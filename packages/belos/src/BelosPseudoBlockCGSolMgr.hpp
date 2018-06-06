@@ -325,18 +325,18 @@ namespace Belos {
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
     // Default solver values.
-    static const MagnitudeType convtol_default_;
-    static const int maxIters_default_;
-    static const bool assertPositiveDefiniteness_default_;
-    static const bool showMaxResNormOnly_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const int defQuorum_default_;
-    static const std::string resScale_default_;
-    static const std::string label_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
-    static const bool genCondEst_default_;
+    static constexpr MagnitudeType convTol_default_ = 1e-8;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr bool assertPositiveDefiniteness_default_ = true;
+    static constexpr bool showMaxResNormOnly_default_ = false;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr int defQuorum_default_ = 1;
+    static constexpr const char * resScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
+    static constexpr bool genCondEst_default_ = false;
 
     // Current solver values.
     MagnitudeType convtol_,achievedTol_;
@@ -356,48 +356,11 @@ namespace Belos {
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::MagnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::assertPositiveDefiniteness_default_ = true;
-
-template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::showMaxResNormOnly_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::defQuorum_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::resScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
-template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::genCondEst_default_ = false;
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -419,8 +382,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -590,7 +553,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {
-    convtol_ = params->get ("Convergence Tolerance", convtol_default_);
+    convtol_ = params->get ("Convergence Tolerance", convTol_default_);
 
     // Update parameter in our list and residual tests.
     params_->set ("Convergence Tolerance", convtol_);
@@ -715,36 +678,36 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   if (validParams_.is_null()) {
     // Set all the valid parameters and their default values.
     RCP<ParameterList> pl = parameterList ();
-    pl->set("Convergence Tolerance", convtol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linera system to be declared converged.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Assert Positive Definiteness", assertPositiveDefiniteness_default_,
+    pl->set("Assert Positive Definiteness", static_cast<bool>(assertPositiveDefiniteness_default_),
       "Whether or not to assert that the linear operator\n"
       "and the preconditioner are indeed positive definite.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Deflation Quorum", defQuorum_default_,
+    pl->set("Deflation Quorum", static_cast<int>(defQuorum_default_),
       "The number of linear systems that need to converge before\n"
       "they are deflated.  This number should be <= block size.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+    pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
     pl->set("Implicit Residual Scaling", resScale_default_,
       "The type of scaling used in the residual convergence test.");
-    pl->set("Estimate Condition Number", genCondEst_default_,
+    pl->set("Estimate Condition Number", static_cast<bool>(genCondEst_default_),
       "Whether or not to estimate the condition number of the preconditioned system.");
     // We leave the old name as a valid parameter for backwards
     // compatibility (so that validateParametersAndSetDefaults()
@@ -754,7 +717,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Residual Scaling", resScale_default_,
             "The type of scaling used in the residual convergence test.  This "
             "name is deprecated; the new name is \"Implicit Residual Scaling\".");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     validParams_ = pl;
   }

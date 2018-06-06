@@ -73,7 +73,7 @@ namespace TpetraTest {
     typedef SumOfCounts<OffsetType, CountType, DeviceType> functor_type;
 
     OffsetType total = 0;
-    range_type range (0, counts.dimension_0 ());
+    range_type range (0, counts.extent (0));
     Kokkos::parallel_reduce (range, functor_type (counts), total);
     return total;
   }
@@ -100,28 +100,28 @@ namespace { // (anonymous)
     static const char* name () { return "HostSpace"; }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct ExecSpaceName<Kokkos::Serial> {
     static const char* name () { return "Serial"; }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   template<>
   struct ExecSpaceName<Kokkos::Threads> {
     static const char* name () { return "Threads"; }
   };
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   template<>
   struct ExecSpaceName<Kokkos::OpenMP> {
     static const char* name () { return "OpenMP"; }
   };
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   template<>
   struct ExecSpaceName<Kokkos::Cuda> {
     static const char* name () { return "Cuda"; }
@@ -136,7 +136,7 @@ namespace { // (anonymous)
   struct MemorySpaceName<Kokkos::CudaUVMSpace> {
     static const char* name () { return "CudaUVMSpace"; }
   };
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
   template<class DeviceType>
   std::string deviceName ()
@@ -211,7 +211,7 @@ namespace { // (anonymous)
       Teuchos::OSTab tab2 (out);
       using Kokkos::subview;
       typedef Kokkos::pair<size_t, size_t> range_type;
-      auto counts_in = subview (offsets, range_type (0, counts.dimension_0 ()));
+      auto counts_in = subview (offsets, range_type (0, counts.extent (0)));
       Kokkos::deep_copy (counts_in, counts);
 
       OffsetType computedTotal = 0;
@@ -532,8 +532,12 @@ namespace { // (anonymous)
       }
     }
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (Kokkos::Cuda::is_initialized ()) {
+  #else
+    if (Kokkos::Cuda::impl_is_initialized ()) {
+  #endif
       // Make sure that we test both without and with UVM.
       // We only have to test once for each case.
       if (! std::is_same<typename device_type::memory_space, Kokkos::CudaSpace>::value) {
@@ -545,7 +549,7 @@ namespace { // (anonymous)
         testComputeOffsets<cur_device_type> (success, out, debug);
       }
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   }
 } // namespace (anonymous)
 

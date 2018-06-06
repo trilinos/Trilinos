@@ -188,13 +188,13 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a = 2, b = 2;
-    if (av.dimension_0 () == 0) {
+    if (av.extent(0) == 0) {
       a = 0;
     }
-    if (bv.dimension_0 () == 0) {
+    if (bv.extent(0) == 0) {
       b = 0;
     }
 
@@ -257,8 +257,8 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a, b;
     if (alpha == ATA::zero ()) {
       a = 0;
@@ -347,7 +347,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
+    const size_type numRows = X.extent(0);
     int a = 2;
     if (alpha == ATA::zero ()) {
       a = 0;

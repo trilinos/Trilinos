@@ -104,7 +104,7 @@ namespace MueLu {
     Array<GO> ghostedNodeCoarseGIDs(this->numGhostedNodes),
       ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
     Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
-    LO currentIndex = -1, coarseNodeFineLID = -1, currentCoarseIndex = -1;
+    LO currentIndex = -1, /*coarseNodeFineLID = -1,*/ currentCoarseIndex = -1;
     for(ijk[2] = 0; ijk[2] < this->ghostedNodesPerDir[2]; ++ijk[2]) {
       for(ijk[1] = 0; ijk[1] < this->ghostedNodesPerDir[1]; ++ijk[1]) {
         for(ijk[0] = 0; ijk[0] < this->ghostedNodesPerDir[0]; ++ijk[0]) {

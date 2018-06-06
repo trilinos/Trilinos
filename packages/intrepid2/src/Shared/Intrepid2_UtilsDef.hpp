@@ -351,7 +351,7 @@ namespace Intrepid2 {
 //     }// switch
 
 // #ifdef HAVE_INTREPID2_DEBUG
-//     INTREPID2_TEST_FOR_ABORT( partialMult.dimension(0) != spaceDim,
+//     INTREPID2_TEST_FOR_ABORT( partialMult.extent(0) != spaceDim,
 //                               ">>> ERROR (Intrepid2::getDkMultiplicities): partialMult must have the same dimension as spaceDim" );
 // #endif
 

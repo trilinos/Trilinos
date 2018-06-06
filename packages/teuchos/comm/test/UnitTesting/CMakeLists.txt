@@ -17,7 +17,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0
     EXEC UnitTestHarness_Parallel_UnitTests
     MESSAGE "Show default output on proc 0"
-    ARGS --output-show-proc-rank
+    ARGS --output-show-proc-rank --teuchos-suppress-startup-banner
     PASS_REGULAR_EXPRESSION_ALL
       "NOTE: Global reduction shows failures on other processes"
       "NOTE: Unit test failed on processes = {1}"
@@ -28,7 +28,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_1
     EXEC UnitTestHarness_Parallel_UnitTests
     MESSAGE "Show output on proc 1"
-    ARGS --output-show-proc-rank --output-to-root-rank-only=1
+    ARGS --output-show-proc-rank --output-to-root-rank-only=1 --teuchos-suppress-startup-banner
     PASS_REGULAR_EXPRESSION_ALL
       "NOTE: Unit test failed on processes = {1}"
       ".*FAILED.* UnitTestHarness_nonRootFails_UnitTest"
@@ -43,7 +43,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0
     EXEC UnitTestHarness_Parallel_UnitTests
     MESSAGE "Show default output on proc 0"
-    ARGS --output-show-proc-rank
+    ARGS --output-show-proc-rank --teuchos-suppress-startup-banner
     PASS_REGULAR_EXPRESSION_ALL
       "NOTE: Global reduction shows failures on other processes"
       "NOTE: Unit test failed on processes = {1, 3}"
@@ -54,7 +54,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_1
     EXEC UnitTestHarness_Parallel_UnitTests
     MESSAGE "Show output on proc 1"
-    ARGS --output-show-proc-rank --output-to-root-rank-only=1
+    ARGS --output-show-proc-rank --output-to-root-rank-only=1 --teuchos-suppress-startup-banner
     PASS_REGULAR_EXPRESSION_ALL
       "NOTE: Unit test failed on processes = {1, 3}"
       ".*FAILED.* UnitTestHarness_nonRootFails_UnitTest"
@@ -68,7 +68,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   UnitTestHarness_Parallel_UnitTests_MPI_no_reduce
     TEST_0
       EXEC UnitTestHarness_Parallel_UnitTests
-      ARGS --test=nonRootFails --no-globally-reduce-test-result
+      ARGS --test=nonRootFails --no-globally-reduce-test-result --teuchos-suppress-startup-banner
       PASS_REGULAR_EXPRESSION_ALL
         "UnitTestHarness_nonRootFails_UnitTest ... .Passed."
       NUM_MPI_PROCS 2

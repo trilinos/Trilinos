@@ -139,7 +139,7 @@ inline std::string tolower(const std::string & str) {
 
     std::vector<std::set<LocalOrdinal>> seedSets(spaceDim+1);
 
-    int numCells = elementToNodeMap.dimension(0);
+    int numCells = elementToNodeMap.extent(0);
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       for (int d=0; d<=spaceDim; d++)
@@ -289,7 +289,7 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
   // Given: A set of "candidate" hi-DOFs to serve as the "representative" DOF for each lo-DOF on the reference element.
   // Algorithm:  For each element, we choose the lowest GID of the candidates for each DOF to generate the lo_elemToHiRepresentativeNode map
 
-   size_t numElem     = hi_elemToNode.dimension(0);
+   size_t numElem     = hi_elemToNode.extent(0);
    size_t lo_nperel   = candidates.size();
    Kokkos::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
 
@@ -334,9 +334,9 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
   typedef LocalOrdinal LO;
   using Teuchos::RCP;
   //  printf("CMS:BuildLoElemToNodeViaRepresentatives: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
-  size_t numElem     = hi_elemToNode.dimension(0);
+  size_t numElem     = hi_elemToNode.extent(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
-  size_t lo_nperel = lo_elemToHiRepresentativeNode.dimension(1);
+  size_t lo_nperel = lo_elemToHiRepresentativeNode.extent(1);
   Kokkos::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Start by flagginc the representative nodes
@@ -410,7 +410,7 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   //  printf("CMS:BuildLoElemToNode: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
 
-  size_t numElem     = hi_elemToNode.dimension(0);
+  size_t numElem     = hi_elemToNode.extent(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
 
   size_t lo_nperel = lo_node_in_hi.size();
@@ -535,8 +535,8 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
  typedef typename FC::data_type SC;
 
  // Evaluate the linear basis functions at the Pn nodes
- size_t numFieldsHi = ReferenceNodeLocations.dimension(0);
- // size_t dim         = ReferenceNodeLocations.dimension(1);
+ size_t numFieldsHi = ReferenceNodeLocations.extent(0);
+ // size_t dim         = ReferenceNodeLocations.extent(1);
  size_t numFieldsLo = basis.getCardinality();
  
  FC LoValues("LoValues",numFieldsLo,numFieldsHi);
@@ -597,7 +597,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
                                                                                                                  Teuchos::RCP<Matrix>& P) const{
   typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
-  size_t numFieldsHi = hi_elemToNode.dimension(1);
+  size_t numFieldsHi = hi_elemToNode.extent(1);
   size_t numFieldsLo = lo_basis.getCardinality();
   LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
@@ -612,7 +612,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
-  size_t Nelem=hi_elemToNode.dimension(0);
+  size_t Nelem=hi_elemToNode.extent(0);
   std::vector<bool> touched(hi_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);
@@ -654,7 +654,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
                                                                                                                  Teuchos::RCP<Matrix>& P) const{
   typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
-  size_t numFieldsHi = hi_elemToNode.dimension(1);
+  size_t numFieldsHi = hi_elemToNode.extent(1);
   size_t numFieldsLo = lo_basis.getCardinality();
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
@@ -668,7 +668,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
-  size_t Nelem=hi_elemToNode.dimension(0);
+  size_t Nelem=hi_elemToNode.extent(0);
   std::vector<bool> touched(hi_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);

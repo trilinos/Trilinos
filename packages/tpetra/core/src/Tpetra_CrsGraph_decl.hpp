@@ -181,6 +181,24 @@ namespace Tpetra {
       STORAGE_1D_PACKED, //<! 1-D "packed" storage
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
+
+
+    /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
+    ///
+    /// CrsMatrix has methods deprecated by #2630, that need to call
+    /// CrsGraph methods also deprecated by #2630.  This results in
+    /// spurious deprecation warnings.  This mix-in class gives Tpetra
+    /// developers a work-around so that CrsMatrix's and
+    /// BlockCrsMatrix's deprecated methods can call CrsGraph's
+    /// deprecated methods without emitting spurious warnings.
+    class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
+    public:
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () {}
+      virtual bool isLowerTriangularImpl () const = 0;
+      virtual bool isUpperTriangularImpl () const = 0;
+      virtual size_t getGlobalNumDiagsImpl () const = 0;
+      virtual global_size_t getNodeNumDiagsImpl () const = 0;
+    };
   } // namespace Details
 
   /// \class CrsGraph
@@ -250,7 +268,8 @@ namespace Tpetra {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public Teuchos::ParameterListAcceptorDefaultBase,
+    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -586,17 +605,19 @@ namespace Tpetra {
     }
 
     //! Destructor.
-    virtual ~CrsGraph();
+    virtual ~CrsGraph ();
 
     //@}
     //! @name Implementation of Teuchos::ParameterListAcceptor
     //@{
 
     //! Set the given list of parameters (must be nonnull).
-    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
+    void
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params) override;
 
     //! Default parameter list suitable for validation.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const override;
 
     //@}
     //! @name Insertion/Removal Methods
@@ -824,55 +845,55 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
     //! Returns the underlying node.
-    Teuchos::RCP<node_type> getNode() const;
+    Teuchos::RCP<node_type> getNode() const override;
 
     //! Returns the Map that describes the row distribution in this graph.
-    Teuchos::RCP<const map_type> getRowMap () const;
+    Teuchos::RCP<const map_type> getRowMap () const override;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    Teuchos::RCP<const map_type> getColMap () const;
+    Teuchos::RCP<const map_type> getColMap () const override;
 
     //! Returns the Map associated with the domain of this graph.
-    Teuchos::RCP<const map_type> getDomainMap () const;
+    Teuchos::RCP<const map_type> getDomainMap () const override;
 
     //! Returns the Map associated with the domain of this graph.
-    Teuchos::RCP<const map_type> getRangeMap () const;
+    Teuchos::RCP<const map_type> getRangeMap () const override;
 
     //! Returns the importer associated with this graph.
-    Teuchos::RCP<const import_type> getImporter () const;
+    Teuchos::RCP<const import_type> getImporter () const override;
 
     //! Returns the exporter associated with this graph.
-    Teuchos::RCP<const export_type> getExporter () const;
+    Teuchos::RCP<const export_type> getExporter () const override;
 
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
      */
-    global_size_t getGlobalNumRows() const;
+    global_size_t getGlobalNumRows() const override;
 
     //! \brief Returns the number of global columns in the graph.
     /** Returns the number of entries in the domain map of the matrix.
         Undefined if isFillActive().
     */
-    global_size_t getGlobalNumCols() const;
+    global_size_t getGlobalNumCols() const override;
 
     //! Returns the number of graph rows owned on the calling node.
-    size_t getNodeNumRows() const;
+    size_t getNodeNumRows() const override;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    size_t getNodeNumCols() const;
+    size_t getNodeNumCols() const override;
 
     //! Returns the index base for global indices for this graph.
-    GlobalOrdinal getIndexBase() const;
+    GlobalOrdinal getIndexBase() const override;
 
     //! Returns the global number of entries in the graph.
     /** Undefined if isFillActive().
      */
-    global_size_t getGlobalNumEntries() const;
+    global_size_t getGlobalNumEntries() const override;
 
     /// \brief The local number of entries in the graph.
     ///
@@ -883,11 +904,12 @@ namespace Tpetra {
     ///   not store the number of entries as a separate integer field,
     ///   since doing so and keeping it updated would hinder
     ///   thread-parallel insertion of new entries.  See #1357.
-    size_t getNodeNumEntries() const;
+    size_t getNodeNumEntries() const override;
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
-    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+    size_t
+    getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const override;
 
     /// \brief Get the number of entries in the given row (local index).
     ///
@@ -895,7 +917,8 @@ namespace Tpetra {
     ///   local index, on the calling MPI process.  If the specified
     ///   local row index is invalid on the calling process, return
     ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
-    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
+    size_t
+    getNumEntriesInLocalRow (LocalOrdinal localRow) const override;
 
     /// \brief The local number of indices allocated for the graph,
     ///   over all rows on the calling (MPI) process.
@@ -936,19 +959,53 @@ namespace Tpetra {
     ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    global_size_t getGlobalNumDiags() const;
-
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeNumDiags() const;
-
-    /// \brief Maximum number of entries in all rows over all processes.
+    /// \brief Number of diagonal entries over all processes in the
+    ///   graph's communicator.
     ///
-    /// \note Undefined if isFillActive().
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    global_size_t getGlobalNumDiagsImpl () const override;
+
+    /// \brief Number of diagonal entries on the calling process.
+    ///
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    size_t TPETRA_DEPRECATED getNodeNumDiags() const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    size_t getNodeNumDiagsImpl () const override;
+
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   over all processes in the graph's communicator.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
     ///
     /// \note This is the same as the result of a global maximum of
     ///   getNodeMaxNumRowEntries() over all processes.  That may not
@@ -958,12 +1015,13 @@ namespace Tpetra {
     ///   row.  This method only counts the number of entries in each
     ///   row that a process owns, not the total number of entries in
     ///   the row over all processes.
-    size_t getGlobalMaxNumRowEntries() const;
+    size_t getGlobalMaxNumRowEntries () const override;
 
-    //! \brief Maximum number of entries in all rows owned by the calling process.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeMaxNumRowEntries() const;
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   on this process.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
+    size_t getNodeMaxNumRowEntries () const override;
 
     /// \brief Whether the graph has a column Map.
     ///
@@ -973,40 +1031,73 @@ namespace Tpetra {
     /// does not already have one.
     ///
     /// A column Map lets the graph
-    ///
-    ///   - use local indices for storing entries in each row, and
-    ///   - compute an Import from the domain Map to the column Map.
+    /// <ul>
+    /// <li> use local indices for storing entries in each row, and </li>
+    /// <li> compute an Import from the domain Map to the column Map. </li>
+    /// </ul>
     ///
     /// The latter is mainly useful for a graph associated with a
     /// CrsMatrix.
-    bool hasColMap() const;
+    bool hasColMap () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isLowerTriangularImpl () const override;
 
     /// \brief Whether the graph is locally lower triangular.
     ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isLowerTriangular() const;
+    bool TPETRA_DEPRECATED isLowerTriangular () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isUpperTriangularImpl () const override;
 
     /// \brief Whether the graph is locally upper triangular.
     ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isUpperTriangular() const;
+    bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    bool isLocallyIndexed() const;
+    bool isLocallyIndexed() const override;
 
     //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    bool isGloballyIndexed() const;
+    bool isGloballyIndexed() const override;
 
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
-    bool isFillComplete() const;
+    bool isFillComplete() const override;
 
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
     bool isFillActive() const;
@@ -1040,7 +1131,7 @@ namespace Tpetra {
     void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal>& Indices,
-                      size_t& NumIndices) const;
+                      size_t& NumIndices) const override;
 
     /// \brief Get a copy of the given row, using local indices.
     ///
@@ -1052,7 +1143,7 @@ namespace Tpetra {
     void
     getLocalRowCopy (LocalOrdinal LocalRow,
                      const Teuchos::ArrayView<LocalOrdinal>& indices,
-                     size_t& NumIndices) const;
+                     size_t& NumIndices) const override;
 
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
@@ -1066,11 +1157,11 @@ namespace Tpetra {
     /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
     void
     getGlobalRowView (const GlobalOrdinal gblRow,
-                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const;
+                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const override;
 
     /// \brief Whether this class implements getLocalRowView() and
     ///   getGlobalRowView() (it does).
-    bool supportsRowViews () const;
+    bool supportsRowViews () const override;
 
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
@@ -1084,33 +1175,34 @@ namespace Tpetra {
     /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
     void
     getLocalRowView (const LocalOrdinal lclRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const;
+                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const override;
 
     //@}
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    /** \brief Return a simple one-line description of this object. */
-    std::string description() const;
+    //! Return a one-line human-readable description of this object.
+    std::string description () const override;
 
-    //! Print the object to the given output stream with given verbosity level.
+    /// \brief Print this object to the given output stream with the
+    ///   given verbosity level.
     void
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
-              Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const override;
 
     //@}
     //! \name Implementation of DistObject
     //@{
 
     virtual bool
-    checkSizes (const SrcDistObject& source);
+    checkSizes (const SrcDistObject& source) override;
 
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) override;
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
@@ -1118,14 +1210,14 @@ namespace Tpetra {
                     Teuchos::Array<GlobalOrdinal> &exports,
                     const Teuchos::ArrayView<size_t> & numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor &distor);
+                    Distributor &distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<GlobalOrdinal>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
           size_t& constantNumPackets,
-          Distributor& distor) const;
+          Distributor& distor) const override;
 
     virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
@@ -1133,7 +1225,7 @@ namespace Tpetra {
                       const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                       size_t constantNumPackets,
                       Distributor &distor,
-                      CombineMode CM);
+                      CombineMode CM) override;
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1174,7 +1266,7 @@ namespace Tpetra {
     /// \pre The graph must have a column Map.
     /// \pre All diagonal entries of the graph must be populated on
     ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    /// \pre <tt>offsets.extent(0) >= this->getNodeNumRows()</tt>
     ///
     /// \param offsets [out] Output array of offsets.  This method
     ///   does NOT allocate the array; the caller must allocate.  Must
@@ -1342,7 +1434,7 @@ namespace Tpetra {
     /// method call should only fail on user error or failure to
     /// allocate memory.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
     //@}
 
     template<class ViewType, class OffsetViewType >
@@ -1730,11 +1822,11 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
       true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
     //@}
     //! \name Methods for sorting and merging column indices.
@@ -1789,31 +1881,77 @@ namespace Tpetra {
 
     void staticAssertions() const;
     void clearGlobalConstants();
+
   public:
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const { return haveGlobalConstants_;}
 
-    /// \brief Forces computation of global constants if they have not been computed yet
+    /// \brief Compute global constants, if they have not yet been computed.
     ///
-    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
-    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
+    /// \warning This is an implementation detail of Tpetra.  It may
+    ///   change or disappear at any time.  It is public only because
+    ///   MueLu setup needs it to be public.
     ///
-    void computeGlobalConstants();
+    /// Global constants include:
+    /// <ul>
+    /// <li> globalNumEntries_ </li>
+    /// <li> globalNumDiags_ </li>
+    /// <li> globalMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Always compute the following:
+    /// <ul>
+    /// <li> globalNumEntries_ </li>
+    /// <li> globalMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Only compute the following if the input argument
+    /// computeLocalTriangularConstants is true:
+    /// <ul>
+    /// <li> globalNumDiags_ </li>
+    /// </ul>
+    /// The bool input argument comes from an input ParameterList bool
+    /// parameter "compute local triangular constants", named
+    /// analogously to the existing bool parameter "compute global
+    /// constants".
+    void computeGlobalConstants (const bool computeLocalTriangularConstants);
+
   protected:
-
-    /// \brief Forces computation of local constants if they have not been computed yet.
-    // This is implied by the computation of global constants, and this is only used a
-    // as an alterantive if the global constants are not computed
+    /// \brief Compute local constants, if they have not yet been computed.
     ///
-    void computeLocalConstants();
-
-    /// \brief Forces computation of local triangular properties if they have
-    /// not been computed yet.
+    /// \warning You MUST call fillLocalGraph (or
+    ///   CrsMatrix::fillLocalGraphAndMatrix) before calling this
+    ///   method!  This method depends on the Kokkos::StaticCrsGraph
+    ///   (local_graph_type) object being ready.
     ///
-    /// \warning This method is only for expert users.
-    /// \warning We make no promises about backwards compatibility
-    ///   for this method. It may disappear or change at any time.
-    void computeLocalTriangularProperties();
+    /// Local constants include:
+    /// <ul>
+    /// <li> lowerTriangular_ </li>
+    /// <li> upperTriangular_ </li>
+    /// <li> nodeNumDiags_ </li>
+    /// <li> nodeMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Always compute the following:
+    /// <ul>
+    /// <li> nodeMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Only compute the following if the input argument
+    /// computeLocalTriangularConstants is true:
+    /// <ul>
+    /// <li> lowerTriangular_ </li>
+    /// <li> upperTriangular_ </li>
+    /// <li> nodeNumDiags_ </li>
+    /// </ul>
+    /// The bool input argument comes from an input ParameterList bool
+    /// parameter "compute local triangular constants", named
+    /// analogously to the existing bool parameter "compute global
+    /// constants".
+    ///
+    /// computeGlobalConstants calls this method, if global constants
+    /// have not yet been computed.
+    void computeLocalConstants (const bool computeLocalTriangularConstants);
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.

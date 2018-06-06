@@ -6,17 +6,22 @@
 #
 ################################################################################
 
+if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
+  export ATDM_CONFIG_COMPILER=GNU
+fi
+
 echo "Using SEMS RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=32
 
 module purge
 module load sems-env
-module load sems-cmake/3.5.2
 module load sems-git/2.10.1
 
-#module load ninja/1.7.2
+module load atdm-env
+module load atdm-cmake/3.11.1
+module load atdm-ninja_fortran/1.7.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
@@ -77,5 +82,7 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_BOOST_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/l
 export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
+
+export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

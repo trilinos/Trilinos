@@ -54,8 +54,8 @@ void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c) {
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<execution_space>( 0,m ),
     KOKKOS_LAMBDA (const int i) {
@@ -75,7 +75,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -83,8 +83,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -111,7 +111,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename Kokkos::ThreadLocalScalarType<ViewTypeC>::type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -119,8 +119,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -147,7 +147,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -155,8 +155,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -185,8 +185,8 @@ check_val(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   for (size_t i=0; i<m; ++i) {
     value_type t = n;
     if (std::abs(h_c(i)- t) > tol) {
@@ -204,8 +204,8 @@ check_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   const size_t p = Kokkos::dimension_scalar(A);
   for (size_t i=0; i<m; ++i) {
     for (size_t j=0; j<p; ++j) {
@@ -278,7 +278,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -575,19 +575,19 @@ int main(int argc, char* argv[]) {
     clp.setOption("ph", &ph, "Number of derivative components for hierarchical");
     int nloop = 10;
     clp.setOption("nloop", &nloop, "Number of loops");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -632,49 +632,53 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-// #ifdef KOKKOS_HAVE_SERIAL
+// #ifdef KOKKOS_ENABLE_SERIAL
 //     if (serial) {
-//       Kokkos::Serial::initialize();
+//       Kokkos::initialize();
 //       if (print_config)
-//         Kokkos::Serial::print_configuration(std::cout, true);
+//         Kokkos::print_configuration(std::cout, true);
 //       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Serial>(
 //         m,n,p,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Serial");
-//       Kokkos::Serial::finalize();
+//       Kokkos::finalize();
 //     }
 // #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
-      Kokkos::OpenMP::initialize(openmp, numa, cores_per_numa);
+      Kokkos::InitArgs init_args;
+      init_args.num_threads = openmp;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
       if (print_config)
-        Kokkos::OpenMP::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::OpenMP>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"OpenMP");
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
-      Kokkos::Threads::initialize(threads, numa, cores_per_numa);
+      Kokkos::InitArgs init_args;
+      init_args.num_threads = threads;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
       if (print_config)
-        Kokkos::Threads::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Threads>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Threads");
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize();
+      Kokkos::initialize();
       if (print_config)
-        Kokkos::Cuda::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Cuda>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Cuda");
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

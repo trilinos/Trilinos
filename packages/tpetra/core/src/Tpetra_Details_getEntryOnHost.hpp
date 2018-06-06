@@ -89,13 +89,13 @@ struct GetEntryOnHost<ViewType, IndexType, false> {
     // the array, and copy to device.  Do not use host mirror, because
     // that could just be a UVM View if using UVM.
     static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     // Do not use Kokkos::create_mirror_view, because that could just
     // be a UVM View if using UVM.
     typedef typename ViewType::device_type device_type;
     // Hide this in ifdef, to avoid unused typedef warning.
     typedef typename device_type::execution_space dev_exec_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
     typedef typename ViewType::HostMirror::execution_space host_exec_space;
     typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_device_type;
     typedef typename ViewType::non_const_value_type value_type;
@@ -103,18 +103,18 @@ struct GetEntryOnHost<ViewType, IndexType, false> {
     value_type val;
     Kokkos::View<value_type, host_device_type> view_h (&val);
     auto view_d = Kokkos::subview (x, ind); // 0-D View
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     typedef typename device_type::memory_space dev_memory_space;
     if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
       dev_exec_space::fence (); // for UVM's sake.
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
     Kokkos::deep_copy (view_h, view_d);
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
       dev_exec_space::fence (); // for UVM's sake.
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
     return val;
   }
 };

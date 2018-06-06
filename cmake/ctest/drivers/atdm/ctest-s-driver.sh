@@ -8,35 +8,11 @@ echo
 echo "  ==> `date`"
 echo
 
-echo "Loading env and running ctest -S comamnd ..."
+echo "Loading env and running ctest -S comamnd to configure, build, and test ..."
 
-if [ "${WORKSPACE}" == ""  ] ; then
-  echo "Error, must set WORKSPACE var before calling!"
-  exit 1
-fi
+source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
-if [ "${JOB_NAME}" == ""  ] ; then
-  echo "Error, must set JOB_NAME var before calling!"
-  exit 1
-fi
-
-# Shiller/hansen settings for automated job (rest are set in ./environment.sh)
-ulimit -c 0
-
-export SUBDIR=SRC_AND_BUILD
-if [ ! -e $SUBDIR ] ; then
-  echo "Making $SUBDIR"
-  mkdir $SUBDIR
-fi
-
-cd $SUBDIR/
-echo "Current dir: $PWD"
-
-source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
-echo
-module list
-
-export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
 
 echo
 echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."

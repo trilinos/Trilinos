@@ -60,7 +60,7 @@ private:
 public:
   StochasticConstraint(const Ptr<Objective<Real>> &obj,
                const Ptr<SampleGenerator<Real>>   &sampler,
-               Teuchos::ParameterList             &parlist,
+               ROL::ParameterList             &parlist,
                const int index = 0)
     : sampler_(sampler) {
     robj_ = makePtr<StochasticObjective<Real>>(obj,parlist,sampler,1,index);
@@ -69,7 +69,7 @@ public:
 
   StochasticConstraint(const Ptr<Constraint<Real>> &con,
                const Ptr<SampleGenerator<Real>>    &sampler,
-               Teuchos::ParameterList              &parlist,
+               ROL::ParameterList              &parlist,
                const int index = 0)
     : sampler_(sampler) {
     try {

@@ -37,9 +37,9 @@ namespace Tacho {
                       "A, B and C do not have the same value type.");
 
         const ordinal_type 
-          m = A.dimension_0(),
-          n = A.dimension_1(),
-          k = C.dimension_1();
+          m = A.extent(0),
+          n = A.extent(1),
+          k = C.extent(1);
 
         if (m > 0 && n > 0 && k > 0) {
           for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {

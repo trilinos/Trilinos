@@ -63,26 +63,26 @@ class StdVector : public Vector<Real> {
 
 private:
 
-  ROL::Ptr<std::vector<Element> >  std_vec_;
+  Ptr<std::vector<Element> >  std_vec_;
 
 public:
 
-  StdVector(const ROL::Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+  StdVector(const Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
 
   void set( const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
     const StdVector &ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
+    std::copy(xval.begin(),xval.end(),std_vec_->begin());
   }
 
   void plus( const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -96,7 +96,7 @@ public:
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -117,7 +117,7 @@ public:
 
   virtual Real dot( const Vector<Real> &x ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -137,27 +137,26 @@ public:
     return val;
   }
 
-  virtual ROL::Ptr<Vector<Real> > clone() const {
-    return ROL::makePtr<StdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size()));
+  virtual Ptr<Vector<Real> > clone() const {
+    return makePtr<StdVector>( makePtr<std::vector<Element>>(std_vec_->size(), static_cast<Element>(0)));
   }
 
-  ROL::Ptr<const std::vector<Element> > getVector() const {
+  Ptr<const std::vector<Element> > getVector() const {
     return std_vec_;
   }
 
-  ROL::Ptr<std::vector<Element> > getVector() {
+  Ptr<std::vector<Element> > getVector() {
     return std_vec_;
   }
 
-  ROL::Ptr<Vector<Real> > basis( const int i ) const {
+  Ptr<Vector<Real> > basis( const int i ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
 
-    ROL::Ptr<StdVector> e = 
-      ROL::makePtr<StdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size(), 0.0));
-    (*e->getVector())[i] = 1.0;
+    Ptr<Vector<Real>> e = clone();
+    (*staticPtrCast<StdVector>(e)->getVector())[i] = 1.0;
     return e;
   }
 
@@ -174,7 +173,7 @@ public:
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -201,7 +200,7 @@ public:
     std_vec_->assign(dim,C);
   }
 
-  void print( std::ostream &outStream ) const {
+  virtual void print( std::ostream &outStream ) const {
     uint dim = std_vec_->size();
     for(uint i=0; i<dim; ++i) {
       outStream << (*std_vec_)[i] << " ";
@@ -210,8 +209,6 @@ public:
   }
 
 }; // class StdVector
-
-
 
 
 } // namespace ROL

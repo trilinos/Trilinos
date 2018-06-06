@@ -14,17 +14,32 @@ fi
 echo "Setting default compiler and build options for JOB_NAME='${JOB_NAME}'"
 
 # Set the defaults
-export ATDM_CONFIG_COMPILER=GNU
+export ATDM_CONFIG_COMPILER=DEFAULT
 export ATDM_CONFIG_BUILD_TYPE=DEBUG
 export ATDM_CONFIG_USE_OPENMP=OFF
 export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
 
 # Set the compiler
-if [[ $JOB_NAME == *"gnu"* ]];   then ATDM_CONFIG_COMPILER=GNU; fi
-if [[ $JOB_NAME == *"intel"* ]]; then ATDM_CONFIG_COMPILER=INTEL; fi
-if [[ $JOB_NAME == *"cuda"* ]];  then ATDM_CONFIG_COMPILER=CUDA; fi
-if [[ $JOB_NAME == *"clang"* ]]; then ATDM_CONFIG_COMPILER=CLANG; fi
+if [[ $JOB_NAME == "default" ]]; then
+  ATDM_CONFIG_COMPILER=DEFAULT
+elif [[ $JOB_NAME == *"gnu"* ]]; then
+  ATDM_CONFIG_COMPILER=GNU
+elif [[ $JOB_NAME == *"intel"* ]]; then
+ ATDM_CONFIG_COMPILER=INTEL
+elif [[ $JOB_NAME == *"cuda-8.0"* ]]; then
+  ATDM_CONFIG_COMPILER=CUDA-8.0
+elif [[ $JOB_NAME == *"cuda-9.0"* ]]; then
+  ATDM_CONFIG_COMPILER=CUDA-9.0
+elif [[ $JOB_NAME == *"cuda"* ]]; then
+  ATDM_CONFIG_COMPILER=CUDA
+elif [[ $JOB_NAME == *"clang"* ]]; then
+  ATDM_CONFIG_COMPILER=CLANG
+else
+  echo "***"
+  echo "*** ERROR: A compiler was not specified in '$JOB_NAME'!"
+  echo "***"
+fi
 
 # Set the optimization level
 # Defaults to debug

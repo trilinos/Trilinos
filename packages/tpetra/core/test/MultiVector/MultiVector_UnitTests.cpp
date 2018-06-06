@@ -1661,15 +1661,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1714,15 +1714,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1768,15 +1768,15 @@ namespace {
       auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1821,15 +1821,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -3100,16 +3100,16 @@ namespace {
     //     X.template getLocalView<typename host_view_type::execution_space> ();
 
     //   if (comm->getRank () == 0) {
-    //     TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //     TEST_EQUALITY( X_host.dimension_0 (), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_dev.extent (0), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_dev.extent (1), numCols );
+    //     TEST_EQUALITY( X_host.extent (0), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_host.extent (1), numCols );
     //   }
     //   else { // my rank is not zero
-    //     TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //     TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_dev.extent (0), lclNumRows );
+    //     TEST_EQUALITY( X_dev.extent (1), numCols );
+    //     TEST_EQUALITY( X_host.extent (0), lclNumRows );
+    //     TEST_EQUALITY( X_host.extent (1), numCols );
     //   }
     // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
@@ -3142,10 +3142,10 @@ namespace {
     //   host_view_type X_host =
     //     X.template getLocalView<typename host_view_type::execution_space> ();
 
-    //   TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-    //   TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //   TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-    //   TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   TEST_EQUALITY( X_dev.extent (0), lclNumRows );
+    //   TEST_EQUALITY( X_dev.extent (1), numCols );
+    //   TEST_EQUALITY( X_host.extent (0), lclNumRows );
+    //   TEST_EQUALITY( X_host.extent (1), numCols );
     // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
@@ -4207,6 +4207,7 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
 
     out << "Tpetra::MultiVector: Test MultiVector dimensions when ALL "
       "processes have zero rows" << endl;
@@ -4318,6 +4319,44 @@ namespace {
     SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedGblNumRows != gblNumRows" );
   }
 
+  // Swap test
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Swap, LO , GO , Scalar , Node ) {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    typedef Tpetra::global_size_t GST;
+
+    Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    const int numProcs = comm->getSize ();
+
+    // Create a Map that puts nothing on Process 0 and something on
+    // the other processes.
+    const size_t lclNumRows = 4;
+    const GST gblNumRows = GST (numProcs * lclNumRows);
+    const GO indexBase = 0;
+    RCP<const map_type> map = rcp (new map_type (gblNumRows, indexBase, comm));
+
+    size_t numCols = 3;
+    MV Xo (map, numCols), Yo (map, numCols), Xn (map, numCols), Yn (map, numCols);
+
+    // Comparison vectors (unswapped)
+    Xo.putScalar(ZERO); Yo.putScalar(ONE);
+
+    // Swapping vectors (swapped)
+    Yn.putScalar(ZERO); Xn.putScalar(ONE);
+    Xn.swap(Yn);
+
+    // Compare
+    TEST_COMPARE_FLOATING_ARRAYS(Xo.get1dView(),Xn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+    TEST_COMPARE_FLOATING_ARRAYS(Yo.get1dView(),Yn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -4357,7 +4396,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;

@@ -69,29 +69,29 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output(0, 0) = 2.0*x;
-        output(0, 1) = 2.0*(y - 1.0);
-        output(0, 2) = 2.0*z;
+        output.access(0, 0) = 2.0*x;
+        output.access(0, 1) = 2.0*(y - 1.0);
+        output.access(0, 2) = 2.0*z;
 
-        output(1, 0) = 2.0*x;
-        output(1, 1) = 2.0*y;
-        output(1, 2) = 2.0*z;
+        output.access(1, 0) = 2.0*x;
+        output.access(1, 1) = 2.0*y;
+        output.access(1, 2) = 2.0*z;
 
-        output(2, 0) = 2.0*(x - 1.0);
-        output(2, 1) = 2.0*y;
-        output(2, 2) = 2.0*z;
+        output.access(2, 0) = 2.0*(x - 1.0);
+        output.access(2, 1) = 2.0*y;
+        output.access(2, 2) = 2.0*z;
 
-        output(3, 0) = 2.0*x;
-        output(3, 1) = 2.0*y;
-        output(3, 2) = 2.0*(z - 1.0);
+        output.access(3, 0) = 2.0*x;
+        output.access(3, 1) = 2.0*y;
+        output.access(3, 2) = 2.0*(z - 1.0);
         break;
       }
       case OPERATOR_DIV: {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output(0) = 6;
-        output(1) = 6;
-        output(2) = 6;
-        output(3) = 6;
+        output.access(0) = 6;
+        output.access(1) = 6;
+        output.access(2) = 6;
+        output.access(3) = 6;
         break;
       }
       default: {
@@ -116,7 +116,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

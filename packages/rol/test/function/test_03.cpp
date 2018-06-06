@@ -58,13 +58,13 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 template<class Real>
 void print_vector( const ROL::Vector<Real> &x ) {
 
-  typedef ROL::Vector<Real>            V;
+//  typedef ROL::Vector<Real>            V;
   typedef ROL::StdVector<Real>         SV;
   typedef ROL::PartitionedVector<Real> PV;
   typedef typename PV::size_type       size_type;
@@ -74,9 +74,8 @@ void print_vector( const ROL::Vector<Real> &x ) {
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    ROL::Ptr<const V> vec = eb.get(k);
-    ROL::Ptr<const std::vector<Real> > vp = 
-      dynamic_cast<SV>(const_cast<V&&>(*vec)).getVector();  
+   auto vec = eb.get(k);
+   auto vp  = ROL::dynamicPtrCast<const SV>(vec)->getVector();
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
     }  
@@ -107,7 +106,7 @@ int main(int argc, char *argv[]) {
   int iprint = argc - 1;
 
   ROL::Ptr<std::ostream> outStream;
-  oblackholestream bhs; // no output
+  ROL::nullstream bhs; // no output
  
   if( iprint>0 ) 
     outStream = ROL::makePtrFromRef(std::cout);

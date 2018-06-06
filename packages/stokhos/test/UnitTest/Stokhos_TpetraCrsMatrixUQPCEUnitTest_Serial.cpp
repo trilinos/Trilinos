@@ -56,14 +56,14 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize
-  Kokkos::Serial::initialize();
+  Kokkos::initialize();
 
   // Run tests
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Serial::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

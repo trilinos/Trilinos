@@ -78,7 +78,7 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;
@@ -182,7 +182,7 @@ public:
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_coord.dimension_0(); }
+  { return m_coord.extent(0); }
 
   /** \brief  Maximum sparse entries for any coordinate */
   KOKKOS_INLINE_FUNCTION
@@ -212,7 +212,7 @@ public:
    /** \brief  Return row_map ptr */
   KOKKOS_INLINE_FUNCTION
   const size_type* row_map_ptr() const
-  { return m_row_map.ptr_on_device(); }
+  { return m_row_map.data(); }
 
   /** \brief  Number of entries with a coordinate 'i' */
   KOKKOS_INLINE_FUNCTION
@@ -252,7 +252,7 @@ public:
   /** \brief Number tiles */
   KOKKOS_INLINE_FUNCTION
   size_type num_tiles() const
-  { return m_coord_offset.dimension_0(); }
+  { return m_coord_offset.extent(0); }
 
   /** \brief Coordinate offset */
   KOKKOS_INLINE_FUNCTION

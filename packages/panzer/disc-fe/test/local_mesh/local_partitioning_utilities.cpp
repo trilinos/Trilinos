@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
   {
     panzer::LocalMeshInfo<LO,GO> empty_mesh;
 
-    panzer::WorksetDescriptor description("block",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     // It should not return any partitions
@@ -85,21 +85,21 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Test bad descriptors
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::EMPTY,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::CLASSIC_MODE,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     // It should throw an error
     TEST_THROW(generateLocalMeshPartitions(*mesh_info, description, partitions), std::logic_error);
   }
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::SPECIAL,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::NO_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     // It should throw an error
     TEST_THROW(generateLocalMeshPartitions(*mesh_info, description, partitions), std::logic_error);
   }
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::FULL,false);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,false);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     // It should throw an error
@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Non-existant block partition
   {
-    panzer::WorksetDescriptor description("block32",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Non-existant sideset partition
   {
-    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -132,7 +132,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Existing block partition
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Existing sideset partition
   {
-    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
     TEST_EQUALITY(partition.num_virtual_cells,1);
   }
   {
-    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition<LO,GO> > partitions;
 
     generateLocalMeshPartitions(*mesh_info, description, partitions);

@@ -47,8 +47,7 @@
 #include "ROL_RandVarFunctional.hpp"
 #include "ROL_PlusFunction.hpp"
 
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -83,18 +82,18 @@ private:
   void checkInputs(void) {
     Real zero(0), one(1);
     // Check inputs
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_>one || prob_<zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_>one || prob_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadius): Confidence level out of range!");
-    TEUCHOS_TEST_FOR_EXCEPTION((coeff_<zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((coeff_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadius): Coefficient is negative!");
      initializeQR();
   }
 
 public:
 
-  QuantileRadius( Teuchos::ParameterList &parlist )
+  QuantileRadius( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile Radius");
     // Grab probability and coefficient arrays
     prob_  = list.get<Real>("Confidence Level");

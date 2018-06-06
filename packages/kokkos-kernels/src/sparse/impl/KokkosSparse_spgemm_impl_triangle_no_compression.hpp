@@ -195,21 +195,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -868,323 +876,6 @@ struct KokkosSPGEMM
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag&, const team_member_t & teamMember) const {
-
-    nnz_lno_t team_row_begin = teamMember.league_rank()  * team_row_chunk_size;
-    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-
-
-    //int thread_memory = (shared_memory_size / 8 / teamMember.team_size()) * 8;
-    char *all_shared_memory = (char *) (teamMember.team_shmem().get_shmem(shared_memory_size));
-
-    //shift it to the thread private part
-    all_shared_memory += thread_memory * teamMember.team_rank();
-
-    //used_hash_sizes hold the size of 1st and 2nd level hashes
-    volatile nnz_lno_t *used_hash_sizes = (volatile nnz_lno_t *) (all_shared_memory);
-    typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
-    all_shared_memory += sizeof(nnz_lno_t) * 2;
-
-    nnz_lno_t *globally_used_hash_count = (nnz_lno_t *) (all_shared_memory);
-    all_shared_memory += sizeof(nnz_lno_t) * 2;
-
-
-    nnz_lno_t * begins = (nnz_lno_t *) (all_shared_memory);
-    all_shared_memory += sizeof(nnz_lno_t) * shmem_hash_size;
-
-    //poins to the next elements
-    nnz_lno_t * nexts = (nnz_lno_t *) (all_shared_memory);
-    all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
-
-    //holds the keys
-    nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
-    all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
-    nnz_lno_t * vals = (nnz_lno_t *) (all_shared_memory);
-    all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
-    nnz_lno_t * vals_counts = (nnz_lno_t *) (all_shared_memory);
-    nnz_lno_t * vals_counts_gmem = NULL;
-    nnz_lno_t *globally_used_hash_indices = NULL;
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
-
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm2(pow2_hash_size, MaxRoughNonZero,
-        NULL, NULL, NULL, NULL);
-    hm2.max_value_size = MaxRoughNonZero;
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
-        [&] (const nnz_lno_t& row_index) {
-
-      //initialize begins.
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, shmem_hash_size),
-          [&] (nnz_lno_t i) {begins[i] = -1; });
-
-      //initialize hash usage sizes
-      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
-        used_hash_sizes[0] = 0;
-        used_hash_sizes[1] = 0;
-        globally_used_hash_count[0] = 0;
-      });
-
-      bool is_global_alloced = false;
-      //first we inserted the smallest size row to hashmap
-      nnz_lno_t min_row_col = this->min_size_row_for_each_row[row_index];
-      {
-        size_type rowBegin = row_pointer_begins_B[min_row_col];
-        nnz_lno_t left_work_ = row_pointer_ends_B[min_row_col] - rowBegin;
-
-        while (left_work_){
-          nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
-          nnz_lno_t b_col_ind = -1;
-          nnz_lno_t b_val = -1;
-          nnz_lno_t hash = -1;
-          int shmem_success = 0;
-          Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(teamMember, work_to_handle),
-              [&] (nnz_lno_t i) {
-            const size_type adjind = i + rowBegin;
-            b_col_ind = entriesB[adjind];
-            b_val = entriesSetsB[adjind] ;
-            hash = b_col_ind & shared_memory_hash_func;
-            shmem_success = 1;
-          });
-
-          int overall_num_unsuccess = 1;
-          //first insert to shared memory.
-          //if we run out of shared memory and allocated global memory.
-          //then skip this part.
-          if (!is_global_alloced){
-            shmem_success = hm.vector_atomic_insert_into_hash(
-                teamMember, vector_size,
-                hash, b_col_ind, b_val,
-                used_hash_sizes,
-                shmem_key_size,
-                vals_counts);
-
-            overall_num_unsuccess = 0;
-            Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-                [&] (const int threadid, int &overall_num_unsuccess_) {
-              overall_num_unsuccess_ += shmem_success;
-            }, overall_num_unsuccess);
-          }
-
-          if (overall_num_unsuccess){
-            if (!is_global_alloced){
-
-              volatile nnz_lno_t * tmp = NULL;
-              nnz_lno_t tid = get_thread_id(row_index);
-              //the code gets internal compiler error on gcc 4.7.2
-              //assuming that this part only runs on GPUs for now, below fix
-              //has the exact same behaviour and runs okay.
-              //size_t tid = row_index;
-
-              while (tmp == NULL){
-                Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
-                  memptr = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
-                }, tmp);
-              }
-
-              is_global_alloced = true;
-              globally_used_hash_indices = (nnz_lno_t *) tmp;
-              tmp += pow2_hash_size ;
-
-              hm2.hash_begins = (nnz_lno_t *) (tmp);
-              tmp += pow2_hash_size ;
-              hm2.hash_nexts = (nnz_lno_t *) (tmp);
-              tmp += MaxRoughNonZero;
-              hm2.keys= (nnz_lno_t *) (tmp);
-              tmp += MaxRoughNonZero;
-              hm2.values = (nnz_lno_t *) (tmp);
-              tmp += MaxRoughNonZero;
-              vals_counts_gmem = (nnz_lno_t *)tmp;
-            }
-            if (shmem_success) {
-              hash = b_col_ind & pow2_hash_func;
-            }
-
-            hm2.vector_atomic_insert_into_hash_TrackHashes(
-                teamMember, vector_size,
-                hash,b_col_ind,b_val,
-                used_hash_sizes + 1, hm2.max_value_size
-                ,globally_used_hash_count, globally_used_hash_indices,
-                vals_counts_gmem
-            );
-          }
-          left_work_ -= work_to_handle;
-          rowBegin += work_to_handle;
-        }
-      }
-      //now we will insert the others, calculate intersection.
-      const size_type col_begin = row_mapA[row_index];
-      const nnz_lno_t a_row_size = row_mapA[row_index + 1] - col_begin;
-      nnz_lno_t ii = a_row_size;
-      while(ii--){
-
-        size_type a_col = col_begin + ii;
-        nnz_lno_t rowB = entriesA[a_col];
-        //if this is the min row, then skip.
-        if (rowB == min_row_col) continue;
-
-        size_type rowBegin = row_pointer_begins_B[rowB];
-        nnz_lno_t left_work_ = row_pointer_ends_B[rowB] - rowBegin;
-
-        while (left_work_){
-          nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
-          nnz_lno_t b_col_ind = -1;
-          nnz_lno_t b_val = -1;
-          nnz_lno_t hash = -1;
-
-          Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, work_to_handle),
-              [&] (nnz_lno_t i) {
-            const size_type adjind = i + rowBegin;
-            b_col_ind = entriesB[adjind];
-            b_val = entriesSetsB[adjind] ;
-            hash = b_col_ind & shared_memory_hash_func;
-          });
-
-          int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAND(
-              teamMember, vector_size,
-              hash, b_col_ind, b_val,
-              vals_counts);
-
-
-          if (is_global_alloced){
-
-            int overall_num_unsuccess = 0;
-            Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-                [&] (const int threadid, int &overall_num_unsuccess_) {
-              overall_num_unsuccess_ += num_unsuccess;
-            }, overall_num_unsuccess);
-
-            if (overall_num_unsuccess){
-              hash = -1;
-              if (num_unsuccess) {
-                hash = b_col_ind & pow2_hash_func;
-              }
-
-
-              hm2.vector_atomic_insert_into_hash_mergeAND(
-                  teamMember, vector_size,
-                  hash,b_col_ind,b_val,
-                  vals_counts_gmem
-              );
-
-            }
-          }
-          left_work_ -= work_to_handle;
-          rowBegin += work_to_handle;
-        }
-      }
-
-
-      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
-        if (used_hash_sizes[0] > shmem_key_size) used_hash_sizes[0] = shmem_key_size;
-      });
-
-      switch (count_or_fill_mode){
-      case 0: //count mode
-      default:
-      {
-        nnz_lno_t num_el = 0;
-        Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[0]),
-            [&] (nnz_lno_t i, nnz_lno_t &acc) {
-          if (vals_counts[i] == a_row_size){
-            nnz_lno_t c_rows = vals[i];
-            nnz_lno_t num_el2 = 0;
-            for (; c_rows; num_el2++) {
-              c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
-            }
-            acc += num_el2;
-          }
-        },
-        num_el);
-
-        nnz_lno_t num_global_el = 0;
-        Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[1]),
-            [&] (nnz_lno_t i, nnz_lno_t &num_el) {
-          if (vals_counts_gmem[i] == a_row_size){
-            nnz_lno_t c_rows = hm2.values[i];
-            nnz_lno_t num_el2 = 0;
-            for (; c_rows; num_el2++) {
-              c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
-            }
-            num_el += num_el2;
-          }
-        }, num_global_el);
-        rowmapC[row_index] = num_el + num_global_el;
-      }
-      break;
-      case 1: //fill mode
-      {
-        size_type row_begin = rowmapC[row_index];
-        nnz_lno_t num_compressed_elements = used_hash_sizes[0];
-        used_hash_sizes[0] = 0;
-        Kokkos::parallel_for(
-            Kokkos::ThreadVectorRange(teamMember, num_compressed_elements),
-            [&] (nnz_lno_t i) {
-          if (vals_counts[i] == a_row_size){
-            nnz_lno_t c_rows_setind = hm.keys[i];
-            nnz_lno_t c_rows = hm.values[i];
-
-            int current_row = 0;
-            nnz_lno_t unit = 1;
-
-            while (c_rows){
-              if (c_rows & unit){
-                size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, atomic_incr_type(1));
-                entriesC[wind + row_begin] = set_size * c_rows_setind + current_row;
-              }
-              current_row++;
-              c_rows = c_rows & ~unit;
-              unit = unit << 1;
-            }
-          }
-        });
-
-
-        if (is_global_alloced){
-          Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[1]),
-              [&] (nnz_lno_t i) {
-            if (vals_counts_gmem[i] == a_row_size){
-              nnz_lno_t c_rows_setind = hm2.keys[i];
-              nnz_lno_t c_rows = hm2.values[i];
-              int current_row = 0;
-              nnz_lno_t unit = 1;
-              while (c_rows){
-                if (c_rows & unit){
-
-                  size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, atomic_incr_type(1));
-                  entriesC[wind + row_begin] = set_size * c_rows_setind + current_row;
-                }
-                current_row++;
-                c_rows = c_rows & ~unit;
-                unit = unit << 1;
-              }
-            }
-          });
-        }
-      }
-      break;
-      }
-      if (is_global_alloced){
-        nnz_lno_t dirty_hashes = globally_used_hash_count[0];
-        Kokkos::parallel_for(
-            Kokkos::ThreadVectorRange(teamMember, dirty_hashes),
-            [&] (nnz_lno_t i) {
-          nnz_lno_t dirty_hash = globally_used_hash_indices[i];
-          hm2.hash_begins[dirty_hash] = -1;
-        });
-
-        Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
-          m_space.release_chunk(globally_used_hash_indices);
-        });
-      }
-
-
-    });
   }
 
   size_t team_shmem_size (int team_size) const {
@@ -1437,7 +1128,7 @@ void KokkosSPGEMM
       spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
       spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
     size_t s_maxNumRoughZeros = this->getMaxRoughRowNNZ_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends);
     //max row size cannot be overeall number of columns.
@@ -1449,7 +1140,7 @@ void KokkosSPGEMM
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
           Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends, min_result_row_for_each_row.data());
   }
@@ -1462,7 +1153,7 @@ void KokkosSPGEMM
       p_rowmapA,
       p_entriesA,
 
-      entriesB.dimension_0(),
+      entriesB.extent(0),
       p_rowmapB_begins,
       p_rowmapB_ends,
       p_entriesB,

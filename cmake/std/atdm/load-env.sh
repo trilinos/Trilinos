@@ -21,8 +21,8 @@ function get_abs_dir_path() {
 }
 
 # Get the base dir for the sourced script
-_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
-#echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
+ATDM_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
+#echo "ATDM_SCRIPT_DIR = '$ATDM_SCRIPT_DIR'"
 
 #
 # A) Parse the command-line arguments
@@ -44,7 +44,7 @@ fi
 # B) Get the system name from the hostname
 #
 
-source $_SCRIPT_DIR/utils/get_known_system_name.sh
+source $ATDM_SCRIPT_DIR/utils/get_known_system_name.sh
 
 if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
   echo "Error, could not determine known system, aborting env loading"
@@ -58,7 +58,7 @@ fi
 export JOB_NAME=$1
 
 # Get the Trilins base dir
-export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $_SCRIPT_DIR/../../..`
+export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $ATDM_SCRIPT_DIR/../../..`
 echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
 
 #
@@ -66,7 +66,7 @@ echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
 # script
 #
 
-source $_SCRIPT_DIR/utils/set_build_options.sh
+source $ATDM_SCRIPT_DIR/utils/set_build_options.sh
 
 #
 # E) Load the matching env
@@ -81,8 +81,9 @@ unset OMPI_CXX
 unset OMPI_FC
 unset ATDM_CONFIG_USE_NINJA
 unset ATDM_CONFIG_BUILD_COUNT
-unset ATDM_CONFIG_KOKKOS_ARCH
+unset ATDM_CONFIG_CMAKE_JOB_POOL_LINK
 unset ATDM_CONFIG_CTEST_PARALLEL_LEVEL
+unset ATDM_CONFIG_KOKKOS_ARCH
 unset ATDM_CONFIG_BLAS_LIB
 unset ATDM_CONFIG_LAPACK_LIB
 unset ATDM_CONFIG_USE_HWLOC
@@ -95,7 +96,19 @@ unset ATDM_CONFIG_MPI_PRE_FLAGS
 unset ATDM_CONFIG_MPI_POST_FLAG
 unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 
-source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+source $ATDM_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+
+if [ "${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_BUILD_COUNT=${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_CMAKE_JOB_POOL_LINK=${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}
+fi
 
 if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   echo
@@ -103,6 +116,7 @@ if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   echo "*** ERROR: Environment setup was not successful, see above errors!"
   echo "***"
   echo
+  return
 fi
 
 # NOTE: The ATDMDevEnv.cmake module when processed will assert that all of

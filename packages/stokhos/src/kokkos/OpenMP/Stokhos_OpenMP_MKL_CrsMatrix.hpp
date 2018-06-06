@@ -44,7 +44,7 @@
 
 #include "Kokkos_Macros.hpp"
 #include "Stokhos_ConfigDefs.h"
-#if defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_STOKHOS_MKL)
+#if defined(KOKKOS_ENABLE_OPENMP) && defined(HAVE_STOKHOS_MKL)
 
 #include "Kokkos_Core.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -82,7 +82,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
                       const trans_multi_vector_type& xt,
                       const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension_1();
+      const size_t n = xt.extent(1);
       Kokkos::parallel_for( n, GatherTranspose(x,xt,indices) );
     }
   };
@@ -113,7 +113,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
                       const trans_multi_vector_type& xt,
                       const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension_1();
+      const size_t n = xt.extent(1);
       Kokkos::parallel_for( n, ScatterTranspose(x,xt,indices) );
     }
   };
@@ -140,7 +140,7 @@ namespace Impl {
 
     static void apply(const std::vector<vector_type> & x,
                       const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension_1();
+      const size_t n = xt.extent(1);
       Kokkos::parallel_for( n, GatherVecTranspose(x,xt) );
     }
   };
@@ -167,7 +167,7 @@ namespace Impl {
 
     static void apply(const std::vector<vector_type> & x,
                       const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension_1();
+      const size_t n = xt.extent(1);
       Kokkos::parallel_for( n, ScatterVecTranspose(x,xt) );
     }
   };
@@ -182,18 +182,18 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
               Kokkos::View< double* , Kokkos::OpenMP >& y,
               MKLMultiply tag)
 {
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  double *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  double *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
   double alpha = 1.0;
   double beta = 0.0;
 
-  double *x_values = x.ptr_on_device() ;
-  double *y_values = y.ptr_on_device() ;
+  double *x_values = x.data() ;
+  double *y_values = y.data() ;
 
   mkl_dcsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
              row_beg, row_end, x_values, &beta, y_values);
@@ -204,18 +204,18 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
               Kokkos::View< float* , Kokkos::OpenMP >& y,
               MKLMultiply tag)
 {
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  float *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  float *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
   float alpha = 1.0;
   float beta = 0.0;
 
-  float *x_values = x.ptr_on_device() ;
-  float *y_values = y.ptr_on_device() ;
+  float *x_values = x.data() ;
+  float *y_values = y.data() ;
 
   mkl_scsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
              row_beg, row_end, x_values, &beta, y_values);
@@ -230,10 +230,10 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
   typedef double value_type ;
   typedef Kokkos::View< double** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  double *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  double *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
@@ -245,8 +245,8 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
   Impl::GatherVecTranspose<value_type,execution_space>::apply(x,xx);
-  double *x_values = xx.ptr_on_device() ;
-  double *y_values = yy.ptr_on_device() ;
+  double *x_values = xx.data() ;
+  double *y_values = yy.data() ;
 
   // Call MKLs CSR x multi-vector (row-based) multiply
   mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
@@ -265,10 +265,10 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
   typedef float value_type ;
   typedef Kokkos::View< float** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  float *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  float *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
@@ -280,8 +280,8 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
   Impl::GatherVecTranspose<value_type,execution_space>::apply(x,xx);
-  float *x_values = xx.ptr_on_device() ;
-  float *y_values = yy.ptr_on_device() ;
+  float *x_values = xx.data() ;
+  float *y_values = yy.data() ;
 
   // Call MKLs CSR x multi-vector (row-based) multiply
   mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
@@ -303,10 +303,10 @@ void multiply(
   typedef double value_type ;
   typedef Kokkos::View< double** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  double *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  double *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
@@ -318,8 +318,8 @@ void multiply(
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
   Impl::GatherTranspose<value_type,ordinal_type,execution_space>::apply(x,xx,indices);
-  double *x_values = xx.ptr_on_device() ;
-  double *y_values = yy.ptr_on_device() ;
+  double *x_values = xx.data() ;
+  double *y_values = yy.data() ;
 
   // Call MKLs CSR x multi-vector (row-based) multiply
   mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
@@ -341,10 +341,10 @@ void multiply(
   typedef float value_type ;
   typedef Kokkos::View< float** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
-  MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
-  float *A_values = A.values.ptr_on_device() ;
-  MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
-  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
+  MKL_INT n = A.graph.row_map.extent(0) - 1 ;
+  float *A_values = A.values.data() ;
+  MKL_INT *col_indices = A.graph.entries.data() ;
+  MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.data()) ;
   MKL_INT *row_end = row_beg+1;
   char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
   char trans = 'N';
@@ -356,8 +356,8 @@ void multiply(
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
   Impl::GatherTranspose<value_type,ordinal_type,execution_space>::apply(x,xx,indices);
-  float *x_values = xx.ptr_on_device() ;
-  float *y_values = yy.ptr_on_device() ;
+  float *x_values = xx.data() ;
+  float *y_values = yy.data() ;
 
   // Call MKLs CSR x multi-vector (row-based) multiply
   mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,

@@ -40,9 +40,13 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "ROL_Stream.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_RandomVector.hpp"
+//#include "ROL_PinTVector.hpp"
 
 #include "TankConstraint.hpp"
 #include "TankVector.hpp"
@@ -54,74 +58,109 @@
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
 
+
 int main( int argc, char* argv[] ) {
-  
-  using std::vector;
+
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  using Bounds                      = ROL::Bounds<RealT>;
+  using PartitionedVector           = ROL::PartitionedVector<RealT>;
+ 
+  using StateVector   = TankStateVector<RealT>;
+  using ControlVector = TankControlVector<RealT>;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
   int iprint     = argc - 1;
-  ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makePtrFromRef(std::cout);
+    outStream = makePtrFromRef(std::cout);
   else
-    outStream = ROL::makePtrFromRef(bhs);
+    outStream = makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
-  auto print_vector = [outStream]( const vector<RealT>& x) { 
-    *outStream << "\n";
-    for( auto e : x ) *outStream << e << " ";
-    *outStream << "\n";
-  };
   // *** Example body.
 
-//  try {   
+  try {   
 
-    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
     std::string tank_xml("tank-parameters.xml");
-    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+
+    auto tank_parameters = ROL::getParametersFromXmlFile(tank_xml);
     auto& pl = *tank_parameters;
 
-    TankConstraint<RealT> con(pl);
+    auto tankState = makePtr<TankState<RealT>>(pl);
+    auto con = makePtr<TankConstraint<RealT>>(tankState,pl);
 
-    auto Qin00 = pl.get("Corner Inflow",100.0);
-    auto hinit = pl.get("Initial Fluid Level", 2.0);
+    auto height = pl.get("Height of Tank",              10.0  );
+    auto Qin00  = pl.get("Corner Inflow",               100.0 );
+    auto h_init = pl.get("Initial Fluid Level",         2.0   );
+//    auto T      = pl.get("Total Time",                  20.0  );
+//    auto nt     = pl.get("Number of Time Steps",        100   );
+
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
 
-    TankControlVector<RealT> z(nrows,ncols,"z");    
-    TankStateVector<RealT>   un(nrows,ncols,"u_new");
-    TankStateVector<RealT>   uo(nrows,ncols,"u_old");
-    TankStateVector<RealT>   c(nrows,ncols,"c");
+    auto z      = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
+    auto vz     = z->clone( "Control direction (vz)"       );
+    auto z_lo   = z->clone( "Control Lower Bound (z_lo)"   );
+    z_lo->zero();
 
-    z(0,0) = Qin00;
+    auto z_bnd  = makePtr<Bounds>( *z_lo );
 
-    for( size_type i=0; i<nrows; ++i ) {
-      for( size_type j=0; j<ncols; ++j ) {
-        uo.h(i,j) = hinit;
-      }
-    }
+    // State
+    auto u_new    = makePtr<StateVector>( nrows, ncols, "New state (u_new)" );
+    auto u_old    = u_new->clone( "Old state (u_old)"        );
+    auto u_new_lo = u_new->clone( "State lower bound (u_lo)" );
+    auto u_new_up = u_new->clone( "State upper bound (u_up)" );
 
+    auto u    = PartitionedVector::create( { u_old, u_new } );
+    auto u_lo = PartitionedVector::create( { u_new_lo, u_new_lo } );
+    auto u_up = PartitionedVector::create( { u_new_up, u_new_up } );
 
-    uo.print(*outStream);
+    u_lo->zero();
+    u_up->setScalar( height );
+    
+    // State direction 
+    auto vu_new = u_new->clone( "New state direction (vu_new)" );
+    auto vu_old = u_old->clone( "Old state direction (vu_old)" );
+    auto vu     = PartitionedVector::create( { vu_old, vu_new } );
 
-    RealT tol = 0;
-    con.solve( c, uo, un, z, tol );
- 
-    un.print(*outStream);
-    c.print(*outStream);
+    auto c = u_new->clone( "State residual (c)"              );
+    auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u,  z  );
+    auto v = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( vu, vz );
 
-    con.value( c, uo, un, z, tol );
-    c.print(*outStream);
+    (*z)(0,0) = Qin00;
 
+    for( size_type i=0; i<nrows; ++i )
+      for( size_type j=0; j<ncols; ++j )
+        u_old->h(i,j) = h_init;
 
-//  }
-//  catch (std::logic_error err) {
-//    *outStream << err.what() << "\n";
-//    errorFlag = -1000;
-//  }; // end try
+    auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
+    RandomizeFeasibleVector( *u_new, *u_new_bnd );
+    RandomizeVector( *c ) ;
+    RandomizeVector( *v );
+
+    auto u_old_bnd = u_new_bnd; 
+    auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
+
+    con->print_tankstate_parameters( *outStream );
+    con->checkApplyJacobian( *x, *v, *c, true, *outStream );
+    con->checkAdjointConsistencyJacobian( *c, *v, *x, true, *outStream );
+    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+    con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+
+    RandomizeVector( *c ) ;
+    con->checkSolve(*u, *z, *c, true, *outStream ); 
+
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

@@ -44,7 +44,7 @@
 #ifndef ROL_RISKMEASUREFACTORY_HPP
 #define ROL_RISKMEASUREFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 
@@ -206,7 +206,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > RiskMeasureFactory(ROL::ParameterList &parlist) {
     std::string risk = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     ERiskMeasure ed = StringToERiskMeasure(risk);
     switch(ed) {
@@ -251,7 +251,7 @@ namespace ROL {
       case RISKMEASURE_KLDIVERGENCE:
              return makePtr<KLDivergence<Real>>(parlist);
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid risk measure type " << risk << "!");
     }
   }

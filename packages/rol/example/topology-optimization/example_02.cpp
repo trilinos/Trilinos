@@ -46,9 +46,8 @@
            regularization for the volume constraint.
 */
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
@@ -59,6 +58,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
@@ -474,8 +474,8 @@ public:
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix( ROL::makePtrFromRef(K) );
-    solver.setVectors( ROL::makePtrFromRef(U), ROL::makePtrFromRef(F) );
+    solver.setMatrix( Teuchos::rcpFromRef(K) );
+    solver.setVectors( Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F) );
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -534,8 +534,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makePtrFromRef(K));
-    solver.setVectors(ROL::makePtrFromRef(U),ROL::makePtrFromRef(F));
+    solver.setMatrix(Teuchos::rcpFromRef(K));
+    solver.setVectors(Teuchos::rcpFromRef(U),Teuchos::rcpFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -595,8 +595,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makePtrFromRef(K));
-    solver.setVectors(ROL::makePtrFromRef(U), ROL::makePtrFromRef(F));
+    solver.setMatrix(Teuchos::rcpFromRef(K));
+    solver.setVectors(Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -910,7 +910,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -922,15 +922,14 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    uint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
-    uint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
+    uint nx  = 30; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    uint ny  = 10; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     RealT frac = 0.4;      // Volume fraction.
     ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
     // Read optimization input parameter list.
     std::string filename = "input_ex02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // Initialize ROL::Ptrs.
     ROL::Ptr<ROL::Objective_SimOpt<RealT>>         pobj;   // Full objective.
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT>> robj;   // Reduced objective.

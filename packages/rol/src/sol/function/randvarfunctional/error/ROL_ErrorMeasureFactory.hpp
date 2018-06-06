@@ -44,7 +44,7 @@
 #ifndef ROL_ERRORMEASUREFACTORY_HPP
 #define ROL_ERRORMEASUREFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 
@@ -142,7 +142,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > ErrorMeasureFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > ErrorMeasureFactory(ROL::ParameterList &parlist) {
     std::string risk = parlist.sublist("SOL").sublist("Error Measure").get("Name","Least Squares");
     EErrorMeasure ed = StringToEErrorMeasure(risk);
     switch(ed) {
@@ -163,7 +163,7 @@ namespace ROL {
       case ERRORMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
              return makePtr<ExpectationQuadError<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid error measure type " << risk << "!");
     }
   }

@@ -188,7 +188,7 @@ namespace Kokkos {
     size_t getStride2DView (ViewType A) {
       size_t stride[8];
       A.stride (stride);
-      return A.dimension_1 () > 1 ? stride[1] : A.dimension_0 ();
+      return A.extent (1) > 1 ? stride[1] : A.extent (0);
     }
   }
 
@@ -210,17 +210,17 @@ namespace Kokkos {
           const Scalar& beta,
           const View<Scalar**, LayoutLeft, DeviceType>& C)
     {
-      const int n = static_cast<int> (C.dimension_1 ());
+      const int n = static_cast<int> (C.extent (1));
 
       // For some BLAS implementations (e.g., MKL), GEMM when B has
       // one column may be signficantly less efficient than GEMV.
       if (n == 1 && transB == Teuchos::NO_TRANS) {
         const int lda = static_cast<int> (Impl::getStride2DView (A));
         Teuchos::BLAS<int,Scalar> blas;
-        blas.GEMV (transA, A.dimension_0 (), A.dimension_1 (),
-                   alpha, A.ptr_on_device (), lda,
-                   B.ptr_on_device (), static_cast<int> (1),
-                   beta, C.ptr_on_device (), static_cast<int> (1));
+        blas.GEMV (transA, A.extent (0), A.extent (1),
+                   alpha, A.data (), lda,
+                   B.data (), static_cast<int> (1),
+                   beta, C.data (), static_cast<int> (1));
       }
       else {
         const char ctransA = (transA == Teuchos::CONJ_TRANS ? 'C' :
@@ -247,7 +247,7 @@ namespace Kokkos {
           const double& beta,
           const View<double**, LayoutLeft, DeviceType>& C)
     {
-      const int n = static_cast<int> (C.dimension_1 ());
+      const int n = static_cast<int> (C.extent (1));
 
       // For some BLAS implementations (e.g., MKL), GEMM when B has
       // one column may be signficantly less efficient than GEMV.
@@ -275,7 +275,7 @@ namespace Kokkos {
   };
 #endif // HAVE_KOKKOSKERNELS_MKL
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   template <typename Scalar>
   struct DeviceGEMM<Scalar, Cuda> {
   public:
@@ -333,7 +333,7 @@ namespace Kokkos {
                                      alpha, A, B, beta, C);
     }
   };
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 } // namespace Kokkos
 #endif // KOKKOS_MV_GEMM_HPP

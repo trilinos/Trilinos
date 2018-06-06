@@ -68,16 +68,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_TriSolve
-  SOURCES
-    CrsMatrix_TriSolve
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_LeftRightScale
   SOURCES
     CrsMatrix_LeftRightScale
@@ -328,6 +318,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Equilibration
+  SOURCES 
+    Equilibration.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
   )
 

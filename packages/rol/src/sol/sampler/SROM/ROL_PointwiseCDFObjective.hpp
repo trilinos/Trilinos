@@ -109,7 +109,7 @@ public:
                               ROL::Ptr<BatchManager<Real> >               &bman,
                         const Real scale = 1.e-2)
     : Objective<Real>(), dist_(dist), bman_(bman), scale_(scale),
-      sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(Teuchos::ScalarTraits<Real>::pi())) {}
+      sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(ROL::ScalarTraits<Real>::pi())) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
     const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);

@@ -46,6 +46,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"
@@ -184,12 +185,12 @@ public:
     const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
     const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
     // Only does something if #rhs > current capacity.
-    HTST::reset_max_nrhs(Timpl_.get(), X_view.dimension_1());
+    HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
     // Switch alpha and beta because of HTS's opposite convention.
     HTST::solve_omp(Timpl_.get(),
                     // For std/Kokkos::complex.
                     reinterpret_cast<const scalar_type*>(X_view.data()),
-                    X_view.dimension_1(),
+                    X_view.extent(1),
                     // For std/Kokkos::complex.
                     reinterpret_cast<scalar_type*>(Y_view.data()),
                     beta, alpha);
@@ -296,6 +297,8 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
   initializeTime_ = 0.0;
   computeTime_ = 0.0;
   applyTime_ = 0.0;
+  uplo_ = "N";
+  diag_ = "N";
 }
 
 template<class MatrixType>
@@ -335,6 +338,12 @@ setParameters (const Teuchos::ParameterList& pl)
 
   if (pl.isParameter("trisolver: reverse U"))
     reverseStorage_ = pl.get<bool>("trisolver: reverse U");
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (reverseStorage_ && trisolverType == Details::TrisolverType::HTS,
+     std::logic_error, "Ifpack2::LocalSparseTriangularSolver::setParameters: "
+     "You are not allowed to enable both HTS and the \"trisolver: reverse U\" "
+     "options.  See GitHub issue #2647.");
 }
 
 template<class MatrixType>
@@ -342,6 +351,10 @@ void
 LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type>;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
   if (! out_.is_null ()) {
     *out_ << ">>> DEBUG " << prefix << std::endl;
@@ -352,13 +365,10 @@ initialize ()
      "setMatrix() with a nonnull input matrix before you may call "
      "initialize() or compute().");
   if (A_crs_.is_null ()) {
-    typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-      global_ordinal_type, node_type> crs_matrix_type;
-    Teuchos::RCP<const crs_matrix_type> A_crs =
-      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_crs.is_null (), std::invalid_argument, prefix <<
-       "The input matrix A is not a Tpetra::CrsMatrix.");
+      (A_crs.get () == nullptr, std::invalid_argument,
+       prefix << "The input matrix A is not a Tpetra::CrsMatrix.");
     A_crs_ = A_crs;
   }
   auto G = A_crs_->getGraph ();
@@ -373,10 +383,15 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
-  if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
+  // FIXME (mfh 01,02 Jun 2018) isUpperTriangular has been DEPRECATED.
+  // See GitHub Issue #2630.  I'm using isUpperTriangularImpl ONLY to
+  // avoid deprecated warnings.  Users may NOT call this method.
+  //
+  // FIXME (mfh 02 Jun 2018) Move the
+  // determineLocalTriangularStructure call above this test, so we can
+  // use that result, rather than the deprecated method.
+  if (reverseStorage_ && A_crs_->isUpperTriangularImpl() && htsImpl_.is_null()) {
     // Reverse the storage for an upper triangular matrix
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-
     auto Alocal = A_crs_->getLocalMatrix();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
@@ -386,9 +401,9 @@ initialize ()
     auto numCols = Alocal.numCols();
     auto numNnz = Alocal.nnz();
 
-    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.dimension_0 ());
-    typename decltype(ind)::non_const_type  newind ("ind", ind.dimension_0 ());
-    decltype(val)                           newval ("val", val.dimension_0 ());
+    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
+    typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
+    decltype(val)                           newval ("val", val.extent (0));
 
     // FIXME: The code below assumes UVM
     crs_matrix_type::execution_space::fence();
@@ -447,6 +462,29 @@ initialize ()
     htsImpl_->initialize (*A_crs_);
     isInternallyChanged_ = true;
   }
+
+  auto lclMatrix = A_crs_->getLocalMatrix ();
+  auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
+  auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
+  using Tpetra::Details::determineLocalTriangularStructure;
+  // mfh 30 Apr 2018: See GitHub Issue #2658 for why this is false.
+  constexpr bool ignoreMapsForTriangularStructure = true;
+  auto result =
+    determineLocalTriangularStructure (lclMatrix.graph, lclRowMap, lclColMap,
+                                       ignoreMapsForTriangularStructure);
+  using LO = local_ordinal_type;
+  const LO lclNumRows = lclRowMap.getNodeNumElements ();
+  const LO lclNumCols = lclColMap.getNodeNumElements ();
+  // NOTE (mfh 30 Apr 2018) Original test for implicit unit diagonal was
+  //
+  // (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+  //
+  // I don't agree with this test -- it's not an implicitly stored
+  // unit diagonal if there are SOME entries -- but I'm leaving it for
+  // backwards compatibility.
+  this->diag_ = (result.diagCount < lclNumRows) ? "U" : "N";
+  this->uplo_ = result.couldBeLowerTriangular ? "L" :
+    (result.couldBeUpperTriangular ? "U" : "N");
 
   isInitialized_ = true;
   ++numInitialize_;
@@ -513,12 +551,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
     else {
       Teuchos::RCP<const crs_matrix_type> A_crs =
           Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-      const std::string uplo = A_crs->isUpperTriangular () ? "U" :
-        (A_crs->isLowerTriangular () ? "L" : "N");
+      const std::string uplo = this->uplo_;
       const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
         (mode == Teuchos::TRANS ? "T" : "N");
-      const std::string diag =
-        (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+      const std::string diag = this->diag_;
       *out_ << "uplo=\"" << uplo
             << "\", trans=\"" << trans
             << "\", diag=\"" << diag << "\"" << std::endl;
@@ -597,6 +633,84 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
 template<class MatrixType>
 void
 LocalSparseTriangularSolver<MatrixType>::
+localTriangularSolve (const MV& Y,
+                      MV& X,
+                      const Teuchos::ETransp mode) const
+{
+  using Teuchos::CONJ_TRANS;
+  using Teuchos::NO_TRANS;
+  using Teuchos::TRANS;
+  typedef Kokkos::HostSpace host_memory_space;
+  using device_type = typename MV::device_type;
+  using dev_memory_space = typename device_type::memory_space;
+  const char tfecfFuncName[] = "localTriangularSolve: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (! A_crs_->isFillComplete (), std::runtime_error,
+     "The matrix is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
+     "X and Y must be constant stride.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    ( A_crs_->getNodeNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
+      "The matrix is neither upper triangular or lower triangular.  "
+      "You may only call this method if the matrix is triangular.  "
+      "Remember that this is a local (per MPI process) property, and that "
+      "Tpetra only knows how to do a local (per process) triangular solve.");
+  using STS = Teuchos::ScalarTraits<scalar_type>;
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
+     "not currently support non-conjugated transposed solve (mode == "
+     "Teuchos::TRANS) for complex scalar types.");
+
+  // FIXME (mfh 19 May 2016) This makes some Ifpack2 tests fail.
+  //
+  // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+  //   (Y.template need_sync<device_type> () && !
+  //    Y.template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+  //    "Y must be sync'd to device memory before you may call this method.");
+
+  const std::string uplo = this->uplo_;
+  const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+    (mode == Teuchos::TRANS ? "T" : "N");
+  const std::string diag = this->diag_;
+  auto A_lcl = this->A_crs_->getLocalMatrix ();
+
+  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+  // sequential, host-only code.  See
+  // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+  // means that we need to sync to host, then sync back to device
+  // when done.
+  X.template sync<host_memory_space> ();
+  const_cast<MV&> (Y).template sync<host_memory_space> ();
+  X.template modify<host_memory_space> (); // we will write to X
+
+  if (X.isConstantStride () && Y.isConstantStride ()) {
+    auto X_lcl = X.template getLocalView<host_memory_space> ();
+    auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+    KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
+                        A_lcl, Y_lcl, X_lcl);
+  }
+  else {
+    const size_t numVecs =
+      std::min (X.getNumVectors (), Y.getNumVectors ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      auto X_j = X.getVector (j);
+      auto Y_j = X.getVector (j);
+      auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+      auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
+      KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
+                          diag.c_str (), A_lcl, Y_lcl, X_lcl);
+    }
+  }
+
+  X.template sync<dev_memory_space> ();
+  const_cast<MV&> (Y).template sync<dev_memory_space> ();
+}
+
+template<class MatrixType>
+void
+LocalSparseTriangularSolver<MatrixType>::
 localApply (const MV& X,
             MV& Y,
             const Teuchos::ETransp mode,
@@ -618,7 +732,7 @@ localApply (const MV& X,
       Y.putScalar (STS::zero ()); // Y := 0 * Y (ignore contents of Y)
     }
     else { // alpha != 0
-      A_crs_->template localSolve<ST, ST> (X, Y, mode);
+      this->localTriangularSolve (X, Y, mode);
       if (alpha != STS::one ()) {
         Y.scale (alpha);
       }
@@ -630,7 +744,7 @@ localApply (const MV& X,
     }
     else { // alpha != 0
       MV Y_tmp (Y, Teuchos::Copy);
-      A_crs_->template localSolve<ST, ST> (X, Y_tmp, mode); // Y_tmp := M * X
+      this->localTriangularSolve (X, Y_tmp, mode); // Y_tmp := M * X
       Y.update (alpha, Y_tmp, beta); // Y := beta * Y + alpha * Y_tmp
     }
   }

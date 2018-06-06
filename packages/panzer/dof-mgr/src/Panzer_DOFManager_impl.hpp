@@ -109,6 +109,39 @@ public:
 
 }
 
+
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class GreedyTieBreak : public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> {
+
+public:
+  GreedyTieBreak() { }
+
+  virtual bool mayHaveSideEffects() const {
+    return true;
+  }
+
+  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+                                    const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // always choose index of pair with smallest pid
+    auto numLids = pid_and_lid.size();
+    decltype(numLids) idx = 0;
+    auto minpid = pid_and_lid[0].first;
+    decltype(minpid) minidx = 0;
+    for (idx = 0; idx < numLids; ++idx) {
+      if (pid_and_lid[idx].first < minpid) {
+        minpid = pid_and_lid[idx].first;
+        minidx = idx;
+      }
+    }
+    return minidx;
+  }
+};
+
+}
+
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
@@ -371,6 +404,23 @@ const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string
     return fa_fps_[bid]->localOffsets(fieldNum);
 
   static const std::vector<int> empty;
+  return empty;
+}
+
+template <typename LO, typename GO>
+const Kokkos::View<const int*,PHX::Device> DOFManager<LO,GO>::
+getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
+                                                                      "buildGlobalUnknowns has been called");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  int bid=bitr->second;
+  if(fa_fps_[bid]!=Teuchos::null)
+    return fa_fps_[bid]->localOffsetsKokkos(fieldNum);
+
+  static const Kokkos::View<int*,PHX::Device> empty("panzer::DOFManager::getGIDFieldOffsetsKokkos() empty",0);
   return empty;
 }
 
@@ -677,7 +727,8 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
   if(!useTieBreak_) {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_04 createOneToOne");
 
-    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map);
+    GreedyTieBreak<LO,GO> greedy_tie_break;
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map, greedy_tie_break);
   }
   else {
     // use a hash tie break to get better load balancing from create one to one
@@ -740,7 +791,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
     typedef typename MV::dual_view_type::t_dev KV;
     typedef typename MV::dual_view_type::t_dev::memory_space DMS;
     KV values = non_overlap_mv->template getLocalView<DMS>();
-    auto mv_size = values.dimension_0();
+    auto mv_size = values.extent(0);
     Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
   }
 

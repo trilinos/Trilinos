@@ -109,7 +109,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    //     = 1/dt * M_1(eps) + dt * D_1^T * M_2(1/mu) * D_1
    // addon in paper: dt * M_1(1) * D_0 * M_0(mu)^-1 * D_0^T * M_1(1)
    // addon here:     1/dt * M_1(eps) * D_0 * M_0(epsilon / dt / cfl^2 / min_dx^2)^-1 * D_0^T * 1/dt * M_1(eps)
-   //               = Q_E * D_0 * Q_rho^-1 * D_0^T * Q_E 
+   //               = Q_E * D_0 * Q_rho^-1 * D_0^T * Q_E
 
 
    bool useDiscreteGradient = false;
@@ -268,7 +268,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
         Teko::setBlock(1,0,invL,Teko::multiply(Thyra::scale(-1.0, Kt), invQ_B));
         Teko::setBlock(1,1,invL,id_E);
      Teko::endBlockFill(invL);
-     
+
      return Teko::multiply(invU, Teko::toLinearOp(invL));
    } else
      return invU;

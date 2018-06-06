@@ -145,7 +145,7 @@ public:
     return makePtr<StdVector<Real>>(x_ptr);
   }
 
-  Ptr<Vector<Real>> getSolution(void) const {
+  Ptr<Vector<Real>> getSolution(const int i = 0) const {
     ROL::Ptr<std::vector<Real> > z_ptr = ROL::makePtr<std::vector<Real>>(4, 0.0);
     (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0;
     (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;

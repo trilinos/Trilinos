@@ -38,13 +38,13 @@ namespace Tacho {
           Algo::External,Algo::Internal>::type GemmAlgoType;
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            const ordinal_type pend = A.dimension_0();
+            const ordinal_type pend = A.extent(0);
             for (ordinal_type p=0;p<pend;++p) {
               const auto beta_select = (p > 0 ? ScalarType(1.0) : beta);
-              const ordinal_type k2end = C.dimension_1();
+              const ordinal_type k2end = C.extent(1);
               for (ordinal_type k2=0;k2<k2end;++k2) {
                 auto &bb = B(p, k2);
-                const ordinal_type k1end = C.dimension_0();
+                const ordinal_type k1end = C.extent(0);
                 for (ordinal_type k1=0;k1<k1end;++k1) {
                   auto &aa = A(p,  k1);
                   auto &cc = C(k1, k2);
@@ -93,13 +93,13 @@ namespace Tacho {
           Algo::External,Algo::Internal>::type GemmAlgoType;
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            const ordinal_type pend = A.dimension_1();
+            const ordinal_type pend = A.extent(1);
             for (ordinal_type p=0;p<pend;++p) {
               const auto beta_select = (p > 0 ? ScalarType(1.0) : beta);
-              const ordinal_type k2end = C.dimension_1();
+              const ordinal_type k2end = C.extent(1);
               for (ordinal_type k2=0;k2<k2end;++k2) {
                 auto &bb = B(p, k2);
-                const ordinal_type k1end = C.dimension_0();
+                const ordinal_type k1end = C.extent(0);
                 for (ordinal_type k1=0;k1<k1end;++k1) {
                   auto &aa = A(k1, p );
                   auto &cc = C(k1, k2);

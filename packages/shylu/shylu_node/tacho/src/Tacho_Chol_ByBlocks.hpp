@@ -70,7 +70,7 @@ namespace Tacho {
             Part_2x2(A,  ATL, ATR,
                      /**/ABL, ABR,
                      0, 0, Partition::TopLeft);
-            while (ATL.dimension_0() < A.dimension_0()) {
+            while (ATL.extent(0) < A.extent(0)) {
               Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
                               /*******/ /**/  A10, A11, A12,
                               ABL, ABR, /**/  A20, A21, A22,
@@ -93,7 +93,7 @@ namespace Tacho {
               // A12 = inv(triu(A11)') * A12
               {
                 auto &aa = A11(0, 0); 
-                const ordinal_type n = A12.dimension_1();
+                const ordinal_type n = A12.extent(1);
                 for (auto j=0;j<n;++j) {
                   auto &bb = A12(0, j); 
 
@@ -112,7 +112,7 @@ namespace Tacho {
 
               // A22 = A22 - A12' * A12
               {
-                const ordinal_type n = A22.dimension_1();
+                const ordinal_type n = A22.extent(1);
                 for (auto j=0;j<n;++j) {
                   {
                     auto &aa = A12(0, j);

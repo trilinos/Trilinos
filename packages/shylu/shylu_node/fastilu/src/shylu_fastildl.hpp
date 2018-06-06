@@ -482,7 +482,7 @@ class FastILDLPrec
 
         void numericILU()
         {
-            aVal = ScalarArray("aVal", aColIdx.dimension_0());
+            aVal = ScalarArray("aVal", aColIdx.extent(0));
             //Copy the host matrix into the initialized a;
             Ordinal aHostPtr = 0;
             Ordinal check = 0;

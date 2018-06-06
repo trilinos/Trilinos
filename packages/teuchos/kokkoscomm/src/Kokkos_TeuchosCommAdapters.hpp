@@ -68,7 +68,7 @@ send (const ViewType& sendBuffer,
       const int tag,
       const Comm<Ordinal>& comm)
 {
-  send(sendBuffer.ptr_on_device(), count, destRank, tag, comm);
+  send(sendBuffer.data(), count, destRank, tag, comm);
 }
 
 //! Variant of ssend() that takes a tag (and restores the correct order of arguments).
@@ -80,7 +80,7 @@ ssend (const ViewType& sendBuffer,
        const int tag,
        const Comm<Ordinal>& comm)
 {
-  ssend(sendBuffer.ptr_on_device(), count, destRank, tag, comm);
+  ssend(sendBuffer.data(), count, destRank, tag, comm);
 }
 
 //! Variant of readySend() that accepts a message tag.
@@ -92,7 +92,7 @@ readySend (const ViewType& sendBuffer,
            const int tag,
            const Comm<Ordinal>& comm)
 {
-  readySend(sendBuffer.ptr_on_device(), count, destRank, tag, comm);
+  readySend(sendBuffer.data(), count, destRank, tag, comm);
 }
 
 //! Variant of isend() that takes a tag (and restores the correct order of arguments).
@@ -147,10 +147,10 @@ reduceAll (const SendViewType& sendBuf,
     "The send View's rank is " << SendViewType::rank << " and the receive "
     "View's rank is " << RecvViewType::rank << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    sendBuf.dimension_0 () != recvBuf.dimension_0 (), std::invalid_argument,
-    "Send and receive buffer lengths do not match.  sendBuf.dimension_0() = "
-    << sendBuf.dimension_0 () << " != recvBuf.dimension_0() = "
-    << recvBuf.dimension_0 () << ".");
+    sendBuf.extent (0) != recvBuf.extent (0), std::invalid_argument,
+    "Send and receive buffer lengths do not match.  sendBuf.extent(0) = "
+    << sendBuf.extent (0) << " != recvBuf.extent(0) = "
+    << recvBuf.extent (0) << ".");
 
   // mfh 04 Nov 2014: Don't let Teuchos::SerialComm do a deep copy;
   // that always happens on the host, since SerialComm doesn't know
@@ -159,10 +159,10 @@ reduceAll (const SendViewType& sendBuf,
     Kokkos::deep_copy (recvBuf, sendBuf);
   }
   else {
-    const Ordinal count = static_cast<Ordinal> (sendBuf.dimension_0 ());
+    const Ordinal count = static_cast<Ordinal> (sendBuf.extent (0));
     reduceAll (comm, reductionType, count,
-               sendBuf.ptr_on_device (),
-               recvBuf.ptr_on_device ());
+               sendBuf.data (),
+               recvBuf.data ());
   }
 }
 
@@ -203,8 +203,8 @@ reduceAll(const Comm<Ordinal>& comm,
   }
   else {
     reduceAll (comm, serializer, reductType, count,
-               sendBuffer.ptr_on_device (),
-               recvBuffer.ptr_on_device ());
+               sendBuffer.data (),
+               recvBuffer.data ());
   }
 }
 
@@ -216,7 +216,7 @@ broadcast(const Comm<Ordinal>& comm,
                const Ordinal count,
                const ViewType& buffer)
 {
-  broadcast( comm, rootRank, count, buffer.ptr_on_device() );
+  broadcast( comm, rootRank, count, buffer.data() );
 }
 
 template<typename Ordinal,
@@ -229,7 +229,7 @@ broadcast(const Comm<Ordinal>& comm,
                const Ordinal count,
                const ViewType& buffer)
 {
-  broadcast( comm, serializer, rootRank, count, buffer.ptr_on_device() );
+  broadcast( comm, serializer, rootRank, count, buffer.data() );
 }
 
 } // namespace Teuchos

@@ -51,9 +51,9 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Fletcher.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include <iostream>
 
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   std::string filename = "input.xml";
-  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-  Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+  
+  auto parlist = ROL::getParametersFromXmlFile( filename );
 
   using Opt     = ROL::OptimizationProblem<RealT>;
   using V       = ROL::Vector<RealT>;
@@ -73,14 +73,14 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -90,17 +90,18 @@ int main(int argc, char *argv[]) {
   try {
 
     // Set up optimization problem
-    ROL::Ptr<V> x, sol;
+    ROL::Ptr<V> x;
+    std::vector<ROL::Ptr<V> > sol;
     ROL::Ptr<Opt> optProb;
     ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
     SEC.get( optProb, x, sol );
-    ROL::Ptr<V> error = sol->clone();
+    ROL::Ptr<V> error = x->clone();
 
     // Solve optimization problem
     ROL::OptimizationSolver<RealT> optSolver(*optProb, *parlist);
     optSolver.solve(*outStream);
 
-    error->set(*sol);
+    error->set(*sol[0]);
     error->axpy(static_cast<RealT>(-1), *x);
     RealT solnErr = error->norm();
 

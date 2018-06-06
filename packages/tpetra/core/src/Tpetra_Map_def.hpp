@@ -106,7 +106,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -267,7 +267,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -461,7 +461,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -584,17 +584,17 @@ namespace Tpetra {
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
       {
-        const std::pair<size_t, size_t> ncRange (i, entryList_host.dimension_0 ());
+        const std::pair<size_t, size_t> ncRange (i, entryList_host.extent (0));
         auto nonContigGids_host = subview (entryList_host, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (static_cast<size_t> (nonContigGids_host.dimension_0 ()) !=
-           static_cast<size_t> (entryList_host.dimension_0 () - i),
+          (static_cast<size_t> (nonContigGids_host.extent (0)) !=
+           static_cast<size_t> (entryList_host.extent (0) - i),
            std::logic_error, "Tpetra::Map noncontiguous constructor: "
-           "nonContigGids_host.dimension_0() = "
-           << nonContigGids_host.dimension_0 ()
-           << " != entryList_host.dimension_0() - i = "
-           << (entryList_host.dimension_0 () - i) << " = "
-           << entryList_host.dimension_0 () << " - " << i
+           "nonContigGids_host.extent(0) = "
+           << nonContigGids_host.extent (0)
+           << " != entryList_host.extent(0) - i = "
+           << (entryList_host.extent (0) - i) << " = "
+           << entryList_host.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
         // FixedHashTable's constructor expects an owned device View,
@@ -723,7 +723,7 @@ namespace Tpetra {
   {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -754,7 +754,7 @@ namespace Tpetra {
   {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -806,7 +806,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -929,17 +929,17 @@ namespace Tpetra {
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
       {
-        const std::pair<size_t, size_t> ncRange (i, entryList.dimension_0 ());
+        const std::pair<size_t, size_t> ncRange (i, entryList.extent (0));
         auto nonContigGids = subview (entryList, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (static_cast<size_t> (nonContigGids.dimension_0 ()) !=
-           static_cast<size_t> (entryList.dimension_0 () - i),
+          (static_cast<size_t> (nonContigGids.extent (0)) !=
+           static_cast<size_t> (entryList.extent (0) - i),
            std::logic_error, "Tpetra::Map noncontiguous constructor: "
-           "nonContigGids.dimension_0() = "
-           << nonContigGids.dimension_0 ()
-           << " != entryList.dimension_0() - i = "
-           << (entryList.dimension_0 () - i) << " = "
-           << entryList.dimension_0 () << " - " << i
+           "nonContigGids.extent(0) = "
+           << nonContigGids.extent (0)
+           << " != entryList.extent(0) - i = "
+           << (entryList.extent (0) - i) << " = "
+           << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
         glMap_ = global_to_local_table_type (nonContigGids,
@@ -1236,8 +1236,8 @@ namespace Tpetra {
       return true;
     }
     else if (! isContiguous () && ! map.isContiguous () &&
-             lgMap_.dimension_0 () != 0 && map.lgMap_.dimension_0 () != 0 &&
-             lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
+             lgMap_.extent (0) != 0 && map.lgMap_.extent (0) != 0 &&
+             lgMap_.data () == map.lgMap_.data ()) {
       // Noncontiguous Maps whose global index lists are nonempty and
       // have the same pointer must be the same (and therefore
       // contiguous).
@@ -1331,7 +1331,7 @@ namespace Tpetra {
         }
         return true;
       }
-      else if (this->lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
+      else if (this->lgMap_.data () == map.lgMap_.data ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
         return this->getNodeNumElements () == map.getNodeNumElements ();
@@ -1507,7 +1507,7 @@ namespace Tpetra {
     // have local entries, then create and fill the local-to-global
     // mapping.
     const bool needToCreateLocalToGlobalMapping =
-      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+      lgMap_.extent (0) == 0 && numLocalElements_ > 0;
 
     if (needToCreateLocalToGlobalMapping) {
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1552,12 +1552,12 @@ namespace Tpetra {
     (void) this->getMyGlobalIndices ();
 
     // This does NOT assume UVM; lgMapHost_ is a host pointer.
-    const GO* lgMapHostRawPtr = lgMapHost_.ptr_on_device ();
+    const GO* lgMapHostRawPtr = lgMapHost_.data ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.
     return Teuchos::ArrayView<const GO> (lgMapHostRawPtr,
-                                         lgMapHost_.dimension_0 (),
+                                         lgMapHost_.extent (0),
                                          Teuchos::RCP_DISABLE_NODE_LOOKUP);
   }
 
@@ -1800,14 +1800,14 @@ namespace Tpetra {
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:
 
       auto lgMap = this->getMyGlobalIndices ();
-      typedef typename std::decay<decltype (lgMap.dimension_0 ()) >::type size_type;
+      typedef typename std::decay<decltype (lgMap.extent (0)) >::type size_type;
       const size_type lclNumInds =
         static_cast<size_type> (this->getNodeNumElements ());
       using Teuchos::TypeNameTraits;
       TEUCHOS_TEST_FOR_EXCEPTION
-        (lgMap.dimension_0 () != lclNumInds, std::logic_error,
+        (lgMap.extent (0) != lclNumInds, std::logic_error,
          "Tpetra::Map::replaceCommWithSubset: Result of getMyGlobalIndices() "
-         "has length " << lgMap.dimension_0 () << " (of type " <<
+         "has length " << lgMap.extent (0) << " (of type " <<
          TypeNameTraits<size_type>::name () << ") != this->getNodeNumElements()"
          " = " << this->getNodeNumElements () << ".  The latter, upon being "
          "cast to size_type = " << TypeNameTraits<size_type>::name () << ", "

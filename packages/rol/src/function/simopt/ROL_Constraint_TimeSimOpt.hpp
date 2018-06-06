@@ -45,6 +45,7 @@
 #define ROL_CONSTRAINT_TIMESIMOPT_H
 
 #include "ROL_Constraint_SimOpt.hpp"
+#include "ROL_VectorWorkspace.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_TimeSimOpt
@@ -124,6 +125,12 @@ private:
     const PartitionedVector<Real> & xpv = dynamic_cast<const PartitionedVector<Real>&>(x);
     return *xpv.get(0);
   }
+
+  mutable VectorWorkspace<Real> workspace_;
+
+protected:
+
+  VectorWorkspace<Real>& getVectorWorkspace() const { return workspace_; }
 
 public:
   Constraint_TimeSimOpt()
@@ -311,7 +318,7 @@ public:
                            z,
                            tol);
 
-    ROL::Ptr<Vector<Real> > jv_new = jv.clone();
+    ROL::Ptr<Vector<Real> > jv_new = workspace_.clone(jv);
 
     // evaluate derivative against "new" time variable
     applyJacobian_1_new(*jv_new,v_new,
@@ -342,7 +349,7 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
@@ -376,7 +383,7 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
@@ -505,12 +512,12 @@ public:
                           std::ostream & outStream = std::cout) override {
     // Solve constraint for u. 
     Real tol = ROL_EPSILON<Real>();
-    ROL::Ptr<ROL::Vector<Real> > r = c.clone();
-    ROL::Ptr<ROL::Vector<Real> > s = u.clone();
+    ROL::Ptr<ROL::Vector<Real> > r = workspace_.clone(c);
+    ROL::Ptr<ROL::Vector<Real> > s = workspace_.clone(u);
     s->set(u);
     solve(*r,*s,z,tol);
     // Evaluate constraint residual at (u,z).
-    ROL::Ptr<ROL::Vector<Real> > cs = c.clone();
+    ROL::Ptr<ROL::Vector<Real> > cs = workspace_.clone(c);
     update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
@@ -527,6 +534,192 @@ public:
     return cnorm;
   }
   
+  // Verify that ||v-Jinv*J*v|| < tol
+  virtual Real checkInverseJacobian_1_new( const ROL::Vector<Real> &c,
+                                           const ROL::Vector<Real> &u_new,
+                                           const ROL::Vector<Real> &u_old,
+                                           const ROL::Vector<Real> &z,
+                                           const ROL::Vector<Real> &v_new,
+                                           const bool printToStream = true,
+                                           std::ostream & outStream = std::cout) {
+     Real tol = ROL_EPSILON<Real>();
+     auto Jv   = workspace_.clone(c);
+     update( u_new, u_old, z );
+     applyJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
+     auto iJJv = workspace_.clone(u_new);
+     update( u_new, u_old, z );
+     applyInverseJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
+     auto diff = workspace_.clone(v_new);
+     diff->set(v_new);
+     diff->axpy(-1.0,*iJJv);
+     Real dnorm = diff->norm();
+     Real vnorm = v_new.norm();
+     if ( printToStream ) {
+       std::stringstream hist;
+       hist << std::scientific << std::setprecision(8);
+       hist << "\nTest TimeSimOpt consistency of inverse Jacobian_1_new: \n  ||v-inv(J)Jv|| = " 
+            << dnorm << "\n";
+       hist << "  ||v||          = " << vnorm << "\n";
+       hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
+       outStream << hist.str();
+     }
+     return dnorm;
+   }
+
+  virtual Real checkInverseAdjointJacobian_1_new( const ROL::Vector<Real> &c,
+                                                  const ROL::Vector<Real> &u_new,
+                                                  const ROL::Vector<Real> &u_old,
+                                                  const ROL::Vector<Real> &z,
+                                                  const ROL::Vector<Real> &v_new,
+                                                  const bool printToStream = true,
+                                                  std::ostream & outStream = std::cout) {
+     Real tol = ROL_EPSILON<Real>();
+     auto Jv   = workspace_.clone(c);
+     update( u_new, u_old, z );
+     applyAdjointJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
+     auto iJJv = workspace_.clone(u_new);
+     update( u_new, u_old, z );
+     applyInverseAdjointJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
+     auto diff = workspace_.clone(v_new);
+     diff->set(v_new);
+     diff->axpy(-1.0,*iJJv);
+     Real dnorm = diff->norm();
+     Real vnorm = v_new.norm();
+     if ( printToStream ) {
+       std::stringstream hist;
+       hist << std::scientific << std::setprecision(8);
+       hist << "\nTest TimeSimOpt consistency of inverse adjoint Jacobian_1_new: \n  ||v-inv(adj(J))adj(J)v|| = " 
+            << dnorm << "\n";
+       hist << "  ||v||          = " << vnorm << "\n";
+       hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
+       outStream << hist.str();
+     }
+     return dnorm;
+   }
+
+  std::vector<std::vector<Real> > checkApplyJacobian_1_new(const Vector<Real> &u_new,
+                                                       const Vector<Real> &u_old,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyJacobian_1_new(u_new,u_old,z,v,jv,steps,printToStream,outStream,order);
+  }
+  
+  std::vector<std::vector<Real> > checkApplyJacobian_1_new(const Vector<Real> &u_new, 
+                                                         const Vector<Real> &u_old, 
+                                                         const Vector<Real> &z,
+                                                         const Vector<Real> &v,
+                                                         const Vector<Real> &jv,
+                                                         const std::vector<Real> &steps, 
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int order = 1) {
+ 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+ 
+    Real one(1.0);
+ 
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+ 
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+ 
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
+ 
+    // Save the format state of the original outStream.
+    ROL::nullstream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+ 
+    // Compute constraint value at x.
+    ROL::Ptr<Vector<Real> > c = workspace_.clone(jv);
+    this->update(u_new, u_old, z);
+    this->value(*c, u_new, u_old, z, tol);
+ 
+    // Compute (Jacobian at x) times (vector v).
+    ROL::Ptr<Vector<Real> > Jv = workspace_.clone(jv);
+    this->applyJacobian_1_new(*Jv, v, u_new, u_old, z, tol);
+    Real normJv = Jv->norm();
+ 
+    // Temporary vectors.
+    ROL::Ptr<Vector<Real> > cdif = workspace_.clone(jv);
+    ROL::Ptr<Vector<Real> > cnew = workspace_.clone(jv);
+    ROL::Ptr<Vector<Real> > u_2  = workspace_.clone(u_new);
+ 
+    for (int i=0; i<numSteps; i++) {
+ 
+      Real eta = steps[i];
+ 
+      u_2->set(u_new);
+ 
+      cdif->set(*c);
+      cdif->scale(weights[order-1][0]);
+ 
+      for(int j=0; j<order; ++j) {
+ 
+         u_2->axpy(eta*shifts[order-1][j], v);
+
+         if( weights[order-1][j+1] != 0 ) {
+             this->update(*u_2,u_old,z);
+             this->value(*cnew,*u_2,u_old,z,tol);
+             cdif->axpy(weights[order-1][j+1],*cnew);
+         }
+
+      }
+ 
+      cdif->scale(one/eta);
+ 
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      jvCheck[i][0] = eta;
+      jvCheck[i][1] = normJv;
+      jvCheck[i][2] = cdif->norm();
+      cdif->axpy(-one, *Jv);
+      jvCheck[i][3] = cdif->norm();
+ 
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(Jac*vec)"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << jvCheck[i][0]
+             << std::setw(20) << jvCheck[i][1]
+             << std::setw(20) << jvCheck[i][2]
+             << std::setw(20) << jvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+ 
+    }
+ 
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+ 
+    return jvCheck;
+  } // checkApplyJacobian_1_new
+
 
 }; // class Constraint_SimOpt
 

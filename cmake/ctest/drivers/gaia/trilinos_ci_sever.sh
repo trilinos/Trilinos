@@ -7,7 +7,8 @@
 DRIVER_SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
 echo "DRIVER_SCRIPT_DIR = '$DRIVER_SCRIPT_DIR'"
 
-TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
+#TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
+TRILINOS_DIR=${DRIVER_SCRIPT_DIR}/../../../..
 echo "TRILINOS_DIR='${TRILINOS_DIR}'"
 
 BASE_COMMAND=$DRIVER_SCRIPT_DIR/single_ci_iter.sh
@@ -25,7 +26,7 @@ echo "TODAY_RUN_TILL = '$TODAY_RUN_TILL'"
 echo "PAUSE_FILE = '$PAUSE_FILE'"
 
 #
-# Executate
+# Execute
 #
 
 # Have to source this or you don't even get the module command!

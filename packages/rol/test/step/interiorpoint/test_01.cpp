@@ -41,18 +41,22 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_InteriorPointPenalty.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include <iomanip>
 
 
-/*! \file test_01.cpp 
+/*! \file test_01.cpp
     \brief Verify that the interior point log-barrier penalized objective
-           passes gradient and Hessian checks. 
+           passes gradient and Hessian checks.
 */
 
 template<class Real>
@@ -61,8 +65,8 @@ class NullObjective : public ROL::Objective<Real> {
 public:
   Real value( const V &x, Real &tol ) {
     return Real(0.0);
-  } 
-  void gradient( V &g, const V &x, Real &tol ) { 
+  }
+  void gradient( V &g, const V &x, Real &tol ) {
     g.zero();
   }
   void hessVec( V &hv, const V &v, const V &x, Real &tol ) {
@@ -70,7 +74,7 @@ public:
   }
 };
 
-template<class Real> 
+template<class Real>
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
   ROL::Ptr<const std::vector<Real> > xp = 
     dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
@@ -94,22 +98,20 @@ int main(int argc, char *argv[]) {
   typedef ROL::Objective<RealT>       OBJ;
   typedef ROL::BoundConstraint<RealT> BND;
 
-  typedef Teuchos::ParameterList      PL;
-
-   
+  typedef ROL::ParameterList      PL;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs;
+  ROL::nullstream bhs;
   if( iprint > 0 ) 
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
-   
+
   try {
 
     PL parlist;
@@ -119,14 +121,14 @@ int main(int argc, char *argv[]) {
     RealT mu = 1.e2;
     RealT kappaD = 1.e-4;
     bool useLinearDamping = true;
-  
+
     lblist.set("Use Linear Damping", useLinearDamping);
     lblist.set("Linear Damping Coefficient",kappaD);
     lblist.set("Initial Barrier Parameter",mu);
 
     RealT ninf = ROL::ROL_NINF<RealT>();
     RealT inf  = ROL::ROL_INF<RealT>();
- 
+
     int dim = 4;
     int numTestVectors = 19;
  
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]) {
 
     RealT left = -1.0;  RealT right = 1.0;
 
-    RealT xmax = 4.99; 
+    RealT xmax = 4.99;
 
     ROL::Ptr<V> x  = ROL::makePtr<SV>( x_ptr );
     ROL::Ptr<V> d  = ROL::makePtr<SV>( d_ptr );
@@ -162,8 +164,8 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*d,left,right);
     ROL::RandomizeVector(*v,left,right);
 
-    std::vector<RealT>   values(numTestVectors);        // Computed objective value for each 
-    std::vector<RealT>   exact_values(numTestVectors);  
+    std::vector<RealT>   values(numTestVectors);        // Computed objective value for each
+    std::vector<RealT>   exact_values(numTestVectors);
 
     std::vector<ROL::Ptr<V> > x_test;
 
@@ -187,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     *outStream << "\nLower bound vector" << std::endl;
     printVector(*l,*outStream);
- 
+
     *outStream << "\nUpper bound vector" << std::endl;
     printVector(*u,*outStream);
 
@@ -198,14 +200,14 @@ int main(int argc, char *argv[]) {
     printVector(*maskU, *outStream);
 
     *outStream << "\nChecking Objective value" << std::endl;
- 
+
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
-    *outStream   << std::setw(16) << "x[i], i=0,1,2,3" 
-                 << std::setw(20) << "Computed Objective" 
+    *outStream   << std::setw(16) << "x[i], i=0,1,2,3"
+                 << std::setw(20) << "Computed Objective"
                  << std::setw(20) << "Exact Objective" << std::endl;
 
     RealT valueError(0.0);
- 
+
     for(int i=0; i<numTestVectors; ++i) {
       values[i] = ipobj.value(*(x_test[i]),tol);
 
@@ -214,7 +216,7 @@ int main(int argc, char *argv[]) {
       // Extract the value from the test vector that is in every element
       RealT xval = x_test[i]->dot(e0);
 
- 
+
       for(int j=0; j<dim; ++j) {
         if( (*maskL_ptr)[j] ) {
           RealT diff = xval-(*l_ptr)[j];
@@ -231,27 +233,27 @@ int main(int argc, char *argv[]) {
 
           if(useLinearDamping && !(*maskL_ptr)[j] ) {
             exact_values[i] += mu*kappaD*diff;
-          }        
-    
+          }
+
         }
       } // end loop over elements
 
       *outStream << std::setw(16) << xval
-                 << std::setw(20) << values[i] 
-                 << std::setw(20) << exact_values[i] << std::endl; 
+                 << std::setw(20) << values[i]
+                 << std::setw(20) << exact_values[i] << std::endl;
       RealT valDiff = exact_values[i] - values[i];
-      valueError += valDiff*valDiff; 
+      valueError += valDiff*valDiff;
     } // end loop over vectors
 
     if(valueError>ROL::ROL_EPSILON<RealT>()) {
       errorFlag++;
-    }     
+    }
 
-    *outStream << "\nPerforming finite difference checks" << std::endl; 
+    *outStream << "\nPerforming finite difference checks" << std::endl;
 
     ipobj.checkGradient(*x,*v,true,*outStream);       *outStream << std::endl;
     ipobj.checkHessVec(*x,*d,true,*outStream);        *outStream << std::endl;
-    ipobj.checkHessSym(*x,*d,*v,true,*outStream);     *outStream << std::endl; 
+    ipobj.checkHessSym(*x,*d,*v,true,*outStream);     *outStream << std::endl;
 
   }
   catch (std::logic_error err) {
@@ -266,4 +268,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

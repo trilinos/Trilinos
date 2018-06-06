@@ -94,9 +94,10 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
-  Kokkos::Cuda::print_configuration( std::cout );
+  Kokkos::InitArguments init_args;
+  init_args.device_id = device_id;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration( std::cout );
 
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, device_id);
@@ -110,8 +111,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_lin, test_block, symmetric);
 
-  Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Cuda::finalize();
+  Kokkos::finalize();
 
   cudaDeviceReset();
 

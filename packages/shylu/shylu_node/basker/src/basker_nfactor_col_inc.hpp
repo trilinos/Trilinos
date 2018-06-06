@@ -838,7 +838,7 @@ namespace BaskerNS
 	     //	    k, j, B.val(i), kid);
 	     
 	     //printf("color size: %d \n",
-	     //	    color.dimension_0());
+	     //	    color.extent(0));
      
 	     if(color[j] != 2)
 	       {

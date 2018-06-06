@@ -340,7 +340,7 @@ unpackAndCombine(
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsGraphImpl::unpackAndCombine: ";
 
-  const size_t num_import_lids = static_cast<size_t>(import_lids.dimension_0());
+  const size_t num_import_lids = static_cast<size_t>(import_lids.extent(0));
   if (num_import_lids == 0) {
     // Nothing to unpack
     return;
@@ -361,11 +361,11 @@ unpackAndCombine(
 
     // Check that sizes of input objects are consistent.
     bool bad_num_import_lids =
-      num_import_lids != static_cast<size_t>(num_packets_per_lid.dimension_0());
+      num_import_lids != static_cast<size_t>(num_packets_per_lid.extent(0));
     TEUCHOS_TEST_FOR_EXCEPTION(bad_num_import_lids,
         std::invalid_argument,
         prefix << "importLIDs.size() (" << num_import_lids << ") != "
-        "numPacketsPerLID.size() (" << num_packets_per_lid.dimension_0() << ").");
+        "numPacketsPerLID.size() (" << num_packets_per_lid.extent(0) << ").");
   } // end QA error checking
 
   // Get the offsets
@@ -383,7 +383,7 @@ unpackAndCombine(
       size_t num_ent = (unpack_pids) ? num_packets_this_lid/2
                                      : num_packets_this_lid;
       if (num_ent > running_max_num_ent) running_max_num_ent = num_ent;
-    }, Kokkos::Experimental::Max<size_t>(max_num_ent));
+    }, Kokkos::Max<size_t>(max_num_ent));
 
   // Now do the actual unpack!
   unpack_functor_type f(local_graph, local_map,
@@ -435,7 +435,7 @@ unpackAndCombineWithOwningPIDsCount(
   }
 
   // Count entries copied directly from the source graph with permuting.
-  num_items = static_cast<LO>(permute_from_lids.dimension_0());
+  num_items = static_cast<LO>(permute_from_lids.extent(0));
   if (num_items) {
     size_t kcnt = 0;
     parallel_reduce(
@@ -455,7 +455,7 @@ unpackAndCombineWithOwningPIDsCount(
         num_packets_per_lid.size(),
         KOKKOS_LAMBDA(const int& i, size_t& lsum) {
           lsum += num_packets_per_lid(i) / 2;
-        }, Kokkos::Experimental::Sum<size_t>(tot_num_ent));
+        }, Kokkos::Sum<size_t>(tot_num_ent));
     count += tot_num_ent;
   }
 
@@ -477,7 +477,7 @@ setupRowPointersForRemotes(
   typedef typename Kokkos::View<size_t*,device_type>::size_type size_type;
   typedef Kokkos::RangePolicy<execution_space, Kokkos::IndexType<size_type> > range_policy;
 
-  const size_type N = num_packets_per_lid.dimension_0();
+  const size_type N = num_packets_per_lid.extent(0);
   parallel_for("Setup row pointers for remotes",
     range_policy(0, N),
     KOKKOS_LAMBDA(const size_t i){
@@ -500,7 +500,7 @@ makeCrsRowPtrFromLengths(
   typedef typename device_type::execution_space execution_space;
   typedef typename Kokkos::View<size_t*,device_type>::size_type size_type;
   typedef Kokkos::RangePolicy<execution_space, Kokkos::IndexType<size_type> > range_policy;
-  const size_type N = new_start_row.dimension_0();
+  const size_type N = new_start_row.extent(0);
   parallel_scan(
     range_policy(0, N),
     KOKKOS_LAMBDA(const size_t& i, size_t& update, const bool& final) {
@@ -587,7 +587,7 @@ copyDataFromPermuteIDs(
   typedef typename Kokkos::View<LO*,device_type>::size_type size_type;
   typedef Kokkos::RangePolicy<execution_space, Kokkos::IndexType<size_type> > range_policy;
 
-  const size_type num_permute_to_lids = permute_to_lids.dimension_0();
+  const size_type num_permute_to_lids = permute_to_lids.extent(0);
 
   parallel_for(
     range_policy(0, num_permute_to_lids),
@@ -760,7 +760,7 @@ unpackAndCombineIntoCrsArrays(
   );
 
   // Permute IDs: Still local, but reordered
-  const size_type num_permute_to_lids = permute_to_lids.dimension_0();
+  const size_type num_permute_to_lids = permute_to_lids.extent(0);
   parallel_for(
     range_policy(0, num_permute_to_lids),
     KOKKOS_LAMBDA(const size_t i) {
@@ -772,7 +772,7 @@ unpackAndCombineIntoCrsArrays(
   );
 
   // Get the offsets from the number of packets per LID
-  const size_type num_import_lids = import_lids.dimension_0();
+  const size_type num_import_lids = import_lids.extent(0);
   View<size_t*, device_type> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
@@ -780,11 +780,11 @@ unpackAndCombineIntoCrsArrays(
   {
     auto nth_offset_h = getEntryOnHost(offsets, num_import_lids);
     const bool condition =
-      nth_offset_h != static_cast<size_t>(imports.dimension_0());
+      nth_offset_h != static_cast<size_t>(imports.extent(0));
     TEUCHOS_TEST_FOR_EXCEPTION
       (condition, std::logic_error, prefix
        << "The final offset in bytes " << nth_offset_h
-       << " != imports.size() = " << imports.dimension_0()
+       << " != imports.size() = " << imports.extent(0)
        << ".  Please report this bug to the Tpetra developers.");
   }
 #endif // HAVE_TPETRA_DEBUG
@@ -815,7 +815,7 @@ unpackAndCombineIntoCrsArrays(
       tgt_rowptr, src_pids, permute_to_lids, permute_from_lids,
       local_graph, local_col_map, my_pid);
 
-  if (imports.dimension_0() <= 0) {
+  if (imports.extent(0) <= 0) {
     return;
   }
 

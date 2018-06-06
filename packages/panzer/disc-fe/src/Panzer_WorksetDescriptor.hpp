@@ -50,37 +50,53 @@
 
 namespace panzer {
 
+  //! Special values for the workset size. When the workset size is set on the WorksetDescriptor an interger value can be set, or one of these special enums can be used.
+  enum WorksetSizeType : int {
+    //! Backwards compatibility mode that ignores the worksetSize in the WorksetDescriptor
+    CLASSIC_MODE=-2,
+    //! Workset size is set to the total number of local elements in the MPI process
+    ALL_ELEMENTS=-1,
+    //! Workset size is set to zero
+    NO_ELEMENTS=0,
+  };
+
 /** Class provides a simple description of the types of worksets
  * that need to be constructed and used. This is a generalization of
  * using strings and pairs of string to represent the element blocks
  * and sidesets. It is primarily used in specifying the "domain" of the
  * assembly algorithm, that is which elements will be used in the assembly
  * process.
+ *
+ * There are currently two construction paths supported, a CLASSIC
+ * path that is the legacy code that constructs worksets out of
+ * locally owned elements. The new path uses the PARTITIONED
+ * approach. The PARTITIONED approach supports creating worksets that
+ * might require ghosted and/or virtual cells commonly used in DG
+ * methods. For the CLASSIC mode, the workset size is determined by
+ * the deprecated CellData object in the WorksetNeeds. This is the
+ * current default for backwards compatibility. NOTE: For CLASSIC,
+ * this means that the worksetSize in this object is ignored! For
+ * PARTITIONED, used by DG codes, the worksetSize in the
+ * WorksetDescriptor is always used.
  */
 class WorksetDescriptor {
 public:
 
-  enum {EMPTY=-2,FULL=-1,SPECIAL=0};
-
   /** Constructor specifying a lone element block with a requested workset size.
    *
-   * Options for workset_size: EMPTY, FULL, SPECIAL, >0
-   *   EMPTY -> workset size is set by cellData in WorksetNeeds
-   *   FULL -> workset size is set to largest possible value
-   *   SPECIAL  -> Special case
-   *   >0 -> workset size is set to this value (overwrites WorksetNeeds)
-   *
-   * \param[in] eBlock Name of the element block
-   * \param[in] workset_size Requested workset size (default to EMPTY)
+   * \param[in] elementBlock Name of the element block
+   * \param[in] worksetSize Requested workset size. This is an integer > 0 for a user specified size or can be of type WorksetSizeType for special cases
+   * \param[in] requiresPartitioning If set to true, uses the new path for building worksets with partitioning
+   * \param[in] applyOrientations If set to true, computes and applies orientations to relevant bases
    */
-  WorksetDescriptor(const std::string & element_block,
-                    const int workset_size=EMPTY,
-                    const bool requires_partitioning=false,
-                    const bool apply_orientations=true)
-  : elementBlock_(element_block),
-    worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations),
+  WorksetDescriptor(const std::string & elementBlock,
+                    const int worksetSize=WorksetSizeType::CLASSIC_MODE,
+                    const bool requiresPartitioning=false,
+                    const bool applyOrientations=true)
+  : elementBlock_(elementBlock),
+    worksetSize_(worksetSize),
+    requiresPartitioning_(requiresPartitioning),
+    applyOrientations_(applyOrientations),
     sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
@@ -90,24 +106,18 @@ public:
   /** Constructor that defines a side set. Note that the
    * specified sideset must be a non-empty string.
    *
-   * Options for workset_size: EMPTY, FULL, SPECIAL, >0
-   *   EMPTY -> workset size is set by cellData in WorksetNeeds
-   *   FULL -> workset size is set to largest possible value
-   *   SPECIAL  -> Special case
-   *   >0 -> workset size is set to this value (overwrites WorksetNeeds)
-   *
-   * \param[in] eBlock Element block that includes the side
+   * \param[in] elementBlock Element block that includes the side
    * \param[in] sideset Side set that is being used
    * \param[in] sideAssembly Are integration rules and
    *                         basis functions evaluated on the
    *                         side or on the volume of the element.
    */
-  WorksetDescriptor(const std::string & element_block,
+  WorksetDescriptor(const std::string & elementBlock,
                     const std::string & sideset,
                     const bool sideAssembly)
-  : elementBlock_(element_block),
+  : elementBlock_(elementBlock),
     sideset_(sideset),
-    worksetSize_(EMPTY),
+    worksetSize_(CLASSIC_MODE),
     requiresPartitioning_(false),
     applyOrientations_(true),
     sideAssembly_(sideAssembly)
@@ -129,20 +139,20 @@ public:
    *
    * \param[in] element_block Element block that includes the side
    * \param[in] sideset Side set that is being used
-   * \param[in] workset_size Approximate size of workset
-   * \param[in] requires_partitioning Should the local mesh be partitioned - used for discontinuous discretizations
-   * \param[in] apply_orientations Should we apply orientations to the mesh
+   * \param[in] worksetSize Requested workset size. This is an integer > 0 for a user specified size or can be of type WorksetSizeType for special cases
+   * \param[in] requiresPartitioning If set to true, uses the new path for building worksets with partitioning
+   * \param[in] applyOrientations If set to true, computes and applies orientations to relevant bases
    */
-  WorksetDescriptor(const std::string & element_block,
+  WorksetDescriptor(const std::string & elementBlock,
                     const std::string & sideset,
-                    const int workset_size=EMPTY,
-                    const bool requires_partitioning=false,
-                    const bool apply_orientations=true)
-  : elementBlock_(element_block),
+                    const int worksetSize=WorksetSizeType::CLASSIC_MODE,
+                    const bool requiresPartitioning=false,
+                    const bool applyOrientations=true)
+  : elementBlock_(elementBlock),
     sideset_(sideset),
-    worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations),
+    worksetSize_(worksetSize),
+    requiresPartitioning_(requiresPartitioning),
+    applyOrientations_(applyOrientations),
     sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
@@ -164,24 +174,25 @@ public:
    * \param[in] element_block_1 Element block on other side of sideset_1
    * \param[in] sideset_0 Sideset of interest attached to element_block_0
    * \param[in] sideset_1 Sideset of interest attached to element_block_1
-   * \param[in] workset_size Requested workset size
-   * \param[in] requires_partitioning Do we need to partition this workset (default to false)
+   * \param[in] worksetSize Requested workset size. This is an integer > 0 for a user specified size or can be of type WorksetSizeType for special cases
+   * \param[in] requiresPartitioning If set to true, uses the new path for building worksets with partitioning
+   * \param[in] applyOrientations If set to true, computes and applies orientations to relevant bases
    *
    */
-  WorksetDescriptor(const std::string & element_block_0,
-                    const std::string & element_block_1,
+  WorksetDescriptor(const std::string & elementBlock_0,
+                    const std::string & elementBlock_1,
                     const std::string & sideset_0,
                     const std::string & sideset_1,
-                    const int workset_size=EMPTY,
-                    const bool requires_partitioning=false,
-                    const bool apply_orientations=true)
-  : elementBlock_(element_block_0),
-    elementBlock_2_(element_block_1),
+                    const int worksetSize=WorksetSizeType::CLASSIC_MODE,
+                    const bool requiresPartitioning=false,
+                    const bool applyOrientations=true)
+  : elementBlock_(elementBlock_0),
+    elementBlock_2_(elementBlock_1),
     sideset_(sideset_0),
     sideset_2_(sideset_1),
-    worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning),
-    applyOrientations_(apply_orientations),
+    worksetSize_(worksetSize),
+    requiresPartitioning_(requiresPartitioning),
+    applyOrientations_(applyOrientations),
     sideAssembly_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
@@ -276,12 +287,6 @@ private:
 
   //! Apply orientations - used for continuous discretizations with edge/face elements
   bool applyOrientations_;
-
-//
-//  //! Use the side set information or not
-//  bool useSideset_;
-
-
 
   /** This indicates if side quadrature rules are constructed
    * or volume rules are constructued. Ignored if useSideset_

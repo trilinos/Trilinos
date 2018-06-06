@@ -177,13 +177,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCenter.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellCenter.dimension(0) < cell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellCenter.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension bigger than Parameters::MaxDimension." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
 #endif
     const ordinal_type vertexCount = cell.getVertexCount();
@@ -217,7 +217,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
 #endif
     getReferenceNode(cellVertex, 
@@ -249,10 +249,10 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcellVertieces must have rank 2." );
     
     // need to match to node count as it invokes getReferenceSubcellNodes
-    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.dimension(0) != parentCell.getNodeCount(subcellDim, subcellOrd), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.extent(0) != parentCell.getNodeCount(subcellDim, subcellOrd), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcellVertieces dimension(0) must match to parent cell vertex count." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.dimension(1) != parentCell.getDimension(), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.extent(1) != parentCell.getDimension(), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcellVertieces dimension(1) must match to parent cell dimension." );
 #endif 
     getReferenceSubcellNodes(subcellVertices, 
@@ -279,7 +279,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellNode.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellNode.dimension(0) < cell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellNode.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension bigger than Parameters::MaxDimension." );
 #endif
 
@@ -364,10 +364,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( subcellNodes.rank() != 2, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcellNodes must have rank 2.");
       
-    INTREPID2_TEST_FOR_EXCEPTION( subcellNodes.dimension(0) != parentCell.getNodeCount(subcellDim, subcellOrd), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellNodes.extent(0) != parentCell.getNodeCount(subcellDim, subcellOrd), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcellNodes dimension (0) must match to node count in cell.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellNodes.dimension(1) != parentCell.getDimension(), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellNodes.extent(1) != parentCell.getDimension(), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcellNodes dimension (1) must match to cell dimension.");
 #endif 
     
@@ -399,7 +399,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.rank() != 1, std::invalid_argument,  
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
     
-    INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
 
     INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
@@ -439,10 +439,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceTanU.rank() != 1 || refFaceTanV.rank() != 1, std::invalid_argument,  
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
   
-    INTREPID2_TEST_FOR_EXCEPTION( refFaceTanU.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refFaceTanU.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 
-    INTREPID2_TEST_FOR_EXCEPTION( refFaceTanV.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refFaceTanV.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
   
@@ -514,7 +514,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.rank() != 1, std::invalid_argument,  
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
   
-    INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
     
@@ -546,22 +546,22 @@ namespace Intrepid2 {
     // (1) edgeTangents is rank-3 (C,P,D) and D=2, or 3 is required
     INTREPID2_TEST_FOR_EXCEPTION( edgeTangents.rank() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): edgeTangents requires rank 3." );  
-    INTREPID2_TEST_FOR_EXCEPTION( edgeTangents.dimension(2) != 2 && 
-                                  edgeTangents.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( edgeTangents.extent(2) != 2 && 
+                                  edgeTangents.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): edgeTangents dimension(2) must be 2 or 3." );
  
     // (2) worksetJacobians in rank-4 (C,P,D,D) and D=2, or 3 is required
     INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.rank() != 4, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): worksetJacobians requires rank 4." );  
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != 2 && 
-                                  worksetJacobians.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != 2 && 
+                                  worksetJacobians.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): worksetJacobians dimension(2) must be 2 or 3." );
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != worksetJacobians.dimension(3), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != worksetJacobians.extent(3), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): worksetJacobians dimension(2) and (3) must match each other." );
 
     // (4) cross-check array dimensions: edgeTangents (C,P,D) vs. worksetJacobians (C,P,D,D)
     for (auto i=0;i<3;++i) {
-      INTREPID2_TEST_FOR_EXCEPTION( edgeTangents.dimension(i) != worksetJacobians.dimension(i), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( edgeTangents.extent(i) != worksetJacobians.extent(i), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): edgeTangents dimension (i) does not match to worksetJacobians dimension(i)." );
     }
 #endif
@@ -597,12 +597,12 @@ namespace Intrepid2 {
                                   faceTanV.rank() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): faceTan U,V must have rank 3." );  
 
-    INTREPID2_TEST_FOR_EXCEPTION( faceTanU.dimension(2) != 3 ||
-                                  faceTanV.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( faceTanU.extent(2) != 3 ||
+                                  faceTanV.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): faceTan U,V dimension (2) must be 3." );  
     
     for (auto i=0;i<3;++i) {
-      INTREPID2_TEST_FOR_EXCEPTION( faceTanU.dimension(i) != faceTanV.dimension(i), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( faceTanU.extent(i) != faceTanV.extent(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): faceTan U,V dimension (i) must match each other." );  
     }
 
@@ -610,15 +610,15 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.rank() != 4, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians must have rank 4." );  
 
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians dimension(2) must be 3." );  
 
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != worksetJacobians.dimension(3), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != worksetJacobians.extent(3), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians dimension(2) and dimension(3) must match." );  
 
     // (4) cross-check array dimensions: faceTanU (C,P,D) vs. worksetJacobians (C,P,D,D)
     for (auto i=0;i<3;++i) {
-      INTREPID2_TEST_FOR_EXCEPTION( faceTanU.dimension(i) != worksetJacobians.dimension(i), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( faceTanU.extent(i) != worksetJacobians.extent(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians dimension(i) and faceTan dimension (i) must match." );  
     }      
 #endif
@@ -667,9 +667,9 @@ namespace Intrepid2 {
       auto vcprop = Kokkos::common_view_alloc_prop(sideNormals);
       using common_value_type = typename decltype(vcprop)::value_type;
       Kokkos::DynRankView< common_value_type, SpT > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
-                                                              sideNormals.dimension(0),
-                                                              sideNormals.dimension(1),
-                                                              sideNormals.dimension(2));
+                                                              sideNormals.extent(0),
+                                                              sideNormals.extent(1),
+                                                              sideNormals.extent(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
       Kokkos::DynRankView< common_value_type, SpT > rotation ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::rotation", vcprop), dim, dim);
@@ -699,28 +699,28 @@ namespace Intrepid2 {
     // (1) faceNormals is rank-3 (C,P,D) and D=3 is required
     INTREPID2_TEST_FOR_EXCEPTION( faceNormals.rank() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): faceNormals must have a rank 3." );
-    INTREPID2_TEST_FOR_EXCEPTION( faceNormals.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( faceNormals.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): faceNormals dimension (2) must be 3." );
     
     // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
     INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.rank() != 4, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): worksetJacobians must have a rank 4." );
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != 3, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): worksetJacobians dimension (2) must be 3." );
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != worksetJacobians.dimension(3), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.extent(2) != worksetJacobians.extent(3), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): worksetJacobians dimension (2) must match to dimension (3)." );
   
     // (4) cross-check array dimensions: faceNormals (C,P,D) vs. worksetJacobians (C,P,D,D)
     for (auto i=0;i<3;++i) {
-      INTREPID2_TEST_FOR_EXCEPTION( faceNormals.dimension(i) != worksetJacobians.dimension(i), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( faceNormals.extent(i) != worksetJacobians.extent(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): faceNormals dimension (i) must match to worksetJacobians dimension (i)." );
     }        
 #endif
   
     // this should be provided from users
     // Storage for physical face tangents: rank-3 (C,P,D) arrays
-    const auto worksetSize = worksetJacobians.dimension(0);
-    const auto facePtCount = worksetJacobians.dimension(1);
+    const auto worksetSize = worksetJacobians.extent(0);
+    const auto facePtCount = worksetJacobians.extent(1);
     const auto dim = parentCell.getDimension();
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceNormals);

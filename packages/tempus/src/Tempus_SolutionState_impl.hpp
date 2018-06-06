@@ -77,8 +77,8 @@ SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
   : metaData_       (metaData),
     metaData_nc_    (metaData),
     x_              (x),
@@ -108,8 +108,8 @@ SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<const Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState)
   : metaData_       (metaData),
     metaData_nc_    (Teuchos::null),
     x_              (x),
@@ -148,14 +148,14 @@ SolutionState<Scalar>::SolutionState(
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isInterpolated,
   const bool   isSynced,
+  const bool   isInterpolated,
   const Scalar accuracy,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (x),
     xdot_           (xdot),
@@ -209,14 +209,14 @@ SolutionState<Scalar>::SolutionState(
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isInterpolated,
   const bool   isSynced,
+  const bool   isInterpolated,
   const Scalar accuracy,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<const Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (Teuchos::null),
     xdot_           (xdot),
@@ -259,8 +259,8 @@ SolutionState<Scalar>::SolutionState(
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::rcp_const_cast;

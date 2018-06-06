@@ -1069,7 +1069,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
                                                                         \
 }
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #define FAD_KOKKOS_COMM_TESTS_OPENMP(FadType, FAD)                      \
   using Kokkos::OpenMP;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, OpenMP)
@@ -1077,7 +1077,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_OPENMP(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 #define FAD_KOKKOS_COMM_TESTS_THREADS(FadType, FAD)                      \
   using Kokkos::Threads;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Threads)
@@ -1085,7 +1085,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_THREADS(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)                         \
   using Kokkos::Cuda;                                                    \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Cuda)
@@ -1093,7 +1093,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 #define FAD_KOKKOS_COMM_TESTS_SERIAL(FadType, FAD)                      \
   using Kokkos::Serial;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Serial)

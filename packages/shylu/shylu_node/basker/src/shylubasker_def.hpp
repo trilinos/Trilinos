@@ -1085,24 +1085,24 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
     {
       printVec("match.csc", order_match_array,
-          order_match_array.dimension_0());
+          order_match_array.extent(0));
     }
     if(btf_flag == BASKER_TRUE)
     {
       printVec("btf.csc", order_btf_array,
-          order_btf_array.dimension_0());
+          order_btf_array.extent(0));
       printVec("amdblk.csc", order_blk_amd_array,
-          order_blk_amd_array.dimension_0());
+          order_blk_amd_array.extent(0));
     }
     if(btf_tabs_offset != 0)
     {
       printVec("ND.csc", part_tree.permtab, 
-          part_tree.permtab.dimension_0());
+          part_tree.permtab.extent(0));
     }
     if(amd_flag == BASKER_TRUE)
     {
       printVec("camd.csc", order_csym_array,
-          order_csym_array.dimension_0());
+          order_csym_array.extent(0));
     }
   }//end DEBUG_PRINT()
 

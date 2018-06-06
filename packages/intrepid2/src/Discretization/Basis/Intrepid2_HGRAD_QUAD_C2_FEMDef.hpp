@@ -69,17 +69,17 @@ namespace Intrepid2 {
       const auto y = input(1);
 
       // output is a rank-2 array with dimensions (basisCardinality_, dim0)
-      output(0) = x*(x - 1.0)*y*(y - 1.0)/4.0;
-      output(1) = x*(x + 1.0)*y*(y - 1.0)/4.0;
-      output(2) = x*(x + 1.0)*y*(y + 1.0)/4.0;
-      output(3) = x*(x - 1.0)*y*(y + 1.0)/4.0;
+      output.access(0) = x*(x - 1.0)*y*(y - 1.0)/4.0;
+      output.access(1) = x*(x + 1.0)*y*(y - 1.0)/4.0;
+      output.access(2) = x*(x + 1.0)*y*(y + 1.0)/4.0;
+      output.access(3) = x*(x - 1.0)*y*(y + 1.0)/4.0;
       // edge midpoints basis functions
-      output(4) = (1.0 - x)*(1.0 + x)*y*(y - 1.0)/2.0;
-      output(5) = x*(x + 1.0)*(1.0 - y)*(1.0 + y)/2.0;
-      output(6) = (1.0 - x)*(1.0 + x)*y*(y + 1.0)/2.0;
-      output(7) = x*(x - 1.0)*(1.0 - y)*(1.0 + y)/2.0;
+      output.access(4) = (1.0 - x)*(1.0 + x)*y*(y - 1.0)/2.0;
+      output.access(5) = x*(x + 1.0)*(1.0 - y)*(1.0 + y)/2.0;
+      output.access(6) = (1.0 - x)*(1.0 + x)*y*(y + 1.0)/2.0;
+      output.access(7) = x*(x - 1.0)*(1.0 - y)*(1.0 + y)/2.0;
       // quad bubble basis function
-      output(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
+      output.access(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
       break;
     }
     case OPERATOR_D1 :
@@ -87,222 +87,222 @@ namespace Intrepid2 {
       const auto x = input(0);
       const auto y = input(1);
 
-      // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-      output(0, 0) = (-0.25 + 0.5*x)*(-1. + y)*y;
-      output(0, 1) = (-1.0 + x)*x*(-0.25 + 0.5*y);
+      // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output.access(0, 0) = (-0.25 + 0.5*x)*(-1. + y)*y;
+      output.access(0, 1) = (-1.0 + x)*x*(-0.25 + 0.5*y);
       
-      output(1, 0) = (0.25 + 0.5*x)*(-1. + y)*y;
-      output(1, 1) = x*(1. + x)*(-0.25 + 0.5*y);
+      output.access(1, 0) = (0.25 + 0.5*x)*(-1. + y)*y;
+      output.access(1, 1) = x*(1. + x)*(-0.25 + 0.5*y);
       
-      output(2, 0) = (0.25 + 0.5*x)*y*(1. + y);
-      output(2, 1) = x*(1. + x)*(0.25 + 0.5*y);
+      output.access(2, 0) = (0.25 + 0.5*x)*y*(1. + y);
+      output.access(2, 1) = x*(1. + x)*(0.25 + 0.5*y);
  
-      output(3, 0) = (-0.25 + 0.5*x)*y*(1. + y);
-      output(3, 1) = (-1. + x)*x*(0.25 + 0.5*y);
+      output.access(3, 0) = (-0.25 + 0.5*x)*y*(1. + y);
+      output.access(3, 1) = (-1. + x)*x*(0.25 + 0.5*y);
 
-      output(4, 0) = x*(1.0 - y)*y;
-      output(4, 1) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
+      output.access(4, 0) = x*(1.0 - y)*y;
+      output.access(4, 1) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
         
-      output(5, 0) = 0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
-      output(5, 1) =-x*(1.0 + x)*y;
+      output.access(5, 0) = 0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
+      output.access(5, 1) =-x*(1.0 + x)*y;
         
-      output(6, 0) =-y*(1.0 + y)*x;
-      output(6, 1) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
+      output.access(6, 0) =-y*(1.0 + y)*x;
+      output.access(6, 1) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
         
-      output(7, 0) = 0.5*(1.0 - y)*(1.0+ y)*(-1.0 + 2.0*x);
-      output(7, 1) = (1.0 - x)*x*y;
+      output.access(7, 0) = 0.5*(1.0 - y)*(1.0+ y)*(-1.0 + 2.0*x);
+      output.access(7, 1) = (1.0 - x)*x*y;
  
-      output(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
-      output(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+      output.access(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
+      output.access(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;          
       break;
     }
     case OPERATOR_CURL : {
       const auto x = input(0);
       const auto y = input(1);
 
-      // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
       // CURL(u) = (u_y, -u_x), is rotated GRAD
-      output(0, 1) =-(-0.25 + 0.5*x)*(-1. + y)*y;
-      output(0, 0) = (-1.0 + x)*x*(-0.25 + 0.5*y);
+      output.access(0, 1) =-(-0.25 + 0.5*x)*(-1. + y)*y;
+      output.access(0, 0) = (-1.0 + x)*x*(-0.25 + 0.5*y);
       
-      output(1, 1) =-(0.25 + 0.5*x)*(-1. + y)*y;
-      output(1, 0) = x*(1. + x)*(-0.25 + 0.5*y);
+      output.access(1, 1) =-(0.25 + 0.5*x)*(-1. + y)*y;
+      output.access(1, 0) = x*(1. + x)*(-0.25 + 0.5*y);
       
-      output(2, 1) =-(0.25 + 0.5*x)*y*(1. + y);
-      output(2, 0) = x*(1. + x)*(0.25 + 0.5*y);
+      output.access(2, 1) =-(0.25 + 0.5*x)*y*(1. + y);
+      output.access(2, 0) = x*(1. + x)*(0.25 + 0.5*y);
       
-      output(3, 1) =-(-0.25 + 0.5*x)*y*(1. + y);
-      output(3, 0) = (-1. + x)*x*(0.25 + 0.5*y);
+      output.access(3, 1) =-(-0.25 + 0.5*x)*y*(1. + y);
+      output.access(3, 0) = (-1. + x)*x*(0.25 + 0.5*y);
       
-      output(4, 1) =-x*(1.0 - y)*y;
-      output(4, 0) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
+      output.access(4, 1) =-x*(1.0 - y)*y;
+      output.access(4, 0) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
       
-      output(5, 1) =-0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
-      output(5, 0) =-x*(1.0 + x)*y;
+      output.access(5, 1) =-0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
+      output.access(5, 0) =-x*(1.0 + x)*y;
       
-      output(6, 1) = y*(1.0 + y)*x;
-      output(6, 0) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
+      output.access(6, 1) = y*(1.0 + y)*x;
+      output.access(6, 0) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
       
-      output(7, 1) =-0.5*(1.0 - y)*(1.0 + y)*(-1.0 + 2.0*x);
-      output(7, 0) = (1.0 - x)*x*y;
+      output.access(7, 1) =-0.5*(1.0 - y)*(1.0 + y)*(-1.0 + 2.0*x);
+      output.access(7, 0) = (1.0 - x)*x*y;
       
-      output(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
-      output(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+      output.access(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
+      output.access(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;          
       break;
     }
     case OPERATOR_D2 : {
       const auto x = input(0);
       const auto y = input(1);
-      // output is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality=3) 
-      output(0, 0) = 0.5*(-1.0 + y)*y;
-      output(0, 1) = 0.25 - 0.5*y + x*(-0.5 + 1.*y);
-      output(0, 2) = 0.5*(-1.0 + x)*x;
+      // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality=3) 
+      output.access(0, 0) = 0.5*(-1.0 + y)*y;
+      output.access(0, 1) = 0.25 - 0.5*y + x*(-0.5 + 1.*y);
+      output.access(0, 2) = 0.5*(-1.0 + x)*x;
 
-      output(1, 0) = 0.5*(-1.0 + y)*y;
-      output(1, 1) =-0.25 + 0.5*y + x*(-0.5 + 1.*y);
-      output(1, 2) = 0.5*x*(1.0 + x);
+      output.access(1, 0) = 0.5*(-1.0 + y)*y;
+      output.access(1, 1) =-0.25 + 0.5*y + x*(-0.5 + 1.*y);
+      output.access(1, 2) = 0.5*x*(1.0 + x);
       
-      output(2, 0) = 0.5*y*(1.0 + y);
-      output(2, 1) = 0.25 + 0.5*y + x*(0.5 + 1.*y);
-      output(2, 2) = 0.5*x*(1.0 + x);
+      output.access(2, 0) = 0.5*y*(1.0 + y);
+      output.access(2, 1) = 0.25 + 0.5*y + x*(0.5 + 1.*y);
+      output.access(2, 2) = 0.5*x*(1.0 + x);
       
-      output(3, 0) = 0.5*y*(1.0 + y);
-      output(3, 1) =-0.25 - 0.5*y + x*(0.5 + 1.*y);
-      output(3, 2) = 0.5*(-1.0 + x)*x;
+      output.access(3, 0) = 0.5*y*(1.0 + y);
+      output.access(3, 1) =-0.25 - 0.5*y + x*(0.5 + 1.*y);
+      output.access(3, 2) = 0.5*(-1.0 + x)*x;
       
-      output(4, 0) = (1.0 - y)*y;
-      output(4, 1) = x*(1. - 2.*y);
-      output(4, 2) = (1.0 - x)*(1.0 + x);
+      output.access(4, 0) = (1.0 - y)*y;
+      output.access(4, 1) = x*(1. - 2.*y);
+      output.access(4, 2) = (1.0 - x)*(1.0 + x);
 
-      output(5, 0) = (1.0 - y)*(1.0 + y);
-      output(5, 1) = x*(0. - 2.*y) - 1.*y;
-      output(5, 2) =-x*(1.0 + x);
+      output.access(5, 0) = (1.0 - y)*(1.0 + y);
+      output.access(5, 1) = x*(0. - 2.*y) - 1.*y;
+      output.access(5, 2) =-x*(1.0 + x);
 
-      output(6, 0) =-y*(1.0 + y);
-      output(6, 1) = x*(-1. - 2.*y);
-      output(6, 2) = (1.0 - x)*(1.0 + x);
+      output.access(6, 0) =-y*(1.0 + y);
+      output.access(6, 1) = x*(-1. - 2.*y);
+      output.access(6, 2) = (1.0 - x)*(1.0 + x);
 
-      output(7, 0) = (1.0 - y)*(1.0 + y);
-      output(7, 1) = x*(0. - 2.*y) + 1.*y;
-      output(7, 2) = (1.0 - x)*x;
+      output.access(7, 0) = (1.0 - y)*(1.0 + y);
+      output.access(7, 1) = x*(0. - 2.*y) + 1.*y;
+      output.access(7, 2) = (1.0 - x)*x;
 
-      output(8, 0) =-2.0 + 2.0*y*y;
-      output(8, 1) = 4*x*y;
-      output(8, 2) =-2.0 + 2.0*x*x;
+      output.access(8, 0) =-2.0 + 2.0*y*y;
+      output.access(8, 1) = 4*x*y;
+      output.access(8, 2) =-2.0 + 2.0*x*x;
       break;
     }
     case OPERATOR_D3 : {
       const auto x = input(0);
       const auto y = input(1);
-      output(0, 0) = 0.0;
-      output(0, 1) =-0.5 + y;
-      output(0, 2) =-0.5 + x;
-      output(0, 3) = 0.0;
+      output.access(0, 0) = 0.0;
+      output.access(0, 1) =-0.5 + y;
+      output.access(0, 2) =-0.5 + x;
+      output.access(0, 3) = 0.0;
 
-      output(1, 0) = 0.0;
-      output(1, 1) =-0.5 + y;
-      output(1, 2) = 0.5 + x;
-      output(1, 3) = 0.0;
+      output.access(1, 0) = 0.0;
+      output.access(1, 1) =-0.5 + y;
+      output.access(1, 2) = 0.5 + x;
+      output.access(1, 3) = 0.0;
 
-      output(2, 0) = 0.0;
-      output(2, 1) = 0.5 + y;
-      output(2, 2) = 0.5 + x;
-      output(2, 3) = 0.0;
+      output.access(2, 0) = 0.0;
+      output.access(2, 1) = 0.5 + y;
+      output.access(2, 2) = 0.5 + x;
+      output.access(2, 3) = 0.0;
 
-      output(3, 0) = 0.0;
-      output(3, 1) = 0.5 + y;
-      output(3, 2) =-0.5 + x;
-      output(3, 3) = 0.0;
+      output.access(3, 0) = 0.0;
+      output.access(3, 1) = 0.5 + y;
+      output.access(3, 2) =-0.5 + x;
+      output.access(3, 3) = 0.0;
 
-      output(4, 0) = 0.0;
-      output(4, 1) = 1.0 - 2.0*y;
-      output(4, 2) =-2.0*x;
-      output(4, 3) = 0.0;
+      output.access(4, 0) = 0.0;
+      output.access(4, 1) = 1.0 - 2.0*y;
+      output.access(4, 2) =-2.0*x;
+      output.access(4, 3) = 0.0;
 
-      output(5, 0) = 0.0;
-      output(5, 1) =-2.0*y;
-      output(5, 2) =-1.0 - 2.0*x;
-      output(5, 3) = 0.0;
+      output.access(5, 0) = 0.0;
+      output.access(5, 1) =-2.0*y;
+      output.access(5, 2) =-1.0 - 2.0*x;
+      output.access(5, 3) = 0.0;
 
-      output(6, 0) = 0.0;
-      output(6, 1) =-1.0 - 2.0*y;
-      output(6, 2) =-2.0*x;
-      output(6, 3) = 0.0;
+      output.access(6, 0) = 0.0;
+      output.access(6, 1) =-1.0 - 2.0*y;
+      output.access(6, 2) =-2.0*x;
+      output.access(6, 3) = 0.0;
 
-      output(7, 0) = 0.0;
-      output(7, 1) =-2.0*y;
-      output(7, 2) = 1.0 - 2.0*x;
-      output(7, 3) = 0.0;        
+      output.access(7, 0) = 0.0;
+      output.access(7, 1) =-2.0*y;
+      output.access(7, 2) = 1.0 - 2.0*x;
+      output.access(7, 3) = 0.0;        
       
-      output(8, 0) = 0.0;
-      output(8, 1) = 4.0*y;
-      output(8, 2) = 4.0*x;
-      output(8, 3) = 0.0;                
+      output.access(8, 0) = 0.0;
+      output.access(8, 1) = 4.0*y;
+      output.access(8, 2) = 4.0*x;
+      output.access(8, 3) = 0.0;                
       break;
     }
     case OPERATOR_D4 : {
-      output(0, 0) = 0.0;
-      output(0, 1) = 0.0;
-      output(0, 2) = 1.0;
-      output(0, 3) = 0.0;                
-      output(0, 4) = 0.0;                
+      output.access(0, 0) = 0.0;
+      output.access(0, 1) = 0.0;
+      output.access(0, 2) = 1.0;
+      output.access(0, 3) = 0.0;                
+      output.access(0, 4) = 0.0;                
 
-      output(1, 0) = 0.0;
-      output(1, 1) = 0.0;
-      output(1, 2) = 1.0;
-      output(1, 3) = 0.0;                
-      output(1, 4) = 0.0;                
+      output.access(1, 0) = 0.0;
+      output.access(1, 1) = 0.0;
+      output.access(1, 2) = 1.0;
+      output.access(1, 3) = 0.0;                
+      output.access(1, 4) = 0.0;                
       
-      output(2, 0) = 0.0;
-      output(2, 1) = 0.0;
-      output(2, 2) = 1.0;
-      output(2, 3) = 0.0;                
-      output(2, 4) = 0.0;                
+      output.access(2, 0) = 0.0;
+      output.access(2, 1) = 0.0;
+      output.access(2, 2) = 1.0;
+      output.access(2, 3) = 0.0;                
+      output.access(2, 4) = 0.0;                
       
-      output(3, 0) = 0.0;
-      output(3, 1) = 0.0;
-      output(3, 2) = 1.0;
-      output(3, 3) = 0.0;                
-      output(3, 4) = 0.0;                
+      output.access(3, 0) = 0.0;
+      output.access(3, 1) = 0.0;
+      output.access(3, 2) = 1.0;
+      output.access(3, 3) = 0.0;                
+      output.access(3, 4) = 0.0;                
       
-      output(4, 0) = 0.0;
-      output(4, 1) = 0.0;
-      output(4, 2) =-2.0;
-      output(4, 3) = 0.0;                
-      output(4, 4) = 0.0;                
+      output.access(4, 0) = 0.0;
+      output.access(4, 1) = 0.0;
+      output.access(4, 2) =-2.0;
+      output.access(4, 3) = 0.0;                
+      output.access(4, 4) = 0.0;                
 
-      output(5, 0) = 0.0;
-      output(5, 1) = 0.0;
-      output(5, 2) =-2.0;
-      output(5, 3) = 0.0;                
-      output(5, 4) = 0.0;                
+      output.access(5, 0) = 0.0;
+      output.access(5, 1) = 0.0;
+      output.access(5, 2) =-2.0;
+      output.access(5, 3) = 0.0;                
+      output.access(5, 4) = 0.0;                
       
-      output(6, 0) = 0.0;
-      output(6, 1) = 0.0;
-      output(6, 2) =-2.0;
-      output(6, 3) = 0.0;                
-      output(6, 4) = 0.0;                
+      output.access(6, 0) = 0.0;
+      output.access(6, 1) = 0.0;
+      output.access(6, 2) =-2.0;
+      output.access(6, 3) = 0.0;                
+      output.access(6, 4) = 0.0;                
       
-      output(7, 0) = 0.0;
-      output(7, 1) = 0.0;
-      output(7, 2) =-2.0;
-      output(7, 3) = 0.0;                
-      output(7, 4) = 0.0;                
+      output.access(7, 0) = 0.0;
+      output.access(7, 1) = 0.0;
+      output.access(7, 2) =-2.0;
+      output.access(7, 3) = 0.0;                
+      output.access(7, 4) = 0.0;                
       
-      output(8, 0) = 0.0;
-      output(8, 1) = 0.0;
-      output(8, 2) = 4.0;
-      output(8, 3) = 0.0;                
-      output(8, 4) = 0.0;                
+      output.access(8, 0) = 0.0;
+      output.access(8, 1) = 0.0;
+      output.access(8, 2) = 4.0;
+      output.access(8, 3) = 0.0;                
+      output.access(8, 4) = 0.0;                
       break;
     }
     case OPERATOR_MAX : {
-      const ordinal_type jend = output.dimension(1);
-      const ordinal_type iend = output.dimension(0);
+      const ordinal_type jend = output.extent(1);
+      const ordinal_type iend = output.extent(0);
 
       for (ordinal_type j=0;j<jend;++j)
         for (ordinal_type i=0;i<iend;++i)
-          output(i, j) = 0.0;
+          output.access(i, j) = 0.0;
       break;
     }
     default: {
@@ -333,7 +333,7 @@ namespace Intrepid2 {
     typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
-    const auto loopSize = inputPoints.dimension(0);
+    const auto loopSize = inputPoints.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
     switch (operatorType) {

@@ -71,7 +71,9 @@
             <Parameter name="Prec Type" type="string" value="MueLu-Tpetra"/>
             <ParameterList name="Prec Types">
               <ParameterList name="MueLu-Tpetra">
+                <Parameter name="use kokkos refactor" type="bool" value="true"/>
                 <Parameter name="verbosity" type="string" value="high"/>
+                <Parameter name="hierarchy label" type="string" value="Q_B"/>
                 <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
                 <Parameter name="coarse: type" type="string" value="KLU2"/>
                 <Parameter name="coarse: max size" type="int" value="2500"/>
@@ -145,12 +147,14 @@
 
                 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                 <ParameterList name="smoother: params">
-                  <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+                  <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                  <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                   <Parameter name="relaxation: sweeps" type="int" value="2"/>
                   <Parameter name="relaxation: use l1" type="bool" value="true"/>
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 11list">
+                  <Parameter name="use kokkos refactor" type="bool" value="true"/>
                   <Parameter name="coarse: max size" type="int" value="1000"/>
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
@@ -164,14 +168,26 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>
                   </ParameterList>
 
+                  <Parameter name="repartition: enable" type="bool" value="true"/>
+                  <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+                  <Parameter name="repartition: start level" type="int" value="1"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: remap parts" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <ParameterList name="repartition: params">
+                    <Parameter name="algorithm" type="string" value="multijagged"/>
+                  </ParameterList>
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
+                  <Parameter name="use kokkos refactor" type="bool" value="true"/>
                   <Parameter name="coarse: max size" type="int" value="1000"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
@@ -184,9 +200,21 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>
+                  </ParameterList>
+
+                  <Parameter name="repartition: enable" type="bool" value="true"/>
+                  <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+                  <Parameter name="repartition: start level" type="int" value="1"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: remap parts" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <ParameterList name="repartition: params">
+                    <Parameter name="algorithm" type="string" value="multijagged"/>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>

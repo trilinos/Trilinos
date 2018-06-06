@@ -136,7 +136,7 @@ localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Nod
         const LO meshCol = indHost[absBlkOff];
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
-        little_blk_type A_cur (A_cur_1d.ptr_on_device (), blockSize, blockSize);
+        little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
         auto X_cur = X.getLocalBlock (meshCol, j);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
@@ -511,11 +511,11 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // because, for CudaUVMSpace, the HostMirror is the same as the
   // original.  This causes segfaults in the pseudorandom number
   // generator, due to CUDA code trying to access host memory.
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> host_device_type;
 #else
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, device_type>::host_mirror_space host_device_type;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
   typedef host_device_type::execution_space host_execution_space;
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, host_device_type> block_type;
 
@@ -555,7 +555,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   block_type curBlk ("curBlk", blkSize, blkSize);
   // We only use this if filling with random values.
   Kokkos::View<SC*, Kokkos::LayoutRight, host_device_type,
-    Kokkos::MemoryUnmanaged> curBlk_1d (curBlk.ptr_on_device (),
+    Kokkos::MemoryUnmanaged> curBlk_1d (curBlk.data (),
                                         blkSize * blkSize);
   if (! opts.runTest) {
     // For benchmarks, we don't care so much about the values; we just
@@ -582,7 +582,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
       }
       const LO lclColInd = lclColInds[k];
       const LO err =
-        A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+        A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
       TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
     }
   }

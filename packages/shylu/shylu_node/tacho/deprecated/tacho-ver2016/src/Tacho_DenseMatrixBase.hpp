@@ -81,7 +81,7 @@ namespace Tacho {
       _n = n;
 
       // grow buffer dimension
-      if (static_cast<size_type>(_a.dimension_0()) < size) {
+      if (static_cast<size_type>(_a.extent(0)) < size) {
         _a = value_type_array("DenseMatrixBase::ValueArray", size);
       } else {
         // otherwise initialize it
@@ -121,7 +121,7 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION    
     bool isValueArrayNull() const {
-      return !_a.dimension_0();
+      return !_a.extent(0);
     }
 
     KOKKOS_INLINE_FUNCTION    
@@ -305,7 +305,7 @@ namespace Tacho {
         // when the space is different, perform deep copy
         createInternalArrays(b._m, b._n, b._rs, b._cs);
         
-        const auto range = range_type<ordinal_type>(0, Util::min(_a.dimension_0(), b._a.dimension_0())); 
+        const auto range = range_type<ordinal_type>(0, Util::min(_a.extent(0), b._a.extent(0))); 
         
         space_type::execution_space::fence();      
         Kokkos::deep_copy(Kokkos::subview(_a, range), Kokkos::subview(b._a, range));
@@ -333,7 +333,7 @@ namespace Tacho {
          << "    Col Stride             = " << _cs << std::endl
          << "    Row Stride             = " << _rs << std::endl
          << std::endl
-         << "    ValueArray dimensions  = " << _a.dimension_0() << std::endl
+         << "    ValueArray dimensions  = " << _a.extent(0) << std::endl
          << std::endl;
 
       const int w = 4;

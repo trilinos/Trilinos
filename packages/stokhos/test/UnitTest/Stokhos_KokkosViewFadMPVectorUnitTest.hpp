@@ -92,12 +92,12 @@ checkVectorView(const ViewType& v,
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right || !view_type::is_contiguous) {
-    num_rows = h_a.dimension_0();
-    num_cols = h_a.dimension_1();
+    num_rows = h_a.extent(0);
+    num_cols = h_a.extent(1);
   }
   else {
-    num_rows = h_a.dimension_1();
-    num_cols = h_a.dimension_0();
+    num_rows = h_a.extent(1);
+    num_cols = h_a.extent(0);
   }
   bool success = true;
   if (is_right || !view_type::is_contiguous) {
@@ -142,7 +142,7 @@ checkConstantFadVectorView(const ViewType& view,
   host_view_type h_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(h_view, view);
 
-  const size_type num_rows = h_view.dimension_0();
+  const size_type num_rows = h_view.extent(0);
   const size_type num_fad = Kokkos::dimension_scalar(h_view)-1;
   const size_type num_ensemble = storage_type::static_size;
   bool success = true;
@@ -177,19 +177,19 @@ checkConstantFadVectorView2(const ViewType& view,
   bool success = true;
   const size_type num_fad = Kokkos::dimension_scalar(h_view)-1;
   const size_type num_ensemble = storage_type::static_size;
-  for (size_type i0=0; i0<h_view.dimension_0(); ++i0) {
-  for (size_type i1=0; i1<h_view.dimension_1(); ++i1) {
-  for (size_type i2=0; i2<h_view.dimension_2(); ++i2) {
-  for (size_type i3=0; i3<h_view.dimension_3(); ++i3) {
-  for (size_type i4=0; i4<h_view.dimension_4(); ++i4) {
-  for (size_type i5=0; i5<h_view.dimension_5(); ++i5) {
-  for (size_type i6=0; i6<h_view.dimension_6(); ++i6) {
+  for (size_type i0=0; i0<h_view.extent(0); ++i0) {
+  for (size_type i1=0; i1<h_view.extent(1); ++i1) {
+  for (size_type i2=0; i2<h_view.extent(2); ++i2) {
+  for (size_type i3=0; i3<h_view.extent(3); ++i3) {
+  for (size_type i4=0; i4<h_view.extent(4); ++i4) {
+  for (size_type i5=0; i5<h_view.extent(5); ++i5) {
+  for (size_type i6=0; i6<h_view.extent(6); ++i6) {
     for (size_type k=0; k<num_ensemble; ++k)
-      TEUCHOS_TEST_EQUALITY(h_view(i0,i1,i2,i3,i4,i5,i6,0).val().coeff(k),
+      TEUCHOS_TEST_EQUALITY(h_view.access(i0,i1,i2,i3,i4,i5,i6,0).val().coeff(k),
                             v.val().coeff(k), out, success);
     for (size_type j=0; j<num_fad; ++j) {
       for (size_type k=0; k<num_ensemble; ++k)
-        TEUCHOS_TEST_EQUALITY(h_view(i0,i1,i2,i3,i4,i5,i6,0).dx(j).coeff(k),
+        TEUCHOS_TEST_EQUALITY(h_view.access(i0,i1,i2,i3,i4,i5,i6,0).dx(j).coeff(k),
                               v.dx(j).coeff(k), out, success);
     }
   }}}}}}}

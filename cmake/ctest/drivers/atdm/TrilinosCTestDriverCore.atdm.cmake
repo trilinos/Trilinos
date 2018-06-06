@@ -49,11 +49,19 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
   IF ($ENV{ATDM_CONFIG_USE_NINJA})
     SET(CTEST_CMAKE_GENERATOR Ninja)
-    SET(CTEST_BUILD_FLAGS "-k 999999")
+    IF ("$ENV{ATDM_CONFIG_BUILD_COUNT}" GREATER "0")
+      SET(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT} ")
+    ELSE()
+      SET(CTEST_BUILD_FLAGS "")
+    ENDIF()
+    SET(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}-k 999999")
   ELSE()
     SET(CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT} -k")
   ENDIF()
+  ATDM_SET_CACHE(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}" CACHE STRING)
+  # NOTE: Above, we need to set this as a cache var because this var is also
+  # set as a cache var in ATDMDevEnvSettings.cmake that gets included below.
   
   SET(EXTRA_CONFIGURE_OPTIONS)
   
@@ -89,23 +97,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   STRING(REGEX MATCH "panzer" ATDM_PANZER_IN_JOB_NAME
     "${CTEST_BUILD_NAME}" )
 
-  SET(PANZER_DISABLE_EXAMPLES_ARGS)
-
   IF (ATDM_ENABLE_ALL_PACKAGES)
     MESSAGE("Enabling all packages by default!")
     SET(Trilinos_PACKAGES)
   ELSEIF (ATDM_PANZER_IN_JOB_NAME)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
-    SET(PANZER_DISABLE_EXAMPLES_ARGS
-      "-DPanzer_ENABLE_EXAMPLES=OFF"
-      "-DPanzerCore_ENABLE_EXAMPLES=OFF"
-      "-DPanzerDofMgr_ENABLE_EXAMPLES=OFF"
-      "-DPanzerDiscFE_ENABLE_EXAMPLES=OFF"
-      "-DPanzerAdaptersSTK_ENABLE_EXAMPLES=OFF"
-      "-DPanzerAdaptersIOSS_ENABLE_EXAMPLES=OFF"
-      "-DPanzerMiniEM_ENABLE_EXAMPLES=OFF"
-      )
   ELSE()
     # Explictly test an important subset of Trilinos packages used by the ATDM
     # APP codes that are under active development.
@@ -147,7 +144,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=${ATDM_CONFIGURE_OPTIONS_FILES}"
     "-DTrilinos_TRACE_ADD_TEST=ON"
     "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
-    ${PANZER_DISABLE_EXAMPLES_ARGS}
     )
 
   # Don't bother processing packages that are only implicitly enabled due to

@@ -48,6 +48,8 @@
 #include <cstddef>
 #include <utility>
 
+// Temporary
+#include "Teuchos_RCPStdSharedPtrConversions.hpp"
 
 /* \file  ROL_Ptr.hpp
  * \brief Wraps the C++11 std::shared_ptr
@@ -60,7 +62,7 @@ namespace ROL {
 
 template<class T> using Ptr = std::shared_ptr<T>;
 
-std::nullptr_t nullPtr = nullptr;
+static std::nullptr_t nullPtr = nullptr;
 
 template<class T, class... Args>
 inline
@@ -108,6 +110,43 @@ template<class T>
 inline
 T* getRawPtr( const Ptr<T>& x ) {
   return x.get();
+}
+
+template<class T>
+inline 
+int getCount( const Ptr<T>& x ) {
+  return x.use_count();
+}
+
+template<class T>
+inline
+bool is_nullPtr( const Ptr<T>& x ) {
+  return x == nullPtr;
+}
+
+template<typename T>
+inline 
+Ptr<T> toPtr( const Teuchos::RCP<T>& ptr ) { 
+  return Teuchos::get_shared_ptr(ptr);
+}
+
+// Temporary fix until MPI is generalized
+template<typename T>
+inline 
+Ptr<const T> toPtr( const Teuchos::RCP<const T>& ptr ) { 
+  return Teuchos::get_shared_ptr(ptr);
+}
+
+template<typename T>
+inline 
+Ptr<T> toPtr( const Ptr<T>& ptr ) { 
+  return ptr;
+}
+
+template<typename T>
+inline 
+Ptr<const T> toPtr( const Ptr<const T>& ptr ) { 
+  return ptr;
 }
 
 

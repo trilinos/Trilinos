@@ -701,6 +701,8 @@ namespace MueLuTests {
     M2.SetFactory("P", rcp(new SaPFactory()));
 
     bool r; // cf. bug Teuchos Bug 5214
+    H.EnableGraphDumping("hierarchy_test_graph",0);
+
     r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
     r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));   TEST_EQUALITY(r, false);
     r = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null);  TEST_EQUALITY(r, true);

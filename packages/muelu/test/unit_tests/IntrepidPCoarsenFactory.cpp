@@ -95,7 +95,7 @@ namespace MueLuTests {
 #endif
 
   using namespace std;
-  // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the dimension of the cellTopo
+  // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the extent of the cellTopo
   std::vector<std::pair<int,int>> subcellEntitiesForSide(const shards::CellTopology &cellTopo, int sideOrdinal)
   {
     using namespace std;
@@ -111,7 +111,7 @@ namespace MueLuTests {
       int node = (int) cellTopo.getNodeMap(sideDim, sideOrdinal, nodeOrdinal);
       nodesForSide.insert(node);
     }
-    // now, iterate over dimensions.
+    // now, iterate over extents.
     // Any subcells that only have nodes that match nodesForSide should be included.
     for (int d=0; d<=sideDim; d++)
     {
@@ -158,9 +158,9 @@ namespace MueLuTests {
     auto dofOrdinalData = basis->getAllDofOrdinal();
 
     // determine size of first two parts of dofOrdinalData container
-    // for dimensions > 0, there may no entries at all (for lower-order bases)
-    int maxDim = dofOrdinalData.dimension(0);
-    int maxSubcellOrdinal = dofOrdinalData.dimension(1);
+    // for extents > 0, there may no entries at all (for lower-order bases)
+    int maxDim = dofOrdinalData.extent(0);
+    int maxSubcellOrdinal = dofOrdinalData.extent(1);
 
     vector<int> localDofOrdinals;
 
@@ -171,7 +171,7 @@ namespace MueLuTests {
 
       if (subcellDim >= maxDim) continue; // no entries
 
-      int dofContainerSize = dofOrdinalData.dimension(2); // 3rd dimension: max dof count
+      int dofContainerSize = dofOrdinalData.extent(2); // 3rd extent: max dof count
 
       if (subcellOrdinal >= maxSubcellOrdinal) continue; // no entries
 
@@ -367,7 +367,7 @@ namespace MueLuTests {
 
   class UniqueNumbering
   {
-    vector<vector<double>> _knownCoords; // x,y,z, depending on spatial dimension; inner vector is sorted
+    vector<vector<double>> _knownCoords; // x,y,z, depending on spatial extent; inner vector is sorted
     double _tol; // what counts as a match
     map<vector<double>, int> _numbering; // maps from tuple selected from the sets in _knownCoords to unique identifier for tuple
     void getSanitizedCoords(const vector<double> &coords, vector<double> &sanitizedCoords)
@@ -417,10 +417,10 @@ namespace MueLuTests {
     void getIDs(const ArrayScalar &points, ArrayOrdinal &globalIDs)
     {
       int spaceDim = _knownCoords.size();
-      TEUCHOS_TEST_FOR_EXCEPTION(spaceDim != (int) points.dimension(points.rank()-1), std::invalid_argument, "final dimension of points container must equal spaceDim");
+      TEUCHOS_TEST_FOR_EXCEPTION(spaceDim != (int) points.extent(points.rank()-1), std::invalid_argument, "final extent of points container must equal spaceDim");
       if (points.rank() == 2)
       {
-        int numPoints = points.dimension(0);
+        int numPoints = points.extent(0);
         for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
         {
           vector<double> coords(spaceDim);
@@ -433,8 +433,8 @@ namespace MueLuTests {
       }
       else if (points.rank() == 3)
       {
-        int numCells = points.dimension(0);
-        int numPoints = points.dimension(1);
+        int numCells = points.extent(0);
+        int numPoints = points.extent(1);
         for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
         {
           for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
@@ -642,7 +642,7 @@ namespace MueLuTests {
     UniqueNumbering globalNumbering(spaceDim, pointTol);
     globalNumbering.getIDs<ArrayScalar,ArrayOrdinal>(cellDofCoords,cellDofIDs);
 
-    int tagOrdSubcellDim = 0; // where to find the subcell dimension within the tag
+    int tagOrdSubcellDim = 0; // where to find the subcell extent within the tag
     int numDofsPerCell = basis->getCardinality();
 
     // store ordinals in a set for easy uniquing
@@ -834,8 +834,8 @@ namespace MueLuTests {
                                                                             subcellCountForDimension);
       vector<vector<LocalOrdinal>> seeds;
 
-      int numCells = elementToNodeMap.dimension(0);
-      int dofsPerCell = elementToNodeMap.dimension(1);
+      int numCells = elementToNodeMap.extent(0);
+      int dofsPerCell = elementToNodeMap.extent(1);
       int maxGID = -1;
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
@@ -957,7 +957,7 @@ namespace MueLuTests {
         if (int(seeds.size()) != spaceDim + 1)
         {
           success = false;
-          out << "seeds should have dimension = spaceDim + 1; ";
+          out << "seeds should have extent = spaceDim + 1; ";
           out << seeds.size() << " != " << spaceDim + 1 << endl;
         }
         else
@@ -970,7 +970,7 @@ namespace MueLuTests {
             if (expectedSeedCount != seedCount)
             {
               success = false;
-              out << "expected " << expectedSeedCount << " seeds for dimension " << d;
+              out << "expected " << expectedSeedCount << " seeds for extent " << d;
               out << "; had " << seedCount << endl;
             }
             // check that each entry belongs to an entity of the correct type
@@ -979,7 +979,7 @@ namespace MueLuTests {
               if (expectedSeedsSets[d].find(localDofOrdinal) == expectedSeedsSets[d].end())
               {
                 success = false;
-                out << "Found local dof ordinal " << localDofOrdinal << " as a seed for dimension ";
+                out << "Found local dof ordinal " << localDofOrdinal << " as a seed for extent ";
                 out << d << ", but did not find it in expectedSeedsSets[" << d << "]\n";
               }
             }
@@ -1015,8 +1015,8 @@ namespace MueLuTests {
       vector<vector<LocalOrdinal>> seeds;
 
       // construct a serial map (claiming all rows and cells)
-      int numCells = elementToNodeMap.dimension(0);
-      int dofsPerCell = elementToNodeMap.dimension(1);
+      int numCells = elementToNodeMap.extent(0);
+      int dofsPerCell = elementToNodeMap.extent(1);
       int maxLID = -1;
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
@@ -1036,7 +1036,7 @@ namespace MueLuTests {
       if (int(seeds.size()) != spaceDim + 1)
       {
         success = false;
-        out << "seeds should have dimension = spaceDim + 1; ";
+        out << "seeds should have extent = spaceDim + 1; ";
         out << seeds.size() << " != " << spaceDim + 1 << endl;
       }
       else
@@ -1047,7 +1047,7 @@ namespace MueLuTests {
           int expectedSeedCount = subcellCountForDimension[d];
           if (basis->getDofCount(d,0) == 0)
           {
-            // no dofs for first subcell of dimension d; we assume that all other subcells of dimension d also
+            // no dofs for first subcell of extent d; we assume that all other subcells of extent d also
             // don't have dofs assigned
             expectedSeedCount = 0;
           }
@@ -1055,7 +1055,7 @@ namespace MueLuTests {
           if (expectedSeedCount != seedCount)
           {
             success = false;
-            out << "expected " << expectedSeedCount << " seeds for dimension " << d;
+            out << "expected " << expectedSeedCount << " seeds for extent " << d;
             out << "; had " << seedCount << endl;
           }
           // check that each entry belongs to an entity of the correct type
@@ -1065,7 +1065,7 @@ namespace MueLuTests {
                 == ordinalsForSubcellDimension[d].end())
             {
               success = false;
-              out << "Found local dof ordinal " << localDofOrdinal << " as a seed for dimension ";
+              out << "Found local dof ordinal " << localDofOrdinal << " as a seed for extent ";
               out << d << ", but did not find it in ordinalsForSubcellDimension[" << d << "]\n";
             }
           }
@@ -1189,8 +1189,8 @@ namespace MueLuTests {
         FC hi_dofCoords;
 
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
-        TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());
-        TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
+        TEST_EQUALITY((size_t)hi_dofCoords.extent(0),(size_t)hi->getCardinality());
+        TEST_EQUALITY((size_t)hi_dofCoords.extent(1),(size_t)hi->getBaseCellTopology().getDimension());
         TEST_EQUALITY(lo_node_in_hi.size(),(size_t)lo->getCardinality());
       }
     }
@@ -1834,7 +1834,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     resize(refCellVertices,vertexCount,spaceDim);
     resize(refCellVertex,3);
 
-    // regardless of spatial dimension, CellTools::getReferenceVertex() populates 3 slots
+    // regardless of spatial extent, CellTools::getReferenceVertex() populates 3 slots
     for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
@@ -1863,7 +1863,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // --> we make a lambda function that accepts FC with dof coords as argument
       auto getTwoCellNumbering = [pointTol,numCells,spaceDim,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
       {
-        int dofsPerCell = dofCoords.dimension(0);
+        int dofsPerCell = dofCoords.extent(0);
 
         vector<double> coords(spaceDim);
         UniqueNumbering numbering(spaceDim, pointTol);
@@ -1905,8 +1905,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         out << "Low-order global IDs along intercell interface:\n";
         for (int lowOrdinal=0; lowOrdinal<lo->getCardinality(); lowOrdinal++)
         {
-          vector<double> coords(lo_DofCoords.dimension(1));
-          for (int d=0; d<int(lo_DofCoords.dimension(1)); d++)
+          vector<double> coords(lo_DofCoords.extent(1));
+          for (int d=0; d<int(lo_DofCoords.extent(1)); d++)
           {
             coords[d] = lo_DofCoords(lowOrdinal,d);
           }
@@ -1925,8 +1925,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         out << "High-order global IDs along intercell interface:\n";
         for (int highOrdinal=0; highOrdinal<hi->getCardinality(); highOrdinal++)
         {
-          vector<double> coords(hi_DofCoords.dimension(1));
-          for (int d=0; d<int(hi_DofCoords.dimension(1)); d++)
+          vector<double> coords(hi_DofCoords.extent(1));
+          for (int d=0; d<int(hi_DofCoords.extent(1)); d++)
           {
             coords[d] = hi_DofCoords(highOrdinal,d);
           }
@@ -1948,7 +1948,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
 
         // Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
-        std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
+        std::vector<bool> is_candidate(hi_DofCoords.extent(0),false);
         bool no_doubles = true;
         for(int lowOrderDof=0; no_doubles && lowOrderDof<(int)candidates.size(); lowOrderDof++) {
           if(candidates[lowOrderDof].size()==0) no_doubles=false; // this low DOF has no candidates!
@@ -2395,8 +2395,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
         TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
 
-        for(size_t i=0; i<lo_e2n.dimension(0); i++)
-          for(size_t j=0; j<lo_e2n.dimension(1); j++)
+        for(size_t i=0; i<lo_e2n.extent(0); i++)
+          for(size_t j=0; j<lo_e2n.extent(1); j++)
             TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
 
         for(size_t i=0; i<(size_t) lo_owned.size(); i++)

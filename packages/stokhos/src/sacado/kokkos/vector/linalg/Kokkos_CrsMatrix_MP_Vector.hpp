@@ -93,7 +93,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputP... >,
                   Update
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
                       !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
 #endif
@@ -155,7 +155,7 @@ public:
                      const output_vector_type & y,
                      const update_type & update )
   {
-    const size_type row_count = A.graph.row_map.dimension_0()-1;
+    const size_type row_count = A.graph.row_map.extent(0)-1;
     Kokkos::parallel_for( row_count, MPMultiply(A,x,y,update) );
   }
 };
@@ -187,7 +187,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputP... >,
                   Update
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
                     !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
 #endif
@@ -234,7 +234,7 @@ public:
   {
     scalar_type sum;
     // Loop over columns of x, y
-    const size_type num_col = m_y.dimension_1();
+    const size_type num_col = m_y.extent(1);
     for (size_type col=0; col<num_col; ++col) {
       // Compute mat-vec for this row
       const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -255,7 +255,7 @@ public:
                      const output_vector_type & y,
                      const update_type & update )
   {
-    const size_type row_count = A.graph.row_map.dimension_0()-1;
+    const size_type row_count = A.graph.row_map.extent(0)-1;
     Kokkos::parallel_for( row_count, MPMultiply(A,x,y,update) );
   }
 };
@@ -481,7 +481,7 @@ spmv(
     Kokkos::Impl::raise_error(
       "Stokhos spmv not implemented for transposed or conjugated matrix-vector multiplies");
   }
-  if (y.dimension_1() == 1) {
+  if (y.extent(1) == 1) {
     auto y_1D = subview(y, Kokkos::ALL(), 0);
     auto x_1D = subview(x, Kokkos::ALL(), 0);
     spmv(mode, a, A, x_1D, b, y_1D, RANK_ONE());

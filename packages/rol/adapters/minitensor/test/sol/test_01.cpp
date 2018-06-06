@@ -71,7 +71,7 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -133,7 +133,7 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -200,7 +200,7 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -290,7 +290,7 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -526,7 +526,7 @@ TEST(MiniTensor_ROL, HS24_BoundOnlyMod)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
