@@ -214,7 +214,7 @@ template<typename scalar> class Mask
 
             return sum/size;    
         }                               
-} ;
+};
 
 template<typename scalar> std::ostream &operator<<(std::ostream &os, const Mask<scalar>& m) {
     os << "[ ";
@@ -228,22 +228,21 @@ template<typename S>  Sacado::MP::Vector<S> operator* (Sacado::MP::Vector<S> &a1
     Sacado::MP::Vector<S> mul;
     mul = m*a1;
     return mul;
-};
+}
 
 template<typename S, typename S2>  Sacado::MP::Vector<S> operator* (S2 a1, Mask<Sacado::MP::Vector<S>> m)
 {
     Sacado::MP::Vector<S> mul;
     mul = m* (Sacado::MP::Vector<S>) a1;
     return mul;
-};
+}
 
 template<typename S, typename S2>  Sacado::MP::Vector<S> operator* (Mask<Sacado::MP::Vector<S>> m, S2 a1)
 {
     Sacado::MP::Vector<S> mul;
     mul = m* (Sacado::MP::Vector<S>) a1;
     return mul;
-};
-
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<S> &a1, S2 a2)
 {
@@ -253,7 +252,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator> (Sacado
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) > a2;
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector<S> &a1, S2 a2)
 {
@@ -263,7 +262,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator>= (Sacad
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) >= a2;
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<S> &a1, S2 a2)
 {
@@ -273,7 +272,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator< (Sacado
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) < a2;
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector<S> &a1, S2 a2)
 {
@@ -283,8 +282,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator<= (Sacad
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) <= a2;
     return mask;
-};
-
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator> (S2 a2, Sacado::MP::Vector<S> &a1)
 {
@@ -294,7 +292,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator> (S2 a2,
     for(auto i=0; i<ET::size; ++i)
         mask[i] = a2 > ET::coeff(a1,i);
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator>= (S2 a2, Sacado::MP::Vector<S> &a1)
 {
@@ -304,7 +302,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator>= (S2 a2
     for(auto i=0; i<ET::size; ++i)
         mask[i] = a2 >= ET::coeff(a1,i);
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator< (S2 a2, Sacado::MP::Vector<S> &a1)
 {
@@ -314,7 +312,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator< (S2 a2,
     for(auto i=0; i<ET::size; ++i)
         mask[i] = a2 < ET::coeff(a1,i);
     return mask;
-};
+}
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator<= (S2 a2, Sacado::MP::Vector<S> &a1)
 {
@@ -324,7 +322,7 @@ template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator<= (S2 a2
     for(auto i=0; i<ET::size; ++i)
         mask[i] = a2 <= ET::coeff(a1,i);
     return mask;
-};
+}
 
 template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<S> &a1, Sacado::MP::Vector<S> &a2)
 {
@@ -334,7 +332,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) > ET::coeff(a2,i);
     return mask;
-};
+}
 
 template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector<S> &a1, Sacado::MP::Vector<S> &a2)
 {
@@ -344,7 +342,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) >= ET::coeff(a2,i);
     return mask;
-};
+}
 
 template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<S> &a1, Sacado::MP::Vector<S> &a2)
 {
@@ -354,7 +352,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) < ET::coeff(a2,i);
     return mask;
-};
+}
 
 template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector<S> &a1, Sacado::MP::Vector<S> &a2)
 {
@@ -364,9 +362,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector
     for(auto i=0; i<ET::size; ++i)
         mask[i] = ET::coeff(a1,i) <= ET::coeff(a2,i);
     return mask;
-};
-
-
+}
 
 namespace MaskLogic{
 
