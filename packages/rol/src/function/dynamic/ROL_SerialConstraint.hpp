@@ -80,6 +80,7 @@ private:
  
   Ptr<DynamiConstraint<Real>>        con_;        // Constraint over a single time step
   Ptr<Vector<Real>>                  u_initial_;  // Initial condition for state
+  Ptr<Vector<Real>>                  u_zero_;     // Zero vector the size of u_initial_
   Pre<std::vector<TimeStamp<Real>>>  timeStamps_; // Set of all time stamps
   VectorWorkspace<Real>              workspace_;  // For efficient cloning
   size_type                          Nt_;         // Number of time steps  
@@ -92,7 +93,10 @@ public:
   SerialConstraint( const Ptr<DynamicConstraint<Real>>& con, 
                     const Vector<Real>& u_initial, 
                     const Ptr<vector<TimeStamp<Real>>>& timeStamps ) : 
-    con_(con), u_initial_(u_initial), timeStamps_(timeStamps), Nt_(timeStamps_->size()) {}
+    con_(con), u_initial_(u_initial), u_zero_(u_initial->clone()), 
+    timeStamps_(timeStamps), Nt_(timeStamps_->size()) {
+    u_zero_->zero();
+  }
 
   
   const Vector<Real>& getInitialCondition() const { return *u_initial_; }
@@ -140,12 +144,12 @@ public:
     auto& up  = partition(u);    auto& zp = partition(z);
 
     auto  tmp = workspace_.clone(jvp.get(0));
-    auto& w   = *tmp; 
+    auto& x   = *tmp; 
 
-    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(k) );
+    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(k) );
     
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyJacobian_uo( w, *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyJacobian_uo( x, *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
       con_->applyJacobian_un( *(jvp.get(k)),  *(vp.get(k)),   *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
       jvp.get(k)->plus(w);
     }
@@ -162,15 +166,15 @@ public:
     auto& up   = partition(u);    auto& zp = partition(z);
 
     auto  tmp  = workspace_.clone(ijvp.get(0));
-    auto& w    = *tmp;
+    auto& x    = *tmp;
 
-    con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyJacobian_uo( w, *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      w.scale(-1.0);
-      w.plus( *(vp.get(k)) );
-      con_->applyInverseJacobian_un( *(ijvp.get(k)), w, *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyJacobian_uo( x, *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      x.scale(-1.0);
+      x.plus( *(vp.get(k)) );
+      con_->applyInverseJacobian_un( *(ijvp.get(k)), x, *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
     }
   } // applyInverseJacobian_1
   
@@ -186,13 +190,13 @@ public:
     auto& up    = partition(u);     auto& zp = partition(z);
 
     auto  tmp  = workspace_.clone(ajvp.get(0)); 
-    auto& w    = *tmp; 
+    auto& x    = *tmp; 
 
-    con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
    
     for( size_type k=1; k<Nt_; ++k ) {
       con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      con_->applyAdjointJacobian_uo( w, *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyAdjointJacobian_uo( x, *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
       ajvp.get(k-1)->plus(w);
     }
   } // applyAdjointJacobian_1
@@ -207,23 +211,23 @@ public:
     auto& up    = partition(u);     auto& zp = partition(z);
 
     auto  tmp  = workspace_.clone(iajvp.get(0));
-    auto& w    = *tmp; 
+    auto& x    = *tmp; 
 
     size_type k = Nt_-1;
 
     con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
 
     for( size_type k=Nt_-2; k>0; --k ) {
-      con_->applyAdjointJacobian_uo( w, *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
+      con_->applyAdjointJacobian_uo( x, *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
       w.scale(-1.0);
       w.plus( *(vp.get(k) ) );
-      con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), w, *(up.get(k)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );             
+      con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), x, *(up.get(k)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );             
     }
 
-    con_->applyAdjointJacobian_uo( w, *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
-    w.scale(-1.0);
-    w.plus( *(vp.get(0) ) );
-    con_->applyInverseAdjointJacobian_un( *(iajvp.get(0)), w, *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );           
+    con_->applyAdjointJacobian_uo( x, *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
+    x.scale(-1.0);
+    x.plus( *(vp.get(0) ) );
+    con_->applyInverseAdjointJacobian_un( *(iajvp.get(0)), x, *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );           
      
   } // applyInverseAdjointJacobian_1
 
@@ -237,7 +241,7 @@ public:
     auto& jvp = partition(jv);   auto& vp = partition(v);
     auto& up  = partition(u);    auto& zp = partition(z);
   
-    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
   
     for( size_type k=1; k<Nt_; ++k ) 
       con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
@@ -253,7 +257,7 @@ public:
     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
     auto& up    = partition(u);     auto& zp = partition(z);
 
-    con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) 
       con_->applyAdjointJacobian_z( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -267,6 +271,20 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) override {
+
+    auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
+    auto& vp    = partition(v);       auto& up = partition(u);
+    auto& zp    = partition(z);
+
+    auto  tmp  = workspace_.clone(ajvp.get(0)); 
+    auto& x    = *tmp; 
+    
+    con_->applyAdjointHessian_un_un( *(ahwvp.get(0), *(w.get(0)), *(v.get(0)), *u_zero_, 
+                                     *(u.get(0)), *(z.get(0)), timeStamp_->at(k) );
+
+    for( size_type k=1; k<Nt_; ++k ) {
+      con_->applyAdjointHessian_un_uo( , *(w.get(0)), *vo, *u_zero_, *(u
+    }
 
   }
 
@@ -304,11 +322,12 @@ public:
     con_->applyAdjointHessian_z_z( *(ahwvp.get(0)), *(wp.get(0)), *(vp.get(0)), *u_initial_, 
                                    *(up.get(0)),    *(zp.get(0)), timeStamps_->at(0) );
   
-    for( size_type k=1; k<Nt_; ++k ) 
-      con_->applyHessian_z_z( *(ahwvp.get(k)), *(wp.get(k), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-  } // applyJacobian_2
+    for( size_type k=1; k<Nt_; ++k ) {
+      con_->applyHessian_z_z( *(ahwvp.get(k)), *(wp.get(k), *(vp.get(k)), *(up.get(k-1)), 
+                              *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+    }
 
-  }
+  } // applyAdjointHessian_22
 
 
 

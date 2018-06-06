@@ -159,10 +159,9 @@ public:
     ahwv.zero();
   }
 
-// This should be zero 
-//  virtual void applyAdjointHessian_uo_uo( V& ahwv, const V& w, const V& v,
-//                                          const V& uo, const V& un, 
-//                                          const V& z, const TS& ts ) const;
+  virtual void applyAdjointHessian_uo_uo( V& ahwv, const V& w, const V& v,
+                                          const V& uo, const V& un, 
+                                          const V& z, const TS& ts ) const;
 
   virtual void applyAdjointHessian_uo_z( V& ahwv, const V& w, const V& vo,
                                          const V& uo, const V& un, 
