@@ -83,18 +83,6 @@
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
-    ///
-    /// impl tag to distinguish built-in types and sacado types
-    ///
-    struct ImplNotAvailTag {};
-    struct ImplSimdTag {};
-    struct ImplSacadoTag {};
-
-    template<typename T> struct ImplTag                        { typedef ImplNotAvailTag type; };
-    template<>           struct ImplTag<float>                 { typedef ImplSimdTag type;     };
-    template<>           struct ImplTag<double>                { typedef ImplSimdTag type;     };
-    template<>           struct ImplTag<std::complex<float> >  { typedef ImplSimdTag type;     };
-    template<>           struct ImplTag<std::complex<double> > { typedef ImplSimdTag type;     };
 
     ///
     /// view decorators for unmanaged and const memory
@@ -104,15 +92,13 @@ namespace Ifpack2 {
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
     using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
                                               MemoryTraitsType::RandomAccess |
-                                              MemoryTraitsType::Atomic |
                                               flag>;
     
     template <typename ViewType>
     using Unmanaged = Kokkos::View<typename ViewType::data_type,
                                    typename ViewType::array_layout,
                                    typename ViewType::device_type,
-                                   MemoryTraits<typename ViewType::memory_traits,
-                                                Kokkos::Unmanaged> >;
+                                   MemoryTraits<typename ViewType::memory_traits> >;
     template <typename ViewType>
     using Const = Kokkos::View<typename ViewType::const_data_type, 
                                typename ViewType::array_layout,
