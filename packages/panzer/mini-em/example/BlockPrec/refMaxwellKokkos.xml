@@ -147,7 +147,7 @@
 
                 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                 <ParameterList name="smoother: params">
-                  <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                  <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                   <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                   <Parameter name="relaxation: sweeps" type="int" value="2"/>
                   <Parameter name="relaxation: use l1" type="bool" value="true"/>
@@ -168,7 +168,7 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                     <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>
@@ -200,7 +200,7 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                     <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>
