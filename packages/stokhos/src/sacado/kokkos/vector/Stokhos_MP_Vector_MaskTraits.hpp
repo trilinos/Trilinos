@@ -44,6 +44,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include <iostream>
+#include <cmath>
 
 template <typename T>
 struct EnsembleTraits_m {
@@ -73,6 +74,8 @@ template<typename scalar> class Mask
 
     public:
         Mask(){
+            for(auto i=0; i<size; ++i)
+                data[i]=false;
         }
 
         Mask(bool a){
@@ -134,6 +137,20 @@ template<typename scalar> class Mask
                 sum = sum + this->data[i];
 
             return sum != v*size;
+        }
+    
+        bool operator== (Mask<scalar> m2)
+        {
+            double sum = 0;
+            for(auto i=0; i<size; ++i)
+                sum = sum + (this->data[i] == m2.data[i]);
+            
+            return sum == size;
+        }
+    
+        bool operator!= (Mask<scalar> m2)
+        {
+            return !(this==m2);
         }
 
         Mask<scalar> operator&& (Mask<scalar> m2)
@@ -260,6 +277,16 @@ template<typename S, typename S2>  Sacado::MP::Vector<S> operator* (Mask<Sacado:
     Sacado::MP::Vector<S> mul;
     mul = m* (Sacado::MP::Vector<S>) a1;
     return mul;
+}
+
+template<typename S> Mask<Sacado::MP::Vector<S> > signbit_v (Sacado::MP::Vector<S> &a1)
+{
+    typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
+    
+    Mask<Sacado::MP::Vector<S> > mask;
+    for(auto i=0; i<ET::size; ++i)
+        mask[i] = signbit(ET::coeff(a1,i));
+    return mask;
 }
 
 template<typename S, typename S2> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<S> &a1, S2 a2)

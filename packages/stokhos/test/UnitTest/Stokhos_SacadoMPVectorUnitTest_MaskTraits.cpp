@@ -480,6 +480,24 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
     TEST_EQUALITY(m3,!m1);
 }
 
+TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit)
+{
+    constexpr int ensemble_size = 8;
+    
+    typedef Kokkos::DefaultExecutionSpace execution_space;
+    typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
+    typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
+    
+    scalar a = (scalar) 1.;
+    a[2] = -2.5;
+    
+    mask m1 = signbit_v(a);
+    mask m2;
+    m2[2] = true;
+    TEST_EQUALITY(m1,m2);
+}
+
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
