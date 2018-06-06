@@ -98,7 +98,7 @@ namespace Ifpack2 {
     using Unmanaged = Kokkos::View<typename ViewType::data_type,
                                    typename ViewType::array_layout,
                                    typename ViewType::device_type,
-                                   MemoryTraits<typename ViewType::memory_traits> >;
+                                   MemoryTraits<typename ViewType::memory_traits,Kokkos::Unmanaged> >;
     template <typename ViewType>
     using Const = Kokkos::View<typename ViewType::const_data_type, 
                                typename ViewType::array_layout,
@@ -3442,6 +3442,33 @@ namespace Ifpack2 {
       
       return sweep;
     }
+
+
+    template<typename MatrixType>
+    struct ImplObject { 
+      using impl_type = ImplType<MatrixType>;
+      using part_interface_type = PartInterface<MatrixType>;
+      using block_tridiags_type = BlockTridiags<MatrixType>;
+      using amd_type = AmD<MatrixType>;
+      using norm_manager_type = NormManager<MatrixType>;
+      using async_import_type = AsyncableImport<MatrixType>;
+      
+      // distructed objects
+      Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A;
+      Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer;
+      Teuchos::RCP<async_import_type> async_importer;
+      bool overlap_communication_and_computation;
+      
+      // copy of Y (mutable to penentrate const)
+      mutable typename impl_type::tpetra_multivector_type Z;
+      
+      // local objects
+      part_interface_type part_interface;
+      block_tridiags_type block_tridiags; // D
+      amd_type a_minus_d; // R = A - D
+      mutable typename impl_type::vector_type_1d_view work; // right hand side workspace
+      mutable norm_manager_type norm_manager;      
+    };
   
   } // namespace BlockTriDiContainerDetails
 

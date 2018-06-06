@@ -80,28 +80,31 @@ namespace Ifpack2 {
   void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                const Teuchos::RCP<const import_type>& importer,
-                const bool overlapCommAndComp,
-                const bool useSeqMethod) 
+                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                  const Teuchos::RCP<const import_type>& importer,
+                  const bool overlapCommAndComp,
+                  const bool useSeqMethod) 
   {
+    // create pointer of impl
+    impl_ = Teuchos::rcp(new BlockTriDiContainerDetails::ImplObject<MatrixType>());
+
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
     using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
-    A_ = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
+    impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
     TEUCHOS_TEST_FOR_EXCEPT_MSG
-      (A_.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
+      (impl_->A.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
 
-    tpetra_importer_ = Teuchos::null;
-    async_importer_  = Teuchos::null;
+    impl_->tpetra_importer = Teuchos::null;
+    impl_->async_importer  = Teuchos::null;
     
     if (importer.is_null()) // there is no given importer, then create one
       if (useSeqMethod) 
-        tpetra_importer_ = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_);
+        impl_->tpetra_importer = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(impl_->A);
       else 
-        async_importer_ = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(A_);
+        impl_->async_importer = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(impl_->A);
     else 
-      tpetra_importer_ = importer; // if there is a given importer, use it
+      impl_->tpetra_importer = importer; // if there is a given importer, use it
 
     // as a result, there are 
     // 1) tpetra_importer is     null , async_importer is     null (no need for importer)
@@ -109,13 +112,13 @@ namespace Ifpack2 {
     // 3) tpetra_importer is     null , async_importer is NOT null (async method is used)
 
     // temporary disabling 
-    overlap_communication_and_computation_ = overlapCommAndComp;
+    impl_->overlap_communication_and_computation = overlapCommAndComp;
     
-    Z_ = typename impl_type::tpetra_multivector_type();
+    impl_->Z = typename impl_type::tpetra_multivector_type();
 
-    part_interface_  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(A_, partitions);
-    block_tridiags_  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(part_interface_);
-    norm_manager_    = BlockTriDiContainerDetails::NormManager<MatrixType>(A_->getComm());
+    impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, partitions);
+    impl_->block_tridiags  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(impl_->part_interface);
+    impl_->norm_manager    = BlockTriDiContainerDetails::NormManager<MatrixType>(impl_->A->getComm());
   }
 
   template <typename MatrixType>
@@ -129,17 +132,19 @@ namespace Ifpack2 {
     using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
     using norm_manager_type = BlockTriDiContainerDetails::NormManager<MatrixType>;
     
-    A_ = Teuchos::null;
-    tpetra_importer_ = Teuchos::null;
-    async_importer_  = Teuchos::null;
+    impl_->A = Teuchos::null;
+    impl_->tpetra_importer = Teuchos::null;
+    impl_->async_importer  = Teuchos::null;
 
-    Z_ = typename impl_type::tpetra_multivector_type();
+    impl_->Z = typename impl_type::tpetra_multivector_type();
 
-    part_interface_  = part_interface_type();
-    block_tridiags_  = block_tridiags_type();
-    a_minus_d_       = amd_type();
-    work_            = typename impl_type::vector_type_1d_view();
-    norm_manager_    = norm_manager_type();
+    impl_->part_interface  = part_interface_type();
+    impl_->block_tridiags  = block_tridiags_type();
+    impl_->a_minus_d       = amd_type();
+    impl_->work            = typename impl_type::vector_type_1d_view();
+    impl_->norm_manager    = norm_manager_type();
+
+    impl_ = Teuchos::null;
   }
 
   template <typename MatrixType>
@@ -205,10 +210,13 @@ namespace Ifpack2 {
     // We assume that if you called this method, you intend to recompute
     // everything.
     IsComputed_ = false;
-    TEUCHOS_ASSERT(!A_.is_null()); // when initInternal is called, A_ must be set
+    TEUCHOS_ASSERT(!impl_->A.is_null()); // when initInternal is called, A_ must be set
     {
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
-        (A_, part_interface_, block_tridiags_, a_minus_d_, overlap_communication_and_computation_);    
+        (impl_->A, 
+         impl_->part_interface, impl_->block_tridiags, 
+         impl_->a_minus_d, 
+         impl_->overlap_communication_and_computation);    
     }
   }
 
@@ -222,7 +230,9 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (A_, part_interface_, block_tridiags_, Kokkos::ArithTraits<magnitude_type>::zero());
+        (impl_->A, 
+         impl_->part_interface, impl_->block_tridiags, 
+         Kokkos::ArithTraits<magnitude_type>::zero());
     }
     IsComputed_ = true;
   }
@@ -247,14 +257,14 @@ namespace Ifpack2 {
     const int check_tol_every = 1;
 
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
-      (A_,
-       tpetra_importer_, 
-       async_importer_, 
-       overlap_communication_and_computation_,
-       X, Y, Z_,
-       part_interface_, block_tridiags_, a_minus_d_,
-       work_,
-       norm_manager_,
+      (impl_->A,
+       impl_->tpetra_importer, 
+       impl_->async_importer, 
+       impl_->overlap_communication_and_computation,
+       X, Y, impl_->Z,
+       impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+       impl_->work,
+       impl_->norm_manager,
        this->DampingFactor_,
        zeroStartingSolution,
        numSweeps,
@@ -280,7 +290,9 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (A_, part_interface_, block_tridiags_, in.addRadiallyToDiagonal);
+        (impl_->A, 
+         impl_->part_interface, impl_->block_tridiags, 
+         in.addRadiallyToDiagonal);
     }
     IsComputed_ = true;
   }
@@ -304,14 +316,14 @@ namespace Ifpack2 {
     int r_val = 0;
     {
       r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
-        (A_,
-         tpetra_importer_, 
-         async_importer_,
-         overlap_communication_and_computation_,
-         X, Y, Z_,
-         part_interface_, block_tridiags_, a_minus_d_,
-         work_,
-         norm_manager_,
+        (impl_->A,
+         impl_->tpetra_importer, 
+         impl_->async_importer,
+         impl_->overlap_communication_and_computation,
+         X, Y, impl_->Z,
+         impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+         impl_->work,
+         impl_->norm_manager,
          in.dampingFactor,
          in.zeroStartingSolution,
          in.maxNumSweeps,
@@ -325,16 +337,16 @@ namespace Ifpack2 {
   const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNorms0 () const {
-    const auto p = norm_manager_.getNorms0();
-    return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
+    const auto p = impl_->norm_manager.getNorms0();
+    return Teuchos::arcp(p, 0, p ? impl_->norm_manager.getNumVectors() : 0, false);
   }
 
   template <typename MatrixType>
   const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNormsFinal () const {
-    const auto p = norm_manager_.getNormsFinal();
-    return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
+    const auto p = impl_->norm_manager.getNormsFinal();
+    return Teuchos::arcp(p, 0, p ? impl_->norm_manager.getNumVectors() : 0, false);
   }
 
   template <typename MatrixType>
