@@ -121,7 +121,7 @@ public:
     return true;
   }
 
-  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+  virtual std::size_t selectedIndex(GlobalOrdinal /* GID */,
                                     const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
   {
     // always choose index of pair with smallest pid
