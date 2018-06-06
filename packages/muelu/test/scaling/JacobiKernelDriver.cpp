@@ -104,8 +104,9 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
-#if defined(HAVE_MUELU_TPETRA)
+#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+    typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    vector_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -114,6 +115,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
     typedef typename KCRS::values_type::non_const_type     scalar_view_t;
 
+    typedef typename vector_type::device_type              device_type;
     typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
 
     RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
@@ -133,7 +135,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
     scalar_view_t Cvals = Cmat.values;
 
-    auto Dvals = Du->getDualView();
+    auto Dvals = Du->template getLocalView<device_type>();
 
     sparse_matrix_t AMKL;
     sparse_matrix_t BMKL;
@@ -142,7 +144,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     sparse_matrix_t XTempMKL,YTempMKL;
 
-
+    sparse_status_t result;
     // **********************************
     // Copy in the matrix data for MKL
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Matrix CopyIn")));
@@ -170,20 +172,20 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     // **********************************
     // Copy in the vector-as-matrix data for MKL
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Scaled D-Vector CopyIn")));
-
-    mkl_int_type DrowptrMKL("Drowptr",Dvals.extent(0)+1);
-    mkl_int_type DcolindMKL("Dcolimd",Dvals.extent(0));
-    scalar_view_type DvalsMKL("Dvals",Dvals.extent(0));
+    size_t n = Dvals.extent(0);
+    mkl_int_type DrowptrMKL("Drowptr",n+1);
+    mkl_int_type DcolindMKL("Dcolind",n);
+    scalar_view_t DvalsMKL("Dvals",n);
     Kokkos::parallel_for(n+1,KOKKOS_LAMBDA(const size_t i) {
         DrowptrMKL[i] = i;
         if(i < n)  {
           DcolindMKL[i] = i;
-          DvalsMKL[i]   = - omega * Dvals[i]; 
+          DvalsMKL[i]   = - omega * Dvals(i,0); 
         }
     });
 
     // NOTE: No sanity checks here.  We did that above
-    mkl_sparse_d_create_csr(&DMKL, SPARSE_INDEX_BASE_ZERO,Dvals.extent(0),Dvals,extent(0), DrowptrMKL.data(),DrowptrMKL.data()+1,DcolindMKL.data(),DvalsMKL.data());
+    mkl_sparse_d_create_csr(&DMKL, SPARSE_INDEX_BASE_ZERO,Dvals.extent(0),Dvals.extent(0), DrowptrMKL.data(),DrowptrMKL.data()+1,DcolindMKL.data(),DvalsMKL.data());
 
     tm = Teuchos::null;
     Au->getComm()->barrier();
@@ -191,20 +193,23 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     // **********************************
     // Multiply (A*B) 
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Multiply")));
-    mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &XTempMKL);
+    result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &XTempMKL);
     KCRS::execution_space::fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed");
 
     // **********************************
     // Scale (-omegaD) * AB)
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Scale-Via-Multiply")));
-    mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, DMKL, XTempMKL, &YTempMKL);
+    result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, DMKL, XTempMKL, &YTempMKL);
     KCRS::execution_space::fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Scale failed");
 
     // **********************************
     // Add B - ((-omegaD) * AB))
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Add")));
-    mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,1.0,BMKL,YTempMKL,&CMKL);
+    result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,BMKL,1.0,YTempMKL,&CMKL);
     KCRS::execution_space::fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed");
 
     // **********************************
     // Copy out the data for MKL
@@ -230,6 +235,9 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     mkl_sparse_destroy(CMKL);
     mkl_sparse_destroy(XTempMKL);
     mkl_sparse_destroy(YTempMKL);
+
+#else 
+    std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
 #endif
 
 
@@ -345,7 +353,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList);
     params->set("openmp: jacobi algorithm", jacobi_algorithm_name);
     params->set("openmp: algorithm", spgemm_algorithm_name);
-    params->get("openmp: team work size",team_work_size);
+    params->set("openmp: team work size",team_work_size);
 
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("Jacobi ")+name+": Kernel")));
     Tpetra::MMdetails::KernelWrappers2<SC,LO,GO,Node,lno_nnz_view_t>::jacobi_A_B_newmatrix_kernel_wrapper(omega,*Du,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,name,params);
@@ -529,9 +537,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           #ifdef HAVE_MUELU_MKL
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
-            TimeMonitor t(*TimeMonitor::getNewTimer("JAC MKL: Total"));
-            
-            //            Jacobi_MKL_SPMM(*A,*B,*C,*D,omega);
+            TimeMonitor t(*TimeMonitor::getNewTimer("JAC MKL: Total"));            
+            Jacobi_MKL_SPMM(*A,*B,*C,*D,omega);
           }
           #endif
           break;
