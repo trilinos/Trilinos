@@ -958,8 +958,13 @@ MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Ja
 #endif
 
   // 3) Add [-omega Dinv A] + B
+ Teuchos::ParameterList jparams;
+  if(!params.is_null()) {
+    jparams = *params;
+    jparams.set("label",label+std::string(" MSAK Add"));
+  }
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();  
-  Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,Scalar(-omega),false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),params);
+  Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,Scalar(-omega),false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),Teuchos::rcp(&jparams,false));
 
  }// jacobi_A_B_newmatrix_MultiplyScaleAddKernel
 
