@@ -63,7 +63,7 @@ NonlinearSource(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
+postRegistrationSetup(typename Traits::SetupData /* d */,
 		      PHX::FieldManager<Traits>& vm)
 {
   // NOTE: We no longer need manually call setFieldData(). It happens
@@ -96,7 +96,7 @@ evaluateFields(typename Traits::EvalData d)
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-preEvaluate(typename Traits::PreEvalData d)
+preEvaluate(typename Traits::PreEvalData /* d */)
 { 
   using namespace std;
   cout << "In Source Pre Op" << endl;
@@ -105,7 +105,7 @@ preEvaluate(typename Traits::PreEvalData d)
 //**********************************************************************
 template< typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-postEvaluate(typename Traits::PostEvalData d)
+postEvaluate(typename Traits::PostEvalData /* d */)
 { 
   using namespace std;
   cout << "In Source Post Op" << endl;

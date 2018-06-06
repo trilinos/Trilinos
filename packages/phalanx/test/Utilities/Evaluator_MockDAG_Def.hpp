@@ -60,7 +60,7 @@ namespace PHX {
   }
 
   template<typename EvalT,typename Traits>
-  void MockDAG<EvalT,Traits>::evaluateFields(typename Traits::EvalData d){}
+  void MockDAG<EvalT,Traits>::evaluateFields(typename Traits::EvalData /* d */){}
 
   template<typename EvalT,typename Traits>
   void MockDAG<EvalT,Traits>::evaluates(const std::string& n)
