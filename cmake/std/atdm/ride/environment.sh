@@ -26,8 +26,8 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
 fi
 
+export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Power8
     module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
     module swap openblas/0.2.19/gcc/5.4.0 netlib/3.8.0/gcc/5.4.0
     export OMPI_CXX=`which g++`
@@ -36,7 +36,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
     module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
     module swap openblas/0.2.19/gcc/5.4.0 netlib/3.8.0/gcc/5.4.0
@@ -53,7 +52,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export CUDA_LAUNCH_BLOCKING=1
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-    # Avoids timeouts due to not running on seprate GPUs (see #2446)
+    # Avoids timeouts due to not running on separate GPUs (see #2446)
 else
     echo "***"
     echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"

@@ -202,10 +202,10 @@ namespace MueLu {
       }
     }
     GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
-    Teuchos::RCP<LocalOrdinalVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
-    Teuchos::RCP<LocalOrdinalVector> procWinner_vector   = aggregates->GetProcWinner();
-    Teuchos::ArrayRCP<LocalOrdinal>  vertex2AggId        = aggregates->GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LocalOrdinal>  procWinner          = aggregates->GetProcWinner()->getDataNonConst(0);
+    Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
+    Teuchos::RCP<LocalOrdinalVector>      procWinner_vector   = aggregates->GetProcWinner();
+    Teuchos::ArrayRCP<LocalOrdinal>       vertex2AggId        = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal>       procWinner          = aggregates->GetProcWinner()->getDataNonConst(0);
 
     vertex2AggId_ = vertex2AggId;
 
