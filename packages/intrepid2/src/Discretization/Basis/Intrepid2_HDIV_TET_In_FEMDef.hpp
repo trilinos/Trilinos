@@ -178,7 +178,6 @@ getValues( /* */ Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HDIV_TET_In_FEM): Operator type not implemented" );
-    break;
   }
   }
 }
