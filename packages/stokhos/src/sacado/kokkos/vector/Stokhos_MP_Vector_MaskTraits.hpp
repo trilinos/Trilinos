@@ -152,8 +152,26 @@ template<typename scalar> class Mask
                 m3.data[i] = (this->data[i] || m2.data[i]);
 
             return m3;
-        } 
-
+        }
+    
+        Mask<scalar> operator&& (bool m2)
+        {
+            Mask<scalar> m3;
+            for(auto i=0; i<size; ++i)
+                m3.data[i] = (this->data[i] && m2);
+            
+            return m3;
+        }
+    
+        Mask<scalar> operator|| (bool m2)
+        {
+            Mask<scalar> m3;
+            for(auto i=0; i<size; ++i)
+                m3.data[i] = (this->data[i] || m2);
+            
+            return m3;
+        }
+    
         Mask<scalar> operator+ (Mask<scalar> m2)
         {
             Mask<scalar> m3;
