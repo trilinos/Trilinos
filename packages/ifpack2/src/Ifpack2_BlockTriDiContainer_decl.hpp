@@ -55,8 +55,6 @@
 #include <type_traits>
 #include <string>
 
-#include "Ifpack2_BlockTriDiContainer_impl.hpp"
-
 namespace Ifpack2 {
 
   /// \class BlockTriDiContainer
@@ -90,6 +88,24 @@ namespace Ifpack2 {
   /// Currently, this class is expected to perform well on conventional CPU and
   /// Intel Xeon Phi. It does *not* yet perform well on GPU.
 
+  ///
+  /// Impl Tag
+  ///
+  namespace BlockTriDiContainerDetails {
+    ///
+    /// impl tag to distinguish built-in types and sacado types
+    ///
+    struct ImplNotAvailTag {};
+    struct ImplSimdTag {};
+    struct ImplSacadoTag {};
+
+    template<typename T> struct ImplTag                        { typedef ImplNotAvailTag type; };
+    template<>           struct ImplTag<float>                 { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<double>                { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<float> >  { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<double> > { typedef ImplSimdTag type;     };
+  }
+  
   ///
   /// Primary declation
   ///
