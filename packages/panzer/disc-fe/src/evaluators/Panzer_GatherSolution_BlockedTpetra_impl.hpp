@@ -143,7 +143,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -459,7 +459,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
