@@ -476,6 +476,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
         << "========================================================" << endl;
 
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+    out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<endl;
+    << "========================================================" << endl;
+#endif
+
     // At the moment, this test only runs on one MPI rank
     if(comm->getSize() != 1) exit(1);
 
