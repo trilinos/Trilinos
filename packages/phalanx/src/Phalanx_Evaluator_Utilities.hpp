@@ -83,9 +83,9 @@ namespace PHX {
     }
 
     template<typename DataT,typename... Props>
-    void setFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,Props...>& f,
-                      PHX::FieldManager<Traits>& fm)
+    void setFieldData(const PHX::FieldTag& /* ft */,
+                      Kokkos::View<DataT,Props...>& /* f */,
+                      PHX::FieldManager<Traits>& /* fm */)
     {
 
     }
