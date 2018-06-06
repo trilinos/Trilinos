@@ -944,7 +944,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 
   // 1) Multiply A*B
   Teuchos::RCP<Matrix_t> AB = Teuchos::rcp(new Matrix_t(C.getRowMap(),0));
-  Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),Teuchos::rcp(&pparams,false));
+  Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale"))));
