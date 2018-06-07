@@ -66,7 +66,7 @@ void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op
 
 Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Teko::BlockedLinearOp & blo, Teko::BlockPreconditionerState & /* state */) const
 {
-   Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("MaxwellPreconditioner::build"))));
+   Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("MaxwellPreconditioner::build")));
 
    // Output stream for debug information
    Teuchos::RCP<Teuchos::FancyOStream> debug;
@@ -123,120 +123,129 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      useAsPreconditioner = params.get<bool>("Use as preconditioner");
 
    // Compute the approximate Schur complement
-   Teko::LinearOp idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
-   Teko::LinearOp KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
-   if (debug != Teuchos::null) 
-     *debug << "Adding up S_E" << std::endl;
-   Teko::LinearOp S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
-   if (debug != Teuchos::null) 
-     *debug << "Added up S_E" << std::endl;
-   if (dump)
-     writeOut("S_E.mm",*S_E);
-   describeMatrix("S_E",*S_E,debug);
+   Teko::LinearOp idQ_B, KtK, S_E;
+   {
+     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
+     idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
+     KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
+     if (debug != Teuchos::null)
+       *debug << "Adding up S_E" << std::endl;
+     S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
+     if (debug != Teuchos::null)
+       *debug << "Added up S_E" << std::endl;
+     if (dump)
+       writeOut("S_E.mm",*S_E);
+     describeMatrix("S_E",*S_E,debug);
+   }
 
    Teko::LinearOp invQ_B,invS_E;
 
    // Inverse of B mass matrix
-   *Teko::getOutputStream() << "Building Q_B inverse operator" << std::endl;
-   // Are we building a solver or a preconditioner?
-   if (useAsPreconditioner) {
-     invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
-   } else {
-     Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
-     describeMatrix("invDiagQ_B",*invDiagQ_B,debug);
-     invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
-   }
-
-   if(!use_refmaxwell) // Augmentation based solver
    {
-     // Get auxiliary operators for gradient and nodal mass matrix
-     Teko::LinearOp G;
-     if (useDiscreteGradient) {
-       Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
-       if (dump)
-         writeOut("DiscreteGradient.mm",*T);
-       describeMatrix("DiscreteGradient",*T,debug);
-       double dt = params.get<double>("dt");
-       double epsilon = params.get<double>("epsilon");
-       G = Teko::explicitMultiply(Q_E,Teko::scale(-dt/epsilon,T));
-     } else {
-       G = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Weak Gradient"));
-     }
-     if (dump)
-       writeOut("WeakGradient.mm",*G);
-     describeMatrix("WeakGradient",*G,debug);
-
-     Teko::LinearOp Gt = Teko::explicitTranspose(G);
-     // Compute grad-div term
-     Teko::LinearOp invDiagQ_rho = Teko::getInvDiagonalOp(Q_rho,Teko::AbsRowSum);
-     Teko::LinearOp GGt = Teko::explicitMultiply(G,invDiagQ_rho,Gt);
-
-     // Rescale such that grad-div is large enough to fix curl-curl null-space while not dominating
-     double scaling = Teko::infNorm(Q_E)/Teko::infNorm(GGt);
-
-     // Augmented Schur complement and its inverse
-     if (debug != Teuchos::null)
-       *debug << "Adding up T_E" << std::endl;
-     Teko::LinearOp T_E = Teko::explicitAdd(S_E, Thyra::scale(scaling,GGt));
-     if (debug != Teuchos::null)
-       *debug << "Added up T_E" << std::endl;
-     *Teko::getOutputStream() << "Building T_E inverse operator" << std::endl;
-     Teko::LinearOp invT_E = Teko::buildInverse(*invLib.getInverseFactory("T_E Solve"),T_E);
-
-     // Correction term
-     Teko::LinearOp Z_E = Thyra::add(Q_E, Thyra::scale(scaling,GGt));
-
-     if (dump)
-       writeOut("Z_E.mm",*Z_E);
-     describeMatrix("Z_E",*Z_E,debug);
-
-     // Mass inverse - diagonal approximation
-     Teko::LinearOp invQ_E = Teko::getInvDiagonalOp(Q_E,Teko::AbsRowSum);
-
-     // Approximate inverse of S_E
-     invS_E = Teko::multiply(invQ_E,Z_E,invT_E);
-   }
-   else {// refMaxwell
-
-     // Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
-     // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
-     // TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
-
-     // Inverse of Schur complement
-     *Teko::getOutputStream() << "Building S_E inverse operator" << std::endl;
-     Teuchos::RCP<Teko::InverseFactory> S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
-     Teuchos::ParameterList S_E_prec_pl = *S_E_prec_factory->getParameterList();
-
-     // Get coordinates
-     Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > >("Coordinates");
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Coordinates",Coordinates);
-     S_E_prec_pl.remove("Coordinates");
-
-     // Set M1 = Q_E.
-     // We do this here, since we cannot get it from the request handler.
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M1",Q_E);
-
-     // Get inverse of lumped Q_rho
-     RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
-     RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
-     Thyra::assign(ones.ptr(),1.0);
-     // compute lumped diagonal
-     Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
-     Thyra::reciprocal(*diagonal,diagonal.ptr());
-     RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
-
-     Teko::InverseLibrary myInvLib = invLib;
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
-     myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra"));
-     S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
-
+     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Inverse Q_B"));
      // Are we building a solver or a preconditioner?
-     if (useAsPreconditioner)
-       invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
-     else {
-       Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
-       invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+     if (useAsPreconditioner) {
+       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+     } else {
+       Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+       describeMatrix("invDiagQ_B",*invDiagQ_B,debug);
+       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+     }
+   }
+
+   // Solver for S_E
+   {
+     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Solver S_E"));
+     if(!use_refmaxwell) // Augmentation based solver
+       {
+         // Get auxiliary operators for gradient and nodal mass matrix
+         Teko::LinearOp G;
+         if (useDiscreteGradient) {
+           Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+           if (dump)
+             writeOut("DiscreteGradient.mm",*T);
+           describeMatrix("DiscreteGradient",*T,debug);
+           double dt = params.get<double>("dt");
+           double epsilon = params.get<double>("epsilon");
+           G = Teko::explicitMultiply(Q_E,Teko::scale(-dt/epsilon,T));
+         } else {
+           G = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Weak Gradient"));
+         }
+         if (dump)
+           writeOut("WeakGradient.mm",*G);
+         describeMatrix("WeakGradient",*G,debug);
+
+         Teko::LinearOp Gt = Teko::explicitTranspose(G);
+         // Compute grad-div term
+         Teko::LinearOp invDiagQ_rho = Teko::getInvDiagonalOp(Q_rho,Teko::AbsRowSum);
+         Teko::LinearOp GGt = Teko::explicitMultiply(G,invDiagQ_rho,Gt);
+
+         // Rescale such that grad-div is large enough to fix curl-curl null-space while not dominating
+         double scaling = Teko::infNorm(Q_E)/Teko::infNorm(GGt);
+
+         // Augmented Schur complement and its inverse
+         if (debug != Teuchos::null)
+           *debug << "Adding up T_E" << std::endl;
+         Teko::LinearOp T_E = Teko::explicitAdd(S_E, Thyra::scale(scaling,GGt));
+         if (debug != Teuchos::null)
+           *debug << "Added up T_E" << std::endl;
+         *Teko::getOutputStream() << "Building T_E inverse operator" << std::endl;
+         Teko::LinearOp invT_E = Teko::buildInverse(*invLib.getInverseFactory("T_E Solve"),T_E);
+
+         // Correction term
+         Teko::LinearOp Z_E = Thyra::add(Q_E, Thyra::scale(scaling,GGt));
+
+         if (dump)
+           writeOut("Z_E.mm",*Z_E);
+         describeMatrix("Z_E",*Z_E,debug);
+
+         // Mass inverse - diagonal approximation
+         Teko::LinearOp invQ_E = Teko::getInvDiagonalOp(Q_E,Teko::AbsRowSum);
+
+         // Approximate inverse of S_E
+         invS_E = Teko::multiply(invQ_E,Z_E,invT_E);
+       }
+     else {// refMaxwell
+
+       // Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+       // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
+       // TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
+
+       // Inverse of Schur complement
+       Teuchos::RCP<Teko::InverseFactory> S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
+       Teuchos::ParameterList S_E_prec_pl = *S_E_prec_factory->getParameterList();
+
+       // Get coordinates
+       Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > >("Coordinates");
+       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Coordinates",Coordinates);
+       S_E_prec_pl.remove("Coordinates");
+
+       // Set M1 = Q_E.
+       // We do this here, since we cannot get it from the request handler.
+       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M1",Q_E);
+
+       // Get inverse of lumped Q_rho
+       RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
+       RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
+       Thyra::assign(ones.ptr(),1.0);
+       // compute lumped diagonal
+       Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
+       Thyra::reciprocal(*diagonal,diagonal.ptr());
+       RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
+       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
+
+       Teko::InverseLibrary myInvLib = invLib;
+       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
+       myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra"));
+       S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
+
+       // Are we building a solver or a preconditioner?
+       if (useAsPreconditioner)
+         invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+       else {
+         Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
+         invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+       }
      }
    }
 
@@ -244,34 +253,39 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // Build block upper triangular inverse matrix //
    /////////////////////////////////////////////////
 
-   // Inverse blocks
-   std::vector<Teko::LinearOp> diag(2);
-   diag[0] = invQ_B;
-   diag[1] = invS_E;
 
-   // Upper tri blocks
-   Teko::BlockedLinearOp U = Teko::createBlockedOp();
-      Teko::beginBlockFill(U,rows,rows);
-      Teko::setBlock(0,0,U,Q_B);
-      Teko::setBlock(1,1,U,S_E);
-      Teko::setBlock(0,1,U,K);
-   Teko::endBlockFill(U);
+   {
+     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Block preconditioner"));
 
-   Teko::LinearOp invU = Teko::createBlockUpperTriInverseOp(U,diag);
+     // Inverse blocks
+     std::vector<Teko::LinearOp> diag(2);
+     diag[0] = invQ_B;
+     diag[1] = invS_E;
 
-   if (solveLowerTriangular) {
-     Teko::BlockedLinearOp invL = Teko::createBlockedOp();
-     Teko::LinearOp id_B = Teko::identity(Teko::rangeSpace(Q_B));
-     Teko::LinearOp id_E = Teko::identity(Teko::rangeSpace(Q_E));
-     Teko::beginBlockFill(invL,rows,rows);
-        Teko::setBlock(0,0,invL,id_B);
-        Teko::setBlock(1,0,invL,Teko::multiply(Thyra::scale(-1.0, Kt), invQ_B));
-        Teko::setBlock(1,1,invL,id_E);
-     Teko::endBlockFill(invL);
+     // Upper tri blocks
+     Teko::BlockedLinearOp U = Teko::createBlockedOp();
+     Teko::beginBlockFill(U,rows,rows);
+     Teko::setBlock(0,0,U,Q_B);
+     Teko::setBlock(1,1,U,S_E);
+     Teko::setBlock(0,1,U,K);
+     Teko::endBlockFill(U);
 
-     return Teko::multiply(invU, Teko::toLinearOp(invL));
-   } else
-     return invU;
+     Teko::LinearOp invU = Teko::createBlockUpperTriInverseOp(U,diag);
+
+     if (solveLowerTriangular) {
+       Teko::BlockedLinearOp invL = Teko::createBlockedOp();
+       Teko::LinearOp id_B = Teko::identity(Teko::rangeSpace(Q_B));
+       Teko::LinearOp id_E = Teko::identity(Teko::rangeSpace(Q_E));
+       Teko::beginBlockFill(invL,rows,rows);
+       Teko::setBlock(0,0,invL,id_B);
+       Teko::setBlock(1,0,invL,Teko::multiply(Thyra::scale(-1.0, Kt), invQ_B));
+       Teko::setBlock(1,1,invL,id_E);
+       Teko::endBlockFill(invL);
+
+       return Teko::multiply(invU, Teko::toLinearOp(invL));
+     } else
+       return invU;
+   }
 }
 
 //! Initialize from a parameter list

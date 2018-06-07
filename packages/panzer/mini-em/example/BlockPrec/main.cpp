@@ -123,7 +123,7 @@ int main(int argc,char * argv[])
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     {
-      Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time"))));
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
 
       // defaults for command-line options
       int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=1,z_procs=1,basis_order=1;
@@ -177,47 +177,49 @@ int main(int argc,char * argv[])
       }
 
 
-      Teuchos::RCP<Teuchos::TimeMonitor> tMmesh = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh"))));
       RCP<panzer_stk::STK_Interface> mesh;
       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-      if ( filename != "") { // Exodus file reader...
-        *out << "Reading from mesh file "<<filename<<std::endl;
-        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-        pl->set("File Name", filename);
-        mesh_factory = Teuchos::RCP<panzer_stk::STK_MeshFactory>(new panzer_stk::STK_ExodusReaderFactory());
-        mesh_factory->setParameterList(pl);
-        // build mesh
-        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-      } else { // Inline mesh generator
-        // set mesh factory parameters
-        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-        pl->set("X Blocks",1);
-        pl->set("Y Blocks",1);
-        pl->set("Z Blocks",1);
-        pl->set("X Elements",x_elements);
-        pl->set("Y Elements",y_elements);
-        pl->set("Z Elements",z_elements);
-        pl->set("X Procs",x_procs);
-        pl->set("Y Procs",y_procs);
-        pl->set("Z Procs",z_procs);
+      {
+        Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
 
-        // periodic boundaries
-        //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-        //      per_pl.set("Count", 3);
-        //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-        //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-        //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+        if ( filename != "") { // Exodus file reader...
+          *out << "Reading from mesh file "<<filename<<std::endl;
+          RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+          pl->set("File Name", filename);
+          mesh_factory = Teuchos::RCP<panzer_stk::STK_MeshFactory>(new panzer_stk::STK_ExodusReaderFactory());
+          mesh_factory->setParameterList(pl);
+          // build mesh
+          mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        } else { // Inline mesh generator
+          // set mesh factory parameters
+          RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+          pl->set("X Blocks",1);
+          pl->set("Y Blocks",1);
+          pl->set("Z Blocks",1);
+          pl->set("X Elements",x_elements);
+          pl->set("Y Elements",y_elements);
+          pl->set("Z Elements",z_elements);
+          pl->set("X Procs",x_procs);
+          pl->set("Y Procs",y_procs);
+          pl->set("Z Procs",z_procs);
 
-        // build mesh
-        if (build_tet_mesh) {
-          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-        } else {
-          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+          // periodic boundaries
+          //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+          //      per_pl.set("Count", 3);
+          //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
+          //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
+          //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+
+          // build mesh
+          if (build_tet_mesh) {
+            mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+          } else {
+            mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+          }
+          mesh_factory->setParameterList(pl);
+          mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
         }
-        mesh_factory->setParameterList(pl);
-        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
       }
-      tMmesh = Teuchos::null;
 
       // compute dt from cfl
       double c  = std::sqrt(1.0/epsilon/mu);
@@ -248,9 +250,10 @@ int main(int argc,char * argv[])
       std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
 
       // build the physics blocks objects
-      Teuchos::RCP<Teuchos::TimeMonitor> tMphysics = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build physics blocks"))));
       std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
       {
+        Teuchos::TimeMonitor tMphysics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build physics blocks")));
+
         bool build_transient_support = true;
 
         std::vector<std::string> block_names;
@@ -273,10 +276,8 @@ int main(int argc,char * argv[])
         // we can have more than one physics block, one per element block
         physicsBlocks.push_back(pb);
       }
-      tMphysics = Teuchos::null;
 
       // build the auxiliary physics blocks objects
-      Teuchos::RCP<Teuchos::TimeMonitor> tMaux_physics = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks"))));
       Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
       if (use_refmaxwell) {
         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
@@ -287,6 +288,8 @@ int main(int argc,char * argv[])
         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
       std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
       {
+        Teuchos::TimeMonitor tMaux_physics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks")));
+
         bool build_transient_support = false;
 
         std::vector<std::string> block_names;
@@ -309,7 +312,6 @@ int main(int argc,char * argv[])
         // we can have more than one physics block, one per element block
         auxPhysicsBlocks.push_back(pb);
       }
-      tMaux_physics = Teuchos::null;
 
       // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
       // fields to be setup)
@@ -375,9 +377,6 @@ int main(int argc,char * argv[])
       // add full maxwell solver to teko
       RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
       Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
-      // add refMaxwell solver to teko
-      //clone = rcp(new Teko::AutoClone<mini_em::RefMaxwellPreconditionerFactory>());
-      //Teko::PreconditionerFactory::addPreconditionerFactory("RefMaxwell Preconditioner",clone);
 
       // add callbacks to request handler. these are for requesting auxiliary operators and for providing
       // coordinate information to MueLu
@@ -391,9 +390,10 @@ int main(int argc,char * argv[])
       req_handler->addRequestCallback(callback);
 
       // add discrete gradient
-      Teuchos::RCP<Teuchos::TimeMonitor> tMdiscGrad = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient"))));
-      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-      tMdiscGrad = Teuchos::null;
+      {
+        Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
+        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+      }
 
 
       std::string defaultXMLfile;
@@ -449,34 +449,36 @@ int main(int argc,char * argv[])
         physics->addResponse("Electromagnetic Energy",wkst_descs,builder);
       }
 
-      Teuchos::RCP<Teuchos::TimeMonitor> tMphysicsEval = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup physics model evaluator"))));
-      physics->setupModel(wkstContainer,physicsBlocks,bcs,
-                          *eqset_factory,
-                          bc_factory,
-                          cm_factory,
-                          cm_factory,
-                          closure_models,
-                          user_data,false,"");
+      {
+        Teuchos::TimeMonitor tMphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup physics model evaluator")));
+        physics->setupModel(wkstContainer,physicsBlocks,bcs,
+                            *eqset_factory,
+                            bc_factory,
+                            cm_factory,
+                            cm_factory,
+                            closure_models,
+                            user_data,false,"");
 
-      // add auxiliary data to model evaluator
-      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-        physics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-      tMphysicsEval = Teuchos::null;
+        // add auxiliary data to model evaluator
+        for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
+          physics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
+      }
 
+      {
+        Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator")));
 
-      Teuchos::RCP<Teuchos::TimeMonitor> tMauxphysicsEval = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator"))));
-      auxPhysics->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
-                             *eqset_factory,
-                             bc_factory,
-                             cm_factory,
-                             cm_factory,
-                             closure_models,
-                             user_data,false,"");
+        auxPhysics->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
+                               *eqset_factory,
+                               bc_factory,
+                               cm_factory,
+                               cm_factory,
+                               closure_models,
+                               user_data,false,"");
 
-      // evaluate the auxiliary model to obtain auxiliary operators
-      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-        auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-      tMauxphysicsEval = Teuchos::null;
+        // evaluate the auxiliary model to obtain auxiliary operators
+        for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
+          auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
+      }
 
       Thyra::ModelEvaluatorBase::InArgs<double> auxInArgs = auxPhysics->getNominalValues();
       Thyra::ModelEvaluatorBase::OutArgs<double> auxOutArgs = auxPhysics->createOutArgs();
@@ -525,7 +527,7 @@ int main(int argc,char * argv[])
       Thyra::assign(correction_vec.ptr(),0.0);
 
       {
-        Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper"))));
+        Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
         for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
@@ -583,7 +585,7 @@ int main(int argc,char * argv[])
           // write to an exodus file
           if (exodus_output)
           {
-            Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper: writeToExodus"))));
+            Teuchos::TimeMonitor tMexodus(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper: writeToExodus")));
             writeToExodus(dt*ts,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
           }
 
