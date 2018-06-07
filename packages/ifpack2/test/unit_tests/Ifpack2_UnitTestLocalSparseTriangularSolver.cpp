@@ -48,10 +48,10 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include <limits>
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 namespace { // (anonymous)
 
@@ -63,11 +63,107 @@ using Teuchos::reduceAll;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
+template<class CrsMatrixType>
+void
+localSolve (Tpetra::MultiVector<
+              typename CrsMatrixType::scalar_type,
+              typename CrsMatrixType::local_ordinal_type,
+              typename CrsMatrixType::global_ordinal_type,
+              typename CrsMatrixType::node_type>& X,
+            const CrsMatrixType& A,
+            const Tpetra::MultiVector<
+              typename CrsMatrixType::scalar_type,
+              typename CrsMatrixType::local_ordinal_type,
+              typename CrsMatrixType::global_ordinal_type,
+              typename CrsMatrixType::node_type>& Y,
+            const bool isUpperTriangular, // opposite is "lower triangular"
+            const bool implicitUnitDiag, // opposite is "explicitly stored, possibly non-unit diagonal"
+            Teuchos::ETransp mode)
+{
+  using Teuchos::CONJ_TRANS;
+  using Teuchos::NO_TRANS;
+  using Teuchos::TRANS;
+  using MV = Tpetra::MultiVector<
+    typename CrsMatrixType::scalar_type,
+    typename CrsMatrixType::local_ordinal_type,
+    typename CrsMatrixType::global_ordinal_type,
+    typename CrsMatrixType::node_type>;
+  using scalar_type = typename CrsMatrixType::scalar_type;
+  using STS = Teuchos::ScalarTraits<scalar_type>;
+  using host_memory_space = Kokkos::HostSpace;
+  using device_type = typename CrsMatrixType::device_type;
+  using dev_memory_space = typename device_type::memory_space;
+  const char prefix[] = "localSolve: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A.isFillComplete (), std::runtime_error,
+     prefix << "The matrix is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
+     prefix << "X and Y must be constant stride.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isComplex && mode == TRANS, std::logic_error, prefix << "This "
+     "function does not currently support non-conjugated transposed solve "
+     "(mode == Teuchos::TRANS) for complex scalar types.");
+
+  // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
+  // that if _some_ diagonal entries are missing locally, then it
+  // assumes that the matrix has an implicitly stored unit diagonal.
+  // Whether the matrix has an implicit unit diagonal or not should
+  // be up to the user to decide.  What if the graph has no diagonal
+  // entries, and the user wants it that way?  The only reason this
+  // matters, though, is for the triangular solve, and in that case,
+  // missing diagonal entries will cause trouble anyway.  However,
+  // it would make sense to warn the user if they ask for a
+  // triangular solve with an incomplete diagonal.  Furthermore,
+  // this code should only assume an implicitly stored unit diagonal
+  // if the matrix has _no_ explicitly stored diagonal entries.
+
+  const std::string uplo = isUpperTriangular ? "U" : "L";
+  const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+    (mode == Teuchos::TRANS ? "T" : "N");
+  const std::string diag = implicitUnitDiag ? "U" : "N";
+
+  auto A_lcl = A.getLocalMatrix ();
+
+  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+  // sequential, host-only code.  See
+  // https://github.com/kokkos/kokkos-kernels/issues/48.  This means
+  // that we need to sync to host, then sync back to device when done.
+  X.template sync<host_memory_space> ();
+  const_cast<MV&> (Y).template sync<host_memory_space> ();
+  X.template modify<host_memory_space> (); // we will write to X
+
+  if (X.isConstantStride () && Y.isConstantStride ()) {
+    auto X_lcl = X.template getLocalView<host_memory_space> ();
+    auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+    KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
+                        A_lcl, Y_lcl, X_lcl);
+  }
+  else {
+    const size_t numVecs =
+      std::min (X.getNumVectors (), Y.getNumVectors ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      auto X_j = X.getVector (j);
+      auto Y_j = X.getVector (j);
+      auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+      auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
+      KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
+                          diag.c_str (), A_lcl, Y_lcl, X_lcl);
+    }
+  }
+
+  X.template sync<dev_memory_space> ();
+  const_cast<MV&> (Y).template sync<dev_memory_space> ();
+}
+
 template<class CrsMatrixType, class MultiVectorType>
 void
-referenceApply (const CrsMatrixType& A,
+referenceApply (MultiVectorType& Y,
+                const CrsMatrixType& A,
                 const MultiVectorType& X,
-                MultiVectorType& Y,
+                const bool isUpperTriangular, // opposite is "lower triangular"
+                const bool implicitUnitDiag, // opposite is "explicitly stored, possibly non-unit diagonal"
                 const Teuchos::ETransp mode,
                 const typename MultiVectorType::scalar_type& alpha,
                 const typename MultiVectorType::scalar_type& beta)
@@ -77,11 +173,9 @@ referenceApply (const CrsMatrixType& A,
   typedef MultiVectorType MV;
 
   if (beta == STS::zero ()) {
-    if (alpha == STS::zero ()) {
-      Y.putScalar (STS::zero ()); // Y := 0 * Y (ignore contents of Y)
-    }
-    else { // alpha != 0
-      A.template localSolve<ST, ST> (X, Y, mode);
+    Y.putScalar (STS::zero ()); // Y := 0 * Y (ignore contents of Y)
+    if (alpha != STS::zero ()) {
+      localSolve (Y, A, X, isUpperTriangular, implicitUnitDiag, mode);
       if (alpha != STS::one ()) {
         Y.scale (alpha);
       }
@@ -93,7 +187,7 @@ referenceApply (const CrsMatrixType& A,
     }
     else { // alpha != 0
       MV Y_tmp (Y, Teuchos::Copy);
-      A.template localSolve<ST, ST> (X, Y_tmp, mode); // Y_tmp := M * X
+      localSolve (Y_tmp, A, X, isUpperTriangular, implicitUnitDiag, mode); // Y_tmp := M * X
       Y.update (alpha, Y_tmp, beta); // Y := beta * Y + alpha * Y_tmp
     }
   }
@@ -105,7 +199,7 @@ struct TrisolverDetails {
 
 static bool isGblSuccess (const bool success, Teuchos::FancyOStream& out)
 {
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  auto comm = Tpetra::getDefaultComm ();
   const int lclSuccess = success ? 1 : 0;
   int gblSuccess = 0; // to be revised
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -134,14 +228,14 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
   out << "Ifpack2::LocalSparseTriangularSolver CompareToLocalSolve" << endl;
   Teuchos::OSTab tab0 (out);
 
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  auto comm = Tpetra::getDefaultComm ();
 
   const LO lclNumRows = 5;
   const GO gblNumRows = comm->getSize () * lclNumRows;
   const GO indexBase = 0;
   RCP<const map_type> rowMap =
     rcp (new map_type (static_cast<GST> (gblNumRows),
-                       static_cast<size_t> (lclNumRows),
+                       static_cast<std::size_t> (lclNumRows),
                        indexBase, comm));
 
   // If we construct an upper or lower triangular matrix with an
@@ -180,7 +274,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
       out << "Construct the test matrix A" << endl;
       RCP<crs_matrix_type> A =
         rcp (new crs_matrix_type (rowMap, colMap,
-                                  static_cast<size_t> (maxNumEntPerRow),
+                                  static_cast<std::size_t> (maxNumEntPerRow),
                                   Tpetra::StaticProfile));
 
       out << "Fill the test matrix A" << endl;
@@ -357,7 +451,10 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
       // A_copy, a deep copy of the original matrix A.  This tests
       // whether the solver changes A (it shouldn't).
 
-      const size_t numVecValues[] = {static_cast<size_t> (1), static_cast<size_t> (3)};
+      const std::size_t numVecValues[] = {
+        static_cast<std::size_t> (1),
+        static_cast<std::size_t> (3)
+      };
       const Scalar ZERO = STS::zero ();
       const Scalar ONE = STS::one ();
       const Scalar THREE = ONE + ONE + ONE;
@@ -365,7 +462,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
       const Scalar betaValues[] = {ZERO, ONE, -ONE, THREE, -THREE};
       const Teuchos::ETransp modes[] = {Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS};
 
-      for (size_t numVecs : numVecValues) {
+      for (std::size_t numVecs : numVecValues) {
         out << "numVecs: " << numVecs << endl;
         Teuchos::OSTab tab3 (out);
 
@@ -419,7 +516,11 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
               if (! isGblSuccess (success, out)) return;
 
               // Test against a reference implementation.
-              TEST_NOTHROW( referenceApply (*A_copy, X_copy, Y_copy, mode, alpha, beta) );
+
+              TEST_NOTHROW( referenceApply (Y_copy, *A_copy, X_copy,
+                                            isUpperTriangular,
+                                            implicitUnitDiag,
+                                            mode, alpha, beta) );
               if (! isGblSuccess (success, out)) return;
 
               // Compare Y and Y_copy.  Compute difference in Y_copy.
@@ -427,7 +528,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
               Y_copy.normInf (norms);
 
               const mag_type tol = static_cast<mag_type> (gblNumRows) * STS::eps ();
-              for (size_t j = 0; j < numVecs; ++j) {
+              for (std::size_t j = 0; j < numVecs; ++j) {
                 TEST_ASSERT( norms(j) <= tol );
                 if (norms(j) > tol) {
                   out << "norms(" << j << ") = " << norms(j) << " > tol = " << tol << endl;
@@ -456,192 +557,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocal
 #else
 
 #endif
-}
-
-// Solve Ax = b for x, where A is either upper or lower triangular.
-// We don't implement the transpose or conjugate transpose cases here.
-template<class CrsMatrixType, class VectorType>
-void
-TRSV (VectorType& x,
-      const CrsMatrixType& A,
-      VectorType& b,
-      const char uplo[],
-      const char trans[],
-      const char diag[])
-{
-  typedef typename CrsMatrixType::scalar_type SC;
-  //typedef typename CrsMatrixType::impl_scalar_type val_type;
-  typedef typename CrsMatrixType::local_ordinal_type LO;
-  typedef typename CrsMatrixType::global_ordinal_type GO;
-
-  bool upper = false;
-  if (uplo[0] == 'U' || uplo[0] == 'u') {
-    upper = true;
-  }
-  else if (uplo[0] == 'L' || uplo[0] == 'l') {
-    upper = false; // lower instead
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid uplo");
-  }
-
-  bool transpose = false;
-  bool conjugate = false;
-  if (trans[0] == 'T' || trans[0] == 't') {
-    transpose = true;
-    conjugate = false;
-  }
-  else if (trans[0] == 'C' || trans[0] == 'c') {
-    transpose = true;
-    conjugate = true;
-  }
-  else if (trans[0] == 'H' || trans[0] == 'h') {
-    transpose = true;
-    conjugate = true;
-  }
-  else if (trans[0] == 'N' || trans[0] == 'n') {
-    transpose = false;
-    conjugate = false;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid trans");
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (transpose || conjugate, std::logic_error, "Transpose and conjugate "
-     "transpose cases not implemented");
-
-  bool implicitUnitDiag = false;
-  if (diag[0] == 'U' || diag[0] == 'u') {
-    implicitUnitDiag = true;
-  }
-  else if (diag[0] == 'N' || diag[0] == 'n') {
-    implicitUnitDiag = false;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid diag");
-  }
-
-  const auto colMap = A.getColMap ();
-  const auto rowMap = A.getRowMap ();
-  const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
-
-  // x is write only, but we sync anyway, just to be sure
-  x.template sync<Kokkos::HostSpace> ();
-  x.template modify<Kokkos::HostSpace> ();
-  auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
-  auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
-  Kokkos::deep_copy (x_lcl_1d, Kokkos::Details::ArithTraits<SC>::zero ());
-
-  // b is read only
-  b.template sync<Kokkos::HostSpace> ();
-  auto b_lcl_2d = b.template getLocalView<Kokkos::HostSpace> ();
-  auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
-
-  // Use global indices, in case the row and column Maps differ.
-  // This helps us check what the actual diagonal entry is.
-  Teuchos::Array<SC> valsBuf;
-  Teuchos::Array<GO> gblColIndsBuf;
-
-  if (upper) {
-    // NOTE (mfh 23 Aug 2016) In the upper triangular case, we count
-    // from N down to 1, to avoid an infinite loop if LO is unsigned.
-    // (Unsigned numbers are ALWAYS >= 0.)
-    for (LO lclRowPlusOne = lclNumRows; lclRowPlusOne > static_cast<LO> (0); --lclRowPlusOne) {
-      const LO lclRow = lclRowPlusOne - static_cast<LO> (1);
-
-      const size_t numEnt = A.getNumEntriesInLocalRow (lclRow);
-      if (static_cast<size_t> (valsBuf.size ()) < numEnt) {
-        valsBuf.resize (numEnt);
-      }
-      if (static_cast<size_t> (gblColIndsBuf.size ()) < numEnt) {
-        gblColIndsBuf.resize (numEnt);
-      }
-
-      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
-      Teuchos::ArrayView<SC> vals = valsBuf (0, numEnt);
-
-      const GO gblRow = rowMap->getGlobalElement (lclRow);
-      size_t numEnt2 = 0;
-      A.getGlobalRowCopy (gblRow, gblColInds, vals, numEnt2);
-      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
-      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
-      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (gblColInds.size ()) != numEnt );
-      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (vals.size ()) != numEnt );
-
-      // Go through the row.  It doesn't matter if the matrix is upper
-      // or lower triangular here; what matters is distinguishing the
-      // diagonal entry.
-      SC x_i = static_cast<SC> (b_lcl_1d[lclRow]);
-      SC diagVal = Teuchos::ScalarTraits<SC>::one ();
-      for (size_t k = 0; k < numEnt; ++k) {
-        if (gblColInds[k] == gblRow) {
-          TEUCHOS_TEST_FOR_EXCEPT( implicitUnitDiag && gblColInds[k] == gblRow );
-          diagVal = vals[k];
-        }
-        else {
-          const LO lclCol = colMap->getLocalElement (gblColInds[k]);
-          TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
-          x_i = x_i - vals[k] * x_lcl_1d[lclCol];
-        }
-      }
-
-      // Update the output entry
-      {
-        const LO lclCol = colMap->getLocalElement (gblRow);
-        TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
-        x_lcl_1d[lclCol] = x_i / diagVal;
-      }
-    } // for each local row
-  }
-  else { // lower triangular
-    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      const size_t numEnt = A.getNumEntriesInLocalRow (lclRow);
-      if (static_cast<size_t> (valsBuf.size ()) < numEnt) {
-        valsBuf.resize (numEnt);
-      }
-      if (static_cast<size_t> (gblColIndsBuf.size ()) < numEnt) {
-        gblColIndsBuf.resize (numEnt);
-      }
-
-      Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
-      Teuchos::ArrayView<SC> vals = valsBuf (0, numEnt);
-
-      const GO gblRow = rowMap->getGlobalElement (lclRow);
-      size_t numEnt2 = 0;
-      A.getGlobalRowCopy (gblRow, gblColInds, vals, numEnt2);
-      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
-      TEUCHOS_TEST_FOR_EXCEPT( numEnt != numEnt2 );
-      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (gblColInds.size ()) != numEnt );
-      TEUCHOS_TEST_FOR_EXCEPT( static_cast<size_t> (vals.size ()) != numEnt );
-
-      // Go through the row.  It doesn't matter if the matrix is upper
-      // or lower triangular here; what matters is distinguishing the
-      // diagonal entry.
-      SC x_i = static_cast<SC> (b_lcl_1d[lclRow]);
-      SC diagVal = Teuchos::ScalarTraits<SC>::one ();
-      for (size_t k = 0; k < numEnt; ++k) {
-        if (gblColInds[k] == gblRow) {
-          TEUCHOS_TEST_FOR_EXCEPT( implicitUnitDiag && gblColInds[k] == gblRow );
-          diagVal = vals[k];
-        }
-        else {
-          const LO lclCol = colMap->getLocalElement (gblColInds[k]);
-          TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
-          x_i = x_i - vals[k] * x_lcl_1d[lclCol];
-        }
-      }
-
-      // Update the output entry
-      {
-        const LO lclCol = colMap->getLocalElement (gblRow);
-        TEUCHOS_TEST_FOR_EXCEPT( lclCol == Teuchos::OrdinalTraits<LO>::invalid () );
-        x_lcl_1d[lclCol] = x_i / diagVal;
-      }
-    } // for each local row
-  } // upper or lower triangular
-
-  x.template sync<typename VectorType::device_type::memory_space> ();
 }
 
 // Consider a real arrow matrix (arrow pointing down and right) with
@@ -864,7 +779,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   out << "Ifpack2::LocalSparseTriangularSolver: Test with arrow matrix" << endl;
   Teuchos::OSTab tab1 (out);
 
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  auto comm = Tpetra::getDefaultComm ();
 
   const LO lclNumRows = 8; // power of two (see above)
   const LO lclNumCols = lclNumRows;
@@ -872,7 +787,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   const GO indexBase = 0;
   RCP<const map_type> rowMap =
     rcp (new map_type (static_cast<GST> (gblNumRows),
-                       static_cast<size_t> (lclNumRows),
+                       static_cast<std::size_t> (lclNumRows),
                        indexBase, comm));
 
   // At this point, we know Kokkos has been initialized, so test the
@@ -1284,8 +1199,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
 
   const std::string unitDiagL = explicitlyStoreUnitDiagonalOfL ?
     "No unit diagonal" : "Unit diagonal";
-  TRSV<crs_matrix_type, vec_type> (c, *L, b, "Lower triangular", "No transpose",
-                                   unitDiagL.c_str ());
+  localSolve (c, *L, b, false, ! explicitlyStoreUnitDiagonalOfL, Teuchos::NO_TRANS);
   out << "Test entries of c (solution of Lc=b)" << endl;
   {
     Teuchos::OSTab tab2 (out);
@@ -1305,8 +1219,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
     c.template sync<typename device_type::memory_space> ();
   }
 
-  TRSV<crs_matrix_type, vec_type> (x, *U, c, "Upper triangular", "No transpose",
-                                   "No unit diagonal");
+  localSolve (x, *U, c, true, false, Teuchos::NO_TRANS);
   out << "Test entries of x (solution of Ux=c)" << endl;
   {
     Teuchos::OSTab tab2 (out);
