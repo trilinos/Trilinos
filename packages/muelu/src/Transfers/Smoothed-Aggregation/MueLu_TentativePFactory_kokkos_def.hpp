@@ -119,8 +119,9 @@ namespace MueLu {
       rowsAuxType rowsAux;
       colsAuxType colsAux;
       valsAuxType valsAux;
+      bool doQRStep;
     public:
-      LocalQRDecompFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_) :
+      LocalQRDecompFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_, bool doQRStep_) :
         fineNS(fineNS_),
         coarseNS(coarseNS_),
         aggRows(aggRows_),
@@ -130,7 +131,8 @@ namespace MueLu {
         rows(rows_),
         rowsAux(rowsAux_),
         colsAux(colsAux_),
-        valsAux(valsAux_)
+        valsAux(valsAux_),
+        doQRStep(doQRStep_)
         { }
 
       KOKKOS_INLINE_FUNCTION
@@ -148,192 +150,229 @@ namespace MueLu {
         int m = aggSize;
         int n = fineNS.extent(1);
 
-        // Extract the piece of the nullspace corresponding to the aggregate
-        shared_matrix r(thread.team_shmem(), m, n);     // A (initially), R (at the end)
-        for (int j = 0; j < n; j++)
-          for (int k = 0; k < m; k++)
-            r(k,j) = fineNS(agg2RowMapLO(aggRows(agg)+k),j);
-#if 0
-        printf("A\n");
-        for (int i = 0; i < m; i++) {
-          for (int j = 0; j < n; j++)
-            printf(" %5.3lf ", r(i,j));
-          printf("\n");
-        }
-#endif
-
         // calculate row offset for coarse nullspace
         Xpetra::global_size_t offset = agg * n;
 
-        // Calculate QR decomposition (standard)
-        shared_matrix q(thread.team_shmem(), m, m);     // Q
-        if (m >= n) {
-          bool isSingular = false;
+        if (doQRStep) {
 
-          // Initialize Q^T
-          auto qt = q;
+          // Extract the piece of the nullspace corresponding to the aggregate
+          shared_matrix r(thread.team_shmem(), m, n);     // A (initially), R (at the end)
+          for (int j = 0; j < n; j++)
+            for (int k = 0; k < m; k++)
+              r(k,j) = fineNS(agg2RowMapLO(aggRows(agg)+k),j);
+#if 0
+          printf("A\n");
           for (int i = 0; i < m; i++) {
-            for (int j = 0; j < m; j++)
-              qt(i,j) = zero;
-            qt(i,i) = one;
-          }
-
-          for (int k = 0; k < n; k++) {  // we ignore "n" instead of "n-1" to normalize
-            // FIXME_KOKKOS: use team
-            Magnitude s = zeroM, norm, norm_x;
-            for (int i = k+1; i < m; i++)
-              s += pow(ATS::magnitude(r(i,k)), 2);
-            norm = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
-
-            if (norm == zero) {
-              isSingular = true;
-              break;
-            }
-
-            r(k,k) -= norm*one;
-
-            norm_x = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
-            if (norm_x == zeroM) {
-              // We have a single diagonal element in the column.
-              // No reflections required. Just need to restor r(k,k).
-              r(k,k) = norm*one;
-              continue;
-            }
-
-            // FIXME_KOKKOS: use team
-            for (int i = k; i < m; i++)
-              r(i,k) /= norm_x;
-
-            // Update R(k:m,k+1:n)
-            for (int j = k+1; j < n; j++) {
-              // FIXME_KOKKOS: use team in the loops
-              SC si = zero;
-              for (int i = k; i < m; i++)
-                si += r(i,k) * r(i,j);
-              for (int i = k; i < m; i++)
-                r(i,j) -= two*si * r(i,k);
-            }
-
-            // Update Q^T (k:m,k:m)
-            for (int j = k; j < m; j++) {
-              // FIXME_KOKKOS: use team in the loops
-              SC si = zero;
-              for (int i = k; i < m; i++)
-                si += r(i,k) * qt(i,j);
-              for (int i = k; i < m; i++)
-                qt(i,j) -= two*si * r(i,k);
-            }
-
-            // Fix R(k:m,k)
-            r(k,k) = norm*one;
-            for (int i = k+1; i < m; i++)
-              r(i,k) = zero;
-          }
-
-#if 0
-          // Q = (Q^T)^T
-          for (int i = 0; i < m; i++)
-            for (int j = 0; j < i; j++) {
-              SC tmp  = qt(i,j);
-              qt(i,j) = qt(j,i);
-              qt(j,i) = tmp;
-            }
-#endif
-
-          // Build coarse nullspace using the upper triangular part of R
-          for (int j = 0; j < n; j++)
-            for (int k = 0; k <= j; k++)
-              coarseNS(offset+k,j) = r(k,j);
-
-          if (isSingular) {
-            statusAtomic(1) = true;
-            return;
-          }
-
-        } else {
-          // Special handling for m < n (i.e. single node aggregates in structural mechanics)
-
-          // The local QR decomposition is not possible in the "overconstrained"
-          // case (i.e. number of columns in qr > number of rowsAux), which
-          // corresponds to #DOFs in Aggregate < n. For usual problems this
-          // is only possible for single node aggregates in structural mechanics.
-          // (Similar problems may arise in discontinuous Galerkin problems...)
-          // We bypass the QR decomposition and use an identity block in the
-          // tentative prolongator for the single node aggregate and transfer the
-          // corresponding fine level null space information 1-to-1 to the coarse
-          // level null space part.
-
-          // NOTE: The resulting tentative prolongation operator has
-          // (m*DofsPerNode-n) zero columns leading to a singular
-          // coarse level operator A.  To deal with that one has the following
-          // options:
-          // - Use the "RepairMainDiagonal" flag in the RAPFactory (default:
-          //   false) to add some identity block to the diagonal of the zero rowsAux
-          //   in the coarse level operator A, such that standard level smoothers
-          //   can be used again.
-          // - Use special (projection-based) level smoothers, which can deal
-          //   with singular matrices (very application specific)
-          // - Adapt the code below to avoid zero columns. However, we do not
-          //   support a variable number of DOFs per node in MueLu/Xpetra which
-          //   makes the implementation really hard.
-          //
-          // FIXME: do we need to check for singularity here somehow? Zero
-          // columns would be easy but linear dependency would require proper QR.
-
-          // R = extended (by adding identity rowsAux) qr
-          for (int j = 0; j < n; j++)
-            for (int k = 0; k < n; k++)
-              if (k < m)
-                coarseNS(offset+k,j) = r(k,j);
-              else
-                coarseNS(offset+k,j) = (k == j ? one : zero);
-
-          // Q = I (rectangular)
-          for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
-              q(i,j) = (j == i ? one : zero);
-        }
-
-        // Process each row in the local Q factor and fill helper arrays to assemble P
-        for (int j = 0; j < m; j++) {
-          LO localRow = agg2RowMapLO(aggRows(agg)+j);
-          size_t rowStart = rowsAux(localRow);
-          size_t lnnz = 0;
-          for (int k = 0; k < n; k++) {
-            // skip zeros
-            if (q(j,k) != zero) {
-              colsAux(rowStart+lnnz) = offset + k;
-              valsAux(rowStart+lnnz) = q(j,k);
-              lnnz++;
-            }
+              printf(" %5.3lf ", r(i,j));
+            printf("\n");
           }
-          rows(localRow+1) = lnnz;
-          nnz += lnnz;
-        }
+#endif
+
+          // Calculate QR decomposition (standard)
+          shared_matrix q(thread.team_shmem(), m, m);     // Q
+          if (m >= n) {
+            bool isSingular = false;
+
+            // Initialize Q^T
+            auto qt = q;
+            for (int i = 0; i < m; i++) {
+              for (int j = 0; j < m; j++)
+                qt(i,j) = zero;
+              qt(i,i) = one;
+            }
+
+            for (int k = 0; k < n; k++) {  // we ignore "n" instead of "n-1" to normalize
+              // FIXME_KOKKOS: use team
+              Magnitude s = zeroM, norm, norm_x;
+              for (int i = k+1; i < m; i++)
+                s += pow(ATS::magnitude(r(i,k)), 2);
+              norm = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
+
+              if (norm == zero) {
+                isSingular = true;
+                break;
+              }
+
+              r(k,k) -= norm*one;
+
+              norm_x = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
+              if (norm_x == zeroM) {
+                // We have a single diagonal element in the column.
+                // No reflections required. Just need to restor r(k,k).
+                r(k,k) = norm*one;
+                continue;
+              }
+
+              // FIXME_KOKKOS: use team
+              for (int i = k; i < m; i++)
+                r(i,k) /= norm_x;
+
+              // Update R(k:m,k+1:n)
+              for (int j = k+1; j < n; j++) {
+                // FIXME_KOKKOS: use team in the loops
+                SC si = zero;
+                for (int i = k; i < m; i++)
+                  si += r(i,k) * r(i,j);
+                for (int i = k; i < m; i++)
+                  r(i,j) -= two*si * r(i,k);
+              }
+
+              // Update Q^T (k:m,k:m)
+              for (int j = k; j < m; j++) {
+                // FIXME_KOKKOS: use team in the loops
+                SC si = zero;
+                for (int i = k; i < m; i++)
+                  si += r(i,k) * qt(i,j);
+                for (int i = k; i < m; i++)
+                  qt(i,j) -= two*si * r(i,k);
+              }
+
+              // Fix R(k:m,k)
+              r(k,k) = norm*one;
+              for (int i = k+1; i < m; i++)
+                r(i,k) = zero;
+            }
 
 #if 0
-        printf("R\n");
-        for (int i = 0; i < m; i++) {
+            // Q = (Q^T)^T
+            for (int i = 0; i < m; i++)
+              for (int j = 0; j < i; j++) {
+                SC tmp  = qt(i,j);
+                qt(i,j) = qt(j,i);
+                qt(j,i) = tmp;
+              }
+#endif
+
+            // Build coarse nullspace using the upper triangular part of R
+            for (int j = 0; j < n; j++)
+              for (int k = 0; k <= j; k++)
+                coarseNS(offset+k,j) = r(k,j);
+
+            if (isSingular) {
+              statusAtomic(1) = true;
+              return;
+            }
+
+          } else {
+            // Special handling for m < n (i.e. single node aggregates in structural mechanics)
+
+            // The local QR decomposition is not possible in the "overconstrained"
+            // case (i.e. number of columns in qr > number of rowsAux), which
+            // corresponds to #DOFs in Aggregate < n. For usual problems this
+            // is only possible for single node aggregates in structural mechanics.
+            // (Similar problems may arise in discontinuous Galerkin problems...)
+            // We bypass the QR decomposition and use an identity block in the
+            // tentative prolongator for the single node aggregate and transfer the
+            // corresponding fine level null space information 1-to-1 to the coarse
+            // level null space part.
+
+            // NOTE: The resulting tentative prolongation operator has
+            // (m*DofsPerNode-n) zero columns leading to a singular
+            // coarse level operator A.  To deal with that one has the following
+            // options:
+            // - Use the "RepairMainDiagonal" flag in the RAPFactory (default:
+            //   false) to add some identity block to the diagonal of the zero rowsAux
+            //   in the coarse level operator A, such that standard level smoothers
+            //   can be used again.
+            // - Use special (projection-based) level smoothers, which can deal
+            //   with singular matrices (very application specific)
+            // - Adapt the code below to avoid zero columns. However, we do not
+            //   support a variable number of DOFs per node in MueLu/Xpetra which
+            //   makes the implementation really hard.
+            //
+            // FIXME: do we need to check for singularity here somehow? Zero
+            // columns would be easy but linear dependency would require proper QR.
+
+            // R = extended (by adding identity rowsAux) qr
+            for (int j = 0; j < n; j++)
+              for (int k = 0; k < n; k++)
+                if (k < m)
+                  coarseNS(offset+k,j) = r(k,j);
+                else
+                  coarseNS(offset+k,j) = (k == j ? one : zero);
+
+            // Q = I (rectangular)
+            for (int i = 0; i < m; i++)
+              for (int j = 0; j < n; j++)
+                q(i,j) = (j == i ? one : zero);
+          }
+
+          // Process each row in the local Q factor and fill helper arrays to assemble P
+          for (int j = 0; j < m; j++) {
+            LO localRow = agg2RowMapLO(aggRows(agg)+j);
+            size_t rowStart = rowsAux(localRow);
+            size_t lnnz = 0;
+            for (int k = 0; k < n; k++) {
+              // skip zeros
+              if (q(j,k) != zero) {
+                colsAux(rowStart+lnnz) = offset + k;
+                valsAux(rowStart+lnnz) = q(j,k);
+                lnnz++;
+              }
+            }
+            rows(localRow+1) = lnnz;
+            nnz += lnnz;
+          }
+
+#if 0
+          printf("R\n");
+          for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++)
+              printf(" %5.3lf ", coarseNS(i,j));
+            printf("\n");
+          }
+
+          printf("Q\n");
+          for (int i = 0; i < aggSize; i++) {
+            for (int j = 0; j < aggSize; j++)
+              printf(" %5.3lf ", q(i,j));
+            printf("\n");
+          }
+#endif
+        } else {
+          /////////////////////////////
+          //      "no-QR" option     //
+          /////////////////////////////
+          // Local Q factor is just the fine nullspace support over the current aggregate.
+          // Local R factor is the identity.
+          // TODO I have not implemented any special handling for aggregates that are too
+          // TODO small to locally support the nullspace, as is done in the standard QR
+          // TODO case above.
+
+          for (int j = 0; j < m; j++) {
+            LO localRow = agg2RowMapLO(aggRows(agg)+j);
+            size_t rowStart = rowsAux(localRow);
+            size_t lnnz = 0;
+            for (int k = 0; k < n; k++) {
+              const SC qr_jk = fineNS(localRow,k);
+              // skip zeros
+              if (qr_jk != zero) {
+                colsAux(rowStart+lnnz) = offset + k;
+                valsAux(rowStart+lnnz) = qr_jk;
+                lnnz++;
+              }
+            }
+            rows(localRow+1) = lnnz;
+            nnz += lnnz;
+          }
+
           for (int j = 0; j < n; j++)
-            printf(" %5.3lf ", coarseNS(i,j));
-          printf("\n");
+            coarseNS(offset+j,j) = one;
+
         }
 
-        printf("Q\n");
-        for (int i = 0; i < aggSize; i++) {
-          for (int j = 0; j < aggSize; j++)
-            printf(" %5.3lf ", q(i,j));
-          printf("\n");
-        }
-#endif
       }
 
       // amount of shared memory
       size_t team_shmem_size( int team_size ) const {
-        int m = maxAggDofSize;
-        int n = fineNS.extent(1);
-        return shared_matrix::shmem_size(m, n) +    // r
-               shared_matrix::shmem_size(m, m);     // q
+        if (doQRStep) {
+          int m = maxAggDofSize;
+          int n = fineNS.extent(1);
+          return shared_matrix::shmem_size(m, n) +    // r
+            shared_matrix::shmem_size(m, m);     // q
+        } else
+          return 0;
       }
     };
 
@@ -583,8 +622,11 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     const bool& doQRStep = pL.get<bool>("tentative: calculate qr");
-    if (!doQRStep)
+    if (!doQRStep) {
       GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
+      if (NSDim>1)
+        GetOStream(Warnings0) << "TentativePFactor : for nontrivial nullspace, this may degrade performance" << std::endl;
+    }
 
     if (NSDim == 1) {
       // 1D is special, as it is the easiest. We don't even need to the QR,
@@ -685,9 +727,6 @@ namespace MueLu {
         // We do use auxilary view in this case, so keep a second rows view for
         // counting nonzeros in rows
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!doQRStep, Exceptions::RuntimeError,
-            "MueLu: TentativePFactory_kokkos: skipping QR step have not been implemented for block systems yet.");
-
         // NOTE: the allocation (initialization) of these view takes noticeable time
         size_t nnzEstimate = numRows * NSDim;
         rows_type rowsAux("Ptent_aux_rows", numRows+1);
@@ -712,7 +751,7 @@ namespace MueLu {
         }
 
         {
-          SubFactoryMonitor m2(*this, "Stage 1 (LocalQR)", coarseLevel);
+          SubFactoryMonitor m2 = SubFactoryMonitor(*this, doQRStep ? "Stage 1 (LocalQR)" : "Stage 1 (Fill coarse nullspace and tentative P)", coarseLevel);
           // Set up team policy with numAggregates teams and one thread per team.
           // Each team handles a slice of the data associated with one aggregate
           // and performs a local QR decomposition
@@ -722,7 +761,7 @@ namespace MueLu {
               decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux),
               decltype(valsAux)>
                   localQRFunctor(fineNSRandom, coarseNS, aggDofSizes, maxAggSize, agg2RowMapLO, statusAtomic,
-                                 rows, rowsAux, colsAux, valsAux);
+                                 rows, rowsAux, colsAux, valsAux, doQRStep);
           Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_qr_loop", policy, localQRFunctor, nnz);
         }
 
