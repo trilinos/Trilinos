@@ -310,6 +310,9 @@ if (printToStream_) {
   return invCheck;
 }
 
+template<typename Real>
+ostream& ValidateFunction<Real>::getStream() const { return os_; }
+
 } // namespace details
 
 } // namespace ROL

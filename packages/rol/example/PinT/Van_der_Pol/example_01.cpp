@@ -43,16 +43,41 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "ROL_Stream.hpp"
+#include "ROL_DynamicConstraintCheck.hpp"
 
 #include "VdP_DynamicConstraint.hpp"
 
+
+using RealT = double;
+
 int main( int argc, char* argv[] ) {
+
+  using ROL::Ptr;
+  using ROL::makePtr;
+
+  using vector = std::vector<RealT>;
+  using SV     = ROL::StdVector<RealT>;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );    
   int errorFlag  = 0;
+
+  auto uo = makePtr<SV>( makePtr<vector>(2) );
+  auto un = makePtr<SV>( makePtr<vector>(2) );
+  auto z  = makePtr<SV>( makePtr<vector>(1) );
+    
+  ROL::RandomizeVector<RealT>(*uo);
+  ROL::RandomizeVector<RealT>(*un);
+  ROL::RandomizeVector<RealT>(*z);
+
+  VdP::DynamicConstraint<RealT> dyn_con;
+
+  ROL::ValidateFunction<RealT> validator( 1, 13, 20, 11, true, *outStream);
+
+  ROL::DynamicConstraintCheck<RealT>::check( dyn_con, validator, *uo, *un, *z, 
+    {"applyJacobian_uo","applyJacobian_un","applyJacobian_z"} );
 
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";

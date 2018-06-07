@@ -117,7 +117,7 @@ public:
                                       const string& name="Linear Operator",
                                       const string& symbol="A" ) const;
 
-    
+   ostream& getStream() const; 
 
 private:
 

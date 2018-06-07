@@ -56,7 +56,6 @@ int main( int argc, char* argv[] ) {
  
   using ROL::Ptr;
   using ROL::makePtr;
-  using ROL::makePtrFromRef;
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;

@@ -43,11 +43,10 @@
 
 
 #pragma once
-#ifndef ROL_DYNAMICCONSTRAINTCHECK_HPP
-#define ROL_DYNAMICCONSTRAINTCHECK_HPP
+#ifndef ROL_DYNAMICCONSTRAINT_CHECKINTERFACE_HPP
+#define ROL_DYNAMICCONSTRAINT_CHECKINTERFACE_HPP
 
-#include <functional>
-
+#include "ROL_FunctionBindings.hpp"
 #include "ROL_DynamicConstraint.hpp"
 
 namespace ROL {
@@ -69,8 +68,18 @@ private:
 
 public:
 
-  DynamicConstraint_CheckInterface( Con& con ) : con_(con) {}
+  DynamicConstraint_CheckInterface( Con& con ) : con_(con) { 
+    ts_.t.resize(2);
+    ts_.t.at(0) = 0.0;
+    ts_.t.at(1) = 1.0;
+  }
 
+  DynamicConstraint_CheckInterface( Con& con, TimeStamp<Real>& ts ) : con_(con), ts_(ts) { 
+    ts_.t.resize(2);
+    ts_.t.at(0) = 0.0;
+    ts_.t.at(1) = 1.0;
+  }
+ 
   f_update_t<Real> update_uo() {
     return bind( &Con::update_uo, &con_, ph::_1 );
   }
@@ -209,6 +218,6 @@ DynamicConstraint_CheckInterface<Real> make_check( DynamicConstraint<Real>& con 
 } // namespace ROL
 
 
-#endif // ROL_DYNAMICCONSTRAINTCHECK_HPP
+#endif // ROL_DYNAMICCONSTRAINT_CHECKINTERFACE_HPP
 
 
