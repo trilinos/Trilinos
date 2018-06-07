@@ -4,56 +4,116 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoLevelCopyFiles
-    DEST_FILES Parameters.xml
+    DEST_FILES IPOUHarmonic.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     EXEDEPS twolevel
 )
 
+###########################
+# 2D - 1 DPN - Ordering 0 #
+###########################
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_1dpn_o0_gdsw
+#    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=GDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_1dpn_o0_rgdsw
+#    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=RGDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
 TRIBITS_ADD_TEST(
     twolevel
-    NAME test_twolevel_2d_gdsw
-    ARGS "--DIM=2 --CL=GDSW"
+    NAME test_twolevel_2d_1dpn_o0_ipouharmonic
+    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=IPOUHarmonic.xml"
     COMM mpi
     NUM_MPI_PROCS 4
 )
 
+###########################
+# 2D - 1 DPN - Ordering 1 #
+###########################
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_1dpn_o1_gdsw
+#    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=GDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_1dpn_o1_rgdsw
+#    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=RGDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
 TRIBITS_ADD_TEST(
     twolevel
-    NAME test_twolevel_2d_rgdsw
-    ARGS "--DIM=2 --CL=RGDSW"
+    NAME test_twolevel_2d_1dpn_o1_ipouharmonic
+    ARGS "--Dim=2 --DPN=1 --Ordering=0 --List=IPOUHarmonic.xml"
     COMM mpi
     NUM_MPI_PROCS 4
 )
 
+###########################
+# 2D - 2 DPN - Ordering 0 #
+###########################
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_2dpn_o0_gdsw
+#    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=GDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_2dpn_o0_rgdsw
+#    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=RGDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
 TRIBITS_ADD_TEST(
     twolevel
-    NAME test_twolevel_2d_ipouharmonic
-    ARGS "--DIM=2 --CL=IPOUHarmonic"
+    NAME test_twolevel_2d_2dpn_o0_ipouharmonic
+    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=IPOUHarmonic.xml"
     COMM mpi
     NUM_MPI_PROCS 4
 )
 
-TRIBITS_ADD_TEST(
-    twolevel
-    NAME test_twolevel_3d_gdsw
-    ARGS "--DIM=3 --CL=GDSW"
-    COMM mpi
-    NUM_MPI_PROCS 8
-)
+###########################
+# 2D - 2 DPN - Ordering 1 #
+###########################
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_2dpn_o1_gdsw
+#    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=GDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
+
+#TRIBITS_ADD_TEST(
+#    twolevel
+#    NAME test_twolevel_2d_2dpn_o1_rgdsw
+#    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=RGDSW.xml"
+#    COMM mpi
+#    NUM_MPI_PROCS 4
+#)
 
 TRIBITS_ADD_TEST(
     twolevel
-    NAME test_twolevel_3d_rgdsw
-    ARGS "--DIM=3 --CL=RGDSW"
+    NAME test_twolevel_2d_2dpn_o1_ipouharmonic
+    ARGS "--Dim=2 --DPN=2 --Ordering=0 --List=IPOUHarmonic.xml"
     COMM mpi
-    NUM_MPI_PROCS 8
-)
-
-TRIBITS_ADD_TEST(
-    twolevel
-    NAME test_twolevel_3d_ipouharmonic
-    ARGS "--DIM=3 --CL=IPOUHarmonic"
-    COMM mpi
-    NUM_MPI_PROCS 8
+    NUM_MPI_PROCS 4
 )

@@ -109,7 +109,7 @@ namespace FROSch {
         
         int initialize(UN dimension,
                        MapPtr repeatedMap,
-                       GOVecPtr myGlobalDirichletBoundaryDofs);
+                       GOVecPtr dirichletBoundaryDofs);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
@@ -120,20 +120,20 @@ namespace FROSch {
                        UN dofsPerNode,
                        MapPtr repeatedNodesMap,
                        MapPtrVecPtr &RepeatedDofMaps,
-                       GOVecPtr myGlobalDirichletBoundaryDofs);
+                       GOVecPtr dirichletBoundaryDofs);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
                        MapPtr repeatedNodesMap,
                        MapPtrVecPtr &RepeatedDofMaps,
-                       SCVecPtr2D &localNodeList);
+                       MultiVectorPtr &nodeList);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
                        MapPtr repeatedNodesMap,
                        MapPtrVecPtr &RepeatedDofMaps,
-                       GOVecPtr myGlobalDirichletBoundaryDofs,
-                       SCVecPtr2D &localNodeList);
+                       GOVecPtr dirichletBoundaryDofs,
+                       MultiVectorPtr &nodeList);
         
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
@@ -147,7 +147,7 @@ namespace FROSch {
         
         int buildCoarseSpace(UN dimension,
                              MapPtr &nodesMap,
-                             GOVecPtr myGlobalDirichletBoundaryDofs); // Das kann man auch mit in den Fall davor reinnehmen ?!
+                             GOVecPtr dirichletBoundaryDofs); // Das kann man auch mit in den Fall davor reinnehmen ?!
         
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
@@ -158,28 +158,28 @@ namespace FROSch {
                              UN dofsPerNode,
                              MapPtr &nodesMap,
                              MapPtrVecPtr &dofsMaps,
-                             GOVecPtr myGlobalDirichletBoundaryDofs);
+                             GOVecPtr dirichletBoundaryDofs);
         
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
                              MapPtr &nodesMap,
                              MapPtrVecPtr &dofsMaps,
-                             SCVecPtr2D &localNodeList);
+                             MultiVectorPtr &nodeList);
         
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
                              MapPtr &nodesMap,
                              MapPtrVecPtr &dofsMaps,
-                             GOVecPtr myGlobalDirichletBoundaryDofs,
-                             SCVecPtr2D &localNodeList);
+                             GOVecPtr dirichletBoundaryDofs,
+                             MultiVectorPtr &nodeList);
         
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
                                           MapPtr &nodesMap,
                                           MapPtrVecPtr &dofsMaps,
-                                          GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                          SCVecPtr2D &localNodeList);
+                                          GOVecPtr &dirichletBoundaryDofs,
+                                          MultiVectorPtr &nodeList);
         
         int addZeroCoarseSpaceBlock(MapPtr &dofsMap);
         
@@ -187,7 +187,7 @@ namespace FROSch {
                          bool buildRotations,
                          UN dimension,
                          UN dofsPerNode,
-                         SCVecPtr2D &localNodeList,
+                         MultiVectorPtr &nodeList,
                          LOVecPtr2D &partMappings,
                          EntitySetPtr &vertices,
                          EntitySetPtr &shortEdges,

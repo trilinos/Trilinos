@@ -62,6 +62,9 @@ namespace FROSch {
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
@@ -96,7 +99,7 @@ namespace FROSch {
         InterfaceEntityPtrVecPtr sortOutShortEdges();
         
         InterfaceEntityPtrVecPtr sortOutStraightEdges(UN dimension,
-                                                      SCVecPtr2D &localNodeList);
+                                                      MultiVectorPtr &nodeList);
         
         int removeEntity(UN iD);
         
@@ -109,7 +112,7 @@ namespace FROSch {
         bool checkForShortEdges();
         
         bool checkForStraightEdges(UN dimension,
-                                   SCVecPtr2D &localNodeList);
+                                   MultiVectorPtr &nodeList);
         
         bool checkForEmptyEntities();
         
@@ -136,7 +139,7 @@ namespace FROSch {
         const MapPtr getEntityMap() const;
         
         const SCVecPtr getDirection(UN dimension,
-                                    SCVecPtr2D &localNodeList,
+                                    MultiVectorPtr &nodeList,
                                     UN iD) const;
         
     protected:

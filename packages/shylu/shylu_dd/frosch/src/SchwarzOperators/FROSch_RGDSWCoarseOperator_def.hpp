@@ -60,8 +60,8 @@ namespace FROSch {
                                                                 UN dofsPerNode,
                                                                 MapPtr &nodesMap,
                                                                 MapPtrVecPtr &dofsMaps,
-                                                                GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                                                SCVecPtr2D &localNodeList)
+                                                                GOVecPtr &dirichletBoundaryDofs,
+                                                                MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
@@ -76,7 +76,7 @@ namespace FROSch {
         int option = coarseSpaceList->get("Option",1);
         bool useRotations = coarseSpaceList->get("Rotations",true);
         
-        if (useRotations && (localNodeList.size()==0) && this->Verbose_) {
+        if (useRotations && nodeList.is_null() && this->Verbose_) {
             FROSCH_ASSERT(option==1,"Only option 1 can be constructed without a valid node list.");
             useRotations = false;
             if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
@@ -85,12 +85,12 @@ namespace FROSch {
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
         
-        Teuchos::Array<GO> globalDirichletBoundaryDofs(myGlobalDirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
-        sortunique(globalDirichletBoundaryDofs);
+        Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
+        sortunique(tmpDirichletBoundaryDofs);
         
         this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
-        this->DDInterface_->removeDirichletNodes(globalDirichletBoundaryDofs);
+        this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
         this->DDInterface_->divideUnconnectedEntities(this->K_);
         
         EntitySetPtr vertices,edges,faces,interface,interior,parentVertices,parentEdges,parentFaces;
@@ -209,7 +209,7 @@ namespace FROSch {
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,localNodeList,partMappings,vertices,edges,faces);            
+            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);            
         }
         
         return 0;
@@ -221,14 +221,14 @@ namespace FROSch {
                                                               bool buildRotations,
                                                               UN dimension,
                                                               UN dofsPerNode,
-                                                              SCVecPtr2D &localNodeList,
+                                                              MultiVectorPtr &nodeList,
                                                               LOVecPtr2D &partMappings,
                                                               EntitySetPtr &vertices,
                                                               EntitySetPtr &edges,
                                                               EntitySetPtr &faces)
     {
         if (buildRotations || (option == 3) ) {
-            FROSCH_ASSERT(localNodeList[0].size()==dimension,"dimension of the localNodeList is wrong.");
+            FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         }
         
         //Epetra_SerialComm serialComm;
@@ -316,16 +316,16 @@ namespace FROSch {
                             for (UN ii=0; ii<parentVertices->getNumEntities(); ii++) {
                                 InterfaceEntityPtr parentVertex = parentVertices->getEntity(ii);
                                 
-                                x = localNodeList[parentVertex->getLocalNodeID(0)][0];
-                                y = localNodeList[parentVertex->getLocalNodeID(0)][1];
+                                x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)];
+                                y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)];
                                 rx = -y;
                                 ry = x;
                                 this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,0),partMappings[itmp][parentVertex->getParentID()],rx);
                                 this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,1),partMappings[itmp][parentVertex->getParentID()],ry);
                                 
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    x = localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][parentVertex->getParentID()],edgeValue*rx);
@@ -348,9 +348,9 @@ namespace FROSch {
                                     InterfaceEntityPtr parentVertex = parentVertices->getEntity(iii);
                                     vertexParentsFace.push_back(parentVertex->getParentID());
                                     
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)];
                                     
                                     // Rotation 1
                                     rx = y;
@@ -377,9 +377,9 @@ namespace FROSch {
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,2),partMappings[itmp+2][parentVertex->getParentID()],rz);
                                     
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
-                                        x = localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -412,9 +412,9 @@ namespace FROSch {
                             faceValue = 1.0/SC(vertexParentsFace.size());
                             for (UN ii=0; ii<vertexParentsFace.size(); ii++) {
                                 for (UN j=0; j<face->getNumNodes(); j++) {
-                                    x = localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[face->getLocalNodeID(j)];
                                     
                                     // Rotation 1
                                     rx = y;
@@ -491,8 +491,8 @@ namespace FROSch {
                             EntitySetPtr parentVertices = edge->getParents();
                             if (parentVertices->getNumEntities()==0) {
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    x = localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getParentID()],rx);
@@ -511,9 +511,9 @@ namespace FROSch {
                                 EntitySetPtr parentVertices = parentEdge->getParents();
                                 if (parentVertices->getNumEntities()==0) {
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
-                                        x = localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -540,9 +540,9 @@ namespace FROSch {
                                         this->MVPhiGamma_[blockId]->replaceLocalValue(parentEdge->getGammaDofID(j,2),partMappings[itmp+2][parentEdge->getParentID()],rz);
                                     }
                                     for (UN j=0; j<face->getNumNodes(); j++) {
-                                        x = localNodeList[face->getLocalNodeID(j)][0];
-                                        y = localNodeList[face->getLocalNodeID(j)][1];
-                                        z = localNodeList[face->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[face->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[face->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[face->getLocalNodeID(j)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -595,9 +595,9 @@ namespace FROSch {
                         EntitySetPtr parentEdges = face->getParents();
                         if (parentEdges->getNumEntities()==0) {
                             for (UN j=0; j<face->getNumNodes(); j++) {
-                                x = localNodeList[face->getLocalNodeID(j)][0];
-                                y = localNodeList[face->getLocalNodeID(j)][1];
-                                z = localNodeList[face->getLocalNodeID(j)][2];
+                                x = nodeList->getData(0)[face->getLocalNodeID(j)];
+                                y = nodeList->getData(1)[face->getLocalNodeID(j)];
+                                z = nodeList->getData(2)[face->getLocalNodeID(j)];
                                 
                                 // Rotation 1
                                 rx = y;
@@ -652,16 +652,16 @@ namespace FROSch {
                                 this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,k),partMappings[itmp][parentVertex->getParentID()],1.0);
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
                                     // compute distance
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     edgeValues[j] += 1.0/sqrt(x*x+y*y);
                                 }
                             }
                             for (UN j=0; j<edge->getNumNodes(); j++) {
                                 for (UN ii=0; ii<parentVertices->getNumEntities(); ii++) {
                                     InterfaceEntityPtr parentVertex = parentVertices->getEntity(ii);
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     edgeValue = (1.0/sqrt(x*x+y*y))/(edgeValues[j]);
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][parentVertex->getParentID()],edgeValue);
                                 }
@@ -686,18 +686,18 @@ namespace FROSch {
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,k),partMappings[itmp][parentVertex->getParentID()],1.0);
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
                                         // compute distance
-                                        x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         edgeValues[j] += 1.0/sqrt(x*x+y*y+z*z);
                                     }
                                 }
                                 for (UN j=0; j<parentEdge->getNumNodes(); j++) {
                                     for (UN iii=0; iii<parentVertices->getNumEntities(); iii++) {
                                         InterfaceEntityPtr parentVertex = parentVertices->getEntity(iii);
-                                        x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         edgeValue = (1.0/sqrt(x*x+y*y+z*z))/(edgeValues[j]);
                                         this->MVPhiGamma_[blockId]->replaceLocalValue(parentEdge->getGammaDofID(j,k),partMappings[itmp][parentVertex->getParentID()],edgeValue);
                                     }
@@ -708,18 +708,18 @@ namespace FROSch {
                                 InterfaceEntityPtr parentVertex = vertexParentsFace->getEntity(ii);
                                 for (UN j=0; j<face->getNumNodes(); j++) {
                                     // compute distance
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[face->getLocalNodeID(j)];
                                     faceValues[j] += 1.0/sqrt(x*x+y*y+z*z);
                                 }
                             }
                             for (UN j=0; j<face->getNumNodes(); j++) {
                                 for (UN ii=0; ii<vertexParentsFace->getNumEntities(); ii++) {
                                     InterfaceEntityPtr parentVertex = vertexParentsFace->getEntity(ii);
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[face->getLocalNodeID(j)];
                                     faceValue = (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][parentVertex->getParentID()],faceValue);
                                 }
@@ -739,8 +739,8 @@ namespace FROSch {
                             for (UN ii=0; ii<parentVertices->getNumEntities(); ii++) {
                                 InterfaceEntityPtr parentVertex = parentVertices->getEntity(ii);
                                 
-                                x = localNodeList[parentVertex->getLocalNodeID(0)][0];
-                                y = localNodeList[parentVertex->getLocalNodeID(0)][1];
+                                x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)];
+                                y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)];
                                 rx = -y;
                                 ry = x;
                                 this->MVPhiGamma_[blockId]->replaceLocalValue(parentVertex->getGammaDofID(0,0),partMappings[itmp][parentVertex->getParentID()],rx);
@@ -748,20 +748,20 @@ namespace FROSch {
                                 
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
                                     // compute distance
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     edgeValues[j] += 1.0/sqrt(x*x+y*y);
                                 }
                             }
                             for (UN j=0; j<edge->getNumNodes(); j++) {
                                 for (UN ii=0; ii<parentVertices->getNumEntities(); ii++) {
                                     InterfaceEntityPtr parentVertex = parentVertices->getEntity(ii);
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     edgeValue = (1.0/sqrt(x*x+y*y))/(edgeValues[j]);
                                     
-                                    x = localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][parentVertex->getParentID()],edgeValue*rx);
@@ -784,9 +784,9 @@ namespace FROSch {
                                     InterfaceEntityPtr parentVertex = parentVertices->getEntity(iii);
                                     vertexParentsFace->addEntity(parentVertex);
                                     
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)];
                                     
                                     // Rotation 1
                                     rx = y;
@@ -814,23 +814,23 @@ namespace FROSch {
                                     
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
                                         // compute distance
-                                        x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         edgeValues[j] += 1.0/sqrt(x*x+y*y+z*z);
                                     }
                                 }
                                 for (UN j=0; j<parentEdge->getNumNodes(); j++) {
                                     for (UN iii=0; iii<parentVertices->getNumEntities(); iii++) {
                                         InterfaceEntityPtr parentVertex = parentVertices->getEntity(iii);
-                                        x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         edgeValue = (1.0/sqrt(x*x+y*y+z*z))/(edgeValues[j]);
                                         
-                                        x = localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -863,23 +863,23 @@ namespace FROSch {
                                 InterfaceEntityPtr parentVertex = vertexParentsFace->getEntity(ii);
                                 for (UN j=0; j<face->getNumNodes(); j++) {
                                     // compute distance
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[face->getLocalNodeID(j)];
                                     faceValues[j] += 1.0/sqrt(x*x+y*y+z*z);
                                 }
                             }
                             for (UN j=0; j<face->getNumNodes(); j++) {
                                 for (UN ii=0; ii<vertexParentsFace->getNumEntities(); ii++) {
                                     InterfaceEntityPtr parentVertex = vertexParentsFace->getEntity(ii);
-                                    x = localNodeList[parentVertex->getLocalNodeID(0)][0] - localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[parentVertex->getLocalNodeID(0)][1] - localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[parentVertex->getLocalNodeID(0)][2] - localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[parentVertex->getLocalNodeID(0)] - nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[parentVertex->getLocalNodeID(0)] - nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[parentVertex->getLocalNodeID(0)] - nodeList->getData(2)[face->getLocalNodeID(j)];
                                     faceValue = (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
                                     
-                                    x = localNodeList[face->getLocalNodeID(j)][0];
-                                    y = localNodeList[face->getLocalNodeID(j)][1];
-                                    z = localNodeList[face->getLocalNodeID(j)][2];
+                                    x = nodeList->getData(0)[face->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[face->getLocalNodeID(j)];
+                                    z = nodeList->getData(2)[face->getLocalNodeID(j)];
                                     
                                     // Rotation 1
                                     rx = y;
@@ -938,9 +938,9 @@ namespace FROSch {
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
                                         this->MVPhiGamma_[blockId]->replaceLocalValue(parentEdge->getGammaDofID(j,k),partMappings[itmp][parentEdge->getParentID()],1.0);
                                         for (UN jj=0; jj<face->getNumNodes(); jj++) {
-                                            x = localNodeList[parentEdge->getLocalNodeID(j)][0] - localNodeList[face->getLocalNodeID(jj)][0];
-                                            y = localNodeList[parentEdge->getLocalNodeID(j)][1] - localNodeList[face->getLocalNodeID(jj)][1];
-                                            z = localNodeList[parentEdge->getLocalNodeID(j)][2] - localNodeList[face->getLocalNodeID(jj)][2];
+                                            x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
+                                            y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)] - nodeList->getData(1)[face->getLocalNodeID(jj)];
+                                            z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)] - nodeList->getData(2)[face->getLocalNodeID(jj)];
                                             faceValues[jj] += 1.0/sqrt(x*x+y*y+z*z);
                                         }
                                     }
@@ -953,9 +953,9 @@ namespace FROSch {
                                     for (UN jj=0; jj<face->getNumNodes(); jj++) {
                                         faceValue = 0.0;
                                         for (UN j=0; j<parentEdge->getNumNodes(); j++) {
-                                            x = localNodeList[parentEdge->getLocalNodeID(j)][0] - localNodeList[face->getLocalNodeID(jj)][0];
-                                            y = localNodeList[parentEdge->getLocalNodeID(j)][1] - localNodeList[face->getLocalNodeID(jj)][1];
-                                            z = localNodeList[parentEdge->getLocalNodeID(j)][2] - localNodeList[face->getLocalNodeID(jj)][2];
+                                            x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
+                                            y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)] - nodeList->getData(1)[face->getLocalNodeID(jj)];
+                                            z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)] - nodeList->getData(2)[face->getLocalNodeID(jj)];
                                             faceValue += (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
                                         }
                                         this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,k),partMappings[itmp][parentEdge->getParentID()],faceValue);
@@ -975,8 +975,8 @@ namespace FROSch {
                             EntitySetPtr parentVertices = edge->getParents();
                             if (parentVertices->getNumEntities()==0) {
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    x = localNodeList[edge->getLocalNodeID(j)][0];
-                                    y = localNodeList[edge->getLocalNodeID(j)][1];
+                                    x = nodeList->getData(0)[edge->getLocalNodeID(j)];
+                                    y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
                                     this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getParentID()],rx);
@@ -995,9 +995,9 @@ namespace FROSch {
                                 EntitySetPtr parentVertices = parentEdge->getParents();
                                 if (parentVertices->getNumEntities()==0) {
                                     for (UN j=0; j<parentEdge->getNumNodes(); j++) {
-                                        x = localNodeList[parentEdge->getLocalNodeID(j)][0];
-                                        y = localNodeList[parentEdge->getLocalNodeID(j)][1];
-                                        z = localNodeList[parentEdge->getLocalNodeID(j)][2];
+                                        x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)];
+                                        y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)];
+                                        z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -1024,9 +1024,9 @@ namespace FROSch {
                                         this->MVPhiGamma_[blockId]->replaceLocalValue(parentEdge->getGammaDofID(j,2),partMappings[itmp+2][parentEdge->getParentID()],rz);
                                         
                                         for (UN jj=0; jj<face->getNumNodes(); jj++) {
-                                            x = localNodeList[parentEdge->getLocalNodeID(j)][0] - localNodeList[face->getLocalNodeID(jj)][0];
-                                            y = localNodeList[parentEdge->getLocalNodeID(j)][1] - localNodeList[face->getLocalNodeID(jj)][1];
-                                            z = localNodeList[parentEdge->getLocalNodeID(j)][2] - localNodeList[face->getLocalNodeID(jj)][2];
+                                            x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
+                                            y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)] - nodeList->getData(1)[face->getLocalNodeID(jj)];
+                                            z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)] - nodeList->getData(2)[face->getLocalNodeID(jj)];
                                             faceValues[jj] += 1.0/sqrt(x*x+y*y+z*z);
                                         }
                                     }
@@ -1039,14 +1039,14 @@ namespace FROSch {
                                     for (UN jj=0; jj<face->getNumNodes(); jj++) {
                                         faceValue = 0.0;
                                         for (UN j=0; j<parentEdge->getNumNodes(); j++) {
-                                            x = localNodeList[parentEdge->getLocalNodeID(j)][0] - localNodeList[face->getLocalNodeID(jj)][0];
-                                            y = localNodeList[parentEdge->getLocalNodeID(j)][1] - localNodeList[face->getLocalNodeID(jj)][1];
-                                            z = localNodeList[parentEdge->getLocalNodeID(j)][2] - localNodeList[face->getLocalNodeID(jj)][2];
+                                            x = nodeList->getData(0)[parentEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
+                                            y = nodeList->getData(1)[parentEdge->getLocalNodeID(j)] - nodeList->getData(1)[face->getLocalNodeID(jj)];
+                                            z = nodeList->getData(2)[parentEdge->getLocalNodeID(j)] - nodeList->getData(2)[face->getLocalNodeID(jj)];
                                             faceValue += (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
                                         }
-                                        x = localNodeList[face->getLocalNodeID(jj)][0];
-                                        y = localNodeList[face->getLocalNodeID(jj)][1];
-                                        z = localNodeList[face->getLocalNodeID(jj)][2];
+                                        x = nodeList->getData(0)[face->getLocalNodeID(jj)];
+                                        y = nodeList->getData(1)[face->getLocalNodeID(jj)];
+                                        z = nodeList->getData(2)[face->getLocalNodeID(jj)];
                                         
                                         // Rotation 1
                                         rx = y;
@@ -1100,9 +1100,9 @@ namespace FROSch {
                         EntitySetPtr parentEdges = face->getParents();
                         if (parentEdges->getNumEntities()==0) {
                             for (UN j=0; j<face->getNumNodes(); j++) {
-                                x = localNodeList[face->getLocalNodeID(j)][0];
-                                y = localNodeList[face->getLocalNodeID(j)][1];
-                                z = localNodeList[face->getLocalNodeID(j)][2];
+                                x = nodeList->getData(0)[face->getLocalNodeID(j)];
+                                y = nodeList->getData(1)[face->getLocalNodeID(j)];
+                                z = nodeList->getData(2)[face->getLocalNodeID(j)];
                                 
                                 // Rotation 1
                                 rx = y;

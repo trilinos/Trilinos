@@ -68,9 +68,9 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
                                                     MapPtr repeatedMap,
-                                                    GOVecPtr myGlobalDirichletBoundaryDofs)
+                                                    GOVecPtr dirichletBoundaryDofs)
     {
-        buildCoarseSpace(dimension,repeatedMap,myGlobalDirichletBoundaryDofs);
+        buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -93,9 +93,9 @@ namespace FROSch {
                                                     UN dofsPerNode,
                                                     MapPtr repeatedNodesMap,
                                                     MapPtrVecPtr &repeatedDofMaps,
-                                                    GOVecPtr myGlobalDirichletBoundaryDofs)
+                                                    GOVecPtr dirichletBoundaryDofs)
     {
-        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,myGlobalDirichletBoundaryDofs);
+        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -106,9 +106,9 @@ namespace FROSch {
                                                     UN dofsPerNode,
                                                     MapPtr repeatedNodesMap,
                                                     MapPtrVecPtr &repeatedDofMaps,
-                                                    SCVecPtr2D &localNodeList)
+                                                    MultiVectorPtr &nodeList)
     {
-        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,localNodeList);
+        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -119,10 +119,10 @@ namespace FROSch {
                                                     UN dofsPerNode,
                                                     MapPtr repeatedNodesMap,
                                                     MapPtrVecPtr &repeatedDofMaps,
-                                                    GOVecPtr myGlobalDirichletBoundaryDofs,
-                                                    SCVecPtr2D &localNodeList)
+                                                    GOVecPtr dirichletBoundaryDofs,
+                                                    MultiVectorPtr &nodeList)
     {
-        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,myGlobalDirichletBoundaryDofs,localNodeList);
+        buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -155,11 +155,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           MapPtr &nodesMap,
-                                                          GOVecPtr myGlobalDirichletBoundaryDofs)
+                                                          GOVecPtr dirichletBoundaryDofs)
     {
         MapPtrVecPtr dofsMaps(1);
         dofsMaps[0] = nodesMap;
-        buildCoarseSpace(dimension,1,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs);
+        buildCoarseSpace(dimension,1,nodesMap,dofsMaps,dirichletBoundaryDofs);
         
         return 0;
     }
@@ -170,8 +170,8 @@ namespace FROSch {
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
-        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs);
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
+        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs);
         
         return 0;
     }
@@ -181,11 +181,11 @@ namespace FROSch {
                                                           UN dofsPerNode,
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps,
-                                                          GOVecPtr myGlobalDirichletBoundaryDofs)
+                                                          GOVecPtr dirichletBoundaryDofs)
     {
         
-        SCVecPtr2D localNodeList(0);
-        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
+        SCVecPtr2D nodeList(0);
+        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
         
         return 0;
     }
@@ -195,10 +195,10 @@ namespace FROSch {
                                                           UN dofsPerNode,
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps,
-                                                          SCVecPtr2D &localNodeList)
+                                                          MultiVectorPtr &nodeList)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
-        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
+        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
+        buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
         
         return 0;
     }
@@ -208,8 +208,8 @@ namespace FROSch {
                                                           UN dofsPerNode,
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps,
-                                                          GOVecPtr myGlobalDirichletBoundaryDofs,
-                                                          SCVecPtr2D &localNodeList)
+                                                          GOVecPtr dirichletBoundaryDofs,
+                                                          MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         
@@ -224,7 +224,7 @@ namespace FROSch {
         
         this->NumberOfBlocks_++;
         
-        resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
+        resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
         
         return 0;
     }
@@ -235,8 +235,8 @@ namespace FROSch {
                                                                UN dofsPerNode,
                                                                MapPtr &nodesMap,
                                                                MapPtrVecPtr &dofsMaps,
-                                                               GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                                               SCVecPtr2D &localNodeList)
+                                                               GOVecPtr &dirichletBoundaryDofs,
+                                                               MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
@@ -267,7 +267,7 @@ namespace FROSch {
         
         
         bool useRotations = coarseSpaceList->get("Rotations",true);
-        if (useRotations && (localNodeList.size()==0) && this->Verbose_) {
+        if (useRotations && nodeList.is_null() && this->Verbose_) {
             useRotations = false;
             if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
         }
@@ -281,18 +281,16 @@ namespace FROSch {
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
         
-        Teuchos::Array<GO> globalDirichletBoundaryDofs(myGlobalDirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
-        sortunique(globalDirichletBoundaryDofs);
+        Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
+        sortunique(tmpDirichletBoundaryDofs);
         
         DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap));
         DDInterface_->resetGlobalDofs(dofsMaps);
-        DDInterface_->removeDirichletNodes(globalDirichletBoundaryDofs());
+        DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
         DDInterface_->divideUnconnectedEntities(this->K_);
-        if (localNodeList.size()>0) {
-            DDInterface_->sortEntities(localNodeList);
-        } else {
-            DDInterface_->sortEntities();
-        }
+        
+        DDInterface_->sortEntities(nodeList);
+        
         
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         
@@ -479,7 +477,7 @@ namespace FROSch {
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-            phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,localNodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
+            phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
         }
         
         return 0;
@@ -547,7 +545,7 @@ namespace FROSch {
                                                       bool buildRotations,
                                                       UN dimension,
                                                       UN dofsPerNode,
-                                                      SCVecPtr2D &localNodeList,
+                                                      MultiVectorPtr &nodeList,
                                                       LOVecPtr2D &partMappings,
                                                       EntitySetPtr &vertices,
                                                       EntitySetPtr &shortEdges,
@@ -557,7 +555,7 @@ namespace FROSch {
                                                       BoolVecPtr &coarseSpaceFunctions)
     {
         if (buildRotations) {
-            FROSCH_ASSERT(localNodeList[0].size()==dimension,"dimension of the localNodeList is wrong.");
+            FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         }
         
         //Epetra_SerialComm serialComm;
@@ -600,8 +598,8 @@ namespace FROSch {
                 for (UN i=0; i<shortEdges->getNumEntities(); i++) {
                     // Rotation 1
                     for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
-                        x = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][1];
+                        x = nodeList->getData(0)[shortEdges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[shortEdges->getEntity(i)->getLocalNodeID(j)];
                         rx = -y;
                         ry = x;
                         this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
@@ -613,14 +611,14 @@ namespace FROSch {
                 for (UN i=0; i<shortEdges->getNumEntities(); i++) {
                     for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
                         // Get the direction of the short edge
-                        dir = shortEdges->getDirection(dimension,localNodeList,i);
+                        dir = shortEdges->getDirection(dimension,nodeList,i);
                         tmp = 0;
                         
                         FROSCH_ASSERT(sqrt(dir[0]*dir[0]+dir[1]*dir[1]+dir[2]*dir[2])>1.0e-12,"The direction vector is 0. ERROR!");
                         
-                        x = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][1];
-                        z = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][2];
+                        x = nodeList->getData(0)[shortEdges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[shortEdges->getEntity(i)->getLocalNodeID(j)];
+                        z = nodeList->getData(2)[shortEdges->getEntity(i)->getLocalNodeID(j)];
                         
                         // Rotation 1
                         if ((fabs(dir[0])>1.0e-12) || (fabs(dir[1])>1.0e-12)) {
@@ -682,8 +680,8 @@ namespace FROSch {
                 for (UN i=0; i<straightEdges->getNumEntities(); i++) {
                     // Rotation 1
                     for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
-                        x = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][1];
+                        x = nodeList->getData(0)[straightEdges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[straightEdges->getEntity(i)->getLocalNodeID(j)];
                         rx = -y;
                         ry = x;
                         this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
@@ -695,14 +693,14 @@ namespace FROSch {
                 for (UN i=0; i<straightEdges->getNumEntities(); i++) {
                     for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
                         // Get the direction of the straight edge
-                        dir = straightEdges->getDirection(dimension,localNodeList,i);
+                        dir = straightEdges->getDirection(dimension,nodeList,i);
                         tmp=0;
                         
                         FROSCH_ASSERT(sqrt(dir[0]*dir[0]+dir[1]*dir[1]+dir[2]*dir[2])>1.0e-12,"The direction vector is 0. ERROR!");
                         
-                        x = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][1];
-                        z = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][2];
+                        x = nodeList->getData(0)[straightEdges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[straightEdges->getEntity(i)->getLocalNodeID(j)];
+                        z = nodeList->getData(2)[straightEdges->getEntity(i)->getLocalNodeID(j)];
                         
                         // Rotation 1
                         if ((fabs(dir[0])>1.0e-12) || (fabs(dir[1])>1.0e-12)) {
@@ -764,8 +762,8 @@ namespace FROSch {
                 for (UN i=0; i<edges->getNumEntities(); i++) {
                     // Rotation 1
                     for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        x = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][1];
+                        x = nodeList->getData(0)[edges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[edges->getEntity(i)->getLocalNodeID(j)];
                         rx = -y;
                         ry = x;
                         this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
@@ -776,9 +774,9 @@ namespace FROSch {
             } else if (dimension == 3) {
                 for (UN i=0; i<edges->getNumEntities(); i++) {
                     for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        x = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][0];
-                        y = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][1];
-                        z = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][2];
+                        x = nodeList->getData(0)[edges->getEntity(i)->getLocalNodeID(j)];
+                        y = nodeList->getData(1)[edges->getEntity(i)->getLocalNodeID(j)];
+                        z = nodeList->getData(2)[edges->getEntity(i)->getLocalNodeID(j)];
                         
                         // Rotation 1
                         rx = y;
@@ -830,9 +828,9 @@ namespace FROSch {
             
             for (UN i=0; i<faces->getNumEntities(); i++) {
                 for (UN j=0; j<faces->getEntity(i)->getNumNodes(); j++) {
-                    x = localNodeList[faces->getEntity(i)->getLocalNodeID(j)][0];
-                    y = localNodeList[faces->getEntity(i)->getLocalNodeID(j)][1];
-                    z = localNodeList[faces->getEntity(i)->getLocalNodeID(j)][2];
+                    x = nodeList->getData(0)[faces->getEntity(i)->getLocalNodeID(j)];
+                    y = nodeList->getData(1)[faces->getEntity(i)->getLocalNodeID(j)];
+                    z = nodeList->getData(2)[faces->getEntity(i)->getLocalNodeID(j)];
                     
                     // Rotation 1
                     rx = y;

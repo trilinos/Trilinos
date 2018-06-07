@@ -61,6 +61,8 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
@@ -90,8 +92,8 @@ namespace FROSch {
                                           UN dofsPerNode,
                                           MapPtr &nodesMap,
                                           MapPtrVecPtr &dofsMaps,
-                                          GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                          SCVecPtr2D &localNodeList);
+                                          GOVecPtr &dirichletBoundaryDofs,
+                                          MultiVectorPtr &nodeList);
         
         
         protected:
@@ -101,7 +103,7 @@ namespace FROSch {
                                 bool buildRotations,
                                 UN dimension,
                                 UN dofsPerNode,
-                                SCVecPtr2D &localNodeList,
+                                MultiVectorPtr &nodeList,
                                 LOVecPtr2D &partMappings,
                                 EntitySetPtr &vertices,
                                 EntitySetPtr &edges,

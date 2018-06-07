@@ -79,11 +79,11 @@ namespace FROSch {
         int initialize(MapPtr repeatedMap,
                        bool useDefaultParameters = true);
         
-        int initialize(GOVecPtr &localDirichletBoundaryDofs,
+        int initialize(GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
         
         int initialize(MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs,
+                       GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
         
         int initialize(UN dimension,
@@ -96,7 +96,7 @@ namespace FROSch {
         int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs);
+                       GOVecPtr &dirichletBoundaryDofs);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
@@ -109,22 +109,22 @@ namespace FROSch {
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs);
+                       GOVecPtr &dirichletBoundaryDofs);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       SCVecPtr2D &localNodeList);
+                       MultiVectorPtr &nodeList);
         
         int initialize(UN dimension,
                        UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs,
-                       SCVecPtr2D &localNodeList);
+                       GOVecPtr &dirichletBoundaryDofs,
+                       MultiVectorPtr &nodeList);
         
         int compute();
         

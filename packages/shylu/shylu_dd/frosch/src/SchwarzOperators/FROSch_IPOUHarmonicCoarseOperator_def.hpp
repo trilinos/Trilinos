@@ -63,10 +63,10 @@ namespace FROSch {
                                                             MapPtr nodesMap,
                                                             MapPtrVecPtr dofsMaps,
                                                             MultiVectorPtr nullSpaceBasis,
-                                                            SCVecPtr2D localNodeList,
-                                                            GOVecPtr myGlobalDirichletBoundaryDofs)
+                                                            MultiVectorPtr nodeList,
+                                                            GOVecPtr dirichletBoundaryDofs)
     {
-        int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,myGlobalDirichletBoundaryDofs,localNodeList);
+        int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return ret;
@@ -91,8 +91,8 @@ namespace FROSch {
                                                                    MapPtr nodesMap,
                                                                    MapPtrVecPtr dofsMaps,
                                                                    MultiVectorPtr nullSpaceBasis,
-                                                                   GOVecPtr myGlobalDirichletBoundaryDofs,
-                                                                   SCVecPtr2D localNodeList)
+                                                                   GOVecPtr dirichletBoundaryDofs,
+                                                                   MultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         
@@ -107,7 +107,7 @@ namespace FROSch {
         
         this->NumberOfBlocks_++;
         
-        return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,myGlobalDirichletBoundaryDofs,localNodeList);
+        return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -117,8 +117,8 @@ namespace FROSch {
                                                                         MapPtr nodesMap,
                                                                         MapPtrVecPtr dofsMaps,
                                                                         MultiVectorPtr nullSpaceBasis,
-                                                                        GOVecPtr myGlobalDirichletBoundaryDofs,
-                                                                        SCVecPtr2D localNodeList)
+                                                                        GOVecPtr dirichletBoundaryDofs,
+                                                                        MultiVectorPtr nodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
@@ -141,10 +141,10 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(0!=0,"InterfacePartitionOfUnity Type is unknown.");
             }            
-            InterfacePartitionOfUnity_->removeDirichletNodes();
-            InterfacePartitionOfUnity_->sortInterface(this->K_);
+            InterfacePartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
+            InterfacePartitionOfUnity_->sortInterface(this->K_,nodeList);
             InterfacePartitionOfUnity_->computePartitionOfUnity();
-
+            
             InterfaceEntityPtr interface = InterfacePartitionOfUnity_->getDDInterface()->getInterface()->getEntity(0);
             InterfaceEntityPtr interior = InterfacePartitionOfUnity_->getDDInterface()->getInterior()->getEntity(0);
             
@@ -153,10 +153,10 @@ namespace FROSch {
             this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
             for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                 for (UN i=0; i<interface->getNumNodes(); i++) {
-                    this->GammaDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interface->getLocalDofID(i,k);
+                    this->GammaDofs_[blockId][interface->getGammaDofID(i,k)] = interface->getLocalDofID(i,k);
                 }
                 for (UN i=0; i<interior->getNumNodes(); i++) {
-                    this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getLocalDofID(i,k);
+                    this->IDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                 }
             }
             
@@ -166,7 +166,7 @@ namespace FROSch {
             for (UN i=0; i<nullSpaceBasis->getNumVectors(); i++) {
                 for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                     for (UN j=0; j<interface->getNumNodes(); j++) {
-                        interfaceNullspaceBasis->getDataNonConst(i)[this->DofsPerNode_[blockId]*j+k] = nullSpaceBasis->getData(i)[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
+                        interfaceNullspaceBasis->getDataNonConst(i)[interface->getGammaDofID(j,k)] = nullSpaceBasis->getData(i)[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
                     }
                 }
             }
@@ -179,7 +179,7 @@ namespace FROSch {
             InterfaceCoarseSpace_ = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
             
             this->BlockCoarseMaps_[blockId] = InterfaceCoarseSpace_->getBasisMap();
-            this->MVPhiGamma_[blockId] = InterfaceCoarseSpace_->getLocalBasis();
+            this->MVPhiGamma_[blockId] = InterfaceCoarseSpace_->getLocalBasis(); //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
         }
         
         return 0;

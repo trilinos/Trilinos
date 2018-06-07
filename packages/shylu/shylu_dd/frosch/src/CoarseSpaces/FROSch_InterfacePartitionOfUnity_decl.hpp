@@ -97,10 +97,11 @@ namespace FROSch {
         
         virtual ~InterfacePartitionOfUnity();
         
-        virtual int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs = Teuchos::null) = 0;
+        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
+                                         MultiVectorPtr nodeList = Teuchos::null) = 0;
         
         virtual int sortInterface(CrsMatrixPtr matrix,
-                                  SCVecPtr2D localNodeList = Teuchos::null) = 0;
+                                  MultiVectorPtr nodeList = Teuchos::null) = 0;
         
         virtual int computePartitionOfUnity() = 0;
         

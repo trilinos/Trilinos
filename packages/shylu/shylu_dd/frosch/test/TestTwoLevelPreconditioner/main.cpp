@@ -96,6 +96,8 @@ int main(int argc, char *argv[])
     My_CLP.setOption("DPN",&DofsPerNode,"Dofs per node.");
     int DOFOrdering = 0;
     My_CLP.setOption("Ordering",&DOFOrdering,"Dofs ordering (NodeWise=0,DimensionWise=1,Custom=2).");
+    string xmlFile = "GDSW.xml";
+    My_CLP.setOption("List",&xmlFile,"File name of the parameter list.");
     
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
     RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (COMM));
     if (color==0) {
         
-        RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
+        RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
         
         if (Comm->MyPID()==0) {
             cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;

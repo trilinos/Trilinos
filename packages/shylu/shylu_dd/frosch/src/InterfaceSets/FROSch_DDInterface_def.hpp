@@ -189,7 +189,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs)
+    int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs)
     {
         // Vertices
         for (UN i=0; i<Vertices_->getNumEntities(); i++) {
@@ -199,7 +199,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<DofsPerNode_) {
                     GO dofGlobal = Vertices_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(myGlobalDirichletBoundaryDofs.begin(),myGlobalDirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         Vertices_->getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -207,6 +207,7 @@ namespace FROSch {
                 }
             }
         }
+        Vertices_->removeEmptyEntities();
         
         // ShortEdges
         for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
@@ -216,7 +217,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<DofsPerNode_) {
                     GO dofGlobal = ShortEdges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(myGlobalDirichletBoundaryDofs.begin(),myGlobalDirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         ShortEdges_->getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -224,6 +225,7 @@ namespace FROSch {
                 }
             }
         }
+        ShortEdges_->removeEmptyEntities();
         
         // StraightEdges
         for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
@@ -233,7 +235,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<DofsPerNode_) {
                     GO dofGlobal = StraightEdges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(myGlobalDirichletBoundaryDofs.begin(),myGlobalDirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         StraightEdges_->getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -241,6 +243,7 @@ namespace FROSch {
                 }
             }
         }
+        StraightEdges_->removeEmptyEntities();
         
         // Edges
         for (UN i=0; i<Edges_->getNumEntities(); i++) {
@@ -250,7 +253,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<DofsPerNode_) {
                     GO dofGlobal = Edges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(myGlobalDirichletBoundaryDofs.begin(),myGlobalDirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         Edges_->getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -258,6 +261,7 @@ namespace FROSch {
                 }
             }
         }
+        Edges_->removeEmptyEntities();
         
         // Faces
         for (UN i=0; i<Faces_->getNumEntities(); i++) {
@@ -267,7 +271,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<DofsPerNode_) {
                     GO dofGlobal = Faces_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(myGlobalDirichletBoundaryDofs.begin(),myGlobalDirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         Faces_->getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -275,6 +279,8 @@ namespace FROSch {
                 }
             }
         }
+        Faces_->removeEmptyEntities();
+        
         return 0;
     }
     
@@ -346,44 +352,43 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::sortEntities(SCVecPtr2D localNodeList)
+    int DDInterface<SC,LO,GO,NO>::sortEntities(MultiVectorPtr nodeList)
     {
-        // Edges_
-        InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
-        for (UN i=0; i<extractedVertices.size(); i++) {
-            Vertices_->addEntity(extractedVertices[i]);
-        }
-        
-        InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
-        for (UN i=0; i<extractedShortEdges.size(); i++) {
-            ShortEdges_->addEntity(extractedShortEdges[i]);
-        }
-        
-        if (localNodeList.size()==0) {
-            InterfaceEntityPtrVecPtr extractedStraightEdges = Edges_->sortOutStraightEdges(Dimension_,localNodeList);
+        if (nodeList.is_null()) {
+            this->sortEntities();
+        } else {
+            // Edges_
+            InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
+            for (UN i=0; i<extractedVertices.size(); i++) {
+                Vertices_->addEntity(extractedVertices[i]);
+            }
+            
+            InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
+            for (UN i=0; i<extractedShortEdges.size(); i++) {
+                ShortEdges_->addEntity(extractedShortEdges[i]);
+            }
+            
+            InterfaceEntityPtrVecPtr extractedStraightEdges = Edges_->sortOutStraightEdges(Dimension_,nodeList);
+            for (UN i=0; i<extractedStraightEdges.size(); i++) {
+                StraightEdges_->addEntity(extractedStraightEdges[i]);
+            }
+            
+            // Faces_
+            extractedVertices = Faces_->sortOutVertices();
+            for (UN i=0; i<extractedVertices.size(); i++) {
+                Vertices_->addEntity(extractedVertices[i]);
+            }
+            
+            extractedShortEdges = Faces_->sortOutShortEdges();
+            for (UN i=0; i<extractedShortEdges.size(); i++) {
+                ShortEdges_->addEntity(extractedShortEdges[i]);
+            }
+            
+            extractedStraightEdges = Faces_->sortOutStraightEdges(Dimension_,nodeList);
             for (UN i=0; i<extractedStraightEdges.size(); i++) {
                 StraightEdges_->addEntity(extractedStraightEdges[i]);
             }
         }
-        
-        // Faces_
-        extractedVertices = Faces_->sortOutVertices();
-        for (UN i=0; i<extractedVertices.size(); i++) {
-            Vertices_->addEntity(extractedVertices[i]);
-        }
-        
-        extractedShortEdges = Faces_->sortOutShortEdges();
-        for (UN i=0; i<extractedShortEdges.size(); i++) {
-            ShortEdges_->addEntity(extractedShortEdges[i]);
-        }
-        
-        if (localNodeList.size()==0) {
-            InterfaceEntityPtrVecPtr extractedStraightEdges = Faces_->sortOutStraightEdges(Dimension_,localNodeList);
-            for (UN i=0; i<extractedStraightEdges.size(); i++) {
-                StraightEdges_->addEntity(extractedStraightEdges[i]);
-            }
-        }
-        
         return 0;
     }
     

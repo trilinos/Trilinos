@@ -82,9 +82,6 @@ namespace FROSch {
         typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVecView GOVecView;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
-        
         
         GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
                                       CommPtr serialComm,
@@ -96,10 +93,11 @@ namespace FROSch {
         
         virtual ~GDSWInterfacePartitionOfUnity();
         
-        virtual int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs);
+        virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
+                                         MultiVectorPtr nodeList);
         
         virtual int sortInterface(CrsMatrixPtr matrix,
-                                  SCVecPtr2D localNodeList);
+                                  MultiVectorPtr nodeList);
         
         virtual int computePartitionOfUnity();
         

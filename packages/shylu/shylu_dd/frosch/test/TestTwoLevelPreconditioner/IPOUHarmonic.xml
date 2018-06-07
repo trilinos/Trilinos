@@ -45,7 +45,11 @@
         <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
         <Parameter name="Overlap"                                           type="int"      value="1"/>
         
-        <ParameterList name="OverlappingOperator">
+        <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
+        <Parameter name="CoarseOperator Type"                               type="string"   value="IPOUHarmonicCoarseOperator"/>
+        <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
+        
+        <ParameterList name="AlgebraicOverlappingOperator">
             <ParameterList name="Solver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
                 <Parameter name="Solver"                                    type="string"   value="KLU"/>

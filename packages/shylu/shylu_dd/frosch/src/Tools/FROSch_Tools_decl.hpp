@@ -53,6 +53,8 @@ namespace FROSch {
     
     enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
     
+    enum NullSpace {LaplaceNullSpace=0,LinearElasticityNullSpace=1};
+    
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map);
     
@@ -68,11 +70,21 @@ namespace FROSch {
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
     
     template <class LO,class GO,class NO>
-    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
-                     unsigned dofsPerNO,
+    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
+                     unsigned dofsPerNode,
                      unsigned dofOrdering,
-                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedNodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &repeatedDofMaps);
+                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
+                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromDofMaps(const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps,
+                                                             unsigned dofsPerNode,
+                                                             unsigned dofOrdering);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMap(Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                             unsigned dofsPerNode,
+                                                             unsigned dofOrdering);
     
     template <class SC,class LO,class GO,class NO>
     Teuchos::ArrayRCP<GO> FindOneEntryOnly(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix);
@@ -88,6 +100,28 @@ namespace FROSch {
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector,
                                                                         Teuchos::ArrayView<unsigned> zero = Teuchos::ArrayView<unsigned>());
     
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
+                                                                   unsigned nullSpaceType,
+                                                                   Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
+                                                                   unsigned dofsPerNode,
+                                                                   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps,
+                                                                   Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nodeList = Teuchos::null);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                         const Epetra_BlockMap &map,
+                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                               Epetra_CrsMatrix &matrix,
+                                                               Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                                    Epetra_MultiVector &vector,
+                                                                    Teuchos::RCP<const Teuchos::Comm<int> > comm);
 }
 
 #endif

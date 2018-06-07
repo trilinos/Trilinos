@@ -128,28 +128,25 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs)
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
+                                                                         MultiVectorPtr nodeList)
     {
-        if (!myGlobalDirichletBoundaryDofs.is_null()) {
-            GOVec globalDirichletBoundaryDofs(myGlobalDirichletBoundaryDofs());
-            sortunique(globalDirichletBoundaryDofs);
-            this->DDInterface_->removeDirichletNodes(globalDirichletBoundaryDofs());
+        if (!dirichletBoundaryDofs.is_null()) {
+            GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
+            sortunique(tmpDirichletBoundaryDofs);            
+            this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
+            this->DDInterface_->sortEntities(nodeList);
         }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(CrsMatrixPtr matrix,
-                                                                  SCVecPtr2D localNodeList)
+                                                                  MultiVectorPtr nodeList)
     {
         this->DDInterface_->divideUnconnectedEntities(matrix);
-        if (!localNodeList.is_null()) {
-            if (localNodeList.size()>0) {
-                this->DDInterface_->sortEntities(localNodeList);
-            } else {
-                this->DDInterface_->sortEntities();
-            }
-        }
+        this->DDInterface_->sortEntities(nodeList);
+        
         return 0;
     }
     

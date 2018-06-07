@@ -78,6 +78,9 @@ namespace FROSch {
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         typedef const EntitySetPtr EntitySetConstPtr;
         
@@ -107,13 +110,13 @@ namespace FROSch {
         
         int resetGlobalDofs(MapPtrVecPtr dofsMaps);
         
-        int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs);
+        int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix);
         
         int sortEntities();
         
-        int sortEntities(SCVecPtr2D localNodeList);
+        int sortEntities(MultiVectorPtr nodeList);
         
         int findParents();
         

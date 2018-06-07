@@ -55,7 +55,7 @@ namespace FROSch {
     OverlappingOperator_ ()
     {
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
-            OverlappingOperator_ = AlgebraicOverlappingOperatorPtr(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"OverlappingOperator")));
+            OverlappingOperator_ = AlgebraicOverlappingOperatorPtr(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
         } else {
             FROSCH_ASSERT(0!=0,"OverlappingOperator Type unkown.");
         }
