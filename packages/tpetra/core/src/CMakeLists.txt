@@ -401,5 +401,5 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'
 # subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.
+# CMake in order to regenerate Makefiles.  Here is another change.
 #
