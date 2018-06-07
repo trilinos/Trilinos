@@ -1426,9 +1426,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
   RCP<OP> M = rcp(new Stokhos::MeanBasedTpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M_s));
 #else
-  typedef typename Storage::execution_space Device;
   Cijk mean_cijk =
-    Stokhos::create_mean_based_product_tensor<Device,typename Storage::ordinal_type,BaseScalar>();
+    Stokhos::create_mean_based_product_tensor<typename Storage::execution_space,typename Storage::ordinal_type,BaseScalar>();
   Kokkos::setGlobalCijkTensor(mean_cijk);
   RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
   RCP<OP> mean_matrix_op = mean_matrix;
@@ -1989,9 +1988,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
   RCP<OP> M = rcp(new Stokhos::MeanBasedTpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M_s));
 #else
-  typedef typename Storage::execution_space Device;
   Cijk mean_cijk =
-    Stokhos::create_mean_based_product_tensor<Device,typename Storage::ordinal_type,BaseScalar>();
+    Stokhos::create_mean_based_product_tensor<typename Storage::execution_space,typename Storage::ordinal_type,BaseScalar>();
   Kokkos::setGlobalCijkTensor(mean_cijk);
   RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
   RCP<OP> mean_matrix_op = mean_matrix;
