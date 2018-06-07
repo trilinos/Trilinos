@@ -41,61 +41,21 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_Stream.hpp"
 
-#pragma once
-#ifndef ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
-#define ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
+#include "VdP_DynamicConstraint.hpp"
 
+int main( int argc, char* argv[] ) {
 
-namespace ROL {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
-namespace details {
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );    
+  int errorFlag  = 0;
 
-using namespace std;
-namespace ph = std::placeholders; // defines ph::_1, ph::_2, ...
+  if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
+  else                std::cout << "End Result: TEST PASSED\n";
 
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                      ROL::ParameterList& pl,
-                                                      ostream& os=cout ) :
-  con_(con), os_(os) {
-  auto& fdlist = pl.sublist("Finite Difference Check"); 
-  order_ = fdlist.get("Order", 1);
-  numSteps_ = fdlist.get("Number of Steps", 
+  return 0;
 }
-
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                     const int numSteps = ROL_NUM_CHECKDERIVSTEPS, 
-                                                     const int order = 1,
-                                                     ostream& os=cout ) : 
-  con_(con), numSteps_(numSteps), order_(order), os_(os) {
-  steps_.resize(numSteps_);
-}
-
-
-
-template<typename Real>
-DynamicConstraintCheck<Real>::value( V& c, const V& uo, const V& un, 
-                                     const V& z, const TS& ts ) const override {
-  con_.value(c,uo,un,z,ts);
-}
- 
-template<typename Real>
-DynamicConstraintCheck<Real>::applyJacobian_uo( V& jv, const V& vo, const V& uo, 
-                                                const V& un, const V& z, 
-                                                const TS& ts ) const override {
-
-  auto f_val = bind( &DC::value, ph::_2, ph::_1, un, z, ts );
-  auto f_der = bind( &DC::applyJacobian_uo, ph::_3, ph::_2, ph::_1, un, z, ts );
-   
-}
-
-
-} // namespace details
-
-} // namespace ROL
-
-
-#endif // ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
-

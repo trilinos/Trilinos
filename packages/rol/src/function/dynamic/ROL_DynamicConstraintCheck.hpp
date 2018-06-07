@@ -46,56 +46,146 @@
 #ifndef ROL_DYNAMICCONSTRAINTCHECK_HPP
 #define ROL_DYNAMICCONSTRAINTCHECK_HPP
 
-#include <functional>
-
-#include "ROL_DynamicConstraint.hpp"
+#include "ROL_DynamicConstraint_CheckInterface.hpp"
+#include "ROL_ValidateFunction.hpp"
+#include "ROL_RandomVector.hpp"
 
 namespace ROL {
-
-namespace details {
 
 using namespace std;
 using Finite_Difference_Arrays::shifts;
 using Finite_Difference_Arrays::weights;
 
-template<typename Real>
-class DynamicConstraintCheck : public DynamicConstraint<Real> {
-public:
+template<typename Real, template<typename> class DerivedConstraint>
+struct DynamicConstraintCheck : public DynamicConstraint<Real> {
 
-  using V  = Vector<Real>;  
-  using DC = DynamicConstraint<Real>;
+  using Base    = DynamicConstraint<Real>;
+  using Derived = DerivedConstraint<Real>;
+   
+  static void check( DerivedConstraint<Real>& con,
+                     ValidateFunction<ReaL>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z ) {
  
+    auto c  = uo.clone();
+    auto vu = uo.clone();
+    auto vz = z.clone();
+    auto l  = uo.dual().clone();
+     
+    RandomizeVector( *c );
+    RandomizeVector( *vu );
+    RandomizeVector( *vz );
+    RandomizeVector( *l );
 
-  // Provide vectors from which to create random direction vectors
-  // (No bound constraint)
-  DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                          ROL::ParameterList& pl, 
-                          ostream& os );
+    auto con_check = make_check( con );
 
-  DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                          const int numSteps, const int order,
-                          ostream& os );
- 
+    auto up_uo = con_check.update_uo();
+    auto up_un = con_check.update_un();
+    auto up_z  = con_check.update_z();
+  
+    auto val_uo = con_check.value_uo( *un, *z  );
+    auto val_un = con_check.value_un( *uo, *z  );
+    auto val_z  = con_check.value_z( *uo, *un );
+    
 
-  virtual ~DyanamicConstraintCheck() {}
+    if( &Derived::applyJacobian_uo != &Base::applyJacobian_uo ) {
+      auto J = con_check.jacobian_uo( *un, *z  );
+      validator.derivative_check( val_uo, J, up_uo, *c, *vu, *uo, "norm(J_uo*vec)" );
+    }
 
-private:
+    if( &Derived::applyJacobian_un != &Base::applyJacobian_un ) {
+      auto J = con_check.jacobian_un( *uo, *z  );
+      validator.derivative_check( val_un, J, up_un, *c, *vu, *un, "norm(J_un*vec)" );
+    }
 
-  DC<Real>&    con_;
-  ostream&     os_;   
+    if( &Derived::applyJacobian_z != &Base::applyJacobian_z ) {
+      auto J = con_check.jacobian_z( *uo, *un );
+      validator.derivative_check( val_z,  J,  up_z,  *c, *vz, *z,  "norm(J_z*vec)" );
+    }
 
-  int          order_;
-  int          numSteps_;
-  vector<Real> steps_;
+    if( &Derived::applyAdjointJacobian_uo != &Base::applyAdjointJacobian_uo ) {
+      auto J = con_check.jacobian_uo( *un, *z );
+      auto aJ = con_check.adjointJacobian_uo( *un, *z  );
+      validator.adjoint_consistency_check( J, aJo, up_uo, *c, *vu, *uo, 
+                                           "Jacobian with respect to uo", "J_uo");
+    }
+
+    if( &Derived::applyAdjointJacobian_un != &Base::applyAdjointJacobian_un ) {
+      auto J  = con_check.jacobian_un( *uo, *z );
+      auto aJ = con_check.adjointJacobian_un( *uo, *z );
+      validator.adjoint_consistency_check( J, aJ, up_un, *c, *vu, *un, 
+                                           "Jacobian with respect to un", "J_un");
+    }
+
+    if( &Derived::applyAdjointJacobian_z != &Base::applyAdjointJacobian_z ) {
+      auto J  = con_check.jacobian_z(  *uo, *un );
+      auto aJ = con_check.adjointJacobian_z(  *uo, *un );
+      validator.adjoint_consistency_check( J,  aJ, up_z, *vz, *c, *z,  
+                                           "Jacobian with respect to z", "J_z");
+    }
+
+    if( &Derived::applyInverseJacobian_un != &Base::applyInverseJacobian_un ) {
+      auto J  = con_check.jacobian_uo( *un, *z );
+      auto iJ = con_check.inverseJacobian_un( *uo, *z );
+      validator.inverse_check( J, iJ, up_un, *vu, *un, 
+                               "Jacobian with respect to un", "J_un");
+    }
+
+    if( &Derived::applyInverseAdjointJacobian_un != &Base::applyInverseAdjointJacobian_un ) {
+      auto aJ  = con_check.adjointJacobian_un( *uo, *z );
+      auto iaJ = con_check.inverseAdjointJacobian_un( *uo, *z );
+      validator.inverse_check( aJ, iaJ, up_un, *vu, *un, 
+                               "adjoint Jacobian with respect to un", "J_un");
+    }
+
+    if( &Derived::applyAdjointHessian_un_un != &Base::applyAdjointHessian_un_un ) {
+      auto aJ  = con_check.adjointJacobian_un( *uo, *z );
+      auto aJl = fix_direction( *aJ, *l );
+      auto aH  = con_check.adjointHessian_un_un( *uo, *z, std::cref(l) );
+//      validator.derivative_check( aJl, aJ, up_un, 
+    }
+
+    if( &Derived::applyAdjointHessian_un_uo != &Base::applyAdjointHessian_un_uo ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_un_z != &Base::applyAdjointHessian_un_z ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_uo_un != &Base::applyAdjointHessian_uo_un ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_uo_uo != &Base::applyAdjointHessian_uo_uo ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_uo_z != &Base::applyAdjointHessian_uo_z ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_z_un != &Base::applyAdjointHessian_z_un ) {
+
+    }
+
+
+    if( &Derived::applyAdjointHessian_z_uo != &Base::applyAdjointHessian_z_uo ) {
+
+    }
+
+    if( &Derived::applyAdjointHessian_z_z != &Base::applyAdjointHessian_z_z ) {
+
+    }
+
+
+  }
+
+  
 };
 
-} // namespace details
-
-using details::DynamicConstraintCheck;
-
 } // namespace ROL
-
-#include "ROL_DynamicConstraintCheckDef.hpp"
 
 #endif // ROL_DYNAMICCONSTRAINTCHECK_HPP
 

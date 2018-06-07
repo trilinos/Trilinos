@@ -116,6 +116,9 @@ public:
                                       const V& x, 
                                       const string& name="Linear Operator",
                                       const string& symbol="A" ) const;
+
+    
+
 private:
 
   int                    order_;         // Finite difference order

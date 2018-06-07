@@ -103,46 +103,50 @@ public:
 
   //----------------------------------------------------------------------------
   // Partial Jacobians
-  void applyJacobian_uo( V& jv, const V& vo, const V& uo, 
+  void applyJacobian_uo( V& jv, const V& v,  const V& uo, 
                                 const V& un, const V& z, 
                                 const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   auto vop = getVector(vo);
-    auto uop = getVector(uo);   auto unp = getVector(un);
+    auto jvp = getVector(jv);   
+    auto vp  = getVector(vo);
+    auto up  = getVector(uo);   
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 = -1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 +     dt*uop->at(0)*uop->at(1);
-    Real j22 = -1.0 - 0.5*dt*uop->at(0)*uop->at(0);
+    Real j21 = -1.0 +     dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
 
-    jvp->at(0) = j11*vop->at(0) + j12*vop->at(1);
-    jvp->at(1) = j21*vop->at(0) + j22*vop->at(1);  
+    jvp->at(0) = j11*vp->at(0) + j12*vp->at(1);
+    jvp->at(1) = j21*vp->at(0) + j22*vp->at(1);  
     
   }
 
-  void applyJacobian_un( V& jv, const V& vn, const V& uo, 
+  void applyJacobian_un( V& jv, const V& v,  const V& uo, 
                                 const V& un, const V& z, 
                                 const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   auto vnp = getVector(vn);
-    auto uop = getVector(uo);   auto unp = getVector(un);
+    auto jvp = getVector(jv);   
+    auto vp  = getVector(v);
+    auto up  = getVector(un);
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 =  1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 + dt*unp->at(0)*unp->at(1);
-    Real j22 = -1.0 - 0.5*dt*unp->at(0)*unp->at(0);
+    Real j21 = -1.0 + dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
 
     jvp->at(0) = j11*vnp->at(0) + j12*vnp->at(1);      
     jvp->at(1) = j21*vnp->at(0) + j22*vnp->at(1);    
   }
 
-  void applyJacobian_z( V& jv, const V& vz, const V& uo, 
+  void applyJacobian_z( V& jv, const V& v,  const V& uo, 
                                const V& un, const V& z, 
                                const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   auto vzp = getVector(vz);
+    auto jvp = getVector(jv);   auto vp  = getVector(v);
     auto uop = getVector(uo);   auto unp = getVector(un);
     Real dt = ts.t[1]-ts.t[0];
 
@@ -150,7 +154,7 @@ public:
                 (1-unp->at(0)*unp->at(0))*unp->at(1) - unp->at(0); 
 
     jvp->at(0) =  0.0;
-    jvp->at(1) = -0.5*dt*vzp->at(0)*term;
+    jvp->at(1) = -0.5*dt*vp->at(0)*term;
   }
 
   //----------------------------------------------------------------------------
@@ -159,71 +163,77 @@ public:
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
 
-    auto ajvp = getVector(ajv);  auto vop = getVector(vo);
-    auto uop  = getVector(uo);   auto unp = getVector(un);
+    auto ajvp = getVector(ajv);  
+    auto vp   = getVector(v);
+    auto up   = getVector(uo);  
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 = -1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 +     dt*uop->at(0)*uop->at(1);
-    Real j22 = -1.0 - 0.5*dt*uop->at(0)*uop->at(0);
+    Real j21 = -1.0 +     dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
 
-    ajvp->at(0) = j11*vop->at(0) + j21*vop->at(1);
-    ajvp->at(1) = j12*vop->at(0) + j22*vop->at(1);  
+    ajvp->at(0) = j11*vp->at(0) + j21*vp->at(1);
+    ajvp->at(1) = j12*vp->at(0) + j22*vp->at(1);  
 
   }
 
-  void applyAdjointJacobian_un( V& ajv, const V& dualv, const V& uo, 
+  void applyAdjointJacobian_un( V& ajv, const V& v,  const V& uo, 
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
 
-    auto ajvp = getVector(ajv);  auto vnp = getVector(vn);
-    auto uop  = getVector(uo);   auto unp = getVector(un);
+    auto ajvp = getVector(ajv);  
+    auto vp   = getVector(v);
+    auto up   = getVector(un);
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 =  1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 + dt*unp->at(0)*unp->at(1);
-    Real j22 = -1.0 - 0.5*dt*unp->at(0)*unp->at(0);
+    Real j21 = -1.0 + dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
 
-    ajvp->at(0) = j11*vnp->at(0) + j21*vnp->at(1);      
-    ajvp->at(1) = j12*vnp->at(0) + j22*vnp->at(1);    
+    ajvp->at(0) = j11*vp->at(0) + j21*vp->at(1);      
+    ajvp->at(1) = j12*vp->at(0) + j22*vp->at(1);    
 
   }
 
-  void applyAdjointJacobian_z( V& ajv, const V& vz, const V& uo, 
+  void applyAdjointJacobian_z( V& ajv, const V& v,  const V& uo, 
                                        const V& un, const V& z, 
                                        const TS& ts ) const override {
 
-    auto ajvp = getVector(ajv);  auto vzp = getVector(vz);
+    auto ajvp = getVector(ajv);  auto vp  = getVector(v);
     auto uop  = getVector(uo);   auto unp = getVector(un);
     Real dt = ts.t[1]-ts.t[0];
 
     auto term = (1-uop->at(0)*uop->at(0))*uop->at(1) - uop->at(0) +
                 (1-unp->at(0)*unp->at(0))*unp->at(1) - unp->at(0); 
 
-    jvp->at(0) = -0.5*dt*vzp->at(1)*term;
+    jvp->at(0) = -0.5*dt*vp->at(1)*term;
 
   }
 
   //----------------------------------------------------------------------------
   // Inverses
-  void applyInverseJacobian_un( V& ijv, const V& vn, const V& uo, 
+  void applyInverseJacobian_un( V& ijv, const V& v,  const V& uo, 
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   auto vnp = getVector(vn);
-    auto uop = getVector(uo);   auto unp = getVector(un);
+    auto jvp = getVector(jv);   
+    auto vp  = getVector(v);
+    auto unp = getVector(un);
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 =  1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 + dt*unp->at(0)*unp->at(1);
-    Real j22 = -1.0 - 0.5*dt*unp->at(0)*unp->at(0);
+    Real j21 = -1.0 + dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
     Real det = j11*j22-j21*j12;
 
-    ijvp->at(0) = ( j22*vnp->at(0) - j12*vnp->at(1) )/det;      
-    ijvp->at(1) = (-j21*vnp->at(0) + j11*vnp->at(1) )/det;    
+    ijvp->at(0) = ( j22*vp->at(0) - j12*vp->at(1) )/det;      
+    ijvp->at(1) = (-j21*vp->at(0) + j11*np->at(1) )/det;    
 
   }
     
@@ -231,71 +241,45 @@ public:
                                                 const V& un, const V& z, 
                                                 const TS& ts ) const override {
 
-    auto ajvp = getVector(ajv);  auto vnp = getVector(vn);
-    auto uop  = getVector(uo);   auto unp = getVector(un);
+    auto ajvp = getVector(ajv);  
+    auto vp   = getVector(v);
+    auto up   = getVector(un);
+
     Real dt = ts.t[1]-ts.t[0];
 
     Real j11 =  1.0;
     Real j12 = -0.5*dt;
-    Real j21 = -1.0 + dt*unp->at(0)*unp->at(1);
-    Real j22 = -1.0 - 0.5*dt*unp->at(0)*unp->at(0);
+    Real j21 = -1.0 + dt*up->at(0)*up->at(1);
+    Real j22 = -1.0 - 0.5*dt*up->at(0)*up->at(0);
     Real det = j11*j22-j21*j12;
 
-    iajvp->at(0) = ( j22*vnp->at(0) - j21*vnp->at(1) );      
-    iajvp->at(1) = (-j12*vnp->at(0) + j11*vnp->at(1) );    
+    iajvp->at(0) = ( j22*vp->at(0) - j21*vp->at(1) );      
+    iajvp->at(1) = (-j12*vp->at(0) + j11*vp->at(1) );    
 
   }
 
   //----------------------------------------------------------------------------
   // Adjoint Hessian components
-  void applyAdjointHessian_un_un( V& ahwv, const V& wn, const V& vn,
-                                           const V& uo, const V& un, 
-                                           const V& z, const TS& ts ) const override {
 
-    auto ahwvp = getVector(ahwv);    auto wp    = getVector(w);
-    auto vp    = getVector(v);       auto uop   = getVector(uo);
-    auto unp   = getVector(un);      auto zp    = getVector(z);
-    Real dt = ts.t[1]-ts.t[0];
-    
-    Real h11 = dt*unp->at(1)*wp->at(1);
-    Real h12 = dt*unp->at(0)*wp->at(1);
-    Real h21 = dt*unp->at(0)*wp->at(1);
-    Real h22 = 0.0;
-
-    ahwvp->at(0) = h11*vp->at(0) + h12*vp->at(1);
-    ahwvp->at(1) = h21*vp->at(0) + h22*vp->at(1);    
-  }
-
-  void applyAdjointHessian_un_uo( V& ahwv, const V& w,  const V& vn,
-                                           const V& uo, const V& un, 
-                                           const V& z,  const TS& ts ) const override {
-    ahwv.zero();
-  }
-
-  void applyAdjointHessian_un_z( V& ahwv, const V& w,  const V& vn,
-                                          const V& uo, const V& un, 
-                                          const V& z,  const TS& ts ) const override {
-    // TODO
-  }
-
-  void applyAdjointHessian_uo_un( V& ahwv, const V& w,  const V& vo,
-                                           const V& uo, const V& un, 
-                                           const V& z,  const TS& ts ) const override {
-    ahwv.zero();
-  }
+//  void applyAdjointHessian_uo_un( V& ahwv, const V& w,  const V& vo,
+//                                           const V& uo, const V& un, 
+//                                           const V& z,  const TS& ts ) const override {
+//    ahwv.zero();
+//  }
 
   void applyAdjointHessian_uo_uo( V& ahwv, const V& w,  const V& v,
                                            const V& uo, const V& un, 
                                            const V& z,  const TS& ts ) const override {
   
-    auto ahwvp = getVector(ahwv);    auto wp    = getVector(w);
-    auto vp    = getVector(v);       auto uop   = getVector(uo);
-    auto unp   = getVector(un);      auto zp    = getVector(z);
+    auto ahwvp = getVector(ahwv);    auto wp = getVector(w);
+    auto vp    = getVector(v);       auto up = getVector(uo);
+    auto zp    = getVector(z);
+
     Real dt = ts.t[1]-ts.t[0];
     
-    Real h11 = dt*uop->at(1)*wp->at(1);
-    Real h12 = dt*uop->at(0)*wp->at(1);
-    Real h21 = dt*uop->at(0)*wp->at(1);
+    Real h11 = dt*up->at(1)*wp->at(1);
+    Real h12 = dt*up->at(0)*wp->at(1);
+    Real h21 = dt*up->at(0)*wp->at(1);
     Real h22 = 0.0;
 
     ahwvp->at(0) = h11*vp->at(0) + h12*vp->at(1);
@@ -305,34 +289,66 @@ public:
   void applyAdjointHessian_uo_z( V& ahwv, const V& w,  const V& vo,
                                           const V& uo, const V& un, 
                                           const V& z,  const TS& ts ) const override {
-    // TODO
-  }
 
-   void applyAdjointHessian_z_un( V& ahwv, const V& w, const V& vz,
-                                           const V& uo, const V& un, 
-                                           const V& z, const TS& ts ) const override {
-    // TODO
-  }
+    auto ahwvp = getVector(ahwv);    auto wp    = getVector(w);
+    auto vp    = getVector(v);       auto up    = getVector(uo);
+    auto zp    = getVector(z);
 
-   void applyAdjointHessian_z_uo( V& ahwv, const V& w, const V& vz,
-                                           const V& uo, const V& un, 
-                                           const V& z, const TS& ts ) const override {
-    // TODO
+    Real dt = ts.t[1]-ts.t[0];
+
+    ahwvp->at(0) =     dt*wp->at(1)*vp->at(0)*up->at(0)*up->at(1)
+                  -0.5*dt*wp->at(1)*vp->at(0)*(1-up->at(0)*up->at(0));
   }
-  
-   void applyAdjointHessian_z_z( V& ahwv, const V& w, const V& vz,
+ 
+//  void applyAdjointHessian_un_uo( V& ahwv, const V& w,  const V& vn,
+//                                           const V& uo, const V& un, 
+//                                           const V& z,  const TS& ts ) const override {
+//    ahwv.zero();
+//  }
+
+ void applyAdjointHessian_un_un( V& ahwv, const V& w,  const V& v,
                                           const V& uo, const V& un, 
-                                          const V& z, const TS& ts ) const override {
-    ahwv.zero();
+                                          const V& z,  const TS& ts ) const override {
+    applyAdjointHessian_uo_uo( ahwv, w, v, un, uo, z, ts );
   }
 
+  void applyAdjointHessian_un_z( V& ahwv, const V& w,  const V& vn,
+                                          const V& uo, const V& un, 
+                                          const V& z,  const TS& ts ) const override {
+    applyAdjointHessian_uo_z( ahwv, w, v, un, uo, z, ts );
+  }
+
+
+   void applyAdjointHessian_z_uo( V& ahwv, const V& w,  const V& vz,
+                                           const V& uo, const V& un, 
+                                           const V& z,  const TS& ts ) const override {
+
+    auto ahwvp = getVector(ahwv);    auto wp = getVector(w);
+    auto vp    = getVector(v);       auto up = getVector(uo);
+    auto zp    = getVector(z);
+
+    Real dt = ts.t[1]-ts.t[0];
+
+    ahwvp->at(0) = dt*wp->at(1)*vp->at(0)*up->at(0)*up->at(1);
+    ahwvp->at(1) = -0.5*dt*wp->at(1)*vp->at(0)*(1-up->at(0)*up->at(0));
+
+  }
+
+  void applyAdjointHessian_z_un( V& ahwv, const V& w,  const V& v,
+                                          const V& uo, const V& un, 
+                                          const V& z,  const TS& ts ) const override {
+    applyAdjointHessian_z_uo( ahwv, w, v, un, uo, z, ts );     
+  }
+ 
+//   void applyAdjointHessian_z_z( V& ahwv, const V& w,  const V& v,
+//                                          const V& uo, const V& un, 
+//                                          const V& z,  const TS& ts ) const override {
+//    ahwv.zero();
+//  }
 
 }; // VdP::DynamicConstraint
 
-
 } // namespace VdP
-
-
 
 
 #endif // VDP_DYNAMICCONSTRAINT_HPP

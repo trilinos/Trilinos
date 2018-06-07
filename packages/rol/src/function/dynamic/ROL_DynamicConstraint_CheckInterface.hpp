@@ -168,6 +168,11 @@ public:
                  cref(uo), ph::_3, cref(z), ts_ );
   } 
 
+  f_dderiv_t<Real> adjointHessian_uo_uo( const V& uo, const V& z, const V& l ) {
+    return bind( &Con::applyAdjointHessian_uo_uo, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), ph::_3, cref(z), ts_ );
+  } 
+
   f_dderiv_t<Real> adjointHessian_uo_z( const V& un, const V& uo, const V& l ) {
     return bind( &Con::applyAdjointHessian_uo_z, &con_, ph::_1, cref(l), ph::_2, 
                  cref(uo), cref(un), ph::_3, ts_ );
