@@ -131,11 +131,6 @@ namespace Tpetra {
         (! matrix_->isFillComplete (), std::runtime_error,
          prefix << "Underlying matrix is not fill complete.");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! matrix_->isLowerTriangular () && ! matrix_->isUpperTriangular (),
-         std::runtime_error, prefix << "The matrix is neither lower nor upper "
-         "triangular.  Remember that in Tpetra, triangular-ness is a local "
-         "(per MPI process) property.");
-      TEUCHOS_TEST_FOR_EXCEPTION
         (X.getNumVectors () != Y.getNumVectors (), std::invalid_argument,
          prefix << "X and Y must have the same number of columns (vectors).  "
          "X.getNumVectors() = " << X.getNumVectors ()
