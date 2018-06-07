@@ -320,9 +320,6 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
-  static constexpr MagnitudeType polytol_default_ = 1e-12;
-  static constexpr MagnitudeType convTol_default_ = 1e-8;
-  static constexpr MagnitudeType orthoKappa_default_ = -1.0;
   static constexpr int maxDegree_default_ = 25;
   static constexpr int maxRestarts_default_ = 20;
   static constexpr int maxIters_default_ = 1000;
@@ -370,9 +367,9 @@ private:
 template<class ScalarType, class MV, class OP>
 GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   outputStream_ (outputStream_default_),
-  polytol_ (polytol_default_),
-  convtol_ (convTol_default_),
-  orthoKappa_ (orthoKappa_default_),
+  polytol_ (DefaultSolverParameters::polyTol),
+  convtol_ (DefaultSolverParameters::convTol),
+  orthoKappa_ (DefaultSolverParameters::orthoKappa),
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
@@ -403,9 +400,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                  const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_ (problem),
   outputStream_ (outputStream_default_),
-  polytol_ (polytol_default_),
-  convtol_ (convTol_default_),
-  orthoKappa_ (orthoKappa_default_),
+  polytol_ (DefaultSolverParameters::polyTol),
+  convtol_ (DefaultSolverParameters::convTol),
+  orthoKappa_ (DefaultSolverParameters::orthoKappa),
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
@@ -451,11 +448,11 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
 
     // The static_cast is to resolve an issue with older clang versions which
     // would cause the constexpr to link fail. With c++17 the problem is resolved.
-    pl->set("Polynomial Tolerance", static_cast<MagnitudeType>(polytol_default_),
+    pl->set("Polynomial Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::polyTol),
       "The relative residual tolerance that used to construct the GMRES polynomial.");
     pl->set("Maximum Degree", static_cast<int>(maxDegree_default_),
       "The maximum degree allowed for any GMRES polynomial.");
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged." );
     pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),
@@ -496,7 +493,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
-    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(orthoKappa_default_),
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
     validPL_ = pl;
@@ -615,7 +612,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check which orthogonalization constant to use.
   if (params->isParameter("Orthogonalization Constant")) {
-    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
 
     // Update parameter in our list.
     params_->set("Orthogonalization Constant",orthoKappa_);
@@ -688,7 +692,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for polynomial convergence tolerance
   if (params->isParameter("Polynomial Tolerance")) {
-    polytol_ = params->get("Polynomial Tolerance",polytol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      polytol_ = params->get ("Polynomial Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      polytol_ = params->get ("Polynomial Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Polynomial Tolerance", polytol_);
@@ -696,7 +706,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
