@@ -754,7 +754,7 @@ namespace Tpetra {
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiags () const {
-    return this->getNodeNumDiags ();
+    return this->getNodeNumDiagsImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
