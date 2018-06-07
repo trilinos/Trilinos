@@ -14,6 +14,7 @@ CoupledAggregationFactory
 GlobalLexicographicIndexManager
 Graph
 GraphBase
+HybridAggregationFactory
 IndexManager
 InterfaceAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm
