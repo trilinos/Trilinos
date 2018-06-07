@@ -206,10 +206,12 @@ namespace MueLu {
     }
     else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
       // normalize coordinates
-      Teuchos::Array<magnitudeType> norms(Coords_->getNumVectors());
+      typedef typename RealValuedMultiVector::scalar_type realScalarType;
+      typedef typename Teuchos::ScalarTraits<realScalarType>::magnitudeType realMagnitudeType;
+      Teuchos::Array<realMagnitudeType> norms(Coords_->getNumVectors());
       Coords_->norm2(norms);
       for (size_t i=0;i<Coords_->getNumVectors();i++)
-        norms[i] = ((magnitudeType)1.0)/norms[i];
+        norms[i] = ((realMagnitudeType)1.0)/norms[i];
       Coords_->scale(norms());
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
