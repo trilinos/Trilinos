@@ -555,7 +555,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
+    const int numRanks = comm->getSize();
+    const int myRank   = comm->getRank();
     EXTRACT_LIB(comm,M) // returns mylib
     // create a Map
     const size_t numLocal = 13;
@@ -565,16 +566,49 @@ namespace {
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
-    TEST_EQUALITY( mvec.getGlobalLength(), numImages*numLocal );
-    // we zeroed it out in the constructor; all norms should be zero
-    Array<Magnitude> norms(numVecs), zeros(numVecs);
-    std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
-    mvec.norm2(norms);
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-    mvec.norm1(norms);
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-    mvec.normInf(norms);
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    TEST_EQUALITY( mvec.getGlobalLength(), numRanks*numLocal );
+
+    // Norms are not computed by Epetra_IntMultiVector so far
+    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value &&
+       !(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
+      std::cout << "Running the norm tests!" << std::endl;
+      // we zeroed it out in the constructor; all norms should be zero
+      Array<Magnitude> norms(numVecs), zeros(numVecs);
+      std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
+      mvec.norm2(norms);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+      mvec.norm1(norms);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+      mvec.normInf(norms);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    }
+
+    Scalar testValue = 2, sumValue = 3;
+    LocalOrdinal  testLID = 7;
+    GlobalOrdinal testGID = myRank*numLocal + testLID;
+    std::cout << "myRank: " << myRank << ", testGID=" << testGID << std::endl;
+    mvec.replaceLocalValue(testLID, 3, testValue);
+    mvec.replaceLocalValue(testLID, 4, testValue);
+    mvec.sumIntoLocalValue(testLID, 4, sumValue);
+    mvec.replaceGlobalValue(testGID, 5, testValue);
+    mvec.replaceGlobalValue(testGID, 6, testValue);
+    mvec.sumIntoGlobalValue(testGID, 6, sumValue);
+    ArrayRCP<const Scalar> replaceLocalData = mvec.getData(3);
+    ArrayRCP<const Scalar> sumIntoLocalData = mvec.getData(4);
+    ArrayRCP<const Scalar> replaceGlobalData = mvec.getData(5);
+    ArrayRCP<const Scalar> sumIntoGlobalData = mvec.getData(6);
+
+    if(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value) {
+      TEST_EQUALITY( replaceLocalData[testLID], testValue );
+      TEST_EQUALITY( sumIntoLocalData[testLID], testValue + sumValue );
+      TEST_EQUALITY( replaceGlobalData[testLID], testValue );
+      TEST_EQUALITY( sumIntoGlobalData[testLID], testValue + sumValue );
+    } else {
+      TEST_FLOATING_EQUALITY( replaceLocalData[testLID], testValue, 1.0e-10 );
+      TEST_FLOATING_EQUALITY( sumIntoLocalData[testLID], testValue + sumValue, 1.0e-10 );
+      TEST_FLOATING_EQUALITY( replaceGlobalData[testLID], testValue, 1.0e-10 );
+      TEST_FLOATING_EQUALITY( sumIntoGlobalData[testLID], testValue + sumValue, 1.0e-10 );
+    }
   }
 
   ////
@@ -2592,10 +2626,14 @@ namespace {
 
 #ifdef HAVE_XPETRA_EPETRA
 
-  #define XPETRA_EPETRA_TYPES( S, LO, GO, N) \
+  #define XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
     typedef typename Xpetra::EpetraMultiVectorT<GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::EpetraVectorT<GO,N> V##S##LO##GO##N;       \
+
+  #define XPETRA_EPETRA_ORDINAL_SCALAR_TYPES( S, LO, GO, N) \
+    typedef typename Xpetra::EpetraIntMultiVectorT<GO,N> MV##S##LO##GO##N; \
+    typedef typename Xpetra::EpetraIntVectorT<GO,N> V##S##LO##GO##N;       \
 
 #endif
 
@@ -2622,7 +2660,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Multiply                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadCombinations            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsTpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
 
 // List of tests which run only with Epetra
 #define XP_EPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
@@ -2631,20 +2669,15 @@ namespace {
 
 // list of all tests which run both with Epetra and Tpetra
 // TODO: move more lists from the upper list to this list
-#define XP_MULTIVECTOR_INSTANT(S,LO,GO,N) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+#define XP_MULTIVECTOR_NO_ORDINAL_INSTANT(S,LO,GO,N)                           \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, AssignmentDeepCopies , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, GetVector            , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstNumVecs      , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstAA           , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Typedefs             , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstAA           , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
 
-
-
-
-  //TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadDot               , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
-  //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, NonContigView       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
-  //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, ScaleAndAssign      , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
+#define XP_MULTIVECTOR_INSTANT(S,LO,GO,N) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Typedefs             , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
 
 // can we relax the INT INT?
 #if defined(HAVE_XPETRA_TPETRA)
@@ -2653,9 +2686,11 @@ namespace {
 #include <TpetraCore_ETIHelperMacros.h>
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_SLGN ( XP_MULTIVECTOR_INSTANT )
 // no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MULTIVECTOR_INSTANT )
+// TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_NO_ORDINAL_TYPES )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MULTIVECTOR_NO_ORDINAL_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 
 #endif
@@ -2666,14 +2701,18 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 #include "Xpetra_Map.hpp" // defines EpetraNode
 typedef Xpetra::EpetraNode EpetraNode;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
-XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
+XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES(double,int,int,EpetraNode)
+XPETRA_EPETRA_ORDINAL_SCALAR_TYPES(int,int,int,EpetraNode)
+XP_MULTIVECTOR_NO_ORDINAL_INSTANT(double,int,int,EpetraNode)
+XP_MULTIVECTOR_INSTANT(int,int,int,EpetraNode)
 XP_EPETRA_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 #endif
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
-XP_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES(double,int,LongLong,EpetraNode)
+XPETRA_EPETRA_ORDINAL_SCALAR_TYPES(int,int,LongLong,EpetraNode)
+XP_MULTIVECTOR_INSTANT(int,int,LongLong,EpetraNode)
+XP_MULTIVECTOR_NO_ORDINAL_INSTANT(double,int,LongLong,EpetraNode)
 XP_EPETRA_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
 #endif
 #endif

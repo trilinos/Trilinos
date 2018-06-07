@@ -43,6 +43,7 @@ Level 1
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -109,6 +110,7 @@ Level 2
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -175,6 +177,7 @@ Level 3
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -241,6 +244,7 @@ Level 4
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
+  tentative: calculate qr = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   

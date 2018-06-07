@@ -144,7 +144,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d, 
-		      PHX::FieldManager<TRAITS>& fm)
+		      PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
   const std::string blockId = this->wda(workset_0).block_id;
@@ -275,7 +275,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-		      PHX::FieldManager<TRAITS>& fm)
+		      PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
   const std::string blockId = this->wda(workset_0).block_id;

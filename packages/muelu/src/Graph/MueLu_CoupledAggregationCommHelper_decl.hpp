@@ -49,6 +49,7 @@
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -180,7 +181,7 @@ namespace MueLu {
                                         its MyPid, the corresponding companion
                                         is not altered.
     */
-    void ArbitrateAndCommunicate(Vector &weight, LOVector &procWinner, LOVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
+    void ArbitrateAndCommunicate(Vector &weight, LOVector &procWinner, LOMultiVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOMultiVector *, const bool) const
 
     /*!  @brief Redistribute data in source to dest where both source and dest might have multiple copies of the same global id across many processors.
 

@@ -56,8 +56,8 @@ Density(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData /* d */,
+		      PHX::FieldManager<Traits>& /* vm */)
 {
   cell_data_size = density.size() / density.dimension(0);
 }

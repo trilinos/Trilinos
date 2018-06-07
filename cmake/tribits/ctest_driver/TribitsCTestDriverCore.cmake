@@ -759,9 +759,9 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #     If ``TRUE``, ``ctest_start()`` is called to set up a new "dashboard"
 #     (i.e. define a new CDash build with a unique Build Stamp defined in the
-#     ``Testing/TAG`` file).  If ``FALSE``, then ``ctest_start(APPEND)`` is
-#     called which allows it this ctest -S invocation to append results to an
-#     existing CDash build.  (See ???).  Default ``TRUE``.
+#     ``Testing/TAG`` file).  If ``FALSE``, then ``ctest_start(... APPEND)``
+#     is called which allows it this ctest -S invocation to append results to
+#     an existing CDash build.  (See ???).  Default ``TRUE``.
 #
 #   ``CTEST_DO_UPDATES``
 #
@@ -823,10 +823,14 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #     Build-in CTest variable that gives the flags passed to the build command
 #     called inside of the built-in CTest command ``CTEST_BUILD()``.  The
-#     default is ``-j2`` when ``CTEST_CMAKE_GENERATOR`` is set to "Unix
-#     Makefiles".  Otherwise, the default is empty "".  Useful options to set
+#     default is ``-j2`` when `CTEST_CMAKE_GENERATOR`_ is set to ``Unix
+#     Makefiles``.  Otherwise, the default is empty "".  Useful options to set
 #     are ``-j<N>`` (to build on parallel) and ``-k`` (to keep going when
-#     there are build errors so we can see all of the build errors).
+#     there are build errors so we can see all of the build errors).  When
+#     ``CTEST_CMAKE_GENERATOR`` is set to ``Ninja``, the ``j<N>`` option can
+#     be left off (in which case all of the available unloaded cores are used
+#     to build) and the option ``-k 999999`` can be used to build all targets
+#     when there are build failures.
 #
 #   .. _CTEST_DO_TEST:
 #
@@ -1137,13 +1141,6 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # configuration has not been performed yet.  And one cannot run just tests if
 # there is not a valid configuration and build already in place.
 #
-# NOTE: In order for the results generated in the different ``ctest -S``
-# invocations to go to the same build on CDash, a version of CMake/CTest 3.10+
-# must be used.  With older versions of CMake/CTest, the
-# ``ctest_start(APPEND)`` command incorrectly creates a new build stamp which
-# then results in a different build on CDash.  CMake versions CMake/CTest
-# 3.10+ and above don't have this defect.
-#
 # .. _Repository Updates (TRIBITS_CTEST_DRIVER()):
 #
 # **Repository Updates (TRIBITS_CTEST_DRIVER()):**
@@ -1304,14 +1301,20 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # Other miscellaneous vars that can be set in the CTest -S script or as env
 # vars are given below.
 #
+#   .. _CTEST_CMAKE_GENERATOR:
+#
 #   ``CTEST_CMAKE_GENERATOR``
 #
-#     The CMake generator.  If an existing ``CMakeCache.txt`` file exists,
-#     then the generator will be read out of that file.  Otherwise, the
-#     default generator is selected to be ``Unix Makefiles``.  NOTE: Currently
-#     this value is **NOT** passed down into the inner CMake configure step!
-#     Currently, its only purpose is to select the default value for
-#     `CTEST_BUILD_FLAGS`_.
+#     Built-in CTest variable that determines the CMake generator used in the
+#     inner configure.  If an existing ``CMakeCache.txt`` file exists, then
+#     the default value for the generator will be read out of that file.
+#     Otherwise, the default generator is selected to be ``Unix Makefiles``.
+#     Another popular option is ``Ninja``.  The value of this variable
+#     determines the type of generator used in the inner CMake configure done
+#     by the command ``ctest_configure(...)`` called in this function.  This
+#     is done implicitly by CTest.  The selected generator has an impact on
+#     what flags can be used in `CTEST_BUILD_FLAGS`_ since ``make`` and
+#     ``ninja`` accept different arguments in some cases.
 #
 #   ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE``
 #

@@ -55,8 +55,6 @@
 #include <type_traits>
 #include <string>
 
-#include "Ifpack2_BlockTriDiContainer_impl.hpp"
-
 namespace Ifpack2 {
 
   /// \class BlockTriDiContainer
@@ -90,6 +88,27 @@ namespace Ifpack2 {
   /// Currently, this class is expected to perform well on conventional CPU and
   /// Intel Xeon Phi. It does *not* yet perform well on GPU.
 
+  ///
+  /// Impl Tag
+  ///
+  namespace BlockTriDiContainerDetails {
+    ///
+    /// impl tag to distinguish built-in types and sacado types
+    ///
+    struct ImplNotAvailTag {};
+    struct ImplSimdTag {};
+    struct ImplSacadoTag {};
+
+    template<typename T> struct ImplTag                        { typedef ImplNotAvailTag type; };
+    template<>           struct ImplTag<float>                 { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<double>                { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<float> >  { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<double> > { typedef ImplSimdTag type;     };
+
+    /// forward declaration 
+    template<typename MatrixType> struct ImplObject;
+  }
+  
   ///
   /// Primary declation
   ///
@@ -365,28 +384,8 @@ namespace Ifpack2 {
     //! If \c true, the container has been successfully computed.
     bool IsComputed_;
 
-    using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
-    using part_interface_type = BlockTriDiContainerDetails::PartInterface<MatrixType>;
-    using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
-    using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
-    using norm_manager_type = BlockTriDiContainerDetails::NormManager<MatrixType>;
-    using async_import_type = BlockTriDiContainerDetails::AsyncableImport<MatrixType>;
-
-    // distructed objects
-    Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A_;
-    Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer_;
-    Teuchos::RCP<async_import_type> async_importer_;
-    bool overlap_communication_and_computation_;
-
-    // copy of Y (mutable to penentrate const)
-    mutable typename impl_type::tpetra_multivector_type Z_;
-
-    // local objects
-    part_interface_type part_interface_;
-    block_tridiags_type block_tridiags_; // D
-    amd_type a_minus_d_; // R = A - D
-    mutable typename impl_type::vector_type_1d_view work_; // right hand side workspace
-    mutable norm_manager_type norm_manager_;
+    // hide details of impl using ImplObj; finally I understand why AMB did that way.
+    Teuchos::RCP<BlockTriDiContainerDetails::ImplObject<MatrixType> > impl_;
     
     // initialize distributed and local objects
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,

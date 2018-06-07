@@ -56,6 +56,7 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
@@ -342,6 +343,10 @@ namespace MueLu {
   RCP<const ParameterList> TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+  SET_VALID_ENTRY("tentative: calculate qr");
+#undef SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
@@ -422,7 +427,7 @@ namespace MueLu {
 
     typedef Kokkos::ArithTraits<SC>     ATS;
     typedef typename ATS::magnitudeType Magnitude;
-    const SC zero = ATS::zero();
+    const SC zero = ATS::zero(), one = ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
@@ -576,6 +581,11 @@ namespace MueLu {
     cols_type cols;
     vals_type vals;
 
+    const ParameterList& pL = GetParameterList();
+    const bool& doQRStep = pL.get<bool>("tentative: calculate qr");
+    if (!doQRStep)
+      GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
+
     if (NSDim == 1) {
       // 1D is special, as it is the easiest. We don't even need to the QR,
       // just normalize an array. Plus, no worries abot small aggregates.  In
@@ -608,20 +618,28 @@ namespace MueLu {
           // put it in the flat array, "localQR" (in column major format) for the
           // QR routine. Trivial in 1D.
           if (goodMap) {
-            // Calculate QR by hand
             auto norm = ATS::magnitude(zero);
-            // FIXME: shouldn't there be stridedblock here?
-            // FIXME_KOKKOS: shouldn't there be stridedblock here?
-            for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              auto dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
-              norm += dnorm*dnorm;
-            }
-            norm = sqrt(norm);
 
-            if (norm == zero) {
-              // zero column; terminate the execution
-              statusAtomic(1) = true;
-              return;
+            if (doQRStep) {
+              // Calculate QR by hand
+              // FIXME: shouldn't there be stridedblock here?
+              // FIXME_KOKKOS: shouldn't there be stridedblock here?
+              for (decltype(aggSize) k = 0; k < aggSize; k++) {
+                auto dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
+                norm += dnorm*dnorm;
+              }
+              norm = sqrt(norm);
+
+              if (norm == zero) {
+                // zero column; terminate the execution
+                statusAtomic(1) = true;
+                return;
+              }
+            } else {
+              // The easiest and less code churn way is to just declare the
+              // norm to one, that the column of tentative P is just scaled by
+              // identity
+              norm = ATS::magnitude(one);
             }
 
             // R = norm
@@ -666,6 +684,9 @@ namespace MueLu {
         //     packing new values in the beginning of each row
         // We do use auxilary view in this case, so keep a second rows view for
         // counting nonzeros in rows
+
+        TEUCHOS_TEST_FOR_EXCEPTION(!doQRStep, Exceptions::RuntimeError,
+            "MueLu: TentativePFactory_kokkos: skipping QR step have not been implemented for block systems yet.");
 
         // NOTE: the allocation (initialization) of these view takes noticeable time
         size_t nnzEstimate = numRows * NSDim;
@@ -769,7 +790,6 @@ namespace MueLu {
       PtentCrs->resumeFill();  // we need that for rectangular matrices
 
       // Managing labels & constants for ESFC
-      const ParameterList& pL = GetParameterList();
       RCP<ParameterList> FCparams;
       if(pL.isSublist("matrixmatrix: kernel params"))
         FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
