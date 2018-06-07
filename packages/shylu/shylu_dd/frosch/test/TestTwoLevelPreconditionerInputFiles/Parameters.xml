@@ -189,7 +189,7 @@
             <ParameterList name="Blocks">
                 <ParameterList name="1">
                     <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                    <Parameter name="Rotations"                             type="bool"     value="false"/>
+                    <Parameter name="Rotations"                             type="bool"     value="true"/>
                     <ParameterList name="Custom">
                         <Parameter name="Vertices: translations"            type="bool"     value="true"/>
                         <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
@@ -270,7 +270,7 @@
                 <ParameterList name="1">
                     <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
                     <Parameter name="Option"                                type="int"      value="1"/>
-                    <Parameter name="Rotations"                             type="bool"     value="false"/>
+                    <Parameter name="Rotations"                             type="bool"     value="true"/>
                 </ParameterList>
             </ParameterList>
             
