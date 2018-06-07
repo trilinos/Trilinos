@@ -86,7 +86,24 @@ namespace Ifpack2 {
   /// user-provided column Map.
   ///
   /// Currently, this class is expected to perform well on conventional CPU and
-  /// Intel Xeon Phi. It does *not* yet perform well on GPU.
+  /// Intel Xeon Phi (reaching the ceiling of the bandwidth utilization) and 
+  /// perform reasonably well on GPU (comparable to Intel Xeon Phi performance).
+  /// The main performance issue on GPU is block sparse matrix vector multiplication
+  /// which does not use a SIMD format.
+  ///
+  /// Implementation specific comments:
+  ///  - When ETI is not enabled, do not use something like "using namepsace KokkosBatched::Experimental".
+  ///    Albany (or any applications) can use the same struct name (in this case Albany uses Side).
+  ///  - Use an impl pointer to hide details. If you use an object inside of an Ifpack container,  
+  ///    it requires a complete definition of the member object, which needs to expose an impl details 
+  ///    header. However, a pointer does not require a complete definition of the member objects.
+  ///  - Always test with complex even if this code is not used with complex. 
+  ///  - Always check a non MPI build to check MPI is guarded by #ifdef HAVE_IFPACK2_MPI
+  ///  - Do not trust CMake variables and macros because you see the variables in the file. If you use
+  ///    CMake varialbes and macro definitions, check Ifpack2_config.h. 
+  ///  - Always better remove warnings (shadows and signed/unsinged comparison). If the code is used by 
+  ///    other customers, they may have a different software quality standard. It is better to follow 
+  ///    a higher quality standard.
 
   ///
   /// Impl Tag
