@@ -47,9 +47,109 @@
 /// Declaration and definition of Tpetra::CrsMatrixSolveOp and its
 /// nonmember constructor Tpetra::createCrsMatrixSolveOp.
 
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "KokkosSparse.hpp"
 
 namespace Tpetra {
+  namespace Details {
+    /// \brief Solves a linear system when the underlying matrix is
+    ///   locally triangular.
+    ///
+    /// \warning This method is DEPRECATED.  For comparable
+    ///   functionality with a better interface, please see
+    ///   Ifpack2::LocalSparseTriangularSolver.
+    template <class DomainScalar, class RangeScalar,
+              class MatrixScalar, class LO, class GO, class NT>
+    void
+    localSolve (MultiVector<DomainScalar, LO, GO, NT>& X,
+                const CrsMatrix<MatrixScalar, LO, GO, NT>& A,
+                const MultiVector<RangeScalar, LO, GO, NT>& Y,
+                Teuchos::ETransp mode)
+    {
+      using Teuchos::CONJ_TRANS;
+      using Teuchos::NO_TRANS;
+      using Teuchos::TRANS;
+      using RMV = MultiVector<RangeScalar, LO, GO, NT>;
+      using host_memory_space = Kokkos::HostSpace;
+      using crs_matrix_type = CrsMatrix<MatrixScalar, LO, GO, NT>;
+      using device_type = typename crs_matrix_type::device_type;
+      using dev_memory_space = typename device_type::memory_space;
+      const char prefix[] = "Tpetra::Details::localSolve: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A.isFillComplete (), std::runtime_error,
+         prefix << "The matrix is not fill complete.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! X.isConstantStride () || ! Y.isConstantStride (),
+         std::invalid_argument, prefix << "X and Y must be constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A.getNodeNumRows () != 0 && ! A.isUpperTriangularImpl () &&
+         ! A.isLowerTriangularImpl (), std::runtime_error, prefix <<
+         "The matrix is neither upper triangular or lower triangular.  "
+         "You may only call this method if the matrix is triangular.  "
+         "Remember that this is a local (per MPI process) property, and that "
+         "Tpetra only knows how to do a local (per process) triangular solve.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (Teuchos::ScalarTraits<MatrixScalar>::isComplex && mode == TRANS,
+         std::logic_error, prefix << "This function does not support "
+         "non-conjugated transposed solve (mode == Teuchos::TRANS) for "
+         "complex scalar types.");
+
+      // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
+      // that if _some_ diagonal entries are missing locally, then it
+      // assumes that the matrix has an implicitly stored unit diagonal.
+      // Whether the matrix has an implicit unit diagonal or not should
+      // be up to the user to decide.  What if the graph has no diagonal
+      // entries, and the user wants it that way?  The only reason this
+      // matters, though, is for the triangular solve, and in that case,
+      // missing diagonal entries will cause trouble anyway.  However,
+      // it would make sense to warn the user if they ask for a
+      // triangular solve with an incomplete diagonal.  Furthermore,
+      // this code should only assume an implicitly stored unit diagonal
+      // if the matrix has _no_ explicitly stored diagonal entries.
+
+      const std::string uplo = A.isUpperTriangularImpl () ? "U" :
+        (A.isLowerTriangularImpl () ? "L" : "N");
+      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+        (mode == Teuchos::TRANS ? "T" : "N");
+      const std::string diag =
+        (A.getNodeNumDiagsImpl () < A.getNodeNumRows ()) ? "U" : "N";
+
+      using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+      local_matrix_type A_lcl = A.getLocalMatrix ();
+
+      // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+      // sequential, host-only code.  See
+      // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+      // means that we need to sync to host, then sync back to device
+      // when done.
+      X.template sync<host_memory_space> ();
+      const_cast<RMV&> (Y).template sync<host_memory_space> ();
+      X.template modify<host_memory_space> (); // we will write to X
+
+      if (X.isConstantStride () && Y.isConstantStride ()) {
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
+                            A_lcl, Y_lcl, X_lcl);
+      }
+      else {
+        const size_t numVecs =
+          std::min (X.getNumVectors (), Y.getNumVectors ());
+        for (size_t j = 0; j < numVecs; ++j) {
+          auto X_j = X.getVector (j);
+          auto Y_j = X.getVector (j);
+          auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
+          KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
+                              diag.c_str (), A_lcl, Y_lcl, X_lcl);
+        }
+      }
+
+      X.template sync<dev_memory_space> ();
+      const_cast<RMV&> (Y).template sync<dev_memory_space> ();
+    }
+  } // namespace Details
 
   /// \class CrsMatrixSolveOp
   /// \brief Wrap a CrsMatrix instance's triangular solve in an Operator.
@@ -92,7 +192,7 @@ namespace Tpetra {
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
             class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
             class Node = ::Tpetra::Details::DefaultTypes::node_type>
-  class CrsMatrixSolveOp TPETRA_DEPRECATED :
+  class TPETRA_DEPRECATED CrsMatrixSolveOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
     //! The specialization of CrsMatrix which this class wraps.
@@ -141,9 +241,11 @@ namespace Tpetra {
          "implemented.  Please speak with the Tpetra developers.");
       if (mode == Teuchos::NO_TRANS) {
         applyNonTranspose (X,Y);
-      } else if (mode == Teuchos::TRANS || mode == Teuchos::CONJ_TRANS) {
+      }
+      else if (mode == Teuchos::TRANS || mode == Teuchos::CONJ_TRANS) {
         applyTranspose (X, Y, mode);
-      } else {
+      }
+      else {
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::invalid_argument, prefix << "The 'mode' argument has an "
            "invalid value " << mode << ".  Valid values are Teuchos::NO_TRANS="
@@ -185,23 +287,24 @@ namespace Tpetra {
     //! Do the non-transpose solve.
     void applyNonTranspose (const MV& X_in, MV& Y_in) const
     {
+      using Teuchos::RCP;
       using Teuchos::NO_TRANS;
       using Teuchos::null;
+      using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
+      using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
       typedef Teuchos::ScalarTraits<Scalar> ST;
 
       // Solve U X = Y  or  L X = Y
       // X belongs to domain map, while Y belongs to range map
 
       const size_t numVectors = X_in.getNumVectors();
-      Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-        matrix_->getGraph ()->getImporter ();
-      Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter =
-        matrix_->getGraph ()->getExporter ();
-      Teuchos::RCP<const MV> X;
+      RCP<const import_type> importer = matrix_->getGraph ()->getImporter ();
+      RCP<const export_type> exporter = matrix_->getGraph ()->getExporter ();
+      RCP<const MV> X;
 
       // it is okay if X and Y reference the same data, because we can
       // perform a triangular solve in-situ.  however, we require that
-      // column access to each is strided.
+      // each have constant stride
 
       // set up import/export temporary multivectors
       if (importer != null) {
@@ -235,11 +338,6 @@ namespace Tpetra {
         exportMV_->doImport (X_in, *exporter, INSERT);
         X = exportMV_;
       }
-      else if (! X_in.isConstantStride ()) {
-        // cannot handle non-constant stride right now
-        // generate a copy of X_in
-        X = Teuchos::rcp (new MV (X_in));
-      }
       else {
         // just temporary, so this non-owning RCP is okay
         X = Teuchos::rcpFromRef (X_in);
@@ -249,23 +347,14 @@ namespace Tpetra {
       // are permuted or belong to other processes.  We will compute
       // solution into the to-be-exported MV.
       if (importer != null) {
-        matrix_->template localSolve<Scalar, Scalar> (*X, *importMV_, NO_TRANS);
+        Details::localSolve (*importMV_, *matrix_, *X, NO_TRANS);
         // Make sure target is zero: necessary because we are adding.
         Y_in.putScalar (ST::zero ());
         Y_in.doExport (*importMV_, *importer, ADD);
       }
       // otherwise, solve into Y
       else {
-        // can't solve into non-strided multivector
-        if (! Y_in.isConstantStride ()) {
-          // generate a strided copy of Y
-          MV Y (Y_in);
-          matrix_->template localSolve<Scalar, Scalar> (*X, Y, NO_TRANS);
-          Tpetra::deep_copy (Y_in, Y);
-        }
-        else {
-          matrix_->template localSolve<Scalar, Scalar> (*X, Y_in, NO_TRANS);
-        }
+        Details::localSolve (Y_in, *matrix_, *X, NO_TRANS);
       }
     }
 
@@ -273,7 +362,10 @@ namespace Tpetra {
     void applyTranspose (const MV& X_in, MV& Y_in, const Teuchos::ETransp mode) const
     {
       typedef Teuchos::ScalarTraits<Scalar> ST;
+      using Teuchos::RCP;
       using Teuchos::null;
+      using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
+      using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
 
       TEUCHOS_TEST_FOR_EXCEPTION
         (mode != Teuchos::TRANS && mode != Teuchos::CONJ_TRANS, std::logic_error,
@@ -282,11 +374,9 @@ namespace Tpetra {
          "Tpetra developers.");
 
       const size_t numVectors = X_in.getNumVectors();
-      Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-        matrix_->getGraph ()->getImporter ();
-      Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter =
-        matrix_->getGraph ()->getExporter ();
-      Teuchos::RCP<const MV> X;
+      RCP<const import_type> importer = matrix_->getGraph ()->getImporter ();
+      RCP<const export_type> exporter = matrix_->getGraph ()->getExporter ();
+      RCP<const MV> X;
 
       // it is okay if X and Y reference the same data, because we can
       // perform a triangular solve in-situ.  however, we require that
@@ -324,38 +414,23 @@ namespace Tpetra {
         importMV_->doImport(X_in,*importer,INSERT);
         X = importMV_;
       }
-      else if (X_in.isConstantStride() == false) {
-        // cannot handle non-constant stride right now
-        // generate a copy of X_in
-        X = Teuchos::rcp(new MV(X_in));
-      }
       else {
         // just temporary, so this non-owning RCP is okay
         X = Teuchos::rcpFromRef (X_in);
       }
 
-
       // If we have a non-trivial exporter, we must export elements that
       // are permuted or belong to other processes.  We will compute
       // solution into the to-be-exported MV; get a view.
       if (exporter != null) {
-        matrix_->template localSolve<Scalar, Scalar> (*X, *exportMV_,
-                                                      Teuchos::CONJ_TRANS);
+        Details::localSolve (*exportMV_, *matrix_, *X, Teuchos::CONJ_TRANS);
         // Make sure target is zero: necessary because we are adding
         Y_in.putScalar(ST::zero());
         Y_in.doExport(*importMV_, *importer, ADD);
       }
       // otherwise, solve into Y
       else {
-        if (Y_in.isConstantStride() == false) {
-          // generate a strided copy of Y
-          MV Y(Y_in);
-          matrix_->template localSolve<Scalar, Scalar> (*X, Y, Teuchos::CONJ_TRANS);
-          Y_in = Y;
-        }
-        else {
-          matrix_->template localSolve<Scalar, Scalar> (*X, Y_in, Teuchos::CONJ_TRANS);
-        }
+        Details::localSolve (Y_in, *matrix_, *X, Teuchos::CONJ_TRANS);
       }
     }
   };
