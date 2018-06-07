@@ -349,16 +349,6 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
       TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::EpetraIntVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::Vector!
-    ///
-    /// \warning Be aware that the view on the vector data is non-persisting, i.e.
-    ///          only valid as long as the vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
       Kokkos::Impl::is_same<
@@ -744,11 +734,13 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
 
         // access Epetra vector data
         int* data = NULL;
-        vec_->ExtractView(&data);
+        int myLDA;
+        vec_->ExtractView(&data, &myLDA);
         int localLength = vec_->MyLength();
+        int numVectors  = vec_->NumVectors();
 
         // create view
-        epetra_view_type test = epetra_view_type(data, localLength,1);
+        epetra_view_type test = epetra_view_type(data, localLength, numVectors);
         typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
 
         return ret;
@@ -1182,11 +1174,13 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
 
         // access Epetra vector data
         int* data = NULL;
-        vec_->ExtractView(&data);
+        int myLDA;
+        vec_->ExtractView(&data, &myLDA);
         int localLength = vec_->MyLength();
+        int numVectors  = vec_->NumVectors();
 
         // create view
-        epetra_view_type test = epetra_view_type(data, localLength, 1);
+        epetra_view_type test = epetra_view_type(data, localLength, numVectors);
         typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
 
         return ret;
