@@ -50,6 +50,9 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 #ifdef MUELU_GRAPHBASE_SHORT
 typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> GraphBase;
 #endif
+#ifdef MUELU_HYBRIDAGGREGATIONFACTORY_SHORT
+typedef MueLu::HybridAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> HybridAggregationFactory;
+#endif
 #ifdef MUELU_INDEXMANAGER_SHORT
 typedef MueLu::IndexManager<LocalOrdinal,GlobalOrdinal,Node> IndexManager;
 #endif

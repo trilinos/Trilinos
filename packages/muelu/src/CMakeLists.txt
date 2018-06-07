@@ -23,6 +23,7 @@ SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${DIR})
 INCLUDE_DIRECTORIES(${DIR}/Graph)
 INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
@@ -458,6 +459,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
