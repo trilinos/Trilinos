@@ -131,7 +131,7 @@ namespace MueLu {
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
 #endif
 
-    RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
+    Teuchos::TimeMonitor tmCompute(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute"));
 
     bool defaultFilter = false;
 
@@ -318,7 +318,7 @@ namespace MueLu {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for (2,2)-block" << std::endl;
 
       { // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
-        RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22")));
+        Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22"));
 
         Level fineLevel, coarseLevel;
         fineLevel.SetFactoryManager(Teuchos::null);
@@ -945,7 +945,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
-    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) matrix")));
+    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) matrix"));
     
     // coarse matrix for P11* (M1 + D1* M2 D1) P11
     Teuchos::RCP<Matrix> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
@@ -965,7 +965,7 @@ namespace MueLu {
       AH_=Matrix1;
     }
     else {
-      RCP<Teuchos::TimeMonitor> tmAddon = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix")));
+      Teuchos::TimeMonitor tmAddon(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix"));
       // catch a failure
       TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
                                  "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "
@@ -1133,6 +1133,8 @@ namespace MueLu {
                                                                   Teuchos::ETransp mode,
                                                                   Scalar alpha,
                                                                   Scalar beta) const {
+
+    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLuRefmaxwell: Solve"));
 
     // make sure that we have enough temporary memory
     if (X.getNumVectors() != P11res_->getNumVectors()) {
