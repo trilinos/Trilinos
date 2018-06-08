@@ -598,25 +598,32 @@ class AggregateGenerator {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    // Get MPI parameters
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    LO numRanks = comm->getSize();
+    LO myRank   = comm->getRank();
+
+    if(numRanks == 1) {
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
 
 
-    RCP<const Map> rowmap = A->getRowMap();
+      RCP<const Map> rowmap = A->getRowMap();
 
-    // Specify root nodes on interface
-    Teuchos::Array<LO> nodeOnInterface(rowmap->getNodeNumElements(),0);
-    nodeOnInterface[0] = 1;
-    nodeOnInterface[35] = 1;
+      // Specify root nodes on interface
+      Teuchos::Array<LO> nodeOnInterface(rowmap->getNodeNumElements(),0);
+      nodeOnInterface[0] = 1;
+      nodeOnInterface[35] = 1;
 
-    RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
-    GO numAggs = aggregates->GetNumAggregates();
+      RCP<AmalgamationInfo> amalgInfo;
+      RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
+      GO numAggs = aggregates->GetNumAggregates();
 
 
-    // Check to see if specified nodes are root nodes
-    for(LO i=0; i<nodeOnInterface.size(); i++){
-      if (nodeOnInterface[i])
-        TEST_EQUALITY(aggregates->IsRoot( i ), true);
+      // Check to see if specified nodes are root nodes
+      for(LO i=0; i<nodeOnInterface.size(); i++){
+        if (nodeOnInterface[i])
+          TEST_EQUALITY(aggregates->IsRoot( i ), true);
+      }
     }
 
   } //UncoupledInterface

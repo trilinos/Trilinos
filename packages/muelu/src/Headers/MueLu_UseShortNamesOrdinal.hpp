@@ -32,6 +32,9 @@ typedef MueLu::AggregationPhase3Algorithm<LocalOrdinal,GlobalOrdinal,Node> Aggre
 #ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
 typedef MueLu::AggregationPhase3Algorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase3Algorithm_kokkos;
 #endif
+#ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
+typedef MueLu::AggregationStructuredAlgorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationStructuredAlgorithm;
+#endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo;
 #endif
