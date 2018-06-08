@@ -1549,8 +1549,8 @@ namespace Ifpack2 {
       inline
       void 
       factorize (const local_ordinal_type& packidx) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level3::Blocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level3::Blocked;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -1561,22 +1561,22 @@ namespace Ifpack2 {
 
         // subview pattern
         auto A = Kokkos::subview(vector_values, i0, Kokkos::ALL(), Kokkos::ALL());
-        SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
+        KB::SerialLU<KB::Algo::LU::Unblocked>::invoke(A, tiny);
 
         if (nrows > 1) {
           auto B = A;
           auto C = A;
           for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
             B.assign_data( &vector_values(i0+1,0,0) );
-            SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
+            KB::SerialTrsm<KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
               ::invoke(one, A, B);
             C.assign_data( &vector_values(i0+2,0,0) );
-            SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
+            KB::SerialTrsm<KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>
               ::invoke(one, A, C);
             A.assign_data( &vector_values(i0+3,0,0) );
-            SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+            KB::SerialGemm<KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
               ::invoke(-one, C, B, one, A);
-            SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
+            KB::SerialLU<KB::Algo::LU::Unblocked>::invoke(A, tiny);
           }
         }
       }
@@ -1613,8 +1613,8 @@ namespace Ifpack2 {
 		const local_ordinal_type &i0,
 		const local_ordinal_type &nrows,
                 const local_ordinal_type &v) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level3::Unblocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level3::Unblocked;
 
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -1622,22 +1622,22 @@ namespace Ifpack2 {
         // subview pattern
         auto A = Kokkos::subview(scalar_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
         A.assign_data( &scalar_values(i0,0,0,v) );
-        TeamLU<member_type,Algo::LU::Unblocked>::invoke(member, A, tiny);
+        KB::TeamLU<member_type,KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
         if (nrows > 1) {
           auto B = A;
           auto C = A;
           local_ordinal_type i = i0;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
             B.assign_data( &scalar_values(i+1,0,0,v) );
-            TeamTrsm<member_type,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
+            KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
               ::invoke(member, one, A, B);
             C.assign_data( &scalar_values(i+2,0,0,v) );
-            TeamTrsm<member_type,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
+            KB::TeamTrsm<member_type,KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>
               ::invoke(member, one, A, C);
             A.assign_data( &scalar_values(i+3,0,0,v) );
-            TeamGemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+            KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
               ::invoke(member, -one, C, B, one, A);
-            TeamLU<member_type,Algo::LU::Unblocked>::invoke(member, A, tiny);
+            KB::TeamLU<member_type,KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
           }
         }
       }
@@ -2064,8 +2064,8 @@ namespace Ifpack2 {
       void 
       serialSolveSingleVector(const local_ordinal_type &blocksize, 
                               const local_ordinal_type &packidx) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Unblocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level2::Unblocked;
         
         // base pointers
         auto A = D_vector_values.data();
@@ -2092,7 +2092,7 @@ namespace Ifpack2 {
 
         // solve Lx = x
         KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
-          (AlgoType,Diag::Unit,
+          (AlgoType,KB::Diag::Unit,
            blocksize,blocksize,
            one, 
            A, as0, as1,
@@ -2109,7 +2109,7 @@ namespace Ifpack2 {
              X+1*xstep, xs0);
 
           KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
-            (AlgoType,Diag::Unit,
+            (AlgoType,KB::Diag::Unit,
              blocksize,blocksize,
              one, 
              A+3*astep, as0, as1,
@@ -2121,7 +2121,7 @@ namespace Ifpack2 {
         
         // solve Ux = x
         KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
-          (AlgoType,Diag::NonUnit,
+          (AlgoType,KB::Diag::NonUnit,
            blocksize, blocksize,
            one, 
            A, as0, as1,
@@ -2139,7 +2139,7 @@ namespace Ifpack2 {
              X-1*xstep, xs0);
 
           KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
-            (AlgoType,Diag::NonUnit,
+            (AlgoType,KB::Diag::NonUnit,
              blocksize, blocksize,
              one, 
              A, as0, as1,
@@ -2153,8 +2153,8 @@ namespace Ifpack2 {
       void 
       serialSolveMultiVector(const local_ordinal_type &blocksize, 
                              const local_ordinal_type &packidx) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level3::Blocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level3::Blocked;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -2174,30 +2174,30 @@ namespace Ifpack2 {
         // solve Lx = x
         A.assign_data( &D_vector_values(i,0,0) );
         X1.assign_data( &X_vector_values(r,0,0) );
-        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
+        KB::SerialTrsm<KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
           ::invoke(one, A, X1);
         for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
           A.assign_data( &D_vector_values(i+2,0,0) );
           X2.assign_data( &X_vector_values(++r,0,0) );
-          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+          KB::SerialGemm<KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
             ::invoke(-one, A, X1, one, X2);
           A.assign_data( &D_vector_values(i+3,0,0) );
-          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>          
+          KB::SerialTrsm<KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>          
             ::invoke(one, A, X2);
           X1.assign_data( X2.data() );
         }
         
         // solve Ux = x
-        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+        KB::SerialTrsm<KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
           ::invoke(one, A, X1);
         for (local_ordinal_type tr=nrows;tr>1;--tr) {
           i -= 3;
           A.assign_data( &D_vector_values(i+1,0,0) );
           X2.assign_data( &X_vector_values(--r,0,0) );          
-          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+          KB::SerialGemm<KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
             ::invoke(-one, A, X1, one, X2); 
           A.assign_data( &D_vector_values(i,0,0) );          
-          SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+          KB::SerialTrsm<KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
             ::invoke(one, A, X2);
           X1.assign_data( X2.data() );
         }
@@ -2214,8 +2214,8 @@ namespace Ifpack2 {
                             const local_ordinal_type &r0,
                             const local_ordinal_type &nrows,
                             const local_ordinal_type &v) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Unblocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level2::Unblocked;
 
         // base pointers
         auto A = D_scalar_values.data();
@@ -2244,7 +2244,7 @@ namespace Ifpack2 {
         {
           // solve Lx = x
           KOKKOSBATCHED_TEAM_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
-            (AlgoType,member,Diag::Unit,
+            (AlgoType,member,KB::Diag::Unit,
              blocksize,blocksize,
              one, 
              A, as0, as1,
@@ -2261,7 +2261,7 @@ namespace Ifpack2 {
                X+1*xstep, xs0);
 
             KOKKOSBATCHED_TEAM_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
-              (AlgoType,member,Diag::Unit,
+              (AlgoType,member,KB::Diag::Unit,
                blocksize,blocksize,
                one, 
                A+3*astep, as0, as1,
@@ -2273,7 +2273,7 @@ namespace Ifpack2 {
           
           // solve Ux = x
           KOKKOSBATCHED_TEAM_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
-            (AlgoType,member,Diag::NonUnit,
+            (AlgoType,member,KB::Diag::NonUnit,
              blocksize, blocksize,
              one, 
              A, as0, as1,
@@ -2291,7 +2291,7 @@ namespace Ifpack2 {
                X-1*xstep, xs0);
             
             KOKKOSBATCHED_TEAM_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
-              (AlgoType,member,Diag::NonUnit,
+              (AlgoType,member,KB::Diag::NonUnit,
                blocksize, blocksize,
                one, 
                A, as0, as1,
@@ -2312,8 +2312,8 @@ namespace Ifpack2 {
                            const local_ordinal_type &r0,
                            const local_ordinal_type &nrows,
                            const local_ordinal_type &v) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level3::Blocked;
+        namespace KB = KokkosBatched::Experimental;
+        using AlgoType = KB::Algo::Level3::Blocked;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -2328,30 +2328,30 @@ namespace Ifpack2 {
         // solve Lx = x
         A.assign_data( &D_scalar_values(i,0,0,v) );
         X1.assign_data( &X_scalar_values(r,0,0,v) );
-        TeamTrsm<member_type,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
+        KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
           ::invoke(member, one, A, X1);
         for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
           A.assign_data( &D_scalar_values(i+2,0,0,v) );
           X2.assign_data( &X_scalar_values(++r,0,0,v) );
-          TeamGemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+          KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
             ::invoke(member, -one, A, X1, one, X2);
           A.assign_data( &D_scalar_values(i+3,0,0,v) );
-          TeamTrsm<member_type,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>          
+          KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>          
             ::invoke(member, one, A, X2);
           X1.assign_data( X2.data() );
         }
         
         // solve Ux = x
-        TeamTrsm<member_type,Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+        KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
           ::invoke(member, one, A, X1);
         for (local_ordinal_type tr=nrows;tr>1;--tr) {
           i -= 3;
           A.assign_data( &D_scalar_values(i+1,0,0,v) );
           X2.assign_data( &X_scalar_values(--r,0,0,v) );          
-          TeamGemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+          KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
             ::invoke(member, -one, A, X1, one, X2); 
           A.assign_data( &D_scalar_values(i,0,0,v) );          
-          TeamTrsm<member_type,Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+          KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
             ::invoke(member, one, A, X2);
           X1.assign_data( X2.data() );
         }
@@ -2660,7 +2660,7 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const SeqTag &, const member_type &member) const {
-        using namespace KokkosBatched::Experimental;
+        namespace KB = KokkosBatched::Experimental;
         
         // constants
         const local_ordinal_type blocksize = blocksize_requested;

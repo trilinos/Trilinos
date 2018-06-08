@@ -452,8 +452,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
-    static constexpr MagnitudeType orthoKappa_default_ = 0.0;
+    static constexpr double orthoKappa_default_ = 0.0;
     static constexpr int maxRestarts_default_ = 100;
     static constexpr int maxIters_default_ = 1000;
     static constexpr int numBlocks_default_ = 50;
@@ -563,7 +562,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP,true>::init () {
   outputStream_ = Teuchos::rcp(outputStream_default_,false);
-  convTol_ = convTol_default_;
+  convTol_ = DefaultSolverParameters::convTol;
   orthoKappa_ = orthoKappa_default_;
   maxRestarts_ = maxRestarts_default_;
   maxIters_ = maxIters_default_;
@@ -938,8 +937,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
   if (params->isParameter ("Orthogonalization Constant")) {
-    const MagnitudeType orthoKappa =
-      params->get ("Orthogonalization Constant", orthoKappa_default_);
+    MagnitudeType orthoKappa = orthoKappa_default_;
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa = params->get ("Orthogonalization Constant", orthoKappa);
+    }
+    else {
+      orthoKappa = params->get ("Orthogonalization Constant", orthoKappa_default_);
+    }
+
     if (orthoKappa > 0) {
       orthoKappa_ = orthoKappa;
       // Update parameter in our list.
@@ -963,7 +968,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convTol_ = params->get ("Convergence Tolerance", convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convTol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convTol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set ("Convergence Tolerance", convTol_);
@@ -1105,7 +1116,7 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     RCP<ParameterList> pl = parameterList ();
 
     // Set all the valid parameters and their default values.
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),

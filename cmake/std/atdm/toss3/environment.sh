@@ -33,7 +33,6 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-    export ATDM_CONFIG_KOKKOS_ARCH=BDW
     module load sems-python/2.7.9
     module load sems-intel/17.0.0
     module load sems-openmpi/1.10.5
