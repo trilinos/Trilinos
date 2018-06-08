@@ -1618,6 +1618,7 @@ namespace MueLu {
 #undef MUELU_TEST_AND_SET_VAR
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
 #undef MUELU_TEST_PARAM_2LIST
+#undef MUELU_KOKKOS_FACTORY
 
   size_t LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
@@ -1867,7 +1868,9 @@ namespace MueLu {
           FactoryMap levelFactoryMap;
           BuildFactoryMap(levelList, factoryMap, levelFactoryMap, factoryManagers);
 
-          RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
+          RCP<FactoryManager> m = rcp(new FactoryManager(levelFactoryMap));
+          if (hieraList.isParameter("use kokkos refactor"))
+            m->SetKokkosRefactor(hieraList.get<bool>("use kokkos refactor"));
 
           if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);

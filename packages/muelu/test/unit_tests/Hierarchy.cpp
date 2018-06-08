@@ -192,6 +192,7 @@ namespace MueLuTests {
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
@@ -263,6 +264,7 @@ namespace MueLuTests {
     int maxLevels = 5;
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -359,6 +361,7 @@ namespace MueLuTests {
     int maxLevels = 5;
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -418,6 +421,7 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     bool r = H.Setup(0, Teuchos::null, rcpFromRef(M0), Teuchos::null); TEST_EQUALITY(r, true); // cf. Teuchos Bug 5214
 
@@ -463,6 +467,7 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     H.Setup(M0, 0, 1);
 
@@ -506,12 +511,15 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     M1.SetFactory("P", rcp(new TentativePFactory()));
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -580,14 +588,17 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     RCP<FactoryBase> P = rcp(new TentativePFactory());
     M1.SetFactory("P", P);
     M1.SetFactory("Ptent", P); //FIXME: can it be done automatically in FactoryManager?
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -687,9 +698,11 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
     M0.SetFactory("Smoother", preSmooFact);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     RCP<FactoryBase> PFact = rcp(new TentativePFactory());
     M1.SetFactory("P", PFact);
@@ -697,6 +710,7 @@ namespace MueLuTests {
     M1.SetFactory("Smoother", postSmooFact);
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -777,8 +791,10 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     M1.SetFactory("P", rcp(new TentativePFactory()));
 
@@ -823,6 +839,7 @@ namespace MueLuTests {
     H.SetDefaultVerbLevel(MueLu::Low);
     H.SetMaxCoarseSize(29);
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
     H.Setup(M, 0, 2);
@@ -922,6 +939,7 @@ namespace MueLuTests {
     Haux.SetDefaultVerbLevel(MueLu::None);
 
     FactoryManager Maux;
+    Maux.SetKokkosRefactor(false);
     const FactoryBase* nullFactory = Maux.GetFactory("Nullspace").get();
 
     Haux.Keep("Nullspace", nullFactory);
@@ -946,10 +964,13 @@ namespace MueLuTests {
     // fix proposed here is to simply set corresponding fatories to NoFactory, so
     // they would fetch user data.
     FactoryManager M0, M1, M2;
+    M0.SetKokkosRefactor(false);
     M0.SetFactory("Smoother", SmooFact);
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A",        MueLu::NoFactory::getRCP());
     M1.SetFactory("P",        MueLu::NoFactory::getRCP());
     M1.SetFactory("R",        MueLu::NoFactory::getRCP());
+    M2.SetKokkosRefactor(false);
 
     out << "===== Setting up mixed hierarchy =====" << std::endl;
 

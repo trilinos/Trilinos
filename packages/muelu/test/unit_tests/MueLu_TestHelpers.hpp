@@ -800,7 +800,8 @@ namespace MueLuTests {
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+        RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
+        factoryHandler->SetKokkosRefactor(false);
         currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(0);
@@ -809,7 +810,8 @@ namespace MueLuTests {
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+        RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
+        factoryHandler->SetKokkosRefactor(false);
         fineLevel.SetFactoryManager(factoryHandler);
         coarseLevel.SetFactoryManager(factoryHandler);
 
