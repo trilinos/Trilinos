@@ -46,7 +46,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
 
     // Problem dimensions
     const int controlDim = 1;
-    const RealT one(1); 
     RealT tol(1e-8);
 
     /*************************************************************************/
@@ -227,6 +226,12 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
     (*zp_ptr)[0] = parlist->sublist("Problem").get("Advection Magnitude",0.0);
     u_ptr->putScalar(450.0);
+
+    bool solveFS = parlist->sublist("Problem").get("Initial Solve for Full Space",true); 
+    if (solveFS) {
+      con->solve(*rp,*up,*zp,tol);
+    }
+
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
     *outStream << "Optimization time: "

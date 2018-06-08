@@ -115,7 +115,7 @@ struct InclusiveParallelPrefixSum{
 template <typename view_t, typename MyExecSpace>
 inline void kk_exclusive_parallel_prefix_sum(typename view_t::value_type num_elements, view_t arr){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan( my_exec_space(0, num_elements), ExclusiveParallelPrefixSum<view_t>(arr));
+  Kokkos::parallel_scan( "KokkosKernels::PrefixSum", my_exec_space(0, num_elements), ExclusiveParallelPrefixSum<view_t>(arr));
 }
 
 
@@ -130,7 +130,7 @@ inline void kk_exclusive_parallel_prefix_sum(typename view_t::value_type num_ele
 template <typename forward_array_type, typename MyExecSpace>
 void kk_inclusive_parallel_prefix_sum(typename forward_array_type::value_type num_elements, forward_array_type arr){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan( my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
+  Kokkos::parallel_scan( "KokkosKernels::PrefixSum", my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
 }
 
 template <typename view_t>
@@ -140,6 +140,18 @@ struct ReductionFunctor{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t ii, typename view_t::value_type & update) const {
+	  update += array_sum(ii);
+  }
+};
+
+
+template <typename view_t>
+struct ReductionFunctor2{
+  view_t array_sum;
+  ReductionFunctor2(view_t arr_): array_sum(arr_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, size_t & update) const {
 	  update += array_sum(ii);
   }
 };
@@ -195,6 +207,11 @@ inline void kk_reduce_view(size_t num_elements, view_t arr, typename view_t::val
   Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor<view_t>(arr), reduction);
 }
 
+template <typename view_t, typename MyExecSpace>
+inline void kk_reduce_view2(size_t num_elements, view_t arr, size_t & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor2<view_t>(arr), reduction);
+}
 
 template<typename view_type1, typename view_type2, typename eps_type = typename Kokkos::Details::ArithTraits<typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor{
@@ -279,7 +296,7 @@ struct ReduceMaxFunctor{
 template <typename view_type , typename MyExecSpace>
 void kk_view_reduce_max(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &max_reduction){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
+  Kokkos::parallel_reduce( "KokkosKernels::FindMax", my_exec_space(0,num_elements), ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
 }
 
 

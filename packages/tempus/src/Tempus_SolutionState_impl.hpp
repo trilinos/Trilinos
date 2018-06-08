@@ -18,27 +18,39 @@ template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot)
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (x),
     xdot_           (xdot),
     xdot_nc_        (xdot),
     xdotdot_        (xdotdot),
     xdotdot_nc_     (xdotdot),
-    stepperState_   (Teuchos::null),
-    stepperState_nc_(Teuchos::null),
-    physicsState_   (Teuchos::null),
-    physicsState_nc_(Teuchos::null)
+    stepperState_   (stepperState),
+    stepperState_nc_(stepperState),
+    physicsState_   (physicsState),
+    physicsState_nc_(physicsState)
 {
   metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
-  metaData_ = metaData_nc_;
+  metaData_    = metaData_nc_;
+  if (stepperState_nc_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  }
+  if (physicsState_nc_ == Teuchos::null) {
+    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
+    physicsState_    = physicsState_nc_;
+  }
 }
 
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
+  const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (Teuchos::null),
     xdot_           (xdot),
@@ -51,7 +63,11 @@ SolutionState<Scalar>::SolutionState(
     physicsState_nc_(Teuchos::null)
 {
   metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
-  metaData_ = metaData_nc_;
+  metaData_    = metaData_nc_;
+  stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+  stepperState_    = stepperState_nc_;
+  physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
+  physicsState_    = physicsState_nc_;
 }
 
 
@@ -61,8 +77,8 @@ SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
   : metaData_       (metaData),
     metaData_nc_    (metaData),
     x_              (x),
@@ -76,9 +92,13 @@ SolutionState<Scalar>::SolutionState(
     physicsState_   (physicsState),
     physicsState_nc_(physicsState)
 {
-  if (physicsState_ == Teuchos::null) {
+  if (stepperState_nc_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  }
+  if (physicsState_nc_ == Teuchos::null) {
     physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-    physicsState_ = physicsState_nc_;
+    physicsState_    = physicsState_nc_;
   }
 }
 
@@ -88,8 +108,8 @@ SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<const Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState)
   : metaData_       (metaData),
     metaData_nc_    (Teuchos::null),
     x_              (x),
@@ -103,9 +123,13 @@ SolutionState<Scalar>::SolutionState(
     physicsState_   (physicsState),
     physicsState_nc_(Teuchos::null)
 {
+  if (stepperState_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  }
   if (physicsState_ == Teuchos::null) {
     physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-    physicsState_ = physicsState_nc_;
+    physicsState_    = physicsState_nc_;
   }
 }
 
@@ -119,18 +143,19 @@ SolutionState<Scalar>::SolutionState(
   const Scalar errorRel,
   const int    order,
   const int    nFailures,
+  const int    nRunningFailures,
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isInterpolated,
   const bool   isSynced,
+  const bool   isInterpolated,
   const Scalar accuracy,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (x),
     xdot_           (xdot),
@@ -150,6 +175,7 @@ SolutionState<Scalar>::SolutionState(
                                                     errorRel,
                                                     order,
                                                     nFailures,
+                                                    nRunningFailures,
                                                     nConsecutiveFailures,
                                                     solutionStatus,
                                                     output,
@@ -159,7 +185,11 @@ SolutionState<Scalar>::SolutionState(
                                                     accuracy));
   metaData_ = metaData_nc_;
 
-  if (physicsState_ == Teuchos::null) {
+  if (stepperState_nc_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  }
+  if (physicsState_nc_ == Teuchos::null) {
     physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
     physicsState_ = physicsState_nc_;
   }
@@ -174,18 +204,19 @@ SolutionState<Scalar>::SolutionState(
   const Scalar errorRel,
   const int    order,
   const int    nFailures,
+  const int    nRunningFailures,
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isInterpolated,
   const bool   isSynced,
+  const bool   isInterpolated,
   const Scalar accuracy,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-  const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<const Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState)
   : x_              (x),
     x_nc_           (Teuchos::null),
     xdot_           (xdot),
@@ -205,6 +236,7 @@ SolutionState<Scalar>::SolutionState(
                                                     errorRel,
                                                     order,
                                                     nFailures,
+                                                    nRunningFailures,
                                                     nConsecutiveFailures,
                                                     solutionStatus,
                                                     output,
@@ -214,6 +246,10 @@ SolutionState<Scalar>::SolutionState(
                                                     accuracy));
   metaData_ = metaData_nc_;
 
+  if (stepperState_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  }
   if (physicsState_ == Teuchos::null) {
     physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
     physicsState_ = physicsState_nc_;
@@ -223,34 +259,58 @@ SolutionState<Scalar>::SolutionState(
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState,
-  const Teuchos::RCP<Tempus::PhysicsState<Scalar> >& physicsState)
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
 {
+  typedef Thyra::ModelEvaluatorBase MEB;
+  using Teuchos::rcp_const_cast;
+
   metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
   metaData_nc_->setSolutionStatus(Status::PASSED);
   metaData_ = metaData_nc_;
 
-  x_nc_ = Thyra::createMember(model->get_x_space());
-  assign(x_nc_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-  x_ = x_nc_;
+  MEB::InArgs<Scalar> inArgs = model->getNominalValues();
 
-  xdot_nc_ = Thyra::createMember(model->get_x_space());
-  assign(xdot_nc_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-  xdot_ = xdot_nc_;
+  // The solution vector, x, is required (usually).
+  x_nc_ = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x());
+  x_    = x_nc_;
 
-  xdotdot_nc_ = Thyra::createMember(model->get_x_space());
-  assign(xdotdot_nc_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-  xdotdot_ = xdotdot_nc_;
+  // The solution derivative, xdot, can be optional provided, based on
+  // application needs.  Here we will base it on "supports" IN_ARG_x_dot.
+  // Depending on the stepper used, a temporary xdot vector may be created
+  // within the Stepper, but not moved to the SolutionState.
+  if (inArgs.supports(MEB::IN_ARG_x_dot)) {
+    xdot_nc_ = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
+    xdot_    = xdot_nc_;
+  } else {
+    xdot_nc_ = Teuchos::null;
+    xdot_    = xdot_nc_;
+  }
 
-  stepperState_ = stepperState;
-  stepperState_nc_ = stepperState;
+  // Similar as xdot.
+  if (inArgs.supports(MEB::IN_ARG_x_dot_dot)) {
+    xdotdot_nc_ =
+      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x_dot_dot());
+    xdotdot_    = xdotdot_nc_;
+  } else {
+    xdotdot_nc_ = Teuchos::null;
+    xdotdot_    = xdotdot_nc_;
+  }
 
-  physicsState_ = physicsState;
-  physicsState_nc_ = physicsState;
+  if (stepperState_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar> ()); // Use default
+    stepperState_    = stepperState_nc_;
+  } else {
+    stepperState_nc_ = stepperState;
+    stepperState_    = stepperState;
+  }
 
   if (physicsState_ == Teuchos::null) {
-    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-    physicsState_ = physicsState_nc_;
+    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ()); // Use default
+    physicsState_    = physicsState_nc_;
+  } else {
+    physicsState_nc_ = physicsState;
+    physicsState_    = physicsState;
   }
 }
 
@@ -306,11 +366,7 @@ void SolutionState<Scalar>::
 copy(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
 {
   metaData_nc_->copy(ss->metaData_);
-  Thyra::V_V(x_nc_.ptr(),       *(ss->x_));
-  Thyra::V_V(xdot_nc_.ptr(),    *(ss->xdot_));
-  Thyra::V_V(xdotdot_nc_.ptr(), *(ss->xdotdot_));
-  stepperState_nc_->copy(ss->stepperState_);
-  physicsState_nc_->copy(ss->physicsState_);
+  this->copySolutionStepperState(ss);
 }
 
 
@@ -319,8 +375,10 @@ void SolutionState<Scalar>::
 copySolutionStepperState(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
 {
   Thyra::V_V(x_nc_.ptr(),       *(ss->x_));
-  Thyra::V_V(xdot_nc_.ptr(),    *(ss->xdot_));
-  Thyra::V_V(xdotdot_nc_.ptr(), *(ss->xdotdot_));
+  if (ss->xdot_ == Teuchos::null) xdot_nc_ = Teuchos::null;
+  else Thyra::V_V(xdot_nc_.ptr(),    *(ss->xdot_));
+  if (ss->xdotdot_ == Teuchos::null) xdotdot_nc_ = Teuchos::null;
+  else Thyra::V_V(xdotdot_nc_.ptr(), *(ss->xdotdot_));
   stepperState_nc_->copy(ss->stepperState_);
   physicsState_nc_->copy(ss->physicsState_);
 }

@@ -1111,7 +1111,6 @@ isend (const ArrayRCP<const float>& sendBuffer,
 }
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 void
@@ -1297,8 +1296,6 @@ isend (const ArrayRCP<const unsigned long long>& sendBuffer,
 {
   return isendImpl<unsigned long long> (sendBuffer, destRank, tag, comm);
 }
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 // Specialization for Ordinal=int and Packet=long.
@@ -1540,7 +1537,65 @@ reduce<int, int> (const int sendBuf[],
      << ")");
   reduceImpl<int> (sendBuf, recvBuf, count, reductType, root, comm);
 }
+template<>
+void
+reduce<int, long> (const long sendBuf[],
+                   long recvBuf[],
+                   const int count,
+                   const EReductionType reductType,
+                   const int root,
+                   const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR
+    ("Teuchos::reduce<int, int> (" << count << ", " << toString (reductType)
+     << ")");
+  reduceImpl<long> (sendBuf, recvBuf, count, reductType, root, comm);
+}
 
+template<>
+void
+reduce<int, unsigned long> (const unsigned long sendBuf[],
+                            unsigned long recvBuf[],
+                            const int count,
+                            const EReductionType reductType,
+                            const int root,
+                            const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR
+    ("Teuchos::reduce<int, int> (" << count << ", " << toString (reductType)
+     << ")");
+  reduceImpl<unsigned long> (sendBuf, recvBuf, count, reductType, root, comm);
+}
+
+template<>
+void
+reduce<int, unsigned long long > (const unsigned long long sendBuf[],
+                                  unsigned long long recvBuf[],
+                                  const int count,
+                                  const EReductionType reductType,
+                                  const int root,
+                                  const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR
+    ("Teuchos::reduce<int, int> (" << count << ", " << toString (reductType)
+     << ")");
+  reduceImpl<unsigned long long> (sendBuf, recvBuf, count, reductType, root, comm);
+}
+
+template<>
+void
+reduce<int, double> (const double sendBuf[],
+                     double recvBuf[],
+                     const int count,
+                     const EReductionType reductType,
+                     const int root,
+                     const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR
+    ("Teuchos::reduce<int, int> (" << count << ", " << toString (reductType)
+     << ")");
+  reduceImpl<double> (sendBuf, recvBuf, count, reductType, root, comm);
+}
 template<>
 void
 reduceAll<int, int> (const Comm<int>& comm,

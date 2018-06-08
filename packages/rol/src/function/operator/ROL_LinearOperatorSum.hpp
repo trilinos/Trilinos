@@ -107,7 +107,7 @@ public:
   }
 
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_LinearOperatorSum, applyInverse): "
                                   "Inverse is not defined for general sum of operators.");     
   }

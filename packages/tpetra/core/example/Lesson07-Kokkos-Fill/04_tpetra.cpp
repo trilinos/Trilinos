@@ -68,7 +68,7 @@ int main (int argc, char* argv[]) {
       const LO lclRows = elt;
 
       // Always add a diagonal matrix entry.
-      Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+      Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
       curNumLclEntries++;
 
       // Each neighboring MPI process contributes an entry to the
@@ -79,23 +79,23 @@ int main (int argc, char* argv[]) {
 
       // MPI process to the left sends us an entry
       if (myRank > 0 && lclRows == 0) {
-        Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+        Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
         curNumLclEntries++;
       }
       // MPI process to the right sends us an entry
       if (myRank + 1 < numProcs && lclRows + 1 == numLclRows) {
-        Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+        Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
         curNumLclEntries++;
       }
 
       // Contribute a matrix entry to the previous row.
       if (lclRows > 0) {
-        Kokkos::atomic_fetch_add (&rowCounts(lclRows-1), 1);
+        Kokkos::atomic_fetch_add (&rowCounts(lclRows-1), size_t(1));
         curNumLclEntries++;
       }
       // Contribute a matrix entry to the next row.
       if (lclRows + 1 < numLclRows) {
-        Kokkos::atomic_fetch_add (&rowCounts(lclRows+1), 1);
+        Kokkos::atomic_fetch_add (&rowCounts(lclRows+1), size_t(1));
         curNumLclEntries++;
       }
     }, numLclEntries /* reduction result */);
@@ -144,7 +144,7 @@ int main (int argc, char* argv[]) {
 
       // Always add a diagonal matrix entry.
       {
-        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
         colIndices(rowOffsets(lclRows) + count) = lclRows;
         Kokkos::atomic_fetch_add (&matrixValues(rowOffsets(lclRows) + count), midCoeff);
       }
@@ -157,13 +157,13 @@ int main (int argc, char* argv[]) {
 
       // MPI process to the left sends us an entry
       if (myRank > 0 && lclRows == 0) {
-        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
         colIndices(rowOffsets(lclRows) + count) = numLclRows;
         Kokkos::atomic_fetch_add (&matrixValues(rowOffsets(lclRows) + count), offCoeff);
       }
       // MPI process to the right sends us an entry
       if (myRank + 1 < numProcs && lclRows + 1 == numLclRows) {
-        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), 1);
+        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows), size_t(1));
 
         // Give this entry the right local column index, depending on
         // whether the MPI process to the left has already sent us an
@@ -175,13 +175,13 @@ int main (int argc, char* argv[]) {
 
       // Contribute a matrix entry to the previous row.
       if (lclRows > 0) {
-        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows-1), 1);
+        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows-1), size_t(1));
         colIndices(rowOffsets(lclRows-1) + count) = lclRows;
         Kokkos::atomic_fetch_add (&matrixValues(rowOffsets(lclRows-1) + count), offCoeff);
       }
       // Contribute a matrix entry to the next row.
       if (lclRows + 1 < numLclRows) {
-        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows+1), 1);
+        const size_t count = Kokkos::atomic_fetch_add (&rowCounts(lclRows+1), size_t(1));
         colIndices(rowOffsets(lclRows+1) + count) = lclRows;
         Kokkos::atomic_fetch_add (&matrixValues(rowOffsets(lclRows+1) + count), offCoeff);
       }

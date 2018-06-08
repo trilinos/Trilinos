@@ -99,9 +99,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -119,7 +119,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
@@ -143,9 +143,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -165,7 +165,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 namespace Experimental {
@@ -186,20 +186,20 @@ struct DeepCopyNonContiguous
                          const InputView & arg_in ) :
     output( arg_out ), input( arg_in )
   {
-    parallel_for( output.dimension_0() , *this );
+    parallel_for( output.extent(0) , *this );
     execution_space::fence();
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
-    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+    for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7) ;
     }}}}}}}
   }
@@ -268,17 +268,17 @@ void deep_copy( const View<DT,DP...> & dst ,
            !is_allocation_contiguous(src) ) {
         size_t src_dims[8];
         //src.dimensions(src_dims);
-        src_dims[0] = src.dimension_0();
-        src_dims[1] = src.dimension_1();
-        src_dims[2] = src.dimension_2();
-        src_dims[3] = src.dimension_3();
-        src_dims[4] = src.dimension_4();
-        src_dims[5] = src.dimension_5();
-        src_dims[6] = src.dimension_6();
-        src_dims[7] = src.dimension_7();
+        src_dims[0] = src.extent(0);
+        src_dims[1] = src.extent(1);
+        src_dims[2] = src.extent(2);
+        src_dims[3] = src.extent(3);
+        src_dims[4] = src.extent(4);
+        src_dims[5] = src.extent(5);
+        src_dims[6] = src.extent(6);
+        src_dims[7] = src.extent(7);
         src_dims[src_type::Rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
-          Experimental::view_alloc("src_tmp" , Experimental::WithoutInitializing, cijk(src) ) ,
+          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
           src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
         Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
@@ -293,17 +293,17 @@ void deep_copy( const View<DT,DP...> & dst ,
                  is_allocation_contiguous(src) ) {
         size_t dst_dims[8];
         //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.dimension_0();
-        dst_dims[1] = dst.dimension_1();
-        dst_dims[2] = dst.dimension_2();
-        dst_dims[3] = dst.dimension_3();
-        dst_dims[4] = dst.dimension_4();
-        dst_dims[5] = dst.dimension_5();
-        dst_dims[6] = dst.dimension_6();
-        dst_dims[7] = dst.dimension_7();
+        dst_dims[0] = dst.extent(0);
+        dst_dims[1] = dst.extent(1);
+        dst_dims[2] = dst.extent(2);
+        dst_dims[3] = dst.extent(3);
+        dst_dims[4] = dst.extent(4);
+        dst_dims[5] = dst.extent(5);
+        dst_dims[6] = dst.extent(6);
+        dst_dims[7] = dst.extent(7);
         dst_dims[dst_type::Rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
-          Experimental::view_alloc("dst_tmp" , Experimental::WithoutInitializing, cijk(dst) ) ,
+          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
@@ -317,33 +317,33 @@ void deep_copy( const View<DT,DP...> & dst ,
       else {
         size_t src_dims[8];
         //src.dimensions(src_dims);
-        src_dims[0] = src.dimension_0();
-        src_dims[1] = src.dimension_1();
-        src_dims[2] = src.dimension_2();
-        src_dims[3] = src.dimension_3();
-        src_dims[4] = src.dimension_4();
-        src_dims[5] = src.dimension_5();
-        src_dims[6] = src.dimension_6();
-        src_dims[7] = src.dimension_7();
+        src_dims[0] = src.extent(0);
+        src_dims[1] = src.extent(1);
+        src_dims[2] = src.extent(2);
+        src_dims[3] = src.extent(3);
+        src_dims[4] = src.extent(4);
+        src_dims[5] = src.extent(5);
+        src_dims[6] = src.extent(6);
+        src_dims[7] = src.extent(7);
         src_dims[src_type::Rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
-          Experimental::view_alloc("src_tmp" , Experimental::WithoutInitializing, cijk(src) ) ,
+          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
           src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
         Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
         size_t dst_dims[8];
         //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.dimension_0();
-        dst_dims[1] = dst.dimension_1();
-        dst_dims[2] = dst.dimension_2();
-        dst_dims[3] = dst.dimension_3();
-        dst_dims[4] = dst.dimension_4();
-        dst_dims[5] = dst.dimension_5();
-        dst_dims[6] = dst.dimension_6();
-        dst_dims[7] = dst.dimension_7();
+        dst_dims[0] = dst.extent(0);
+        dst_dims[1] = dst.extent(1);
+        dst_dims[2] = dst.extent(2);
+        dst_dims[3] = dst.extent(3);
+        dst_dims[4] = dst.extent(4);
+        dst_dims[5] = dst.extent(5);
+        dst_dims[6] = dst.extent(6);
+        dst_dims[7] = dst.extent(7);
         dst_dims[dst_type::Rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
-          Experimental::view_alloc("dst_tmp" , Experimental::WithoutInitializing, cijk(dst) ) ,
+          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
@@ -411,19 +411,19 @@ make_view(const std::string& label,
           size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
           size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
 {
-  return ViewType(Experimental::view_alloc(label,cijk),
+  return ViewType(view_alloc(label,cijk),
                   N0, N1, N2, N3, N4, N5, N6, N7);
 }
 
 template <typename ViewType>
 ViewType
 make_view(const std::string& label,
-          const Experimental::Impl::WithoutInitializing_t& init,
+          const Impl::WithoutInitializing_t& init,
           const typename CijkType<ViewType>::type& cijk,
           size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
           size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
 {
-  return ViewType(Experimental::view_alloc(label,init,cijk),
+  return ViewType(view_alloc(label,init,cijk),
                   N0, N1, N2, N3, N4, N5, N6, N7);
 }
 
@@ -434,8 +434,8 @@ make_view(const ViewAllocateWithoutInitializing& init,
           size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
           size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
 {
-  return ViewType(Experimental::view_alloc(init.label,
-                                           Experimental::WithoutInitializing,
+  return ViewType(view_alloc(init.label,
+                                           WithoutInitializing,
                                            cijk),
                   N0, N1, N2, N3, N4, N5, N6, N7);
 }
@@ -449,7 +449,7 @@ make_view(typename ViewType::pointer_type ptr,
 {
   size_t N[8] = { N0, N1, N2, N3, N4, N5, N6, N7 };
   N[ViewType::rank] = cijk.dimension();
-  ViewType v(Experimental::view_wrap(ptr, cijk),
+  ViewType v(view_wrap(ptr, cijk),
              N[0], N[1], N[2], N[3], N[4], N[5], N[6], N[7]);
   return v;
 }
@@ -1606,7 +1606,7 @@ namespace Impl {
 // Specialization for deep_copy( view, view::value_type ) for Cuda
 #if defined( KOKKOS_HAVE_CUDA )
 template< class OutputView >
-struct ViewFill< OutputView ,
+struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
                                                         Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
@@ -1637,15 +1637,15 @@ struct ViewFill< OutputView ,
       const size_type nvec = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
         output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           input.fastAccessCoeff(is) ;
@@ -1672,15 +1672,15 @@ struct ViewFill< OutputView ,
       const size_type npce = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
         output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           is == 0 ? input : scalar_type(0) ;
@@ -1688,7 +1688,7 @@ struct ViewFill< OutputView ,
     }
   };
 
-  ViewFill( const OutputView & output , const_value_type & input )
+  StokhosViewFill( const OutputView & output , const_value_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;
@@ -1699,14 +1699,14 @@ struct ViewFill< OutputView ,
     const size_type block_size = 256;
 
     const size_type rows_per_block = block_size / vector_length;
-    const size_type n = output.dimension_0();
+    const size_type n = output.extent(0);
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     if (static_cast<unsigned>(input.size()) != dimension_scalar(output) &&
         input.size() != 1)
-      Kokkos::abort("ViewFill:  Invalid input value size");
+      Kokkos::abort("StokhosViewFill:  Invalid input value size");
 
     if (input.size() == 1)
       parallel_for(
@@ -1716,7 +1716,7 @@ struct ViewFill< OutputView ,
     execution_space::fence();
   }
 
-  ViewFill( const OutputView & output , const scalar_type & input )
+  StokhosViewFill( const OutputView & output , const scalar_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;
@@ -1727,7 +1727,7 @@ struct ViewFill< OutputView ,
     const size_type block_size = 256;
 
     const size_type rows_per_block = block_size / vector_length;
-    const size_type n = output.dimension_0();
+    const size_type n = output.extent(0);
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );

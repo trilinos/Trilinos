@@ -76,7 +76,7 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOp
 };
 
 
-  // Jacobi KernelWrappers for Partial Specialization to OpenMP
+// Jacobi KernelWrappers for Partial Specialization to OpenMP
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal, class LocalOrdinalViewType>
@@ -93,7 +93,7 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                            const std::string& label = std::string(),
                                                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#if 1
+
     static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
                                                        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
@@ -106,7 +106,7 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
                                                        Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                        const std::string& label = std::string(),
                                                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif
+
 };
 
 
@@ -147,14 +147,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-
-  // NOTE: GNU 7.2.0 (with optimizations turned on) generates a collection of Heisenbug-like errors in the merge_matrices wrapper to
-  // the SPGEMM_KK kernels.  In this case, we switch the default kernel to LTG.  See Tpetra Issue #2161.
-#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__) && (__GNUC__ == 7) && (__GNUC_MINOR__ == 2) && (__GNUC_PATCHLEVEL__ == 0)
-  std::string myalg("LTG");
-#else
   std::string myalg("SPGEMM_KK_MEMORY");
-#endif
 
 
   if(!params.is_null()) {
@@ -358,6 +351,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
     // Use the LTG kernel if requested
     ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_LowThreadGustavsonKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   } 
+  else if(myalg == "MSAK") {
+    ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_MultiplyScaleAddKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  }
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
@@ -370,8 +366,13 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
   labelList->set("Timer Label",label);
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+
+  // NOTE: MSAK already fillCompletes, so we have to check here
+  if(!C.isFillComplete()) {
+    RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
+    C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+  }
+
 }
 
 

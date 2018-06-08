@@ -842,14 +842,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       }
       algName_ = algorithm;
     }
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    else if (algorithm == std::string("nd"))
-    {
-      modelAvail_[GraphModelType]=true;
-      modelAvail_[CoordinateModelType]=true;
-      algName_ = algorithm;
-    }
-#endif
     else
     {
       // Parameter list should ensure this does not happen.
@@ -864,10 +856,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = HypergraphModelType;
       modelAvail_[HypergraphModelType]=true;
 
-      if (this->comm_->getSize() > 1)
-        algName_ = std::string("phg");
-      else
-        algName_ = std::string("patoh");
+      algName_ = std::string("phg");
     }
     else if (model == std::string("graph"))
     {
@@ -896,10 +885,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //else
       algName_ = std::string("pulp");
 #else
-      if (this->comm_->getSize() > 1)
-        algName_ = std::string("phg");
-      else
-        algName_ = std::string("patoh");
+      algName_ = std::string("phg");
 #endif
 #endif
 #endif
@@ -936,10 +922,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = HypergraphModelType;
       modelAvail_[HypergraphModelType]=true;
 
-      if (this->comm_->getSize() > 1)
-        algName_ = std::string("phg");
-      else
-        algName_ = std::string("patoh");
+      algName_ = std::string("phg");
     }
     else if (inputType_ == GraphAdapterType ||
         inputType_ == MeshAdapterType)
@@ -947,10 +930,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
 
-      if (this->comm_->getSize() > 1)
-        algName_ = std::string("phg");
-      else
-        algName_ = std::string("patoh");
+      algName_ = std::string("phg");
     }
     else if (inputType_ == VectorAdapterType)
     {

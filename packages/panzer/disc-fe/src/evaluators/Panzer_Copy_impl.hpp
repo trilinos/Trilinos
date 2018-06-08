@@ -50,7 +50,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Copy,p)
+template<typename EvalT, typename Traits>
+Copy<EvalT, Traits>::
+Copy(
+  const Teuchos::ParameterList& p)
 {
   std::string input_name = p.get<std::string>("Source Name");
   std::string output_name = p.get<std::string>("Destination Name");
@@ -67,7 +70,12 @@ PHX_EVALUATOR_CTOR(Copy,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Copy, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+Copy<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(input,fm);
   this->utils.setFieldData(output,fm);
@@ -76,7 +84,11 @@ PHX_POST_REGISTRATION_SETUP(Copy, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Copy, /* workset */)
+template<typename EvalT, typename Traits>
+void
+Copy<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   output.deep_copy(input);
 }

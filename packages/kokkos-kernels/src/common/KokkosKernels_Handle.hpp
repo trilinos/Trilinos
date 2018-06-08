@@ -44,6 +44,7 @@
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
+#include "KokkosSparse_spadd_handle.hpp"
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
@@ -148,6 +149,7 @@ public:
 	  is_owner_of_the_gc_handle = false;
 	  is_owner_of_the_gs_handle = false;
 	  is_owner_of_the_spgemm_handle = false;
+	  is_owner_of_the_spadd_handle = false;
 	  //return *this;
   }
 
@@ -163,9 +165,7 @@ public:
       <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
 	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> SPGEMMHandleType;
 
-
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> in_scalar_nnz_view_t;
-
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
@@ -181,11 +181,19 @@ public:
   typedef typename Kokkos::View<bool *, HandlePersistentMemorySpace> bool_persistent_view_t;
   typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
 
+  typedef typename KokkosSparse::SPADDHandle
+         <row_lno_temp_work_view_t,
+          nnz_lno_temp_work_view_t,
+          scalar_temp_work_view_t,
+          HandleExecSpace,
+          HandleTempMemorySpace> SPADDHandleType;
+
 private:
 
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
+  SPADDHandleType *spaddHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -199,6 +207,7 @@ private:
   bool is_owner_of_the_gc_handle;
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
+  bool is_owner_of_the_spadd_handle;
 
 
 public:
@@ -206,17 +215,19 @@ public:
 
 
   KokkosKernelsHandle():
-      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),
+      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),spaddHandle(NULL),
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Impl::kk_get_exec_space_type<HandleExecSpace>()),
       use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1),
-	  is_owner_of_the_gc_handle(true), is_owner_of_the_gs_handle(true), is_owner_of_the_spgemm_handle(true){}
+	  is_owner_of_the_gc_handle(true), is_owner_of_the_gs_handle(true), is_owner_of_the_spgemm_handle(true),
+    is_owner_of_the_spadd_handle(true) {}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
     this->destroy_spgemm_handle();
+    this->destroy_spadd_handle();
   }
 
 
@@ -387,6 +398,8 @@ public:
     this->is_owner_of_the_gc_handle = true;
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
+    this->gcHandle->set_tictoc(KKVERBOSE);
+
   }
   void destroy_graph_coloring_handle(){
     if (is_owner_of_the_gc_handle &&  this->gcHandle != NULL){
@@ -416,6 +429,23 @@ public:
   }
 
 
+  SPADDHandleType *get_spadd_handle(){
+    return this->spaddHandle;
+  }
+
+  void create_spadd_handle(bool input_sorted) {
+    this->destroy_spadd_handle();
+    this->is_owner_of_the_spadd_handle = true;
+    this->spaddHandle = new SPADDHandleType(input_sorted);
+  }
+
+  void destroy_spadd_handle(){
+    if (is_owner_of_the_spadd_handle && this->spaddHandle != NULL)
+    {
+      delete this->spaddHandle;
+      this->spaddHandle = NULL;
+    }
+  }
 
 };
 

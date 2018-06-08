@@ -43,10 +43,10 @@
 // @HEADER
 
 %{
-// Domi includes
+// Domi include files
 #include "Domi_Slice.hpp"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_Domi_Util.hpp"
 %}
 

@@ -84,7 +84,7 @@ private:
 
   int N_;
   
-  Teuchos::LAPACK<int,Real>  lapack_;
+  ROL::LAPACK<int,Real>  lapack_;
 
   void copy(void) const {
     for(int i=0;i<N_-1;++i) {

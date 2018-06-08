@@ -46,7 +46,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
@@ -286,31 +286,31 @@ int main(int argc, char *argv[]) {
     plvec[1].sublist("SOL").set("Stochastic Component Type", "Risk Neutral");
     // CVaR
     plvec[2].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
-    plvec[2].sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Confidence Level", 0.95);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Convex Combination Parameter", 0.0);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter", 1e-4);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").set("Name", "Parabolic");
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
+    plvec[2].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.0);
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
+    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Mixture of expectation and CVaR
     plvec[3].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
-    plvec[3].sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Confidence Level", 0.95);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Convex Combination Parameter", 0.5);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter", 1e-4);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").set("Name", "Parabolic");
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
+    plvec[3].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.5);
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
+    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Entropic risk
     plvec[4].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
-    plvec[4].sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
-    plvec[4].sublist("SOL").sublist("Risk Measure").sublist("Exponential Utility").set("Rate", 1.0);
+    plvec[4].sublist("SOL").sublist("Risk Measure").set("Name","Entropic Risk");
+    plvec[4].sublist("SOL").sublist("Risk Measure").sublist("Entropic Risk").set("Rate", 1.0);
     // bPOE
-    plvec[5].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
-    plvec[5].sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
-    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Moment Order", 2.0);
-    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Threshold", 6.0);
+    plvec[5].sublist("SOL").set("Stochastic Component Type", "Probability");
+    plvec[5].sublist("SOL").sublist("Probability").set("Name","bPOE");
+    plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Moment Order", 2.0);
+    plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Threshold", 6.0);
     // KL-divergence distributionally robust optimization
     plvec[6].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
     plvec[6].sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");

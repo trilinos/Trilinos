@@ -252,6 +252,22 @@ WorksetDetails::getIntegrationRule(const panzer::IntegrationDescriptor & descrip
   return *(itr->second);
 }
 
+panzer::BasisValues2<double> &
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                               const panzer::IntegrationDescriptor & integration_description)
+{
+  const auto itr = _basis_map.find(basis_description.getKey());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _basis_map.end(),
+                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" " 
+                              "of order " + std::to_string(basis_description.getOrder()));
+  const auto & integration_map = itr->second;
+  const auto itr2 = integration_map.find(integration_description.getKey());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == integration_map.end(),
+                              "Workset::getBasisValues: Can't find integration " + std::to_string(integration_description.getType()) + " " 
+                              "of order " + std::to_string(integration_description.getOrder()));
+  return *(itr2->second);
+}
+
 const panzer::BasisValues2<double> &
 WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
                                const panzer::PointDescriptor & point_description) const

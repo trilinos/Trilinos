@@ -106,6 +106,8 @@ public:
 template <typename ScalarType, typename OrdinalType, typename Device, typename MemoryTraits, typename SizeType>
 class CrsMatrix{
 public:
+  typedef typename Kokkos::ViewTraits<ScalarType*,Device,void,void>::host_mirror_space host_mirror_space ;
+
   typedef typename Device::execution_space execution_space;
   typedef typename Device::memory_space memory_space;
   typedef Kokkos::Device<execution_space, memory_space> device_type;
@@ -120,6 +122,8 @@ public:
   typedef typename index_type::non_const_value_type non_const_ordinal_type;
   typedef typename StaticCrsGraphType::row_map_type row_map_type;
   typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
+
   StaticCrsGraphType graph;
   values_type values;
   CrsMatrix () :

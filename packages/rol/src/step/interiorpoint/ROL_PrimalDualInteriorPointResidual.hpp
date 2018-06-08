@@ -77,7 +77,7 @@ namespace ROL {
 template<class Real> 
 class PrimalDualInteriorPointResidual : public Constraint<Real> {
 
-  typedef Teuchos::ParameterList     PL;
+  typedef ROL::ParameterList     PL;
 
   typedef Vector<Real>               V;
   typedef PartitionedVector<Real>    PV;

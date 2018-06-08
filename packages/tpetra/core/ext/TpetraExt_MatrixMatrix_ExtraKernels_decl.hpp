@@ -56,10 +56,6 @@ namespace MatrixMatrix {
                                       , typename Kokkos::MemoryTraits< Kokkos::Unmanaged>
                                       >;
 
-  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
-  template<class ViewType>
-  void Kokkos_resize_1DView(ViewType & v, const size_t N);
-
   namespace ExtraKernels {
 
     template<class CrsMatrixType>
@@ -71,6 +67,7 @@ namespace MatrixMatrix {
                                        size_t m, double thread_chunk,
                                        OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
 
+    /***************************** OpenMP Only Kernels *****************************/
 #ifdef HAVE_TPETRA_INST_OPENMP
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
     static inline void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
@@ -123,8 +120,23 @@ namespace MatrixMatrix {
                                                                      Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                      const std::string& label,
                                                                      const Teuchos::RCP<Teuchos::ParameterList>& params);
-
 #endif
+
+    /***************************** Generic Kernels *****************************/
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
+    static inline void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
+                                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Node> & Dinv,
+                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                                   const LocalOrdinalViewType & Acol2Brow,
+                                                                   const LocalOrdinalViewType & Acol2Irow,
+                                                                   const LocalOrdinalViewType & Bcol2Ccol,
+                                                                   const LocalOrdinalViewType & Icol2Ccol,
+                                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                   const std::string& label,
+                                                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
+
   }// ExtraKernels
 }//MatrixMatrix
 }//Tpetra

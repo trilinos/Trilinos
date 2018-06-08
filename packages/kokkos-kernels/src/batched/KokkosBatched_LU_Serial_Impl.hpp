@@ -27,7 +27,8 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     int
     SerialLU<Algo::LU::CompactMKL>::
-    invoke(const AViewType &A) {
+    invoke(const AViewType &A,
+           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
       typedef typename AViewType::value_type vector_type;
       typedef typename vector_type::value_type value_type;
 
@@ -59,9 +60,11 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     int
     SerialLU<Algo::LU::Unblocked>::
-    invoke(const AViewType &A) {
-      return SerialLU_Internal<Algo::LU::Unblocked>::invoke(A.dimension_0(), A.dimension_1(),
-                                                      A.data(), A.stride_0(), A.stride_1());
+    invoke(const AViewType &A,
+           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
+      return SerialLU_Internal<Algo::LU::Unblocked>::invoke(A.extent(0), A.extent(1),
+                                                            A.data(), A.stride_0(), A.stride_1(),
+                                                            tiny);
     }
     
     template<>
@@ -69,9 +72,11 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     int
     SerialLU<Algo::LU::Blocked>::
-    invoke(const AViewType &A) {
-      return SerialLU_Internal<Algo::LU::Blocked>::invoke(A.dimension_0(), A.dimension_1(),
-                                                    A.data(), A.stride_0(), A.stride_1());
+    invoke(const AViewType &A,
+           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
+      return SerialLU_Internal<Algo::LU::Blocked>::invoke(A.extent(0), A.extent(1),
+                                                          A.data(), A.stride_0(), A.stride_1(),
+                                                          tiny);
     }
 
   }

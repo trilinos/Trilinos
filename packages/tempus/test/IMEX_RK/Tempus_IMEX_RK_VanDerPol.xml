@@ -39,16 +39,23 @@
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
         <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
-        <Parameter name="Reduction Factor" type="double" value="0.5"/>
-        <Parameter name="Amplification Factor" type="double" value="1.75"/>
-        <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-        <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e0"/>
+        <ParameterList name="Time Step Control Strategy">
+            <Parameter name="Time Step Control Strategy List"  type="string" value="basic_vs"/>
+            <ParameterList name="basic_vs">
+                <Parameter name="Name" type="string" value="Basic VS"/>
+                <Parameter name="Reduction Factor" type="double" value="0.5"/>
+                <Parameter name="Amplification Factor" type="double" value="1.75"/>
+                <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+                <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e0"/>
+            </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">
@@ -106,6 +113,7 @@
   <ParameterList name="General IMEX RK">
 
       <Parameter name="Stepper Type" type="string" value="General IMEX RK"/>
+      <Parameter name="overall order" type="int" value="2"/>
       <ParameterList name ="IMEX-RK Explicit Stepper">
           <Parameter name="Stepper Type" type="string" value="General ERK"/>
           <ParameterList name="Tableau">
@@ -136,6 +144,7 @@
           </ParameterList>
       </ParameterList>
 
+  <Parameter name="Zero Initial Guess" type="bool" value="0"/>
   <Parameter name="Solver Name"    type="string" value="Default Solver"/>
   <ParameterList name="Default Solver">
       <ParameterList name="NOX">

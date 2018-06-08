@@ -510,6 +510,7 @@ int main(int argc, char *argv[]) {
   TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   string msg("Poisson: ");
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Mesh queries")));
 
   // Get mesh size info
@@ -641,6 +642,7 @@ int main(int argc, char *argv[]) {
     delete [] elem_cmap_elem_cnts;
   }
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global Node Nums")));
 
   //Calculate global node ids
@@ -656,6 +658,7 @@ int main(int argc, char *argv[]) {
                        comm_node_ids,
                        rank);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Boundary Conds")));
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
@@ -686,6 +689,7 @@ int main(int argc, char *argv[]) {
   }
   delete [] sideSetIds;
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
   // Enumerate edges 
@@ -758,6 +762,7 @@ int main(int argc, char *argv[]) {
 
   myCub->getCubature(cubPoints, cubWeights);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
   /**********************************************************************************/
@@ -841,6 +846,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Build global maps")));
 
   /**********************************************************************************/
@@ -913,7 +919,6 @@ int main(int argc, char *argv[]) {
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   if (inputSolverList.isParameter("linear P1")) {
     printf("Activating Linear scheduled p-coarsening...\n");
-    char hi_basis[80];
     Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
     Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
     level0.set("pcoarsen: element to node map",rcp(&elemToNodeI2,false));
@@ -967,6 +972,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Get Dirichlet boundary values")));
 
   int numBCNodes = 0;
@@ -997,6 +1003,7 @@ int main(int argc, char *argv[]) {
     }
   }
     
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly")));
   
   /**********************************************************************************/
@@ -1043,6 +1050,7 @@ int main(int argc, char *argv[]) {
 	 (int)StiffMatrix.getColMap()->getGlobalNumElements(),
 	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements());
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature for auxiliary P1 mesh")));
 
   /////////////////////////////////////////////////////////////////////
@@ -1062,6 +1070,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> cubWeights_aux(numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting basis for auxiliary P1 mesh")));
 
   //Basis
@@ -1075,6 +1084,7 @@ int main(int argc, char *argv[]) {
   myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
   myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly (auxiliary system)")));
 
   crs_matrix_type StiffMatrix_aux(globalMapG, 20*numFieldsG_aux);
@@ -1104,6 +1114,7 @@ int main(int argc, char *argv[]) {
 
   StiffMatrix_aux.fillComplete();
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs")));
 
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
@@ -1270,6 +1281,7 @@ int main(int argc, char *argv[]) {
   /**************************** CALCULATE ERROR *************************************/
   /**********************************************************************************/
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate error")));
 
   double L2err = 0.0;
@@ -1454,6 +1466,7 @@ int main(int argc, char *argv[]) {
   const bool ignoreZeroTimers = true;
   const std::string filter    = "";
   if (optPrintTimings) {
+    tm.reset();
     TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
                            writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
   }
@@ -2244,6 +2257,7 @@ void CreateLinearSystem(int numWorksets,
     FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate Jacobians")));
 
     /**********************************************************************************/
@@ -2283,6 +2297,7 @@ void CreateLinearSystem(int numWorksets,
     /*          Cubature Points to Physical Frame and Compute Data                    */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Map to physical frame and get source term")));
 
     // map cubature points to physical frame
@@ -2298,6 +2313,7 @@ void CreateLinearSystem(int numWorksets,
     /*                         Compute Stiffness Matrix                               */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute stiffness matrix")));
 
     // Transform basis gradients to physical frame:
@@ -2328,6 +2344,7 @@ void CreateLinearSystem(int numWorksets,
     /*                                   Compute RHS                                  */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute right-hand side")));
 
     // Transform basis values to physical frame:

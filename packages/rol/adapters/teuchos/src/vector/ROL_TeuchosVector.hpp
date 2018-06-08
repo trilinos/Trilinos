@@ -77,7 +77,7 @@ public:
   TeuchosVector( Ordinal length, bool zeroOut=true ) : 
     vec_( Teuchos::rcp( new SerialDenseVector(length,zeroOut) ) ) {} 
 
-  Real dot( const Vector<Real>& x ) { 
+  Real dot( const Vector<Real>& x ) const override { 
     return dynamic_cast<const TeuchosVector&>(x).getVector()->dot(*vec_);
   }
 
@@ -112,28 +112,28 @@ public:
     return result;
   }
 
-  void setScalar(const Real C) {
+  void setScalar(const Real C) override {
     for( Ordinal i=0; i<vec_->length(); ++i ) {
       (*vec_)(i) = C;
     }    
   }
 
-  Ptr<Vector<Real>> clone() const { 
-    return makePtr<TeuchosVector>( vec_->length() );
+  Teuchos::RCP<Vector<Real>> clone() const override { 
+    return Teuchos::rcp( new TeuchosVector(vec_->length()) );
   }
 
-  Ptr<Vector<Real>> basis( int i ) const override {
+  Teuchos::RCP<Vector<Real>> basis( int i ) const override {
     //auto b = Teuchos::rcp( new SerialDenseVector(vec_->length(),true) );
     auto b = Teuchos::rcp( new TeuchosVector(vec_->length(),true) );
     (*b)[static_cast<Ordinal>(i)] = Real{1.0};
     return b;
   }
 
-  Ptr<SerialDenseVector> getVector() {
+  Teuchos::RCP<SerialDenseVector> getVector() {
     return vec_;
   }
   
-  Ptr<const SerialDenseVector> getVector() const { 
+  Teuchos::RCP<const SerialDenseVector> getVector() const { 
     return vec_;
   }
   

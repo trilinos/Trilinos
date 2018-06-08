@@ -23,6 +23,9 @@ typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBox
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoarseMapFactory;
 #endif
+#ifdef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::BlockedCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoordinatesTransferFactory;
+#endif
 #ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
 typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
 #endif
@@ -79,9 +82,6 @@ typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdin
 #endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
-#endif
-#ifdef MUELU_CREATEXPETRAPRECONDITIONER_SHORT
-typedef MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> CreateXpetraPreconditioner;
 #endif
 #ifdef MUELU_DEMOFACTORY_SHORT
 typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
@@ -221,6 +221,9 @@ typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Reor
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
 #endif
+#ifdef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_SHORT
+typedef MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionBlockDiagonalFactory;
+#endif
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
 #endif
@@ -265,6 +268,9 @@ typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
 #endif
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
 typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
+#endif
+#ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
+typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;
 #endif
 #ifdef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 typedef MueLu::StructuredLineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredLineDetectionFactory;

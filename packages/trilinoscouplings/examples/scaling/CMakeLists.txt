@@ -62,13 +62,20 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     COMM mpi # Fails to build in serial (see Trilinos #465)
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
-    ARGS "--solverName=ML"
-    NUM_MPI_PROCS 1
+    COMM serial mpi
     )
+
+  TRIBITS_ADD_TEST(
+      Example_Maxwell
+      NAME Example_Maxwell_ML
+      ARGS "--solverName=ML"
+      NUM_MPI_PROCS 1
+      COMM mpi serial
+      )
 
   IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
     TRIBITS_ADD_TEST(
@@ -76,6 +83,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
       NAME Example_Maxwell_ML_Stratimikos
       ARGS "--solverName=ML-Stratimikos"
       NUM_MPI_PROCS 1
+      COMM mpi serial
       )
   ENDIF()
 
@@ -88,6 +96,15 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
         NAME Example_Maxwell_MueLu
         ARGS "--solverName=MueLu"
         NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+
+      TRIBITS_ADD_TEST(
+        Example_Maxwell
+        NAME Example_Maxwell_MueLu
+        ARGS "--solverName=MueLu"
+        NUM_MPI_PROCS 4
+        COMM mpi
         )
 
       IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
@@ -96,16 +113,25 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
           NAME Example_Maxwell_MueLu_Stratimikos
           ARGS "--solverName=MueLu-Stratimikos"
           NUM_MPI_PROCS 1
+          COMM mpi serial
+          )
+
+        TRIBITS_ADD_TEST(
+          Example_Maxwell
+          NAME Example_Maxwell_MueLu_Stratimikos
+          ARGS "--solverName=MueLu-Stratimikos"
+          NUM_MPI_PROCS 4
+          COMM mpi
           )
       ENDIF()
-
-      TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-        SOURCE_FILES Maxwell.xml
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-        )
     ENDIF() # MueLu_ENABLE_Epetra
   ENDIF()
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
+    SOURCE_FILES Maxwell.xml Ninja.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_GradDiv
@@ -379,5 +405,30 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp
     COMM serial mpi
+    )
+ENDIF()
+
+# lbv 22 March 2018
+#
+# Just build this executable; don't run it as a test (yet).
+#
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    StructuredIntrepidPoisson_Pamgen_Tpetra
+    SOURCES StructuredIntrepidPoisson_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuStructuredFiles
+    SOURCE_FILES muelu_structured_aggregation.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
 ENDIF()

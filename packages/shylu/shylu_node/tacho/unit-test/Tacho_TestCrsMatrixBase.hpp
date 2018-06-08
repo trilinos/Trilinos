@@ -6,16 +6,17 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
 TEST( CrsMatrixBase, constructor ) {  
+  TEST_BEGIN;
   ///
   /// host space crs matrix base
   ///
@@ -24,10 +25,10 @@ TEST( CrsMatrixBase, constructor ) {
     n = 4,
     nnz = 16;
 
-  CrsMatrixBaseHostType Ah("A host", m, n, nnz);
+  CrsMatrixBaseHostType Ah(m, n, nnz);
   EXPECT_EQ(Ah.NumRows(), m);
   EXPECT_EQ(Ah.NumCols(), n);
-  EXPECT_EQ(Ah.NumNonZeros(), nnz);
+  EXPECT_EQ(size_t(Ah.NumNonZeros()), size_t(nnz));
 
   ordinal_type cnt = 0;
   for (ordinal_type i=0;i<m;++i) {
@@ -40,8 +41,8 @@ TEST( CrsMatrixBase, constructor ) {
   }
 
   for (ordinal_type i=0;i<m;++i) {
-    EXPECT_EQ(Ah.RowPtrBegin(i), i*n);
-    EXPECT_EQ(Ah.RowPtrEnd(i), i*n + n);
+    EXPECT_EQ(size_t(Ah.RowPtrBegin(i)), size_t(i*n));
+    EXPECT_EQ(size_t(Ah.RowPtrEnd(i)), size_t(i*n + n));
   }
 
   for (ordinal_type k=0;k<nnz;++k) {
@@ -52,14 +53,14 @@ TEST( CrsMatrixBase, constructor ) {
   ///
   /// device space crs matrix base and mirroring
   ///
-  CrsMatrixBaseDeviceType Ad("A device");
+  CrsMatrixBaseDeviceType Ad;
   Ad.createMirror(Ah);
   Ad.copy(Ah);
 
   ///
   /// for checking copy back to host
   ///
-  CrsMatrixBaseHostType Bh("B host");
+  CrsMatrixBaseHostType Bh;
   Bh.createConfTo(Ad);
   Bh.copy(Ad);
   
@@ -79,29 +80,31 @@ TEST( CrsMatrixBase, constructor ) {
   Bh.clear();
   EXPECT_EQ(Bh.NumRows(), 0);
   EXPECT_EQ(Bh.NumCols(), 0);
-  EXPECT_EQ(Bh.NumNonZeros(), 0);
+  EXPECT_EQ(size_t(Bh.NumNonZeros()), size_t(0));
 
-  EXPECT_EQ(Bh.RowPtr().dimension_0(), 0);
-  EXPECT_EQ(Bh.Cols().dimension_0(), 0);
-  EXPECT_EQ(Bh.Values().dimension_0(), 0);
+  EXPECT_EQ(size_t(Bh.RowPtr().dimension_0()), size_t(0));
+  EXPECT_EQ(size_t(Bh.Cols().dimension_0()), size_t(0));
+  EXPECT_EQ(size_t(Bh.Values().dimension_0()), size_t(0));
 
   EXPECT_TRUE(Bh.RowPtr().data() == NULL);
   EXPECT_TRUE(Bh.Cols().data() == NULL);
   EXPECT_TRUE(Bh.Values().data() == NULL);
+  TEST_END;
 }
 
 TEST( CrsMatrixBase, matrixmarket ) {
+  TEST_BEGIN;
   std::string inputfilename  = MM_TEST_FILE + ".mtx";
   std::string outputfilename = MM_TEST_FILE + "_read_output.mtx";      
 
-  CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType Ah;
+  MatrixMarket<ValueType>::read(inputfilename, Ah);
 
   std::ofstream out(outputfilename);
   MatrixMarket<ValueType>::write(out, Ah);
 
-  CrsMatrixBaseHostType Bh("B host");
-  Bh = MatrixMarket<ValueType>::read(outputfilename);
+  CrsMatrixBaseHostType Bh;
+  MatrixMarket<ValueType>::read(outputfilename, Bh);
 
   ///
   /// read and write the matrix and read again, 
@@ -120,6 +123,7 @@ TEST( CrsMatrixBase, matrixmarket ) {
       EXPECT_EQ(Ah.Value(j), Bh.Value(j));      
     }
   }
+  TEST_END;
 }
 
 #endif

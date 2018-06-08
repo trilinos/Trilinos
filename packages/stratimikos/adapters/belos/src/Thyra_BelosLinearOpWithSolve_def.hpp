@@ -223,6 +223,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
           "find that type using Teuchos::ScalarTraits<Scalar>::magnitudeType.");
       }
     }
+
+    if (solverPL_->isParameter("Timer Label") && solverPL_->isType<std::string>("Timer Label"))
+      lp_->setLabel(solverPL_->get<std::string>("Timer Label"));
   }
   else {
     RCP<const Teuchos::ParameterList> defaultPL =

@@ -45,6 +45,7 @@
     <ParameterList name="Demo Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="BDF2"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Start Up Stepper Name" type="string" value="Demo Start Up Stepper"/>
 
@@ -100,6 +101,7 @@
 
       <ParameterList name="Demo Start Up Stepper">
         <Parameter name="Stepper Type" type="string" value="Backward Euler"/>
+        <Parameter name="Zero Initial Guess" type="bool" value="0"/>
         <Parameter name="Solver Name"    type="string" value="Start Up Solver"/>
         <ParameterList name="Start Up Solver">
         <ParameterList name="NOX">

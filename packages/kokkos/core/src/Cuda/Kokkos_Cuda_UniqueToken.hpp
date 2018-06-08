@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -73,17 +73,47 @@ public:
   KOKKOS_INLINE_FUNCTION
   UniqueToken() : m_buffer(0), m_count(0) {}
 
-  KOKKOS_FUNCTION_DEFAULTED
+#ifdef KOKKOS_CUDA_9_DEFAULTED_BUG_WORKAROUND
+  KOKKOS_INLINE_FUNCTION
+  UniqueToken( const UniqueToken & rhs )
+  : m_buffer(rhs.m_buffer)
+  , m_count(rhs.m_count)
+  {
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  UniqueToken( UniqueToken && rhs )
+  : m_buffer(std::move(rhs.m_buffer))
+  , m_count(std::move(rhs.m_count))
+  {
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  UniqueToken & operator=( const UniqueToken & rhs ) {
+    m_buffer = rhs.m_buffer;
+    m_count = rhs.m_count;
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  UniqueToken & operator=( UniqueToken && rhs ) {
+    m_buffer = std::move(rhs.m_buffer);
+    m_count = std::move(rhs.m_count);
+    return *this;
+  }
+#else
+  KOKKOS_INLINE_FUNCTION
   UniqueToken( const UniqueToken & ) = default;
 
-  KOKKOS_FUNCTION_DEFAULTED
+  KOKKOS_INLINE_FUNCTION
   UniqueToken( UniqueToken && )      = default;
 
-  KOKKOS_FUNCTION_DEFAULTED
+  KOKKOS_INLINE_FUNCTION
   UniqueToken & operator=( const UniqueToken & ) = default ;
 
-  KOKKOS_FUNCTION_DEFAULTED
+  KOKKOS_INLINE_FUNCTION
   UniqueToken & operator=( UniqueToken && ) = default ;
+#endif
 
   /// \brief upper bound for acquired values, i.e. 0 <= value < size()
   KOKKOS_INLINE_FUNCTION

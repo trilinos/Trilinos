@@ -95,30 +95,30 @@ namespace Details {
       src_ (src),
       dstWhichVecs_ (dstWhichVecs),
       srcWhichVecs_ (srcWhichVecs),
-      numVecs_ (DstConstStride ? dst.dimension_1 () : dstWhichVecs.dimension_0 ())
+      numVecs_ (DstConstStride ? dst.extent (1) : dstWhichVecs.extent (0))
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! DstConstStride && ! SrcConstStride &&
-        dstWhichVecs.dimension_0 () != srcWhichVecs.dimension_0 (),
+        dstWhichVecs.extent (0) != srcWhichVecs.extent (0),
         std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
         "Neither src nor dst have constant stride, but "
-        "dstWhichVecs.dimension_0() = " << dstWhichVecs.dimension_0 ()
-        << " != srcWhichVecs.dimension_0() = " << srcWhichVecs.dimension_0 ()
+        "dstWhichVecs.extent(0) = " << dstWhichVecs.extent (0)
+        << " != srcWhichVecs.extent(0) = " << srcWhichVecs.extent (0)
         << ".");
       TEUCHOS_TEST_FOR_EXCEPTION(
         DstConstStride && ! SrcConstStride &&
-        srcWhichVecs.dimension_0 () != dst.dimension_1 (),
+        srcWhichVecs.extent (0) != dst.extent (1),
         std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
-        "src does not have constant stride, but srcWhichVecs.dimension_0() = "
-        << srcWhichVecs.dimension_0 () << " != dst.dimension_1() = "
-        << dst.dimension_1 () << ".");
+        "src does not have constant stride, but srcWhichVecs.extent(0) = "
+        << srcWhichVecs.extent (0) << " != dst.extent(1) = "
+        << dst.extent (1) << ".");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! DstConstStride && SrcConstStride &&
-        dstWhichVecs.dimension_0 () != src.dimension_1 (),
+        dstWhichVecs.extent (0) != src.extent (1),
         std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
-        "dst does not have constant stride, but dstWhichVecs.dimension_0() = "
-        << dstWhichVecs.dimension_0 () << " != src.dimension_1() = "
-        << src.dimension_1 () << ".");
+        "dst does not have constant stride, but dstWhichVecs.extent(0) = "
+        << dstWhichVecs.extent (0) << " != src.extent(1) = "
+        << src.extent (1) << ".");
     }
 
     // You may only call the 2-argument constructor if DstConstStride
@@ -126,7 +126,7 @@ namespace Details {
     LocalDeepCopyFunctor (const DstViewType& dst, const SrcViewType& src) :
       dst_ (dst),
       src_ (src),
-      numVecs_ (dst.dimension_1 ())
+      numVecs_ (dst.extent (1))
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! DstConstStride || ! SrcConstStride, std::logic_error,
@@ -190,10 +190,10 @@ namespace Details {
         DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
       functor_type f (dst, src);
       typedef typename DstViewType::execution_space execution_space;
-      typedef decltype (dst.dimension_0 ()) size_type;
+      typedef decltype (dst.extent (0)) size_type;
       typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
 
-      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
+      Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride)",range_type (0, dst.extent (0)), f);
     }
 
     static void
@@ -212,7 +212,7 @@ namespace Details {
       // to copy one column at a time.
 
       typedef typename DstViewType::execution_space execution_space;
-      typedef decltype (dst.dimension_0 ()) size_type;
+      typedef decltype (dst.extent (0)) size_type;
       typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
 
       if (dstConstStride) {
@@ -222,13 +222,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
           functor_type f (dst, src);
-          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,0)",range_type (0, dst.extent (0)), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, false> functor_type;
           functor_type f (dst, src, srcWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,1)",range_type (0, dst.extent (0)), f);
         }
       }
       else { // ! dstConstStride
@@ -236,13 +236,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, true> functor_type;
           functor_type f (dst, src, dstWhichVecs, dstWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,2)",range_type (0, dst.extent (0)), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, false> functor_type;
           functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.dimension_0 ()), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,3)",range_type (0, dst.extent (0)), f);
         }
       }
     }

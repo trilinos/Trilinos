@@ -109,16 +109,16 @@ namespace MueLu {
       targetRowsPerProcess = minRowsPerProcess;
 
     RCP<const FactoryBase> Afact = GetFactory("A");
-    if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
+    if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
        Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
-       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
+       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null) {
       GetOStream(Warnings) <<
         "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
         "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
         "It specifically must not be of type Rebalance(Blocked)AcFactory or similar. " \
-        "Please check the input. Make also sure that \"number of partitions\" is provided to" \
-        "the Interface class and the RepartitionFactory instance." << std::endl;
-
+        "Please check the input. Make also sure that \"number of partitions\" is provided to " \
+        "the Interface class and the RepartitionFactory instance.  Instead, we have a "<<Afact->description() << std::endl;
+    }
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 

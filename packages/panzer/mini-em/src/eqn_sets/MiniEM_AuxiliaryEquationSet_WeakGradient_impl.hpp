@@ -13,7 +13,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
@@ -72,8 +71,8 @@ AuxiliaryEquationSet_WeakGradient(
 template <typename EvalT>
 void mini_em::AuxiliaryEquationSet_WeakGradient<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const panzer::FieldLibrary& field_library,
-				      const Teuchos::ParameterList& user_data) const
+				      const panzer::FieldLibrary& /* field_library */,
+				      const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -106,10 +105,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 // ***********************************************************************
 template <typename EvalT >
 void mini_em::AuxiliaryEquationSet_WeakGradient<EvalT>::
-buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				  const panzer::FieldLibrary& field_library,
-                                  const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                  const Teuchos::ParameterList& user_data) const
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+				  const panzer::FieldLibrary& /* field_library */,
+                                  const panzer::LinearObjFactory<panzer::Traits> & /* lof */,
+                                  const Teuchos::ParameterList& /* user_data */) const
 {
 }
 
@@ -119,7 +118,7 @@ void mini_em::AuxiliaryEquationSet_WeakGradient<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                  const Teuchos::ParameterList& user_data) const
+                                  const Teuchos::ParameterList& /* user_data */) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

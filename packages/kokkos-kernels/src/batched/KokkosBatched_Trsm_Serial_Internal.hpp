@@ -43,8 +43,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialTrsmInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0);
         
@@ -96,8 +94,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialTrsmInternal:: not valid template types");
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
@@ -171,8 +167,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
   
       if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
@@ -219,8 +214,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
       enum : int {

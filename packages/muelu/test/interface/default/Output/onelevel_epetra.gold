@@ -1,0 +1,23 @@
+Level 0
+ Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother -> 
+  [empty list]
+ 
+
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 1
+Operator complexity = 1.00
+Smoother complexity = 0.00
+Cycle type          = V
+
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+
+Smoother (level 0) pre  : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 0) post : no smoother
+

@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
+template<typename EvalT, typename Traits>
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+Integrator_TransientBasisTimesScalar(
+  const Teuchos::ParameterList& p) :
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   scalar( p.get<std::string>("Value Name"), 
@@ -97,7 +100,12 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
@@ -115,7 +123,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.evaluate_transient_terms) {
     

@@ -78,6 +78,11 @@
 #include <EpetraExt_RowMatrixOut.h>
 #endif
 
+
+#ifdef HAVE_MUELU_TPETRA
+#include <TpetraExt_MatrixMatrix.hpp>
+#endif
+
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 using Teuchos::RCP;
@@ -218,7 +223,6 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
 
 #endif
 
-
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -343,6 +347,7 @@ bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Imp
 }
 #endif //if defined(HAVE_MUELU_EPETRA)
 
+
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -354,8 +359,34 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 
   if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA)
-    printf("This test is not yet implemented for Tpetra.");
-#endif
+    typedef Tpetra::CrsMatrixStruct<SC,LO,GO,NO>  crs_matrix_struct_type;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO>        crs_matrix_type;
+    typedef Tpetra::Import<LO,GO,NO>              import_type;
+
+    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(A);
+    RCP<const crs_matrix_type> Pu = Utilities::Op2TpetraCrs(P);
+    if(Au->getComm()->getSize()==1) return;
+
+    // ==================
+    // Optimized Transfer
+    // ==================
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("OptimizedTransfer: Import")));
+    crs_matrix_struct_type Pview;
+    Tpetra::MMdetails::import_and_extract_views(*Pu,Au->getColMap(), Pview, Au->getGraph()->getImporter(), false,"ImportPerf: ");
+
+    tm=Teuchos::null;
+    Au->getComm()->barrier();
+
+    // ==================
+    // Naive Transfer
+    // ==================
+    // Use the columnmap from Aopt and build an importer ex nihilo
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
+    import_type NaiveImport(Pview.importMatrix->getColMap(),Pu->getDomainMap());
+    tm=Teuchos::null;
+    Au->getComm()->barrier();
+#endif // defined(HAVE_MUELU_TPETRA)
   }
   else if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA)
@@ -391,6 +422,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Naive Transfer
     // ==================
     // Use the columnmap from Aopt and build an importer ex nihilo
+
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
     const Epetra_Map &NaiveColMap = Aopt->ColMap();
     Epetra_Import NaiveImport(NaiveColMap,Pu->DomainMap());
@@ -409,8 +441,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 
     // Cleanup
     delete Aopt;
-#else
-    printf("This test requires Epetra.");
 #endif // defined(HAVE_MUELU_EPETRA)
   }
 }
@@ -630,21 +660,11 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-      bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
 
       RCP<Hierarchy> H;
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-      RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
-#endif
       A->SetMaxEigenvalueEstimate(-one);
 
-      if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-        aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
-#endif
-      } else {
-        H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
-      }
+      H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       comm->barrier();
       tm = Teuchos::null;
 

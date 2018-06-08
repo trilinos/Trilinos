@@ -50,6 +50,7 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_LinearOperator.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -63,11 +64,11 @@ class Krylov {
 public:
   virtual ~Krylov(void) {}
 
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
+  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 )
     : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
 
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
+  Krylov( ROL::ParameterList &parlist ) {
+    ROL::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
     absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
     relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
     maxit_  = krylovList.get("Iteration Limit", 100);

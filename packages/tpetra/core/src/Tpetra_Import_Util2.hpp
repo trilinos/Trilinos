@@ -54,15 +54,10 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
-
-// Tpetra::CrsMatrix uses the functions below in its implementation.
-// To avoid a circular include issue, only include the declarations
-// for CrsMatrix.  We will include the definition after the functions
-// here have been defined.
-#include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Import_Util {
@@ -75,12 +70,21 @@ sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind,
                 const Teuchos::ArrayView<Scalar>&CRS_vals);
 
+template<typename Ordinal>
+void
+sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
 void
 sortCrsEntries (const rowptr_array_type& CRS_rowptr,
                 const colind_array_type& CRS_colind,
                 const vals_array_type& CRS_vals);
+
+template<typename rowptr_array_type, typename colind_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind);
 
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
@@ -91,6 +95,11 @@ void
 sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal>& CRS_colind,
                         const Teuchos::ArrayView<Scalar>& CRS_vals);
+
+template<typename Ordinal>
+void
+sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                        const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 /// \brief lowCommunicationMakeColMapAndReindex
 ///
@@ -118,6 +127,28 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
 
+
+
+  /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
+  /// Let:
+  ///   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+  ///   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+  ///   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+  ///   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+  /// Precondition:
+  ///  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
+  ///  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
+  ///  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
+  ///  --- Precondition 3 is only checked in DEBUG mode ---
+  /// Postcondition:
+  ///   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+  void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
+                                     bool useReverseModeForOwnership,
+                                     const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferForMigratingData,
+                                     bool useReverseModeForMigration,
+                                     Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs);
+
 } // namespace Import_Util
 } // namespace Tpetra
 
@@ -142,13 +173,17 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t NumRows = CRS_rowptr.size()-1;
   size_t nnz = CRS_colind.size();
 
+  const bool permute_values_array = CRS_vals.size() > 0;
+
   for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
     if(start >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
-    Ordinal* locIndices = &CRS_colind[start];
+    Teuchos::ArrayRCP<Scalar> locValues;
+    if (permute_values_array)
+      locValues = Teuchos::arcp<Scalar>(&CRS_vals[start], 0, NumEntries, false);
+    Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[start], 0, NumEntries, false);
 
     Ordinal n = NumEntries;
     Ordinal m = 1;
@@ -161,9 +196,11 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          Scalar dtemp = locValues[k+m];
-          locValues[k+m] = locValues[k];
-          locValues[k] = dtemp;
+          if (permute_values_array) {
+            Scalar dtemp = locValues[k+m];
+            locValues[k+m] = locValues[k];
+            locValues[k] = dtemp;
+          }
           Ordinal itemp = locIndices[k+m];
           locIndices[k+m] = locIndices[k];
           locIndices[k] = itemp;
@@ -172,6 +209,16 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
       m = m/3;
     }
   }
+}
+
+template<typename Ordinal>
+void
+sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+                const Teuchos::ArrayView<Ordinal> & CRS_colind)
+{
+  // Generate dummy values array
+  Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
+  sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 namespace Impl {
@@ -197,8 +244,9 @@ public:
 
   KOKKOS_FUNCTION void operator() (const size_t i) const
   {
-    const size_t nnz = ind_.dimension_0 ();
+    const size_t nnz = ind_.extent (0);
     const size_t start = ptr_(i);
+    const bool permute_values_array = val_.extent(0) > 0;
 
     if (start < nnz) {
       const size_t NumEntries = ptr_(i+1) - start;
@@ -216,9 +264,11 @@ public:
             if (ind_(sk+m) >= ind_(sk)) {
               break;
             }
-            const scalar_type dtemp = val_(sk+m);
-            val_(sk+m)   = val_(sk);
-            val_(sk)     = dtemp;
+            if (permute_values_array) {
+              const scalar_type dtemp = val_(sk+m);
+              val_(sk+m)   = val_(sk);
+              val_(sk)     = dtemp;
+            }
             const ordinal_type itemp = ind_(sk+m);
             ind_(sk+m) = ind_(sk);
             ind_(sk)   = itemp;
@@ -239,10 +289,10 @@ public:
     // Code copied from  Epetra_CrsMatrix::SortEntries()
     // NOTE: This should not be taken as a particularly efficient way to sort
     // rows of matrices in parallel.  But it is correct, so that's something.
-    if (ptr.dimension_0 () == 0) {
+    if (ptr.extent (0) == 0) {
       return; // no rows, so nothing to sort
     }
-    const size_t NumRows = ptr.dimension_0 () - 1;
+    const size_t NumRows = ptr.extent (0) - 1;
 
     typedef size_t index_type; // what this function was using; not my choice
     typedef typename ValuesType::execution_space execution_space;
@@ -271,6 +321,20 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
     vals_array_type>::sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
 }
 
+template<typename rowptr_array_type, typename colind_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind)
+{
+  // Generate dummy values array
+  typedef typename colind_array_type::execution_space execution_space;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_type;
+  typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
+  scalar_view_type CRS_vals;
+  sortCrsEntries<rowptr_array_type, colind_array_type,
+    scalar_view_type>(CRS_rowptr, CRS_colind, CRS_vals);
+}
+
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
 void
@@ -291,14 +355,18 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t new_curr = CRS_rowptr[0];
   size_t old_curr = CRS_rowptr[0];
 
+  const bool permute_values_array = CRS_vals.size() > 0;
+
   for(size_t i = 0; i < NumRows; i++){
     const size_t old_rowptr_i=CRS_rowptr[i];
     CRS_rowptr[i] = old_curr;
     if(old_rowptr_i >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[old_rowptr_i];
     size_t NumEntries   = CRS_rowptr[i+1] - old_rowptr_i;
-    Ordinal* locIndices = &CRS_colind[old_rowptr_i];
+    Teuchos::ArrayRCP<Scalar> locValues;
+    if (permute_values_array)
+      locValues = Teuchos::arcp<Scalar>(&CRS_vals[old_rowptr_i], 0, NumEntries, false);
+    Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[old_rowptr_i], 0, NumEntries, false);
 
     // Sort phase
     Ordinal n = NumEntries;
@@ -310,9 +378,11 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          Scalar dtemp = locValues[k+m];
-          locValues[k+m] = locValues[k];
-          locValues[k] = dtemp;
+          if (permute_values_array) {
+            Scalar dtemp = locValues[k+m];
+            locValues[k+m] = locValues[k];
+            locValues[k] = dtemp;
+          }
           Ordinal itemp = locIndices[k+m];
           locIndices[k+m] = locIndices[k];
           locIndices[k] = itemp;
@@ -324,14 +394,14 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     // Merge & shrink
     for(size_t j=old_rowptr_i; j < CRS_rowptr[i+1]; j++) {
       if(j > old_rowptr_i && CRS_colind[j]==CRS_colind[new_curr-1]) {
-        CRS_vals[new_curr-1] += CRS_vals[j];
+        if (permute_values_array) CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
         new_curr++;
       }
       else {
         CRS_colind[new_curr] = CRS_colind[j];
-        CRS_vals[new_curr]   = CRS_vals[j];
+        if (permute_values_array) CRS_vals[new_curr]   = CRS_vals[j];
         new_curr++;
       }
     }
@@ -340,6 +410,16 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
   CRS_rowptr[NumRows] = new_curr;
 }
+
+template<typename Ordinal>
+void
+sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+                        const Teuchos::ArrayView<Ordinal> & CRS_colind)
+{
+  Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
+  return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+}
+
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
@@ -576,12 +656,72 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   }
 }
 
+
+
+
+// Generates an list of owning PIDs based on two transfer (aka import/export objects)
+// Let:
+//   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+//   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+//   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+//   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+// Precondition:
+//  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
+//  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
+//  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
+//  --- Precondition 3 is only checked in DEBUG mode ---
+// Postcondition:
+//   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
+                                   bool useReverseModeForOwnership,
+                                   const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesMigration,
+                                   bool useReverseModeForMigration,
+                                   Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs) {
+  typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+  typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!MapAo->isSameAs(*MapAm),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch between transfers");
+  TEUCHOS_TEST_FOR_EXCEPTION(!VectorMap->isSameAs(*owningPIDs.getMap()),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch transfer and vector");
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(!OwningMap->isOneToOne(),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");
+#endif
+
+  int rank = OwningMap->getComm()->getRank();
+  // Generate "A" vector and fill it with owning information.  We can read this from transferThatDefinesOwnership w/o communication
+  // Note:  Due to the 1-to-1 requirement, several of these options throw
+  Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> temp(MapAo);
+  const import_type* ownAsImport = dynamic_cast<const import_type*> (&transferThatDefinesOwnership);
+  const export_type* ownAsExport = dynamic_cast<const export_type*> (&transferThatDefinesOwnership);
+
+  Teuchos::ArrayRCP<int> pids    = temp.getDataNonConst();
+  Teuchos::ArrayView<int> v_pids = pids();
+  if(ownAsImport && useReverseModeForOwnership)       {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
+  else if(ownAsImport && !useReverseModeForOwnership) getPids(*ownAsImport,v_pids,false);
+  else if(ownAsExport && useReverseModeForMigration)  {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector this option not yet implemented");}
+  else                                                {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
+
+  const import_type* xferAsImport = dynamic_cast<const import_type*> (&transferThatDefinesMigration);
+  const export_type* xferAsExport = dynamic_cast<const export_type*> (&transferThatDefinesMigration);
+  TEUCHOS_TEST_FOR_EXCEPTION(!xferAsImport && !xferAsExport,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector transfer undefined");
+
+  // Migrate from "A" vector to output vector
+  owningPIDs.putScalar(rank);
+  if(xferAsImport && useReverseModeForMigration)        owningPIDs.doExport(temp,*xferAsImport,Tpetra::REPLACE);
+  else if(xferAsImport && !useReverseModeForMigration)  owningPIDs.doImport(temp,*xferAsImport,Tpetra::REPLACE);
+  else if(xferAsExport && useReverseModeForMigration)   owningPIDs.doImport(temp,*xferAsExport,Tpetra::REPLACE);
+  else                                                  owningPIDs.doExport(temp,*xferAsExport,Tpetra::REPLACE);
+
+}
+
+
+
 } // namespace Import_Util
 } // namespace Tpetra
-
-// We can include the definitions for Tpetra::CrsMatrix now that the above
-// functions have been defined.  For ETI, this isn't necessary, so we just
-// including the generated hpp
-#include "Tpetra_CrsMatrix.hpp"
 
 #endif // TPETRA_IMPORT_UTIL_HPP

@@ -136,7 +136,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                                                                 std::ostream & outStream,
                                                                 const int order ) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   using Finite_Difference_Arrays::shifts;
@@ -150,7 +150,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   std::vector<std::vector<Real> > gCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Evaluate objective value at x.
@@ -257,7 +257,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                                                                std::ostream & outStream,
                                                                const int order ) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   using Finite_Difference_Arrays::shifts;
@@ -272,7 +272,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute gradient at x.
@@ -380,7 +380,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   hsymCheck[2] = std::abs(vHw-wHv);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   if (printToStream) {

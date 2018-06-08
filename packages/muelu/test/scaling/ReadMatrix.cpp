@@ -170,6 +170,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
     comm->barrier();
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -195,6 +196,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // System solution (Ax = b)
     // =========================================================================
     comm->barrier();
+    tm.reset();
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
     RCP<Vector> X = VectorFactory::Build(map,1);
@@ -222,6 +224,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     comm->barrier();
     if (amgAsSolver) {
+      tm.reset();
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
       H->IsPreconditioner(false);
@@ -236,6 +239,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     } else if (amgAsPrecond) {
 #ifdef HAVE_MUELU_BELOS
+      tm.reset();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
       // Operator and Multivector type that will be used with Belos
       typedef MultiVector          MV;

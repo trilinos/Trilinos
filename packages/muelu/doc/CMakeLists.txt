@@ -14,3 +14,5 @@ if (${PACKAGE_NAME}_ENABLE_Tutorial)
 else()
   MESSAGE(STATUS "disabling tutorial")
 endif()
+
+ADD_SUBDIRECTORY(UsersGuide)

@@ -268,32 +268,32 @@ int main (int argc, char ** argv){
 
 
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cores" ) ) {
       sscanf( argv[++i] , "%dx%d" ,
               cmdline + CMD_USE_NUMA ,
               cmdline + CMD_USE_CORE_PER_NUMA );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda-dev" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
       cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "mtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mtx" ) ) {
       mtx_bin_file = argv[++i];
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+      std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
 
       return 0;
     }
@@ -301,7 +301,7 @@ int main (int argc, char ** argv){
 
   if (mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+    std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
 
     return 0;
   }

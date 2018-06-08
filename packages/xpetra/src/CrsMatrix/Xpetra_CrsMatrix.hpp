@@ -176,12 +176,6 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
-
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
@@ -281,6 +275,10 @@ namespace Xpetra {
 
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+
+    virtual void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                               const typename local_graph_type::entries_type::non_const_type& ind,
+                               const typename local_matrix_type::values_type& val)=0;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

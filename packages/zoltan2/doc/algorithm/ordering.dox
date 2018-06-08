@@ -9,6 +9,7 @@ Ordering methods currently available:
 <li> random ordering
 <li> \ref rcmPage for bandwidth-reducing ordering.
 <li> sorted_degree ordering
+<li> \ref ndPage for nested dissection based ordering.
 </ul>
 These are all serial.
 

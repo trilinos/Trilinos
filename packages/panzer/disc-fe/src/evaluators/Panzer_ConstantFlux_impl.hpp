@@ -46,7 +46,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(ConstantFlux,p) :
+template<typename EvalT, typename Traits>
+ConstantFlux<EvalT, Traits>::
+ConstantFlux(
+  const Teuchos::ParameterList& p) :
   flux( p.get<std::string>("Flux Field Name"), 
 	p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
@@ -62,7 +65,12 @@ PHX_EVALUATOR_CTOR(ConstantFlux,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ConstantFlux, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+ConstantFlux<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   using namespace PHX;
   this->utils.setFieldData(flux,fm);
@@ -76,7 +84,11 @@ PHX_POST_REGISTRATION_SETUP(ConstantFlux, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(ConstantFlux, /* d */)
+template<typename EvalT, typename Traits>
+void
+ConstantFlux<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* d */)
 { }
 
 //**********************************************************************

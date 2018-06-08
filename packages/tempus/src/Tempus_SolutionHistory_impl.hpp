@@ -29,7 +29,7 @@ namespace {
   static std::string Static_name     = "Static";
   static std::string Unlimited_name  = "Unlimited";
   static std::string Storage_name    = "Storage Type";
-  static std::string Storage_default = Unlimited_name;
+  static std::string Storage_default = Undo_name;
 
   static std::string StorageLimit_name    = "Storage Limit";
   static int         StorageLimit_default = 2;
@@ -246,7 +246,7 @@ void SolutionHistory<Scalar>::initWorkingState()
       // Recycle old state and copy currentState
       newState = (*history_)[0];
       history_->erase(history_->begin());
-      newState->copy(getCurrentState());
+      if (getNumStates() > 0) newState->copy(getCurrentState());
       // When using the Griewank algorithm, we will want to select which
       // older state to recycle.
     }

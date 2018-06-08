@@ -49,6 +49,7 @@
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_Details_getNumDiags.hpp"
 #include <type_traits> // std::is_same
 
 // mfh 08 Mar 2013: This include isn't being used here, so I'm
@@ -264,8 +265,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
-    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
@@ -528,8 +529,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
-    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
@@ -598,8 +599,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
-    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);

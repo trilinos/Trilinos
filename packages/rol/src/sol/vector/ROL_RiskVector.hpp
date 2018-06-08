@@ -45,8 +45,8 @@
 #define ROL_RISKVECTOR_HPP
 
 #include "ROL_StdVector.hpp"
-#include "ROL_RiskMeasureInfo.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_RandVarFunctionalInfo.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -71,14 +71,14 @@ private:
   mutable ROL::Ptr<Vector<Real> > dual_vec1_;
   mutable ROL::Ptr<RiskVector<Real> > dual_vec_;
 
-  void initializeObj(Teuchos::RCP<Teuchos::ParameterList> &parlist,
+  void initializeObj(ROL::Ptr<ROL::ParameterList> &parlist,
                const Real stat = 1) {
     // Get risk measure information
     if (parlist != ROL::nullPtr) {
       std::string name;
       std::vector<Real> lower, upper;
       bool activated(false);
-      RiskMeasureInfo<Real>(*parlist,name,nStatObj_,lower,upper,activated);
+      RandVarFunctionalInfo<Real>(*parlist,name,nStatObj_,lower,upper,activated);
       augmentedObj_ = (nStatObj_ > 0) ? true : false;
       // Initialize statistic vector
       if (augmentedObj_) {
@@ -90,9 +90,9 @@ private:
       augmentedObj_ = false;
       nStatObj_     = 0;
     }
-  } 
+  }
 
-  void initializeCon(std::vector<Teuchos::RCP<Teuchos::ParameterList> > &parlist,
+  void initializeCon(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist,
                const Real stat = 1) {
     int size = parlist.size();
     statCon_.resize(size); statCon_vec_.resize(size); nStatCon_.resize(size);
@@ -102,7 +102,7 @@ private:
         std::string name;
         std::vector<Real> lower, upper;
         bool activated(false);
-        RiskMeasureInfo<Real>(*parlist[i],name,nStatCon_[i],lower,upper,activated);
+        RandVarFunctionalInfo<Real>(*parlist[i],name,nStatCon_[i],lower,upper,activated);
         augmentedCon_ = (nStatCon_[i] > 0) ? true : augmentedCon_;
         // Initialize statistic vector
         if (nStatCon_[i] > 0) {
@@ -124,7 +124,7 @@ private:
 public:
   
   // Objective risk only
-  RiskVector( Teuchos::RCP<Teuchos::ParameterList> &parlist,
+  RiskVector( ROL::Ptr<ROL::ParameterList> &parlist,
         const ROL::Ptr<Vector<Real> >          &vec,
         const Real stat = 0 )
     : statObj_(ROL::nullPtr), statObj_vec_(ROL::nullPtr),
@@ -135,7 +135,7 @@ public:
   }
 
   // Inequality constraint risk only
-  RiskVector( std::vector<Teuchos::RCP<Teuchos::ParameterList> > &parlist,
+  RiskVector( std::vector<ROL::Ptr<ROL::ParameterList> > &parlist,
         const ROL::Ptr<Vector<Real> > &vec,
         const Real stat = 0 )
     : statObj_(ROL::nullPtr), statObj_vec_(ROL::nullPtr),
@@ -146,8 +146,8 @@ public:
   }
 
   // Objective and inequality constraint risk
-  RiskVector( Teuchos::RCP<Teuchos::ParameterList> & parlistObj,
-              std::vector<Teuchos::RCP<Teuchos::ParameterList> > &parlistCon,
+  RiskVector( ROL::Ptr<ROL::ParameterList> & parlistObj,
+              std::vector<ROL::Ptr<ROL::ParameterList> > &parlistCon,
         const ROL::Ptr<Vector<Real> > &vec,
         const Real stat = 0 )
     : statObj_(ROL::nullPtr), statObj_vec_(ROL::nullPtr),
@@ -185,6 +185,12 @@ public:
       }
     }
   }
+
+  // Build from components -- Objective only...no statistic
+  RiskVector( const ROL::Ptr<Vector<Real> > &vec )
+    : statObj_(ROL::nullPtr), statObj_vec_(ROL::nullPtr),
+      augmentedObj_(false), nStatObj_(0), augmentedCon_(false),
+      vec_(vec), isDualInitialized_(false) {}
 
   void set( const Vector<Real> &x ) {
     const RiskVector<Real> &xs = dynamic_cast<const RiskVector<Real>&>(x);

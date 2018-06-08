@@ -47,22 +47,6 @@ namespace Tpetra {
 
 namespace MatrixMatrix{
 
-
-  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
-template<class ViewType>
-void Kokkos_resize_1DView(ViewType & v, const size_t N) {
-  if(v.extent(0) == N) return;
-  typedef typename ViewType::execution_space execution_space;
-  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-
-  ViewType newv("newv",N);
-  Kokkos::parallel_for(range_type(0,std::min(N,v.extent(0))), KOKKOS_LAMBDA(const size_t i) {
-      newv(i) = v(i);
-    });
-  v = newv;// This is a shallow copy
-}
-
-
 namespace ExtraKernels{
 
 
@@ -150,6 +134,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -158,6 +143,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
     Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
     Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
   // Sizes
@@ -201,7 +187,6 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       // For each row of A/C
       size_t CSR_ip = 0, OLD_ip = 0;
       for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-        //        printf("CMS: row %d CSR_alloc = %d\n",(int)i,(int)CSR_alloc);fflush(stdout);
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
         Crowptr(i-my_thread_start) = CSR_ip;
@@ -266,7 +251,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
         }
         
         // Resize for next pass if needed
-        if (CSR_ip + n > CSR_alloc) {
+        if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1))*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
           Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
@@ -297,7 +282,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
 #endif    
     // Sort & set values
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    if (params.is_null() || params->get("sort entries",true))
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
@@ -523,6 +509,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -531,6 +518,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
     Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
     Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff
@@ -660,7 +648,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         }
         
         // Resize for next pass if needed
-        if (CSR_ip + n > CSR_alloc) {
+        if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1)+1)*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
           Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
@@ -693,7 +681,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort"))));
 #endif    
     // Sort & set values
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    if (params.is_null() || params->get("sort entries",true))
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
@@ -927,6 +916,59 @@ void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InCol
 }//end copy_out
 
 #endif // OpenMP
+
+
+/*********************************************************************************************************/
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
+void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
+                                                  const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Node> & Dinv,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                  const LocalOrdinalViewType & Acol2Brow,
+                                                  const LocalOrdinalViewType & Acol2Irow,
+                                                  const LocalOrdinalViewType & Bcol2Ccol,
+                                                  const LocalOrdinalViewType & Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                  const std::string& label,
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Multiply"))));
+#endif
+  typedef  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
+
+  // This kernel computes (I-omega Dinv A) B the slow way (for generality's sake, you must understand)
+  Teuchos::ParameterList jparams;
+  if(!params.is_null()) {
+    jparams = *params;
+    jparams.remove("openmp: algorithm",false);
+    jparams.remove("cuda: algorithm",false);
+  }
+
+  // 1) Multiply A*B
+  Teuchos::RCP<Matrix_t> AB = Teuchos::rcp(new Matrix_t(C.getRowMap(),0));
+  Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),Teuchos::rcp(&jparams,false));
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Scale"))));
+#endif
+  
+  // 2) Scale A by Dinv
+  AB->leftScale(Dinv);
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS  
+MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Add"))));
+#endif
+
+  // 3) Add [-omega Dinv A] + B
+  Scalar one = Teuchos::ScalarTraits<Scalar>::one();  
+  Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,Scalar(-omega),false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),params);
+
+ }// jacobi_A_B_newmatrix_MultiplyScaleAddKernel
+
 
 
 }//ExtraKernels

@@ -54,7 +54,7 @@ private:
   const int nQuad_;
 
   void checkInputs(void) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((nQuad_ < 1 || nQuad_ > 20),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((nQuad_ < 1 || nQuad_ > 20),std::invalid_argument,
       ">>> ERROR (ROL::GaussLegendreQuadrature): Requested number of points not implemented!");
   }
 

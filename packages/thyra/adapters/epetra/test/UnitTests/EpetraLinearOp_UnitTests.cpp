@@ -60,7 +60,7 @@
 #include "Thyra_UnitTestHelpers.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
-#include "EpetraThyraAdaptersTestHelpers.hpp"
+#include "EpetraLinearOpTestHelpers.hpp"
 
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 

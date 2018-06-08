@@ -300,7 +300,7 @@ namespace MueLu {
     nodeSteps[1] = gFineNodesPerDir[0];
     nodeSteps[2] = gFineNodesPerDir[0]*gFineNodesPerDir[1];
     Array<LO> glFineNodesPerDir(3);
-    GO startingGID = A->getRowMap()->getMinGlobalIndex(), rankGhostID;
+    GO startingGID = A->getRowMap()->getMinGlobalIndex();
     for(LO dim = 0; dim < 3; ++dim) {
       LO numCoarseNodes = 0;
       if(dim < numDimensions) {
@@ -317,7 +317,6 @@ namespace MueLu {
         glFineNodesPerDir[dim] = 1;
       }
     }
-    rankGhostID = startingGID;
     ghostRowGIDs.resize(glFineNodesPerDir[0]*glFineNodesPerDir[1]*glFineNodesPerDir[2]*BlkSize);
     for(LO k = 0; k < glFineNodesPerDir[2]; ++k) {
       for(LO j = 0; j < glFineNodesPerDir[1]; ++j) {
@@ -900,7 +899,7 @@ namespace MueLu {
 
     // We loop over all ghosted coarse nodes by increasing global lexicographic order
     Array<LO> coarseNodeCoarseIndices(3), coarseNodeFineIndices(3), ijk(3);
-    LO currentIndex = -1, countCoarseNodes = 0;
+    LO currentIndex = -1;
     for(ijk[2] = 0; ijk[2] < glCoarseNodesPerDir[2]; ++ijk[2]) {
       for(ijk[1] = 0; ijk[1] < glCoarseNodesPerDir[1]; ++ijk[1]) {
         for(ijk[0] = 0; ijk[0] < glCoarseNodesPerDir[0]; ++ijk[0]) {
@@ -1487,8 +1486,7 @@ namespace MueLu {
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
-    LO idof, jdof, iInd, jInd;
-    LO indi, indf, inde, indc;
+    LO idof, iInd, jInd;
     int iType = 0, jType = 0;
     int orientation = -1;
     int collapseFlags[3] = {};

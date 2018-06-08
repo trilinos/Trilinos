@@ -107,6 +107,14 @@ namespace Xpetra {
       const char *          instOptionNames [maxInstOptions]; // Array that gives the name used in the commandline for each option.
 
       // The ordering of these blocks determines the default behavior.
+      // We test the first available instantiation from the bottom
+      // (i.e. DOUBLE_INT_INT runs if nothing else is available).
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+      inst_ = Xpetra::DOUBLE_INT_INT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_INT;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_INT";
+      nInstOptions++;
+#  endif
 #  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
       inst_ = Xpetra::DOUBLE_INT_LONGINT;  // set default
       instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONGINT;
@@ -129,12 +137,6 @@ namespace Xpetra {
       inst_ = Xpetra::FLOAT_INT_INT;  // set default
       instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_LONGINT;
       instOptionNames[nInstOptions] = "FLOAT_INT_INT";
-      nInstOptions++;
-#  endif
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      inst_ = Xpetra::DOUBLE_INT_INT;  // set default
-      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_INT;
-      instOptionNames[nInstOptions] = "DOUBLE_INT_INT";
       nInstOptions++;
 #  endif
       std::stringstream instDocumentation; // documentation for the option

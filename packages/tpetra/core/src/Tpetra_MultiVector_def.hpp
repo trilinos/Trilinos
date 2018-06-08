@@ -61,7 +61,10 @@
 #include "Tpetra_Details_lclDot.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
+
+
 
 #include "KokkosCompat_View.hpp"
 #include "KokkosBlas.hpp"
@@ -201,11 +204,11 @@ namespace { // (anonymous)
     }
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
-         static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
+        (static_cast<size_t> (d_view.extent (0)) != lclNumRows ||
+         static_cast<size_t> (d_view.extent (1)) != numCols, std::logic_error,
          "allocDualView: d_view's dimensions actual dimensions do not match "
-         "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
-         d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
+         "requested dimensions.  d_view is " << d_view.extent (0) << " x " <<
+         d_view.extent (1) << "; requested " << lclNumRows << " x " << numCols
          << ".  Please report this bug to the Tpetra developers.");
     }
 
@@ -269,7 +272,7 @@ namespace { // (anonymous)
                const Kokkos::Impl::ALL_t&,
                const std::pair<size_t, size_t>& colRng)
   {
-    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
       return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
     }
     else {
@@ -286,7 +289,7 @@ namespace { // (anonymous)
                const std::pair<size_t, size_t>& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
       return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
     }
     else {
@@ -298,21 +301,21 @@ namespace { // (anonymous)
 
 namespace Tpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   vectorIndexOutOfRange (const size_t VectorIndex) const {
     return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector () :
     base_type (Teuchos::rcp (new map_type ()))
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const size_t numVecs,
                const bool zeroOut) : /* default is true */
@@ -325,25 +328,25 @@ namespace Tpetra {
     origView_ = view_;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source) :
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source) :
     base_type (source),
     view_ (source.view_),
     origView_ (source.origView_),
     whichVectors_ (source.whichVectors_)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                const Teuchos::DataAccess copyOrView) :
     base_type (source),
     view_ (source.view_),
     origView_ (source.origView_),
     whichVectors_ (source.whichVectors_)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "MultiVector(const MultiVector&, "
       "const Teuchos::DataAccess): ";
 
@@ -368,8 +371,8 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view) :
     base_type (map),
@@ -382,20 +385,20 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input view's first dimension (number "
-      "of rows = " << view.dimension_0 () << ") does not not match the number "
+      "of rows = " << view.extent (0) << ") does not not match the number "
       "of entries in the Map on the calling process.");
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const typename dual_view_type::t_dev& d_view) :
     base_type (map)
@@ -410,14 +413,14 @@ namespace Tpetra {
     // be 0, so take view_dimension instead.
     size_t stride[8];
     d_view.stride (stride);
-    const size_t LDA = (d_view.dimension_1 () > 1) ? stride[1] :
-      d_view.dimension_0 ();
+    const size_t LDA = (d_view.extent (1) > 1) ? stride[1] :
+      d_view.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::View's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input view's first dimension (number "
-      "of rows = " << d_view.dimension_0 () << ") does not not match the "
+      "of rows = " << d_view.extent (0) << ") does not not match the "
       "number of entries in the Map on the calling process.");
 
     // The difference between create_mirror and create_mirror_view, is
@@ -431,8 +434,8 @@ namespace Tpetra {
     origView_ = view_;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view,
                const dual_view_type& origView) :
@@ -446,20 +449,20 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input origView's first dimension (number "
-      "of rows = " << origView.dimension_0 () << ") does not not match the number "
+      "of rows = " << origView.extent (0) << ") does not not match the number "
       "of entries in the Map on the calling process.");
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
@@ -481,13 +484,13 @@ namespace Tpetra {
     // require the number of columns to match if the (Dual)View has
     // more than zero rows.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
-      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
+      std::invalid_argument, "view.extent(0) = " << view.extent (0)
       << " < map->getNodeNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && view.dimension_1 () == 0,
-        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        view.extent (1) != 0 && view.extent (1) == 0,
+        std::invalid_argument, "view.extent(1) = 0, but whichVectors.size()"
         " = " << whichVectors.size () << " > 0.");
       size_t maxColInd = 0;
       typedef Teuchos::ArrayView<const size_t>::size_type size_type;
@@ -499,8 +502,8 @@ namespace Tpetra {
         maxColInd = std::max (maxColInd, whichVectors[k]);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
-        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        view.extent (1) != 0 && static_cast<size_t> (view.extent (1)) <= maxColInd,
+        std::invalid_argument, "view.extent(1) = " << view.extent (1)
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
 
@@ -508,8 +511,8 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument,
       "LDA = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -532,8 +535,8 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view,
                const dual_view_type& origView,
@@ -555,13 +558,13 @@ namespace Tpetra {
     // require the number of columns to match if the (Dual)View has
     // more than zero rows.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
-      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
+      std::invalid_argument, "view.extent(0) = " << view.extent (0)
       << " < map->getNodeNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && view.dimension_1 () == 0,
-        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        view.extent (1) != 0 && view.extent (1) == 0,
+        std::invalid_argument, "view.extent(1) = 0, but whichVectors.size()"
         " = " << whichVectors.size () << " > 0.");
       size_t maxColInd = 0;
       typedef Teuchos::ArrayView<const size_t>::size_type size_type;
@@ -573,16 +576,16 @@ namespace Tpetra {
         maxColInd = std::max (maxColInd, whichVectors[k]);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
-        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        view.extent (1) != 0 && static_cast<size_t> (view.extent (1)) <= maxColInd,
+        std::invalid_argument, "view.extent(1) = " << view.extent (1)
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "Input DualView's column stride"
       " = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -605,8 +608,8 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const Teuchos::ArrayView<const Scalar>& data,
                const size_t LDA,
@@ -658,8 +661,8 @@ namespace Tpetra {
     // case.
     size_t outStrides[8];
     X_out.stride (outStrides);
-    const size_t outStride = (X_out.dimension_1 () > 1) ? outStrides[1] :
-      X_out.dimension_0 ();
+    const size_t outStride = (X_out.extent (1) > 1) ? outStrides[1] :
+      X_out.extent (0);
     if (LDA == outStride) { // strides are the same; deep_copy once
       // This only works because MultiVector uses LayoutLeft.
       // We would need a custom copy functor otherwise.
@@ -678,8 +681,8 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >& ArrayOfPtrs,
                const size_t numVecs) :
@@ -729,19 +732,19 @@ namespace Tpetra {
     origView_ = view_;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ~MultiVector () {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isConstantStride () const {
     return whichVectors_.empty ();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalLength () const
   {
     if (this->getMap ().is_null ()) { // possible, due to replaceMap().
@@ -751,9 +754,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalLength () const
   {
     if (this->getMap ().is_null ()) { // possible, due to replaceMap().
@@ -763,9 +766,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getStride () const
   {
     if (isConstantStride ()) {
@@ -773,8 +776,8 @@ namespace Tpetra {
       // stride might be 0, so take view_dimension instead.
       size_t stride[8];
       origView_.stride (stride);
-      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-        origView_.dimension_0 ();
+      const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+        origView_.extent (0);
       return LDA;
     }
     else {
@@ -782,15 +785,15 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   checkSizes (const SrcDistObject& sourceObj)
   {
     // Check whether the source object is a MultiVector.  If not, then
     // we can't even compare sizes, so it's definitely not OK to
     // Import or Export from it.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> this_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
     const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
     if (src == NULL) {
       return false;
@@ -805,16 +808,16 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   constantNumberOfPackets () const {
     return this->getNumVectors ();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& sourceObj,
                      const size_t numSameIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
@@ -829,7 +832,7 @@ namespace Tpetra {
     using Kokkos::Compat::create_const_view;
     typedef typename device_type::memory_space DMS;
     typedef Kokkos::HostSpace HMS;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
@@ -845,10 +848,10 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
-       std::runtime_error, "permuteToLIDs.dimension_0() = "
-       << permuteToLIDs.dimension_0 () << " != permuteFromLIDs.dimension_0() = "
-       << permuteFromLIDs.dimension_0 () << ".");
+      (permuteToLIDs.extent (0) != permuteFromLIDs.extent (0),
+       std::runtime_error, "permuteToLIDs.extent(0) = "
+       << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
+       << permuteFromLIDs.extent (0) << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -945,8 +948,8 @@ namespace Tpetra {
     // (such as ADD).
 
     // If there are no permutations, we are done
-    if (permuteFromLIDs.dimension_0 () == 0 ||
-        permuteToLIDs.dimension_0 () == 0) {
+    if (permuteFromLIDs.extent (0) == 0 ||
+        permuteToLIDs.extent (0) == 0) {
       if (debug) {
         std::ostringstream os;
         os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
@@ -1010,10 +1013,10 @@ namespace Tpetra {
                                                              copyOnHost);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (tgtWhichVecs.dimension_0 ()) !=
+        (static_cast<size_t> (tgtWhichVecs.extent (0)) !=
          this->getNumVectors (),
-         std::logic_error, "tgtWhichVecs.dimension_0() = " <<
-         tgtWhichVecs.dimension_0 () << " != this->getNumVectors() = " <<
+         std::logic_error, "tgtWhichVecs.extent(0) = " <<
+         tgtWhichVecs.extent (0) << " != this->getNumVectors() = " <<
          this->getNumVectors () << ".");
 
       if (sourceMV.whichVectors_.size () == 0) {
@@ -1036,9 +1039,9 @@ namespace Tpetra {
                                                              copyOnHost);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (srcWhichVecs.dimension_0 ()) !=
+        (static_cast<size_t> (srcWhichVecs.extent (0)) !=
          sourceMV.getNumVectors (), std::logic_error,
-         "srcWhichVecs.dimension_0() = " << srcWhichVecs.dimension_0 ()
+         "srcWhichVecs.extent(0) = " << srcWhichVecs.extent (0)
          << " != sourceMV.getNumVectors() = " << sourceMV.getNumVectors ()
          << ".");
     }
@@ -1131,9 +1134,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepareNew (const SrcDistObject& sourceObj,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
                      Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
@@ -1145,7 +1148,7 @@ namespace Tpetra {
     using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef impl_scalar_type IST;
     typedef Kokkos::HostSpace host_memory_space;
     typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
@@ -1211,8 +1214,8 @@ namespace Tpetra {
         // sourceMV was most recently updated on device; copy to host.
         // Allocate a new host mirror.  We'll use it for packing below.
         src_host = decltype (src_host) ("MV::DualView::h_view",
-                                        src_dev.dimension_0 (),
-                                        src_dev.dimension_1 ());
+                                        src_dev.extent (0),
+                                        src_dev.extent (1));
         Kokkos::deep_copy (src_host, src_dev);
       }
     }
@@ -1227,8 +1230,8 @@ namespace Tpetra {
         // sourceMV was most recently updated on host; copy to device.
         // Allocate a new "device mirror."  We'll use it for packing below.
         src_dev = decltype (src_dev) ("MV::DualView::d_view",
-                                      src_host.dimension_0 (),
-                                      src_host.dimension_1 ());
+                                      src_host.extent (0),
+                                      src_host.extent (1));
         Kokkos::deep_copy (src_dev, src_host);
       }
     }
@@ -1242,7 +1245,7 @@ namespace Tpetra {
 
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
-    if (exportLIDs.dimension_0 () == 0) {
+    if (exportLIDs.extent (0) == 0) {
       if (printDebugOutput) {
         std::ostringstream os;
         os << "Proc " << myRank << ": MV::packAndPrepareNew: "
@@ -1267,13 +1270,13 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    const size_t numExportLIDs = exportLIDs.dimension_0 ();
+    const size_t numExportLIDs = exportLIDs.extent (0);
     const size_t newExportsSize = numCols * numExportLIDs;
     if (printDebugOutput) {
       std::ostringstream os;
       os << "Proc " << myRank << ": MV::packAndPrepareNew: realloc: "
          << "numExportLIDs = " << numExportLIDs
-         << ", exports.dimension_0() = " << exports.dimension_0 ()
+         << ", exports.extent(0) = " << exports.extent (0)
          << ", newExportsSize = " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
@@ -1414,9 +1417,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
                        const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
@@ -1461,20 +1464,20 @@ namespace Tpetra {
     }
 
     // If we have no imports, there is nothing to do
-    if (importLIDs.dimension_0 () == 0) {
+    if (importLIDs.extent (0) == 0) {
       return;
     }
 
     const size_t numVecs = getNumVectors ();
     if (debugCheckIndices) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (imports.dimension_0 ()) !=
-         numVecs * importLIDs.dimension_0 (),
+        (static_cast<size_t> (imports.extent (0)) !=
+         numVecs * importLIDs.extent (0),
          std::runtime_error,
-         "imports.dimension_0() = " << imports.dimension_0 ()
-         << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
-         << " * " << importLIDs.dimension_0 () << " = "
-         << numVecs * importLIDs.dimension_0 () << ".");
+         "imports.extent(0) = " << imports.extent (0)
+         << " != getNumVectors() * importLIDs.extent(0) = " << numVecs
+         << " * " << importLIDs.extent (0) << " = "
+         << numVecs * importLIDs.extent (0) << ".");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
@@ -1594,7 +1597,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    if (numVecs > 0 && importLIDs.dimension_0 () > 0) {
+    if (numVecs > 0 && importLIDs.extent (0) > 0) {
       typedef typename Kokkos::DualView<IST*,
         device_type>::t_dev::execution_space dev_exec_space;
       typedef typename Kokkos::DualView<IST*,
@@ -1730,13 +1733,13 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNumVectors () const
   {
     if (isConstantStride ()) {
-      return static_cast<size_t> (view_.dimension_1 ());
+      return static_cast<size_t> (view_.extent (1));
     } else {
       return static_cast<size_t> (whichVectors_.size ());
     }
@@ -1755,7 +1758,7 @@ namespace Tpetra {
       using Teuchos::reduceAll;
       typedef typename RV::non_const_value_type dot_type;
 
-      const size_t numVecs = dotsOut.dimension_0 ();
+      const size_t numVecs = dotsOut.extent (0);
 
       // If the MultiVector is distributed over multiple processes, do
       // the distributed (interprocess) part of the dot product.  We
@@ -1782,22 +1785,22 @@ namespace Tpetra {
           // sum.
           typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
           Kokkos::deep_copy (lclDots, dotsOut);
-          const dot_type* const lclSum = lclDots.ptr_on_device ();
-          dot_type* const gblSum = dotsOut.ptr_on_device ();
+          const dot_type* const lclSum = lclDots.data ();
+          dot_type* const gblSum = dotsOut.data ();
           reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
         }
         else {
-          dot_type* const inout = dotsOut.ptr_on_device ();
+          dot_type* const inout = dotsOut.data ();
           reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, inout, inout);
         }
       }
     }
   } // namespace (anonymous)
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
        const Kokkos::View<dot_type*, Kokkos::HostSpace>& dots) const
   {
     using ::Tpetra::Details::Behavior;
@@ -1808,7 +1811,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Kokkos::View)");
@@ -1818,7 +1821,7 @@ namespace Tpetra {
       return; // nothing to do
     }
     const size_t lclNumRows = this->getLocalLength ();
-    const size_t numDots = static_cast<size_t> (dots.dimension_0 ());
+    const size_t numDots = static_cast<size_t> (dots.extent (0));
     const bool debug = Behavior::debug ();
 
     if (debug) {
@@ -1849,7 +1852,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       numDots != numVecs, std::runtime_error,
       "The output array 'dots' must have the same number of entries as the "
-      "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+      "number of columns (vectors) in *this and A.  dots.extent(0) = " <<
       numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -1903,14 +1906,14 @@ namespace Tpetra {
   }
 
   namespace { // (anonymous)
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-    typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dot_type
-    multiVectorSingleColumnDot (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& x,
-                                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& y)
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type
+    multiVectorSingleColumnDot (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x,
+                                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y)
     {
       using Teuchos::Comm;
       using Teuchos::RCP;
-      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
       typedef typename MV::dot_type dot_type;
       typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
       typedef typename MV::dual_view_type::t_host::memory_space host_memory_space;
@@ -1980,13 +1983,13 @@ namespace Tpetra {
 
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
        const Teuchos::ArrayView<dot_type>& dots) const
   {
-    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "dot: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Teuchos::ArrayView)");
 
@@ -2015,7 +2018,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (numDots != numVecs, std::runtime_error,
        "The output array 'dots' must have the same number of entries as the "
-       "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+       "number of columns (vectors) in *this and A.  dots.extent(0) = " <<
        numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     if (numVecs == 1 && this->isConstantStride () && A.isConstantStride ()) {
@@ -2028,9 +2031,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
@@ -2043,19 +2046,19 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
     this->normImpl (norms, NORM_TWO);
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TPETRA_DEPRECATED
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
                 const Teuchos::ArrayView<mag_type> &norms) const
   {
     using Kokkos::ALL;
@@ -2068,7 +2071,7 @@ namespace Tpetra {
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
     typedef Kokkos::View<mag_type*, Kokkos::HostSpace> norms_view_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "normWeighted: ";
 
     const size_t numVecs = this->getNumVectors ();
@@ -2133,7 +2136,7 @@ namespace Tpetra {
     if (! comm.is_null () && this->isDistributed ()) {
       // Assume that MPI can access device memory.
       reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                lclNrms.ptr_on_device (), norms.getRawPtr ());
+                                lclNrms.data (), norms.getRawPtr ());
       for (size_t k = 0; k < numVecs; ++k) {
         norms[k] = ATM::sqrt (norms[k] * OneOverN);
       }
@@ -2146,9 +2149,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm1 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
@@ -2159,17 +2162,17 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
     this->normImpl (norms, NORM_ONE);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normInf (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
@@ -2180,9 +2183,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
     this->normImpl (norms, NORM_INF);
@@ -2235,19 +2238,19 @@ namespace Tpetra {
       // it returns a 0 x 0 (Dual)View.
       TEUCHOS_TEST_FOR_EXCEPTION(
         lclNumRows != 0 && constantStride && ( \
-          ( X.dimension_0 () != lclNumRows ) ||
-          ( X.dimension_1 () != numVecs    ) ),
-        std::logic_error, "Constant Stride X's dimensions are " << X.dimension_0 () << " x "
-        << X.dimension_1 () << ", which differ from the local dimensions "
+          ( X.extent (0) != lclNumRows ) ||
+          ( X.extent (1) != numVecs    ) ),
+        std::logic_error, "Constant Stride X's dimensions are " << X.extent (0) << " x "
+        << X.extent (1) << ", which differ from the local dimensions "
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         lclNumRows != 0 && !constantStride && ( \
-          ( X.dimension_0 () != lclNumRows ) ||
-          ( X.dimension_1 () < numVecs    ) ),
-        std::logic_error, "Strided X's dimensions are " << X.dimension_0 () << " x "
-        << X.dimension_1 () << ", which are incompatible with the local dimensions "
+          ( X.extent (0) != lclNumRows ) ||
+          ( X.extent (1) < numVecs    ) ),
+        std::logic_error, "Strided X's dimensions are " << X.extent (0) << " x "
+        << X.extent (1) << ", which are incompatible with the local dimensions "
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
@@ -2334,7 +2337,7 @@ namespace Tpetra {
       using Teuchos::reduceAll;
       typedef typename RV::non_const_value_type mag_type;
 
-      const size_t numVecs = normsOut.dimension_0 ();
+      const size_t numVecs = normsOut.extent (0);
 
       // If the MultiVector is distributed over multiple processes, do
       // the distributed (interprocess) part of the norm.  We assume
@@ -2357,8 +2360,8 @@ namespace Tpetra {
         // a copy of the local sum.
         RV lclNorms ("MV::normImpl lcl", numVecs);
         Kokkos::deep_copy (lclNorms, normsOut);
-        const mag_type* const lclSum = lclNorms.ptr_on_device ();
-        mag_type* const gblSum = normsOut.ptr_on_device ();
+        const mag_type* const lclSum = lclNorms.data ();
+        mag_type* const gblSum = normsOut.data ();
         const int nv = static_cast<int> (numVecs);
         if (whichNorm == IMPL_NORM_INF) {
           reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, lclSum, gblSum);
@@ -2396,9 +2399,9 @@ namespace Tpetra {
 
   } // namespace (anonymous)
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
             const EWhichNorm whichNorm) const
   {
@@ -2415,11 +2418,11 @@ namespace Tpetra {
       return; // nothing to do
     }
     const size_t lclNumRows = this->getLocalLength ();
-    const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
+    const size_t numNorms = static_cast<size_t> (norms.extent (0));
     TEUCHOS_TEST_FOR_EXCEPTION(
       numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::normImpl: "
       "'norms' must have at least as many entries as the number of vectors in "
-      "*this.  norms.dimension_0() = " << numNorms << " < this->getNumVectors()"
+      "*this.  norms.extent(0) = " << numNorms << " < this->getNumVectors()"
       " = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -2464,9 +2467,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   meanValue (const Teuchos::ArrayView<impl_scalar_type>& means) const
   {
     // KR FIXME Overload this method to take a View.
@@ -2526,7 +2529,7 @@ namespace Tpetra {
       // copy lclSums into meansOut.
       if (! comm.is_null () && this->isDistributed ()) {
         reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+                   lclSums.data (), meansOut.data ());
       }
       else {
         Kokkos::deep_copy (meansOut, lclSums);
@@ -2555,7 +2558,7 @@ namespace Tpetra {
       // into meansOut.
       if (! comm.is_null () && this->isDistributed ()) {
         reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+                   lclSums.data (), meansOut.data ());
       }
       else {
         Kokkos::deep_copy (meansOut, lclSums);
@@ -2573,9 +2576,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   randomize ()
   {
     typedef impl_scalar_type IST;
@@ -2590,9 +2593,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   randomize (const Scalar& minVal, const Scalar& maxVal)
   {
     typedef impl_scalar_type IST;
@@ -2638,9 +2641,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   putScalar (const Scalar& alpha)
   {
     using ::Tpetra::Details::ProfilingRegion;
@@ -2690,9 +2693,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceMap (const Teuchos::RCP<const map_type>& newMap)
   {
     using Teuchos::ArrayRCP;
@@ -2766,10 +2769,10 @@ namespace Tpetra {
       // Case 3: current Map is null, new Map is nonnull.
       // Reallocate the DualView with the right dimensions.
       const size_t newNumRows = newMap->getNodeNumElements ();
-      const size_t origNumRows = view_.dimension_0 ();
+      const size_t origNumRows = view_.extent (0);
       const size_t numCols = this->getNumVectors ();
 
-      if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
+      if (origNumRows != newNumRows || view_.extent (1) != numCols) {
         view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
       }
     }
@@ -2784,9 +2787,9 @@ namespace Tpetra {
     this->map_ = newMap;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha)
   {
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
@@ -2840,9 +2843,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Teuchos::ArrayView<const Scalar>& alphas)
   {
     const size_t numVecs = this->getNumVectors ();
@@ -2864,9 +2867,9 @@ namespace Tpetra {
     this->scale (k_alphas.d_view);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Kokkos::View<const impl_scalar_type*, device_type>& alphas)
   {
     using Kokkos::ALL;
@@ -2875,9 +2878,9 @@ namespace Tpetra {
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (alphas.dimension_0 ()) != numVecs,
+      static_cast<size_t> (alphas.extent (0)) != numVecs,
       std::invalid_argument, "Tpetra::MultiVector::scale(alphas): "
-      "alphas.dimension_0() = " << alphas.dimension_0 ()
+      "alphas.extent(0) = " << alphas.extent (0)
       << " != this->getNumVectors () = " << numVecs << ".");
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -2938,11 +2941,11 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha,
-         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A)
+         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -3025,12 +3028,12 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A)
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3084,12 +3087,12 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A)
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "abs";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
        getLocalLength () != A.getLocalLength (), std::runtime_error,
@@ -3137,11 +3140,11 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   update (const Scalar& alpha,
-          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta)
   {
     using Kokkos::ALL;
@@ -3228,18 +3231,18 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   update (const Scalar& alpha,
-          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta,
-          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
           const Scalar& gamma)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta,B,gamma)");
@@ -3307,14 +3310,14 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<const Scalar>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getData (size_t j) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "getData: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -3335,23 +3338,23 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (hostView_j.dimension_0 ()) <
+      (static_cast<size_t> (hostView_j.extent (0)) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       "hostView_j.extent(0) = " << hostView_j.extent (0)
        << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
        "Please report this bug to the Tpetra developers.");
 
     return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getDataNonConst (size_t j)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -3376,19 +3379,19 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (hostView_j.dimension_0 ()) <
+      (static_cast<size_t> (hostView_j.extent (0)) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       "hostView_j.extent(0) = " << hostView_j.extent (0)
        << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
        "Please report this bug to the Tpetra developers.");
 
     return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source)
   {
     if (this != &source) {
       base_type::operator= (source);
@@ -3413,13 +3416,13 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subCopy (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::RCP;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     // Check whether the index set in cols is contiguous.  If it is,
     // use the more efficient Range1D version of subCopy.
@@ -3442,13 +3445,13 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subCopy (const Teuchos::Range1D &colRng) const
   {
     using Teuchos::RCP;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     RCP<const MV> X_sub = this->subView (colRng);
     RCP<MV> Y (new MV (this->getMap (), static_cast<size_t> (colRng.size ()), false));
@@ -3456,23 +3459,23 @@ namespace Tpetra {
     return Y;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalRows () const {
-    return origView_.dimension_0 ();
+    return origView_.extent (0);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalCols () const {
-    return origView_.dimension_1 ();
+    return origView_.extent (1);
   }
 
-  template <class Scalar, class LO, class GO, class Node, const bool classic>
-  MultiVector<Scalar, LO, GO, Node, classic>::
-  MultiVector (const MultiVector<Scalar, LO, GO, Node, classic>& X,
+  template <class Scalar, class LO, class GO, class Node>
+  MultiVector<Scalar, LO, GO, Node>::
+  MultiVector (const MultiVector<Scalar, LO, GO, Node>& X,
                const map_type& subMap,
                const size_t offset) :
     base_type (Teuchos::null) // to be replaced below
@@ -3481,7 +3484,7 @@ namespace Tpetra {
     using Kokkos::subview;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LO, GO, Node, classic> MV;
+    typedef MultiVector<Scalar, LO, GO, Node> MV;
     const char prefix[] = "Tpetra::MultiVector constructor (offsetView): ";
 
     const size_t newNumRows = subMap.getNodeNumElements ();
@@ -3505,10 +3508,10 @@ namespace Tpetra {
     const size_t lclNumRowsBefore = X.getLocalLength ();
     const size_t numColsBefore = X.getNumVectors ();
     const impl_scalar_type* hostPtrBefore =
-      X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
+      X.template getLocalView<Kokkos::HostSpace> ().data ();
 #endif // HAVE_TPETRA_DEBUG
 
-    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.dimension_0 ());
+    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.extent (0));
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
@@ -3529,13 +3532,13 @@ namespace Tpetra {
     // reason, the ([0,0], [0,2]) subview of a 0 x 2 DualView is 0 x
     // 0.  We work around by creating a new empty DualView of the
     // desired (degenerate) dimensions.
-    if (newOrigView.dimension_0 () == 0 &&
-        newOrigView.dimension_1 () != X.origView_.dimension_1 ()) {
+    if (newOrigView.extent (0) == 0 &&
+        newOrigView.extent (1) != X.origView_.extent (1)) {
       newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                          X.getNumVectors ());
     }
-    if (newView.dimension_0 () == 0 &&
-        newView.dimension_1 () != X.view_.dimension_1 ()) {
+    if (newView.extent (0) == 0 &&
+        newView.extent (1) != X.view_.extent (1)) {
       newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                      X.getNumVectors ());
     }
@@ -3551,7 +3554,7 @@ namespace Tpetra {
     const size_t lclNumRowsAfter = X.getLocalLength ();
     const size_t numColsAfter = X.getNumVectors ();
     const impl_scalar_type* hostPtrAfter =
-      X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
+      X.template getLocalView<Kokkos::HostSpace> ().data ();
 
     const size_t strideRet = subViewMV.isConstantStride () ?
       subViewMV.getStride () :
@@ -3594,34 +3597,34 @@ namespace Tpetra {
     *this = subViewMV; // shallow copy
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   offsetView (const Teuchos::RCP<const map_type>& subMap,
               const size_t offset) const
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     return Teuchos::rcp (new MV (*this, *subMap, offset));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
                       const size_t offset)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     return Teuchos::rcp (new MV (*this, *subMap, offset));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subView (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::Array;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     const size_t numViewCols = static_cast<size_t> (cols.size ());
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -3662,9 +3665,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subView (const Teuchos::Range1D& colRng) const
   {
     using ::Tpetra::Details::Behavior;
@@ -3673,7 +3676,7 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "subView(Range1D): ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -3773,29 +3776,29 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subViewNonConst (const Teuchos::ArrayView<const size_t> &cols)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     return Teuchos::rcp_const_cast<MV> (this->subView (cols));
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   subViewNonConst (const Teuchos::Range1D &colRng)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     return Teuchos::rcp_const_cast<MV> (this->subView (colRng));
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                const size_t j)
     : base_type (X.getMap ())
   {
@@ -3822,13 +3825,13 @@ namespace Tpetra {
     // exports_.  Taking subviews now ensures that their lengths will
     // be exactly what we need, so we won't have to resize them later.
     {
-      const size_t newSize = X.imports_.dimension_0 () / numCols;
+      const size_t newSize = X.imports_.extent (0) / numCols;
       auto newImports = X.imports_;
       newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
       newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
     }
     {
-      const size_t newSize = X.exports_.dimension_0 () / numCols;
+      const size_t newSize = X.exports_.extent (0) / numCols;
       auto newExports = X.exports_;
       newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
       newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
@@ -3841,29 +3844,29 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getVector (const size_t j) const
   {
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     return Teuchos::rcp (new V (*this, j));
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getVectorNonConst (const size_t j)
   {
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     return Teuchos::rcp (new V (*this, j));
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dCopy (const Teuchos::ArrayView<Scalar>& A, const size_t LDA) const
   {
     typedef decltype (this->template getLocalView<device_type> ())
@@ -3925,7 +3928,7 @@ namespace Tpetra {
       if (useHostVersion) {
         auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.dimension_0 () != srcColView_host.dimension_0 (),
+          dstColView.extent (0) != srcColView_host.extent (0),
           std::logic_error, ": srcColView and dstColView_host have different "
           "dimensions.  Please report this bug to the Tpetra developers.");
         Kokkos::deep_copy (dstColView, srcColView_host);
@@ -3933,7 +3936,7 @@ namespace Tpetra {
       else {
         auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.dimension_0 () != srcColView_dev.dimension_0 (),
+          dstColView.extent (0) != srcColView_dev.extent (0),
           std::logic_error, ": srcColView and dstColView_dev have different "
           "dimensions.  Please report this bug to the Tpetra developers.");
         Kokkos::deep_copy (dstColView, srcColView_dev);
@@ -3942,12 +3945,12 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dCopy (const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> >& ArrayOfPtrs) const
   {
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     const char tfecfFuncName[] = "get2dCopy: ";
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
@@ -3978,15 +3981,15 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<const Scalar>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dView () const
   {
     if (getLocalLength () == 0 || getNumVectors () == 0) {
       return Teuchos::null;
     } else {
-      typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+      typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! isConstantStride (), std::runtime_error, "Tpetra::MultiVector::"
@@ -4010,9 +4013,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dViewNonConst ()
   {
     if (getLocalLength () == 0 || getNumVectors () == 0) {
@@ -4037,9 +4040,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dViewNonConst ()
   {
     // NOTE (mfh 16 May 2016) get?dView() and get?dViewNonConst()
@@ -4072,9 +4075,9 @@ namespace Tpetra {
     return views;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dView () const
   {
     // NOTE (mfh 16 May 2016) get?dView() and get?dViewNonConst()
@@ -4085,7 +4088,7 @@ namespace Tpetra {
     // Since get2dView() is and was (unfortunately) always marked
     // const, I have to cast away const here in order not to break
     // backwards compatibility.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> this_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
     const_cast<this_type*> (this)->sync<Kokkos::HostSpace> ();
 
     const size_t myNumRows = this->getLocalLength ();
@@ -4108,14 +4111,14 @@ namespace Tpetra {
     return views;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   multiply (Teuchos::ETransp transA,
             Teuchos::ETransp transB,
             const Scalar& alpha,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             const Scalar& beta)
   {
     using Teuchos::CONJ_TRANS;
@@ -4126,7 +4129,7 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "multiply: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::multiply");
 
@@ -4303,18 +4306,18 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   elementWiseMultiply (Scalar scalarAB,
-                       const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-                       const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+                       const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                       const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                        Scalar scalarThis)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -4367,9 +4370,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reduce ()
   {
     using Teuchos::reduceAll;
@@ -4418,7 +4421,7 @@ namespace Tpetra {
     host_view_type srcView_host;
     if (useHostVersion) {
       srcView_host = this->template getLocalView<Kokkos::HostSpace> ();
-      if (lclNumRows != static_cast<size_t> (srcView_host.dimension_0 ())) {
+      if (lclNumRows != static_cast<size_t> (srcView_host.extent (0))) {
         // Make sure the number of rows is correct.  If not, take a subview.
         const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
         srcView_host = Kokkos::subview (srcView_host, rowRng, Kokkos::ALL ());
@@ -4426,7 +4429,7 @@ namespace Tpetra {
     }
     else {
       srcView_dev = this->template getLocalView<device_type> ();
-      if (lclNumRows != static_cast<size_t> (srcView_dev.dimension_0 ())) {
+      if (lclNumRows != static_cast<size_t> (srcView_dev.extent (0))) {
         // Make sure the number of rows is correct.  If not, take a subview.
         const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
         srcView_dev = Kokkos::subview (srcView_dev, rowRng, Kokkos::ALL ());
@@ -4496,8 +4499,8 @@ namespace Tpetra {
          << tgtBuf_host.size () << " < lclNumRows*numCols = " << totalAllocSize
          << ".  Please report this bug to the Tpetra developers.");
       reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_host.ptr_on_device (),
-                                        tgtBuf_host.ptr_on_device ());
+                                        srcBuf_host.data (),
+                                        tgtBuf_host.data ());
     }
     else { // use device version
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -4506,8 +4509,8 @@ namespace Tpetra {
          << tgtBuf_dev.size () << " < lclNumRows*numCols = " << totalAllocSize
          << ".  Please report this bug to the Tpetra developers.");
       reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_dev.ptr_on_device (),
-                                        tgtBuf_dev.ptr_on_device ());
+                                        srcBuf_dev.data (),
+                                        tgtBuf_dev.data ());
     }
 
     // Write back the results to *this.
@@ -4542,9 +4545,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& ScalarValue) const
@@ -4570,9 +4573,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
@@ -4604,9 +4607,9 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceGlobalValue (const GlobalOrdinal gblRow,
                       const size_t col,
                       const impl_scalar_type& ScalarValue) const
@@ -4628,9 +4631,9 @@ namespace Tpetra {
     this->replaceLocalValue (lclRow, col, ScalarValue);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const size_t col,
                       const impl_scalar_type& value,
@@ -4655,10 +4658,10 @@ namespace Tpetra {
     this->sumIntoLocalValue (lclRow, col, value, atomic);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class T>
   Teuchos::ArrayRCP<T>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getSubArrayRCP (Teuchos::ArrayRCP<T> arr,
                   size_t j) const
   {
@@ -4671,20 +4674,16 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node,
-            const bool classic>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dual_view_type
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getDualView () const {
     return view_;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   descriptionImpl (const std::string& className) const
   {
     using Teuchos::TypeNameTraits;
@@ -4712,17 +4711,17 @@ namespace Tpetra {
     return out.str ();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   description () const
   {
     return this->descriptionImpl ("Tpetra::MultiVector");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   localDescribeToString (const Teuchos::EVerbosityLevel vl) const
   {
     typedef LocalOrdinal LO;
@@ -4816,9 +4815,9 @@ namespace Tpetra {
     return outStringP->str ();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   describeImpl (Teuchos::FancyOStream& out,
                 const std::string& className,
                 const Teuchos::EVerbosityLevel verbLevel) const
@@ -4889,27 +4888,27 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     this->describeImpl (out, "Tpetra::MultiVector", verbLevel);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap)
   {
     replaceMap (newMap);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& src)
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
   {
     typedef LocalOrdinal LO;
     typedef device_type DT;
@@ -5171,24 +5170,70 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LO, class GO, class NT, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT, classic> >
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+    typedef impl_scalar_type ST;
+    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space HES;
+    size_t l1 = this->getLocalLength();
+    size_t l2 = vec.getLocalLength();
+    if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors()))
+      return false;
+    if(l1==0)  return true;
+
+    auto v1 = this->template getLocalView<HES>();
+    auto v2 = vec.template getLocalView<HES>();
+    if(Details::PackTraits<ST,HES>::packValueCount(v1(0,0)) != Details::PackTraits<ST,HES>::packValueCount(v2(0,0)))
+      return false;
+
+    return true;
+  }
+
+
+  template <class Scalar, class LO, class GO, class NT>
+  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
   createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
                      size_t numVectors)
   {
-    typedef MultiVector<Scalar, LO, GO, NT, classic> MV;
+    typedef MultiVector<Scalar, LO, GO, NT> MV;
     return Teuchos::rcp (new MV (map, numVectors));
   }
 
-  template <class ST, class LO, class GO, class NT, const bool classic>
-  MultiVector<ST, LO, GO, NT, classic>
-  createCopy (const MultiVector<ST, LO, GO, NT, classic>& src)
+  template <class ST, class LO, class GO, class NT>
+  MultiVector<ST, LO, GO, NT>
+  createCopy (const MultiVector<ST, LO, GO, NT>& src)
   {
-    typedef MultiVector<ST, LO, GO, NT, classic> MV;
+    typedef MultiVector<ST, LO, GO, NT> MV;
     MV cpy (src.getMap (), src.getNumVectors (), false);
     cpy.assign (src);
     return cpy;
   }
+
+  template <class ST, class LO, class GO, class NT>
+  void MultiVector<ST, LO, GO, NT>::
+  swap(MultiVector<ST, LO, GO, NT> & mv) {
+    // Cache maps & views
+    Teuchos::RCP<const map_type> map = mv.map_;
+    dual_view_type  view, origView;
+    Teuchos::Array<size_t> whichVectors; // FIXME: This is a deep copy 
+    view         = mv.view_;
+    origView     = mv.origView_;
+    whichVectors = mv.whichVectors_;
+
+    // Swap this-> mv
+    mv.map_          = this->map_;
+    mv.view_         = this->view_;
+    mv.origView_     = this->origView_;
+    mv.whichVectors_ = this->whichVectors_;
+    
+    // Swap mv -> this
+    this->map_          = map;
+    this->view_         = view;
+    this->origView_     = origView;
+    this->whichVectors_ = whichVectors;  
+  }
+
 
 } // namespace Tpetra
 

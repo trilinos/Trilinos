@@ -51,7 +51,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
+template<typename EvalT, typename Traits>
+PointValues_Evaluator<EvalT, Traits>::
+PointValues_Evaluator(
+  const Teuchos::ParameterList& p)
 {
   basis_index = 0;
 
@@ -141,7 +144,12 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
+template<typename EvalT, typename Traits>
+void
+PointValues_Evaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   // setup the pointers for evaluation
   this->utils.setFieldData(pointValues.coords_ref,fm);
@@ -161,7 +169,11 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
+template<typename EvalT, typename Traits>
+void
+PointValues_Evaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if(useBasisValuesRefArray) {
     panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];

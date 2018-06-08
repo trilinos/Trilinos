@@ -43,6 +43,8 @@
 
 #include "ROL_Vector.hpp"
 
+#include <initializer_list>
+
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H
 
@@ -76,26 +78,20 @@ public:
   }
 
   void set( const V &x ) {
-    
     const PV &xs = dynamic_cast<const PV&>(x);
-
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
-
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->set(*xs.get(i));
     }
   }
 
   void plus( const V &x ) {
-    
     const PV &xs = dynamic_cast<const PV&>(x);
-
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
-
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->plus(*xs.get(i));
     }
@@ -108,10 +104,8 @@ public:
   }
 
   void axpy( const Real alpha, const V &x ) {
-    
     const PV &xs = dynamic_cast<const PV&>(x);
-
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -121,13 +115,10 @@ public:
   }
 
   Real dot( const V &x ) const {
-    
     const PV &xs = dynamic_cast<const PV&>(x);
-
-   TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+   ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
-
     Real result = 0;
     for( size_type i=0; i<vecs_.size(); ++i ) {
       result += vecs_[i]->dot(*xs.get(i));
@@ -144,9 +135,6 @@ public:
   }
 
   Vp clone() const {
-    
-    
-
     std::vector<Vp> clonevec;
     for( size_type i=0; i<vecs_.size(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
@@ -155,8 +143,6 @@ public:
   }
 
   const V& dual(void) const {
-    
-
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
     }
@@ -165,37 +151,24 @@ public:
   }
 
   Vp basis( const int i ) const {
-
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
-
-    
-    
-    
-
     Vp bvec = clone();
-
     // Downcast
     PV &eb = dynamic_cast<PV&>(*bvec);
 
-    int begin = 0;
-    int end = 0;
-
     // Iterate over subvectors
+    int begin = 0, end = 0;
     for( size_type j=0; j<vecs_.size(); ++j ) {
-
       end += vecs_[j]->dimension();
-
       if( begin<= i && i<end ) {
         eb.set(j, *(vecs_[j]->basis(i-begin)) );
       }
       else {
         eb.zero(j);
       }
-
       begin = end;
-
     }
     return bvec;
   }
@@ -272,6 +245,13 @@ public:
 
   size_type numVectors() const {
     return vecs_.size();
+  }
+
+public:
+
+  static Vp create( std::initializer_list<Vp> vs ) {
+    std::vector<Vp> subvecs{vs};
+    return ROL::makePtr<PartitionedVector>( subvecs ); 
   }
 
 };

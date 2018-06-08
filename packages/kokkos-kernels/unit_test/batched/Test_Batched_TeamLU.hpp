@@ -33,7 +33,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
       if (member.team_rank() == 0) {
-        for (int i=0;i<static_cast<int>(aa.dimension_0());++i)                                                                          
+        for (int i=0;i<static_cast<int>(aa.extent(0));++i)                                                                          
           aa(i,i) += 10.0;  
       }
       member.team_barrier();
@@ -43,7 +43,7 @@ namespace Test {
 
     inline
     void run() {
-      const int league_size = _a.dimension_0();
+      const int league_size = _a.extent(0);
       Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
     }
@@ -104,7 +104,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
@@ -114,7 +114,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }

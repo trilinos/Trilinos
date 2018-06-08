@@ -47,7 +47,6 @@
     \brief Defines the IdentifierAdapter interface.
 */
 
-
 #ifndef _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
@@ -115,7 +114,6 @@ public:
 
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 };
-
 
 }  //namespace Zoltan2
 

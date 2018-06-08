@@ -65,7 +65,7 @@ public:
   virtual ~Bisection() {}
 
   // Constructor
-  Bisection( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+  Bisection( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real oem8(1.e-8);
     tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",oem8);
     btls_ = ROL::makePtr<BackTracking<Real>>(parlist);

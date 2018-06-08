@@ -68,14 +68,40 @@ namespace ROL {
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
 
     ROL::Ptr<Vector<Real> > e = x.clone();
-    ROL::Ptr<Vector<Real> > h = x.clone();
+    ROL::Ptr<Vector<Real> > h = x.dual().clone();
 
     for (int i=0; i<dim; i++) {
       e = x.basis(i);
       obj.hessVec(*h, *e, x, tol);
       for (int j=0; j<dim; j++) {
         e = x.basis(j);
-        H(j,i) = e->dot(*h);
+        H(j,i) = e->dot(h->dual());
+      }
+    }
+
+    return H;
+
+  }
+
+
+  template<class Real>
+  Teuchos::SerialDenseMatrix<int, Real> computeScaledDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
+
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+
+    int dim = x.dimension();
+    Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
+
+    ROL::Ptr<Vector<Real> > ei = x.clone();
+    ROL::Ptr<Vector<Real> > ej = x.dual().clone();
+    ROL::Ptr<Vector<Real> > h  = x.dual().clone();
+
+    for (int i=0; i<dim; i++) {
+      ei = ei->basis(i);
+      obj.hessVec(*h, *ei, x, tol);
+      for (int j=0; j<dim; j++) {
+        ej = ej->basis(j);
+        H(j,i) = ej->dot(*h);
       }
     }
 

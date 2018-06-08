@@ -110,15 +110,15 @@ public:
              test is determined based on the step string.
   */
   Algorithm( const std::string &stepname,
-             Teuchos::ParameterList &parlist,
+             ROL::ParameterList &parlist,
              bool printHeader = false) {
 
 // Uncomment to test for parameter inconsistencies
-//    ROL::Ptr<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    ROL::Ptr<const ROL::ParameterList> validParlist = getValidROLParameters();
 //    parlist.validateParametersAndSetDefaults(*validParlist);
 
     EStep els = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
+    ROL_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
                                 "Invalid step name in algorithm constructor!");
     StepFactory<Real> stepFactory;
@@ -235,6 +235,14 @@ public:
         outStream << step_->print(*state_,printHeader_);
       }
     }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
+    }
     return output;
   }
 
@@ -320,6 +328,14 @@ public:
         outStream << step_->print(*state_,printHeader_);
       }
     }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
+    }
     return output;
   }
 
@@ -400,6 +416,14 @@ public:
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
       }
+    }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
     }
     return output;
   }

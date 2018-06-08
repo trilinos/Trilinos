@@ -167,9 +167,9 @@ namespace {
       Kokkos::fill_random (C_orig, randPool, minVal, maxVal);
     }
 
-    mat_type A ("A", A_orig.dimension_0 (), A_orig.dimension_1 ());
-    mat_type B ("B", B_orig.dimension_0 (), B_orig.dimension_1 ());
-    mat_type C ("C", C_orig.dimension_0 (), C_orig.dimension_1 ());
+    mat_type A ("A", A_orig.extent (0), A_orig.extent (1));
+    mat_type B ("B", B_orig.extent (0), B_orig.extent (1));
+    mat_type C ("C", C_orig.extent (0), C_orig.extent (1));
     auto A_host = Kokkos::create_mirror_view (A);
     auto B_host = Kokkos::create_mirror_view (B);
     auto C_host = Kokkos::create_mirror_view (C);
@@ -178,9 +178,9 @@ namespace {
     // and C, in case the routine to test is buggy and modifies the
     // wrong thing.  The host mirror of a View may be the View itself,
     // thus the same allocation.
-    host_mat_type A2 ("A2", A.dimension_0 (), A.dimension_1 ());
-    host_mat_type B2 ("B2", B.dimension_0 (), B.dimension_1 ());
-    host_mat_type C2 ("C2", C.dimension_0 (), C.dimension_1 ());
+    host_mat_type A2 ("A2", A.extent (0), A.extent (1));
+    host_mat_type B2 ("B2", B.extent (0), B.extent (1));
+    host_mat_type C2 ("C2", C.extent (0), C.extent (1));
 
     // Use the host versions of A, B, and C to compute max norms.
     // We'll need these for relative error bounds.
@@ -189,24 +189,24 @@ namespace {
     mag_type C_norm = Kokkos::ArithTraits<mag_type>::zero ();
     {
       Kokkos::deep_copy (A2, A_orig);
-      for (LO i = 0; i < static_cast<LO> (A2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (A2.dimension_1 ()); ++j) {
+      for (LO i = 0; i < static_cast<LO> (A2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (A2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (A2(i,j));
           A_norm = (curAbs > A_norm) ? curAbs : A_norm;
         }
       }
       Kokkos::deep_copy (B2, B_orig);
-      for (LO i = 0; i < static_cast<LO> (B2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (B2.dimension_1 ()); ++j) {
+      for (LO i = 0; i < static_cast<LO> (B2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (B2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (B2(i,j));
           B_norm = (curAbs > B_norm) ? curAbs : B_norm;
         }
       }
       Kokkos::deep_copy (C2, A_orig);
-      for (LO i = 0; i < static_cast<LO> (C2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (C2.dimension_1 ()); ++j) {
+      for (LO i = 0; i < static_cast<LO> (C2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (C2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (C2(i,j));
           C_norm = (curAbs > C_norm) ? curAbs : C_norm;
@@ -281,8 +281,8 @@ namespace {
 
         {
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-          for (LO i = 0; i < static_cast<LO> (C_host.dimension_0 ()); ++i) {
-            for (LO j = 0; j < static_cast<LO> (C_host.dimension_1 ()); ++j) {
+          for (LO i = 0; i < static_cast<LO> (C_host.extent (0)); ++i) {
+            for (LO j = 0; j < static_cast<LO> (C_host.extent (1)); ++j) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (C_host(i,j) - C2(i,j));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -309,8 +309,8 @@ namespace {
 
         {
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-          for (LO i = 0; i < static_cast<LO> (C_host.dimension_0 ()); ++i) {
-            for (LO j = 0; j < static_cast<LO> (C_host.dimension_1 ()); ++j) {
+          for (LO i = 0; i < static_cast<LO> (C_host.extent (0)); ++i) {
+            for (LO j = 0; j < static_cast<LO> (C_host.extent (1)); ++j) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (C_host(i,j) - C2(i,j));
               maxErr = (curErr > maxErr) ? curErr : maxErr;

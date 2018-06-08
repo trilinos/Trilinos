@@ -89,7 +89,7 @@ ResponseScatterEvaluator_ExtremeValue(const std::string & name,
   cellExtremeValue_ = PHX::MDField<const ScalarT,panzer::Cell>(name,dl_cell);
   this->addDependentField(cellExtremeValue_);
 
-  std::string n = "Functional Response Scatter: " + name;
+  std::string n = "Extreme Value Response Scatter: " + name;
   this->setName(n);
 }
 
@@ -119,7 +119,7 @@ ResponseScatterEvaluator_ExtremeValue(const std::string & integrandName,
   cellExtremeValue_ = PHX::MDField<const ScalarT,panzer::Cell>(integrandName,dl_cell);
   this->addDependentField(cellExtremeValue_);
 
-  std::string n = "Functional Response Scatter: " + responseName;
+  std::string n = "Extreme Value Response Scatter: " + responseName;
   this->setName(n);
 }
 

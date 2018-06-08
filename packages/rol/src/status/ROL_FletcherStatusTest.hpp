@@ -67,7 +67,7 @@ public:
 
   virtual ~FletcherStatusTest() {}
 
-  FletcherStatusTest( Teuchos::ParameterList &parlist ) {
+  FletcherStatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
     ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", em6);
@@ -87,6 +87,12 @@ public:
       return true;
     }
     else {
+      state.statusFlag = ((state.gnorm <= gtol_) && (state.cnorm <= ctol_) ? EXITSTATUS_CONVERGED
+                          : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
+                          : state.aggregateGradientNorm <= gtol_ ? EXITSTATUS_CONVERGED
+                          : state.iter  >= max_iter_ ? EXITSTATUS_MAXITER
+                          : state.flag==true ? EXITSTATUS_CONVERGED
+                          : EXITSTATUS_LAST);
       return false;
     }
   }

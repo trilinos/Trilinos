@@ -286,10 +286,30 @@ int AnyNumberParameterEntryValidator::getInt(
   const any &anyValue = entry.getAny(activeQuery);
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
     return any_cast<int>(anyValue);
+  if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
+    return as<int>(any_cast<long long>(anyValue));
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return as<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
     return convertStringToInt(any_cast<std::string>(anyValue));
+  throwTypeError(entry,paramName,sublistName);
+  return 0; // Will never get here!
+}
+
+long long AnyNumberParameterEntryValidator::getLongLong(
+  const ParameterEntry &entry, const std::string &paramName,
+  const std::string &sublistName, const bool activeQuery
+  ) const
+{
+  const any &anyValue = entry.getAny(activeQuery);
+  if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
+    return as<long long>(any_cast<int>(anyValue));
+  if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
+    return any_cast<long long>(anyValue);
+  if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
+    return as<int>(any_cast<double>(anyValue));
+  if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
+    return convertStringToLongLong(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);
   return 0; // Will never get here!
 }
@@ -302,6 +322,8 @@ double AnyNumberParameterEntryValidator::getDouble(
   const any &anyValue = entry.getAny(activeQuery);
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
     return as<double>(any_cast<int>(anyValue));
+  if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
+    return as<double>(any_cast<long long>(anyValue));
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
@@ -319,6 +341,8 @@ std::string AnyNumberParameterEntryValidator::getString(
   const any &anyValue = entry.getAny(activeQuery);
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
     return Utils::toString(any_cast<int>(anyValue));
+  if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
+    return Utils::toString(any_cast<long long>(anyValue));
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return Utils::toString(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
@@ -338,6 +362,15 @@ int AnyNumberParameterEntryValidator::getInt(
   return paramList.get(paramName,defaultValue);
 }
 
+long long AnyNumberParameterEntryValidator::getLongLong(
+  ParameterList &paramList, const std::string &paramName,
+  const long long defaultValue
+  ) const
+{
+  const ParameterEntry *entry = paramList.getEntryPtr(paramName);
+  if(entry) return getLongLong(*entry,paramName,paramList.name(),true);
+  return paramList.get(paramName,defaultValue);
+}
 
 double AnyNumberParameterEntryValidator::getDouble(
   ParameterList &paramList, const std::string &paramName,
@@ -360,18 +393,20 @@ std::string AnyNumberParameterEntryValidator::getString(
   return paramList.get(paramName,defaultValue);
 }
 
-
-bool AnyNumberParameterEntryValidator::isDoubleAllowed() const
-{
-  return acceptedTypes_.allowDouble();
-}
-
-
 bool AnyNumberParameterEntryValidator::isIntAllowed() const
 {
   return acceptedTypes_.allowInt();
 }
 
+bool AnyNumberParameterEntryValidator::isLongLongAllowed() const
+{
+  return acceptedTypes_.allowLongLong();
+}
+
+bool AnyNumberParameterEntryValidator::isDoubleAllowed() const
+{
+  return acceptedTypes_.allowDouble();
+}
 
 bool AnyNumberParameterEntryValidator::isStringAllowed() const
 {
@@ -441,6 +476,12 @@ void AnyNumberParameterEntryValidator::validateAndModify(
         false // isDefault
         );
       break;
+    case PREFER_LONG_LONG:
+      entry->setValue(
+        getLongLong(*entry,paramName,sublistName,false),
+        false // isDefault
+        );
+      break;
     case PREFER_DOUBLE:
       entry->setValue(
         getDouble(*entry,paramName,sublistName,false),
@@ -469,6 +510,10 @@ void AnyNumberParameterEntryValidator::finishInitialization()
   bool addedType = false;
   if(acceptedTypes_.allowInt()) {
     oss << "\"int\"";
+    addedType = true;
+  }
+  if(acceptedTypes_.allowLongLong()) {
+    oss << "\"long long\"";
     addedType = true;
   }
   if(acceptedTypes_.allowDouble()) {

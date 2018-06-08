@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
     ROL::Ptr<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
     if (iprint > 0)
         outStream = ROL::makePtrFromRef(std::cout);
     else
@@ -103,14 +103,13 @@ int main(int argc, char **argv) {
     int errorFlag = 0;
  
 
-    Teuchos::ParameterList parlist;
-    Teuchos::ParameterList gplist;
+    ROL::ParameterList parlist;
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
+    auto gplist = ROL::getParametersFromXmlFile( paramfile );
        
-    int    nx         = gplist.get("Interior Grid Points",100);
-    RealT gnl         = gplist.get("Nonlinearity Coefficient g",50.0);
-    bool   exactsolve = gplist.get("Solve Exact Augmented System",false);
+    int    nx         = gplist->get("Interior Grid Points",100);
+    RealT gnl         = gplist->get("Nonlinearity Coefficient g",50.0);
+    bool   exactsolve = gplist->get("Solve Exact Augmented System",false);
 
     // Command line option to override parameters.xml for solving the exact augmented system
     if(argc > 1) {

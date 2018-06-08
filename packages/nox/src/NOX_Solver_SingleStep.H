@@ -72,6 +72,10 @@ namespace Solver {
   solve known linear problems.
   In that case, it is convenient to create a NOX::Solver object which requires
   no status tests and simply executes the linear solver.
+
+  Valid parameters in the ParameterList are:
+  \param [in] "Ignore Linear Solver Failure" (bool) - If set to true, ignore the linear solver status. This is used for iterative methods where the requested tolerance was not explicitly met, but the solve might still be good enough to use. Defaults to false.
+  \param [in] "Update Jacobian" - If set to true, the Jacobian is computed at the beginning of each nonlinear iteration. In some use cases, we may want to reuse the Jacobian matrix (i.e. only the RHS is changing). Defaults to true.
  */
 class SingleStep : public Generic {
 
@@ -134,6 +138,14 @@ protected:
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Solver::PrePostOperator prePostOperator;
 
+  //! If set to true, the return status of the linear solver is ignored, step is declared a success
+  bool ignoreLinearSolverFailures;
+
+  //! If set to true, the Jacobian is computed at the beginning of each nonlinear iteration
+  bool updateJacobian;
+
+  //! Group that contains the "frozen Jacobian" if updateJacobian is false.
+  Teuchos::RCP<NOX::Abstract::Group> frozenJacobianPtr;
 };
 } // namespace Solver
 } // namespace NOX

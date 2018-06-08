@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_GradBasisCrossVector,p):
+template<typename EvalT, typename Traits>
+Integrator_GradBasisCrossVector<EvalT, Traits>::
+Integrator_GradBasisCrossVector(
+  const Teuchos::ParameterList& p):
   _num_basis_nodes(0),
   _num_quadrature_points(0),
   _basis_index(-1)
@@ -119,7 +122,12 @@ PHX_EVALUATOR_CTOR(Integrator_GradBasisCrossVector,p):
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisCrossVector,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_GradBasisCrossVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
 
   for (auto & residual : _residuals){
@@ -142,7 +150,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisCrossVector,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_GradBasisCrossVector,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_GradBasisCrossVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
 
   // Zero the residuals

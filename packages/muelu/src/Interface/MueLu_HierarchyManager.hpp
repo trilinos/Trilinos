@@ -127,6 +127,10 @@ namespace MueLu {
       return rcp(new Hierarchy());
     }
 
+    virtual RCP<Hierarchy> CreateHierarchy(const std::string& label) const {
+      return rcp(new Hierarchy(label));
+    }
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
@@ -226,7 +230,9 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-
+      // FIXME: Should allow specification of NumVectors on parameterlist
+      H.AllocateLevelMultiVectors(1);
+      
       RCP<Teuchos::FancyOStream> fos = this->getOStream();
       fos->setOutputToRootOnly(0);
       H.describe(*fos, verbosity_);

@@ -84,31 +84,25 @@ template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
-
-  /// Constructor
+  /// Constructor to use default Stepper parameters.
   StepperDIRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType = "SDIRK 2 Stage 2nd order");
+
+  /// Constructor to specialize Stepper parameters.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor for StepperFactory.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -166,9 +160,6 @@ private:
 protected:
 
   std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >           wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
 
@@ -176,9 +167,15 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >                 stepperObserver_;
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+
+  // For Embedded RK
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 };
 
 
@@ -190,7 +187,7 @@ protected:
  *  \f]
  *  compute the DIRK stage time-derivative,
  *  \f[
- *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}
  *  \f]
  *  \f$\ddot{x}\f$ is not used and set to null.
  */

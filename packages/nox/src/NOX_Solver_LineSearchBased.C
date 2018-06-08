@@ -189,7 +189,9 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
+  prePostOperator.runPreLineSearch(*this);
   ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
+  prePostOperator.runPostLineSearch(*this);
   if (!ok)
   {
     if (stepSize == 0.0)

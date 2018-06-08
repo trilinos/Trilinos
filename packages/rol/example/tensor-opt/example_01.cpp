@@ -183,7 +183,7 @@ private:
     void plus(const ROL::Vector<DT2_> & x) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -215,7 +215,7 @@ private:
     DT2_ dot(const ROL::Vector<DT2_> & x) const override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -245,7 +245,7 @@ private:
     void axpy(const DT2_ alpha, const ROL::Vector<DT2_> & x) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -281,7 +281,7 @@ private:
     void set(const ROL::Vector<DT2_> & x) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -311,7 +311,7 @@ private:
                      const ROL::Vector<DT2_> & x) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dimension() != x.dimension(),
                                   std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -381,7 +381,7 @@ private:
     DT2_ value (const ROL::Vector<DT2_> & x, DT2_ & /*tol*/) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vectors must have the same dimension." );
 #endif
@@ -403,10 +403,10 @@ private:
                    DT2_ &                    /*tol*/) override
     {
 #ifdef DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != g.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != g.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
 #endif
@@ -426,13 +426,13 @@ private:
                   DT2_ &                    /*tol*/) override
     {
 #ifdef DEBUG
-      /* TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
+      /* ROL_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." ); */
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != hv.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != hv.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != v.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != v.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
 #endif
@@ -449,13 +449,13 @@ private:
                      DT2_ &                    /*tol*/) override
     {
 #ifdef DEBUG
-      /* TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
+      /* ROL_TEST_FOR_EXCEPTION(dim2_ != x.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." ); */
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != hv.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != hv.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
-      TEUCHOS_TEST_FOR_EXCEPTION(dim2_ != v.dimension(),
+      ROL_TEST_FOR_EXCEPTION(dim2_ != v.dimension(),
                                  std::invalid_argument,
                                  "Error: Vector size is not correct." );
 #endif
@@ -634,7 +634,7 @@ private:
 
 private:
   const std::string                                    _parfile;
-  const Teuchos::RCP<Teuchos::ParameterList>           _parlist;
+  const ROL::Ptr<ROL::ParameterList>           _parlist;
 
   const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower,  _upper;
   const ROL::Ptr<VectorWrapper<DT_, dim_>>         _x;
@@ -662,7 +662,7 @@ public:
   /// Constructor
   SemidefiniteProgramming() :
     _parfile("example_01.xml"),
-    _parlist(   Teuchos::rcp( new Teuchos::ParameterList() )),
+    _parlist(   Teuchos::rcp( new ROL::ParameterList() )),
     _lower(     ROL::makePtr<VectorWrapper<DT_, dim_>>(DT_(0))),
     _upper(     ROL::makePtr<VectorWrapper<DT_, dim_>>(DT_(1))),
     _x(         ROL::makePtr<VectorWrapper<DT_, dim_>>()),
@@ -826,7 +826,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else

@@ -69,7 +69,7 @@ private:
 
   Real ierf(Real input) const {
     std::vector<Real> coeff;
-    Real pi = Teuchos::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
+    Real pi = ROL::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
     Real c(1);
     Real tmp = c * (std::sqrt(pi)/two * input);
     Real val = tmp;
@@ -173,7 +173,7 @@ public:
       useDist_(true),
       dist_(dist) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     sample();
   }
@@ -196,7 +196,7 @@ public:
       sum_ng2_(0),
       useDist_(false) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = bounds.size();
     data_.clear();
@@ -232,7 +232,7 @@ public:
       sum_ng2_(0), 
       useDist_(false) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = mean.size();
     data_.clear();
@@ -330,6 +330,10 @@ public:
       SampleGenerator<Real>::setPoints(pts);
       SampleGenerator<Real>::setWeights(wts);
     }
+  }
+
+  int numGlobalSamples(void) const {
+    return nSamp_;
   }
 
 };

@@ -252,8 +252,17 @@ namespace MueLu {
     }
 
     // Check for Kokkos
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    useKokkos_ = false;
+#elif defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+    ParameterList tempList("tempList");
+    tempList.set("use kokkos refactor",true);
+    MUELU_SET_VAR_2LIST(constParamList, tempList, "use kokkos refactor", bool, useKokkos);
+    useKokkos_ = useKokkos;
+#else
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
+#endif
 
     // Check for timer synchronization
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
@@ -322,6 +331,7 @@ namespace MueLu {
     //  - we use "distance laplacian" dropping on some level, or
     //  - we use repartitioning on some level
     //  - we use brick aggregation
+    //  - we use Ifpack2 line partitioner
     // This is not ideal, as we may have "repartition: enable" turned on by default
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
@@ -330,7 +340,12 @@ namespace MueLu {
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick") ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
-
+    } else if(paramList.isSublist("smoother: params")) {
+      const auto smooParamList = paramList.sublist("smoother: params");
+      if(smooParamList.isParameter("partitioner: type") &&
+         (smooParamList.get<std::string>("partitioner: type") == "line")) {
+        useCoordinates_ = true;
+      }
     } else {
       for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
         std::string levelStr = "level " + toString(levelID);
@@ -829,8 +844,8 @@ namespace MueLu {
         "SPARSE BLOCK RELAXATION", "SPARSE_BLOCK_RELAXATION", "SPARSEBLOCKRELAXATION",
         "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
         "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
-        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
-        "TOPOLOGICAL"}).count(coarseType)) {
+        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",             
+        "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       } else {
 #ifdef HAVE_MUELU_MATLAB

@@ -61,41 +61,30 @@ operators, and dense and sparse matrices.
         docstring = %tpetra_docstring) Tpetra
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Tpetra_Util.hpp"
 #include "PyTrilinos_DAP.hpp"
 
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
-#include "Teuchos_DefaultComm.hpp"
 
-// Tpetra includes
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Version.hpp"
-#include "Tpetra_CombineMode.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+// Tpetra include files
+#include "PyTrilinos_Tpetra_Headers.hpp"
 
 #ifdef HAVE_DOMI
-// Domi includes
-#include "Domi_MDVector.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+// Domi include files
+#include "PyTrilinos_Domi_Headers.hpp"
 #endif
 
 %}
@@ -114,7 +103,7 @@ using Teuchos::ArrayRCP;
 namespace PyTrilinos
 {
 
-// Attempt to convert a PyObject to an RCP to a Tpetra::MultiVector.
+// Attempt to convert a PyObject to an RCP of a Tpetra::MultiVector.
 // The input PyObject could be a wrapped Tpetra::MultiVector, or a
 // wrapped Domi::MDVector, or an object that supports the DistArray
 // Protocol, or, if the environment is serial, a simple NumPy array.
@@ -489,9 +478,8 @@ convertPythonToTpetraVector(PyObject * pyobj,
 
 // Global swig features
 %feature("autodoc", "1");
-%feature("compactdefaultargs");
 
-// SWIG standard library includes
+// SWIG standard library include files
 using std::string;
 %include "stl.i"
 
@@ -650,69 +638,77 @@ __version__ = version()
 ////////////////////////
 // Tpetra Map support //
 ////////////////////////
-%extend Tpetra::Map
+
+%extend Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >
 {
+  Map()
+  {
+    return new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                            PYTRILINOS_GLOBAL_ORD,
+                            DefaultNodeType       >();
+  }
+
   Map(Tpetra::global_size_t numGlobalElements,
-      GlobalOrdinal indexBase,
+      PYTRILINOS_GLOBAL_ORD indexBase,
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm,
       Tpetra::LocalGlobal lg=GloballyDistributed)
   {
-    return new Tpetra::Map< LocalOrdinal,
-                            GlobalOrdinal,
-                            Node          >(numGlobalElements,
-                                            indexBase,
-                                            comm,
-                                            lg);
+    return new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                            PYTRILINOS_GLOBAL_ORD,
+                            DefaultNodeType       >(numGlobalElements,
+                                                    indexBase,
+                                                    comm,
+                                                    lg);
   }
 
   Map(Tpetra::global_size_t numGlobalElements,
       size_t numLocalElements,
-      GlobalOrdinal indexBase,
+      PYTRILINOS_GLOBAL_ORD indexBase,
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm)
   {
-    return new Tpetra::Map< LocalOrdinal,
-                            GlobalOrdinal,
-                            Node          >(numGlobalElements,
-                                            numLocalElements,
-                                            indexBase,
-                                            comm);
+    return new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                            PYTRILINOS_GLOBAL_ORD,
+                            DefaultNodeType       >(numGlobalElements,
+                                                    numLocalElements,
+                                                    indexBase,
+                                                    comm);
   }
 
   Map(Tpetra::global_size_t numGlobalElements,
       PyObject * elementList,
-      GlobalOrdinal indexBase,
+      PYTRILINOS_GLOBAL_ORD indexBase,
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm)
   {
     int is_new = 0;
-    int type_code = PyTrilinos::NumPy_TypeCode< GlobalOrdinal >();
+    int type_code = PyTrilinos::NumPy_TypeCode< PYTRILINOS_GLOBAL_ORD >();
     PyArrayObject * npArray =
       obj_to_array_contiguous_allow_conversion(elementList,
                                                type_code,
                                                &is_new);
     if (!npArray) throw PyTrilinos::PythonException();
-    Teuchos::ArrayView< GlobalOrdinal > elementArray =
-      Teuchos::arrayView( (GlobalOrdinal*) array_data(npArray),
+    Teuchos::ArrayView< PYTRILINOS_GLOBAL_ORD > elementArray =
+      Teuchos::arrayView( (PYTRILINOS_GLOBAL_ORD*) array_data(npArray),
                           array_size(npArray, 0));
-    return new Tpetra::Map< LocalOrdinal,
-                            GlobalOrdinal,
-                            Node          >(numGlobalElements,
-                                            elementArray,
-                                            indexBase,
-                                            comm);
+    return new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                            PYTRILINOS_GLOBAL_ORD,
+                            DefaultNodeType       >(numGlobalElements,
+                                                    elementArray,
+                                                    indexBase,
+                                                    comm);
   }
 
-  PyObject * getLocalElement(GlobalOrdinal globalIndex)
+  PyObject * getLocalElement(PYTRILINOS_GLOBAL_ORD globalIndex)
   {
-    LocalOrdinal localIndex = self->getLocalElement(globalIndex);
-    if (localIndex == Teuchos::OrdinalTraits< LocalOrdinal >::invalid())
+    PYTRILINOS_LOCAL_ORD localIndex = self->getLocalElement(globalIndex);
+    if (localIndex == Teuchos::OrdinalTraits< PYTRILINOS_LOCAL_ORD >::invalid())
       return Py_BuildValue("");
     return SWIG_From_long(static_cast< long >(localIndex));
   }
 
-  PyObject * getGlobalElement(LocalOrdinal localIndex)
+  PyObject * getGlobalElement(PYTRILINOS_LOCAL_ORD localIndex)
   {
-    GlobalOrdinal globalIndex = self->getGlobalElement(localIndex);
-    if (globalIndex == Teuchos::OrdinalTraits< GlobalOrdinal >::invalid())
+    PYTRILINOS_GLOBAL_ORD globalIndex = self->getGlobalElement(localIndex);
+    if (globalIndex == Teuchos::OrdinalTraits< PYTRILINOS_GLOBAL_ORD >::invalid())
       return Py_BuildValue("");
     return SWIG_From_long(static_cast< long >(globalIndex));
   }
@@ -721,15 +717,15 @@ __version__ = version()
   {
     // Variable initialization
     int is_new = 0;
-    int type_code = PyTrilinos::NumPy_TypeCode< GlobalOrdinal >();
+    int type_code = PyTrilinos::NumPy_TypeCode< PYTRILINOS_GLOBAL_ORD >();
     npy_intp dims[1];
     PyObject * globalArray = NULL;
     PyObject * nodeArray   = NULL;
     PyObject * localArray  = NULL;
     PyObject * resultObj   = PyTuple_New(3);
-    Teuchos::ArrayView< const GlobalOrdinal > globalList;
-    Teuchos::ArrayView< int >                 nodeList;
-    Teuchos::ArrayView< LocalOrdinal >        localList;
+    Teuchos::ArrayView< const PYTRILINOS_GLOBAL_ORD > globalList;
+    Teuchos::ArrayView< int >                         nodeList;
+    Teuchos::ArrayView< PYTRILINOS_LOCAL_ORD >        localList;
     Tpetra::LookupStatus result;
 
     // Check the input argument
@@ -751,22 +747,22 @@ __version__ = version()
 
     // Initialize the output NumPy arrays and tuple
     dims[0]    = array_size(globalArray, 0);
-    type_code  = PyTrilinos::NumPy_TypeCode< LocalOrdinal >();
+    type_code  = PyTrilinos::NumPy_TypeCode< PYTRILINOS_LOCAL_ORD >();
     nodeArray  = PyArray_SimpleNew(1, dims, NPY_INT);
     localArray = PyArray_SimpleNew(1, dims, type_code);
     PyTuple_SET_ITEM(resultObj, 0, nodeArray );
     PyTuple_SET_ITEM(resultObj, 1, localArray);
 
     // Initialize the Teuchos::ArrayViews
-    globalList = Teuchos::ArrayView< const GlobalOrdinal >
-      ((const GlobalOrdinal*) array_data(globalArray),
-       (Teuchos::ArrayView< GlobalOrdinal >::size_type) dims[0]);
+    globalList = Teuchos::ArrayView< const PYTRILINOS_GLOBAL_ORD >
+      ((const PYTRILINOS_GLOBAL_ORD*) array_data(globalArray),
+       (Teuchos::ArrayView< PYTRILINOS_GLOBAL_ORD >::size_type) dims[0]);
     nodeList = Teuchos::ArrayView< int >
       ((int*) array_data(nodeArray),
        (Teuchos::ArrayView< int >::size_type) dims[0]);
-    localList = Teuchos::ArrayView< LocalOrdinal >
-      ((LocalOrdinal*) array_data(localArray),
-       (Teuchos::ArrayView< LocalOrdinal >::size_type) dims[0]);
+    localList = Teuchos::ArrayView< PYTRILINOS_LOCAL_ORD >
+      ((PYTRILINOS_LOCAL_ORD*) array_data(localArray),
+       (Teuchos::ArrayView< PYTRILINOS_LOCAL_ORD >::size_type) dims[0]);
 
     // Call the method
     result = self->getRemoteIndexList(globalList,
@@ -791,106 +787,15 @@ __version__ = version()
     return self->description();
   }
 }
-// %ignore Tpetra::Map::Map;
-// %ignore Tpetra::Map::getLocalElement;
-// %ignore Tpetra::Map::getGlobalElement;
-// %ignore Tpetra::Map::getRemoteIndexList;
-// The official definition of Tpetra::Map uses some C++ 11 and other
-// advanced features that confuse SWIG, so I declare a "simplified"
-// version here.
-namespace Tpetra
-{
-template< class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-          class Node = Details::DefaultTypes::node_type >
-class Map :
-    public Teuchos::Describable
-{
-public:
-  typedef LocalOrdinal local_ordinal_type;
-  typedef GlobalOrdinal global_ordinal_type;
-  typedef Node node_type;
-  typedef typename Kokkos::Device< typename Node::execution_space,
-                                   typename Node::memory_space > device_type;
-  typedef Details::LocalMap< LocalOrdinal, GlobalOrdinal, device_type >
-    local_map_type;
-  // Map(global_size_t numGlobalElements,
-  //     GlobalOrdinal indexBase,
-  //     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-  //     LocalGlobal lg=GloballyDistributed,
-  //     const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
-  // Map(global_size_t numGlobalElements,
-  //     size_t numLocalElements,
-  //     GlobalOrdinal indexBase,
-  //     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-  //     const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
-  // Map(const global_size_t numGlobalElements,
-  //     const Kokkos::View<const GlobalOrdinal*, device_type>& indexList,
-  //     const GlobalOrdinal indexBase,
-  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
-  // Map(const global_size_t numGlobalElements,
-  //     const GlobalOrdinal indexList[],
-  //     const LocalOrdinal indexListSize,
-  //     const GlobalOrdinal indexBase,
-  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
-  // Map(const global_size_t numGlobalElements,
-  //     const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
-  //     const GlobalOrdinal indexBase,
-  //     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-  //     const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
-  // Map();
-  ~Map();
-  bool isOneToOne() const;
-  global_size_t getGlobalNumElements() const;
-  size_t getNodeNumElements() const;
-  GlobalOrdinal getIndexBase() const;
-  LocalOrdinal getMinLocalIndex() const;
-  LocalOrdinal getMaxLocalIndex() const;
-  GlobalOrdinal getMinGlobalIndex() const;
-  GlobalOrdinal getMaxGlobalIndex() const;
-  GlobalOrdinal getMinAllGlobalIndex() const;
-  GlobalOrdinal getMaxAllGlobalIndex() const;
-  // LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
-  // GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
-  // LookupStatus
-  // getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
-  //                    const Teuchos::ArrayView< int > & nodeIDList,
-  //                    const Teuchos::ArrayView< LocalOrdinal> & LIDList) const;
-  // LookupStatus
-  // getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
-  //                    const Teuchos::ArrayView< int > & nodeIDList) const;
-  Kokkos::View< const GlobalOrdinal*,
-                Kokkos::LayoutLeft,
-                device_type > getMyGlobalIndices() const;
-  Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
-  bool isNodeLocalElement(LocalOrdinal localIndex) const;
-  bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
-  bool isUniform() const;
-  bool isContiguous() const;
-  bool isDistributed() const;
-  bool isCompatible(const Map< LocalOrdinal,GlobalOrdinal,Node > & map) const;
-  bool isSameAs(const Map< LocalOrdinal,GlobalOrdinal,Node > & map) const;
-  bool locallySameAs(const Map< LocalOrdinal,
-                                GlobalOrdinal,
-                                node_type > & map) const;
-  Teuchos::RCP<const Teuchos::Comm< int > > getComm() const;
-  Teuchos::RCP< Node > getNode() const;
-  std::string description() const;
-  void
-  describe(Teuchos::FancyOStream &out,
-           const Teuchos::EVerbosityLevel verbLevel=
-             Teuchos::Describable::verbLevel_default) const;
-  template < class NodeOut >
-  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, NodeOut > >
-  clone(const RCP< NodeOut > & nodeOut) const;
-  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >
-  removeEmptyProcesses() const;
-  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >
-  replaceCommWithSubset(
-      const Teuchos::RCP<const Teuchos::Comm< int > > & newComm) const;
-};
-}
-// %include "Tpetra_Map_decl.hpp"
+
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::Map;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getLocalElement;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getGlobalElement;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getRemoteIndexList;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getMyGlobalIndices;
+
+%include "Tpetra_Map_decl.hpp"
+
 // N.B.: Technically, the third template argument in the two SWIG
 // directives below are redundant, because it is the same as the
 // default template argument.  But SWIG is much more acurate when
@@ -1585,7 +1490,6 @@ public:
 %tpetra_scalars(int       , int   )
 %tpetra_scalars(long long , long  )
 %tpetra_scalars(double    , double)
-//%tpetra_scalars(float     , float )
 
 /////////////////////////////////////////////////////
 // Python code that consolidates templated classes //

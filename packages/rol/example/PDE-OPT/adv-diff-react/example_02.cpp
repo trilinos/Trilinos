@@ -46,7 +46,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -87,13 +87,130 @@ Real random(const Teuchos::Comm<int> &comm,
   return val;
 }
 
+template<class Real>
+void print(ROL::Objective<Real> &obj,
+           const ROL::Vector<Real> &z,
+           ROL::SampleGenerator<Real> &sampler,
+           const ROL::Ptr<const Teuchos::Comm<int> > &comm,
+           const std::string &filename) {
+  Real tol(1e-8);
+  int ngsamp = sampler.numGlobalSamples();
+  // Build objective function distribution
+  int nsamp = sampler.numMySamples();
+  std::vector<Real> myvalues(nsamp), myzerovec(nsamp, 0);
+  std::vector<double> gvalues(ngsamp), gzerovec(ngsamp, 0);
+  std::vector<Real> sample = sampler.getMyPoint(0);
+  int sdim = sample.size();
+  std::vector<std::vector<Real> > mysamples(sdim, myzerovec);
+  std::vector<std::vector<double> > gsamples(sdim, gzerovec);
+  for (int i = 0; i < nsamp; ++i) {
+    sample = sampler.getMyPoint(i);
+    obj.setParameter(sample);
+    myvalues[i] = static_cast<double>(obj.value(z,tol));
+    for (int j = 0; j < sdim; ++j) {
+      mysamples[j][i] = static_cast<double>(sample[j]);
+    }
+  }
+
+  // Send data to root processor
+#ifdef HAVE_MPI
+  ROL::Ptr<const Teuchos::MpiComm<int> > mpicomm
+    = ROL::dynamicPtrCast<const Teuchos::MpiComm<int> >(comm);
+  int nproc = Teuchos::size<int>(*mpicomm);
+  std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
+  MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
+  for (int i = 1; i < nproc; ++i) {
+    sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
+  }
+  MPI_Gatherv(&myvalues[0],nsamp,MPI_DOUBLE,&gvalues[0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  for (int j = 0; j < sdim; ++j) {
+    MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  }
+#else
+  gvalues.assign(myvalues.begin(),myvalues.end());
+  for (int j = 0; j < sdim; ++j) {
+    gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
+  }
+#endif
+
+  // Print
+  int rank  = Teuchos::rank<int>(*comm);
+  if ( rank==0 ) {
+    std::ofstream file;
+    file.open(filename);
+    file << std::scientific << std::setprecision(15);
+    for (int i = 0; i < ngsamp; ++i) {
+      for (int j = 0; j < sdim; ++j) {
+        file << std::setw(25) << std::left << gsamples[j][i];
+      }
+      file << std::setw(25) << std::left << gvalues[i] << std::endl;
+    }
+    file.close();
+  }
+}
+
+template<class Real>
+void printSampler(ROL::SampleGenerator<Real> &sampler,
+                  const ROL::Ptr<const Teuchos::Comm<int> > &comm,
+                  const std::string &filename) {
+  int ngsamp = sampler.numGlobalSamples();
+  // Build objective function distribution
+  int nsamp = sampler.numMySamples();
+  std::vector<Real> myzerovec(nsamp, 0);
+  std::vector<double> gzerovec(ngsamp, 0);
+  std::vector<Real> sample = sampler.getMyPoint(0);
+  int sdim = sample.size();
+  std::vector<std::vector<Real> > mysamples(sdim, myzerovec);
+  std::vector<std::vector<double> > gsamples(sdim, gzerovec);
+  for (int i = 0; i < nsamp; ++i) {
+    sample = sampler.getMyPoint(i);
+    for (int j = 0; j < sdim; ++j) {
+      mysamples[j][i] = static_cast<double>(sample[j]);
+    }
+  }
+
+  // Send data to root processor
+#ifdef HAVE_MPI
+  ROL::Ptr<const Teuchos::MpiComm<int> > mpicomm
+    = ROL::dynamicPtrCast<const Teuchos::MpiComm<int> >(comm);
+  int nproc = Teuchos::size<int>(*mpicomm);
+  std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
+  MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
+  for (int i = 1; i < nproc; ++i) {
+    sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
+  }
+  for (int j = 0; j < sdim; ++j) {
+    MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  }
+#else
+  for (int j = 0; j < sdim; ++j) {
+    gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
+  }
+#endif
+
+  // Print
+  int rank  = Teuchos::rank<int>(*comm);
+  if ( rank==0 ) {
+    std::ofstream file;
+    file.open(filename);
+    file << std::scientific << std::setprecision(15);
+    for (int i = 0; i < ngsamp; ++i) {
+      for (int j = 0; j < sdim; ++j) {
+        file << std::setw(25) << std::left << gsamples[j][i];
+      }
+      file << std::endl;
+    }
+    file.close();
+  }
+}
+
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
@@ -289,9 +406,20 @@ int main(int argc, char *argv[]) {
       std::ofstream zfile;
       zfile.open("control.txt");
       for (int i = 0; i < controlDim; i++) {
-        zfile << (*z_ptr)[i] << "\n";
+        zfile << std::scientific << std::setprecision(15);
+        zfile << (*z_ptr)[i] << std::endl;
       }
       zfile.close();
+    }
+    // Output statisitic to file
+    std::vector<RealT> stat = opt.getObjectiveStatistic();
+    if ( myRank == 0 && stat.size() > 0 ) {
+      std::ofstream sfile;
+      sfile.open("stat.txt");
+      for (int i = 0; i < static_cast<int>(stat.size()); ++i) {
+        sfile << std::scientific << std::setprecision(15);
+        sfile << stat[i] << std::endl;
+      }
     }
     // Output expected state and samples to file
     up->zero(); pp->zero(); dup->zero();
@@ -299,42 +427,21 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BatchManager<RealT> > bman_Eu
       = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
     std::vector<RealT> sample(stochDim);
-    std::stringstream name_samp;
-    name_samp << "samples_" << bman->batchID() << ".txt";
-    std::ofstream file_samp;
-    file_samp.open(name_samp.str());
     for (int i = 0; i < sampler->numMySamples(); ++i) {
       sample = sampler->getMyPoint(i);
       con->setParameter(sample);
       con->solve(*rp,*dup,*zp,tol);
       up->axpy(sampler->getMyWeight(i),*dup);
-      for (int j = 0; j < stochDim; ++j) {
-        file_samp << sample[j] << "  ";
-      }
-      file_samp << "\n";
     }
-    file_samp.close();
     bman_Eu->sumAll(*up,*pp);
     pdeCon->getAssembler()->outputTpetraVector(p_ptr,"mean_state.txt");
+    // Print samples
+    printSampler<RealT>(*sampler,comm,"samples.txt");
     // Build objective function distribution
-    RealT val(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
     ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
       = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
-    std::stringstream name;
-    name << "obj_samples_" << bman->batchID() << ".txt";
-    std::ofstream file;
-    file.open(name.str());
-    for (int i = 0; i < sampler_dist->numMySamples(); ++i) {
-      sample = sampler_dist->getMyPoint(i);
-      objReduced->setParameter(sample);
-      val = objReduced->value(*zp,tol);
-      for (int j = 0; j < stochDim; ++j) {
-        file << sample[j] << "  ";
-      }
-      file << val << "\n";
-    }
-    file.close();
+    print<RealT>(*objReduced,*zp,*sampler_dist,comm,"obj_samples.txt");
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;

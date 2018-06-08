@@ -43,7 +43,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0 && comm->MyPID()==0)
     ROL::makePtrFromRef(std::cout);
   else
@@ -323,15 +323,6 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_ptr,*outStream);
     /**********************************************************************************************/
-    /************************* SMOOTHED CVAR QUADRANGLE *******************************************/
-    /**********************************************************************************************/
-    *outStream << "\nQUANTILE-BASED QUADRANGLE RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
-    setRandomVector(*x_ptr,comm);
-    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
     /************************* MEAN PLUS HMCR *****************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
@@ -344,16 +335,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
     list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
-    setRandomVector(*x_ptr,comm);
-    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* BPOE ***************************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nBUFFERED PROBABILITY OF EXCEEDANCE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Entropic Risk");
     setRandomVector(*x_ptr,comm);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_ptr,*outStream);

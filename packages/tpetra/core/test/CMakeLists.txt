@@ -9,10 +9,12 @@ ADD_SUBDIRECTORIES(
   Block
   BugTests
   Comm
+  Core  
   CrsGraph
   CrsMatrix
   Directory
   Distributor
+  FEMultiVector
   HashTable
   ImportExport
   ImportExport2

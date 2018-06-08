@@ -48,7 +48,7 @@
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = Teuchos::rcp(&std::cout, false);
   else
@@ -91,17 +91,18 @@ int main(int argc, char *argv[]) {
     *outStream << "\nthyra vector norm = " << vecnorm << "\n";
 
     // Play with Tempus.
-    RCP<Teuchos::ParameterList> parList = Teuchos::getParametersFromXmlFile("example_01.xml");
+    RCP<Teuchos::ParameterList> parList = Teuchos::rcp( new Teuchos::ParameterList );
+    Teuchos::updateParametersFromXmlFile("example_01.xml", parList.ptr());
     RCP<Teuchos::ParameterList> tempusParList = sublist(parList, "Tempus", true);
     RCP<SinCosModelEvaluator<RealT>> model = Teuchos::rcp(new SinCosModelEvaluator<RealT>());
 
     RCP<Tempus::IntegratorBasic<RealT> > integrator = Tempus::integratorBasic<RealT>(tempusParList, model);
 
-    bool integratorStatus = integrator->advanceTime();
+    integrator->advanceTime();
 
     // Test if at 'Final Time'
-    RealT time = integrator->getTime();
-    RealT timeFinal = tempusParList->sublist("Demo Integrator").sublist("Time Step Control").get<RealT>("Final Time");
+//    RealT time = integrator->getTime(); // Unused
+//    RealT timeFinal = tempusParList->sublist("Demo Integrator").sublist("Time Step Control").get<RealT>("Final Time"); // Unused
 
     // Output solution.
     std::ofstream ftmp("Tempus_ForwardEuler_SinCos.dat");

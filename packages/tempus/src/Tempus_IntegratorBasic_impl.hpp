@@ -138,47 +138,25 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
   solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
 
   if (state == Teuchos::null) {
-    // Construct default IC
-    // Create initial condition metadata from TimeStepControl
-    RCP<SolutionStateMetaData<Scalar> > md =
-      rcp(new SolutionStateMetaData<Scalar> ());
-    md->setTime (timeStepControl_->getInitTime());
-    md->setIStep(timeStepControl_->getInitIndex());
-    md->setDt   (timeStepControl_->getInitTimeStep());
-    int orderTmp = timeStepControl_->getInitOrder();
-    if (orderTmp == 0) orderTmp = stepper_->getOrder();
-    md->setOrder(orderTmp);
-    md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
-
-    // Create initial condition from ModelEvaluator::getNominalValues()
-    typedef Thyra::ModelEvaluatorBase MEB;
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =
-      stepper_->getModel()->getNominalValues();
-
-    using Teuchos::rcp_const_cast;
-    //RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
-    RCP<Thyra::VectorBase<Scalar> > x =
-      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x());
-    RCP<Thyra::VectorBase<Scalar> > xdot;
-    if (inArgsIC.supports(MEB::IN_ARG_x_dot)) {
-      //xdot = inArgsIC.get_x_dot()->clone_v();
-      xdot = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot());
-    } else {
-      xdot = x->clone_v();
-    }
-    RCP<Thyra::VectorBase<Scalar> > xdotdot;
-    if (inArgsIC.supports(MEB::IN_ARG_x_dot_dot)) {
-      //xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
-      xdotdot =
-        rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot_dot());
-    }
-    else {
-      xdotdot = x->clone_v();
-    }
+    // Construct default IC from the application model
     RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-      md, x, xdot, xdotdot, stepper_->getDefaultStepperState()));
+      stepper_->getModel(), stepper_->getDefaultStepperState(), Teuchos::null));
+
+    // Set SolutionState MetaData from TimeStepControl
+    newState->setTime    (timeStepControl_->getInitTime());
+    newState->setIndex   (timeStepControl_->getInitIndex());
+    newState->setTimeStep(timeStepControl_->getInitTimeStep());
+    newState->getMetaData()->setTolRel(timeStepControl_->getMaxRelError());
+    newState->getMetaData()->setTolAbs(timeStepControl_->getMaxAbsError());
+    int order = timeStepControl_->getInitOrder();
+    if (order == 0) order = stepper_->getOrder();
+    if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
+    if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
+    newState->setOrder(order);
+    newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
     solutionHistory_->addState(newState);
+
   } else {
     // Use state as IC
     solutionHistory_->addState(state);
@@ -201,17 +179,6 @@ setInitialState(Scalar t0,
     Teuchos::sublist(integratorPL_, "Solution History", true);
   solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
 
-  // Create initial condition metadata from TimeStepControl
-  RCP<SolutionStateMetaData<Scalar> > md =
-    rcp(new SolutionStateMetaData<Scalar> ());
-  md->setTime (timeStepControl_->getInitTime());
-  md->setIStep(timeStepControl_->getInitIndex());
-  md->setDt   (timeStepControl_->getInitTimeStep());
-  int orderTmp = timeStepControl_->getInitOrder();
-  if (orderTmp == 0) orderTmp = stepper_->getOrder();
-  md->setOrder(orderTmp);
-  md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
-
   // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = x0->clone_v();
@@ -225,7 +192,19 @@ setInitialState(Scalar t0,
     Thyra::assign(xdotdot.ptr(), *(xdotdot0));
 
   RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-    md, x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
+    x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
+
+  // Set SolutionState MetaData from TimeStepControl
+  newState->setTime    (timeStepControl_->getInitTime());
+  newState->setIndex   (timeStepControl_->getInitIndex());
+  newState->setTimeStep(timeStepControl_->getInitTimeStep());
+  int order = timeStepControl_->getInitOrder();
+  if (order == 0) order = stepper_->getOrder();
+  if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
+  if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
+  newState->setOrder(order);
+
+  newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
   solutionHistory_->addState(newState);
 }
@@ -252,7 +231,7 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
     // Make integratorPL_ consistent with new SolutionHistory.
     RCP<ParameterList> shPL = sh->getNonconstParameterList();
     integratorPL_->set("Solution History", shPL->name());
-    integratorPL_->set(shPL->name(), shPL);
+    integratorPL_->set(shPL->name(), *shPL);
 
     solutionHistory_ = sh;
   }
@@ -279,7 +258,7 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
         timeStepControl_ = rcp(new TimeStepControl<Scalar>());
         RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
         integratorPL_->set("Time Step Control", tscPL->name());
-        integratorPL_->set(tscPL->name(), tscPL);
+        integratorPL_->set(tscPL->name(), *tscPL);
       }
     }
 
@@ -287,7 +266,7 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
     // Make integratorPL_ consistent with new TimeStepControl.
     RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
     integratorPL_->set("Time Step Control", tscPL->name());
-    integratorPL_->set(tscPL->name(), tscPL);
+    integratorPL_->set(tscPL->name(), *tscPL);
     timeStepControl_ = tsc;
   }
 
@@ -304,12 +283,16 @@ void IntegratorBasic<Scalar>::setObserver(
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
         Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
-      // add obsever to output integrator time step info
-      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs =
+      // Add basic observer to output time step info
+      Teuchos::RCP<IntegratorObserverBasic<Scalar> > basicObs =
           Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
-      integratorObserver_->addObserver(outputObs);
+      integratorObserver_->addObserver(basicObs);
     }
   } else {
+    if (integratorObserver_ == Teuchos::null) {
+      integratorObserver_ =
+        Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
+    }
     integratorObserver_->addObserver(obs);
   }
 
@@ -328,14 +311,38 @@ void IntegratorBasic<Scalar>::initialize()
   this->setSolutionHistory();
   this->setObserver();
 
-  if (timeStepControl_->getMinOrder() == 0)
+  // Ensure TimeStepControl orders match the Stepper orders.
+  if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
       timeStepControl_->setMinOrder(stepper_->getOrderMin());
-  if (timeStepControl_->getMaxOrder() == 0)
+  if (timeStepControl_->getMinOrder() > stepper_->getOrderMax())
+      timeStepControl_->setMinOrder(stepper_->getOrderMax());
+
+  if (timeStepControl_->getMaxOrder() == 0 ||
+      timeStepControl_->getMaxOrder() > stepper_->getOrderMax())
       timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getMaxOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setMaxOrder(timeStepControl_->getMinOrder());
+
   if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
       timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
   if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
       timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    timeStepControl_->getMinOrder() > timeStepControl_->getMaxOrder(),
+    std::out_of_range,
+       "Error - Invalid TimeStepControl min order greater than max order.\n"
+    << "        Min order = " << timeStepControl_->getMinOrder() << "\n"
+    << "        Max order = " << timeStepControl_->getMaxOrder() << "\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder() ||
+    timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder(),
+    std::out_of_range,
+       "Error - Initial TimeStepControl order is out of min/max range.\n"
+    << "        Initial order = " << timeStepControl_->getInitOrder() << "\n"
+    << "        Min order     = " << timeStepControl_->getMinOrder()  << "\n"
+    << "        Max order     = " << timeStepControl_->getMaxOrder()  << "\n");
 
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
@@ -404,6 +411,12 @@ void IntegratorBasic<Scalar>::startIntegrator()
     return;
   }
   integratorTimer_->start();
+  // get optimal initial time step
+  const Scalar initDt = 
+     std::min(timeStepControl_->getInitTimeStep(),
+              stepper_->getInitTimeStep(solutionHistory_));
+  // update initial time step
+  timeStepControl_->setInitTimeStep(initDt);
   integratorStatus_ = WORKING;
 }
 
@@ -458,6 +471,10 @@ void IntegratorBasic<Scalar>::startTimeStep()
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > wsmd =
     solutionHistory_->getWorkingState()->getMetaData();
+
+  //set the Abs/Rel tolerance
+  wsmd->setTolRel(timeStepControl_->getMaxRelError());
+  wsmd->setTolAbs(timeStepControl_->getMaxAbsError());
 
   // Check if we need to dump screen output this step
   std::vector<int>::const_iterator it =
@@ -535,6 +552,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     }
 
     wsmd->setNFailures(wsmd->getNFailures()+1);
+    wsmd->setNRunningFailures(wsmd->getNRunningFailures()+1);
     wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
     wsmd->setSolutionStatus(FAILED);
     return;
@@ -572,9 +590,6 @@ void IntegratorBasic<Scalar>::endIntegrator()
 
   integratorTimer_->stop();
   runtime_ = integratorTimer_->totalElapsedTime();
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //outputObserver_->observeEndIntegrator(*this, out, runtime);
 }
 
 

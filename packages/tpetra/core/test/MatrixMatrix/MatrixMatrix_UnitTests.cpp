@@ -669,26 +669,49 @@ mult_test_results jacobi_test(
   typedef Vector<SC,LO,GO,NT> Vector_t;
   typedef Map<LO,GO,NT> Map_t;
   RCP<const Map_t> map = A->getRowMap();
-
+  SC one = Teuchos::ScalarTraits<SC>::one();
   SC omega=Teuchos::ScalarTraits<SC>::one();
   Vector_t Dinv(B->getRowMap());
   Dinv.putScalar(1.0);
+
 
   // Jacobi version
   RCP<Matrix_t> C = rcp(new Matrix_t(B->getRowMap(),0));
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  Dinv.putScalar(omega);
-  RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
-  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
-  Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
-  AB->leftScale(Dinv);
-  SC one = Teuchos::ScalarTraits<SC>::one();
-  Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C_check);
+  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  bool done=false;
+#ifdef HAVE_TPETRA_INST_OPENMP
+    if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
+      Teuchos::ParameterList p;
+      p.set("openmp: algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
+#endif
+#ifdef HAVE_TPETRA_INST_CUDA
+    if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
+      Teuchos::ParameterList p;
+      p.set("cuda: algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
+#endif
+    // Fallback
+    if(!done) {
+      Dinv.putScalar(omega);
+      RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
+
+      Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
+      AB->leftScale(Dinv);
+      Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
+      if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
+    }
 
   // Check the difference
-  Tpetra::MatrixMatrix::Add(*C, false, -one, *C_check, one);
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  Tpetra::MatrixMatrix::Add(*C, false, -one, *C2, false,one,C_check);
   C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
 
   // Error Check
@@ -1472,7 +1495,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {
@@ -1586,7 +1609,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {

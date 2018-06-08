@@ -102,10 +102,6 @@ namespace Tpetra {
   ///   Map's documentation for a discussion of the types that are
   ///   valid to use here.
   ///
-  /// \tparam classic DO NOT SET THIS EXPLICITLY.  This template
-  ///   parameter only exists for backwards compatibility.  It must
-  ///   always be false.
-  ///
   /// \section Tpetra_DistObject_Summary Summary
   ///
   /// Most Tpetra users will only use this class' methods to perform
@@ -217,8 +213,7 @@ namespace Tpetra {
   template <class Packet,
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
             class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type,
-            const bool classic = Node::classic>
+            class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class DistObject :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable
@@ -246,7 +241,7 @@ namespace Tpetra {
 
   private:
     typedef typename Kokkos::View<packet_type*, device_type>::size_type view_size_type;
-    typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic> this_type;
+    typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> this_type;
 
   public:
     //! The type of the Map specialization to use with this class.
@@ -260,7 +255,7 @@ namespace Tpetra {
     explicit DistObject (const Teuchos::RCP<const map_type>& map);
 
     //! Copy constructor.
-    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs);
+    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~DistObject ();

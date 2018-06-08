@@ -51,6 +51,14 @@
 namespace ROL {
 namespace Elementwise {
 
+enum EReductionType {
+  REDUCE_SUM, ///< Sum
+  REDUCE_MIN, ///< Min
+  REDUCE_MAX, ///< Max
+  REDUCE_AND, ///< Logical AND
+  REDUCE_BOR  ///< Bitwise OR
+};
+
 // Generic reduction operation
 template<class Real>
 class ReductionOp {
@@ -59,7 +67,7 @@ public:
   virtual void reduce( const Real &input, Real &output ) const = 0;
   virtual void reduce( const volatile Real &input, volatile Real &output ) const = 0; 
   virtual Real initialValue() const = 0;
-  virtual Teuchos::EReductionType reductionType() const = 0;
+  virtual EReductionType reductionType() const = 0;
 };
 
 template<class Real> 
@@ -77,8 +85,8 @@ public:
     return 0;
   }
 
-  Teuchos::EReductionType reductionType() const {
-    return Teuchos::REDUCE_SUM;
+  EReductionType reductionType() const {
+    return Elementwise::REDUCE_SUM;
   }
 
 };
@@ -98,8 +106,8 @@ public:
     return 1.0;
   }
 
-  Teuchos::EReductionType reductionType() const {
-    return Teuchos::REDUCE_AND;
+  EReductionType reductionType() const {
+    return Elementwise::REDUCE_AND;
   }
 };
 
@@ -107,9 +115,9 @@ template<class Real>
 class ReductionMin : public ReductionOp<Real> {
 public:
   ReductionMin() {
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
+      ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMin() requires std::numeric_limits "  
-      << "be specialized on supplied template parameter." << std::endl); 
+        "be specialized on supplied template parameter.\n" ); 
   }
 
   void reduce( const Real &input, Real &output ) const {
@@ -124,8 +132,8 @@ public:
     return std::numeric_limits<Real>::max();
   }
 
-  Teuchos::EReductionType reductionType() const {
-    return Teuchos::REDUCE_MIN;
+  EReductionType reductionType() const {
+    return Elementwise::REDUCE_MIN;
   }
 
 };
@@ -134,9 +142,9 @@ template<class Real>
 class ReductionMax : public ReductionOp<Real> {
 public:
   ReductionMax() {
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
+      ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMax() requires std::numeric_limits "  
-      << "be specialized on supplied template parameter." << std::endl); 
+        "be specialized on supplied template parameter.\n" ); 
   }
 
   void reduce( const Real &input, Real &output ) const {
@@ -151,8 +159,8 @@ public:
     return std::numeric_limits<Real>::min();
   }
 
-  Teuchos::EReductionType reductionType() const {
-    return Teuchos::REDUCE_MAX;
+  EReductionType reductionType() const {
+    return Elementwise::REDUCE_MAX;
   }
 };
 
@@ -172,8 +180,8 @@ public:
     return 0;
   }
 
-  Teuchos::EReductionType reductionType() const {
-    return Teuchos::REDUCE_SUM;
+  EReductionType reductionType() const {
+    return Elementwise::REDUCE_SUM;
   }
 
 };

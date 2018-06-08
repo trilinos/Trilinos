@@ -39,6 +39,7 @@ public:
     const Scalar errorRel,
     const int    order,
     const int    nFailures,
+    const int    nRunningFailures,
     const int    nConsecutiveFailures,
     const Status solutionStatus,
     const bool   output,
@@ -68,6 +69,7 @@ public:
     Scalar getErrorRel()             const {return errorRel_;}
     Scalar getOrder()                const {return order_;}
     int    getNFailures()            const {return nFailures_;}
+    int    getNRunningFailures()     const {return nRunningFailures_;}
     int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
     Status getSolutionStatus()       const {return solutionStatus_;}
     bool   getOutput()               const {return output_;}
@@ -75,6 +77,8 @@ public:
     bool   getIsSynced()             const {return isSynced_;}
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
+    Scalar getTolAbs()               const {return tolAbs_;}
+    Scalar getTolRel()               const {return tolRel_;}
 
     void setTime(Scalar time) {time_ = time;}
     void setIStep(int iStep) {iStep_ = iStep;}
@@ -83,6 +87,7 @@ public:
     void setErrorRel (Scalar errorRel){errorRel_ = errorRel;}
     void setOrder(Scalar order) {order_ = order;}
     void setNFailures(int nFailures) {nFailures_ = nFailures;}
+    void setNRunningFailures(int nFailures) {nRunningFailures_ = nFailures;}
     void setNConsecutiveFailures(int nConsecutiveFailures)
       {nConsecutiveFailures_ = nConsecutiveFailures;}
     void setSolutionStatus(Status solutionStatus)
@@ -93,6 +98,9 @@ public:
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
     void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
+    void setTolAbs(Scalar tolAbs){tolAbs_ = tolAbs;}
+    void setTolRel(Scalar tolRel){tolRel_ = tolRel;}
+       
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -110,7 +118,10 @@ protected:
   Scalar errorRel_;          ///< Relative local truncation error
   Scalar order_;             ///< Order of this solution
   int nFailures_;            ///< Total number of stepper failures
+  int nRunningFailures_;     ///< Total number of running stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
+  Scalar tolRel_;            ///< Absolute tolerance 
+  Scalar tolAbs_;            ///< Relative tolerance
 
   /** \brief The solutionStatus is used to indicate
       - if the solution is still being worked on; WORKING

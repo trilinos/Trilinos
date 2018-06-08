@@ -16,6 +16,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_TimeStepControlStrategyComposite.hpp"
 
 #include <iostream>
 #include <iterator>
@@ -55,6 +56,9 @@ public:
   /// Destructor
   virtual ~TimeStepControl() {}
 
+  virtual void initialize(Teuchos::RCP<Teuchos::ParameterList> pList =
+    Teuchos::null) { this->setParameterList(pList); }
+
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
     const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
@@ -66,7 +70,11 @@ public:
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
+  /** \brief Set the TimeStepControlStrategy. */
+  virtual void setTimeStepControlStrategy(
+        Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs = Teuchos::null);
+
+  /// \name Overridden from Teuchos::ParameterListAccepto{}
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -107,14 +115,6 @@ public:
       { return tscPL_->get<int>   ("Initial Order"); }
     virtual int getMaxOrder() const
       { return tscPL_->get<int>   ("Maximum Order"); }
-    virtual Scalar getAmplFactor() const
-      { return tscPL_->get<double>("Amplification Factor"); }
-    virtual Scalar getReductFactor() const
-      { return tscPL_->get<double>("Reduction Factor");}
-    virtual Scalar getMinEta() const
-      { return tscPL_->get<double>   ("Minimum Value Monitoring Function"); }
-    virtual Scalar getMaxEta() const
-      { return tscPL_->get<double>   ("Maximum Value Monitoring Function"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
     virtual std::vector<int> getOutputIndices() const
@@ -128,6 +128,8 @@ public:
                get<int>("Maximum Number of Consecutive Stepper Failures"); }
     virtual int getNumTimeSteps() const
       { return tscPL_->get<int>("Number of Time Steps"); }
+    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
+       getTimeStepControlStrategy() const { return stepControlStrategy_;}
   //@}
 
   /// \name Set ParameterList values
@@ -180,7 +182,6 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
-    virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory);
   //@}
 
 protected:
@@ -192,6 +193,8 @@ protected:
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
+
+  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
 
 };
 } // namespace Tempus

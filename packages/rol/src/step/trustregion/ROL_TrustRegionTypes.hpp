@@ -64,6 +64,7 @@ namespace ROL {
     TRUSTREGION_TRUNCATEDCG,
     TRUSTREGION_DOGLEG,
     TRUSTREGION_DOUBLEDOGLEG,
+    TRUSTREGION_LINMORE,
     TRUSTREGION_LAST
   };
 
@@ -74,6 +75,7 @@ namespace ROL {
       case TRUSTREGION_TRUNCATEDCG:   retString = "Truncated CG";        break;
       case TRUSTREGION_DOGLEG:        retString = "Dogleg";              break;
       case TRUSTREGION_DOUBLEDOGLEG:  retString = "Double Dogleg";       break;
+      case TRUSTREGION_LINMORE:       retString = "Lin-More";            break;
       case TRUSTREGION_LAST:          retString = "Last Type (Dummy)";   break;
       default:                        retString = "INVALID ETrustRegion";
     }
@@ -89,7 +91,8 @@ namespace ROL {
     return( (ls == TRUSTREGION_CAUCHYPOINT)  ||
             (ls == TRUSTREGION_TRUNCATEDCG)  ||
             (ls == TRUSTREGION_DOGLEG)       ||
-            (ls == TRUSTREGION_DOUBLEDOGLEG)
+            (ls == TRUSTREGION_DOUBLEDOGLEG) ||
+            (ls == TRUSTREGION_LINMORE)
           );
   }
 
@@ -132,6 +135,7 @@ namespace ROL {
   enum ETrustRegionModel{
     TRUSTREGION_MODEL_COLEMANLI = 0,
     TRUSTREGION_MODEL_KELLEYSACHS,
+    TRUSTREGION_MODEL_LINMORE,
     TRUSTREGION_MODEL_LAST
   };
 
@@ -140,6 +144,7 @@ namespace ROL {
     switch(tr) {
       case TRUSTREGION_MODEL_COLEMANLI:   retString = "Coleman-Li";        break;
       case TRUSTREGION_MODEL_KELLEYSACHS: retString = "Kelley-Sachs";      break;
+      case TRUSTREGION_MODEL_LINMORE:     retString = "Lin-More";          break;
       case TRUSTREGION_MODEL_LAST:        retString = "Last Type (Dummy)"; break;
       default:                            retString = "INVALID ETrustRegionModel";
     }
@@ -152,8 +157,9 @@ namespace ROL {
       \return 1 if the argument is a valid TrustRegionModel; 0 otherwise.
     */
   inline int isValidTrustRegionModel(ETrustRegionModel ls){
-    return( (ls == TRUSTREGION_MODEL_COLEMANLI)  ||
-            (ls == TRUSTREGION_MODEL_KELLEYSACHS)
+    return( (ls == TRUSTREGION_MODEL_COLEMANLI)   ||
+            (ls == TRUSTREGION_MODEL_KELLEYSACHS) ||
+            (ls == TRUSTREGION_MODEL_LINMORE)
           );
   }
 
@@ -186,7 +192,30 @@ namespace ROL {
     }
     return TRUSTREGION_MODEL_COLEMANLI;
   }
-  
+
+  inline bool isValidTrustRegionSubproblem(ETrustRegion etr, ETrustRegionModel etrm, bool isBnd) {
+    if (etrm != TRUSTREGION_MODEL_LINMORE || !isBnd) {
+      switch(etr) {
+        case TRUSTREGION_CAUCHYPOINT:  return true;
+        case TRUSTREGION_DOGLEG:       return true;
+        case TRUSTREGION_DOUBLEDOGLEG: return true;
+        case TRUSTREGION_TRUNCATEDCG:  return true;
+        case TRUSTREGION_LINMORE:      return false;
+        default:                       return false;
+      }
+    }
+    else {
+      switch(etr) {
+        case TRUSTREGION_CAUCHYPOINT:  return false;
+        case TRUSTREGION_DOGLEG:       return false;
+        case TRUSTREGION_DOUBLEDOGLEG: return false;
+        case TRUSTREGION_TRUNCATEDCG:  return false;
+        case TRUSTREGION_LINMORE:      return true;
+        default:                       return false;
+      }
+    }
+  }
+
   /** \enum  ROL::ETrustRegionFlag 
       \brief Enumation of flags used by trust-region solvers.
 

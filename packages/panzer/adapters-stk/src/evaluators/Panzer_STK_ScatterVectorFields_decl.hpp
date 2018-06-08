@@ -68,7 +68,29 @@ namespace panzer_stk {
   * "Basis" of type <code>Teuchos::RCP<panzer::BasisIRLayout></code> and
   * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
   */
-PANZER_EVALUATOR_CLASS(ScatterVectorFields)
+template<typename EvalT, typename Traits>
+class ScatterVectorFields
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ScatterVectorFields(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
 
   std::vector<std::string> names_;
@@ -87,7 +109,8 @@ public:
                       const std::vector<std::string> & names,
                       const std::vector<double> & scaling = std::vector<double>());
  
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ScatterVectorFields
+
 
 }
 

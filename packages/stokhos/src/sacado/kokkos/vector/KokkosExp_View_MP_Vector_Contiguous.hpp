@@ -121,7 +121,7 @@ void deep_copy(
     , "Can only deep copy into non-const type" );
 
   typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
-  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
@@ -146,7 +146,7 @@ void deep_copy(
   //               , Kokkos::HostSpace >::value
   //   , "Deep copy from a FAD type must be statically sized or host space" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant scalar
@@ -167,7 +167,7 @@ void deep_copy(
     , "Can only deep copy into non-const type" );
 
   typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
-  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
@@ -194,7 +194,7 @@ void deep_copy(
   //               , Kokkos::HostSpace >::value
   //   , "Deep copy from a FAD type must be statically sized or host space" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 /* Specialize for deep copy of MP::Vector */
@@ -1463,7 +1463,7 @@ namespace Impl {
 // Specialization for deep_copy( view, view::value_type ) for Cuda
 #if defined( KOKKOS_HAVE_CUDA )
 template< class OutputView >
-struct ViewFill< OutputView ,
+struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
                                                         Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
@@ -1493,15 +1493,15 @@ struct ViewFill< OutputView ,
       const size_type nvec = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
         output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           input.fastAccessCoeff(is) ;
@@ -1509,7 +1509,7 @@ struct ViewFill< OutputView ,
     }
   };
 
-  ViewFill( const OutputView & output , const_value_type & input )
+  StokhosViewFill( const OutputView & output , const_value_type & input )
   {
     if ( Sacado::is_constant(input) ) {
       deep_copy( output , input.fastAccessCoeff(0) );
@@ -1525,7 +1525,7 @@ struct ViewFill< OutputView ,
       const size_type block_size = 256;
 
       const size_type rows_per_block = block_size / vector_length;
-      const size_type n = output.dimension_0();
+      const size_type n = output.extent(0);
       const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
       const size_type team_size = rows_per_block * vector_length;
       Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
