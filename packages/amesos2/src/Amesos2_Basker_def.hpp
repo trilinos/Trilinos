@@ -83,13 +83,13 @@ Basker<Matrix,Vector>::Basker(
   
 #ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental Basker Amesos2");
   */
   typedef Kokkos::OpenMP Exe_Space;
-#elif defined(KOKKOS_HAVE_SERIAL)
+#elif defined(KOKKOS_ENABLE_SERIAL)
   typedef Kokkos::Serial Exe_Space;
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,

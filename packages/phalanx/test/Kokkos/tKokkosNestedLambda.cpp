@@ -35,6 +35,7 @@ public:
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc,argv);
+  {
 
   const int num_cells = 10;
   const int num_pts = 8;
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
   MyFunctor f(a,b,c);
   f.evaluate();
 
+  }
   Kokkos::finalize();
   return 0;
 }

@@ -73,7 +73,7 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( point.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Point must have rank 1. ");
-    INTREPID2_TEST_FOR_EXCEPTION( point.dimension(0) != cellTopo.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( point.extent(0) != cellTopo.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Point and cell dimensions do not match. ");
 #endif
     bool testResult = true;
@@ -172,7 +172,7 @@ namespace Intrepid2 {
 //                                   ">>> ERROR (Intrepid2::CellTools::checkPointsetInclusion): rank-1, 2 or 3 required for input points array. ");
 
 //     // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
-//     INTREPID2_TEST_FOR_EXCEPTION( !((index_type) points.dimension(rank - 1) == (index_type)cellTopo.getDimension() ), std::invalid_argument,
+//     INTREPID2_TEST_FOR_EXCEPTION( !((index_type) points.extent(rank - 1) == (index_type)cellTopo.getDimension() ), std::invalid_argument,
 //                                   ">>> ERROR (Intrepid2::CellTools::checkPointsetInclusion): Point and cell dimensions do not match. ");
 // #endif
   
@@ -184,12 +184,12 @@ namespace Intrepid2 {
 //       inRefCell.resize(1); 
 //       break;
 //     case 2: 
-//       dim0 = static_cast<index_type>(points.dimension(0)); 
+//       dim0 = static_cast<index_type>(points.extent(0)); 
 //       inRefCell.resize(dim0); 
 //       break;
 //     case 3: 
-//       dim0 = static_cast<index_type>(points.dimension(0)); 
-//       dim1 = static_cast<index_type>(points.dimension(1)); 
+//       dim0 = static_cast<index_type>(points.extent(0)); 
+//       dim1 = static_cast<index_type>(points.extent(1)); 
 //       inRefCell.resize(dim0, dim1); 
 //       break;
 //     }
@@ -237,7 +237,7 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): rank difference between inCell and points is 1.");  
       const ordinal_type iend = inCell.rank();
       for (ordinal_type i=0;i<iend;++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inCell.dimension(i) != points.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inCell.extent(i) != points.extent(i), std::invalid_argument, 
                                       ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): dimension mismatch between inCell and points.");  
       }
     }
@@ -246,7 +246,7 @@ namespace Intrepid2 {
     // do we really need to support 3 ranks ? 
     switch (points.rank()) {
     case 2: {
-      const ordinal_type iend = points.dimension(0);
+      const ordinal_type iend = points.extent(0);
       for (ordinal_type i=0;i<iend;++i) {
         const auto point = Kokkos::subview(points, i, Kokkos::ALL());
         inCell(i) = checkPointInclusion(point, cellTopo, threshold);
@@ -255,8 +255,8 @@ namespace Intrepid2 {
     }
     case 3: {
       const ordinal_type 
-        iend = points.dimension(0), 
-        jend = points.dimension(1); 
+        iend = points.extent(0), 
+        jend = points.extent(1); 
       for (ordinal_type i=0;i<iend;++i) 
         for (ordinal_type j=0;j<jend;++j) {
           const auto point = Kokkos::subview(points, i, j, Kokkos::ALL());
@@ -295,17 +295,17 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): Points must have rank 3. ");
       INTREPID2_TEST_FOR_EXCEPTION( cellWorkset.rank() != 3, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): cellWorkset must have rank 3. ");
-      INTREPID2_TEST_FOR_EXCEPTION( points.dimension(2) != cellTopo.getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( points.extent(2) != cellTopo.getDimension(), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Points and cell dimensions do not match. ");
-      INTREPID2_TEST_FOR_EXCEPTION( cellWorkset.dimension(2) != cellTopo.getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( cellWorkset.extent(2) != cellTopo.getDimension(), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): cellWorkset and cell dimensions do not match. ");
-      INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != cellWorkset.dimension(0) , std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( points.extent(0) != cellWorkset.extent(0) , std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): cellWorkset and points dimension(0) does not match. ");
     }
 #endif    
     const ordinal_type 
-      numCells = cellWorkset.dimension(0),
-      numPoints = points.dimension(1), 
+      numCells = cellWorkset.extent(0),
+      numPoints = points.extent(1), 
       spaceDim = cellTopo.getDimension();
 
     using result_layout = typename DeduceLayout< decltype(points) >::result_layout;

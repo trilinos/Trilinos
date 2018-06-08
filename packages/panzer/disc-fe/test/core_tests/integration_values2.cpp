@@ -91,7 +91,7 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       node_coordinates(cell,0,x) = 0.0;
       node_coordinates(cell,0,y) = 0.0;
       node_coordinates(cell,1,x) = 1.0;
@@ -104,7 +104,7 @@ namespace panzer {
 
     int_values.evaluateValues(node_coordinates);
     
-    TEST_EQUALITY(int_values.ip_coordinates.dimension(1), 4);
+    TEST_EQUALITY(int_values.ip_coordinates.extent(1), 4);
     double realspace_x_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
     double realspace_y_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
     TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,0), 
@@ -156,7 +156,7 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       node_coordinates(cell,0,x) = 0.0;
       node_coordinates(cell,0,y) = 0.0;
       node_coordinates(cell,1,x) = 1.0;
@@ -170,9 +170,9 @@ namespace panzer {
     int_values_vol.evaluateValues(node_coordinates);
     int_values_side.evaluateValues(node_coordinates);
     
-    TEST_EQUALITY(int_values_vol.ip_coordinates.dimension(1), 4);
-    TEST_EQUALITY(int_values_side.ip_coordinates.dimension(1), 4);
-    TEST_EQUALITY(int_values_side.weighted_normals.dimension(1), 4);
+    TEST_EQUALITY(int_values_vol.ip_coordinates.extent(1), 4);
+    TEST_EQUALITY(int_values_side.ip_coordinates.extent(1), 4);
+    TEST_EQUALITY(int_values_side.weighted_normals.extent(1), 4);
     double realspace_x_coord_1 = 0.25;
     double realspace_y_coord_1 = 0.25;
     TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,0), 
@@ -223,7 +223,7 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       node_coordinates(cell,0,x) = 0.0;
       node_coordinates(cell,0,y) = 0.0;
       node_coordinates(cell,1,x) = 1.0;
@@ -236,7 +236,7 @@ namespace panzer {
 
     int_values_bc.evaluateValues(node_coordinates);
     
-    TEST_EQUALITY(int_values_bc.ip_coordinates.dimension(1), 2);
+    TEST_EQUALITY(int_values_bc.ip_coordinates.extent(1), 2);
     double realspace_x_coord_1 = 1.0;
     double realspace_y_coord_1 = 0.25;
     TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,0), 

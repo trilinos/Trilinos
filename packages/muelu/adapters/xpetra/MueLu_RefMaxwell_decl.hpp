@@ -316,6 +316,8 @@ namespace MueLu {
                             Hierarchy22_->template clone<NewNode> (new_node)));
     }
 
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
+
   private:
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)

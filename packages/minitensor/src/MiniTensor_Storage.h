@@ -61,7 +61,7 @@ struct dimension_const<DYNAMIC, C> {
 template<Index D>
 struct check_static {
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     // Empty
 #else
   static Index const

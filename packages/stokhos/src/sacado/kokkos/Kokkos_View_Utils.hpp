@@ -314,7 +314,7 @@ struct StokhosViewFill
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
     for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
+      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
     }}}}}}}
   }
 

@@ -329,7 +329,7 @@ namespace Intrepid2 {
 
         // Dimensions for the output arrays:
         const ordinal_type numFields = tetBasis.getCardinality();
-        const ordinal_type numNodes  = tetNodes.dimension(0);
+        const ordinal_type numNodes  = tetNodes.extent(0);
         const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
         // Check VALUE of basis functions at nodes: resize vals to rank-2 container:\n";
@@ -357,7 +357,7 @@ namespace Intrepid2 {
           }
         }
 
-        const ordinal_type numPoints = tetPoints.dimension(0);
+        const ordinal_type numPoints = tetPoints.extent(0);
 
         // Check VALUE of basis functions at points: resize vals to rank-2 container:\n";
         {

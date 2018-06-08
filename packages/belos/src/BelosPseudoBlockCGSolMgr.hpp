@@ -168,12 +168,12 @@ namespace Belos {
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
-     *		\param pl [in] ParameterList with construction information
-     *			\htmlonly
-     *			<iframe src="belos_PseudoBlockCG.xml" width=100% scrolling="no" frameborder="0">
-     *			</iframe>
-     *			<hr />
-     *			\endhtmlonly   
+     *          \param pl [in] ParameterList with construction information
+     *                  \htmlonly
+     *                  <iframe src="belos_PseudoBlockCG.xml" width=100% scrolling="no" frameborder="0">
+     *                  </iframe>
+     *                  <hr />
+     *                  \endhtmlonly
      */
     PseudoBlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                          const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -330,7 +330,6 @@ namespace Belos {
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
     // Default solver values.
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
     static constexpr int maxIters_default_ = 1000;
     static constexpr bool assertPositiveDefiniteness_default_ = true;
     static constexpr bool showMaxResNormOnly_default_ = false;
@@ -365,7 +364,7 @@ namespace Belos {
 template<class ScalarType, class MV, class OP>
 PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -388,7 +387,7 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -558,7 +557,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {
-    convtol_ = params->get ("Convergence Tolerance", convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set ("Convergence Tolerance", convtol_);
@@ -683,9 +688,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   if (validParams_.is_null()) {
     // Set all the valid parameters and their default values.
     RCP<ParameterList> pl = parameterList ();
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
-      "iterative solver in order for the linera system to be declared converged.");
+      "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
@@ -781,10 +786,10 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (numRHS2Solve == 1) {
     block_cg_iter =
-      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                           
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
   } else {
     block_cg_iter =
-      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                              
+      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
   }
 
 

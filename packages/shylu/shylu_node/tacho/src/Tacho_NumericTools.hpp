@@ -390,7 +390,7 @@ namespace Tacho {
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
               ::factorize_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
@@ -439,7 +439,7 @@ namespace Tacho {
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::SerialPanel>
               ::factorize_recursive_serial(sched, member, 
@@ -469,10 +469,10 @@ namespace Tacho {
           return;
         }
 
-        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1() ||
-                                 x.dimension_0() != t.dimension_0() ||
-                                 x.dimension_1() != t.dimension_1(), std::logic_error,
+        TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
+                                 x.extent(1) != b.extent(1) ||
+                                 x.extent(0) != t.extent(0) ||
+                                 x.extent(1) != t.extent(1), std::logic_error,
                                  "supernode data structure is not allocated");
 
         TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
@@ -491,12 +491,12 @@ namespace Tacho {
         
         timer.reset();
         {
-          value_type_array buf("buf", _info.max_schur_size*x.dimension_1());
+          value_type_array buf("buf", _info.max_schur_size*x.extent(1));
           const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
               ::solve_lower_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
@@ -514,7 +514,7 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
 
         if (verbose) {
-          printf("Summary: NumericTools (SerialSolve: %3d)\n", ordinal_type(x.dimension_1()));
+          printf("Summary: NumericTools (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
           printf("========================================\n");
 
           print_stat_solve();
@@ -541,7 +541,7 @@ namespace Tacho {
         {
           const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);          
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
+          const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -582,7 +582,11 @@ namespace Tacho {
           size_t num_superblock_device = 0;
           if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
             // host space 
-            num_superblock_device = host_space::thread_pool_size(0);
+            #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+              num_superblock_device = host_space::thread_pool_size(0);
+            #else
+              num_superblock_device = host_space::impl_thread_pool_size(0);
+            #endif
           } else {
             // cuda space (what would be best number)
             num_superblock_device = _max_num_superblocks;
@@ -619,7 +623,7 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
 
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
+        const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i)));
@@ -657,7 +661,7 @@ namespace Tacho {
         {
           const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);          
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
+          const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -700,7 +704,11 @@ namespace Tacho {
           size_t num_superblock_device = 0;
           if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
             // host space 
-            num_superblock_device = host_space::thread_pool_size(0);
+            #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+              num_superblock_device = host_space::thread_pool_size(0);
+            #else
+              num_superblock_device = host_space::impl_thread_pool_size(0);
+            #endif
           } else {
             // cuda space (what would be best number)
             num_superblock_device = _max_num_superblocks;
@@ -737,7 +745,7 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
         
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
+        const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i), nb));
@@ -765,10 +773,10 @@ namespace Tacho {
                              const value_type_matrix &b,   // right hand side
                              const value_type_matrix &t,
                              const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
-        TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1() ||
-                                 x.dimension_0() != t.dimension_0() ||
-                                 x.dimension_1() != t.dimension_1(), std::logic_error,
+        TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
+                                 x.extent(1) != b.extent(1) ||
+                                 x.extent(0) != t.extent(0) ||
+                                 x.extent(1) != t.extent(1), std::logic_error,
                                  "supernode data structure is not allocated");
 
         TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
@@ -795,7 +803,7 @@ namespace Tacho {
           {
             const size_t max_functor_size = 2*max(sizeof(functor_lower_type), sizeof(functor_upper_type));
             const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);
-            const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0()/2;
+            const size_t estimate_max_numtasks = _sid_block_colidx.extent(0)/2;
             
             const size_t
               task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -818,7 +826,7 @@ namespace Tacho {
           {
             const size_t
               min_block_size  = 16,
-              max_block_size  = 2*_info.max_schur_size*sizeof(value_type)*x.dimension_1();
+              max_block_size  = 2*_info.max_schur_size*sizeof(value_type)*x.extent(1);
             
             size_t superblock_size = 1;
             for ( ;superblock_size<max_block_size;superblock_size*=2);
@@ -826,7 +834,11 @@ namespace Tacho {
             size_t num_superblock_device = 0;
             if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
               // host space 
+            #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
+            #else
+              num_superblock_device = host_space::impl_thread_pool_size(0);
+            #endif
             } else {
               // cuda space (what would be best number)
               num_superblock_device = _max_num_superblocks;
@@ -849,7 +861,7 @@ namespace Tacho {
           stat.t_extra += timer.seconds();
           
           timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
+          const ordinal_type nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i) {
             auto fl = Kokkos::host_spawn(Kokkos::TaskTeam(_sched_solve, Kokkos::TaskPriority::High),
                                          functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
@@ -866,7 +878,7 @@ namespace Tacho {
         stat.t_extra += timer.seconds();
         
         if (verbose) {
-          printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.dimension_1()));
+          printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.extent(1)));
           printf("==========================================\n");
 
           print_stat_solve();
@@ -898,7 +910,7 @@ namespace Tacho {
           const size_t max_dep_future_size 
             = (_info.max_nchildren + max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
           const size_t max_functor_size = 2*sizeof(functor_type);
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
+          const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -942,7 +954,11 @@ namespace Tacho {
           size_t num_superblock_device = 0;
           if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
             // host space 
-            num_superblock_device = host_space::thread_pool_size(0);
+            #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+              num_superblock_device = host_space::thread_pool_size(0);
+            #else
+              num_superblock_device = host_space::impl_thread_pool_size(0);
+            #endif
           } else {
             // cuda space (what would be best number)
             num_superblock_device = _max_num_superblocks;
@@ -979,7 +995,7 @@ namespace Tacho {
         stat.t_copy += timer.seconds();
 
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
+        const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
@@ -1023,7 +1039,7 @@ namespace Tacho {
           const size_t max_dep_future_size 
             = (_info.max_nchildren + max_nrows_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
           const size_t max_functor_size = 2*sizeof(functor_type);
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
+          const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -1067,7 +1083,11 @@ namespace Tacho {
           size_t num_superblock_device = 0;
           if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
             // host space 
-            num_superblock_device = host_space::thread_pool_size(0);
+            #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+              num_superblock_device = host_space::thread_pool_size(0);
+            #else
+              num_superblock_device = host_space::impl_thread_pool_size(0);
+            #endif
           } else {
             // cuda space (what would be best number)
             num_superblock_device = _max_num_superblocks;
@@ -1104,7 +1124,7 @@ namespace Tacho {
         stat.t_copy += timer.seconds();
         
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
+        const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i), blksize, panelsize));
@@ -1151,9 +1171,9 @@ namespace Tacho {
                               const value_type_matrix &x,
                               const value_type_matrix &b) {
         TACHO_TEST_FOR_EXCEPTION(size_t(A.NumRows()) != size_t(A.NumCols()) ||
-                                 size_t(A.NumRows()) != size_t(b.dimension_0()) ||
-                                 size_t(x.dimension_0()) != size_t(b.dimension_0()) ||
-                                 size_t(x.dimension_1()) != size_t(b.dimension_1()), std::logic_error,
+                                 size_t(A.NumRows()) != size_t(b.extent(0)) ||
+                                 size_t(x.extent(0)) != size_t(b.extent(0)) ||
+                                 size_t(x.extent(1)) != size_t(b.extent(1)), std::logic_error,
                                  "A,x and b dimensions are not compatible");
         CrsMatrixBase<value_type,host_space> h_A;
         h_A.createMirror(A); h_A.copy(A);
@@ -1162,7 +1182,7 @@ namespace Tacho {
         auto h_b = Kokkos::create_mirror_view(b); Kokkos::deep_copy(h_b, b);
 
         typedef ArithTraits<value_type> arith_traits;
-        const ordinal_type m = h_A.NumRows(), k = h_b.dimension_1();
+        const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
         double diff = 0, norm = 0;
         for (ordinal_type i=0;i<m;++i) {
           for (ordinal_type p=0;p<k;++p) {

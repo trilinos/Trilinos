@@ -141,6 +141,16 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
+#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#endif
+
 #ifdef HAVE_MUELU_MATLAB
 // This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
@@ -254,6 +264,15 @@ namespace MueLu {
       if (factoryName == "UserAggregationFactory")             return Build2<UserAggregationFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                       return Build2<UserPFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")        return Build2<VariableDofLaplacianFactory>        (paramList, factoryMapIn, factoryManagersIn);
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if (factoryName == "CoalesceDropFactory_kokkos")         return Build2<CoalesceDropFactory_kokkos>         (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoarseMapFactory_kokkos")            return Build2<CoarseMapFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoordinatesTransferFactory_kokkos")  return Build2<CoordinatesTransferFactory_kokkos>  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "NullspaceFactory_kokkos")            return Build2<NullspaceFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SaPFactory_kokkos")                  return Build2<SaPFactory_kokkos>                  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TentativePFactory_kokkos")           return Build2<TentativePFactory_kokkos>           (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UncoupledAggregationFactory_kokkos") return Build2<UncoupledAggregationFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
+#endif
 
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

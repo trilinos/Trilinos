@@ -140,7 +140,7 @@ struct ViewTraits {
   MemoryTraits;
 
   // figure out default layout based on execution space
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   static constexpr bool is_device_gpu = std::is_same<ExecutionSpace , Kokkos::Cuda>::value;
 #else
   static constexpr bool is_device_gpu = false;

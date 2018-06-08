@@ -89,8 +89,8 @@ namespace Intrepid2 {
 
       // second x-derivatives of u
       if (xd > 1) {
-        for (size_type cell=0; cell<result.dimension(0); cell++) {
-          for (size_type pt=0; pt<result.dimension(1); pt++) {
+        for (size_type cell=0; cell<result.extent(0); cell++) {
+          for (size_type pt=0; pt<result.extent(1); pt++) {
             result(cell,pt) = - xd*(xd-1)*std::pow(points(cell,pt,x), xd-2) *
                                 std::pow(points(cell,pt,y), yd) * std::pow(points(cell,pt,z), zd);
           }
@@ -99,8 +99,8 @@ namespace Intrepid2 {
 
       // second y-derivatives of u
       if (yd > 1) {
-        for (size_type cell=0; cell<result.dimension(0); cell++) {
-          for (size_type pt=0; pt<result.dimension(1); pt++) {
+        for (size_type cell=0; cell<result.extent(0); cell++) {
+          for (size_type pt=0; pt<result.extent(1); pt++) {
             result(cell,pt) -=  yd*(yd-1)*std::pow(points(cell,pt,y), yd-2) *
                                 std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,z), zd);
           }
@@ -109,8 +109,8 @@ namespace Intrepid2 {
 
       // second z-derivatives of u
       if (zd > 1) {
-        for (size_type cell=0; cell<result.dimension(0); cell++) {
-          for (size_type pt=0; pt<result.dimension(1); pt++) {
+        for (size_type cell=0; cell<result.extent(0); cell++) {
+          for (size_type pt=0; pt<result.extent(1); pt++) {
             result(cell,pt) -=  zd*(zd-1)*std::pow(points(cell,pt,z), zd-2) *
                                 std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd);
           }
@@ -118,8 +118,8 @@ namespace Intrepid2 {
       }
 
       // add u
-      for (size_type cell=0; cell<result.dimension(0); cell++) {
-        for (size_type pt=0; pt<result.dimension(1); pt++) {
+      for (size_type cell=0; cell<result.extent(0); cell++) {
+        for (size_type pt=0; pt<result.extent(1); pt++) {
           result(cell,pt) +=  std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd) * std::pow(points(cell,pt,z), zd);
         }
       }
@@ -137,8 +137,8 @@ namespace Intrepid2 {
 
       int x = 0, y = 1, z = 2;
 
-      int numCells  = result.dimension(0);
-      int numPoints = result.dimension(1);
+      int numCells  = result.extent(0);
+      int numPoints = result.extent(1);
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       DynRankView grad_u("grad_u", numCells, numPoints, 3);
@@ -190,8 +190,8 @@ namespace Intrepid2 {
     template<typename viewOut, typename viewIn>
     void u_exact(viewOut result, const viewIn points, int xd, int yd, int zd) {
       int x = 0, y = 1, z = 2;
-      for (size_type cell=0; cell<result.dimension(0); cell++) {
-        for (size_type pt=0; pt<result.dimension(1); pt++) {
+      for (size_type cell=0; cell<result.extent(0); cell++) {
+        for (size_type pt=0; pt<result.extent(1); pt++) {
           result(cell,pt) = std::pow(points(pt,x), xd)*std::pow(points(pt,y), yd)*std::pow(points(pt,z), zd);
         }
       }

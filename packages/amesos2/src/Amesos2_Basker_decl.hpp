@@ -205,7 +205,7 @@ private:
  
 #ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   /*
   typedef typename node_type::device_type  kokkos_device;
   typedef typename kokkos_device::execution_space kokkos_exe;
@@ -213,7 +213,7 @@ private:
   "Kokkos node type not support by experimental Basker Amesos2");
   */
   typedef Kokkos::OpenMP Exe_Space;
-#elif defined(KOKKOS_HAVE_SERIAL)
+#elif defined(KOKKOS_ENABLE_SERIAL)
   typedef Kokkos::Serial Exe_Space;
 #else
 #pragma message("Kokkos Node type not supported by Basker") 

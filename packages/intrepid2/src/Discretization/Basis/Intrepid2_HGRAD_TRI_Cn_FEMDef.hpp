@@ -71,8 +71,8 @@ getValues(       outputViewType output,
 
   constexpr ordinal_type spaceDim = 2;
   const ordinal_type
-  card = vinv.dimension(0),
-  npts = input.dimension(0);
+  card = vinv.extent(0),
+  npts = input.extent(0);
 
   // compute order
   ordinal_type order = 0;
@@ -97,9 +97,9 @@ getValues(       outputViewType output,
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
-        output(i,j) = 0.0;
+        output.access(i,j) = 0.0;
         for (ordinal_type k=0;k<card;++k)
-          output(i,j) += vinv(k,i)*phis(k,j);
+          output.access(i,j) += vinv(k,i)*phis.access(k,j);
       }
     break;
   }
@@ -114,9 +114,9 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<spaceDim;++k) {
-          output(i,j,k) = 0.0;
+          output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output(i,j,k) += vinv(l,i)*phis(l,j,k);
+            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
     break;
   }
@@ -139,9 +139,9 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<dkcard;++k) {
-          output(i,j,k) = 0.0;
+          output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output(i,j,k) += vinv(l,i)*phis(l,j,k);
+            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
     break;
   }
@@ -156,12 +156,12 @@ getValues(       outputViewType output,
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
-        output(i,j,0) = 0.0;
+        output.access(i,j,0) = 0.0;
         for (ordinal_type l=0;l<card;++l)
-          output(i,j,0) += vinv(l,i)*phis(l,j,1);
-        output(i,j,1) = 0.0;
+          output.access(i,j,0) += vinv(l,i)*phis.access(l,j,1);
+        output.access(i,j,1) = 0.0;
         for (ordinal_type l=0;l<card;++l)
-          output(i,j,1) -= vinv(l,i)*phis(l,j,0);
+          output.access(i,j,1) -= vinv(l,i)*phis.access(l,j,0);
       }
     break;
   }
@@ -188,14 +188,14 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to cardinality
-  const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-  const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+  const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+  const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
 
-  const ordinal_type cardinality = outputValues.dimension(0);
+  const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 2;
 
   auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
@@ -203,7 +203,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -211,14 +211,14 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
     break;
   }
   case OPERATOR_CURL: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_CURL,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -227,21 +227,20 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   case OPERATOR_D2: {
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D2,numPtsPerEval> FunctorType;
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.dimension(2), inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
     break;
   }
   /*  case OPERATOR_D3: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType
             OPERATOR_D3,numPtsPerEval> FunctorType;
-        workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0), outputValues.dimension(2));
+        workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0), outputValues.extent(2));
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
       }*/
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): Operator type not implemented" );
-    break;
   }
   }
 }

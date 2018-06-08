@@ -131,6 +131,10 @@ public:
       secant_(secant), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec),
       init_(false) {}
 
+  // Some versions of Clang will issue a warning that update hides and 
+  // overloaded virtual function without this using declaration
+  using Objective<Real>::update;
+
   virtual void update(Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 const Vector<Real> &x, const Vector<Real> &g,
                 const Ptr<Secant<Real>> &secant = nullPtr) {

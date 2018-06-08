@@ -61,7 +61,7 @@ namespace Intrepid {
      ArrayTools::scalarMultiplyDataData2<ArrayOutData,ArrayInDataLeft,ArrayInDataRight, void, void, Rank<ArrayInDataRight>::value,Rank<ArrayOutData>::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
  
      }
- #ifdef HAVE_INTREPID_KOKKOSCORE  
+ #ifdef INTREPID_OLD_KOKKOS_CODE  
  template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, class Layout, class MemorySpace>
  void ArrayTools::scalarMultiplyDataDataTemp(Kokkos::View<ArrayOutData,Layout,MemorySpace>     &outputData,
                                              Kokkos::View<ArrayInDataLeft,Layout,MemorySpace>  &inputDataLeft,

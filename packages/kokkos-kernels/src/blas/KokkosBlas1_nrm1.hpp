@@ -120,11 +120,11 @@ nrm1 (const RV& R, const XMV& X,
                  "(we have to be able to write to its entries).");
 
   // Check compatibility of dimensions at run time.
-  if (X.dimension_1 () != R.dimension_0 ()) {
+  if (X.extent(1) != R.extent(0)) {
     std::ostringstream os;
     os << "KokkosBlas::nrm1 (MV): Dimensions of R and X do not match: "
-       << "R: " << R.dimension_0 ()
-       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+       << "R: " << R.extent(0)
+       << ", X: " << X.extent(0) << " x " << X.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

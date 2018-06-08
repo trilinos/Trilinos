@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on toss3 (chama/serrano) for ATMD builds of Trilinos
+# Set up env on toss3 (chama and serrano) for ATMD builds of Trilinos
 #
 # This source script gets the settings from the JOB_NAME var.
 #
@@ -171,6 +171,8 @@ function atdm_run_script_on_compute_node {
   echo
 
 }
+
+export -f atdm_run_script_on_compute_node
 
 # NOTE: The above function is implemented in this way using 'sbatch' so that
 # we can avoid using 'salloc' which is belived to cause ORTE errors.  But we

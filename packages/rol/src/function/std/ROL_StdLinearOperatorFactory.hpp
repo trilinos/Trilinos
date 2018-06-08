@@ -74,7 +74,7 @@ private:
 
 
   Teuchos::BLAS<int,Real>     blas_;
-  Teuchos::LAPACK<int,Real>   lapack_;
+  ROL::LAPACK<int,Real>   lapack_;
 
   // Fill x with uniformly-distributed random values from [lower,upper]
   void randomize( vector &x, Real lower=0.0, Real upper=1.0 ) {

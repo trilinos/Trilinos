@@ -93,7 +93,7 @@ fi
 
 if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
   export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-  source $TRILINOS_DIR/cmake/load_sems_dev_env.sh ""
+  source $TRILINOS_DIR/cmake/std/GCC-4.8.4-OpenMPI-1.10.1-MpiReleaseDebugSharedPtOpenMP_env.sh
   # NOTE: Above, must pass empty arg "" or bash will pass in "$@" which is
   # bad!
 else
@@ -111,12 +111,10 @@ echo "
 " > COMMON.config
 
 # All of the options needed for the --default-builds
-# MPI_RELEASE_DEBUG_SHARED_PT are in project-checkin-test-config.py so no need
-# to set them here.  Also note that the SEMS env will be read in automatically
-# because load_sems_dev_env.sh was sourced above.
-
+# MPI_RELEASE_DEBUG_SHARED_PT_OPENMP are in project-checkin-test-config.py so
+# no need to set them here.
 echo "
-" > MPI_RELEASE_DEBUG_SHARED_PT.config
+" > MPI_RELEASE_DEBUG_SHARED_PT_OPENMP.config
 
 #
 # The following extra build configurations can be run using
@@ -181,6 +179,7 @@ else
   echo "
 defaults = [
   \"-j4\",
+  \"--use-ninja\",
   \"--ctest-timeout=300\",
   \"--disable-packages=PyTrilinos,Claps,TriKota\",
   \"--skip-case-no-email\",

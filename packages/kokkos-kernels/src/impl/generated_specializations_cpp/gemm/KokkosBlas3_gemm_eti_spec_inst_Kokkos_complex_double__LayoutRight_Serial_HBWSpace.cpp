@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas3_gemm_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
+#include "KokkosBlas3_gemm_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS3_GEMM_ETI_SPEC_INST(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

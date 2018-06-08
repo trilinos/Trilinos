@@ -79,6 +79,7 @@
 #include "ROL_Minimax2.hpp"
 #include "ROL_Minimax3.hpp"
 
+
 namespace ROL {
 
   /** \enum   ROL::ETestOptProblem

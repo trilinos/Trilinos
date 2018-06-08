@@ -114,8 +114,8 @@ getLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
   const size_type latticeSize = getLatticeSize( cell, order, offset );
   const size_type spaceDim = cell.getDimension();
 
-  INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != latticeSize ||
-      points.dimension(1) != spaceDim,
+  INTREPID2_TEST_FOR_EXCEPTION( points.extent(0) != latticeSize ||
+      points.extent(1) != spaceDim,
       std::invalid_argument ,
       ">>> ERROR (PointTools::getLattice): dimension does not match to lattice size." );
 #endif
@@ -330,20 +330,20 @@ warpFactor( Kokkos::DynRankView<pointValueType,pointProperties...> warp,
             const Kokkos::DynRankView<pointValueType,pointProperties...> xout
             )
  {
-   TEUCHOS_TEST_FOR_EXCEPTION( ( warp.dimension(0) != xout.dimension(0) ) ,
+   TEUCHOS_TEST_FOR_EXCEPTION( ( warp.extent(0) != xout.extent(0) ) ,
                        std::invalid_argument ,
                        ">>> ERROR (PointTools::warpFactor): xout and warp must be same size." );
 
    Kokkos::deep_copy(warp, pointValueType(0.0));
 
-   ordinal_type xout_dim0 = xout.dimension(0);
+   ordinal_type xout_dim0 = xout.extent(0);
    Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> d("d", xout_dim0 );
 
    Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> xeq_("xeq", order + 1 ,1);
    PointTools::getEquispacedLatticeLine( xeq_ , order , 0 );
    const auto xeq = Kokkos::subview(xeq_, Kokkos::ALL(),0);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( ( xeq.dimension(0) != xnodes.dimension(0) ) ,
+   TEUCHOS_TEST_FOR_EXCEPTION( ( xeq.extent(0) != xnodes.extent(0) ) ,
                        std::invalid_argument ,
                        ">>> ERROR (PointTools::warpFactor): xeq and xnodes must be same size." );
 
@@ -394,7 +394,7 @@ getWarpBlendLatticeTriangle( Kokkos::DynRankView<pointValueType,pointProperties.
    PointTools::getWarpBlendLatticeLine( gaussX , order , 0 );
    //auto gaussX = Kokkos::subdynrankview(gaussX_, Kokkos::ALL(),0);
 
- //  gaussX.resize(gaussX.dimension(0));
+ //  gaussX.resize(gaussX.extent(0));
 
    pointValueType alpopt[] = {0.0000,0.0000,1.4152,0.1001,0.2751,0.9800,1.0999,
                        1.2832,1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258};
@@ -559,7 +559,7 @@ evalshift( Kokkos::DynRankView<pointValueType,pointProperties...>  dxy,
    Kokkos::DynRankView<pointValueType,Kokkos::DefaultHostExecutionSpace> gaussX("gaussX",order+1,1);
    PointTools::getWarpBlendLatticeLine( gaussX , order , 0 );
    //gaussX.resize(order+1);
-   const ordinal_type N = L1.dimension(0);
+   const ordinal_type N = L1.extent(0);
 
    // Warburton code reverses them
    for (ordinal_type k=0;k<=order;k++) {
@@ -633,7 +633,7 @@ evalwarp(Kokkos::DynRankView<pointValueType,pointProperties...>  warp ,
  {
    Kokkos::DynRankView<pointValueType,Kokkos::DefaultHostExecutionSpace> xeq("xeq",order+1);
 
-   ordinal_type xout_dim0 = xout.dimension(0);
+   ordinal_type xout_dim0 = xout.extent(0);
    Kokkos::DynRankView<pointValueType,Kokkos::DefaultHostExecutionSpace> d("d",xout_dim0);
 
    //Kokkos::deep_copy(d, 0.0);

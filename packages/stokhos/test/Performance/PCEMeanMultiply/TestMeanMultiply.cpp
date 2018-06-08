@@ -47,7 +47,7 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -90,15 +90,15 @@ int main(int argc, char *argv[])
     CLP.setOption("numa", &numa,  "Number of numa nodes");
     int cores = num_cores_per_socket;
     CLP.setOption("cores", &cores, "Cores per numa node");
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     CLP.setOption("threads", &threads, "Number of threads for Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     CLP.setOption("openmp", &openmp, "Number of threads for OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = false;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int device_id = 0;
@@ -109,11 +109,14 @@ int main(int argc, char *argv[])
     typedef int Ordinal;
     typedef double Scalar;
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads > 0) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::Threads::initialize(threads, numa, cores);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = threads;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "Threads performance with " << threads
@@ -123,15 +126,18 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp > 0) {
       typedef Kokkos::OpenMP Device;
 
-      Kokkos::OpenMP::initialize(openmp, numa, cores);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = openmp;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "OpenMP performance with " << openmp
@@ -141,16 +147,17 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -162,8 +169,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

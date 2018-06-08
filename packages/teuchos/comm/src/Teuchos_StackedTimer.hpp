@@ -16,6 +16,17 @@
 #include <cassert>
 #include <chrono>
 
+
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+namespace Kokkos {
+namespace Profiling {
+extern void pushRegion (const std::string&);
+extern void popRegion ();
+} // namespace Profiling
+} // namespace Kokkos
+#endif
+
+
 namespace Teuchos {
   
 //! Error reporting function for stacked timer.
@@ -43,6 +54,7 @@ public:
     if (running_)
       error_out("Base_Timer:start Failed timer already running");
     start_time_ = Clock::now(); 
+
     count_started_++;
     running_ = true;
   }
@@ -197,6 +209,7 @@ protected:
     {
       if ( start_timer )
         BaseTimer::start();
+
     }
 
     /// Copy constructor
@@ -397,7 +410,12 @@ public:
   /**
    * Start the base level timer only, used really in testing only
    */
-  void start() { timer_.BaseTimer::start();}
+  void start() { 
+    timer_.BaseTimer::start();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion("ANONYMOUS");
+#endif
+}
   /**
    * Start a sublevel timer
    * @param [in] name Name of the timer you wish to start
@@ -407,6 +425,9 @@ public:
       top_ = timer_.start(name.c_str());
     else
       top_ = top_->start(name.c_str());
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion(name);
+#endif
   }
 
   /**
@@ -417,6 +438,9 @@ public:
       top_ = top_->stop(name);
     else
       timer_.BaseTimer::stop( );
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::popRegion();
+#endif
   }
 
   /**

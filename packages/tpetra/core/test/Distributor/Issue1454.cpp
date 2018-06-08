@@ -92,14 +92,14 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   typedef map_type::device_type device_type;
   // mfh 01 Aug 2017: Deal with fix for #1088, by not using
   // Kokkos::CudaUVMSpace for communication buffers.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
   std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
     Kokkos::CudaSpace,
     typename device_type::memory_space>::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef typename device_type::execution_space buffer_execution_space;
   typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
 

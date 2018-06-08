@@ -109,7 +109,7 @@ struct KokkosSPGEMM
       int suggested_team_size_, bool KOKKOSKERNELS_VERBOSE_,
       KokkosKernels::Impl::ExecSpaceType my_exec_space_
       ):
-    numrows(row_map_.dimension_0() - 1),
+    numrows(row_map_.extent(0) - 1),
     row_map(row_map_),
     entries(entries_),
     compression_bit_mask(compression_bit_mask_),
@@ -120,10 +120,10 @@ struct KokkosSPGEMM
     set_index_nexts(set_index_nexts_),
     set_index_entries(set_index_entries_),
     set_entries(set_entries_),
-    pset_index_begins(set_index_begins_.ptr_on_device()),
-    pset_index_nexts(set_index_nexts_.ptr_on_device()),
-    pset_index_entries(set_index_entries_.ptr_on_device()),
-    pset_entries(set_entries_.ptr_on_device()),
+    pset_index_begins(set_index_begins_.data()),
+    pset_index_nexts(set_index_nexts_.data()),
+    pset_index_entries(set_index_entries_.data()),
+    pset_entries(set_entries_.data()),
     shared_memory_size(shared_mem),
     team_row_chunk_size(team_row_chunk_size_),
 
@@ -199,21 +199,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -567,14 +575,6 @@ struct KokkosSPGEMM
     });
     //initialize begins.
     //these are initialized before the loop.
-    /*
-    Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(teamMember, left_work),
-        [&] (nnz_lno_t i) {
-      pset_index_begins[rowBegin + i] = -1;
-    });
-    */
-
     //initialize hash usage sizes
     Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
       used_hash_sizes[0] = 0;
@@ -594,34 +594,70 @@ struct KokkosSPGEMM
       nnz_lno_t n_set = 1;
 
       Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, vector_size),
+          [&] (nnz_lno_t i) {
+        result_keys[i] = -1;
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
+        result_vals[i] = 0;
+#endif
+      });
+
+      //here we find the column_set indices for each column.
+      //if it is integer, we divide the column index by 32 with shifts. 
+      //result_keys is an array of size vector_size
+      //this is used as hashtable. 
+      Kokkos::parallel_for(
           Kokkos::ThreadVectorRange(teamMember, work_to_handle),
           [&] (nnz_lno_t i) {
         const size_type adjind = i + rowBegin;
         const nnz_lno_t n = entries(adjind);
         n_set_index = n >> compression_bit_divide_shift;
         n_set = n_set << (n & compression_bit_mask);
+
+        size_type new_hash = n_set_index & (vector_size - 1);
+        nnz_lno_t r = -1;
+        while (true){
+          if (result_keys[new_hash] == n_set_index){
+            Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
+            break;
+          }
+        else if (result_keys[new_hash] == r){
+          if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)){
+	    //MD 4/4/18: one these architectures there can be divergence in the warp.
+	    //once the keys are set, some other vector lane might be doing a 
+	    //fetch_or before we set with n_set. Therefore it is necessary to do
+	    //atomic, and set it with zero as above.
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
+            Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
+#else
+            result_vals[new_hash] = n_set;
+#endif      
+            break;
+          }
+        }
+        else if (++new_hash == decltype(new_hash)(vector_size)){
+          new_hash = 0;
+        }
+      }
+
       });
-
-
-
-      //it is possible that multiple threads have same values.
-      //first merge them, as a result of this operation we will have the n_sets merged,
-      //if a thread's value merged to some other threads we have n_set = -1.
-      hm.vector_mergeOr_MEM(teamMember, vector_size, n_set_index,n_set, result_keys, result_vals);
-
-
-      nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
-
-      //nnz_lno_t hash = n_set_index % shared_memory_hash_size;
-      if (n_set_index == -1) hash = -1;
+      int num_unsuccess = 0;
       int overall_num_unsuccess = 0;
 
-      int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-                                        teamMember, vector_size, hash,n_set_index, n_set, used_hash_sizes, shmem_hash_size);
-
+      //once the values are written result_keys and result_vals
+      //each vector reads their corresponding value and inserts it into level-1 hash.
+      //if level-1 hash is full, it returns 1 (num_unsuccess=1)
+      //a reduction is done to see whether any vector lanes failed.
       Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-          [&] (const int threadid, int &overall_num_unsuccess_) {
-        overall_num_unsuccess_ += num_unsuccess;
+          [&] (const int i, int &overall_num_unsuccess_) {
+          n_set_index = result_keys[i];
+          n_set = result_vals[i];
+          nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
+          if (n_set_index == -1) hash = -1;
+          num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
+                              teamMember, vector_size, hash,n_set_index, 
+			      n_set, used_hash_sizes, shmem_hash_size);
+
       }, overall_num_unsuccess);
 
 #ifdef KOKKOSKERNELSMOREMEM
@@ -629,32 +665,47 @@ struct KokkosSPGEMM
       if (overall_num_unsuccess){
         nnz_lno_t hash_ = -1;
         if (num_unsuccess) hash_ = n_set_index % hm2.hash_key_size;
-
-        //int insertion =
         hm2.vector_atomic_insert_into_hash_mergeOr(
             teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
       }
 #else
-//if one of the inserts was successfull, which means we run out shared memory
-if (overall_num_unsuccess){
-  if (!l2_allocated){
-    volatile nnz_lno_t * tmp = NULL;
-    while (tmp == NULL){
-     Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
-  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_ind));
-        }, tmp);
-     }
-     globally_used_hash_indices = (nnz_lno_t *)tmp;
-     hm2.hash_begins = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size);
-     hm2.hash_nexts = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size * 2);
-           l2_allocated = true;
-  }
-  hash = -1;
-  if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
-  hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-  teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size
-  ,globally_used_hash_count, globally_used_hash_indices);
-}
+      //if one of the inserts was successfull, which means we run out shared memory
+      if (overall_num_unsuccess){
+ 	      //then we allocate second level memory using memory pool.
+	      if (!l2_allocated){
+		      volatile nnz_lno_t * tmp = NULL;
+		      while (tmp == NULL){
+			      Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
+					      memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_ind));
+					      }, tmp);
+		      }
+		      globally_used_hash_indices = (nnz_lno_t *)tmp;
+		      hm2.hash_begins = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size);
+		      hm2.hash_nexts = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size * 2);
+		      l2_allocated = true;
+	      }
+	      //then for those who failed we insert it again to L2-accumulator.
+	      nnz_lno_t hash = -1;
+	      if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
+
+	      //this parallel_for is not really needed.
+	      //we just need a sync threads at the end of the insertion. 
+	      //Basically, we do not want 
+	      //new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] + used_hash_sizes[1];
+	      //to execute before the below insertion finishes.
+	      //parallel_for will provide this mechanism.
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
+              Kokkos::parallel_for(
+                 Kokkos::ThreadVectorRange(teamMember, vector_size),
+	          [&] (nnz_lno_t i) {
+#endif
+		      hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+			      teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size
+			      ,globally_used_hash_count, globally_used_hash_indices);
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
+		});
+#endif
+      }
 #endif
 
       left_work -= work_to_handle;
@@ -662,39 +713,39 @@ if (overall_num_unsuccess){
     }
 
     Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
-      if (used_hash_sizes[0] > shmem_hash_size ) used_hash_sizes[0] = shmem_hash_size;
-      new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] + used_hash_sizes[1];
-    });
+		    if (used_hash_sizes[0] > shmem_hash_size ) used_hash_sizes[0] = shmem_hash_size;
+		    new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] + used_hash_sizes[1];
+		    });
 
 #ifndef KOKKOSKERNELSMOREMEM
     if (l2_allocated){
-      nnz_lno_t dirty_hashes = globally_used_hash_count[0];
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, dirty_hashes),
-          [&] (nnz_lno_t i) {
-        nnz_lno_t dirty_hash = globally_used_hash_indices[i];
-        hm2.hash_begins[dirty_hash] = -1;
-      });
+	    nnz_lno_t dirty_hashes = globally_used_hash_count[0];
+	    Kokkos::parallel_for(
+			    Kokkos::ThreadVectorRange(teamMember, dirty_hashes),
+			    [&] (nnz_lno_t i) {
+			    nnz_lno_t dirty_hash = globally_used_hash_indices[i];
+			    hm2.hash_begins[dirty_hash] = -1;
+			    });
 
-      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
-        memory_space.release_chunk(globally_used_hash_indices);
-      });
+	    Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+			    memory_space.release_chunk(globally_used_hash_indices);
+			    });
     }
 #endif
     size_type written_index = used_hash_sizes[1];
     Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[0]),
-        [&] (nnz_lno_t i) {
-      pset_index_entries[rowBeginP + written_index + i] = keys[i];
-      pset_entries[rowBeginP + written_index + i] = vals[i];
-    });
+		    Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[0]),
+		    [&] (nnz_lno_t i) {
+		    pset_index_entries[rowBeginP + written_index + i] = keys[i];
+		    pset_entries[rowBeginP + written_index + i] = vals[i];
+		    });
   }
 
   size_t team_shmem_size (int team_size) const {
-    return shared_memory_size;
+	  return shared_memory_size;
   }
 
-};
+  };
 
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
@@ -809,7 +860,7 @@ bool KokkosSPGEMM
     size_t num_chunks = concurrency / suggested_vector_size;
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 	if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
 		size_t free_byte ;

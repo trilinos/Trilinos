@@ -178,7 +178,7 @@ computeBasisValues(typename Traits::EvalData d)
   }
 
   // Map point to reference frame
-  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.dimension_1();
+  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.extent(1);
   Kokkos::DynRankView<double,PHX::Device> cell_coords(
     "cell_coords", 1, num_vertex, num_dim); // Cell, Basis, Dim
   for (size_t i=0; i<num_vertex; ++i) {

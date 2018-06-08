@@ -789,9 +789,9 @@ namespace Intrepid2 {
 //        << "    # of Rows          = " << _m << std::endl
 //        << "    # of Cols          = " << _n << std::endl
 //        << std::endl
-//        << "    RowPtrArray length = " << _ap.dimension_0() << std::endl
-//        << "    ColArray    length = " << _aj.dimension_0() << std::endl
-//        << "    ValueArray  length = " << _ax.dimension_0() << std::endl
+//        << "    RowPtrArray length = " << _ap.extent(0) << std::endl
+//        << "    ColArray    length = " << _aj.extent(0) << std::endl
+//        << "    ValueArray  length = " << _ax.extent(0) << std::endl
 //        << std::endl;
 
 //     const ordinal_type w = 10;
@@ -841,7 +841,7 @@ namespace Intrepid2 {
 //      << "    Col Stride             = " << _cs << std::endl
 //      << "    Row Stride             = " << _rs << std::endl
 //      << std::endl
-//      << "    ValueArray dimensions  = " << _a.dimension_0() << std::endl
+//      << "    ValueArray dimensions  = " << _a.extent(0) << std::endl
 //      << std::endl;
 
 //   const ordinal_type w = 10;

@@ -250,10 +250,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
     
   // Note: crsGraph.numRows() == number of vertices in the 'graph'
-  //       crsGraph.entries.dimension_0() == number of edges in the 'graph'
+  //       crsGraph.entries.extent(0) == number of edges in the 'graph'
 
   std::cout << "Num verts: " << crsGraph.numRows() << std::endl
-            << "Num edges: " << crsGraph.entries.dimension_0() << std::endl;
+            << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -331,7 +331,6 @@ void run_multi_mem_experiment(Parameters params)
   slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
   fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
 
-
   //read a and b matrices and store them on slow or fast memory.
   if (params.a_mem_space == 1)
   {
@@ -348,7 +347,6 @@ void run_multi_mem_experiment(Parameters params)
     a_slow_crsgraph = a_slow_crsmat.graph;
     a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
   }
-
 
   if (params.a_mem_space == 1)
   {
@@ -539,12 +537,14 @@ int main (int argc, char ** argv)
   std::cout << "Sizeof(kk_lno_t) : " << sizeof(kk_lno_t) << std::endl 
             << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
-#if defined( KOKKOS_HAVE_OPENMP )
+  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int device_id = 0;
+  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+  Kokkos::print_configuration(std::cout);
 
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (params.use_openmp) 
   {
-    Kokkos::OpenMP::initialize( params.use_openmp );
-    Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
         <kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
@@ -552,16 +552,13 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
         <kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
-    Kokkos::OpenMP::finalize();
   }
 #endif
+
 
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) 
   {
-    Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
-    Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(params);
@@ -569,16 +566,13 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
 #endif
-    Kokkos::Cuda::finalize();
-    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 
-#if defined( KOKKOS_HAVE_SERIAL )
+
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) 
   {
-    Kokkos::Serial::initialize( params.use_openmp );
-    Kokkos::Serial::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(params);
@@ -586,9 +580,10 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
 #endif
-    Kokkos::Serial::finalize();
   }
 #endif
+
+  Kokkos::finalize();
 
   return 0;
 }

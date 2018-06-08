@@ -86,7 +86,7 @@ postRegistrationSetup(
   this->utils.setFieldData(dof,fm);
   this->utils.setFieldData(value,fm);
 
-  cell_data_size = residual.fieldTag().dataLayout().dimension(1);
+  cell_data_size = residual.fieldTag().dataLayout().extent(1);
 }
 
 //**********************************************************************

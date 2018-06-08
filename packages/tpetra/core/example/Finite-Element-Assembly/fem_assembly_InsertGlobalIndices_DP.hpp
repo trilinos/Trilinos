@@ -48,7 +48,7 @@
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
-#include <Tpetra_MultiVectorFiller.hpp>
+#include <Tpetra_FEMultiVector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_RCP.hpp>
@@ -84,7 +84,6 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
-  using Tpetra::MultiVectorFiller;
 
   const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
 
@@ -216,8 +215,8 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
   RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
-  RCP<MultiVectorFiller<multivector_t>> rhs_filler =
-    rcp (new MultiVectorFiller<multivector_t>(crs_graph->getRowMap(), 1));
+  RCP<fe_multivector_t> rhs =
+    rcp (new fe_multivector_t(domain_map, crs_graph->getImporter(), 1));
 
   scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
@@ -227,6 +226,7 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
+  rhs->beginFill();
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Get the contributions for the current element
@@ -243,8 +243,6 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
     // - populate the values array
     // - add the values to the crs_matrix.
     // Note: hardcoded 4 here because we're using quads.
-    Teuchos::Array<global_ordinal_t> rows(4);
-    Teuchos::Array<Scalar> values(4);
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
       global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
@@ -255,13 +253,10 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
       }
 
       crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-      rows[element_node_idx] = global_row_id;
-      values[element_node_idx] = element_rhs[element_node_idx];
+      rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
     }
-    rhs_filler->sumIntoGlobalValues(rows(), 0, values());
   }
   timerElementLoopMatrix = Teuchos::null;
-
 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
@@ -269,11 +264,10 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
     crs_matrix->fillComplete();
   }
 
-  RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    rhs_filler->globalAssemble(*rhs);
+    rhs->endFill();
   }
 
 

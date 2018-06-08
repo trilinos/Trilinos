@@ -257,7 +257,6 @@ namespace Belos {
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
     // Default solver values.
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
     static constexpr int maxIters_default_ = 1000;
     static constexpr bool assertPositiveDefiniteness_default_ = true;
     static constexpr bool showMaxResNormOnly_default_ = false;
@@ -293,7 +292,7 @@ namespace Belos {
 template<class ScalarType, class MV, class OP>
 PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::PseudoBlockStochasticCGSolMgr() :
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -314,7 +313,7 @@ PseudoBlockStochasticCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP
                                const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -448,7 +447,13 @@ void PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuch
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -570,7 +575,7 @@ PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     // The static_cast is to resolve an issue with older clang versions which
     // would cause the constexpr to link fail. With c++17 the problem is resolved.
     RCP<ParameterList> pl = parameterList ();
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linera system to be declared converged.");
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),

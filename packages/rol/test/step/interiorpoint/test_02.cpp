@@ -43,6 +43,8 @@
 
 #define OPTIMIZATION_PROBLEM_REFACTOR
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_NonlinearProgram.hpp"

@@ -77,7 +77,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
   return pattern;
 }
 
-// test that you can correctly compute a rank index from a grobal processor id
+// test that you can correctly compute a rank index from a global processor id
 TEUCHOS_UNIT_TEST(tCartesianTop, computeMyRankTriplet)
 {
   typedef CartesianConnManager<int,Ordinal64> CCM;

@@ -184,7 +184,7 @@ namespace Kokkos {
       // allocated (e.g.,) using new or malloc, but it's not a problem
       // here, because the custom deallocator does not free anything.
       // Nevertheless, it's better not to trouble the tracking system.
-      return Teuchos::arcp(view.data(), 0, view.capacity(),
+      return Teuchos::arcp(view.data(), 0, view.span(),
                            deallocator(view), false);
     }
 

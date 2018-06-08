@@ -54,7 +54,10 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_HelperFunctions.hpp"
 #include "ROL_Stream.hpp"
+
+
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>

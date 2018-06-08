@@ -64,7 +64,7 @@ CellAverage(
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
   quad_order = ir->cubature_degree;
 
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   average = PHX::MDField<ScalarT,Cell>( p.get<std::string>("Average Name"), dl_cell);
   scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Field Name"), ir->dl_scalar);
 
@@ -110,7 +110,7 @@ postRegistrationSetup(
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
-  num_qp = scalar.dimension(1);
+  num_qp = scalar.extent(1);
 
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }

@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
-    SOURCE_FILES solverDefaultsAugmentation.xml solverDefaultsRefMaxwell.xml solverAugmentationUseILU.xml
+    SOURCE_FILES solverDefaultsAugmentation.xml solverDefaultsRefMaxwell.xml solverAugmentationUseILU.xml refMaxwellKokkos.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )

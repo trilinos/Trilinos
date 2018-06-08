@@ -561,14 +561,14 @@ namespace Tpetra {
     /// \brief Kokkos memory space for communication buffers.
     ///
     /// See #1088 for why this is not just <tt>device_type::memory_space</tt>.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     typedef typename std::conditional<
       std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
       Kokkos::CudaSpace,
       typename device_type::memory_space>::type buffer_memory_space;
 #else
     typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
   public:
 

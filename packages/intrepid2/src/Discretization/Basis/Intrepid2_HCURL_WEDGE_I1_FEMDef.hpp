@@ -69,41 +69,41 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output(0, 0) = (1.0 - z)*(1.0 - y)/2.0;
-        output(0, 1) = x*(1.0 - z)/2.0;
-        output(0, 2) = 0.0;
+        output.access(0, 0) = (1.0 - z)*(1.0 - y)/2.0;
+        output.access(0, 1) = x*(1.0 - z)/2.0;
+        output.access(0, 2) = 0.0;
 
-        output(1, 0) = y*(z - 1.0)/2.0;
-        output(1, 1) = x*(1.0 - z)/2.0;
-        output(1, 2) = 0.0;
+        output.access(1, 0) = y*(z - 1.0)/2.0;
+        output.access(1, 1) = x*(1.0 - z)/2.0;
+        output.access(1, 2) = 0.0;
 
-        output(2, 0) = y*(z - 1.0)/2.0;
-        output(2, 1) = (1.0 - x)*(z - 1.0)/2.0;
-        output(2, 2) = 0.0;
+        output.access(2, 0) = y*(z - 1.0)/2.0;
+        output.access(2, 1) = (1.0 - x)*(z - 1.0)/2.0;
+        output.access(2, 2) = 0.0;
 
-        output(3, 0) = (1.0 - y)*(1.0 + z)/2.0;
-        output(3, 1) = x*(1.0 + z)/2.0;
-        output(3, 2) = 0.0;
+        output.access(3, 0) = (1.0 - y)*(1.0 + z)/2.0;
+        output.access(3, 1) = x*(1.0 + z)/2.0;
+        output.access(3, 2) = 0.0;
 
-        output(4, 0) =-y*(1.0 + z)/2.0;
-        output(4, 1) = x*(1.0 + z)/2.0;
-        output(4, 2) = 0.0;
+        output.access(4, 0) =-y*(1.0 + z)/2.0;
+        output.access(4, 1) = x*(1.0 + z)/2.0;
+        output.access(4, 2) = 0.0;
 
-        output(5, 0) = -y*(1.0 + z)/2.0;
-        output(5, 1) = (x - 1.0)*(1.0 + z)/2.0;
-        output(5, 2) = 0.0;
+        output.access(5, 0) = -y*(1.0 + z)/2.0;
+        output.access(5, 1) = (x - 1.0)*(1.0 + z)/2.0;
+        output.access(5, 2) = 0.0;
 
-        output(6, 0) = 0.0;
-        output(6, 1) = 0.0;
-        output(6, 2) = (1.0 - x - y)/2.0;
+        output.access(6, 0) = 0.0;
+        output.access(6, 1) = 0.0;
+        output.access(6, 2) = (1.0 - x - y)/2.0;
 
-        output(7, 0) = 0.0;
-        output(7, 1) = 0.0;
-        output(7, 2) = x/2.0;
+        output.access(7, 0) = 0.0;
+        output.access(7, 1) = 0.0;
+        output.access(7, 2) = x/2.0;
 
-        output(8, 0) = 0.0;
-        output(8, 1) = 0.0;
-        output(8, 2) = y/2.0;
+        output.access(8, 0) = 0.0;
+        output.access(8, 1) = 0.0;
+        output.access(8, 2) = y/2.0;
         break;
       }
       case OPERATOR_CURL: {
@@ -111,41 +111,41 @@ namespace Intrepid2 {
         const auto y = input(1);
         const auto z = input(2);
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output(0, 0) = x/2.0;
-        output(0, 1) = (y - 1.0)/2.0;
-        output(0, 2) = 1.0 - z;
+        output.access(0, 0) = x/2.0;
+        output.access(0, 1) = (y - 1.0)/2.0;
+        output.access(0, 2) = 1.0 - z;
 
-        output(1, 0) = x/2.0;
-        output(1, 1) = y/2.0;
-        output(1, 2) = 1.0 - z;
+        output.access(1, 0) = x/2.0;
+        output.access(1, 1) = y/2.0;
+        output.access(1, 2) = 1.0 - z;
 
-        output(2, 0) = (x - 1.0)/2.0;
-        output(2, 1) = y/2.0;
-        output(2, 2) = 1.0 - z;
+        output.access(2, 0) = (x - 1.0)/2.0;
+        output.access(2, 1) = y/2.0;
+        output.access(2, 2) = 1.0 - z;
 
-        output(3, 0) = -x/2.0;
-        output(3, 1) = (1.0 - y)/2.0;
-        output(3, 2) = 1.0 + z;
+        output.access(3, 0) = -x/2.0;
+        output.access(3, 1) = (1.0 - y)/2.0;
+        output.access(3, 2) = 1.0 + z;
 
-        output(4, 0) = -x/2.0;
-        output(4, 1) = -y/2.0;
-        output(4, 2) = 1.0 + z;
+        output.access(4, 0) = -x/2.0;
+        output.access(4, 1) = -y/2.0;
+        output.access(4, 2) = 1.0 + z;
 
-        output(5, 0) = (1.0 - x)/2.0;
-        output(5, 1) = -y/2.0;
-        output(5, 2) = 1.0 + z;
+        output.access(5, 0) = (1.0 - x)/2.0;
+        output.access(5, 1) = -y/2.0;
+        output.access(5, 2) = 1.0 + z;
 
-        output(6, 0) =-0.5;
-        output(6, 1) = 0.5;
-        output(6, 2) = 0.0;
+        output.access(6, 0) =-0.5;
+        output.access(6, 1) = 0.5;
+        output.access(6, 2) = 0.0;
 
-        output(7, 0) = 0.0;
-        output(7, 1) =-0.5;
-        output(7, 2) = 0.0;
+        output.access(7, 0) = 0.0;
+        output.access(7, 1) =-0.5;
+        output.access(7, 2) = 0.0;
 
-        output(8, 0) = 0.5;
-        output(8, 1) = 0.0;
-        output(8, 2) = 0.0;
+        output.access(8, 0) = 0.5;
+        output.access(8, 1) = 0.0;
+        output.access(8, 2) = 0.0;
         break;
       }
       default: {
@@ -169,7 +169,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {
