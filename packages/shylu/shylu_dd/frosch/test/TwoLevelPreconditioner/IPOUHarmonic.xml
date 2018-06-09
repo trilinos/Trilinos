@@ -45,7 +45,9 @@
         <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
         <Parameter name="Overlap"                                           type="int"      value="1"/>
         
+        <!--<Parameter name="Use OverlappingOperator" 							type="bool" 	value="true">-->
         <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
+        <!--<Parameter name="Use CoarseOperator" 								type="bool" 	value="true">-->
         <Parameter name="CoarseOperator Type"                               type="string"   value="IPOUHarmonicCoarseOperator"/>
         <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
         

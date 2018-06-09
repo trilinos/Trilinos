@@ -48,14 +48,18 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(CommPtr comm) :
-    SchwarzOperator<SC,LO,GO,NO> (comm)
+    SchwarzOperator<SC,LO,GO,NO> (comm),
+	OperatorVector_ (0),
+	EnableOperators_ (0)
     {
         
     }
     
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
-    SchwarzOperator<SC,LO,GO,NO> (operators.at(0)->getRangeMap()->getComm())
+    SchwarzOperator<SC,LO,GO,NO> (operators.at(0)->getRangeMap()->getComm()),
+	OperatorVector_ (0),
+	EnableOperators_ (0)
     {
         OperatorVector_.push_back(operators.at(0));
         for (unsigned i=1; i<operators.size(); i++) {
@@ -63,6 +67,7 @@ namespace FROSch {
             FROSCH_ASSERT(operators.at(i)->OperatorRangeMap().SameAs(OperatorVector_.at(0)->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
             
             OperatorVector_.push_back(operators.at(i));
+            EnableOperators_.push_back(true);
         }
     }
     
@@ -111,9 +116,13 @@ namespace FROSch {
         if (OperatorVector_.size()>0) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
             *xTmp = x; // Das brauche ich für den Fall das x=y
+            UN itmp = 0;
             for (UN i=0; i<OperatorVector_.size(); i++) {
-                OperatorVector_[i]->apply(*xTmp,y,usePreconditionerOnly,mode,alpha,beta); 
-                if (i==0) beta = Teuchos::ScalarTraits<SC>::one();
+            	if (EnableOperators_[i]) {
+            		OperatorVector_[i]->apply(*xTmp,y,usePreconditionerOnly,mode,alpha,beta);
+            		if (itmp==0) beta = Teuchos::ScalarTraits<SC>::one();
+            		itmp++;
+            	}
             }
         } else {
             y.update(alpha,x,beta);
@@ -170,9 +179,10 @@ namespace FROSch {
             //FROSCH_ASSERT(op->OperatorRangeMap().SameAs(OperatorVector_.at(0)->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
         }
         OperatorVector_.push_back(op);
+        EnableOperators_.push_back(true);
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
@@ -182,10 +192,10 @@ namespace FROSch {
         }
         return ret;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
-    int SumOperator<SC,LO,GO,NO>::resetOperator(unsigned iD,
-                                                SchwarzOperatorPtr op)
+    int SumOperator<SC,LO,GO,NO>::resetOperator(UN iD,
+    											SchwarzOperatorPtr op)
     {
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
@@ -200,7 +210,20 @@ namespace FROSch {
         OperatorVector_[iD] = op;
         return ret;
     }
-    
+
+    template <class SC,class LO,class GO,class NO>
+    int SumOperator<SC,LO,GO,NO>::enableOperator(UN iD,
+    											 bool enable)
+	{
+    	EnableOperators_[iD] = enable;
+    	return 0;
+	}
+
+    template <class SC,class LO,class GO,class NO>
+    typename SumOperator<SC,LO,GO,NO>::UN SumOperator<SC,LO,GO,NO>::getNumOperators()
+    {
+    	return OperatorVector_.size();
+    }
 }
 
 #endif

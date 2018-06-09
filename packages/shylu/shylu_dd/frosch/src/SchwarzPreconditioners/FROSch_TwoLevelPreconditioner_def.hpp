@@ -99,7 +99,7 @@ namespace FROSch {
                                                         UN dofsPerNode,
                                                         int overlap,
                                                         MultiVectorPtr nullSpaceBasis,
-                                                        MultiVectorPtr nodeList, // Todo: NodeList auf repeatedNodesMap bringen, falls noch nicht geschehen
+                                                        MultiVectorPtr nodeList,
                                                         DofOrdering dofOrdering,
                                                         MapPtr repeatedMap,
                                                         MapPtrVecPtr dofsMaps,

@@ -134,6 +134,7 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
         typedef Teuchos::ArrayView<const SC> ConstSCVecView;
         
+        typedef Teuchos::Array<bool> BoolVec;
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
         
         

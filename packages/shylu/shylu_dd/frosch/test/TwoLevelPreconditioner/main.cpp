@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
             }
             K->fillComplete();
         } else if (DOFOrdering == 2) {
-            assert(0!=0); // TODO: Implementieren
+            assert(0!=0); // TODO: Andere Sortierung implementieren
         } else {
             assert(0!=0);
         }
