@@ -60,6 +60,8 @@ namespace FROSch {
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr RGDSWCoarseOperatorPtr;
@@ -67,8 +69,6 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
         
         
         RGDSWPreconditioner(CrsMatrixPtr k,
@@ -131,7 +131,7 @@ namespace FROSch {
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
-        std::string description() const;
+        std::string description() const; // @suppress("Type cannot be resolved")
         
     protected:
         

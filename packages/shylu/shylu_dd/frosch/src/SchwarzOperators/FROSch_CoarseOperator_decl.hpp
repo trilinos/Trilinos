@@ -44,8 +44,8 @@
 
 #include <FROSch_SchwarzOperator_def.hpp>
 
-// TODO:
-// -> Member sortieren!
+// TODO: Member sortieren!?
+
 
 namespace FROSch {
     

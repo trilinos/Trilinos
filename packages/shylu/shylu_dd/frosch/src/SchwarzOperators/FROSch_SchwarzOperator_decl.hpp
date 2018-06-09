@@ -58,9 +58,9 @@
 
 #include <FROSch_SubdomainSolver_def.hpp>
 
-// TODO
-// -> Auf const überprüfen
-// -> #ifndef überprüfen
+// TODO: Auf const überprüfen
+// TODO: #ifndef überprüfen ??????
+
 
 namespace FROSch {
     
@@ -133,7 +133,6 @@ namespace FROSch {
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
         typedef Teuchos::ArrayView<const SC> ConstSCVecView;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
         

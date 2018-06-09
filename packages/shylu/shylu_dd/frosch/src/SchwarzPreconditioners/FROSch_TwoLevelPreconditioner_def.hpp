@@ -187,7 +187,7 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
         }
-        
+
         return ret;
     }
     

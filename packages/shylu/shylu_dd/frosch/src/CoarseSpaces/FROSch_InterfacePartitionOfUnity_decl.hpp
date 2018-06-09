@@ -84,7 +84,6 @@ namespace FROSch {
         typedef Teuchos::ArrayView<GO> GOVecView;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
 
         
         InterfacePartitionOfUnity(CommPtr mpiComm,

@@ -184,62 +184,6 @@ namespace FROSch {
         
         return 0;
     }
-    
-    template <class SC,class LO,class GO,class NO>
-    int  IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr &dofsMap)
-    {
-        // Das könnte man noch ändern
-        this->GammaDofs_->resize(this->GammaDofs_.size()+1);
-        this->IDofs_->resize(this->IDofs_.size()+1);
-        this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
-        this->MVPhiGamma_->resize(this->MVPhiGamma_.size()+1);
-        this->DofsMaps_->resize(this->DofsMaps_.size()+1);
-        this->DofsPerNode_->resize(this->DofsPerNode_.size()+1);
-        
-        this->NumberOfBlocks_++;
-        
-        /////
-        int blockId = this->NumberOfBlocks_-1;
-        
-        // Process the parameter list
-        std::stringstream blockIdStringstream;
-        blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
-        Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-        
-        bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
-        
-        this->GammaDofs_[blockId] = LOVecPtr(0);
-        
-        if (useForCoarseSpace) {
-            //Epetra_SerialComm serialComm;
-            MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
-            this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
-        }
-        
-        for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
-            this->GammaDofs_[blockId]->push_back(i);
-            
-            if (useForCoarseSpace) {
-                this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
-            }
-        }
-
-        this->IDofs_[blockId] = LOVecPtr(0);
-        
-        if (useForCoarseSpace) {
-            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,this->GammaDofs_[blockId](),0,this->MpiComm_);
-        }
-        
-        this->DofsMaps_[blockId] = MapPtrVecPtr(0);
-        this->DofsMaps_[blockId].push_back(dofsMap);
-        
-        this->DofsPerNode_[blockId] = 1;
-        
-        
-        return 0;
-    }
-    
 }
 
 #endif

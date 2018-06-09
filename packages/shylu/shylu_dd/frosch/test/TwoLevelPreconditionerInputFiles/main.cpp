@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
             parameterList->print(cout);
             cout << "--------------------------------------------------------------------------------\n\n";
         }
-        
+
         //////////////////
         // Repeated Map //
         //////////////////
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         EpetraExt::MatrixMarketFileToMultiVector("nodeList.dat",*nodeMapEpetra,nodeList);
         RCP<MultiVector<SC,LO,GO,NO> > NodeList = ConvertToXpetra<SC,LO,GO,NO>(UseTpetra,*nodeList,TeuchosComm);
 //        NodeList->describe(*fancy,VERB_EXTREME);
-        
+
         
         if (Comm->MyPID()==0) cout << "CONSTRUCTING PRECONDITIONER...";
         RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));

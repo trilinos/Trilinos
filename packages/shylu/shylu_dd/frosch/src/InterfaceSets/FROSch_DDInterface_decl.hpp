@@ -55,8 +55,6 @@
 
 #include <FROSch_ExtractSubmatrices_def.hpp>
 
-// TODO
-// -> "Parent" -> "Anchestor"
 
 namespace FROSch {
     
@@ -99,7 +97,6 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<GOVec> GOVecVecPtr;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         DDInterface(UN dimension,
@@ -118,7 +115,7 @@ namespace FROSch {
         
         int sortEntities(MultiVectorPtr nodeList);
         
-        int findParents();
+        int findAncestors();
         
         UN getDimension() const;
         
@@ -140,11 +137,11 @@ namespace FROSch {
         
         EntitySetConstPtr & getInterior() const;
         
-        EntitySetConstPtr & getParentVertices() const;
+        EntitySetConstPtr & getAncestorVertices() const;
         
-        EntitySetConstPtr & getParentEdges() const;
+        EntitySetConstPtr & getAncestorEdges() const;
         
-        EntitySetConstPtr & getParentFaces() const;
+        EntitySetConstPtr & getAncestorFaces() const;
         
         ConstMapPtr getNodesMap() const;
         
@@ -171,9 +168,9 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr ParentVertices_;
-        EntitySetPtr ParentEdges_;
-        EntitySetPtr ParentFaces_;
+        EntitySetPtr AncestorVertices_;
+        EntitySetPtr AncestorEdges_;
+        EntitySetPtr AncestorFaces_;
         
         MapPtr NodesMap_;
         MapPtr UniqueNodesMap_;

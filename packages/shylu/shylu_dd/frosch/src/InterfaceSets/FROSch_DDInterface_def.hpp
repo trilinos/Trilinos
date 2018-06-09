@@ -61,9 +61,9 @@ namespace FROSch {
     Faces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
     Interface_ (new EntitySet<SC,LO,GO,NO>(SurfaceType)),
     Interior_ (new EntitySet<SC,LO,GO,NO>(VolumeType)),
-    ParentVertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
-    ParentEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
-    ParentFaces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
+    AncestorVertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
+    AncestorEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
+    AncestorFaces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
     NodesMap_ (localToGlobalMap),
     UniqueNodesMap_ ()
     {
@@ -393,59 +393,59 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::findParents()
+    int DDInterface<SC,LO,GO,NO>::findAncestors()
     {
         if (Faces_->getNumEntities()>0) {
             if (ShortEdges_->getNumEntities()>0) {
-                Faces_->findParents(ShortEdges_);
+                Faces_->findAncestors(ShortEdges_);
             }
             if (StraightEdges_->getNumEntities()>0) {
-                Faces_->findParents(StraightEdges_);
+                Faces_->findAncestors(StraightEdges_);
             }
             if (Edges_->getNumEntities()>0) {
-                Faces_->findParents(Edges_);
+                Faces_->findAncestors(Edges_);
             }
         }
         if (Vertices_->getNumEntities()>0) {
             if (ShortEdges_->getNumEntities()>0) {
-                ShortEdges_->findParents(Vertices_);
+                ShortEdges_->findAncestors(Vertices_);
             }
             if (StraightEdges_->getNumEntities()>0) {
-                StraightEdges_->findParents(Vertices_);
+                StraightEdges_->findAncestors(Vertices_);
             }
             if (Edges_->getNumEntities()>0) {
-                Edges_->findParents(Vertices_);
+                Edges_->findAncestors(Vertices_);
             }
         }
         //
-        ParentVertices_ = Vertices_;
-        for (UN i=0; i<ParentVertices_->getNumEntities(); i++) {
-            ParentVertices_->getEntity(i)->setParentID(i);
+        AncestorVertices_ = Vertices_;
+        for (UN i=0; i<AncestorVertices_->getNumEntities(); i++) {
+            AncestorVertices_->getEntity(i)->setAncestorID(i);
         }
         //
         UN itmp = 0;
         EntitySetPtr tmpVertices;
         for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-            tmpVertices = ShortEdges_->getEntity(i)->getParents();
+            tmpVertices = ShortEdges_->getEntity(i)->getAncestors();
             if (tmpVertices->getNumEntities() == 0) {
-                ParentEdges_->addEntity(ShortEdges_->getEntity(i));
-                ShortEdges_->getEntity(i)->setParentID(itmp);
+                AncestorEdges_->addEntity(ShortEdges_->getEntity(i));
+                ShortEdges_->getEntity(i)->setAncestorID(itmp);
                 itmp++;
             }
         }
         for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-            tmpVertices = StraightEdges_->getEntity(i)->getParents();
+            tmpVertices = StraightEdges_->getEntity(i)->getAncestors();
             if (tmpVertices->getNumEntities() == 0) {
-                ParentEdges_->addEntity(StraightEdges_->getEntity(i));
-                StraightEdges_->getEntity(i)->setParentID(itmp);
+                AncestorEdges_->addEntity(StraightEdges_->getEntity(i));
+                StraightEdges_->getEntity(i)->setAncestorID(itmp);
                 itmp++;
             }
         }
         for (UN i=0; i<Edges_->getNumEntities(); i++) {
-            tmpVertices = Edges_->getEntity(i)->getParents();
+            tmpVertices = Edges_->getEntity(i)->getAncestors();
             if (tmpVertices->getNumEntities() == 0) {
-                ParentEdges_->addEntity(Edges_->getEntity(i));
-                Edges_->getEntity(i)->setParentID(itmp);
+                AncestorEdges_->addEntity(Edges_->getEntity(i));
+                Edges_->getEntity(i)->setAncestorID(itmp);
                 itmp++;
             }
         }
@@ -453,10 +453,10 @@ namespace FROSch {
         itmp = 0;
         EntitySetPtr tmpEdges;
         for (UN i=0; i<Faces_->getNumEntities(); i++) {
-            tmpEdges = Faces_->getEntity(i)->getParents();
+            tmpEdges = Faces_->getEntity(i)->getAncestors();
             if (tmpEdges->getNumEntities() == 0) {
-                ParentFaces_->addEntity(Faces_->getEntity(i));
-                Faces_->getEntity(i)->setParentID(itmp);
+                AncestorFaces_->addEntity(Faces_->getEntity(i));
+                Faces_->getEntity(i)->setAncestorID(itmp);
                 itmp++;
             }
         }
@@ -524,21 +524,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentVertices() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorVertices() const
     {
-        return ParentVertices_;
+        return AncestorVertices_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentEdges() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorEdges() const
     {
-        return ParentEdges_;
+        return AncestorEdges_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentFaces() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorFaces() const
     {
-        return ParentFaces_;
+        return AncestorFaces_;
     }
     
     template <class SC,class LO,class GO,class NO>

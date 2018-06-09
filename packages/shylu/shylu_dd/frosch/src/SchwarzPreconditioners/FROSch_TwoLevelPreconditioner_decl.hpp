@@ -73,8 +73,6 @@ namespace FROSch {
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
-        
         
         TwoLevelPreconditioner(CrsMatrixPtr k,
                                ParameterListPtr parameterList);

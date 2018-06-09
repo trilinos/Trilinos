@@ -46,8 +46,6 @@
 
 #include <FROSch_HarmonicCoarseOperator_def.hpp>
 
-// TODO:
-// -> Typedef
 
 namespace FROSch {
     
@@ -100,7 +98,6 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr BoolVecPtr;
         
@@ -145,8 +142,6 @@ namespace FROSch {
                                           MultiVectorPtr nullSpaceBasis,
                                           GOVecPtr dirichletBoundaryDofs,
                                           MultiVectorPtr nodeList);
-        
-        int addZeroCoarseSpaceBlock(MapPtr &dofsMap);
         
         
         /*

@@ -77,7 +77,6 @@ namespace FROSch {
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         EntitySet(EntityType type);
@@ -90,7 +89,7 @@ namespace FROSch {
         
         int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         
-        int findParents(EntitySetPtr entitySet);
+        int findAncestors(EntitySetPtr entitySet);
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix, int pID);
         

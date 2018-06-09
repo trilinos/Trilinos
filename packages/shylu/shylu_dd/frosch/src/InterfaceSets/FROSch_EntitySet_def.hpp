@@ -132,10 +132,10 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::findParents(EntitySetPtr entitySet)
+    int EntitySet<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
     {
         for (UN i=0; i<getNumEntities(); i++) {
-            getEntity(i)->findParents(entitySet);
+            getEntity(i)->findAncestors(entitySet);
         }
         return 0;
     }

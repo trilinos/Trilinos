@@ -42,6 +42,8 @@
 #ifndef _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 #define _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 
+#include <string>
+
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 
@@ -60,6 +62,8 @@ namespace FROSch {
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
 
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GDSWCoarseOperatorPtr GDSWCoarseOperatorPtr;
@@ -67,8 +71,6 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
         
         
         GDSWPreconditioner(CrsMatrixPtr k,

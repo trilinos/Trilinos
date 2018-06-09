@@ -229,7 +229,6 @@ int main(int argc, char *argv[])
         
         if (Comm->MyPID()==0) cout << "INITIALIZE...";
         TwoLevelPrec->initialize(Dimension,1,DofsPerNode,Ord);
-        //initialize(dim,2,NodeWise,1,rcpFromRef(RepMap),NodeList);
         if (Comm->MyPID()==0) cout << "COMPUTE...";
         TwoLevelPrec->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";

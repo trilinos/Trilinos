@@ -44,8 +44,6 @@
 
 #include <FROSch_CoarseOperator_def.hpp>
 
-// TODO:
-// -> Typedef
 
 namespace FROSch {
     
@@ -74,6 +72,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
@@ -88,7 +87,7 @@ namespace FROSch {
         virtual int initialize() = 0;
                 
         int compute();
-        
+
     protected:
         
         int computeHarmonicExtensions();
@@ -97,14 +96,16 @@ namespace FROSch {
         
         MapPtr assembleCoarseMap();
         
-        int computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                              MapPtr &repeatedMap,
-                              MapPtr &coarseMap,
+        int addZeroCoarseSpaceBlock(MapPtr dofsMap);
+
+        int computeAndFillPhi(CrsMatrixPtr repeatedMatrix,
+                              MapPtr repeatedMap,
+                              MapPtr coarseMap,
                               GOVecView indicesGammaDofsAll,
                               GOVecView indicesIDofsAll,
                               CrsMatrixPtr kII,
                               CrsMatrixPtr kIGamma);
-        
+
         
         SubdomainSolverPtr ExtensionSolver_;
 

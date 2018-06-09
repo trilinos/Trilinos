@@ -81,7 +81,6 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
         
         
         RGDSWCoarseOperator(CrsMatrixPtr k,
@@ -90,10 +89,10 @@ namespace FROSch {
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr &nodesMap,
-                                          MapPtrVecPtr &dofsMaps,
-                                          GOVecPtr &dirichletBoundaryDofs,
-                                          MultiVectorPtr &nodeList);
+                                          MapPtr nodesMap,
+                                          MapPtrVecPtr dofsMaps,
+                                          GOVecPtr dirichletBoundaryDofs,
+                                          MultiVectorPtr nodeList);
         
         
         protected:
@@ -103,11 +102,11 @@ namespace FROSch {
                                 bool buildRotations,
                                 UN dimension,
                                 UN dofsPerNode,
-                                MultiVectorPtr &nodeList,
-                                LOVecPtr2D &partMappings,
-                                EntitySetPtr &vertices,
-                                EntitySetPtr &edges,
-                                EntitySetPtr &faces); // Sollte man hier nicht auch die typen noch auswählen können
+                                MultiVectorPtr nodeList,
+                                LOVecPtr2D partMappings,
+                                EntitySetPtr vertices,
+                                EntitySetPtr edges,
+                                EntitySetPtr faces); // Sollte man hier nicht auch die typen noch auswählen können
         
     };
     

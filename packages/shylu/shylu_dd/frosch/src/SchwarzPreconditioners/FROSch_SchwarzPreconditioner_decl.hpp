@@ -89,7 +89,6 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         SchwarzPreconditioner(ParameterListPtr parameterList,
