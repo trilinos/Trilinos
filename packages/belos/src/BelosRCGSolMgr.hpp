@@ -357,7 +357,6 @@ namespace Belos {
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
     static constexpr int maxIters_default_ = 1000;
     static constexpr int blockSize_default_ = 1;
     static constexpr int numBlocks_default_ = 25;
@@ -496,7 +495,7 @@ template<class ScalarType, class MV, class OP>
 void RCGSolMgr<ScalarType,MV,OP,true>::init()
 {
   outputStream_ = Teuchos::rcp(outputStream_default_,false);
-  convtol_ = convTol_default_;
+  convtol_ = DefaultSolverParameters::convTol;
   maxIters_ = maxIters_default_;
   numBlocks_ = numBlocks_default_;
   recycleBlocks_ = recycleBlocks_default_;
@@ -662,7 +661,13 @@ void RCGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -726,7 +731,7 @@ RCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),

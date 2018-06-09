@@ -93,8 +93,8 @@ public:
     hvec_.resize(5);
   }
 
-  BPOE(Teuchos::ParameterList &parlist) : RandVarFunctional<Real>(), firstResetBPOE_(true) {
-    Teuchos::ParameterList &list = parlist.sublist("SOL").sublist("Probability").sublist("bPOE");
+  BPOE(ROL::ParameterList &parlist) : RandVarFunctional<Real>(), firstResetBPOE_(true) {
+    ROL::ParameterList &list = parlist.sublist("SOL").sublist("Probability").sublist("bPOE");
     threshold_ = list.get<Real>("Threshold");
     order_     = list.get<Real>("Moment Order");
     hvec_.resize(5);

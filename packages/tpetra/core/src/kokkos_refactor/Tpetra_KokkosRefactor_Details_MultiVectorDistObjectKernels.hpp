@@ -192,7 +192,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
-          lclRow >= static_cast<index_type> (src.dimension_0 ())) {
+          lclRow >= static_cast<index_type> (src.extent (0))) {
         result = 0; // failed!
       }
       else {
@@ -235,10 +235,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
-        const size_type numInds = idx_h.dimension_0 ();
+        const size_type numInds = idx_h.extent (0);
         for (size_type k = 0; k < numInds; ++k) {
           if (idx_h(k) < static_cast<index_type> (0) ||
-              idx_h(k) >= static_cast<index_type> (src.dimension_0 ())) {
+              idx_h(k) >= static_cast<index_type> (src.extent (0))) {
             badIndices.push_back (idx_h(k));
           }
         }
@@ -354,7 +354,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
-          lclRow >= static_cast<index_type> (src.dimension_0 ())) {
+          lclRow >= static_cast<index_type> (src.extent (0))) {
         result = 0; // failed!
       }
       else {
@@ -400,10 +400,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
-        const size_type numInds = idx_h.dimension_0 ();
+        const size_type numInds = idx_h.extent (0);
         for (size_type k = 0; k < numInds; ++k) {
           if (idx_h(k) < static_cast<index_type> (0) ||
-              idx_h(k) >= static_cast<index_type> (src.dimension_0 ())) {
+              idx_h(k) >= static_cast<index_type> (src.extent (0))) {
             badIndices.push_back (idx_h(k));
           }
         }
@@ -531,14 +531,14 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
       const row_index_type lclRow = idx(k);
       if (lclRow < static_cast<row_index_type> (0) ||
-          lclRow >= static_cast<row_index_type> (src.dimension_0 ())) {
+          lclRow >= static_cast<row_index_type> (src.extent (0))) {
         result.first = 0; // failed!
       }
       else {
         const size_type offset = k*numCols;
         for (size_type j = 0; j < numCols; ++j) {
           const col_index_type lclCol = col(j);
-          if (Impl::outOfBounds<col_index_type> (lclCol, src.dimension_1 ())) {
+          if (Impl::outOfBounds<col_index_type> (lclCol, src.extent (1))) {
             result.second = 0; // failed!
           }
           else { // all indices are valid; do the assignment
@@ -595,9 +595,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
           Kokkos::deep_copy (idx_h, idx);
 
           std::vector<row_index_type> badRows;
-          const size_type numInds = idx_h.dimension_0 ();
+          const size_type numInds = idx_h.extent (0);
           for (size_type k = 0; k < numInds; ++k) {
-            if (Impl::outOfBounds<row_index_type> (idx_h(k), src.dimension_0 ())) {
+            if (Impl::outOfBounds<row_index_type> (idx_h(k), src.extent (0))) {
               badRows.push_back (idx_h(k));
             }
           }
@@ -621,9 +621,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
           Kokkos::deep_copy (col_h, col);
 
           std::vector<col_index_type> badCols;
-          const size_type numInds = col_h.dimension_0 ();
+          const size_type numInds = col_h.extent (0);
           for (size_type k = 0; k < numInds; ++k) {
-            if (Impl::outOfBounds<col_index_type> (col_h(k), src.dimension_1 ())) {
+            if (Impl::outOfBounds<col_index_type> (col_h(k), src.extent (1))) {
               badCols.push_back (col_h(k));
             }
           }
@@ -705,7 +705,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct InsertOp< ::Kokkos::Serial > {
     template <typename Scalar>
@@ -714,7 +714,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest = src; // no need for an atomic operation here
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template<class ExecutionSpace>
   struct AddOp {
@@ -725,7 +725,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct AddOp< ::Kokkos::Serial > {
     template <typename Scalar>
@@ -734,7 +734,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest += src; // no need for an atomic operation here
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template<class ExecutionSpace>
   struct AbsMaxOp {
@@ -756,7 +756,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct AbsMaxOp< ::Kokkos::Serial > {
     // ETP:  Is this really what we want?  This seems very odd if
@@ -777,7 +777,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest = static_cast<Scalar> (max (SCT::abs (dest), SCT::abs (src)));
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template <typename ExecutionSpace,
             typename DstView,
@@ -906,7 +906,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
-          lclRow >= static_cast<index_type> (dst.dimension_0 ())) {
+          lclRow >= static_cast<index_type> (dst.extent (0))) {
         result = 0; // failed!
       }
       else {
@@ -955,10 +955,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
-        const size_type numInds = idx_h.dimension_0 ();
+        const size_type numInds = idx_h.extent (0);
         for (size_type k = 0; k < numInds; ++k) {
           if (idx_h(k) < static_cast<index_type> (0) ||
-              idx_h(k) >= static_cast<index_type> (dst.dimension_0 ())) {
+              idx_h(k) >= static_cast<index_type> (dst.extent (0))) {
             badIndices.push_back (idx_h(k));
           }
         }
@@ -1163,7 +1163,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
       const row_index_type lclRow = idx(k);
       if (lclRow < static_cast<row_index_type> (0) ||
-          lclRow >= static_cast<row_index_type> (dst.dimension_0 ())) {
+          lclRow >= static_cast<row_index_type> (dst.extent (0))) {
         result.first = 0; // failed!
       }
       else {
@@ -1171,7 +1171,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         for (size_type j = 0; j < numCols; ++j) {
           const col_index_type lclCol = col(j);
 
-          if (Impl::outOfBounds<col_index_type> (lclCol, dst.dimension_1 ())) {
+          if (Impl::outOfBounds<col_index_type> (lclCol, dst.extent (1))) {
             result.second = 0; // failed!
           }
           else { // all indices are valid; apply the op
@@ -1231,10 +1231,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
           Kokkos::deep_copy (idx_h, idx);
 
           std::vector<row_index_type> badRows;
-          const size_type numInds = idx_h.dimension_0 ();
+          const size_type numInds = idx_h.extent (0);
           for (size_type k = 0; k < numInds; ++k) {
             if (idx_h(k) < static_cast<row_index_type> (0) ||
-                idx_h(k) >= static_cast<row_index_type> (dst.dimension_0 ())) {
+                idx_h(k) >= static_cast<row_index_type> (dst.extent (0))) {
               badRows.push_back (idx_h(k));
             }
           }
@@ -1258,9 +1258,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
           Kokkos::deep_copy (col_h, col);
 
           std::vector<col_index_type> badCols;
-          const size_type numInds = col_h.dimension_0 ();
+          const size_type numInds = col_h.extent (0);
           for (size_type k = 0; k < numInds; ++k) {
-            if (Impl::outOfBounds<col_index_type> (col_h(k), dst.dimension_1 ())) {
+            if (Impl::outOfBounds<col_index_type> (col_h(k), dst.extent (1))) {
               badCols.push_back (col_h(k));
             }
           }

@@ -42,13 +42,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize OpenMP
-  Kokkos::OpenMP::initialize();
-  Kokkos::OpenMP::print_configuration(std::cout);
+  Kokkos::initialize();
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize OpenMP
-  Kokkos::OpenMP::finalize();
+  Kokkos::finalize();
 
   return res;
 }

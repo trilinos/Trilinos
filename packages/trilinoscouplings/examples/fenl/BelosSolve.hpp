@@ -82,12 +82,12 @@ struct FillCoords {
   const size_type m_dim;
 
   FillCoords( const coords_type& coords, const coords_vec_type& coords_vec )
-    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.dimension_1())
+    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.extent(1))
   {
     // Note:  coords contains off-processor halo nodes and thus is longer
     // than coords_vec, which is the same length as the solution vector.
     // These extra halo nodes are stored at the end.
-    Kokkos::parallel_for( m_coords_vec.dimension_0(), *this );
+    Kokkos::parallel_for( m_coords_vec.extent(0), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -159,7 +159,7 @@ belos_solve(
     typename Mesh::node_coord_type node_coords = mesh.node_coord();
     //Teuchos::RCP<VectorType> coords =
     Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
-      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x.getMap(), node_coords.dimension_1()));
+      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x.getMap(), node_coords.extent(1)));
     fill_coords(node_coords, coords->getDualView().d_view);
 
     RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");

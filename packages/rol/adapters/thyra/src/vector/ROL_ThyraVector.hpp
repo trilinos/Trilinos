@@ -92,6 +92,7 @@ private:
         return flatVec;
       }
 
+
       // it must be a product vector then
       Ptr<const Thyra::ProductVectorBase<Real> > prod_vec = ptr_dynamic_cast<const Thyra::ProductVectorBase<Real> >(ptrFromRef(vec));
 
@@ -233,7 +234,7 @@ private:
       std::stringstream ss;
       ss << "Block identifier b= " << b << " is too large for i=" << i << " on array with " << getLocalSize() <<
             " and " << flatVec_.size() << " blocks.";
-      TEUCHOS_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
+      ROL_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
 
       return flatVec_[b][i-sum];
     }
@@ -318,10 +319,11 @@ public:
   /** \brief Return i-th basis vector.
     */
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
+    Teuchos::RCP<Vector<Real> > e = clone();
+    Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = (Teuchos::rcp_static_cast<ThyraVector>(e))->getVector();
     ::Thyra::put_scalar(0.0, basisThyraVec.ptr());
     ::Thyra::set_ele(i,1.0, basisThyraVec.ptr());
-    return Teuchos::rcp( new ThyraVector(basisThyraVec) );
+    return e;
   }
 
   /** \brief Return dimension of the vector space.

@@ -82,7 +82,7 @@ struct MV_MultFunctor
                   typename AV::const_value_type& ab,
                   const AV& A,
                   const BMV& B) :
-    m_n (C.dimension_1 ()),
+    m_n (C.extent(1)),
     m_c (c), m_C (C), m_ab (ab), m_A (A), m_B (B)
   {}
 
@@ -91,7 +91,7 @@ struct MV_MultFunctor
   {
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -100,7 +100,7 @@ struct MV_MultFunctor
       }
       else { // ab != 0, c == 0
         typename AV::const_value_type Ai = m_A(i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -109,7 +109,7 @@ struct MV_MultFunctor
       }
     } else { // c != 0
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -118,7 +118,7 @@ struct MV_MultFunctor
       }
       else { // m_ab != 0, and m_c != 0
         typename AV::const_value_type Ai = m_A(i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -208,7 +208,7 @@ V_Mult_Generic (typename CV::const_value_type& c,
   typedef Kokkos::Details::ArithTraits<typename CV::non_const_value_type> ATC;
   typedef typename CV::execution_space execution_space;
 
-  const SizeType numRows = C.dimension_0 ();
+  const SizeType numRows = C.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (c == ATC::zero ()) {
@@ -260,7 +260,7 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
   typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATC;
   typedef typename CMV::execution_space execution_space;
 
-  if (C.dimension_1 () == 1) {
+  if (C.extent(1) == 1) {
     auto C_0 = Kokkos::subview (C, Kokkos::ALL (), 0);
     auto B_0 = Kokkos::subview (B, Kokkos::ALL (), 0);
     typedef decltype (C_0) CV;
@@ -270,7 +270,7 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
     return;
   }
 
-  const SizeType numRows = C.dimension_0 ();
+  const SizeType numRows = C.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (c == ATC::zero ()) {

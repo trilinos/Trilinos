@@ -24,7 +24,7 @@
         <Parameter name="Final Time"             type="double" value="3.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Minimum Time Step"      type="double" value="1.0e-08"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Minimum Order"          type="int"    value="1"/>
@@ -45,8 +45,8 @@
                 <Parameter name="Name" type="string" value="Basic VS"/>
                 <Parameter name="Reduction Factor" type="double" value="0.5"/>
                 <Parameter name="Amplification Factor" type="double" value="1.75"/>
-                <Parameter name="Minimum Value Monitoring Function" type="double" value="5.0e-2"/>
-                <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e-1"/>
+                <Parameter name="Minimum Value Monitoring Function" type="double" value="0.0"/>
+                <Parameter name="Maximum Value Monitoring Function" type="double" value="1.0e+10"/>
             </ParameterList>
         </ParameterList>
       </ParameterList>

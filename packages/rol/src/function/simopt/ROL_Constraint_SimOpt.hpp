@@ -268,7 +268,7 @@ public:
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
       ROL::Ptr<Constraint_SimOpt<Real> > con = ROL::makePtrFromRef(*this);
       ROL::Ptr<Objective<Real> > obj = ROL::makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
@@ -285,7 +285,7 @@ public:
         = ROL::makePtr<Constraint_State<Real>>(con,zVec);
       ROL::Ptr<Objective<Real> > objU
         = ROL::makePtr<Objective_FSsolver<Real>>();
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
@@ -295,14 +295,14 @@ public:
       value(c,u,z,tol);
     }
     if (solverType_ > 4 || solverType_ < 0) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> ERROR (ROL:Constraint_SimOpt:solve): Invalid solver type!");
     }
   }
 
   /** \brief Set solve parameters.
 
-             @param[in]       parlist   Teuchos::ParameterList containing solve parameters
+             @param[in]       parlist   ROL::ParameterList containing solve parameters
 
              For the default implementation, parlist has two sublist ("SimOpt"
              and "Solve") and the "Solve" sublist has six input parameters.
@@ -320,8 +320,8 @@ public:
 
              ---
   */
-  virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
-    Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
+  virtual void setSolveParameters(ROL::ParameterList &parlist) {
+    ROL::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
     atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
     rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
     maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);
@@ -438,7 +438,7 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
@@ -603,7 +603,7 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
@@ -1217,7 +1217,7 @@ public:
                                                        std::ostream & outStream = std::cout,
                                                        const int order = 1) {
  
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
  
     Real one(1.0);
@@ -1233,7 +1233,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
@@ -1342,7 +1342,7 @@ public:
                                                        std::ostream & outStream = std::cout,
                                                        const int order = 1) {
  
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
  
     Real one(1.0);
@@ -1358,7 +1358,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
@@ -1487,7 +1487,7 @@ public:
     ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1613,7 +1613,7 @@ public:
     ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1737,7 +1737,7 @@ public:
     ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1857,7 +1857,7 @@ public:
     ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.

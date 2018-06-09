@@ -243,18 +243,18 @@ namespace Intrepid2 {
     const unsigned int v[2] = { cellTopo.getNodeMap(1, subcellOrd, 0),
                                 cellTopo.getNodeMap(1, subcellOrd, 1) };
 
-    auto normalize = [&](double *v, ordinal_type iend) {
+    auto normalize = [&](double *vv, ordinal_type iend) {
       double norm = 0.0;
-      for (ordinal_type i=0;i<iend;++i)
-        norm += v[i]*v[i];
+      for (ordinal_type ii=0;ii<iend;++ii)
+        norm += vv[ii]*vv[ii];
       norm = std::sqrt(norm);
-      for (ordinal_type i=0;i<iend;++i)
-        v[i] /= norm;
+      for (ordinal_type ii=0;ii<iend;++ii)
+        vv[ii] /= norm;
     };
 
-    auto assign_tangent = [&](refTanType t, double *v, ordinal_type iend) {
-      for (ordinal_type i=0;i<iend;++i)
-        t(i) = v[i];
+    auto assign_tangent = [&](refTanType t, double *vv, ordinal_type iend) {
+      for (ordinal_type ii=0;ii<iend;++ii)
+        t(ii) = vv[ii];
     };
     
     double t[3] = {};

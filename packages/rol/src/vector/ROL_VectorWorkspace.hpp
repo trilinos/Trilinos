@@ -117,21 +117,62 @@ private:
     VectorKey( const Ptr<V>& x ) : 
       VectorKey( *x ) {}
 
+    static string to_string( const VectorKey& key ) {
+      stringstream ss;
+      ss << "VectorKey(" << hex << key.hash_code << ","
+                         << dec << key.dimension << ")";
+      return ss.str();
+    }
+
     bool operator < ( const VectorKey& x ) const {
       return ( hash_code < x.hash_code ) && ( dimension < x.dimension );
     }
+
+    bool operator == ( const VectorKey& x ) const {
+      return ( hash_code == x.hash_code ) && ( dimension == x.dimension );
+    }
+
+//    bool operator != ( const VectorKey& x ) const {
+//      return ( hash_code != x.hash_code ) || ( dimension != x.dimension );
+//    }
+
   }; // class VectorKey
 
   struct VectorStack {
   
     friend class VectorWorkspace<Real>;
     vector<Ptr<V>> vectors_;
-    VectorStack( const V& x ) : vectors_( 1, x.clone() ) {}
+    VectorKey key_;
+
+    VectorStack( const V& x ) : vectors_( 1, x.clone() ),
+      key_(VectorKey(x)) {}
+
+    const VectorKey& getKey() const { return key_; }
+
+    size_type size() const { return vectors_.size(); }
+
+    size_type number_assigned() const {
+      size_type count = 0;
+      for( auto v : vectors_ ) count += ( getCount(v) > 3 );
+      return count;
+    }
 
     /** If no next element exists, clone it, increment the index, and
         return a the clone by pointer
     */
     Ptr<V> clone( const V& x ) {
+      VectorKey x_key(x);
+      
+      ROL_TEST_FOR_EXCEPTION( key_.hash_code != x_key.hash_code, logic_error,
+        "VectorWorkspace::VectorStack tried to clone a vector of type "     <<
+        hex << key_.hash_code << ", but it can only clone vectors of type " <<
+        hex << x_key.hash_code );
+
+      ROL_TEST_FOR_EXCEPTION( key_.dimension != x_key.dimension, logic_error, 
+        "VectorWorkspace::VectorStack tried to clone a vector of dimension "     <<
+        hex << key_.dimension << ", but it can only clone vectors of dimension " <<
+        hex << x_key.dimension );
+
       for( auto e : vectors_ ) { // Return first unreferenced vector
         if( getCount(e) <= 2 ) { // Storing pointers in vector increments count  
           return e;
@@ -157,19 +198,20 @@ private:
 public:
 
   Ptr<V> clone( const V& x ) {  
-    VectorKey key(x);
-  
-    auto search = workspace_.find( key );
+   
+    VectorKey        key(x);
+    size_type        key_count{0};
+    Ptr<VectorStack> vstack{nullPtr};
 
-    if( search != workspace_.end() ) {
-      auto entry  = workspace_[key];
-      return entry->clone(x);
+    for( auto e : workspace_ ) key_count += (key == e.first);
+
+    if( key_count == 0 ) { // New key
+      vstack = makePtr<VectorStack>(x);
+      workspace_.insert( make_pair(key,vstack) );
     }
-    else { // First instance of this kind of vector
-      workspace_[key] = makePtr<VectorStack>(x);
-      auto entry  = workspace_[key];
-      return entry->clone(x);
-    }
+    else vstack = workspace_[key];
+
+    return vstack->clone(x);
   }
  
   Ptr<V> clone( const Ptr<const V>& x ) { return clone(*x); }

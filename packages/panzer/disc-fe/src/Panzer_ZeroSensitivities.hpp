@@ -45,6 +45,7 @@
 
 #include <iostream>
 #include "Panzer_Traits.hpp" // for scalar types
+#include "Kokkos_Core.hpp"
 
 namespace panzer {
 
@@ -53,17 +54,20 @@ namespace panzer {
   // void zeroSensitivities(ScalarT& s);
 
   //! Specialization for Residual
-  inline void zeroSensitivities(panzer::Traits::RealType& /* s */) {}
+  KOKKOS_INLINE_FUNCTION
+  void zeroSensitivities(panzer::Traits::RealType& /* s */) {}
 
   //! Specialization for Fad type Jacobian
-  inline void zeroSensitivities(panzer::Traits::FadType& s) 
+  KOKKOS_INLINE_FUNCTION
+  void zeroSensitivities(panzer::Traits::FadType& s) 
   {
     s.zero();
   }
 
   //! Specialization for Fad type Hessian
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  inline void zeroSensitivities(panzer::Traits::HessianType& s) 
+  KOKKOS_INLINE_FUNCTION
+  void zeroSensitivities(panzer::Traits::HessianType& s) 
   {
     s.val().zero(); // is this right...? What does zero sensitivities mean here?
     s.zero();
@@ -81,7 +85,7 @@ namespace panzer {
   }
   */
   template <typename T>
-  inline
+  KOKKOS_INLINE_FUNCTION
   typename Sacado::mpl::enable_if< Sacado::IsView<T> >::type
   zeroSensitivities(T x) {
     //std::cout << "zeroSensitivities - ViewFad" << std::endl;

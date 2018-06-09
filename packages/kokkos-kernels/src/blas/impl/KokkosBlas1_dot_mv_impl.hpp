@@ -90,7 +90,7 @@ struct MV_V_Dot_Functor
 
   MV_V_Dot_Functor (const RV& r, const XMV& x, const YV& y,
                     const bool reverseOrder) :
-    value_count (x.dimension_1 ()), m_r (r), m_x (x), m_y (y),
+    value_count (x.extent(1)), m_r (r), m_x (x), m_y (y),
     reverseOrder_ (reverseOrder)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
@@ -117,10 +117,10 @@ struct MV_V_Dot_Functor
   {
     const size_type numVecs = value_count;
     if (reverseOrder_) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numVecs; ++k) {
@@ -128,10 +128,10 @@ struct MV_V_Dot_Functor
       }
     }
     else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numVecs; ++k) {
@@ -143,10 +143,10 @@ struct MV_V_Dot_Functor
   KOKKOS_INLINE_FUNCTION void init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -159,10 +159,10 @@ struct MV_V_Dot_Functor
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -175,10 +175,10 @@ struct MV_V_Dot_Functor
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -210,7 +210,7 @@ struct MV_Dot_Right_FunctorVector
   typename YMV::const_type m_y;
 
   MV_Dot_Right_FunctorVector (const RV& r, const XMV& x, const YMV& y) :
-    value_count (x.dimension_1 ()), m_r (r), m_x (x), m_y (y)
+    value_count (x.extent(1)), m_r (r), m_x (x), m_y (y)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "MV_Dot_Right_FunctorVector: R is not a Kokkos::View.");
@@ -235,10 +235,10 @@ struct MV_Dot_Right_FunctorVector
   void operator() (const size_type& i, value_type sum) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -249,10 +249,10 @@ struct MV_Dot_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION void init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -265,10 +265,10 @@ struct MV_Dot_Right_FunctorVector
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -281,10 +281,10 @@ struct MV_Dot_Right_FunctorVector
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -318,7 +318,7 @@ struct MV_Dot_Right_FunctorUnroll
   typename YMV::const_type m_y;
 
   MV_Dot_Right_FunctorUnroll (const RV& r, const XMV& x, const YMV& y) :
-    value_count (x.dimension_1 ()), m_r (r), m_x (x), m_y (y)
+    value_count (x.extent(1)), m_r (r), m_x (x), m_y (y)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "MV_Dot_Right_FunctorUnroll: R is not a Kokkos::View.");
@@ -342,7 +342,7 @@ struct MV_Dot_Right_FunctorUnroll
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i, value_type sum) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -352,7 +352,7 @@ struct MV_Dot_Right_FunctorUnroll
 
   KOKKOS_INLINE_FUNCTION void init (volatile value_type update) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -364,7 +364,7 @@ struct MV_Dot_Right_FunctorUnroll
   join (volatile value_type update,
         const volatile value_type source) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -376,7 +376,7 @@ struct MV_Dot_Right_FunctorUnroll
   /*KOKKOS_INLINE_FUNCTION void
   final (const value_type dst) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -456,18 +456,18 @@ template<class RV, class XMV, class YMV, class SizeType>
 void
 MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 {
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
-  const SizeType numCols = static_cast<SizeType> (X.dimension_1 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
+  const SizeType numCols = static_cast<SizeType> (X.extent(1));
   Kokkos::RangePolicy<typename XMV::execution_space, SizeType> policy (0, numRows);
 
-  if (static_cast<int> (X.dimension_1 ()) != 1 && static_cast<int> (Y.dimension_1 ()) == 1) {
+  if (static_cast<int> (X.extent(1)) != 1 && static_cast<int> (Y.extent(1)) == 1) {
     // X has > 1 columns, and Y has 1 column.
     auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0);
     typedef typename decltype (Y_0)::const_type YV;
     MV_V_Dot_Invoke<RV, XMV, YV, SizeType> (r, X, Y_0, numRows);
     return;
   }
-  else if (static_cast<int> (X.dimension_1 ()) == 1 && static_cast<int> (Y.dimension_1 ()) != 1) {
+  else if (static_cast<int> (X.extent(1)) == 1 && static_cast<int> (Y.extent(1)) != 1) {
     // X has 1 column, and Y has > 1 columns.
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef typename decltype (X_0)::const_type XV;

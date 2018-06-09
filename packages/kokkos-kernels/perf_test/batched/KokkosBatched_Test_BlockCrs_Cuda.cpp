@@ -54,7 +54,6 @@ using namespace KokkosBatched;
 int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
 
-  typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
   typedef Kokkos::DefaultExecutionSpace DeviceSpaceType;
 
   const bool detail = false;

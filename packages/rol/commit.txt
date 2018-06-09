@@ -1,0 +1,3 @@
+- Fixed adapters and examples/poisson-control not being built in rol/CMakeLists.txt
+- Fixed build errors in tempus examples involving use of ParameterList
+

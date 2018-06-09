@@ -71,7 +71,7 @@ Building Kokkoskernels
      example/buildlib/compileKokkosKernels.sh for your environment
      and run it to generate the required makefiles. 
      - KOKKOS_DEVICES can be as below. You can remove any backend 
-       that you don't need. If cuda backend is used, CXX compiler should point to ${KOKKOS_PATH}/config/nvcc_wrapper.
+       that you don't need. If cuda backend is used, CXX compiler should point to ${KOKKOS_PATH}/bin/nvcc_wrapper.
        If you enable Cuda, a host space, either OpenMP or Serial should be enabled.
        KOKKOS_DEVICES=OpenMP,Serial,Cuda
 
@@ -82,7 +82,22 @@ Building Kokkoskernels
      
        For the architecture flags, run below command.
        %: scripts/generate_makefile.bash --help     
+
   2. Run "make build-test" to compile the tests.
+
+
+Comments for building Trilinos with Kokkoskernels
+----------------------
+  - For Trilinos builds with the Cuda backend and complex double enabled with ETI,
+    the cmake option below may need to be set to avoid Error 127 errors:
+    CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON
+
+    If the option above is not set, a warning will be issued during configuration:
+
+      "The CMake option CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS is either
+      undefined or OFF.  Please set
+      CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON when building with CUDA and
+      complex double enabled."
 
 
 Using Kokkoskernels Test Drivers 

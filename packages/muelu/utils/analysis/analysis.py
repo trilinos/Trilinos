@@ -1,14 +1,15 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d] [-s STYLE] [-t TOP]
+  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d] [-s STYLE] [-t TOP] [-f FILTER]
   analysis.py (-h | --help)
 
 Options:
   -h --help                     Show this screen.
   -i FILE --input-files=FILE    Input file
   -o FILE --output-file=FILE    Output file
+  -f FILTER --filter=FILTER     Timer filter [default: ]
   -a MODE --analysis=MODE       Mode [default: setup_timers]
   -d --display                  Display mode
   -s STYLE --style=STYLE        Plot style [default: stack]
@@ -16,6 +17,7 @@ Options:
 """
 
 import glob
+import math
 import matplotlib
 # Check if can connect to DISPLAY
 interactive = True
@@ -57,7 +59,7 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(input_files, display, top, ax = None):
+def setup_timers(input_files, display, top, ax = None, custom_filter = None):
     """Show all setup level specific timers ordered by size"""
     ## Choose top timers from the first file
     with open(input_files[0]) as data_file:
@@ -68,8 +70,12 @@ def setup_timers(input_files, display, top, ax = None):
     timers = timer_data.index
 
     # Timer string corresponding to filtered timers
-    timers_fs = [x for x in timers    if re.search('.*\(level=', x) != None]    # search level specific
-    timers_fs = [x for x in timers_fs if re.search('Solve', x)      == None]    # ignore Solve timers
+    if custom_filter != "":
+        timers_fs = [x for x in timers    if re.search(custom_filter, x) != None]
+    else:
+        timers_fs = [x for x in timers    if re.search('.*\(level=', x) != None]    # search level specific
+        timers_fs = [x for x in timers_fs if re.search('Solve', x)      == None]    # ignore Solve timers
+
     if top > len(timers_fs):
       print("Warning: there are only ", len(timers_fs), " timers to plot.")
     top = min(top, len(timers_fs))
@@ -129,9 +135,14 @@ def setup_timers(input_files, display, top, ax = None):
 
         max_len = len(max(index, key=len)) + 3
 
-        print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), 'file 1', 'file 2', 'ratio'))
+        print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), input_files[0], input_files[1], 'ratio'))
         for i in range(top-1, -1, -1):
-            print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
+            if not math.isnan(d1[i]) and not math.isnan(d2[i]):
+                print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
+            elif math.isnan(d1[i]):
+                print('%s %10s %10.3f %10s' % (dfs.index[i].ljust(max_len, " "), '-', d2[i], '-'))
+            elif math.isnan(d2[i]):
+                print('%s %10.3f %10s %10s' % (dfs.index[i].ljust(max_len, " "), d1[i], '-', '-'))
 
 
 def muelu_strong_scaling(input_files, display, ax, top, style):
@@ -141,8 +152,6 @@ def muelu_strong_scaling(input_files, display, ax, top, style):
     #  - stack        : timers are on top of each other
     #  - stack-percent: same as stack, but shows percentage values on sides
     #  - scaling      : scaling of individual timers
-
-    assert(display)
 
     show_the_rest = 0
     if style == 'stack' or style == 'stack-percent':
@@ -278,6 +287,10 @@ def muelu_strong_scaling(input_files, display, ax, top, style):
             ax.set_xlabel('Scaling', fontsize=17)
 
             ax.legend(timers, loc='upper left')
+
+    else:
+        print("Strong scaling is only implemented for display")
+
 
 def solve_per_level(yaml_data, display, ax = None):
     """Show solve timers per level"""
@@ -455,6 +468,7 @@ if __name__ == '__main__':
     input_files = options['--input-files']
     output_file = options['--output-file']
     analysis    = options['--analysis']
+    filter      = options['--filter']
     display     = options['--display']
     style       = options['--style']
     top         = int(options['--top'])
@@ -501,13 +515,13 @@ if __name__ == '__main__':
 
     if analysis == 'muelu_strong_scaling':
         # Scaling studies work with multiple files
-        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style, top=top)
+        muelu_strong_scaling(input_files, display=display, ax=ax, style=style, top=top)
     elif analysis == 'setup_timers':
         # Setup timers work with multiple files
         # If there are two files, it compares the timers, using top timers from
         # the first file
         assert(len(input_files) <= 2)
-        setup_timers(input_files, display=display, ax=ax, top=top)
+        setup_timers(input_files, display=display, ax=ax, top=top, custom_filter=filter)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here

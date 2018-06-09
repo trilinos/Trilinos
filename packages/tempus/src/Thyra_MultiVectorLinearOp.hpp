@@ -38,7 +38,6 @@ public:
   /** \brief Construct to uninitialized. */
   MultiVectorLinearOp() {}
 
-  /** \brief . */
   void nonconstInitialize(
     const RCP<LinearOpBase<Scalar> > &op,
     const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
@@ -50,7 +49,6 @@ public:
     multiVecDomain_ = multiVecDomain;
   }
 
-  /** \brief . */
   void initialize(
     const RCP<const LinearOpBase<Scalar> > &op,
     const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
@@ -62,15 +60,12 @@ public:
     multiVecDomain_ = multiVecDomain;
   }
 
-  /** \brief . */
   RCP<LinearOpBase<Scalar> >
   getNonconstLinearOp() { return op_.getNonconstObj(); }
 
-  /** \brief . */
   RCP<const LinearOpBase<Scalar> >
   getLinearOp() const { return op_.getConstObj(); }
 
-  /** \brief . */
   void uninitialize() {
     op_.uninitialize();
     multiVecRange_ = Teuchos::null;
@@ -82,13 +77,10 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
 
-  /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > range() const { return multiVecRange_; }
 
-  /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > domain() const { return multiVecDomain_; }
 
-  /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const { return Teuchos::null; // ToDo: Implement if needed ???
   }
   //@}
@@ -97,12 +89,10 @@ protected:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  /** \brief . */
   bool opSupportedImpl(EOpTransp M_trans) const {
     return Thyra::opSupported(*op_.getConstObj(),M_trans);
   }
 
-  /** \brief . */
   void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &XX,
@@ -144,7 +134,7 @@ protected:
 
   /** \brief Get some statistics about a supported row.
    *
-   * \precondition <tt>this->rowStatIsSupported(rowStat)==true</tt>
+   * \pre <tt>this->rowStatIsSupported(rowStat)==true</tt>
    */
   void getRowStatImpl(
     const RowStatLinearOpBaseUtils::ERowStat rowStat,
@@ -177,19 +167,16 @@ protected:
   /** @name Overridden from ScaledLinearOpBase */
   //@{
 
-  /** \brief . */
   virtual bool supportsScaleLeftImpl() const {
     using Teuchos::rcp_dynamic_cast;
     return rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(op_.getConstObj())->supportsScaleLeft();
   }
 
-  /** \brief . */
   virtual bool supportsScaleRightImpl() const {
     using Teuchos::rcp_dynamic_cast;
     return rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(op_.getConstObj())->supportsScaleRight();
   }
 
-  /** \brief . */
   virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling) {
     TEUCHOS_ASSERT(this->supportsScaleLeft());
 
@@ -207,7 +194,6 @@ protected:
     //row_scaling.describe(std::cout, Teuchos::VERB_EXTREME);
   }
 
-  /** \brief . */
   virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling) {
     TEUCHOS_ASSERT(this->supportsScaleRight());
 

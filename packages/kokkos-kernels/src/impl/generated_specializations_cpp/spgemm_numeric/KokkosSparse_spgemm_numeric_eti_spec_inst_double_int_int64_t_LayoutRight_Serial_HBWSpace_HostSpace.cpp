@@ -43,10 +43,8 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosSparse_spgemm_numeric_spec.hpp"
+#include "KokkosKernels_config.h"
 
-namespace KokkosSparse {
-namespace Impl {
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
@@ -54,7 +52,10 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+#include "KokkosSparse_spgemm_numeric_spec.hpp"
+namespace KokkosSparse {
+namespace Impl {
  KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_INST(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
-#endif
 } // Impl
 } // KokkosSparse
+#endif

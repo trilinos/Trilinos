@@ -66,7 +66,7 @@ namespace Intrepid2 {
       /**
         \brief See Intrepid2::Basis_HGRAD_QUAD_Cn_FEM
                work is a rank 1 view having the same value_type of inputPoints
-               and having size equal to getWorkSizePerPoint()*inputPoints.dimension(0);
+               and having size equal to getWorkSizePerPoint()*inputPoints.extent(0);
       */
       template<EOperator opType>
       struct Serial {
@@ -81,10 +81,6 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
-
-        KOKKOS_INLINE_FUNCTION
-        static ordinal_type
-        getWorkSizePerPoint(ordinal_type order) {return 3*getPnCardinality<1>(order); }
       };
       
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -125,16 +121,16 @@ namespace Intrepid2 {
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.extent(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.extent(0));
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+          typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
           auto vcprop = Kokkos::common_view_alloc_prop(_work);
-          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -174,14 +170,19 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+
+  private:
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+
+  public:
     /** \brief  Constructor.
      */
     Basis_HGRAD_QUAD_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
@@ -213,10 +214,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
@@ -230,7 +231,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getdofCoeffs) rank = 1 required for dofCoeffs array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getdofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
 #endif
       Kokkos::deep_copy(dofCoeffs, 1.0);
@@ -248,10 +249,16 @@ namespace Intrepid2 {
       return (this->basisDegree_ > 2);
     }
 
-  private:
+    Kokkos::DynRankView<typename scalarViewType::const_value_type,ExecSpaceType>
+    getVandermondeInverse() const {
+      return vinv_;
+    }
 
-    /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
-    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+    ordinal_type
+    getWorkSizePerPoint(const EOperator operatorType) const { 
+      return 3*getPnCardinality<1>(this->basisDegree_); 
+    }
+    
   };
 
 }// namespace Intrepid2

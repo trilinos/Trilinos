@@ -41,11 +41,11 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
+
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "ROL_ParameterList.hpp"
 #include "ROL_LinearRegression.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -69,27 +69,27 @@ int main(int argc, char* argv[]) {
     // Set up problem data
     int nsamp = 1000, fdim = 4;
     std::vector<ROL::Ptr<ROL::Distribution<RealT>>> dist(fdim+1);
-    Teuchos::ParameterList list0;
+    ROL::ParameterList list0;
     list0.sublist("Distribution").set("Name","Beta");
     list0.sublist("Distribution").sublist("Beta").set("Shape 1",5.0);
     list0.sublist("Distribution").sublist("Beta").set("Shape 2",2.0);
     dist[0] = ROL::DistributionFactory<RealT>(list0);
-    Teuchos::ParameterList list1;
+    ROL::ParameterList list1;
     list1.sublist("Distribution").set("Name","Exponential");
     list1.sublist("Distribution").sublist("Exponential").set("Location",0.0);
     list1.sublist("Distribution").sublist("Exponential").set("Scale",   1.0);
     dist[1] = ROL::DistributionFactory<RealT>(list1);
-    Teuchos::ParameterList list2;
+    ROL::ParameterList list2;
     list2.sublist("Distribution").set("Name","Gaussian");
     list2.sublist("Distribution").sublist("Gaussian").set("Mean",    1.0);
     list2.sublist("Distribution").sublist("Gaussian").set("Variance",2.0);
     dist[2] = ROL::DistributionFactory<RealT>(list2);
-    Teuchos::ParameterList list3;
+    ROL::ParameterList list3;
     list3.sublist("Distribution").set("Name","Uniform");
     list3.sublist("Distribution").sublist("Uniform").set("Lower Bound",0.5);
     list3.sublist("Distribution").sublist("Uniform").set("Upper Bound",0.75);
     dist[3] = ROL::DistributionFactory<RealT>(list3);
-    Teuchos::ParameterList list4;
+    ROL::ParameterList list4;
     list4.sublist("Distribution").set("Name","Triangle");
     list4.sublist("Distribution").sublist("Triangle").set("Lower Bound",  0.25);
     list4.sublist("Distribution").sublist("Triangle").set("Peak Location",0.5);
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
       = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,dist,bman);
     ROL::LinearRegression<RealT> linReg(data);
     // Set up linear regression solver
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
     ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
     parlist.sublist("Status Test").set("Gradient Tolerance",1e-8);
@@ -118,14 +118,14 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       else if (ed == ROL::ERRORMEASURE_TRUNCATEDMEANQUADRANGLE) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Huber");
         list.set("Threshold",1e-1);
         parlist.sublist("Step").set("Type","Trust Region");
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       else if (ed == ROL::ERRORMEASURE_QUANTILEQUADRANGLE) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Koenker-Bassett");
         list.set("Confidence Level",0.75);
         list.set("Convex Combination Parameter",0.0);
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
       }
       else if (ed == ROL::ERRORMEASURE_MOREAUYOSIDACVAR) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Moreau-Yosida-Koenker-Bassett");
         list.set("Confidence Level",0.75);
         list.set("Smoothing Parameter",1e-2);
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       else if (ed == ROL::ERRORMEASURE_GENMOREAUYOSIDACVAR) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Generalized Moreau-Yosida-Koenker-Bassett");
         list.set("Confidence Level",0.75);
         list.set("Convex Combination Parameter",0.0);
@@ -151,14 +151,14 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       else if (ed == ROL::ERRORMEASURE_LOGEXPONENTIALQUADRANGLE) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Exponential");
         list.set("Rate",1.0);
         parlist.sublist("Step").set("Type","Trust Region");
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       else if (ed == ROL::ERRORMEASURE_LOGQUANTILEQUADRANGLE) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Log Quantile");
         list.set("Slope for Linear Growth",0.5);
         list.set("Rate for Exponential Growth",1.0);
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
       }
       else if (ed == ROL::ERRORMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) {
-        Teuchos::ParameterList &list
+        ROL::ParameterList &list
           = parlist.sublist("SOL").sublist("Error Measure").sublist("Smoothed Worst Case");
         list.set("Smoothing Parameter",1e-4);
         parlist.sublist("Step").set("Type","Trust Region");

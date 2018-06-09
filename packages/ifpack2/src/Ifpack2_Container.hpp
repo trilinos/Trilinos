@@ -450,7 +450,7 @@ void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, int stride) const
   const scalar_type one = STS::one();
   // Note: Flop counts copied naively from Ifpack.
   // use partitions_ and blockRows_
-  size_t numVecs = X.dimension_1();
+  size_t numVecs = X.extent(1);
   // Non-overlapping Jacobi
   for (local_ordinal_type i = 0; i < numBlocks_; i++)
   {
@@ -503,7 +503,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
   // Note: Flop counts copied naively from Ifpack.
   const scalar_type one = STS::one();
   const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
-  auto numVecs = X.dimension_1();
+  auto numVecs = X.extent(1);
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices;
   Indices.resize(Length);
@@ -513,7 +513,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  HostView Resid("", X.dimension_0(), X.dimension_1());
+  HostView Resid("", X.extent(0), X.extent(1));
   for(local_ordinal_type i = 0; i < numBlocks_; i++)
   {
     if(blockRows_[i] > 1 || hasBlockCrs_)
@@ -608,7 +608,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   const scalar_type one = STS::one();
-  auto numVecs = X.dimension_1();
+  auto numVecs = X.extent(1);
   const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices(Length);
@@ -617,7 +617,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  HostView Resid("", X.dimension_0(), X.dimension_1());
+  HostView Resid("", X.extent(0), X.extent(1));
   // Forward Sweep
   for(local_ordinal_type i = 0; i < numBlocks_; i++)
   {

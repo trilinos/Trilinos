@@ -302,10 +302,10 @@ namespace Intrepid2 {
           
           // fill with random numbers
           {
-            const auto iend = ma_x_x_d_d.dimension(0);
-            const auto jend = ma_x_x_d_d.dimension(1);
-            const auto kend = ma_x_x_d_d.dimension(2);
-            const auto lend = ma_x_x_d_d.dimension(3);
+            const auto iend = ma_x_x_d_d.extent(0);
+            const auto jend = ma_x_x_d_d.extent(1);
+            const auto kend = ma_x_x_d_d.extent(2);
+            const auto lend = ma_x_x_d_d.extent(3);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
@@ -314,9 +314,9 @@ namespace Intrepid2 {
                     ma_x_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
-            const auto iend = va_x_x_d.dimension(0);
-            const auto jend = va_x_x_d.dimension(1);
-            const auto kend = va_x_x_d.dimension(2);
+            const auto iend = va_x_x_d.extent(0);
+            const auto jend = va_x_x_d.extent(1);
+            const auto kend = va_x_x_d.extent(2);
 
             {
               for (size_type i=0;i<iend;++i)
@@ -371,7 +371,7 @@ namespace Intrepid2 {
           
           { 
             value_type val = 0;
-            for (size_type i=0;i<detA_x_x.dimension(0);++i) 
+            for (size_type i=0;i<detA_x_x.extent(0);++i) 
               val += rst::Serial::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
                                        Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
 
@@ -439,9 +439,9 @@ namespace Intrepid2 {
           
           // fill with random numbers
           {
-            const auto iend = va_x_x_d.dimension(0);
-            const auto jend = va_x_x_d.dimension(1);
-            const auto kend = va_x_x_d.dimension(2);
+            const auto iend = va_x_x_d.extent(0);
+            const auto jend = va_x_x_d.extent(1);
+            const auto kend = va_x_x_d.extent(2);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
@@ -475,10 +475,10 @@ namespace Intrepid2 {
           // fill with random numbers
           // fill with random numbers
           {
-            const auto iend = ma_x_d_d.dimension(0);
-            const auto jend = ma_x_d_d.dimension(1);
-            const auto kend = ma_x_d_d.dimension(2);
-            const auto lend = ma_x_d_d.dimension(3);
+            const auto iend = ma_x_d_d.extent(0);
+            const auto jend = ma_x_d_d.extent(1);
+            const auto kend = ma_x_d_d.extent(2);
+            const auto lend = ma_x_d_d.extent(3);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
@@ -487,9 +487,9 @@ namespace Intrepid2 {
                     ma_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
-            const auto iend = va_x_d.dimension(0);
-            const auto jend = va_x_d.dimension(1);
-            const auto kend = va_x_d.dimension(2);
+            const auto iend = va_x_d.extent(0);
+            const auto jend = va_x_d.extent(1);
+            const auto kend = va_x_d.extent(2);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
@@ -595,8 +595,8 @@ namespace Intrepid2 {
           *outStream << "\n-- Checking dot and vectorNorm \n";
 
           {
-            const auto iend = va_x_d.dimension(0);
-            const auto jend = va_x_d.dimension(1);
+            const auto iend = va_x_d.extent(0);
+            const auto jend = va_x_d.extent(1);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)

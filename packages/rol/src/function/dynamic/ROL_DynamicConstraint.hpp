@@ -47,17 +47,19 @@
 #define ROL_DYNAMICCONSTRAINT_HPP
 
 #include "ROL_DynamicFunction.hpp"
-#include "ROL_ts.hpp"
+#include "ROL_TimeStamp.hpp"
 
 /** @ingroup dynamic_group
     \class ROL::DynamicConstraint
-    \brief Defines the time-dependent constraint operator interface for simulation-based optimization.
+    \brief Defines the time-dependent constraint operator interface for 
+           simulation-based optimization.
 
-    This constraint interface inherits from ROL_Constraint_SimOpt. Though the interface
-    takes two simulation space vectors from spaces
-    \f$\mathcal{U_o}\times\mathcal{U_n}\f$. The space \f$\mathcal{U_o}\f$ is ``old'' information
-    that accounts for the initial condition on the time interval. The space \f$\mathcal{U_n}\f$ is the
-    ``new'' variables that can be determined by satisfying constraints in the form
+    This constraint interface inherits from ROL_Constraint_SimOpt. Though 
+    the interface takes two simulation space vectors from spaces
+    \f$\mathcal{U_o}\times\mathcal{U_n}\f$. The space \f$\mathcal{U_o}\f$ is 
+    ``old'' information that accounts for the initial condition on the time 
+     interval. The space \f$\mathcal{U_n}\f$ is the ``new'' variables that can 
+    be determined by satisfying constraints in the form
     \f[
       c(u_o,u_n,z,t_o,t_n) = 0 \,.
     \f]
@@ -76,6 +78,16 @@ public:
   using TS = TimeStamp<Real>;
  
   virtual ~DynamicConstraint() {}
+
+  virtual void update( const V& uo, const V& un, const V& z ) {
+    update_uo( uo );
+    update_un( un );
+    update_z( z );
+  }
+
+  virtual void update_uo( const V& uo ) { }
+  virtual void update_un( const V& un ) { }
+  virtual void update_z( const V& z ) { }
 
   virtual void value( V& c, const V& uo, const V& un, 
                       const V& z, const TS& ts ) const = 0;
@@ -126,19 +138,26 @@ public:
   virtual void applyAdjointHessian_un_un( V& ahwv, const V& wn, const V& vn,
                                           const V& uo, const V& un, 
                                           const V& z, const TS& ts ) const {
+    ahwv.zero();
   }
 
   virtual void applyAdjointHessian_un_uo( V& ahwv, const V& w, const V& vn,
                                           const V& uo, const V& un, 
-                                          const V& z, const TS& ts ) const {}
+                                          const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
   virtual void applyAdjointHessian_un_z( V& ahwv, const V& w, const V& vn,
                                           const V& uo, const V& un, 
-                                          const V& z, const TS& ts ) const {}
+                                          const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
   virtual void applyAdjointHessian_uo_un( V& ahwv, const V& w, const V& vo,
                                           const V& uo, const V& un, 
-                                          const V& z, const TS& ts ) const {}
+                                          const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
 // This should be zero 
 //  virtual void applyAdjointHessian_uo_uo( V& ahwv, const V& w, const V& v,
@@ -147,19 +166,27 @@ public:
 
   virtual void applyAdjointHessian_uo_z( V& ahwv, const V& w, const V& vo,
                                          const V& uo, const V& un, 
-                                         const V& z, const TS& ts ) const {}
+                                         const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
   virtual void applyAdjointHessian_z_un( V& ahwv, const V& w, const V& vz,
                                          const V& uo, const V& un, 
-                                         const V& z, const TS& ts ) const {}
+                                         const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
   virtual void applyAdjointHessian_z_uo( V& ahwv, const V& w, const V& vz,
                                          const V& uo, const V& un, 
-                                         const V& z, const TS& ts ) const {}
+                                         const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
   
   virtual void applyAdjointHessian_z_z( V& ahwv, const V& w, const V& vz,
                                         const V& uo, const V& un, 
-                                        const V& z, const TS& ts ) const {}
+                                        const V& z, const TS& ts ) const {
+    ahwv.zero();
+  }
 
 }; // DynamicConstraint
 

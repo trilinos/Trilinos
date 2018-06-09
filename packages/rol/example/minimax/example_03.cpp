@@ -52,7 +52,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Minimax3.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -87,14 +87,16 @@ int main(int argc, char *argv[]) {
     // Initialize iteration vectors.
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
+
     ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
+
     ROL::StdVector<RealT> z(z_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+
     std::string stepname = "Bundle";
     ROL::Algorithm<RealT> algo(stepname,*parlist);
 

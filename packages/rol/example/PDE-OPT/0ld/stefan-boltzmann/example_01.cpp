@@ -46,7 +46,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
       ROL::makePtr<Objective_PDEOPT_StefanBoltzmann<RealT>>(data, parlist);
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con =
       ROL::makePtr<EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>>(data, parlist);
+    con->setSolveParameters(*parlist);
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
       ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, up);
 

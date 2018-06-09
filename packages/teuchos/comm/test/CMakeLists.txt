@@ -5,4 +5,5 @@ ADD_SUBDIRECTORIES(
   ParameterList
   Time
   TimeMonitor
-  )
+  StackedTimer
+)

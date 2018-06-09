@@ -46,6 +46,8 @@
     \brief Interior Point test using Hock & Schittkowski problem 24.
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS24.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
@@ -68,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<INEQ> incon = HS24.getInequalityConstraint();
     ROL::Ptr<BC>   inbnd = HS24.getSlackBoundConstraint();
    
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    
 
     std::string stepname = "Interior Point";
 

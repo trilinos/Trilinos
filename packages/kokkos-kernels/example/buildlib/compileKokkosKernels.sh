@@ -6,7 +6,7 @@ KOKKOSKERNELS_OFFSETS=int,size_t #offset types to instantiate
 KOKKOSKERNELS_PATH=../.. #path to kokkos-kernels top directory.
 KOKKOSKERNELS_OPTIONS=eti-only #options for kokkoskernels  
 CXXFLAGS="-Wall -pedantic -Werror -O3 -g -Wshadow -Wsign-compare -Wignored-qualifiers -Wempty-body -Wclobbered -Wuninitialized"
-CXX=${KOKKOS_PATH}/config/nvcc_wrapper #icpc #
+CXX=${KOKKOS_PATH}/bin/nvcc_wrapper #icpc #
 KOKKOS_DEVICES=Serial,Cuda,OpenMP #devices Cuda...
 KOKKOS_ARCHS=Pascal60,Power8
 

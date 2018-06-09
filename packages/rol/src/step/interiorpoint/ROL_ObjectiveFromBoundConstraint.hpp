@@ -38,7 +38,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -119,7 +119,7 @@ private:
 public:
  
   ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc,
-                                Teuchos::ParameterList &parlist ) :
+                                ROL::ParameterList &parlist ) :
     lo_( bc.getLowerBound() ),
     up_( bc.getUpperBound() ) {
 
@@ -217,7 +217,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::value): Undefined barrier function type!");
 
         break;
@@ -300,7 +300,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::gradient): Undefined barrier function type!");
 
         break;
@@ -384,7 +384,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::hessVec): Undefined barrier function type!");
 
         break;

@@ -247,8 +247,8 @@ namespace Experiment{
     if (c_mat_file != NULL){
       if (params.c_mem_space == 1){
 
-        fast_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.dimension_0());
-        fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.dimension_0());
+        fast_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
+        fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
 
         KokkosKernels::Impl::kk_sort_graph
         <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t, fast_cols_view_t, fast_values_view_t, myExecSpace>(
@@ -258,15 +258,15 @@ namespace Experiment{
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) (c_fast_crsmat.numRows()),
-            (size_type) (c_fast_crsmat.graph.entries.dimension_0()),
+            (size_type) (c_fast_crsmat.graph.entries.extent(0)),
             c_fast_crsmat.graph.row_map.data(),
             sorted_adj.data(),
             sorted_vals.data(),
             c_mat_file);
       }
       else {
-        slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.dimension_0());
-        slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.dimension_0());
+        slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
+        slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
 
         KokkosKernels::Impl::kk_sort_graph<
         const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, slow_cols_view_t, slow_values_view_t, myExecSpace>(
@@ -276,7 +276,7 @@ namespace Experiment{
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) c_slow_crsmat.numRows(),
-            (size_type) c_slow_crsmat.graph.entries.dimension_0(),
+            (size_type) c_slow_crsmat.graph.entries.extent(0),
             c_slow_crsmat.graph.row_map.data(),
             sorted_adj.data(),
             sorted_vals.data(),

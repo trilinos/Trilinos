@@ -45,12 +45,10 @@
 #define ROL_MEANDEVIATIONFROMTARGET_HPP
 
 #include "ROL_RandVarFunctional.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_PositiveFunction.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
 
 /** @ingroup risk_group
     \class ROL::MeanDeviationFromTarget
@@ -119,18 +117,18 @@ private:
 
   void checkInputs(void) {
     int oSize = order_.size(), cSize = coeff_.size(), tSize = target_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): Order and coefficient arrays have different sizes!");
-    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=tSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((oSize!=tSize),std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): Order and target arrays have different sizes!");
     Real zero(0), two(2);
     for (int i = 0; i < oSize; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
         ">>> ERROR (ROL::MeanDeviationFromTarget): Element of order array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
         ">>> ERROR (ROL::MeanDeviationFromTarget): Element of coefficient array out of range!");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(positiveFunction_ == nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): PositiveFunction pointer is null!");
     initializeMDT();
   }
@@ -197,20 +195,18 @@ public:
       \li "Deviation Type" (eighter "Upper" or "Absolute")
       \li A sublist for positive function information.
   */
-  MeanDeviationFromTarget( Teuchos::ParameterList &parlist )
+  MeanDeviationFromTarget( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>(), firstResetMDT_(true) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target");
+
     // Get data from parameter list
-    Teuchos::Array<Real> target
-      = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
-    target_ = target.toVector();
-    Teuchos::Array<Real> order
-      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
-    order_ = order.toVector();
-    Teuchos::Array<Real> coeff
-      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    coeff_ = coeff.toVector();
+    target_ = ROL::getArrayFromStringParameter<double>(list,"Targets");
+
+    order_ = ROL::getArrayFromStringParameter<double>(list,"Orders");
+
+    coeff_ = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
+
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
@@ -220,11 +216,11 @@ public:
       positiveFunction_ = makePtr<AbsoluteValue<Real>>(list);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
     }
     // Check inputs
-    NumMoments_ = order.size();
+    NumMoments_ = order_.size();
     checkInputs();
   }
 

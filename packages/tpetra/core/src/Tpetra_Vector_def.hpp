@@ -248,7 +248,7 @@ namespace Tpetra {
 
     if (! comm.is_null () && this->isDistributed ()) {
       // Assume that MPI can access device memory.
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, 1, lclNrm.ptr_on_device (),
+      reduceAll<int, mag_type> (*comm, REDUCE_SUM, 1, lclNrm.data (),
                                 &gblNrm);
       gblNrm = ATM::sqrt (gblNrm * OneOverN);
     }

@@ -102,7 +102,7 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;
@@ -211,7 +211,7 @@ public:
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_coord.dimension_0(); }
+  { return m_coord.extent(0); }
 
   /** \brief  Maximum sparse entries for any coordinate */
   KOKKOS_INLINE_FUNCTION
@@ -840,7 +840,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A.graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -960,7 +960,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A.graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -1076,7 +1076,7 @@ public:
     const bool use_block_algorithm = false;
 #endif
 
-    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    const size_t row_count = A.graph.row_map.extent(0) - 1 ;
     if (use_block_algorithm) {
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC

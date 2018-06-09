@@ -7,6 +7,8 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+#include "Panzer_DotProduct.hpp"
+#include "Panzer_Sum.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -85,12 +87,65 @@ buildClosureModels(const std::string& model_id,
 
     if (plist.isType<std::string>("Type")) {
       std::string type = plist.get<std::string>("Type");
-      double dt = plist.get<double>("dt");
       if(type=="GAUSSIAN PULSE") {
+        double dt = plist.get<double>("dt");
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new mini_em::GaussianPulse<EvalT,panzer::Traits>(key,*ir,fl,dt));
 	evaluators->push_back(e);
 
+        found = true;
+      }
+      if(type=="ELECTROMAGNETIC ENERGY") {
+        double mu = plist.get<double>("mu");
+        double epsilon = plist.get<double>("epsilon");
+
+        // compute ||E||^2
+        {
+          Teuchos::ParameterList input;
+          input.set("Result Name", "E_SQUARED");
+          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+          input.set("Vector A Name", "E_edge");
+          input.set("Vector B Name", "E_edge");
+
+          RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
+        // compute ||B||^2
+        {
+          Teuchos::ParameterList input;
+          input.set("Result Name", "B_SQUARED");
+          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+          input.set("Vector A Name", "B_face");
+          input.set("Vector B Name", "B_face");
+
+          RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
+        // compute epsilon/2*||E||^2 + 1/(2*mu)*||B||^2
+        {
+          RCP<std::vector<double> > coeffs = rcp(new std::vector<double>);
+          coeffs->push_back(0.5*epsilon);
+          coeffs->push_back(0.5/mu);
+  
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+          valuesNames->push_back("E_SQUARED");
+          valuesNames->push_back("B_SQUARED");
+
+          Teuchos::ParameterList input;
+          input.set("Sum Name","EM_ENERGY");
+          input.set("Values Names",valuesNames);
+          input.set("Data Layout",ir->dl_scalar);
+          input.set<RCP<const std::vector<double> > >("Scalars", coeffs);
+        
+          RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+ 
         found = true;
       }
     }

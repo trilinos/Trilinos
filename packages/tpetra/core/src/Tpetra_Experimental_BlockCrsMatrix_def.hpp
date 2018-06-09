@@ -176,9 +176,9 @@ private:
   KOKKOS_INLINE_FUNCTION local_ordinal_type
   getNumLclMeshRows () const
   {
-    return ptr_.dimension_0 () == 0 ?
+    return ptr_.extent (0) == 0 ?
       static_cast<local_ordinal_type> (0) :
-      static_cast<local_ordinal_type> (ptr_.dimension_0 () - 1);
+      static_cast<local_ordinal_type> (ptr_.extent (0) - 1);
   }
 
   static constexpr local_ordinal_type defaultRowsPerTeam = 20;
@@ -255,7 +255,7 @@ public:
       shared_array_type (member.thread_scratch (1), blockSize_ * rowsPerTeam_);
 
     // This looks wrong!  All the threads are writing into the same local storage.
-    //out_little_vec_type Y_tlm (threadLocalMem.ptr_on_device (), blockSize_, 1);
+    //out_little_vec_type Y_tlm (threadLocalMem.data (), blockSize_, 1);
 
     const LO numLclMeshRows = getNumLclMeshRows ();
     const LO rowBeg = leagueRank * rowsPerTeam_;
@@ -274,7 +274,7 @@ public:
     parallel_for (Kokkos::TeamThreadRange (member, rowBeg, rowEnd),
                   [&] (const LO& lclRow) {
                     // Each thread in the team gets its own temp storage.
-                    out_little_vec_type Y_tlm (threadLocalMem.ptr_on_device () + blockSize_ * member.team_rank (), blockSize_);
+                    out_little_vec_type Y_tlm (threadLocalMem.data () + blockSize_ * member.team_rank (), blockSize_);
 
                     const offset_type Y_ptBeg = lclRow * blockSize_;
                     const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
@@ -298,7 +298,7 @@ public:
                       const offset_type bs2 = blockSize_ * blockSize_;
                       for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
                            ++absBlkOff) {
-                        little_block_type A_cur (val_.ptr_on_device () + absBlkOff * bs2,
+                        little_block_type A_cur (val_.data () + absBlkOff * bs2,
                                                  blockSize_, blockSize_);
                         const offset_type X_blkCol = ind_[absBlkOff];
                         const offset_type X_ptBeg = X_blkCol * blockSize_;
@@ -445,7 +445,7 @@ public:
       const offset_type bs2 = blockSize_ * blockSize_;
       for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
            ++absBlkOff) {
-        little_block_type A_cur (val_.ptr_on_device () + absBlkOff * bs2,
+        little_block_type A_cur (val_.data () + absBlkOff * bs2,
                                  blockSize_, blockSize_);
         const offset_type X_blkCol = ind_[absBlkOff];
         const offset_type X_ptBeg = X_blkCol * blockSize_;
@@ -507,10 +507,10 @@ bcrsLocalApplyNoTrans (const AlphaCoeffType& alpha,
   typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_type;
   typedef typename std::remove_const<typename GraphType::data_type>::type LO;
 
-  const LO numLocalMeshRows = graph.row_map.dimension_0 () == 0 ?
+  const LO numLocalMeshRows = graph.row_map.extent (0) == 0 ?
     static_cast<LO> (0) :
-    static_cast<LO> (graph.row_map.dimension_0 () - 1);
-  const LO numVecs = Y.dimension_1 ();
+    static_cast<LO> (graph.row_map.extent (0) - 1);
+  const LO numVecs = Y.extent (1);
   if (numLocalMeshRows == 0 || numVecs == 0) {
     return; // code below doesn't handle numVecs==0 correctly
   }
@@ -624,7 +624,7 @@ public:
     typedef Kokkos::View<const IST**, Kokkos::LayoutRight,
       device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       const_little_block_type;
-    const_little_block_type D_in (val_.ptr_on_device () + pointOffset,
+    const_little_block_type D_in (val_.data () + pointOffset,
                                   blockSize_, blockSize_);
     auto D_out = Kokkos::subview (diag_, lclRowInd, ALL (), ALL ());
     COPY (D_in, D_out);
@@ -1018,7 +1018,7 @@ public:
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     auto vals_host_out =
       const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
-    impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+    impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const LO relBlockOffset =
@@ -1292,9 +1292,9 @@ public:
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO blockSize = this->getBlockSize ();
     TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<LO> (diag.dimension_0 ()) < lclNumMeshRows ||
-       static_cast<LO> (diag.dimension_1 ()) < blockSize ||
-       static_cast<LO> (diag.dimension_2 ()) < blockSize,
+      (static_cast<LO> (diag.extent (0)) < lclNumMeshRows ||
+       static_cast<LO> (diag.extent (1)) < blockSize ||
+       static_cast<LO> (diag.extent (2)) < blockSize,
        std::invalid_argument, prefix <<
        "The input Kokkos::View is not big enough to hold all the data.");
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -1342,9 +1342,9 @@ public:
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO blockSize = this->getBlockSize ();
     TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<LO> (diag.dimension_0 ()) < lclNumMeshRows ||
-       static_cast<LO> (diag.dimension_1 ()) < blockSize ||
-       static_cast<LO> (diag.dimension_2 ()) < blockSize,
+      (static_cast<LO> (diag.extent (0)) < lclNumMeshRows ||
+       static_cast<LO> (diag.extent (1)) < blockSize ||
+       static_cast<LO> (diag.extent (2)) < blockSize,
        std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
        "The input Kokkos::View is not big enough to hold all the data.");
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -1451,7 +1451,7 @@ public:
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     auto vals_host_out =
       const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
-    impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+    impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const LO relBlockOffset =
@@ -1505,7 +1505,7 @@ public:
     }
     else {
       const size_t absBlockOffsetStart = ptrHost_[localRowInd];
-      colInds = indHost_.ptr_on_device () + absBlockOffsetStart;
+      colInds = indHost_.data () + absBlockOffsetStart;
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -1522,7 +1522,7 @@ public:
       typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
       auto vals_host_out =
         const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
-      impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+      impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
       impl_scalar_type* const vOut = vals_host_out_raw +
         absBlockOffsetStart * offsetPerBlock ();
       vals = reinterpret_cast<Scalar*> (vOut);
@@ -1909,7 +1909,7 @@ public:
     const size_t absEndOffset = ptrHost_[localRowIndex+1];
     const LO numEntriesInRow = static_cast<LO> (absEndOffset - absStartOffset);
     // Amortize pointer arithmetic over the search loop.
-    const LO* const curInd = indHost_.ptr_on_device () + absStartOffset;
+    const LO* const curInd = indHost_.data () + absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
     if (hint < numEntriesInRow && curInd[hint] == colIndexToFind) {
@@ -2014,7 +2014,7 @@ public:
       typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
       auto vals_host =
         const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
-      const impl_scalar_type* vals_host_raw = vals_host.ptr_on_device ();
+      const impl_scalar_type* vals_host_raw = vals_host.data ();
 
       return getConstLocalBlockFromInput (vals_host_raw, absPointOffset);
     }
@@ -2079,7 +2079,7 @@ public:
       typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
       auto vals_host =
         const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
-      impl_scalar_type* vals_host_raw = vals_host.ptr_on_device ();
+      impl_scalar_type* vals_host_raw = vals_host.data ();
       return getNonConstLocalBlockFromInput (vals_host_raw, absPointOffset);
     }
   }
@@ -2738,13 +2738,13 @@ public:
       }
       const size_t numScalarEnt = numEnt * blockSize * blockSize;
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.dimension_0 ()) <= offset,
-        std::logic_error, "unpackRow: imports.dimension_0() = "
-        << imports.dimension_0 () << " <= offset = " << offset << ".");
+        static_cast<size_t> (imports.extent (0)) <= offset,
+        std::logic_error, "unpackRow: imports.extent(0) = "
+        << imports.extent (0) << " <= offset = " << offset << ".");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.dimension_0 ()) < offset + numBytes,
-        std::logic_error, "unpackRow: imports.dimension_0() = "
-        << imports.dimension_0 () << " < offset + numBytes = "
+        static_cast<size_t> (imports.extent (0)) < offset + numBytes,
+        std::logic_error, "unpackRow: imports.extent(0) = "
+        << imports.extent (0) << " < offset + numBytes = "
         << (offset + numBytes) << ".");
 
       const GO gid = 0; // packValueCount wants this
@@ -3121,7 +3121,7 @@ public:
     // the same size as any other allocated instance.  Thus, it
     // suffices to find some allocated instance as a representative
     // value.
-    if (this->val_.h_view.dimension_0 () != 0) {
+    if (this->val_.h_view.extent (0) != 0) {
       const ST& val = this->val_.h_view[0];
       numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
     }
@@ -3218,9 +3218,9 @@ public:
 
       // Combine the incoming data with the matrix's current data.
       LO numCombd = 0;
-      const LO* const lidsRaw = const_cast<const LO*> (lidsOut.ptr_on_device ());
+      const LO* const lidsRaw = const_cast<const LO*> (lidsOut.data ());
       const Scalar* const valsRaw =
-        reinterpret_cast<const Scalar*> (const_cast<const ST*> (valsOut.ptr_on_device ()));
+        reinterpret_cast<const Scalar*> (const_cast<const ST*> (valsOut.data ()));
       if (CM == ADD) {
         numCombd = this->sumIntoLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
       } else if (CM == INSERT || CM == REPLACE) {
@@ -3611,7 +3611,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalNumDiags() const
   {
-    return graph_.getGlobalNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3619,7 +3620,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumDiags() const
   {
-    return graph_.getNodeNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3641,17 +3643,19 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   bool
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isLowerTriangular() const
+  isLowerTriangular () const
   {
-    return graph_.isLowerTriangular();
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).isLowerTriangularImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
   bool
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isUpperTriangular() const
+  isUpperTriangular () const
   {
-    return graph_.isUpperTriangular();
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).isUpperTriangularImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3765,7 +3769,7 @@ public:
     auto vals_host_out =
       const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
     Scalar* vals_host_out_raw =
-      reinterpret_cast<Scalar*> (vals_host_out.ptr_on_device ());
+      reinterpret_cast<Scalar*> (vals_host_out.data ());
 
     // TODO amk: This is a temporary measure to make the code run with Ifpack2
     size_t rowOffset = 0;

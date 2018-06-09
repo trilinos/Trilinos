@@ -71,7 +71,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i, Real &min) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     Real gap = U_(i,j)-L_(i,j);
                     if(gap<min) {
@@ -108,7 +108,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i, int &feasible) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)<L_(i,j)) || (X_(i,j)>U_(i,j)) ) {
                         feasible = 0;
@@ -143,7 +143,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( X_(i,j)<L_(i,j) ) {
                         X_(i,j) = L_(i,j); 
@@ -171,7 +171,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
                         Y_(i,j) = 0.0;
@@ -196,7 +196,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = U_.dimension_1();
+                const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)>=U_(i,j)-eps_) {
                         Y_(i,j) = 0.0;
@@ -222,7 +222,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
                         Y_(i,j) = 0.0;
@@ -252,7 +252,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)<=L_(i,j)+eps_) && G_(i,j) > 0.0 ) {
                         Y_(i,j) = 0.0;
@@ -279,7 +279,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = U_.dimension_1();
+                const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)>=U_(i,j)-eps_) && G_(i,j) < 0.0 ) {
                         Y_(i,j) = 0.0;
@@ -306,7 +306,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(( X_(i,j)<=L_(i,j)+eps_) && (G_(i,j)>0.0))  {
                         Y_(i,j) = 0.0;

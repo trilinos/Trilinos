@@ -29,7 +29,7 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 
-#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
 namespace Sacado {
   namespace Impl {
     const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool = 0;

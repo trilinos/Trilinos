@@ -1264,8 +1264,8 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  part_t lMax = std::numeric_limits<part_t>::min(); 
-  part_t lMin = std::numeric_limits<part_t>::max();
+  part_t lMax = -1;
+  part_t lMin = (len > 0 ? std::numeric_limits<part_t>::max() : 0);
   part_t gMax, gMin;
 
   for (size_t i = 0; i < len; i++) {

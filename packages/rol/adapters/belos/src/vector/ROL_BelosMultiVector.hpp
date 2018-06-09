@@ -70,12 +70,12 @@ namespace { // (anonymous)
   public:
     RolStubTsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>&)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
+      ROL_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
 
     RolStubTsqrAdapter ()
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
+      ROL_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
 
     Teuchos::RCP<const Teuchos::ParameterList>
@@ -95,13 +95,13 @@ namespace { // (anonymous)
                     const bool forceNonnegativeDiagonal = false)
     {
       (void) forceNonnegativeDiagonal; // forestall "unused" warning
-      TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
+      ROL_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
 
     int
     revealRank (ROL::MultiVector<Scalar>& /* Q */,
                 Teuchos::SerialDenseMatrix<int, Scalar>& /* R */,
-                const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& /* tol */)
+                const typename ROL::ScalarTraits<Scalar>::magnitudeType& /* tol */)
     {
       return 0;
     }
@@ -120,7 +120,7 @@ namespace Belos {
 
         typedef Teuchos::SerialDenseMatrix<int,Scalar> Matrix;
 
-        typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+        typedef typename ROL::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
         public:
 
@@ -291,7 +291,7 @@ namespace Belos {
                                std::vector<magnitudeType>& normvec,
                                NormType type=TwoNorm) {
 
-                TEUCHOS_TEST_FOR_EXCEPTION( (type !=TwoNorm) , std::invalid_argument,
+                ROL_TEST_FOR_EXCEPTION( (type !=TwoNorm) , std::invalid_argument,
                     "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvNorm()\n"
                     "ROL::MultiVector supports only Euclidean norm");
 
@@ -327,22 +327,22 @@ namespace Belos {
             /** \brief Randomize the vectors in mv (not implemented)
             */
             static void MvRandom(MV& mv) {
-                TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                ROL_TEST_FOR_EXCEPTION(true,std::logic_error,
                     "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::Random()\n"
                     "Random initialization not implemented for ROL::MultiVector");
             }
 
 
             static void MvInit(MV& mv,
-                               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero()) {
-                TEUCHOS_TEST_FOR_EXCEPTION(alpha != 0,std::invalid_argument,
+                               const Scalar alpha = ROL::ScalarTraits<Scalar>::zero()) {
+                ROL_TEST_FOR_EXCEPTION(alpha != 0,std::invalid_argument,
                     "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvInit()\n");
                 mv.zero();
             }
 
 
             static void MvPrint(const MV& mv, std::ostream& os) {
-                TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                ROL_TEST_FOR_EXCEPTION(true,std::logic_error,
                     "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvPrint()\n"
                     "Print not implemented for ROL::MultiVector");
             }

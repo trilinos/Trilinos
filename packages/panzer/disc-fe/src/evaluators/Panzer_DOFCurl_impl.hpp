@@ -71,8 +71,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -97,9 +97,9 @@ void evaluateCurl_withSens_vector(int numCells,
 { 
   if(numCells>0) {
     // evaluate at quadrature points
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
-    int spaceDim  = curl_basis.dimension(3);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
+    int spaceDim  = curl_basis.extent(3);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -133,8 +133,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -157,8 +157,8 @@ void evaluateCurl_withSens_scalar(int numCells,
 { 
   if(numCells>0) {
     // evaluate at quadrature points
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -192,8 +192,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -220,9 +220,9 @@ void evaluateCurl_fastSens_vector(int numCells,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
-    int spaceDim  = curl_basis.dimension(3);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
+    int spaceDim  = curl_basis.extent(3);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -261,8 +261,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -287,8 +287,8 @@ void evaluateCurl_fastSens_scalar(int numCells,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {

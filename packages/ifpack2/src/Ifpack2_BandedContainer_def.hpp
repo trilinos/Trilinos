@@ -335,27 +335,27 @@ applyImpl (HostViewLocal& X,
   using Teuchos::rcpFromRef;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0 () != Y.dimension_0 (),
+    X.extent (0) != Y.extent (0),
     std::logic_error, "Ifpack2::BandedContainer::applyImpl: X and Y have "
-    "incompatible dimensions (" << X.dimension_0 () << " resp. "
-    << Y.dimension_0 () << ").  Please report this bug to "
+    "incompatible dimensions (" << X.extent (0) << " resp. "
+    << Y.extent (0) << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0 () != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows()),
+    X.extent (0) != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows()),
     std::logic_error, "Ifpack2::BandedContainer::applyImpl: The input "
     "multivector X has incompatible dimensions from those of the "
-    "inverse operator (" << X.dimension_0 () << " vs. "
+    "inverse operator (" << X.extent (0) << " vs. "
     << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y.dimension_0 () != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols()),
+    Y.extent (0) != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols()),
     std::logic_error, "Ifpack2::BandedContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
-    "inverse operator (" << Y.dimension_0 () << " vs. "
+    "inverse operator (" << Y.extent (0) << " vs. "
     << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols())
     << ").  Please report this bug to the Ifpack2 developers.");
 
-  size_t numVecs = (int) X.dimension_1 ();
+  size_t numVecs = (int) X.extent (1);
 
   auto zero = Teuchos::ScalarTraits<scalar_type>::zero ();
   if (alpha == zero) { // don't need to solve the linear system
@@ -363,13 +363,13 @@ applyImpl (HostViewLocal& X,
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
       // any Inf or NaN values in Y (rather than multiplying them by
       // zero, resulting in NaN values).
-      for(size_t j = 0; j < Y.dimension_0(); j++)
-        for(size_t i = 0; i < Y.dimension_1(); i++)
+      for(size_t j = 0; j < Y.extent(0); j++)
+        for(size_t i = 0; i < Y.extent(1); i++)
           Y(i, j) = zero;
     }
     else { // beta != 0
-      for(size_t j = 0; j < Y.dimension_0(); j++)
-        for(size_t i = 0; i < Y.dimension_1(); i++)
+      for(size_t j = 0; j < Y.extent(0); j++)
+        for(size_t i = 0; i < Y.extent(1); i++)
           Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
     }
   }
@@ -385,12 +385,12 @@ applyImpl (HostViewLocal& X,
       Y_tmp = ptr(&Y);
     }
     else {
-      Y_tmp = ptr (new HostViewLocal ("", X.dimension_0 (), X.dimension_1 ())); // constructor copies X
+      Y_tmp = ptr (new HostViewLocal ("", X.extent (0), X.extent (1))); // constructor copies X
       deleteYT = true;
       Kokkos::deep_copy(*Y_tmp, X);
     }
 
-    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();
+    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->data();
 
     int INFO = 0;
     const char trans =(mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
@@ -413,8 +413,8 @@ applyImpl (HostViewLocal& X,
       "failed with INFO = " << INFO << " != 0.");
 
     if (beta != zero) {
-      for(size_t j = 0; j < Y.dimension_1(); j++)
-        for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t j = 0; j < Y.extent(1); j++)
+        for(size_t i = 0; i < Y.extent(0); i++)
           Y(i, j) = beta * Y(i, j) + alpha * (*Y_tmp)(i, j);
     }
     if(deleteYT)
@@ -446,7 +446,7 @@ apply (HostView& X,
 
   // Tpetra::MultiVector specialization corresponding to MatrixType.
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! IsComputed_, std::runtime_error, "Ifpack2::BandedContainer::apply: "
@@ -454,10 +454,10 @@ apply (HostView& X,
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1() != Y.dimension_1(), std::runtime_error,
+    X.extent(1) != Y.extent(1), std::runtime_error,
     "Ifpack2::BandedContainer::apply: X and Y have different numbers of "
-    "vectors.  X has " << X.dimension_1()
-    << ", but Y has " << Y.dimension_1() << ".");
+    "vectors.  X has " << X.extent(1)
+    << ", but Y has " << Y.extent(1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -555,7 +555,7 @@ weightedApply (HostView& X,
   // typedef Tpetra::Vector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> LV; // unused
 
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! IsComputed_, std::runtime_error, "Ifpack2::BandedContainer::"
@@ -564,10 +564,10 @@ weightedApply (HostView& X,
     "after calling compute() once, but you must have called compute() at least "
     "once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != Y.dimension_1(), std::runtime_error,
+    numVecs != Y.extent(1), std::runtime_error,
     "Ifpack2::BandedContainer::weightedApply: X and Y have different numbers "
-    "of vectors.  X has " << X.dimension_1() << ", but Y has "
-    << Y.dimension_1() << ".");
+    "of vectors.  X has " << X.extent(1) << ", but Y has "
+    << Y.extent(1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do

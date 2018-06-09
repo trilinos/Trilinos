@@ -76,7 +76,7 @@ public:
   }
 
   virtual void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): gradient not implemented!");
   }
 
@@ -93,7 +93,7 @@ public:
   }
 
   virtual Real dirDeriv( const std::vector<Real> &x, const std::vector<Real> &d, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): dirDeriv not implemented!");
   }
 
@@ -110,7 +110,7 @@ public:
   }
 
   virtual void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): hessVec not implemented!");
   }
 
@@ -128,7 +128,7 @@ public:
   }
 
   virtual void invHessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): invHessVec not implemented!");
   }
 

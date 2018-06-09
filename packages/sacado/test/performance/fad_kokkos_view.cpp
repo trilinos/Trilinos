@@ -68,7 +68,7 @@ struct MatVecFunctor {
   MatVecFunctor(const ViewTypeA& A_arg,
                 const ViewTypeB& b_arg,
                 const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1())
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1))
   {}
 
   // Function to compute matrix-vector product for a given row i
@@ -110,7 +110,7 @@ struct MatVecDerivFunctor {
   MatVecDerivFunctor(const ViewTypeA& A_arg,
                      const ViewTypeB& b_arg,
                      const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1()), p(A.dimension_2()-1)
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1)), p(A.extent(2)-1)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -157,7 +157,7 @@ struct SLMatVecDerivFunctor {
   SLMatVecDerivFunctor(const ViewTypeA& A_arg,
                        const ViewTypeB& b_arg,
                        const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1()), p(A.dimension_2()-1)
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1)), p(A.extent(2)-1)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -211,7 +211,7 @@ struct SMatVecDerivFunctor {
   SMatVecDerivFunctor(const ViewTypeA& A_arg,
                       const ViewTypeB& b_arg,
                       const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1())
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1))
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -251,7 +251,7 @@ void
 run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -260,7 +260,7 @@ void
 run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -269,7 +269,7 @@ void
 run_mat_vec_deriv_sl(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   SLMatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC, MaxP> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -278,7 +278,7 @@ void
 run_mat_vec_deriv_s(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   SMatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC, p> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
@@ -289,8 +289,8 @@ check_val(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   for (size_t i=0; i<m; ++i) {
     value_type t = n;
     if (std::abs(h_c(i)- t) > tol) {
@@ -308,9 +308,9 @@ check_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
-  const size_t p = A.dimension_2();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
+  const size_t p = A.extent(2);
   for (size_t i=0; i<m; ++i) {
     for (size_t j=0; j<p; ++j) {
       value_type t = (j == p-1 ? n : 2*n);
@@ -697,19 +697,19 @@ int main(int argc, char* argv[]) {
     clp.setOption("p", &p, "Number of derivative components");
     int nloop = 10;
     clp.setOption("nloop", &nloop, "Number of loops");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -755,51 +755,43 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-#ifdef KOKKOS_HAVE_SERIAL
+    Kokkos::InitArguments init_args;
+    init_args.num_threads = cores_per_numa;
+    init_args.num_numa = numa;
+
+    Kokkos::initialize(init_args);
+
+    if (print_config)
+      Kokkos::print_configuration(std::cout, true);
+
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
-      Kokkos::Serial::initialize();
-      if (print_config)
-        Kokkos::Serial::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,Kokkos::Serial>(
         m,n,p,nloop,value,analytic,sfad,slfad,dfad,check,layout,"Serial");
-      Kokkos::Serial::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
-      Kokkos::OpenMP::initialize(openmp, numa, cores_per_numa);
-      if (print_config)
-        Kokkos::OpenMP::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,Kokkos::OpenMP>(
         m,n,p,nloop,value,analytic,sfad,slfad,dfad,check,layout,"OpenMP");
-      Kokkos::OpenMP::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
-      Kokkos::Threads::initialize(threads, numa, cores_per_numa);
-      if (print_config)
-        Kokkos::Threads::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,Kokkos::Threads>(
         m,n,p,nloop,value,analytic,sfad,slfad,dfad,check,layout,"Threads");
-      Kokkos::Threads::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize();
-      if (print_config)
-        Kokkos::Cuda::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,Kokkos::Cuda>(
         m,n,p,nloop,value,analytic,sfad,slfad,dfad,check,layout,"Cuda");
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
     }
 #endif
+    Kokkos::finalize();
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

@@ -229,13 +229,37 @@ public:
     return makePtr<StdVector<Real>>(x0p);
   }
 
-  Ptr<Vector<Real> > getSolution( void ) const {
+  Ptr<Vector<Real> > getSolution( const int i = 0 ) const {
     Ptr<std::vector<Real> > xp = makePtr<std::vector<Real>>(3);
-    (*xp)[0] = 4.0;
-    (*xp)[1] = 2.0*std::sqrt(2.0);
-    (*xp)[2] = 2.0;
+    if (i == 0) {
+      (*xp)[0] = 4.0;
+      (*xp)[1] = 2.0*std::sqrt(2.0);
+      (*xp)[2] = 2.0;
+    }
+    else if (i == 1) {
+      (*xp)[0] = 4.0;
+      (*xp)[1] = -2.0*std::sqrt(2.0);
+      (*xp)[2] = -2.0;
+    }
+    else if (i == 2) {
+      (*xp)[0] = -4.0;
+      (*xp)[1] = 2.0*std::sqrt(2.0);
+      (*xp)[2] = -2.0;
+    }
+    else if (i == 3) {
+      (*xp)[0] = -4.0;
+      (*xp)[1] = -2.0*std::sqrt(2.0);
+      (*xp)[2] = 2.0;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::HS29 : The index i must be between 0 and 3!");
+    }
   
     return makePtr<StdVector<Real>>(xp);
+  }
+
+  int getNumSolutions(void) const {
+    return 4;
   }
 
   Ptr<Vector<Real> > getInequalityMultiplier( void ) const {

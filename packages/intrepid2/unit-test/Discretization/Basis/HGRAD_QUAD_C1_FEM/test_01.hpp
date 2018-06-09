@@ -139,7 +139,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = quadBasis.getCardinality();
-        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type numPoints = quadNodes.extent(0);
         const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
@@ -193,22 +193,22 @@ namespace Intrepid2 {
         }
         {
           // exception #13 incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
+          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.extent(0));
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
         }
         {
           // exception #14 incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
+          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.extent(0) + 1);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
         }
         {
           // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 4);
+          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.extent(0), 4);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
         }
         {
           // exception #16: incorrect 2nd dimension of output array (must equal D2 cardinality in 2D)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
+          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.extent(0), 40);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
 
           // exception #17: incorrect 2nd dimension of output array (must equal D3 cardinality in 2D)
@@ -239,7 +239,7 @@ namespace Intrepid2 {
         const auto allTags = quadBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const ordinal_type dofTagSize = allTags.dimension(0);
+        const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -348,7 +348,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = quadBasis.getCardinality();
-        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type numPoints = quadNodes.extent(0);
         const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 

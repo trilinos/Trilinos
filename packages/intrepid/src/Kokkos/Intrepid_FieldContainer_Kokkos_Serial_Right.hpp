@@ -1,4 +1,4 @@
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 namespace Intrepid{
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::Serial>{

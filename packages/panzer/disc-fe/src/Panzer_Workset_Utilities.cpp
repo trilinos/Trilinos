@@ -133,23 +133,23 @@ namespace panzer {
 
      for(index_t i=0;i<workset.num_cells;i++) {
         os << "   cell " << i << " vertices =\n";
-        for(int j=0;j<wda(workset).cell_vertex_coordinates.dimension(1);j++) {
+        for(int j=0;j<wda(workset).cell_vertex_coordinates.extent(1);j++) {
            os << "      ";
-           for(int k=0;k<wda(workset).cell_vertex_coordinates.dimension(2);k++)
+           for(int k=0;k<wda(workset).cell_vertex_coordinates.extent(2);k++)
               os << wda(workset).cell_vertex_coordinates(i,j,k) << " ";
            os << "\n";
         }
      }
 
      os << "   integration rule points =\n";
-     for(int j=0;j<wda(workset).int_rules[0]->cub_points.dimension(0);j++) {
+     for(int j=0;j<wda(workset).int_rules[0]->cub_points.extent(0);j++) {
         os << "      ";
-        for(int k=0;k<wda(workset).int_rules[0]->cub_points.dimension(1);k++)
+        for(int k=0;k<wda(workset).int_rules[0]->cub_points.extent(1);k++)
            os << wda(workset).int_rules[0]->cub_points(j,k) << " ";
         os << "\n";
      }
      os << "   integration weights = [ ";
-     for(int j=0;j<wda(workset).int_rules[0]->cub_weights.dimension(0);j++) {
+     for(int j=0;j<wda(workset).int_rules[0]->cub_weights.extent(0);j++) {
         os << wda(workset).int_rules[0]->cub_weights(j) << " ";
      }
      os << "]\n";

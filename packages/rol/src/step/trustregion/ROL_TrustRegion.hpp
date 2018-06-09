@@ -64,7 +64,6 @@ private:
 
   ETrustRegionModel TRmodel_;
 
-  Real delmax_;
   Real eta0_, eta1_, eta2_;
   Real gamma0_, gamma1_, gamma2_;
   Real pRed_;
@@ -85,12 +84,11 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList &parlist )
+  TrustRegion( ROL::ParameterList &parlist )
     : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Trust-Region Parameters
-    Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
+    ROL::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
     TRmodel_ = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
-    delmax_  = list.get("Maximum Radius",                       static_cast<Real>(5000.0));
     eta0_    = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
     eta1_    = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
     eta2_    = list.get("Radius Growing Threshold",             static_cast<Real>(0.9));
@@ -101,13 +99,13 @@ public:
     TRsafe_  = list.get("Safeguard Size",                       static_cast<Real>(100.0));
     eps_     = TRsafe_*ROL_EPSILON<Real>();
     // General Inexactness Information
-    Teuchos::ParameterList &glist = parlist.sublist("General");
+    ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
     useInexact_.push_back(glist.get("Inexact Objective Function",     false));
     useInexact_.push_back(glist.get("Inexact Gradient",               false));
     useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
     // Inexact Function Evaluation Information
-    Teuchos::ParameterList &ilist = list.sublist("Inexact").sublist("Value");
+    ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Value");
     scale_       = ilist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));
     omega_       = ilist.get("Exponent",                          static_cast<Real>(0.9));
     force_       = ilist.get("Forcing Sequence Initial Value",    static_cast<Real>(1.0));
@@ -157,10 +155,10 @@ public:
       //  fold1 = obj.value(x,ftol_old_);
       //}
       //cnt_++;
-      Real eta = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
-      ftol     = scale_*std::pow(eta*std::min(pRed_,force_),one/omega_);
+      Real eta  = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
+      ftol      = scale_*std::pow(eta*std::min(pRed_,force_),one/omega_);
       ftol_old_ = ftol;
-      fold1 = obj.value(x,ftol_old_);
+      fold1     = obj.value(x,ftol_old_);
       cnt_++;
     }
     // Evaluate objective function at new iterate
@@ -254,11 +252,11 @@ public:
         prim_->plus(x);
         pgnorm *= prim_->norm();
         // Sufficient decrease?
-        decr = ( aRed_safe >= mu0_*eta0_*pgnorm );
+        decr = ( aRed_safe >= mu0_*pgnorm );
         flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
 
         if ( verbosity_ > 0 ) {
-          std::cout << "    Decrease lower bound (constraints):      " << 0.1*eta0_*pgnorm  << std::endl;
+          std::cout << "    Decrease lower bound (constraints):      " << mu0_*pgnorm       << std::endl;
           std::cout << "    Trust-region flag (constraints):         " << flagTR            << std::endl;
           std::cout << "    Is step feasible:                        " << bnd.isFeasible(x) << std::endl;
         }
@@ -305,7 +303,7 @@ public:
       x.plus(s);
       obj.update(x,true,iter);
       if (rho >= eta2_) { // Increase trust-region radius
-        del = std::min(gamma2_*del,delmax_);
+        del = gamma2_*del;
       }
     }
     if ( verbosity_ > 0 ) {

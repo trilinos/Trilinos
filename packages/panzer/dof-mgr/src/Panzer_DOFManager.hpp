@@ -54,6 +54,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_FieldType.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -213,6 +214,11 @@ public:
     * field in the GIDs array.
     */
   const std::vector<int> & getGIDFieldOffsets(const std::string & blockID, int fieldNum) const;
+
+  /** gets the field pattern so you can find a particular
+    * field in the GIDs array.
+    */
+  const Kokkos::View<const int*,PHX::Device> getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const;
 
   //! get associated GIDs for a given local element
   void getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint="") const;

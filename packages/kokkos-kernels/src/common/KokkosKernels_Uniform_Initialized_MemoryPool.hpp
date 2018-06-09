@@ -178,7 +178,8 @@ public:
   UniformMemoryPool(const size_t num_chunks_,
                     const size_t set_chunk_size_,
                     const data_type initialized_value = 0,
-                    const PoolType pool_type_ = OneThread2OneChunk):
+                    const PoolType pool_type_ = OneThread2OneChunk,
+					bool initialize = true):
                       num_chunks(1),
                     num_set_chunks(num_chunks_), modular_num_chunks(0),
                     chunk_size(set_chunk_size_),
@@ -199,11 +200,16 @@ public:
     }
     modular_num_chunks = num_chunks -1;
     overall_size = num_chunks * chunk_size;
-    data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size),
-    data = (data_view.ptr_on_device()),
+    if (num_set_chunks > 0){
+    	data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size);
+    }
+    data = (data_view.data());
 
     this->set_pool_type(pool_type_);
-    Kokkos::deep_copy(data_view, initialized_value);
+
+    if (initialize){
+    	Kokkos::deep_copy(data_view, initialized_value);
+    }
 
   }
 
@@ -242,9 +248,10 @@ public:
    */
   void set_pool_type (PoolType pool_type_){
     if (pool_type_ == ManyThread2OneChunk){
-      //free_chunks = index_view_t (Kokkos::ViewAllocateWithoutInitializing("free_chunk_indices"), num_chunks),
-      chunk_locks = lock_view_t("locks", num_chunks);
-      pchunk_locks = chunk_locks.ptr_on_device();
+      if (num_set_chunks){
+    	  chunk_locks = lock_view_t("locks", num_chunks);
+      }
+      pchunk_locks = chunk_locks.data();
     }
   }
 

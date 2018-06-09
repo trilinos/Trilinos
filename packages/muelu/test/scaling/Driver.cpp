@@ -49,6 +49,7 @@
 #include <unistd.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Xpetra
@@ -103,6 +104,9 @@
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
+#include <KokkosBlas1_abs.hpp>
+#include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
+#include <Tpetra_computeRowAndColumnOneNorms.hpp>
 #endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
@@ -140,6 +144,69 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
 #endif
 /*********************************************************************/
 
+#ifdef HAVE_MUELU_TPETRA
+#include "KokkosBlas1_abs_impl.hpp"
+template<class RV, class XV, class SizeType>
+void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
+  typedef typename XV::execution_space execution_space;
+  const SizeType numRows = X.extent(0);
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  KokkosBlas::Impl::V_Abs_Functor<RV, XV, SizeType> op (R, X);
+  Kokkos::parallel_for (policy, op);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Axpetra, std::string equilibrate) {
+#include <MueLu_UseShortNames.hpp>
+  using Tpetra::computeRowAndColumnOneNorms;
+  using Tpetra::leftAndOrRightScaleCrsMatrix;
+  bool equilibrate_1norm = (equilibrate == "1-norm");
+  bool equilibrate_diag  = (equilibrate == "diag");
+  bool equilibrate_no    = (equilibrate == "no");
+  bool assumeSymmetric = false;
+  typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type,typename Node::device_type> equil_type;
+  
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Utilities::Op2NonConstTpetraCrs(Axpetra);
+  
+  if(Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
+     equil_type equibResult_ = computeRowAndColumnOneNorms (*A, assumeSymmetric);
+     if (equilibrate_1norm) {
+        using device_type = typename Node::device_type;
+        using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+        using mag_view_type = Kokkos::View<mag_type*, device_type>;
+        using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;
+        
+        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));                                  
+        //        KokkosBlas::abs (rowDiagAbsVals, equibResult_.rowDiagonalEntries);
+        Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(rowDiagAbsVals, equibResult_.rowDiagonalEntries);
+
+        mag_view_type colDiagAbsVals ("colDiagAbsVals",equibResult_.colDiagonalEntries.extent (0));
+                                  
+        //        KokkosBlas::abs (colDiagAbsVals, equibResult_.colDiagonalEntries);
+        Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(colDiagAbsVals, equibResult_.colDiagonalEntries);
+
+        leftAndOrRightScaleCrsMatrix (*A, rowDiagAbsVals, colDiagAbsVals,
+                                      true, true, equibResult_.assumeSymmetric,
+                                      Tpetra::SCALING_DIVIDE);
+     }
+     else if (equilibrate_diag) {
+        auto colScalingFactors = equibResult_.assumeSymmetric ?
+          equibResult_.colNorms :
+          equibResult_.rowScaledColNorms;
+        leftAndOrRightScaleCrsMatrix (*A, equibResult_.rowNorms,
+                                      colScalingFactors, true, true,
+                                      equibResult_.assumeSymmetric,
+                                      Tpetra::SCALING_DIVIDE);
+      }
+     else if (equilibrate_no) {
+       // no-op
+     }
+     else
+       throw std::runtime_error("Invalid 'equilibrate' option '"+equilibrate+"'");
+  }
+}
+#endif
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -168,7 +235,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "scaling.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
+  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
@@ -188,10 +256,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+#ifdef HAVE_MUELU_TPETRA
+  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)"); 
+#endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
+
+
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -201,9 +274,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+  TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
+                             "Cannot provide both xml and yaml input files");
 
   ParameterList paramList;
-  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  if (yamlFileName != "") {
+    Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+
+  } else {
+    xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  }
+
   bool isDriver = paramList.isSublist("Run1");
   if (isDriver) {
     // update galeriParameters with the values from the XML file
@@ -242,10 +324,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
   RCP<MultiVector> X, B;
 
-  // Load the matrix off disk (or generate it via Galeri)  
+  // Load the matrix off disk (or generate it via Galeri)
   MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
+
+  // Do equilibration if requested
+#ifdef HAVE_MUELU_TPETRA
+  if(lib == Xpetra::UseTpetra) {
+    equilibrateMatrix(A,equilibrate);
+  }
+#endif
+
+
 
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
@@ -343,7 +434,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for (int i = 0; i <= numRebuilds; i++) {
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 	if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)	  
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
 	  Teuchos::ParameterList dummyList;
 	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
 	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
@@ -384,11 +475,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       comm->barrier();
       if (solveType == "none") {
         // Do not perform a solve
-	
+
       } else if (solveType == "standalone") {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStart();
+#endif
 	H->IsPreconditioner(false);
 	H->Iterate(*B, *X, maxIts);
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStop();
+#endif
       } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));

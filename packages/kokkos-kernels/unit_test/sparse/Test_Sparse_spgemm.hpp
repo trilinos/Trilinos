@@ -170,13 +170,13 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1 = output_mat1.graph.row_map.dimension_0();
-  size_t nentries1 = output_mat1.graph.entries.dimension_0() ;
-  size_t nvals1 = output_mat1.values.dimension_0();
+  size_t nrows1 = output_mat1.graph.row_map.extent(0);
+  size_t nentries1 = output_mat1.graph.entries.extent(0) ;
+  size_t nvals1 = output_mat1.values.extent(0);
 
-  size_t nrows2 = output_mat2.graph.row_map.dimension_0();
-  size_t nentries2 = output_mat2.graph.entries.dimension_0() ;
-  size_t nvals2 = output_mat2.values.dimension_0();
+  size_t nrows2 = output_mat2.graph.row_map.extent(0);
+  size_t nentries2 = output_mat2.graph.entries.extent(0) ;
+  size_t nvals2 = output_mat2.values.extent(0);
 
 
   lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);

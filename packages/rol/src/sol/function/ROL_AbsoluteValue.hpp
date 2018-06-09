@@ -69,7 +69,7 @@ public:
     if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON<Real>() ) { param_ = 1.e2; }
   }
 
-  AbsoluteValue(Teuchos::ParameterList &parlist) {
+  AbsoluteValue(ROL::ParameterList &parlist) {
     Real param = parlist.get("Smoothing Parameter",1.);
     param_ = 1./((param > 0.) ? param : 1.);
     std::string type = parlist.get("Absolute Value Approximation","true");
@@ -88,7 +88,7 @@ public:
       case ABSOLUTEVALUE_SQRTDENOM:  val = sqrtd_absolute_value(input,deriv); break;
       case ABSOLUTEVALUE_C2:         val = c2_absolute_value(input,deriv);    break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::AbsoluteValue): Absolute value approximation not defined!");
     }
     return val;

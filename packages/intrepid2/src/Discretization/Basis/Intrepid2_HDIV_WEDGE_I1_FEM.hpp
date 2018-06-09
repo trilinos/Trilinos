@@ -199,10 +199,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->basisCardinality_, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->basisCardinality_, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);

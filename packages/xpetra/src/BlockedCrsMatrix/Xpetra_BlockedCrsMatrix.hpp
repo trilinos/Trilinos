@@ -631,7 +631,6 @@ namespace Xpetra {
 	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));	
       }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
-
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.

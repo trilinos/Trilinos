@@ -314,7 +314,7 @@ struct ThreadLocalScalarType<
 
 namespace Impl {
 
-#if defined (KOKKOS_HAVE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined (KOKKOS_ENABLE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 template< class OutputView >
 struct SacadoViewFill<
   OutputView,
@@ -340,13 +340,13 @@ struct SacadoViewFill<
   {
     local_scalar_type input_stride = Sacado::partition_scalar<stride>(input);
 
-    const size_t n1 = output.dimension_1();
-    const size_t n2 = output.dimension_2();
-    const size_t n3 = output.dimension_3();
-    const size_t n4 = output.dimension_4();
-    const size_t n5 = output.dimension_5();
-    const size_t n6 = output.dimension_6();
-    const size_t n7 = output.dimension_7();
+    const size_t n1 = output.extent(1);
+    const size_t n2 = output.extent(2);
+    const size_t n3 = output.extent(3);
+    const size_t n4 = output.extent(4);
+    const size_t n5 = output.extent(5);
+    const size_t n6 = output.extent(6);
+    const size_t n7 = output.extent(7);
 
     for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
     for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
@@ -355,7 +355,7 @@ struct SacadoViewFill<
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
     for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
+      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
     }}}}}}}
   }
 
@@ -363,7 +363,7 @@ struct SacadoViewFill<
   void operator()( const team_handle& team ) const
   {
     const size_t i0 = team.league_rank()*team.team_size() + team.team_rank();
-    if (i0 < output.dimension_0())
+    if (i0 < output.extent(0))
       (*this)(i0);
   }
 
@@ -371,7 +371,7 @@ struct SacadoViewFill<
     : output( arg_out ), input( arg_in )
     {
       const size_t team_size = 256 / stride;
-      team_policy policy( (output.dimension_0()+team_size-1)/team_size ,
+      team_policy policy( (output.extent(0)+team_size-1)/team_size ,
                           team_size , stride );
       Kokkos::parallel_for( policy, *this );
       execution_space::fence();
@@ -514,7 +514,7 @@ public:
   enum { PartitionedFadStaticDimension =
            computeFadPartitionSize(FadStaticDimension,PartitionedFadStride) };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename Sacado::LocalScalarType< fad_type, unsigned(PartitionedFadStride) >::type strided_scalar_type;
   typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Cuda>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #else

@@ -143,7 +143,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -178,7 +178,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("GatherSolution_BlockedTpetra(Residual):worksetLIDs",
-                                                gatherFields_[0].dimension_0(),
+                                                gatherFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 
   indexerNames_.clear();  // Don't need this anymore
@@ -459,7 +459,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -492,7 +492,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
-                                                gatherFields_[0].dimension_0(),
+                                                gatherFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 
   // Compute the block offsets

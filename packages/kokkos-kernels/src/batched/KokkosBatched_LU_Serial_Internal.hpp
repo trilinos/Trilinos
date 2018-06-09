@@ -45,9 +45,6 @@ namespace KokkosBatched {
       for (int p=0;p<k;++p) {
         const int iend = m-p-1, jend = n-p-1;
 
-        ValueType
-          alpha11 = A[p*as0+p*as1];
-
         const ValueType
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
         
@@ -56,10 +53,15 @@ namespace KokkosBatched {
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
 
         if (tiny != 0) {
-          const auto alpha11_real = RealPart(alpha11);
-          alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
-          alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
+          ValueType &alpha11_reference = A[p*as0+p*as1];
+          const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11_reference);
+          alpha11_reference += minus_abs_tiny*ValueType(alpha11_real <  0);
+          alpha11_reference +=       abs_tiny*ValueType(alpha11_real >= 0);
         }
+
+        const ValueType
+          alpha11 = A[p*as0+p*as1];
+        
         for (int i=0;i<iend;++i) {
           // a21[i*as0] *= inv_alpha11; 
           a21[i*as0] /= alpha11;

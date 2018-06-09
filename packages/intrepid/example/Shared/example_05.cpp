@@ -1,4 +1,4 @@
-//#ifdef HAVE_INTREPID_KOKKOSCORE
+//#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 #include <impl/Kokkos_Timer.hpp>
@@ -328,7 +328,7 @@ template <class Scalar>
 inline Scalar& FieldContainer_Kokkos<Scalar>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6,const size_t i7)const{
 return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6)*dim7+i7];
 }
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::Serial>{
 size_t dim0=0;
@@ -1084,7 +1084,7 @@ return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim
 }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::OpenMP>{
 size_t dim0=0;
@@ -1848,7 +1848,7 @@ return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim
 }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::Threads>{
@@ -2614,7 +2614,7 @@ return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim
 
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::Cuda>{
@@ -3467,7 +3467,7 @@ __global__ void testcudakernel(AT& A,AT& B, AT& C){
 int main(){
 size_t problemSize=100;
 Kokkos::initialize();
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 {//Test 1 Begin Scope - Kokkos Views Serial vs FieldContainer Kokkos cstd loop
 
 std::cout <<"Test 1 Begin Scope - Kokkos Views Serial vs FieldContainer Kokkos cstd loop"<<std::endl;
@@ -3537,7 +3537,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 }//Test 1 End Scope
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 {//Test 2 Begin Scope - Kokkos Views OpenMP vs FieldContainer Kokkos cstd loop
 
 std::cout <<"Test 2 Begin Scope - Kokkos Views OpenMP vs FieldContainer Kokkos cstd loop"<<std::endl;
@@ -3607,7 +3607,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 }//Test 2 End Scope
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 {//Test 3 Begin Scope - Kokkos Views Serial vs FieldContainer Kokkos - Kokkos loop
 
 std::cout <<"Test 3 Begin Scope - Kokkos Views Serial vs FieldContainer Kokkos - Kokkos loop"<<std::endl;
@@ -3656,7 +3656,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 }//Test 3 End Scope
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 {//Test 4 Begin Scope - Kokkos Views CUDA vs FieldContainer Kokkos - Kokkos Managed - Kokkos loop
 
 std::cout <<"Test 4 Begin Scope - Kokkos Views CUDA vs FieldContainer Kokkos - Kokkos Managed - Kokkos loop"<<std::endl;
@@ -3697,7 +3697,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 }//Test 4 End Scope
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 {//Test 5 Begin Scope - Kokkos Views Cuda vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop
 
 std::cout <<"Test 5 Begin Scope - Kokkos Views Cuda vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop"<<std::endl;
@@ -3744,7 +3744,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 
 }//Test 5 End Scope
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 {//Test 6 Begin Scope - Kokkos Views Threads vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop
 std::cout <<"Test 6 Begin Scope - Kokkos Views Threads vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop"<<std::endl;
 Kokkos::Impl::Timer InitializeViewsTimer;
@@ -3791,7 +3791,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 {//Test 7 Begin Scope - Kokkos Views Cuda vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop
 
 std::cout <<"Test 7 Begin Scope - Kokkos Views Cuda vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop"<<std::endl;

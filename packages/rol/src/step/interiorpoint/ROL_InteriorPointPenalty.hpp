@@ -46,11 +46,12 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup func_group
     \class ROL::InteriorPointPenalty
-    \brief Provides the interface to evaluate the Interior Pointy 
-           log barrier penalty function with upper and lower bounds on 
+    \brief Provides the interface to evaluate the Interior Pointy
+           log barrier penalty function with upper and lower bounds on
            some elements
 
     ---
@@ -58,7 +59,7 @@
 
 namespace ROL {
 
-template<class Real> 
+template<class Real>
 class InteriorPointPenalty : public Objective<Real> {
 
   typedef Vector<Real>             V;
@@ -96,21 +97,21 @@ private:
 
 
 
-  // x <- f(x) = { log(x) if x >  0 
+  // x <- f(x) = { log(x) if x >  0
   //             { 0      if x <= 0
   class ModifiedLogarithm : public Elementwise::UnaryFunction<Real> {
   public:
     Real apply( const Real &x ) const {
       return (x>0) ? std::log(x) : Real(0.0);
-    }   
+    }
   }; // class ModifiedLogarithm
 
-  // x <- f(x) = { 1/x  if  x >  0 
+  // x <- f(x) = { 1/x  if  x >  0
   //             { 0    if  x <= 0
   class ModifiedReciprocal : public Elementwise::UnaryFunction<Real> {
   public:
     Real apply( const Real &x ) const {
-      return (x>0) ? 1.0/x : Real(0.0); 
+      return (x>0) ? 1.0/x : Real(0.0);
     }
 
   }; // class ModifiedReciprocal
@@ -118,7 +119,7 @@ private:
   // x <- f(x,y) = { y/x  if  x >  0
   //               { 0    if  x <= 0
   class ModifiedDivide : public Elementwise::BinaryFunction<Real> {
-  public: 
+  public:
     Real apply( const Real &x, const Real &y ) const {
       return (x>0) ? y/x : Real(0.0);
     }
@@ -129,13 +130,13 @@ private:
   //               { 0  if  y != 0, complement == true
   //               { x  if  y == 0, complement == true
   class Mask : public Elementwise::BinaryFunction<Real> {
-  private: 
+  private:
     bool complement_;
-  public: 
+  public:
     Mask( bool complement ) : complement_(complement) {}
     Real apply( const Real &x, const Real &y ) const {
       return ( complement_ ^ (y !=0) ) ? 0 : x;
-    } 
+    }
   }; // class Mask
 
 
@@ -145,24 +146,24 @@ public:
 
   InteriorPointPenalty( const ROL::Ptr<Objective<Real> > &obj,
                         const ROL::Ptr<BoundConstraint<Real> > &con, 
-                        Teuchos::ParameterList &parlist ) :
+                        ROL::ParameterList &parlist ) :
     obj_(obj), bnd_(con), lo_( con->getLowerBound() ), up_( con->getUpperBound() ) {
 
     Real one(1);
     Real zero(0);
 
-    // Determine the index sets where the 
+    // Determine the index sets where the
     ValueSet isBoundedBelow( ROL_NINF<Real>(), ValueSet::GREATER_THAN, one, zero );
     ValueSet isBoundedAbove( ROL_INF<Real>(),  ValueSet::LESS_THAN,    one, zero );
-   
+
     maskL_ = lo_->clone();
-    maskU_ = up_->clone();     
+    maskU_ = up_->clone();
 
     maskL_->applyBinary(isBoundedBelow,*lo_);
     maskU_->applyBinary(isBoundedAbove,*up_);
 
-    Teuchos::ParameterList &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
-    Teuchos::ParameterList &lblist = iplist.sublist("Barrier Objective");
+    ROL::ParameterList &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
+    ROL::ParameterList &lblist = iplist.sublist("Barrier Objective");
 
     useLinearDamping_ = lblist.get("Use Linear Damping",true);
     kappaD_ = lblist.get("Linear Damping Coefficient",1.e-4);
@@ -202,10 +203,10 @@ public:
     return maskU_;
   }
 
-  /** \brief Update the interior point penalized objective. 
+  /** \brief Update the interior point penalized objective.
 
-      This function updates the log barrier penalized function at new iterations. 
-      @param[in]          x      is the new iterate. 
+      This function updates the log barrier penalized function at new iterations.
+      @param[in]          x      is the new iterate.
       @param[in]          flag   is true if the iterate has changed.
       @param[in]          iter   is the outer algorithm iterations count.
   */
@@ -218,7 +219,7 @@ public:
 
       This function returns the log barrier penalized objective value.
 
-      \f[ \varphi_\mu(x) = f(x) - \mu \sum\limits_{i\int I_L} \ln(x_i-l_i) 
+      \f[ \varphi_\mu(x) = f(x) - \mu \sum\limits_{i\int I_L} \ln(x_i-l_i)
                                 - \mu \sum\limits_{i\in I_Y} \ln(u_i-x_i) \f]
       Where \f$ I_L=\{i:l_i>-\infty\} \f$ and \f$ I_U = \{i:u_i<\infty\}\f$
 
@@ -262,24 +263,24 @@ public:
 
     if( useLinearDamping_ ) {
 
-      c_->set(*maskU_);                     // c_i = { 1 if u_i < INF 
+      c_->set(*maskU_);                     // c_i = { 1 if u_i < INF
                                             //       { 0 otherwise
       c_->applyBinary(Mask(true),*maskL_);  // c_i = { 1 if u_i < INF and l_i = NINF
                                             //       { 0 otherwise
       c_->applyBinary(mult,*b_);            // c_i = { u_i-x_i if u_i < INF and l_i = NINF
-                                            //       { 0 otherwise         
+                                            //       { 0 otherwise
 
       // Penalizes large negative x_i when only an upper bound exists
-      linearTerm += c_->reduce(sum);  
+      linearTerm += c_->reduce(sum);
 
     }
 
     b_->applyUnary(mlog);                   // b_i = mlog(u_i-x_i)
-    
+
     Real bval = b_->dot(*maskU_);
 
 
-    fval -= mu_*(aval+bval);   
+    fval -= mu_*(aval+bval);
     fval += kappaD_*mu_*linearTerm;
 
     return fval;
@@ -293,7 +294,7 @@ public:
       @param[in]          x   is the current iterate.
       @param[in]          tol is a tolerance for inexact log barrier penalty computation.
   */
-    
+
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     // Compute gradient of objective function
     obj_->gradient(*g_,x,tol);
@@ -302,17 +303,17 @@ public:
 
     // Add gradient of the log barrier penalty
     ModifiedReciprocal mrec;
-    
+
     a_->set(x);                             // a = x
     a_->axpy(-1.0,*lo_);                    // a = x-l
 
     a_->applyUnary(mrec);                   // a_i = 1/(x_i-l_i) for i s.t. x_i > l_i, 0 otherwise
-    a_->applyBinary(Mask(true),*maskL_);   // zero elements where l = NINF   
+    a_->applyBinary(Mask(true),*maskL_);   // zero elements where l = NINF
 
-    b_->set(*up_);                          // b = u 
+    b_->set(*up_);                          // b = u
     b_->axpy(-1.0,x);                       // b = u-x
     b_->applyUnary(mrec);                   // b_i = 1/(u_i-x_i) for i s.t. u_i > x_i, 0 otherwise
-    b_->applyBinary(Mask(true),*maskU_);   // zero elements where u = INF  
+    b_->applyBinary(Mask(true),*maskU_);   // zero elements where u = INF
 
     g.axpy(-mu_,*a_);
     g.axpy(mu_,*b_);
@@ -329,7 +330,7 @@ public:
       g.axpy( mu_*kappaD_,*b_);
 
     }
-  }  
+  }
 
   /** \brief Compute action of Hessian on vector.
 
@@ -347,20 +348,20 @@ public:
     Elementwise::Power<Real> square(2.0);
 
     obj_->hessVec(hv,v,x,tol);
- 
+
     a_->set(x);                             // a = x
     a_->axpy(-1.0,*lo_);                    // a = x-l
     a_->applyUnary(mrec);                   // a_i = 1/(x_i-l_i) for i s.t. x_i > l_i, 0 otherwise
-    a_->applyBinary(Mask(true),*maskL_);    // zero elements where l = NINF   
-    a_->applyUnary(square);                 // a_i = { (x_i-l_i)^(-2)  if l_i > NINF   
-                                            //       { 0               if l_i = NINF 
-    a_->applyBinary(mult,v);    
+    a_->applyBinary(Mask(true),*maskL_);    // zero elements where l = NINF
+    a_->applyUnary(square);                 // a_i = { (x_i-l_i)^(-2)  if l_i > NINF
+                                            //       { 0               if l_i = NINF
+    a_->applyBinary(mult,v);
 
-    b_->set(*up_);                          // b = u 
+    b_->set(*up_);                          // b = u
     b_->axpy(-1.0,x);                       // b = u-x
     b_->applyUnary(mrec);                   // b_i = 1/(u_i-x_i) for i s.t. u_i > x_i, 0 otherwise
-    b_->applyBinary(Mask(true),*maskU_);    // zero elements where u = INF  
-    b_->applyUnary(square);                 // b_i = { (u_i-x_i)^(-2)  if u_i < INF 
+    b_->applyBinary(Mask(true),*maskU_);    // zero elements where u = INF
+    b_->applyUnary(square);                 // b_i = { (u_i-x_i)^(-2)  if u_i < INF
                                             //       { 0               if u_i = INF
     b_->applyBinary(mult,v);
 

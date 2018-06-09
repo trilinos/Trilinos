@@ -127,11 +127,11 @@ postRegistrationSetup(
   if(multiplier_field_on)
     this->utils.setFieldData(multiplier_field,fm);
 
-  num_pts = vec_a.dimension(1);
-  num_dim = vec_a.dimension(2);
+  num_pts = vec_a.extent(1);
+  num_dim = vec_a.extent(2);
 
-  TEUCHOS_ASSERT(vec_a.dimension(1) == vec_b.dimension(1));
-  TEUCHOS_ASSERT(vec_a.dimension(2) == vec_b.dimension(2));
+  TEUCHOS_ASSERT(vec_a.extent(1) == vec_b.extent(1));
+  TEUCHOS_ASSERT(vec_a.extent(2) == vec_b.extent(2));
 }
 
 //**********************************************************************

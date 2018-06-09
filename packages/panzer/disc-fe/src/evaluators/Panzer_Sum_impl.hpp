@@ -115,10 +115,10 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < scalars.dimension_0(); ++i)
+  for (std::size_t i=0; i < scalars.extent(0); ++i)
     this->utils.setFieldData(values[i],fm);
 
-  cell_data_size = sum.size() / sum.fieldTag().dataLayout().dimension(0);
+  cell_data_size = sum.size() / sum.fieldTag().dataLayout().extent(0);
 }
 
 
@@ -127,7 +127,7 @@ template<typename EvalT, typename TRAITS>
 template<unsigned int RANK>
 KOKKOS_INLINE_FUNCTION
 void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
-  auto num_vals = scalars.dimension_0();
+  auto num_vals = scalars.extent(0);
 
 
   if (RANK == 1 )
@@ -137,14 +137,14 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 2)
   {
-    const size_t dim_1 = sum.dimension(1);
+    const size_t dim_1 = sum.extent(1);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t iv = 0; iv < num_vals; ++iv)
         sum(i,j) += scalars(iv)*(values[iv](i,j));
   }
   else if (RANK == 3)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t iv = 0; iv < num_vals; ++iv)
@@ -152,7 +152,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 4)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -161,7 +161,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 5)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3),dim_4 = sum.extent(4);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -171,7 +171,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 6)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3),dim_4 = sum.extent(4),dim_5 = sum.extent(5);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -206,7 +206,7 @@ evaluateFields(
   }
 #else
   size_t rank = sum.rank();
-  const size_t length = sum.dimension(0);
+  const size_t length = sum.extent(0);
   if (rank == 1 )
   {
     Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<1> >(0, length), *this);
@@ -288,7 +288,7 @@ void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
-  for (std::size_t i = 0; i < sum.dimension_0(); ++i)
+  for (std::size_t i = 0; i < sum.extent(0); ++i)
     for (std::size_t d = 0; d < values.size(); ++d)
       sum(i) += (values[d])(i);
 }
@@ -412,11 +412,11 @@ evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
 
-  // Kokkos::parallel_for(sum.dimension_0(), *this);
+  // Kokkos::parallel_for(sum.extent(0), *this);
   if(useScalars) 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.dimension_0()), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.extent(0)), *this);
   else
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.dimension_0()), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.extent(0)), *this);
 }
 
 //**********************************************************************
@@ -502,9 +502,9 @@ evaluateFields(typename TRAITS::EvalData d)
   sum.deep_copy(ScalarT(0.0));
   
   for (std::size_t d = 0; d < values.size(); ++d)
-    for (std::size_t i = 0; i < sum.dimension_0(); ++i)
-      for (std::size_t j = 0; j < sum.dimension_1(); ++j)
-        for (std::size_t k = 0; k < sum.dimension_2(); ++k)
+    for (std::size_t i = 0; i < sum.extent(0); ++i)
+      for (std::size_t j = 0; j < sum.extent(1); ++j)
+        for (std::size_t k = 0; k < sum.extent(2); ++k)
           sum(i,j,k) += (values[d])(i);
 }
 */

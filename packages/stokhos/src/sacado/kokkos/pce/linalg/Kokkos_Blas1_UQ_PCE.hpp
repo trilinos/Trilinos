@@ -281,14 +281,14 @@ struct MV_Reciprocal_Functor<
   XMV X_;
 
   MV_Reciprocal_Functor (const RMV& R, const XMV& X) :
-    numCols (X.dimension_1 ()), R_ (R), X_ (X)
+    numCols (X.extent(1)), R_ (R), X_ (X)
   {
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {
@@ -312,14 +312,14 @@ struct MV_ReciprocalSelf_Functor<
   RMV R_;
 
   MV_ReciprocalSelf_Functor (const RMV& R) :
-    numCols (R.dimension_1 ()), R_ (R)
+    numCols (R.extent(1)), R_ (R)
   {
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {
@@ -454,7 +454,7 @@ struct MV_MultFunctor<
                   typename AV::const_value_type& ab,
                   const AV& A,
                   const BMV& B) :
-    m_n (C.dimension_1 ()),
+    m_n (C.extent(1)),
     m_pce (dimension_scalar(C)),
     m_c (c.coeff(0)), m_C (C), m_ab (ab.coeff(0)), m_A (A), m_B (B)
   {
@@ -469,7 +469,7 @@ struct MV_MultFunctor<
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
         for (size_type j = 0; j < m_n; ++j) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
           for (size_type l=0; l<m_pce; ++l)
@@ -479,7 +479,7 @@ struct MV_MultFunctor<
       else { // ab != 0, c == 0
         typename Kokkos::IntrinsicScalarType<AV>::type Ai = m_A(i).fastAccessCoeff(0);
         for (size_type j = 0; j < m_n; ++j) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
           for (size_type l=0; l<m_pce; ++l)
@@ -490,7 +490,7 @@ struct MV_MultFunctor<
     } else { // c != 0
       if (scalar_ab == 0) {
         for (size_type j = 0; j < m_n; ++j) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
           for (size_type l=0; l<m_pce; ++l)
@@ -500,7 +500,7 @@ struct MV_MultFunctor<
       else { // m_ab != 0, and m_c != 0
         typename Kokkos::IntrinsicScalarType<AV>::type Ai = m_A(i).fastAccessCoeff(0);
         for (size_type j = 0; j < m_n; ++j) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
           for (size_type l=0; l<m_pce; ++l)
@@ -554,7 +554,7 @@ struct V_MultFunctor<
   {
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type l=0; l<m_pce; ++l)
@@ -562,7 +562,7 @@ struct V_MultFunctor<
       }
       else { // ab != 0, c == 0
         typename Kokkos::IntrinsicScalarType<AV>::type Ai = m_A(i).fastAccessCoeff(0);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type l=0; l<m_pce; ++l)
@@ -570,7 +570,7 @@ struct V_MultFunctor<
       }
     } else { // c != 0
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type l=0; l<m_pce; ++l)
@@ -578,7 +578,7 @@ struct V_MultFunctor<
       }
       else { // m_ab != 0, and m_c != 0
         typename Kokkos::IntrinsicScalarType<AV>::type Ai = m_A(i).fastAccessCoeff(0);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type l=0; l<m_pce; ++l)

@@ -123,12 +123,12 @@ evaluateFields(
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
       PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];
-      PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
       // write to double field
-      for(unsigned i=0; i<field.dimension(0);i++) {
-         for(unsigned j=0; j<field.dimension(1);j++) 
+      for(unsigned i=0; i<field.extent(0);i++) {
+         for(unsigned j=0; j<field.extent(1);j++) 
             average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
-         average(i,0) /= field.dimension(1);
+         average(i,0) /= field.extent(1);
       }
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,average);

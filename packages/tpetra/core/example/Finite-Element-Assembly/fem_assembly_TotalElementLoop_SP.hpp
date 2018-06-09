@@ -61,12 +61,25 @@
 
 namespace TpetraExamples
 {
-
 using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
+int executeTotalElementLoopSP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts);
 
 
-int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
+
+int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
+{
+  int status = 0;
+  for(size_t i=0; i<opts.repetitions; ++i)
+  {
+    status += executeTotalElementLoopSP_(comm, opts);
+  }
+  return status;
+}
+
+
+
+int executeTotalElementLoopSP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -75,7 +88,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
-  Teuchos::FancyOStream& out = *pOut;  
+  Teuchos::FancyOStream& out = *pOut;
 
   out << "================================================================================" << std::endl
       << "=  Total Element Loop (Static Profile)"    << std::endl
@@ -84,9 +97,9 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
-  int sqrtProcs = sqrt(numProcs); 
+  int sqrtProcs = sqrt(numProcs);
 
-  if(sqrtProcs*sqrtProcs != numProcs) 
+  if(sqrtProcs*sqrtProcs != numProcs)
   {
     if(0 == comm->getRank())
       std::cerr << "Error: Invalid number of processors provided, num processors must be a perfect square." << std::endl;
@@ -117,7 +130,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   // - Loop over every element in the mesh.
   //   - Get list of nodes associated with each element.
   //   - Insert node contributions if the node (row) is owned locally.
-  //   
+  //
   auto domain_map = row_map;
   auto range_map  = row_map;
 
@@ -128,7 +141,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<graph_t> crs_graph = rcp(new graph_t(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
-  
+
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
   Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
 
@@ -136,8 +149,8 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Populate global_ids_in_row:
-    // - Copy the global node ids for current owned element into an array.  
-    // - Since each element's contribution is a clique, we can re-use this for 
+    // - Copy the global node ids for current owned element into an array.
+    // - Since each element's contribution is a clique, we can re-use this for
     //   each row associated with this element's contribution.
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
@@ -201,9 +214,9 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   //    | -1  |     | -1  |  2  |
   //    +-----+-----+-----+-----+
   //
-  // For matrix fill, we create the crs_matrix object and will fill it 
-  // in the same manner as we filled in the graph but in this case, nodes 
-  // associated with each element will receive contributions according to 
+  // For matrix fill, we create the crs_matrix object and will fill it
+  // in the same manner as we filled in the graph but in this case, nodes
+  // associated with each element will receive contributions according to
   // the row in this stencil.
   //
   // In this example, the calls to sumIntoGlobalValues() on 1 core will look like:
@@ -250,15 +263,15 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
     {
       column_global_ids[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
     }
-    
+
     // For each node (row) on the current element:
     // - populate the values array
     // - add values to crs_matrix if the row is owned.
     //   Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
-    { 
+    {
       global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
-      if(mesh.nodeIsOwned(global_row_id)) 
+      if(mesh.nodeIsOwned(global_row_id))
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
         {
@@ -282,11 +295,11 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
     {
       column_global_ids[element_node_idx] = ghost_element_to_node_ids(element_gidx, element_node_idx);
     }
-    
+
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
-    { 
+    {
       global_ordinal_t global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
-      if(mesh.nodeIsOwned(global_row_id)) 
+      if(mesh.nodeIsOwned(global_row_id))
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
         {
