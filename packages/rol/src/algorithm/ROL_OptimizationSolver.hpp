@@ -48,7 +48,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_CombinedStatusTest.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** \class ROL::OptimizationSolver
     \brief Provides a simplified interface for solving a wide range of
@@ -94,7 +94,7 @@ public:
       ---
   */
   OptimizationSolver( OptimizationProblem<Real> &opt,
-                      Teuchos::ParameterList &parlist ) {
+                      ROL::ParameterList &parlist ) {
 
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
@@ -207,7 +207,7 @@ public:
       ---
   */
   int solve(void) {
-    Teuchos::oblackholestream bhs;
+    ROL::nullstream bhs;
     return solve(bhs);
   }
 
@@ -247,7 +247,7 @@ public:
         output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*con_,*bnd_,true,outStream);
       break;
       case TYPE_LAST:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           "Error in OptimizationSolver::solve() : Unsupported problem type");
       break;
     }

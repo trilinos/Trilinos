@@ -97,11 +97,11 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::CVaR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
       ">>> ERROR (ROL::CVaR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::CVaR): PlusFunction pointer is null!");
   }
 
@@ -131,9 +131,9 @@ public:
       \li "Convex Combination Parameter" (between 0 and 1)
       \li A sublist for plus function information.
   */
-  CVaR( Teuchos::ParameterList &parlist )
+  CVaR( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR");
     // Check CVaR inputs
     prob_  = list.get<Real>("Confidence Level");

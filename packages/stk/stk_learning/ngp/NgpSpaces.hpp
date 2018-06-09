@@ -35,39 +35,39 @@
 
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #include <Kokkos_OpenMP.hpp>
 #endif
 
 namespace ngp {
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::Cuda     ExecSpace ;
-#elif KOKKOS_HAVE_OPENMP
+#elif KOKKOS_ENABLE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
 #else
   typedef Kokkos::Serial   ExecSpace ;
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::Serial   HostExecSpace ;
-#elif KOKKOS_HAVE_OPENMP
+#elif KOKKOS_ENABLE_OPENMP
   typedef Kokkos::OpenMP   HostExecSpace ;
 #else
   typedef Kokkos::Serial   HostExecSpace ;
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
    typedef Kokkos::CudaSpace    MemSpace;
-#elif KOKKOS_HAVE_OPENMP
+#elif KOKKOS_ENABLE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
 #else
    typedef Kokkos::HostSpace    MemSpace;
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 typedef Kokkos::CudaUVMSpace UVMMemSpace;
-#elif KOKKOS_HAVE_OPENMP
+#elif KOKKOS_ENABLE_OPENMP
 typedef Kokkos::OpenMP       UVMMemSpace;
 #else
 typedef Kokkos::HostSpace    UVMMemSpace;

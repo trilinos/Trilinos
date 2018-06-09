@@ -50,7 +50,6 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 
 namespace ROL { 
 
@@ -74,7 +73,7 @@ private:
 public:
 
   // Constructor
-  TruncatedCG( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
+  TruncatedCG( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     // Unravel Parameter List
     Real em4(1e-4), em2(1e-2);
     maxit_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);

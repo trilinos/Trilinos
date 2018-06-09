@@ -42,12 +42,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize serial
-  Kokkos::Serial::initialize();
+  Kokkos::initialize(argc,argv);
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize serial
-  Kokkos::Serial::finalize();
+  Kokkos::finalize();
 
   return res;
 }

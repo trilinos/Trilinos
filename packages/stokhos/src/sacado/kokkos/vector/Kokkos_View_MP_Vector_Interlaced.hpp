@@ -817,7 +817,7 @@ public:
 
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::value_type::storage_type::value_type *
-    ptr_on_device() const { return m_ptr_on_device ; }
+    data() const { return m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
@@ -861,13 +861,13 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewMPVectorInterlaced> & dst ,
   typedef typename dst_type::memory_space  dst_memory_space ;
   typedef typename src_type::memory_space  src_memory_space ;
 
-  if ( dst.ptr_on_device() != src.ptr_on_device() ) {
+  if ( dst.data() != src.data() ) {
 
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    const size_t nbytes = sizeof(typename dst_type::value_type::storage_type::value_type) * dst.capacity();
+    const size_t nbytes = sizeof(typename dst_type::value_type::storage_type::value_type) * dst.span();
 
-    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
   }
 }
 

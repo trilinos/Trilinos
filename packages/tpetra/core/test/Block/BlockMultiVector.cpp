@@ -62,12 +62,12 @@ namespace {
   struct LittleEqual<ViewType1, ViewType2, 2, 2> {
     static bool equal (const ViewType1& X, const ViewType2& Y)
     {
-      if (X.dimension_0 () != Y.dimension_0 () ||
-          X.dimension_1 () != Y.dimension_1 ()) {
+      if (X.extent (0) != Y.extent (0) ||
+          X.extent (1) != Y.extent (1)) {
         return false;
       }
-      for (int j = 0; j < static_cast<int> (X.dimension_1 ()); ++j) {
-        for (int i = 0; i < static_cast<int> (X.dimension_0 ()); ++i) {
+      for (int j = 0; j < static_cast<int> (X.extent (1)); ++j) {
+        for (int i = 0; i < static_cast<int> (X.extent (0)); ++i) {
           if (X(i,j) != Y(i,j)) {
             return false;
           }
@@ -82,10 +82,10 @@ namespace {
   struct LittleEqual<ViewType1, ViewType2, 1, 1> {
     static bool equal (const ViewType1& X, const ViewType2& Y)
     {
-      if (X.dimension_0 () != Y.dimension_0 ()) {
+      if (X.extent (0) != Y.extent (0)) {
         return false;
       }
-      for (int i = 0; i < static_cast<int> (X.dimension_0 ()); ++i) {
+      for (int i = 0; i < static_cast<int> (X.extent (0)); ++i) {
         if (X(i) != Y(i)) {
           return false;
         }
@@ -362,13 +362,13 @@ namespace {
     const LO colToModify = 1;
     little_vec_type X_overlap =
       X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), colToModify);
-    TEST_ASSERT( X_overlap.ptr_on_device () != NULL );
-    TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.dimension_0 ()), static_cast<size_t> (blockSize) );
+    TEST_ASSERT( X_overlap.data () != NULL );
+    TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)), static_cast<size_t> (blockSize) );
 
     // {
     //   std::ostringstream os;
     //   os << "Proc " << myRank
-    //      << ": X_overlap.ptr_on_device() = " << X_overlap.ptr_on_device ()
+    //      << ": X_overlap.data() = " << X_overlap.data ()
     //      << ", X_overlap.getBlockSize() = " << X_overlap.getBlockSize ()
     //      << ", meshMap.getMinGlobalIndex() = " << meshMap.getMinGlobalIndex ()
     //      << std::endl;
@@ -376,8 +376,8 @@ namespace {
     // }
 
     {
-      const int lclOk = (X_overlap.ptr_on_device () != NULL &&
-                         static_cast<size_t> (X_overlap.dimension_0 ()) == static_cast<size_t> (blockSize)) ? 1 : 0;
+      const int lclOk = (X_overlap.data () != NULL &&
+                         static_cast<size_t> (X_overlap.extent (0)) == static_cast<size_t> (blockSize)) ? 1 : 0;
       int gblOk = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclOk, outArg (gblOk));
       TEUCHOS_TEST_FOR_EXCEPTION(

@@ -46,7 +46,7 @@
 
 #include <fenl_functors.hpp>
 #include "Kokkos_Parallel_MP_Vector.hpp"
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include "Stokhos_Cuda_WarpShuffle.hpp"
 #endif
 
@@ -116,7 +116,7 @@ public:
     , solution( arg_solution )
     , solution_dp( arg_solution_dp )
     , pce_size( Kokkos::dimension_scalar(solution) )
-    , num_param( solution_dp.dimension_1() )
+    , num_param( solution_dp.extent(1) )
     , value_count( pce_size*(num_param+1) )
     , cijk( Kokkos::cijk(solution) )
     {
@@ -130,7 +130,7 @@ public:
   {
     scalar_type response(cijk, value_count);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response.coeff() );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , response.coeff() );
+    Kokkos::parallel_reduce( solution.extent(0) , *this , response.coeff() );
     return response;
   }
 
@@ -308,7 +308,7 @@ struct EvaluatePCE {
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    Kokkos::parallel_for( pce_view.extent(1), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -351,7 +351,7 @@ struct AssemblePCE {
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    Kokkos::parallel_for( pce_view.extent(1), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -394,7 +394,7 @@ struct AssembleRightPCE {
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_0(), *this );
+    Kokkos::parallel_for( pce_view.extent(0), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -407,7 +407,7 @@ struct AssembleRightPCE {
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA ) && defined( __CUDACC__ )
+#if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
 template < typename pce_view_type,
            typename scalar_view_type,
            typename quad_values_type,
@@ -439,7 +439,7 @@ struct EvaluatePCE< pce_view_type,
     quad_values( arg_quad_values ),
     qp( 0 ),
     num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
-    row_count( pce_view.dimension_1() ) {}
+    row_count( pce_view.extent(1) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -534,7 +534,7 @@ struct AssemblePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.dimension_1(),
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.extent(1),
                                                       EnsembleSize ),
                           *this );
   }
@@ -593,7 +593,7 @@ struct AssembleRightPCE< pce_view_type,
     quad_weights( arg_quad_weights ),
     qp( 0 ),
     num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
-    row_count( pce_view.dimension_0() ) {}
+    row_count( pce_view.extent(0) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -754,8 +754,8 @@ public:
     : solution( arg_solution )
     , residual( arg_residual )
     , jacobian( arg_jacobian )
-    , scalar_solution( "scalar_solution", solution.dimension_0() )
-    , scalar_residual( "scalar_residual", residual.dimension_0() )
+    , scalar_solution( "scalar_solution", solution.extent(0) )
+    , scalar_residual( "scalar_residual", residual.extent(0) )
     , scalar_jacobian( "scalar_jacobian", jacobian.graph )
     , scalar_diffusion_coefficient( arg_coeff_function.m_mean,
                                     arg_coeff_function.m_variance,
@@ -799,8 +799,8 @@ public:
 
     // Note:  num_quad_points is aligned to the ensemble size to make
     // things easier
-    const unsigned num_quad_points = quad_points.dimension_0();
-    const unsigned dim = quad_points.dimension_1();
+    const unsigned num_quad_points = quad_points.extent(0);
+    const unsigned dim = quad_points.extent(1);
 
     evaluate_solution_type evaluate_pce(solution, scalar_solution, quad_values);
     assemble_residual_type assemble_res(residual, scalar_residual,

@@ -40,6 +40,9 @@ Level 1
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
+   Nullspace factory (MueLu::NullspaceFactory)
+   Fine level nullspace = Nullspace
+   
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]

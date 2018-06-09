@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LO, GO)
     diff.update (STS::one (), x, -STS::one ());
     diff.normInf (norms);
     Kokkos::deep_copy (norms_h, norms);
-    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+    for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
       const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
       TEST_ASSERT( absVal <= bound );
       if (absVal > bound) {

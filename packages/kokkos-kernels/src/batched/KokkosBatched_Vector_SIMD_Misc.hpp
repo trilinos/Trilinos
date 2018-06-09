@@ -9,7 +9,8 @@ namespace KokkosBatched {
   namespace Experimental {
 
 #define KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
-#define KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l) typename std::enable_if<std::is_convertible< T0 , T1 >::value && std::is_convertible< T0 , T2 >::value, void >::type
+#define KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l) void
+    //typename std::enable_if<std::is_convertible< T1 , T0 >::value && std::is_convertible< T2 , T0 >::value, void >::type
 
     // scalar, scalar
 

@@ -1,12 +1,20 @@
 <ParameterList name="DIRK_VanDerPol">
-  <ParameterList name="VanDerPolModel">
-    <Parameter name="Accept model parameters"    type="bool" value="false"/>
-    <Parameter name="Provide nominal values"     type="bool" value="true"/>
-    <Parameter name="Coeff epsilon" type="double" value="0.1"/>
-    <Parameter name="IC x0"   type="double" value="2.0"/>
-    <Parameter name="IC x1"   type="double" value="0.0"/>
-    <Parameter name="IC t0"   type="double" value="0.0"/>
-  </ParameterList>
+  <!--<ParameterList name="VanDerPolModel">-->
+    <!--<Parameter name="Accept model parameters"    type="bool" value="false"/>-->
+    <!--<Parameter name="Provide nominal values"     type="bool" value="true"/>-->
+    <!--<Parameter name="Coeff epsilon" type="double" value="0.1"/>-->
+    <!--<Parameter name="IC x0"   type="double" value="2.0"/>-->
+    <!--<Parameter name="IC x1"   type="double" value="0.0"/>-->
+    <!--<Parameter name="IC t0"   type="double" value="0.0"/>-->
+    <!--</ParameterList>-->
+<ParameterList name="VanDerPolModel"> <!-- For embedded reference solution -->
+        <Parameter name="Accept model parameters"    type="bool" value="false"/>
+        <Parameter name="Provide nominal values"     type="bool" value="true"/>
+        <Parameter name="Coeff epsilon" type="double" value="0.1"/>
+        <Parameter name="IC x0"   type="double" value="2.0"/>
+        <Parameter name="IC x1"   type="double" value="-0.6654321"/>
+        <Parameter name="IC t0"   type="double" value="0.0"/>
+    </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
 
@@ -50,7 +58,54 @@
             </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Embedded_Integrator">
+      <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+      <Parameter name="Screen Output Index List"     type="string" value="1"/>
+      <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+      <Parameter name="Stepper Name"       type="string" value="SDIRK 2(1) Pair Stepper"/>
+      <ParameterList name="Solution History">
+          <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+          <Parameter name="Storage Limit" type="int"    value="20"/>
+      </ParameterList>
+      <ParameterList name="Time Step Control">
+          <Parameter name="Initial Time"           type="double" value="0.0"/>
+          <Parameter name="Final Time"             type="double" value="2.0"/>
+          <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
+          <Parameter name="Number of Time Steps" type="int" value="100"/>
+      </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Embedded_Integrator_PID">
+      <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+      <Parameter name="Screen Output Index List"     type="string" value="1"/>
+      <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+      <Parameter name="Stepper Name"       type="string" value="SDIRK 2(1) Pair Embedded Stepper"/>
+      <ParameterList name="Solution History">
+          <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+          <Parameter name="Storage Limit" type="int"    value="20"/>
+      </ParameterList>
+      <ParameterList name="Time Step Control">
+          <Parameter name="Initial Time"           type="double" value="0.0"/>
+          <Parameter name="Final Time"             type="double" value="2.0"/>
+          <Parameter name="Initial Time Step"      type="double" value="1e-3"/>
+          <Parameter name="Initial Time Index"     type="int"    value="0"/>
+          <Parameter name="Final Time Index"       type="int"    value="1000000"/>
+          <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
+          <Parameter name="Maximum Relative Error" type="double" value="1.0e-3"/>
+          <Parameter name="Output Index Interval"  type="int"    value="1"/>
+          <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
+          <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
+          <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="3"/>
+          <ParameterList name="Time Step Control Strategy">
+              <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
+              <ParameterList name="pid">
+                  <Parameter name="Name" type="string" value="Integral Controller"/>
+              </ParameterList>
+          </ParameterList>
+      </ParameterList>
+  </ParameterList>
 
     <ParameterList name="Default Stepper">
 
@@ -108,7 +163,117 @@
         </ParameterList>
       </ParameterList>
 
-    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="SDIRK 2(1) Pair Stepper">
+     <Parameter name="Stepper Type" type="string" value="SDIRK 2(1) Pair"/>
+     <Parameter name="Use Embedded" type="bool" value="false"/>
+     <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+     <ParameterList name="Default Solver">
+        <ParameterList name="NOX">
+           <ParameterList name="Direction">
+              <Parameter name="Method" type="string" value="Newton"/>
+              <ParameterList name="Newton">
+                 <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+                 <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Line Search">
+              <ParameterList name="Full Step">
+                 <Parameter name="Full Step" type="double" value="1"/>
+              </ParameterList>
+              <Parameter name="Method" type="string" value="Full Step"/>
+           </ParameterList>
+           <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+           <ParameterList name="Printing">
+              <Parameter name="Output Precision" type="int" value="3"/>
+              <Parameter name="Output Processor" type="int" value="0"/>
+              <ParameterList name="Output Information">
+                 <Parameter name="Error" type="bool" value="1"/>
+                 <Parameter name="Warning" type="bool" value="1"/>
+                 <Parameter name="Outer Iteration" type="bool" value="0"/>
+                 <Parameter name="Parameters" type="bool" value="0"/>
+                 <Parameter name="Details" type="bool" value="0"/>
+                 <Parameter name="Linear Solver Details" type="bool" value="1"/>
+                 <Parameter name="Stepper Iteration" type="bool" value="1"/>
+                 <Parameter name="Stepper Details" type="bool" value="1"/>
+                 <Parameter name="Stepper Parameters" type="bool" value="1"/>
+              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Solver Options">
+              <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+           </ParameterList>
+           <ParameterList name="Status Tests">
+              <Parameter name="Test Type" type="string" value="Combo"/>
+              <Parameter name="Combo Type" type="string" value="OR"/>
+              <Parameter name="Number of Tests" type="int" value="2"/>
+              <ParameterList name="Test 0">
+                 <Parameter name="Test Type" type="string" value="NormF"/>
+                 <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              </ParameterList>
+              <ParameterList name="Test 1">
+                 <Parameter name="Test Type" type="string" value="MaxIters"/>
+                 <Parameter name="Maximum Iterations" type="int" value="10"/>
+              </ParameterList>
+           </ParameterList>
+        </ParameterList>
+     </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="SDIRK 2(1) Pair Embedded Stepper">
+     <Parameter name="Stepper Type" type="string" value="SDIRK 2(1) Pair"/>
+     <Parameter name="Use Embedded" type="bool" value="true"/>
+     <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+     <ParameterList name="Default Solver">
+        <ParameterList name="NOX">
+           <ParameterList name="Direction">
+              <Parameter name="Method" type="string" value="Newton"/>
+              <ParameterList name="Newton">
+                 <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+                 <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Line Search">
+              <ParameterList name="Full Step">
+                 <Parameter name="Full Step" type="double" value="1"/>
+              </ParameterList>
+              <Parameter name="Method" type="string" value="Full Step"/>
+           </ParameterList>
+           <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+           <ParameterList name="Printing">
+              <Parameter name="Output Precision" type="int" value="3"/>
+              <Parameter name="Output Processor" type="int" value="0"/>
+              <ParameterList name="Output Information">
+                 <Parameter name="Error" type="bool" value="1"/>
+                 <Parameter name="Warning" type="bool" value="1"/>
+                 <Parameter name="Outer Iteration" type="bool" value="0"/>
+                 <Parameter name="Parameters" type="bool" value="0"/>
+                 <Parameter name="Details" type="bool" value="0"/>
+                 <Parameter name="Linear Solver Details" type="bool" value="1"/>
+                 <Parameter name="Stepper Iteration" type="bool" value="1"/>
+                 <Parameter name="Stepper Details" type="bool" value="1"/>
+                 <Parameter name="Stepper Parameters" type="bool" value="1"/>
+              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Solver Options">
+              <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+           </ParameterList>
+           <ParameterList name="Status Tests">
+              <Parameter name="Test Type" type="string" value="Combo"/>
+              <Parameter name="Combo Type" type="string" value="OR"/>
+              <Parameter name="Number of Tests" type="int" value="2"/>
+              <ParameterList name="Test 0">
+                 <Parameter name="Test Type" type="string" value="NormF"/>
+                 <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              </ParameterList>
+              <ParameterList name="Test 1">
+                 <Parameter name="Test Type" type="string" value="MaxIters"/>
+                 <Parameter name="Maximum Iterations" type="int" value="10"/>
+              </ParameterList>
+           </ParameterList>
+        </ParameterList>
+     </ParameterList>
+  </ParameterList>
 
   </ParameterList>
 

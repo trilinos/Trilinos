@@ -45,7 +45,7 @@
 #define ROL_TRUNCATEDEXPONENTIAL_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -80,8 +80,8 @@ public:
     coeff_ = scale_/diff_;
   }
 
-  TruncatedExponential(Teuchos::ParameterList &parlist) {
-    Teuchos::ParameterList TElist
+  TruncatedExponential(ROL::ParameterList &parlist) {
+    ROL::ParameterList TElist
       = parlist.sublist("SOL").sublist("Distribution").sublist("Truncated Exponential");
     a_ = TElist.get("Lower Bound",0.);
     b_ = TElist.get("Upper Bound",1.);

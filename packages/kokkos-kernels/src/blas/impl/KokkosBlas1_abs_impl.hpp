@@ -67,7 +67,7 @@ struct MV_Abs_Functor
   XMV X_;
 
   MV_Abs_Functor (const RMV& R, const XMV& X) :
-    numCols (X.dimension_1 ()), R_ (R), X_ (X)
+    numCols (X.extent(1)), R_ (R), X_ (X)
   {
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: RMV is not a Kokkos::View.");
@@ -82,7 +82,7 @@ struct MV_Abs_Functor
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {
@@ -103,7 +103,7 @@ struct MV_AbsSelf_Functor
   RMV R_;
 
   MV_AbsSelf_Functor (const RMV& R) :
-    numCols (R.dimension_1 ()), R_ (R)
+    numCols (R.extent(1)), R_ (R)
   {
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: RMV is not a Kokkos::View.");
@@ -114,7 +114,7 @@ struct MV_AbsSelf_Functor
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {
@@ -194,7 +194,7 @@ MV_Abs_Generic (const RMV& R, const XMV& X)
                  "MV_Abs_Generic: XMV is not rank 2");
 
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = X.dimension_0 ();
+  const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (R == X) { // if R and X are the same (alias one another)
@@ -222,7 +222,7 @@ V_Abs_Generic (const RV& R, const XV& X)
                  "V_Abs_Generic: XV is not rank 1");
 
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = X.dimension_0 ();
+  const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (R == X) { // if R and X are the same (alias one another)

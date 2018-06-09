@@ -44,7 +44,7 @@
 #define IFPACK2_LOCALFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
+#include "Ifpack2_Details_RowMatrix.hpp"
 #include <type_traits>
 #include <vector>
 
@@ -158,10 +158,7 @@ namespace Ifpack2 {
 /// \endcode
 template<class MatrixType>
 class LocalFilter :
-    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                     typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::RowMatrix<MatrixType>,
     virtual public Teuchos::Describable
 {
 private:
@@ -296,12 +293,6 @@ public:
   ///   otherwise the number of entries in that row on this process.
   virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
-  //! The number of global diagonal entries, based on global row/column index comparisons.
-  virtual global_size_t getGlobalNumDiags() const;
-
-  //! The number of local diagonal entries, based on global row/column index comparisons.
-  virtual size_t getNodeNumDiags() const;
-
   //! The maximum number of entries across all rows/columns on all processes.
   virtual size_t getGlobalMaxNumRowEntries() const;
 
@@ -310,12 +301,6 @@ public:
 
   //! Whether this matrix has a well-defined column Map.
   virtual bool hasColMap() const;
-
-  //! Whether this matrix is lower triangular.
-  virtual bool isLowerTriangular() const;
-
-  //! Whether this matrix is upper triangular.
-  virtual bool isUpperTriangular() const;
 
   //! Whether the underlying sparse matrix is locally (opposite of globally) indexed.
   virtual bool isLocallyIndexed() const;

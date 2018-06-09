@@ -136,7 +136,7 @@ struct KokkosSPGEMM
         rowmapC(rowmapC_),
         entriesC(entriesC_),
         valuesC(valuesC_),
-        pEntriesC(entriesC_.ptr_on_device()), pvaluesC(valuesC_.ptr_on_device()),
+        pEntriesC(entriesC_.data()), pvaluesC(valuesC_.data()),
         shared_memory_size(shared_memory_size_),
         vector_size (vector_size_),
         memory_space(mpool_),
@@ -196,21 +196,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -1120,8 +1128,8 @@ void
     std::cout << "\tHASH MODE" << std::endl;
   }
   KokkosSparse::SPGEMMAlgorithm algorithm_to_run = this->spgemm_algorithm;
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
@@ -1495,8 +1503,8 @@ void
     std::cout << "\tHASH MODE" << std::endl;
   }
 
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);

@@ -146,7 +146,7 @@ public:
       , m_x( x )
       , m_y( y )
       , m_update( update )
-      , m_row_count( A.graph.row_map.dimension_0()-1 )
+      , m_row_count( A.graph.row_map.extent(0)-1 )
       {}
 
     __device__
@@ -235,7 +235,7 @@ public:
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
-    const size_type row_count = A.graph.row_map.dimension_0()-1;
+    const size_type row_count = A.graph.row_map.extent(0)-1;
     const size_type num_blocks = (row_count+rows_per_block-1)/rows_per_block;
     const dim3 block( threads_per_vector, rows_per_block, 1 );
     const dim3 grid( num_blocks, 1 );
@@ -395,8 +395,8 @@ public:
       , m_x( x )
       , m_y( y )
       , m_update( update )
-      , m_row_count( A.graph.row_map.dimension_0()-1 )
-      , m_num_vec_cols( x.dimension_1() )
+      , m_row_count( A.graph.row_map.extent(0)-1 )
+      , m_num_vec_cols( x.extent(1) )
       {}
 
     __device__
@@ -493,7 +493,7 @@ public:
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
-    const size_type row_count = A.graph.row_map.dimension_0()-1;
+    const size_type row_count = A.graph.row_map.extent(0)-1;
     const size_type num_blocks = (row_count+rows_per_block-1)/rows_per_block;
     const dim3 block( threads_per_vector, rows_per_block, 1 );
     const dim3 grid( num_blocks, 1 );

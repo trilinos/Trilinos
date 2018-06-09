@@ -107,7 +107,7 @@ struct SingleLevelNontransposeGEMV {
       y_i = beta_ * y_[i];
     }
 
-    const IndexType numCols = A_.dimension_1 ();
+    const IndexType numCols = A_.extent(1);
     if (alphaPreset == 0) {
       ; // do nothing
     }
@@ -162,7 +162,7 @@ struct SingleLevelTransposeGEMV {
                             const XViewType& x,
                             const BetaCoeffType& beta,
                             const YViewType& y) :
-    value_count (A.dimension_1 ()), alpha_ (alpha),
+    value_count (A.extent(1)), alpha_ (alpha),
     A_ (A), x_ (x), beta_ (beta), y_ (y)
   {
     static_assert (Kokkos::Impl::is_view<AViewType>::value,
@@ -282,7 +282,7 @@ singleLevelGemv (const char trans[],
   typedef typename AViewType::non_const_value_type AlphaCoeffType;
   typedef typename YViewType::non_const_value_type BetaCoeffType;
 
-  policy_type range (0, A.dimension_0 ());
+  policy_type range (0, A.extent(0));
   const char tr = trans[0];
 
   // The transpose and conjugate transpose cases where A has zero rows
@@ -290,7 +290,7 @@ singleLevelGemv (const char trans[],
   // could implement this using KokkosBlas::scal, but we don't want to
   // depend on that or its implementation details.  Instead, we reuse
   // an instantiation of the non-transpose case for alpha=0.
-  if (A.dimension_0 () == 0 && (tr != 'N' && tr != 'n')) {
+  if (A.extent(0) == 0 && (tr != 'N' && tr != 'n')) {
     if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
       Kokkos::deep_copy (y, Kokkos::Details::ArithTraits<BetaCoeffType>::zero ());
     }
@@ -301,7 +301,7 @@ singleLevelGemv (const char trans[],
       typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
         0, -1, IndexType> functor_type;
       functor_type functor (alpha, A, x, beta, y);
-      Kokkos::parallel_for ("KokkosBlas::gemv[SingleLevel]",policy_type (0, A.dimension_1 ()), functor);
+      Kokkos::parallel_for ("KokkosBlas::gemv[SingleLevel]",policy_type (0, A.extent(1)), functor);
     }
     return;
   }

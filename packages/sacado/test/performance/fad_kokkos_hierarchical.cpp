@@ -65,10 +65,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -148,10 +148,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -230,10 +230,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -330,7 +330,7 @@ void run_flat(const KernelType& kernel) {
 template<typename KernelType>
 void run_hierarchical_flat(const KernelType& kernel) {
   typedef typename KernelType::execution_space execution_space;
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -352,7 +352,7 @@ void run_hierarchical_flat(const KernelType& kernel) {
 template<typename KernelType>
 void run_hierarchical_team(const KernelType& kernel) {
   typedef typename KernelType::execution_space execution_space;
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -424,7 +424,7 @@ struct DrekarTest {
   typedef Kokkos::View<FadType**,ExecSpace> t_2DViewFad;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   static const int FadStride =
     std::is_same< ExecSpace, Kokkos::Cuda >::value ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
@@ -652,9 +652,9 @@ struct DrekarTest {
 
     typedef typename View1::value_type value_type;
 
-    const size_t n0 = v_gold_h.dimension_0();
-    const size_t n1 = v_gold_h.dimension_1();
-    const size_t n2 = v_gold_h.dimension_2();
+    const size_t n0 = v_gold_h.extent(0);
+    const size_t n1 = v_gold_h.extent(1);
+    const size_t n2 = v_gold_h.extent(2);
 
     bool success = true;
     for ( size_t i0 = 0 ; i0 < n0 ; ++i0 ) {
@@ -688,9 +688,9 @@ struct DrekarTest {
 
     typedef typename View1::value_type value_type;
 
-    const size_t n0 = v_gold_h.dimension_0();
-    const size_t n1 = v_gold_h.dimension_1();
-    const size_t n2 = v_gold_h.dimension_2();
+    const size_t n0 = v_gold_h.extent(0);
+    const size_t n1 = v_gold_h.extent(1);
+    const size_t n2 = v_gold_h.extent(2);
 
     bool success = true;
     for ( size_t i0 = 0 ; i0 < n0 ; ++i0 ) {
@@ -885,7 +885,7 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
   std::cout << "concurrency = " << ExecSpace::concurrency() << std::endl;
   const size_t block_size = fad_dim*sizeof(double);
   size_t nkernels = ExecSpace::concurrency()*2;
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
     nkernels /= 32;
 #endif
@@ -924,19 +924,19 @@ int main(int argc, char* argv[]) {
     // Set up command line options
     Teuchos::CommandLineProcessor clp(false);
     clp.setDocString("This program tests the speed of various forward mode AD implementations for simple Kokkos kernel");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -976,52 +976,47 @@ int main(int argc, char* argv[]) {
       break;
     }
 
-#ifdef KOKKOS_HAVE_SERIAL
+    Kokkos::InitArguments init_args;
+    init_args.num_threads = -1;
+    #ifdef KOKKOS_ENABLE_OPENMP
+      if(openmp) init_args.num_threads = openmp;
+    #endif
+    #ifdef KOKKOS_ENABLE_THREADS
+      if(threads) init_args.num_threads = threads;
+    #endif
+
+    Kokkos::initialize(init_args);
+    if (print_config)
+      Kokkos::print_configuration(std::cout, true);
+
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       using Kokkos::Serial;
-      Serial::initialize();
-      if (print_config)
-        Serial::print_configuration(std::cout, true);
       run<Serial>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Serial::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       using Kokkos::OpenMP;
-      OpenMP::initialize(openmp, numa, cores_per_numa);
-      if (print_config)
-        OpenMP::print_configuration(std::cout, true);
       run<OpenMP>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      OpenMP::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       using Kokkos::Threads;
-      Threads::initialize(threads, numa, cores_per_numa);
-      if (print_config)
-        Threads::print_configuration(std::cout, true);
       run<Threads>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Threads::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       using Kokkos::Cuda;
-      Kokkos::HostSpace::execution_space::initialize();
-      Cuda::initialize();
-      if (print_config)
-        Cuda::print_configuration(std::cout, true);
       run<Cuda>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Kokkos::HostSpace::execution_space::finalize();
-      Cuda::finalize();
     }
 #endif
-
+    Kokkos::finalize();
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 

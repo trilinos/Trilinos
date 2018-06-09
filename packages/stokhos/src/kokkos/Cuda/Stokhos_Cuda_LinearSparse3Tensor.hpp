@@ -113,7 +113,7 @@ public:
 
       // blockIdx.x == row in the deterministic (finite element) system
       const size_type row = blockIdx.x*blockDim.y + threadIdx.y;
-      if (row < m_A.graph.row_map.dimension_0()-1) {
+      if (row < m_A.graph.row_map.extent(0)-1) {
         const size_type colBeg = m_A.graph.row_map[ row ];
         const size_type colEnd = m_A.graph.row_map[ row + 1 ];
 
@@ -229,7 +229,7 @@ public:
 
       // blockIdx.x == row in the deterministic (finite element) system
       const size_type row = blockIdx.x*blockDim.y + threadIdx.y;
-      if (row < m_A.graph.row_map.dimension_0()-1) {
+      if (row < m_A.graph.row_map.extent(0)-1) {
         const size_type colBeg = m_A.graph.row_map[ row ];
         const size_type colEnd = m_A.graph.row_map[ row + 1 ];
 
@@ -321,7 +321,7 @@ public:
                      const vector_type & x,
                      const vector_type & y )
   {
-    const size_type num_spatial_rows = A.graph.row_map.dimension_0() - 1;
+    const size_type num_spatial_rows = A.graph.row_map.extent(0) - 1;
     const size_type num_stoch_rows = A.block.dimension();
 
     const size_type warp_size = Kokkos::Impl::CudaTraits::WarpSize;

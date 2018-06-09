@@ -108,13 +108,13 @@ evaluateFields(
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
     // Loop over points
-    for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {
+    for (size_type pt = 0; pt < tensor_field.extent(1); ++pt) {
       
       // Loop over vectors
       for (std::size_t vec = 0; vec < vector_fields.size(); ++vec) {
 
         // Loop over spatial dimensions
-        for (std::size_t dim = 0; dim < tensor_field.dimension(2); ++dim) {
+        for (std::size_t dim = 0; dim < tensor_field.extent(2); ++dim) {
       
           vector_fields[vec](cell,pt,dim) = tensor_field(cell,pt,vec,dim);
 

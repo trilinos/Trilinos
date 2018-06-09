@@ -45,7 +45,7 @@
 #define ROL_BETA_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include <math.h>
 
@@ -106,7 +106,7 @@ public:
     initializeQuadrature();
   }
 
-  Beta(Teuchos::ParameterList &parlist) {
+  Beta(ROL::ParameterList &parlist) {
     shape1_ = parlist.sublist("SOL").sublist("Distribution").sublist("Beta").get("Shape 1",2.);
     shape2_ = parlist.sublist("SOL").sublist("Distribution").sublist("Beta").get("Shape 2",2.);
     shape1_ = (shape1_ > 0.) ? shape1_ : 2.;
@@ -125,7 +125,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Beta): Beta integrateCDF not implemented!");
     return ((input < 0.) ? 0. : input);
   }

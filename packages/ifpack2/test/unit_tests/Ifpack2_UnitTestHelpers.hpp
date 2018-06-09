@@ -47,6 +47,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_Details_RowMatrix.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -877,7 +878,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
            class Node =
              typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class NotCrsMatrix :
-    public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+    public Ifpack2::Details::RowMatrix<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
   public:
     NotCrsMatrix (Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : A_(A){;}
     virtual ~NotCrsMatrix(){;}
@@ -902,13 +903,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     virtual size_t getNodeNumEntries() const {return A_->getNodeNumEntries();}
     virtual size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const {return A_->getNumEntriesInGlobalRow(globalRow);}
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {return A_->getNumEntriesInLocalRow(localRow);}
-    virtual global_size_t getGlobalNumDiags() const {return A_->getGlobalNumDiags();}
-    virtual size_t getNodeNumDiags() const {return A_->getNodeNumDiags();}
     virtual size_t getGlobalMaxNumRowEntries() const {return A_->getGlobalMaxNumRowEntries();}
     virtual size_t getNodeMaxNumRowEntries() const {return A_->getNodeMaxNumRowEntries();}
     virtual bool hasColMap() const {return A_->hasColMap();}
-    virtual bool isLowerTriangular() const {return A_->isLowerTriangular();}
-    virtual bool isUpperTriangular() const {return A_->isUpperTriangular();}
     virtual bool isLocallyIndexed() const {return A_->isLocallyIndexed();}
     virtual bool isGloballyIndexed() const {return A_->isGloballyIndexed();}
     virtual bool isFillComplete() const {return A_->isFillComplete();}

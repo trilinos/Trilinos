@@ -109,6 +109,10 @@ private:
   int suggested_team_size;
 
   scalar_persistent_work_view_t permuted_diagonals;
+  nnz_lno_t block_size; //this is for block sgs
+
+  nnz_lno_t max_nnz_input_row, num_values_in_l1, num_values_in_l2, num_big_rows;
+  size_t level_1_mem, level_2_mem;
   public:
 
   /**
@@ -120,7 +124,8 @@ private:
     color_set_xadj(), color_sets(), numColors(0),
     permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
     called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
-    suggested_vector_size(0), suggested_team_size(0), permuted_diagonals()
+    suggested_vector_size(0), suggested_team_size(0), permuted_diagonals(), block_size(1), max_nnz_input_row(-1),
+	num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0)
     {
     if (gs == GS_DEFAULT){
       this->choose_default_algorithm();
@@ -129,10 +134,13 @@ private:
 
   }
 
+  void set_block_size(nnz_lno_t bs){this->block_size = bs; }
+  nnz_lno_t get_block_size(){return this->block_size;}
+
     /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
   void choose_default_algorithm(){
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
@@ -141,7 +149,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
@@ -150,7 +158,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
@@ -163,12 +171,12 @@ private:
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->algorithm_type = GS_TEAM;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: GS_TEAM" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: GS_TEAM" << std::endl;
 #endif
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
@@ -247,11 +255,58 @@ private:
     return this->permuted_diagonals;
   }
 
+
+  void set_level_1_mem(size_t _level_1_mem){
+	  this->level_1_mem = _level_1_mem;
+  }
+  void set_level_2_mem(size_t _level_2_mem){
+	  this->level_2_mem = _level_2_mem;
+  }
+
+  void set_num_values_in_l1(nnz_lno_t _num_values_in_l1){
+	  this->num_values_in_l1 = _num_values_in_l1;
+  }
+  void set_num_values_in_l2(nnz_lno_t _num_values_in_l2){
+	  this->num_values_in_l2 = _num_values_in_l2;
+  }
+
+  void set_num_big_rows(nnz_lno_t _big_rows){
+	  this->num_big_rows = _big_rows;
+  }
+
+  size_t get_level_1_mem() const {
+	  return this->level_1_mem;
+  }
+  size_t get_level_2_mem()const {
+	  return this->level_2_mem;
+  }
+
+  nnz_lno_t get_num_values_in_l1()const {
+	  return this->num_values_in_l1 ;
+  }
+  nnz_lno_t get_num_values_in_l2()const {
+	  return this->num_values_in_l2 ;
+  }
+  nnz_lno_t get_num_big_rows()const {
+	  return this->num_big_rows;
+  }
+
+
+  nnz_lno_t get_max_nnz() const{
+    return this->max_nnz_input_row ;
+  }
+
+
+  void set_max_nnz(nnz_lno_t num_result_nnz_){
+    this->max_nnz_input_row = num_result_nnz_;
+  }
+
+
   void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols){
-    if(permuted_y_vector.dimension_0() != size_t(num_rows)){
+    if(permuted_y_vector.extent(0) != size_t(num_rows)){
       permuted_y_vector = scalar_persistent_work_view_t("PERMUTED Y VECTOR", num_rows);
     }
-    if(permuted_x_vector.dimension_0() != size_t(num_cols)){
+    if(permuted_x_vector.extent(0) != size_t(num_cols)){
       permuted_x_vector = scalar_persistent_work_view_t("PERMUTED X VECTOR", num_cols);
     }
   }

@@ -100,11 +100,11 @@ postRegistrationSetup(
   this->utils.setFieldData(flux,fm);
   this->utils.setFieldData(normal,fm);
 
-  num_ip = flux.dimension(1);
-  num_dim = flux.dimension(2);
+  num_ip = flux.extent(1);
+  num_dim = flux.extent(2);
 
-  TEUCHOS_ASSERT(flux.dimension(1) == normal.dimension(1));
-  TEUCHOS_ASSERT(flux.dimension(2) == normal.dimension(2));
+  TEUCHOS_ASSERT(flux.extent(1) == normal.extent(1));
+  TEUCHOS_ASSERT(flux.extent(2) == normal.extent(2));
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
@@ -130,7 +130,7 @@ evaluateFields(
   // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
+    for (std::size_t basis = 0; basis < residual.extent(1); ++basis) {
       for (std::size_t qp = 0; qp < num_ip; ++qp) {
         residual(cell,basis) += normal_dot_flux(cell,qp)*bv->weighted_basis_scalar(cell,basis,qp);
       }

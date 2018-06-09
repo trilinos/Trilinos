@@ -137,7 +137,7 @@ evaluateFields(
     // Loop over cells
     Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       // Loop over points
-      for (size_type pt = 0; pt < local_vector_field.dimension(1); ++pt) {
+      for (size_type pt = 0; pt < local_vector_field.extent(1); ++pt) {
         local_scalar_field(cell,pt) = local_vector_field(cell,pt,sc);
       }
     });

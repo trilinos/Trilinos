@@ -355,7 +355,7 @@ namespace Stokhos {
     }
   };
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 
   /*!
    * \brief Dynamic array allocation class that is specialized for scalar

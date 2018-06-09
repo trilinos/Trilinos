@@ -139,7 +139,7 @@ namespace Intrepid2 {
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
     const ordinal_type cardinality = triBasis.getCardinality();
-    const ordinal_type numPoints = triNodes.dimension(0);
+    const ordinal_type numPoints = triNodes.extent(0);
 
     DynRankView vals;
     vals = DynRankView("vals", cardinality, numPoints);
@@ -189,23 +189,23 @@ namespace Intrepid2 {
     }
     {
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-      DynRankView ConstructWithLabel(badVals2, triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
+      DynRankView ConstructWithLabel(badVals2, triBasis.getCardinality() + 1, triNodes.extent(0), triBasis.getBaseCellTopology().getDimension());
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-      DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension() );
+      DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality(), triNodes.extent(0) + 1, triBasis.getBaseCellTopology().getDimension() );
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-      DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() - 1);
+      DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.extent(0), triBasis.getBaseCellTopology().getDimension() - 1);
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE) ) ;
     } 
     // exception #15: D2 cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
 //    vals.resize(triBasis.getCardinality(), 
-//                triNodes.dimension(0),  
+//                triNodes.extent(0),  
 //                Intrepid2::getDkCardinality(OPERATOR_D2, triBasis.getBaseCellTopology().getDimension()));
 //    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_D2) ); 
 #endif
@@ -233,7 +233,7 @@ namespace Intrepid2 {
     const auto allTags = triBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const ordinal_type dofTagSize = allTags.dimension(0);
+    const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i = 0; i < dofTagSize; ++i) {
       const auto bfOrd  = triBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
@@ -325,7 +325,7 @@ namespace Intrepid2 {
 
     // Dimensions for the output arrays:
     const ordinal_type cardinality = triBasis.getCardinality();
-    const ordinal_type numPoints = triNodes.dimension(0);
+    const ordinal_type numPoints = triNodes.extent(0);
     const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
     
     {

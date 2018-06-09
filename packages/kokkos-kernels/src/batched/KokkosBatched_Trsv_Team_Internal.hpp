@@ -73,7 +73,7 @@ namespace KokkosBatched {
           ValueType local_beta1 = *beta1;
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
-            local_beta1 /= alpha11;
+            local_beta1 = local_beta1 / alpha11;
 
             if (member.team_rank() == 0)
               *beta1 = local_beta1;
@@ -197,7 +197,7 @@ namespace KokkosBatched {
           ValueType local_beta1 = *beta1;
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
-            local_beta1 /= alpha11;
+            local_beta1 = local_beta1 / alpha11;
 
             if (member.team_rank() == 0)
               *beta1 = local_beta1;

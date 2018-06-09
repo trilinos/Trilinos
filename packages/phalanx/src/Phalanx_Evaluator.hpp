@@ -124,7 +124,7 @@ namespace PHX {
     /*!
         Input:
 	@param policy Kokkos task policy object used to create the task/future.
-	@param num_adjacencies The dependence capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on.
+	@param num_adjacencies The dependence span in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on.
 	@param work_size The number of parallel work units.
 	@param d User defined data.
     */

@@ -40,13 +40,13 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "ROL_Stream.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
-#include "ROL_PinTVector.hpp"
+//#include "ROL_PinTVector.hpp"
 
 #include "TankConstraint.hpp"
 #include "TankVector.hpp"
@@ -75,7 +75,7 @@ int main( int argc, char* argv[] ) {
 
   int iprint     = argc - 1;
   Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = makePtrFromRef(std::cout);
   else
@@ -87,10 +87,9 @@ int main( int argc, char* argv[] ) {
 
   try {   
 
-    auto tank_parameters = makePtr<Teuchos::ParameterList>();
-
     std::string tank_xml("tank-parameters.xml");
-    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+
+    auto tank_parameters = ROL::getParametersFromXmlFile(tank_xml);
     auto& pl = *tank_parameters;
 
     auto tankState = makePtr<TankState<RealT>>(pl);

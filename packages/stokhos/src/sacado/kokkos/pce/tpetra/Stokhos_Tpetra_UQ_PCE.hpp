@@ -118,11 +118,11 @@ template <typename Node>
 struct DeviceForNode2 {
   // Prefer Serial execution space as the default, but if that's not
   // available, use the Host memory space's default execution space.
-#if defined(KOKKOS_HAVE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
   typedef Kokkos::Serial type;
 #else
   typedef Kokkos::HostSpace::execution_space type;
-#endif // defined(KOKKOS_HAVE_SERIAL)
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 };
 
 template <typename Device>

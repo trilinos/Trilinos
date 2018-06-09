@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -105,9 +105,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> > probj = ROL::makePtrFromRef(robj);
 
     // Get input parameter list.
-    std::string filename = "example_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( "example_02.xml" );
 
     // Run optimization.
 

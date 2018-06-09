@@ -1348,7 +1348,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#ifndef HAVE_INTREPID_KOKKOSCORE 
+//#ifndef INTREPID_OLD_KOKKOS_CODE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1566,7 +1566,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#ifndef HAVE_INTREPID_KOKKOSCORE 
+//#ifndef INTREPID_OLD_KOKKOS_CODE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {

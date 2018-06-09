@@ -31,22 +31,22 @@ namespace Tempus {
  * PID = Proportional-Integral-Derivative Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \epsilon_{n-2}^{-k_3 / p} \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \epsilon_{n-1}^{k_2 / p} \epsilon_{n-2}^{-k_3 / p} \right)
  * \f]
  *
  * PI = Proportional-Integral Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \epsilon_{n-1}^{k_2 / p} \right)
  * \f]
  *
  * I = Integral Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \right)
  * \f]
  *
- * where \f$\epsilon_n \f$ is the error at time step \f$n$\f
+ * where \f$\epsilon_n \f$ is the error at time step \f$n\f$.
  *
  * Appropriate for Explicit Methods
  */

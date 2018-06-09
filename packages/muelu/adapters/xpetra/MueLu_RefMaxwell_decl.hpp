@@ -78,9 +78,7 @@
 
 #ifdef HAVE_MUELU_IFPACK2
 #include "Ifpack2_Preconditioner.hpp"
-#if defined(HAVE_TPETRA_INST_INT_INT)
 #include "Ifpack2_Hiptmair.hpp"
-#endif
 #endif
 
 namespace MueLu {
@@ -318,6 +316,8 @@ namespace MueLu {
                             Hierarchy22_->template clone<NewNode> (new_node)));
     }
 
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
+
   private:
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
@@ -339,7 +339,7 @@ namespace MueLu {
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> Smoother_;
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_IFPACK2)
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;

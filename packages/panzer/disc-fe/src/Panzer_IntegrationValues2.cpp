@@ -330,7 +330,7 @@ public:
     _offset(offset),
     _rel_tol(1.e-12)
   {
-    _num_dims=_array.dimension(2);
+    _num_dims=_array.extent(2);
   }
 
 
@@ -510,9 +510,9 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
   // Copy over coordinates
   {
-    const int num_cells = in_node_coordinates.dimension(0);
-    const int num_nodes = in_node_coordinates.dimension(1);
-    const int num_dims = in_node_coordinates.dimension(2);
+    const int num_cells = in_node_coordinates.extent(0);
+    const int num_nodes = in_node_coordinates.extent(1);
+    const int num_dims = in_node_coordinates.extent(2);
 
     for(int cell=0; cell<num_cells; ++cell){
       for(int node=0; node<num_nodes; ++node){
@@ -526,7 +526,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // NOTE: We are assuming that each face can have a different number of points.
   // Not sure if this is necessary, but it requires a lot of additional allocations
 
-  const int num_cells = in_node_coordinates.dimension(0);
+  const int num_cells = in_node_coordinates.extent(0);
   const int cell_dim = cell_topology.getDimension();
   const int subcell_dim = cell_topology.getDimension()-1;
   const int num_subcells = cell_topology.getSubcellCount(subcell_dim);
@@ -766,18 +766,18 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // I'm not sure if these should exist for surface integrals, but here we go!
 
   // Shakib contravarient metric tensor
-  for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
-    for (size_type ip = 0; ip < contravarient.dimension(1); ++ip) {
+  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
 
       // zero out matrix
-      for (size_type i = 0; i < contravarient.dimension(2); ++i)
-        for (size_type j = 0; j < contravarient.dimension(3); ++j)
+      for (size_type i = 0; i < contravarient.extent(2); ++i)
+        for (size_type j = 0; j < contravarient.extent(3); ++j)
           covarient(cell,ip,i,j) = 0.0;
 
       // g^{ij} = \frac{\parital x_i}{\partial \chi_\alpha}\frac{\parital x_j}{\partial \chi_\alpha}
-      for (size_type i = 0; i < contravarient.dimension(2); ++i) {
-        for (size_type j = 0; j < contravarient.dimension(3); ++j) {
-          for (size_type alpha = 0; alpha < contravarient.dimension(2); ++alpha) {
+      for (size_type i = 0; i < contravarient.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient.extent(3); ++j) {
+          for (size_type alpha = 0; alpha < contravarient.extent(2); ++alpha) {
             covarient(cell,ip,i,j) += jac(cell,ip,i,alpha) * jac(cell,ip,j,alpha);
           }
         }
@@ -789,11 +789,11 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(contravarient.get_view(), covarient.get_view());
 
   // norm of g_ij
-  for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
-    for (size_type ip = 0; ip < contravarient.dimension(1); ++ip) {
+  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
       norm_contravarient(cell,ip) = 0.0;
-      for (size_type i = 0; i < contravarient.dimension(2); ++i) {
-        for (size_type j = 0; j < contravarient.dimension(3); ++j) {
+      for (size_type i = 0; i < contravarient.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient.extent(3); ++j) {
           norm_contravarient(cell,ip) += contravarient(cell,ip,i,j) * contravarient(cell,ip,i,j);
         }
       }
@@ -812,8 +812,8 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
 
   // copy the dynamic data structures into the static data structures
   {
-    size_type num_ip = dyn_cub_points.dimension(0);
-    size_type num_dims = dyn_cub_points.dimension(1);
+    size_type num_ip = dyn_cub_points.extent(0);
+    size_type num_dims = dyn_cub_points.extent(1);
 
     for (size_type ip = 0; ip < num_ip;  ++ip) {
       cub_weights(ip) = dyn_cub_weights(ip);
@@ -823,16 +823,16 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   }
 
   if (int_rule->isSide()) {
-    const size_type num_ip = dyn_cub_points.dimension(0), num_side_dims = dyn_side_cub_points.dimension(1);
+    const size_type num_ip = dyn_cub_points.extent(0), num_side_dims = dyn_side_cub_points.extent(1);
     for (size_type ip = 0; ip < num_ip; ++ip)
       for (size_type dim = 0; dim < num_side_dims; ++dim)
         side_cub_points(ip,dim) = dyn_side_cub_points(ip,dim);
   }
 
   {
-    size_type num_cells = in_node_coordinates.dimension(0);
-    size_type num_nodes = in_node_coordinates.dimension(1);
-    size_type num_dims = in_node_coordinates.dimension(2);
+    size_type num_cells = in_node_coordinates.extent(0);
+    size_type num_nodes = in_node_coordinates.extent(1);
+    size_type num_dims = in_node_coordinates.extent(2);
 
     for (size_type cell = 0; cell < num_cells;  ++cell) {
       for (size_type node = 0; node < num_nodes; ++node) {
@@ -872,18 +872,18 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   else TEUCHOS_ASSERT(false);
 
   // Shakib contravarient metric tensor
-  for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
-    for (size_type ip = 0; ip < contravarient.dimension(1); ++ip) {
+  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
 
       // zero out matrix
-      for (size_type i = 0; i < contravarient.dimension(2); ++i)
-        for (size_type j = 0; j < contravarient.dimension(3); ++j)
+      for (size_type i = 0; i < contravarient.extent(2); ++i)
+        for (size_type j = 0; j < contravarient.extent(3); ++j)
           covarient(cell,ip,i,j) = 0.0;
 
       // g^{ij} = \frac{\parital x_i}{\partial \chi_\alpha}\frac{\parital x_j}{\partial \chi_\alpha}
-      for (size_type i = 0; i < contravarient.dimension(2); ++i) {
-        for (size_type j = 0; j < contravarient.dimension(3); ++j) {
-          for (size_type alpha = 0; alpha < contravarient.dimension(2); ++alpha) {
+      for (size_type i = 0; i < contravarient.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient.extent(3); ++j) {
+          for (size_type alpha = 0; alpha < contravarient.extent(2); ++alpha) {
             covarient(cell,ip,i,j) += jac(cell,ip,i,alpha) * jac(cell,ip,j,alpha);
           }
         }
@@ -895,11 +895,11 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(contravarient.get_view(), covarient.get_view());
 
   // norm of g_ij
-  for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
-    for (size_type ip = 0; ip < contravarient.dimension(1); ++ip) {
+  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
       norm_contravarient(cell,ip) = 0.0;
-      for (size_type i = 0; i < contravarient.dimension(2); ++i) {
-        for (size_type j = 0; j < contravarient.dimension(3); ++j) {
+      for (size_type i = 0; i < contravarient.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient.extent(3); ++j) {
           norm_contravarient(cell,ip) += contravarient(cell,ip,i,j) * contravarient(cell,ip,i,j);
         }
       }
@@ -922,7 +922,7 @@ permuteToOther(const PHX::MDField<Scalar,Cell,IP,Dim>& coords,
   // the workset. (2) The first workset has valid data. Hence we operate only
   // on cell 0.
   const size_type cell = 0;
-  const size_type num_ip = coords.dimension(1), num_dim = coords.dimension(2);
+  const size_type num_ip = coords.extent(1), num_dim = coords.extent(2);
   permutation.resize(num_ip);
   std::vector<char> taken(num_ip, 0);
   for (size_type ip = 0; ip < num_ip; ++ip) {
@@ -961,13 +961,13 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
     {
       // Determine the permutation.
-      std::vector<size_type> permutation(other_ip_coordinates.dimension(1));
+      std::vector<size_type> permutation(other_ip_coordinates.extent(1));
       permuteToOther(ip_coordinates, other_ip_coordinates, permutation);
       // Apply the permutation to the cubature arrays.
       MDFieldArrayFactory af(prefix, alloc_arrays);
-      const size_type num_ip = dyn_cub_points.dimension(0);
+      const size_type num_ip = dyn_cub_points.extent(0);
       {
-        const size_type num_dim = dyn_side_cub_points.dimension(1);
+        const size_type num_dim = dyn_side_cub_points.extent(1);
         DblArrayDynamic old_dyn_side_cub_points = af.template buildArray<double,IP,Dim>(
             "old_dyn_side_cub_points", num_ip, num_dim);
         old_dyn_side_cub_points.deep_copy(dyn_side_cub_points);
@@ -977,7 +977,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
               dyn_side_cub_points(ip, dim) = old_dyn_side_cub_points(permutation[ip], dim);
       }
       {
-        const size_type num_dim = dyn_cub_points.dimension(1);
+        const size_type num_dim = dyn_cub_points.extent(1);
         DblArrayDynamic old_dyn_cub_points = af.template buildArray<double,IP,Dim>(
             "old_dyn_cub_points", num_ip, num_dim);
         old_dyn_cub_points.deep_copy(dyn_cub_points);
@@ -990,13 +990,13 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
         DblArrayDynamic old_dyn_cub_weights = af.template buildArray<double,IP>(
             "old_dyn_cub_weights", num_ip);
         old_dyn_cub_weights.deep_copy(dyn_cub_weights);
-        for (size_type ip = 0; ip < dyn_cub_weights.dimension(0); ++ip)
+        for (size_type ip = 0; ip < dyn_cub_weights.extent(0); ++ip)
           if (ip != permutation[ip])
             dyn_cub_weights(ip) = old_dyn_cub_weights(permutation[ip]);
       }
       {
-        const size_type num_cells = ip_coordinates.dimension(0), num_ip = ip_coordinates.dimension(1),
-            num_dim = ip_coordinates.dimension(2);
+        const size_type num_cells = ip_coordinates.extent(0), num_ip = ip_coordinates.extent(1),
+            num_dim = ip_coordinates.extent(2);
         Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
             "old_ip_coordinates", num_cells, num_ip, num_dim);
         Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
@@ -1017,14 +1017,14 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
     getCubatureCV(in_node_coordinates);
 
     // Determine the permutation.
-    std::vector<size_type> permutation(other_ip_coordinates.dimension(1));
+    std::vector<size_type> permutation(other_ip_coordinates.extent(1));
     permuteToOther(ip_coordinates, other_ip_coordinates, permutation);
 
     // Apply the permutation to the cubature arrays.
     MDFieldArrayFactory af(prefix, alloc_arrays);
     {
-      const size_type num_cells = ip_coordinates.dimension(0), num_ip = ip_coordinates.dimension(1),
-          num_dim = ip_coordinates.dimension(2);
+      const size_type num_cells = ip_coordinates.extent(0), num_ip = ip_coordinates.extent(1),
+          num_dim = ip_coordinates.extent(2);
       Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
           "old_ip_coordinates", num_cells, num_ip, num_dim);
       Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
@@ -1070,9 +1070,9 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
     return;
   }
   {
-    size_type num_cells = in_node_coordinates.dimension(0);
-    size_type num_nodes = in_node_coordinates.dimension(1);
-    size_type num_dims = in_node_coordinates.dimension(2);
+    size_type num_cells = in_node_coordinates.extent(0);
+    size_type num_nodes = in_node_coordinates.extent(1);
+    size_type num_dims = in_node_coordinates.extent(2);
 
     for (size_type cell = 0; cell < num_cells;  ++cell) {
       for (size_type node = 0; node < num_nodes; ++node) {
@@ -1091,9 +1091,9 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
   else
     intrepid_cubature->getCubature(dyn_phys_cub_points.get_view(),dyn_phys_cub_weights.get_view(),dyn_node_coordinates.get_view());
 
-  size_type num_cells = dyn_phys_cub_points.dimension(0);
-  size_type num_ip =dyn_phys_cub_points.dimension(1);
-  size_type num_dims = dyn_phys_cub_points.dimension(2);
+  size_type num_cells = dyn_phys_cub_points.extent(0);
+  size_type num_ip =dyn_phys_cub_points.extent(1);
+  size_type num_dims = dyn_phys_cub_points.extent(2);
 
   for (size_type cell = 0; cell < num_cells;  ++cell) {
     for (size_type ip = 0; ip < num_ip;  ++ip) {

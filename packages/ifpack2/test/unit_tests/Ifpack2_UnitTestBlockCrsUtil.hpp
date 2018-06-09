@@ -429,11 +429,11 @@ struct BlockCrsMatrixMaker {
         std::sort(colidx.data() + rowptr(r), colidx.data() + rowptr(r+1));
 
       {
-        typename row_map_type::non_const_type row_map("row_map", rowptr.size());
-        Kokkos::deep_copy(row_map, rowptr);
+        typename row_map_type::non_const_type row_map_tmp("row_map", rowptr.size());
+        Kokkos::deep_copy(row_map_tmp, rowptr);
         entries_type entries("entries", colidx.size());
         Kokkos::deep_copy(entries, colidx);
-        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map);
+        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map_tmp);
       }
 
       if ( ! tridiags_only) {
@@ -534,7 +534,7 @@ struct BlockCrsMatrixMaker {
       Teuchos::reduceAll(*row_map->getComm(), Teuchos::REDUCE_MAX, 1, &max_bpr_lcl, &max_bpr);
     }
     const Int nthreads =
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
       omp_get_max_threads()
 #else
       1
@@ -550,12 +550,12 @@ struct BlockCrsMatrixMaker {
     std::vector<ThreadData> tds;
     for (Int tid = 0; tid < nthreads; ++tid)
       tds.push_back(ThreadData(max_bpr, bs));
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #   pragma omp parallel for
 #endif
     for (Int lr = 0; lr < nr; ++lr) {
       const Int tid =
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
         omp_get_thread_num()
 #else
         0

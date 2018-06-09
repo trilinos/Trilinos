@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas1_nrm1_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
+#include "KokkosBlas1_nrm1_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS1_NRM1_MV_ETI_SPEC_INST(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

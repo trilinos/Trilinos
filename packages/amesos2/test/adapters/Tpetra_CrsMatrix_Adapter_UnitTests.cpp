@@ -60,6 +60,24 @@
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Meta.hpp"
 
+namespace TestTraitsNS {
+  template <typename Scalar>
+  struct test_traits {
+    static const char* test_mat;
+  };
+
+  template <typename Scalar>
+  const char* test_traits<Scalar>::test_mat = "../matrices/amesos2_test_mat0.mtx";
+
+  template <typename Mag>
+  struct test_traits<std::complex<Mag> > {
+    static const char* test_mat;
+  };
+
+  template <typename Mag>
+  const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
+} // namespace TestTraitsNS
+
 namespace {
 
   using std::cout;
@@ -101,21 +119,6 @@ namespace {
   // Where to look for input files
   string filedir;
 
-  template <typename Scalar>
-  struct test_traits {
-    static const char* test_mat;
-  };
-
-  template <typename Scalar>
-  const char* test_traits<Scalar>::test_mat = "../matrices/amesos2_test_mat0.mtx";
-
-  template <typename Mag>
-  struct test_traits<std::complex<Mag> > {
-    static const char* test_mat;
-  };
-
-  template <typename Mag>
-  const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
 
 
   TEUCHOS_STATIC_SETUP()
@@ -264,7 +267,7 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
                                                         comm, node, true, true);
     RCP<const Map<LO,GO,Node> > map = mat->getRowMap();
 
@@ -349,7 +352,7 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
                                                         comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
@@ -432,7 +435,7 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
                                                         comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
@@ -509,7 +512,7 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
                                                         comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);

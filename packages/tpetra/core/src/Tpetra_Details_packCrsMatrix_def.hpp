@@ -163,20 +163,20 @@ public:
     error_ ("error") // don't forget this, or you'll get segfaults!
   {
     if (debug) {
-      const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.dimension_0 ());
+      const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.extent (0));
 
-      if (numRowsToPack != static_cast<size_t> (counts_.dimension_0 ())) {
+      if (numRowsToPack != static_cast<size_t> (counts_.extent (0))) {
         std::ostringstream os;
-        os << "lclRowInds.dimension_0() = " << numRowsToPack
-           << " != counts.dimension_0() = " << counts_.dimension_0 ()
+        os << "lclRowInds.extent(0) = " << numRowsToPack
+           << " != counts.extent(0) = " << counts_.extent (0)
            << ".";
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
       }
       if (static_cast<size_t> (numRowsToPack + 1) !=
-          static_cast<size_t> (outputOffsets_.dimension_0 ())) {
+          static_cast<size_t> (outputOffsets_.extent (0))) {
         std::ostringstream os;
-        os << "lclRowInds.dimension_0() + 1 = " << (numRowsToPack + 1)
-           << " != outputOffsets.dimension_0() = " << outputOffsets_.dimension_0 ()
+        os << "lclRowInds.extent(0) + 1 = " << (numRowsToPack + 1)
+           << " != outputOffsets.extent(0) = " << outputOffsets_.extent (0)
            << ".";
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
       }
@@ -197,7 +197,7 @@ public:
 
     if (final) {
       if (debug) {
-        if (curInd >= static_cast<local_row_index_type> (outputOffsets_.dimension_0 ())) {
+        if (curInd >= static_cast<local_row_index_type> (outputOffsets_.extent (0))) {
           error_ () = 2;
           return;
         }
@@ -205,9 +205,9 @@ public:
       outputOffsets_(curInd) = update;
     }
 
-    if (curInd < static_cast<local_row_index_type> (counts_.dimension_0 ())) {
+    if (curInd < static_cast<local_row_index_type> (counts_.extent (0))) {
       const auto lclRow = lclRowInds_(curInd);
-      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
+      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.extent (0)) ||
           static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
         error_ () = 3;
         return;
@@ -297,28 +297,28 @@ computeNumPacketsAndOffsets (const OutputOffsetsViewType& outputOffsets,
   const char prefix[] = "computeNumPacketsAndOffsets: ";
 
   count_type count = 0;
-  const count_type numRowsToPack = lclRowInds.dimension_0 ();
+  const count_type numRowsToPack = lclRowInds.extent (0);
 
   if (numRowsToPack == 0) {
     return count;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (rowOffsets.dimension_0 () <= static_cast<size_type> (1),
+      (rowOffsets.extent (0) <= static_cast<size_type> (1),
        std::invalid_argument, prefix << "There is at least one row to pack, "
-       "but the matrix has no rows.  lclRowInds.dimension_0() = " <<
-       numRowsToPack << ", but rowOffsets.dimension_0() = " <<
-       rowOffsets.dimension_0 () << " <= 1.");
+       "but the matrix has no rows.  lclRowInds.extent(0) = " <<
+       numRowsToPack << ", but rowOffsets.extent(0) = " <<
+       rowOffsets.extent (0) << " <= 1.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (outputOffsets.dimension_0 () !=
+      (outputOffsets.extent (0) !=
        static_cast<size_type> (numRowsToPack + 1), std::invalid_argument,
        prefix << "Output dimension does not match number of rows to pack.  "
-       << "outputOffsets.dimension_0() = " << outputOffsets.dimension_0 ()
-       << " != lclRowInds.dimension_0() + 1 = "
+       << "outputOffsets.extent(0) = " << outputOffsets.extent (0)
+       << " != lclRowInds.extent(0) + 1 = "
        << static_cast<size_type> (numRowsToPack + 1) << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (counts.dimension_0 () != numRowsToPack, std::invalid_argument,
-       prefix << "counts.dimension_0() = " << counts.dimension_0 ()
+      (counts.extent (0) != numRowsToPack, std::invalid_argument,
+       prefix << "counts.extent(0) = " << counts.extent (0)
        << " != numRowsToPack = " << numRowsToPack << ".");
 
     functor_type f (outputOffsets, counts, rowOffsets,
@@ -540,10 +540,10 @@ struct PackCrsMatrixFunctor {
   {
     const LO numRows = local_matrix_in.numRows ();
     const LO rowMapDim =
-      static_cast<LO> (local_matrix.graph.row_map.dimension_0 ());
+      static_cast<LO> (local_matrix.graph.row_map.extent (0));
     TEUCHOS_TEST_FOR_EXCEPTION
       (numRows != 0 && rowMapDim != numRows + static_cast<LO> (1),
-       std::logic_error, "local_matrix.graph.row_map.dimension_0() = "
+       std::logic_error, "local_matrix.graph.row_map.extent(0) = "
        << rowMapDim << " != numRows (= " << numRows << " ) + 1.");
   }
 
@@ -660,27 +660,27 @@ do_pack (const LocalMatrix& local_matrix,
   typedef Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
   const char prefix[] = "Tpetra::Details::do_pack: ";
 
-  if (export_lids.dimension_0 () != 0) {
+  if (export_lids.extent (0) != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<size_t> (offsets.dimension_0 ()) !=
-       static_cast<size_t> (export_lids.dimension_0 () + 1),
-       std::invalid_argument, prefix << "offsets.dimension_0() = "
-       << offsets.dimension_0 () << " != export_lids.dimension_0() (= "
-       << export_lids.dimension_0 () << ") + 1.");
+      (static_cast<size_t> (offsets.extent (0)) !=
+       static_cast<size_t> (export_lids.extent (0) + 1),
+       std::invalid_argument, prefix << "offsets.extent(0) = "
+       << offsets.extent (0) << " != export_lids.extent(0) (= "
+       << export_lids.extent (0) << ") + 1.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (export_lids.dimension_0 () != num_packets_per_lid.dimension_0 (),
-       std::invalid_argument, prefix << "export_lids.dimension_0() = " <<
-       export_lids.dimension_0 () << " != num_packets_per_lid.dimension_0() = "
-       << num_packets_per_lid.dimension_0 () << ".");
+      (export_lids.extent (0) != num_packets_per_lid.extent (0),
+       std::invalid_argument, prefix << "export_lids.extent(0) = " <<
+       export_lids.extent (0) << " != num_packets_per_lid.extent(0) = "
+       << num_packets_per_lid.extent (0) << ".");
     // If exports has nonzero length at this point, then the matrix
     // has at least one entry to pack.  Thus, if packing process
     // ranks, we had better have at least one process rank to pack.
     TEUCHOS_TEST_FOR_EXCEPTION
-      (pack_pids && exports.dimension_0 () != 0 &&
-       source_pids.dimension_0 () == 0, std::invalid_argument, prefix <<
-       "pack_pids is true, and exports.dimension_0() = " <<
-       exports.dimension_0 ()  << " != 0, meaning that we need to pack at "
-       "least one matrix entry, but source_pids.dimension_0() = 0.");
+      (pack_pids && exports.extent (0) != 0 &&
+       source_pids.extent (0) == 0, std::invalid_argument, prefix <<
+       "pack_pids is true, and exports.extent(0) = " <<
+       exports.extent (0)  << " != 0, meaning that we need to pack at "
+       "least one matrix entry, but source_pids.extent(0) = 0.");
   }
 
   typedef PackCrsMatrixFunctor<LocalMatrix, LocalMap,
@@ -691,7 +691,7 @@ do_pack (const LocalMatrix& local_matrix,
                        pack_pids);
 
   typename pack_functor_type::value_type result;
-  range_type range (0, num_packets_per_lid.dimension_0 ());
+  range_type range (0, num_packets_per_lid.extent (0));
   Kokkos::parallel_reduce (range, f, result);
 
   if (result.first != 0) {
@@ -781,19 +781,19 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   constant_num_packets = 0;
 
   const size_t num_export_lids =
-    static_cast<size_t> (export_lids.dimension_0 ());
+    static_cast<size_t> (export_lids.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
     (num_export_lids !=
-     static_cast<size_t> (num_packets_per_lid.dimension_0 ()),
-     std::invalid_argument, prefix << "num_export_lids.dimension_0() = "
-     << num_export_lids << " != num_packets_per_lid.dimension_0() = "
-     << num_packets_per_lid.dimension_0 () << ".");
+     static_cast<size_t> (num_packets_per_lid.extent (0)),
+     std::invalid_argument, prefix << "num_export_lids.extent(0) = "
+     << num_export_lids << " != num_packets_per_lid.extent(0) = "
+     << num_packets_per_lid.extent (0) << ".");
   if (num_export_lids != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (num_packets_per_lid.ptr_on_device () == NULL, std::invalid_argument,
+      (num_packets_per_lid.data () == NULL, std::invalid_argument,
        prefix << "num_export_lids = "<< num_export_lids << " != 0, but "
-       "num_packets_per_lid.ptr_on_device() = "
-       << num_packets_per_lid.ptr_on_device () << " == NULL.");
+       "num_packets_per_lid.data() = "
+       << num_packets_per_lid.data () << " == NULL.");
   }
 
   const size_t num_bytes_per_lid = PackTraits<LO, DT>::packValueCount (LO (0));
@@ -816,7 +816,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // values should be packed (though this does assume that in our
     // packing scheme, rows with zero entries take zero bytes).
     size_t num_bytes_per_value_l = 0;
-    if (local_matrix.values.dimension_0() > 0) {
+    if (local_matrix.values.extent(0) > 0) {
       const ST& val = local_matrix.values(0);
       num_bytes_per_value_l = PackTraits<ST, DT>::packValueCount (val);
     }
@@ -850,7 +850,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                  num_bytes_per_pid, num_bytes_per_value);
 
   // Resize the output pack buffer if needed.
-  if (count > static_cast<size_t> (exports.dimension_0 ())) {
+  if (count > static_cast<size_t> (exports.extent (0))) {
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
@@ -865,8 +865,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   }
   if (debug) {
     std::ostringstream os;
-    os << "*** count: " << count << ", exports.dimension_0(): "
-       << exports.dimension_0 () << std::endl;
+    os << "*** count: " << count << ", exports.extent(0): "
+       << exports.extent (0) << std::endl;
     std::cerr << os.str ();
   }
 
@@ -874,11 +874,11 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // at least one entry to pack.  Thus, if packing process ranks, we
   // had better have at least one process rank to pack.
   TEUCHOS_TEST_FOR_EXCEPTION
-    (pack_pids && exports.dimension_0 () != 0 &&
-     export_pids.dimension_0 () == 0, std::invalid_argument, prefix <<
-     "pack_pids is true, and exports.dimension_0() = " <<
-     exports.dimension_0 ()  << " != 0, meaning that we need to pack at least "
-     "one matrix entry, but export_pids.dimension_0() = 0.");
+    (pack_pids && exports.extent (0) != 0 &&
+     export_pids.extent (0) == 0, std::invalid_argument, prefix <<
+     "pack_pids is true, and exports.extent(0) = " <<
+     exports.extent (0)  << " != 0, meaning that we need to pack at least "
+     "one matrix entry, but export_pids.extent(0) = 0.");
 
   typedef typename std::decay<decltype (local_matrix)>::type
     local_matrix_type;
@@ -915,7 +915,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
   typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
       std::is_same<
         buffer_exec_space, Kokkos::Cuda
@@ -925,7 +925,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef Kokkos::Device<buffer_exec_space,
     buffer_memory_space> buffer_device_type;
 
@@ -968,8 +968,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // The exports are an output of PackCrsMatrixImpl::packCrsMatrix, so we have
   // to copy them back to host.
   if (static_cast<size_t> (exports.size ()) !=
-      static_cast<size_t> (exports_dv.dimension_0 ())) {
-    exports.resize (exports_dv.dimension_0 ());
+      static_cast<size_t> (exports_dv.extent (0))) {
+    exports.resize (exports_dv.extent (0));
   }
   Kokkos::View<char*, host_dev_type> exports_h (exports.getRawPtr (),
                                                 exports.size ());
@@ -992,7 +992,7 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
   typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
       std::is_same<
         buffer_exec_space, Kokkos::Cuda
@@ -1002,7 +1002,7 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef Kokkos::Device<buffer_exec_space,
     buffer_memory_space> buffer_device_type;
 

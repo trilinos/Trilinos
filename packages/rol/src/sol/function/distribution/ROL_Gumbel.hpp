@@ -45,7 +45,7 @@
 #define ROL_GUMBEL_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -67,7 +67,7 @@ public:
     checkInputs(loc_,scale_);
   }
 
-  Gumbel(Teuchos::ParameterList &parlist) {
+  Gumbel(ROL::ParameterList &parlist) {
     loc_   = parlist.sublist("SOL").sublist("Distribution").sublist("Gumbel").get("Location",0.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gumbel").get("Scale",1.);
     checkInputs(loc_,scale_);

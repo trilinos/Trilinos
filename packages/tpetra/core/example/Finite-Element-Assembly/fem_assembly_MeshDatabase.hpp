@@ -81,17 +81,17 @@ public:
   ~MeshDatabase(){}
 
   // Size accessors
-  size_t getNumOwnedElements() const {return ownedElementGlobalIDs_.dimension(0);}
+  size_t getNumOwnedElements() const {return ownedElementGlobalIDs_.extent(0);}
 
-  size_t getNumGhostElements() const {return ghostElementGlobalIDs_.dimension(0);}
+  size_t getNumGhostElements() const {return ghostElementGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedNodes() const {return ownedNodeGlobalIDs_.dimension(0);}
+  size_t getNumOwnedNodes() const {return ownedNodeGlobalIDs_.extent(0);}
 
-  size_t getNumGhostNodes() const {return ghostNodeGlobalIDs_.dimension(0);}
+  size_t getNumGhostNodes() const {return ghostNodeGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.dimension(0);}
+  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.dimension(0);}
+  size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.extent(0);}
 
   // Data accessors
   global_ordinal_view_t getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
@@ -283,8 +283,8 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
  
   // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
   std::set<global_ordinal_t> my_ghost_nodes;
-  for(size_t k=0; k<ownedElementToNode_.dimension(0); k++) {
-    for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
+  for(size_t k=0; k<ownedElementToNode_.extent(0); k++) {
+    for(size_t l=0; l<ownedElementToNode_.extent(1); l++) {
       global_ordinal_t nidx=ownedElementToNode_(k,l);
       if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
@@ -348,49 +348,49 @@ void MeshDatabase::print(std::ostream & oss)
   oss<<ss.str()<<" Stop/Start Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
   oss<<ss.str()<<" Owned Global Elements = ";
-  for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedElementGlobalIDs_.extent(0); i++) {
     oss<<ownedElementGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Owned Global Nodes    = ";
-  for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedNodeGlobalIDs_.extent(0); i++) {
     oss<<ownedNodeGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Owned Element2Node    = ";
-  for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
+  for(size_t i=0; i<ownedElementToNode_.extent(0); i++) {
     oss<<"(";
-    for(size_t j=0; j<ownedElementToNode_.dimension(1); j++) {
+    for(size_t j=0; j<ownedElementToNode_.extent(1); j++) {
       oss<<ownedElementToNode_(i,j)<<" ";
     }
     oss<<") ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
-  for(size_t i=0; i<ghostElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ghostElementGlobalIDs_.extent(0); i++) {
     oss<<ghostElementGlobalIDs_[i]<<" ";
   }
   oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
-  for(size_t i=0; i<ghostNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ghostNodeGlobalIDs_.extent(0); i++) {
     oss<<ghostNodeGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Element2Node    = ";
-  for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
+  for(size_t i=0; i<ghostElementToNode_.extent(0); i++) {
     oss<<"(";
-    for(size_t j=0; j<ghostElementToNode_.dimension(1); j++) {
+    for(size_t j=0; j<ghostElementToNode_.extent(1); j++) {
       oss<<ghostElementToNode_(i,j)<<" ";
     }
     oss<<") ";
   }      
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Nodes = ";
-  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.extent(0); i++) {
     oss << ownedAndGhostNodeGlobalIDs_[i]<<" ";
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Elements = ";
-  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.extent(0); i++) {
     oss << ownedAndGhostElementGlobalIDs_[i]<<" ";
   }
 

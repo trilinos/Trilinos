@@ -49,6 +49,7 @@
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -143,7 +144,7 @@ namespace MueLu {
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
+    RCP<LOMultiVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
 
     /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
 
@@ -154,7 +155,7 @@ namespace MueLu {
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       }
+    const RCP<LOMultiVector> & GetVertex2AggId() const { return vertex2AggId_;       }
 
     /*! @brief Returns constant vector that maps local node IDs to owning processor IDs.
 
@@ -201,7 +202,7 @@ namespace MueLu {
      * local id k has been assigned. While k is the local id on my processor (MyPID),
      * vertex2AggId[k] is the local id on the processor which actually owns the aggregate.
      */
-    RCP<LOVector> vertex2AggId_;
+    RCP<LOMultiVector> vertex2AggId_;
 
     /*!
      * If k is the local id on my processor (MyPID), the owning processor has the

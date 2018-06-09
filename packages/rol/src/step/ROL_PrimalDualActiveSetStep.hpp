@@ -51,7 +51,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Secant.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::PrimalDualActiveSetStep
@@ -277,7 +277,7 @@ public:
              @param[in]     useSecant is a bool which determines whether or not the algorithm uses 
                                       a secant approximation of the Hessian
   */
-  PrimalDualActiveSetStep( Teuchos::ParameterList &parlist ) 
+  PrimalDualActiveSetStep( ROL::ParameterList &parlist ) 
     : Step<Real>::Step(), krylov_(ROL::nullPtr),
       iterCR_(0), flagCR_(0), itol_(0),
       maxit_(0), iter_(0), flag_(0), stol_(0), gtol_(0), scale_(0),
