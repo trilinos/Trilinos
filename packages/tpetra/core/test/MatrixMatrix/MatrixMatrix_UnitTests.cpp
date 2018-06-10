@@ -685,7 +685,7 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("openmp: algorithm","MSAK");
+      p.set("openmp: jacobi algorithm","MSAK");
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -693,7 +693,7 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_CUDA
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("cuda: algorithm","MSAK");
+      p.set("cuda: jacobi algorithm","MSAK");
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
