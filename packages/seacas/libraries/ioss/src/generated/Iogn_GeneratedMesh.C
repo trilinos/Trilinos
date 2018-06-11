@@ -1550,7 +1550,7 @@ namespace Iogn {
     }
 
 #if 1
-    std::memcpy(rotmat, res, 9 * sizeof(double));
+    std::memcpy(rotmat.data(), res, 9 * sizeof(double));
 #else
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
