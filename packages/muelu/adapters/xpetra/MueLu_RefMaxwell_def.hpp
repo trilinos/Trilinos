@@ -454,6 +454,18 @@ namespace MueLu {
       std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
       std::ofstream outBCcols("BCcols.mat");
       std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
+#else
+      std::ofstream outBCrows("BCrows.mat");
+      auto BCrows = Kokkos::create_mirror_view (BCrows_);
+      Kokkos::deep_copy(BCrows , BCrows_);
+      for (size_t i = 0; i < BCrows.size(); i++)
+        outBCrows << BCrows[i] << "\n";
+
+      std::ofstream outBCcols("BCcols.mat");
+      auto BCcols = Kokkos::create_mirror_view (BCcols_);
+      Kokkos::deep_copy(BCcols , BCcols_);
+      for (size_t i = 0; i < BCcols.size(); i++)
+        outBCcols << BCcols[i] << "\n";
 #endif
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
       if (Coords_ != Teuchos::null)
