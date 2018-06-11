@@ -7,7 +7,7 @@
 #include "ROL_ValidateFunction.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_DynamicConstraint_CheckInterface.hpp"
-#include "Tanks_SerialConstraint.hpp"
+#include "ROL_SerialConstraint.hpp"
 
 namespace Tanks {
 
@@ -76,7 +76,7 @@ void check( DynamicConstraint<Real>& con,
 
 
 template<typename Real>
-void check( SerialConstraint<Real>& con, 
+void check( ROL::SerialConstraint<Real>& con, 
             ROL::BoundConstraint<Real>& ubnd, // For a single time step
             ROL::BoundConstraint<Real>& zbnd,
             std::ostream& outStream ) { 

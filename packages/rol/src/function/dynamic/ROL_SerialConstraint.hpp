@@ -54,13 +54,6 @@
     \class ROL::SerialConstraint
     \brief Evaluates ROL::DynamicConstraint over a sequential set of time intervals
 
-
-    FIXME: It's not clear that u_initial_ should be appearing in all the methods below 
-           since the sensitivity equations should have zero initial condition
-
-           The adjoint Hessian terms (except 22) would appear to require the direction
-           vector v to be a partitioned vector consisting of a v_old and v_new component
-
     ---
 */
 
@@ -71,17 +64,17 @@ namespace details {
 //using namespace std;
 
 template<typename Real>
-class SerialConstraint<Real> : public ROL::Constraint_SimOpt<Real> {
+class SerialConstraint : public ROL::Constraint_SimOpt<Real> {
 
   using PV = PartitionedVector<Real>;  
   using size_type = typename std::vector<Real>::size_type;
 
 private:
  
-  Ptr<DynamiConstraint<Real>>        con_;        // Constraint over a single time step
+  Ptr<DynamicConstraint<Real>>       con_;        // Constraint over a single time step
   Ptr<Vector<Real>>                  u_initial_;  // Initial condition for state
   Ptr<Vector<Real>>                  u_zero_;     // Zero vector the size of u_initial_
-  Pre<std::vector<TimeStamp<Real>>>  timeStamps_; // Set of all time stamps
+  Ptr<std::vector<TimeStamp<Real>>>  timeStamp_; // Set of all time stamps
   VectorWorkspace<Real>              workspace_;  // For efficient cloning
   size_type                          Nt_;         // Number of time steps  
 
@@ -92,52 +85,49 @@ public:
 
   SerialConstraint( const Ptr<DynamicConstraint<Real>>& con, 
                     const Vector<Real>& u_initial, 
-                    const Ptr<vector<TimeStamp<Real>>>& timeStamps ) : 
-    con_(con), u_initial_(u_initial), u_zero_(u_initial->clone()), 
-    timeStamps_(timeStamps), Nt_(timeStamps_->size()) {
+                    const Ptr<vector<TimeStamp<Real>>>& timeStamp ) : 
+    con_(con), u_initial_(u_initial.clone()), 
+    u_zero_(u_initial.clone()), 
+    timeStamp_(timeStamp), Nt_(timeStamp_->size()) {
+    u_initial_->set(u_initial);
     u_zero_->zero();
   }
 
-  
+  size_type numTimeSteps(void) const { return Nt_; }
+
   const Vector<Real>& getInitialCondition() const { return *u_initial_; }
   void setInitialCondition( const Vector<Real>& u_initial ) { u_initial_->set(u_initial); }
 
 
-  virtual void solve( Vector<Real>& c, 
-                      const Vector<Real>& u,
-                      const Vector<Real>& z, 
-                      Real& tol ) override {
+  virtual void solve( Vector<Real>& c, Vector<Real>& u,
+                      const Vector<Real>& z, Real& tol ) override {
     auto& cp = partition(c);
     auto& up = partition(u);
     auto& zp = partition(z);
 
-    con_->solve( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->solve( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) 
-       con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+       con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
   } // solve
 
    
-  virtual void value( Vector<Real>& c, 
-                      const Vector<Real>& u, 
-                      const Vector<Real>& z, 
-                      Real& tol ) override {
+  virtual void value( Vector<Real>& c, const Vector<Real>& u, 
+                      const Vector<Real>& z, Real& tol ) override {
 
     auto& cp = partition(c);
     auto& up = partition(u);
     auto& zp = partition(z);
   
-    con_->value( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->value( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
     
     for( size_type k=1; k<Nt_; ++k ) 
-      con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
   } // value
 
 
-  virtual void applyJacobian_1( Vector<Real>& jv, 
-                                const Vector<Real>& v, 
-                                const Vector<Real>& u, 
-                                const Vector<Real>& z, 
+  virtual void applyJacobian_1( Vector<Real>& jv, const Vector<Real>& v, 
+                                const Vector<Real>& u, const Vector<Real>& z, 
                                 Real& tol ) override {
 
     auto& jvp = partition(jv);   auto& vp = partition(v);
@@ -146,21 +136,18 @@ public:
     auto  tmp = workspace_.clone(jvp.get(0));
     auto& x   = *tmp; 
 
-    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(k) );
+    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
     
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyJacobian_uo( x, *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      con_->applyJacobian_un( *(jvp.get(k)),  *(vp.get(k)),   *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      jvp.get(k)->plus(w);
-    }
+      con_->applyJacobian_uo( x, *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      con_->applyJacobian_un( *(jvp.get(k)),  *(vp.get(k)),   *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      jvp.get(k)->plus(x);
+    } // end for
   } // applyJacobian_1
   
 
-  virtual void applyInverseJacobian_1(       Vector<Real>& ijv, 
-                                       const Vector<Real>& v, 
-                                       const Vector<Real>& u,
-                                       const Vector<Real>& z, 
-                                       Real& tol) override {
+  virtual void applyInverseJacobian_1( Vector<Real>& ijv, const Vector<Real>& v, const Vector<Real>& u,
+                                       const Vector<Real>& z, Real& tol) override {
 
     auto& ijvp = partition(ijv);  auto& vp = partition(v);
     auto& up   = partition(u);    auto& zp = partition(z);
@@ -168,23 +155,19 @@ public:
     auto  tmp  = workspace_.clone(ijvp.get(0));
     auto& x    = *tmp;
 
-    con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyJacobian_uo( x, *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyJacobian_uo( x, *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
       x.scale(-1.0);
       x.plus( *(vp.get(k)) );
-      con_->applyInverseJacobian_un( *(ijvp.get(k)), x, *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-    }
+      con_->applyInverseJacobian_un( *(ijvp.get(k)), x, *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+    } // end for
   } // applyInverseJacobian_1
   
  
-  virtual void applyAdjointJacobian_1(       Vector<Real>& ajv, 
-                                       const Vector<Real>& v, 
-                                       const Vector<Real>& u,
-                                       const Vector<Real>& z, 
-                                       const Vector<Real>& dualv, 
-                                       Real& tol) override {
+  virtual void applyAdjointJacobian_1( Vector<Real>& ajv, const Vector<Real>& v, const Vector<Real>& u,
+                                       const Vector<Real>& z, const Vector<Real>& dualv, Real& tol) override {
 
     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
     auto& up    = partition(u);     auto& zp = partition(z);
@@ -192,20 +175,17 @@ public:
     auto  tmp  = workspace_.clone(ajvp.get(0)); 
     auto& x    = *tmp; 
 
-    con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
    
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      con_->applyAdjointJacobian_uo( x, *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
-      ajvp.get(k-1)->plus(w);
-    }
+      con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      con_->applyAdjointJacobian_uo( x, *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      ajvp.get(k-1)->plus(x);
+    } // end for
   } // applyAdjointJacobian_1
 
-  void applyInverseAdjointJacobian_1(       Vector<Real>& iajv, 
-                                      const Vector<Real>& v, 
-                                      const Vector<Real>& u,
-                                      const Vector<Real>& z, 
-                                      Real& tol) override {
+  void applyInverseAdjointJacobian_1( Vector<Real>& iajv, const Vector<Real>& v, const Vector<Real>& u,
+                                      const Vector<Real>& z, Real& tol) override {
 
     auto& iajvp = partition(iajv);  auto& vp = partition(v);
     auto& up    = partition(u);     auto& zp = partition(z);
@@ -219,10 +199,10 @@ public:
 
     for( size_type k=Nt_-2; k>0; --k ) {
       con_->applyAdjointJacobian_uo( x, *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
-      w.scale(-1.0);
-      w.plus( *(vp.get(k) ) );
+      x.scale(-1.0);
+      x.plus( *(vp.get(k) ) );
       con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), x, *(up.get(k)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );             
-    }
+    } // end for
 
     con_->applyAdjointJacobian_uo( x, *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
     x.scale(-1.0);
@@ -232,27 +212,21 @@ public:
   } // applyInverseAdjointJacobian_1
 
 
-  virtual void applyJacobian_2(       Vector<Real>& jv, 
-                                const Vector<Real>& v, 
-                                const Vector<Real>& u,
-                                const Vector<Real>& z, 
-                                Real &tol ) override { 
+  virtual void applyJacobian_2( Vector<Real>& jv, const Vector<Real>& v, const Vector<Real>& u,
+                                const Vector<Real>& z, Real &tol ) override { 
  
     auto& jvp = partition(jv);   auto& vp = partition(v);
     auto& up  = partition(u);    auto& zp = partition(z);
   
-    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamps_->at(0) );
+    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
   
     for( size_type k=1; k<Nt_; ++k ) 
-      con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
   } // applyJacobian_2
 
  
-  virtual void applyAdjointJacobian_2(       Vector<Real>& ajv,  
-                                       const Vector<Real>& v, 
-                                       const Vector<Real>& u,
-                                       const Vector<Real>& z,
-                                       Real& tol ) override {
+  virtual void applyAdjointJacobian_2( Vector<Real>& ajv, const Vector<Real>& v, const Vector<Real>& u,
+                                       const Vector<Real>& z, Real& tol ) override {
 
     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
     auto& up    = partition(u);     auto& zp = partition(z);
@@ -265,26 +239,22 @@ public:
 
 
 
-  virtual void applyAdjointHessian_11(Vector<Real> &ahwv,
-                                      const Vector<Real> &w,
-                                      const Vector<Real> &v,
-                                      const Vector<Real> &u,
-                                      const Vector<Real> &z,
-                                      Real &tol) override {
+  virtual void applyAdjointHessian_11( Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
+                                       const Vector<Real> &u, const Vector<Real> &z, Real &tol) override {
 
     auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
     auto& vp    = partition(v);       auto& up = partition(u);
     auto& zp    = partition(z);
 
-    auto  tmp  = workspace_.clone(ajvp.get(0)); 
+    auto  tmp  = workspace_.clone(ahwvp.get(0)); 
     auto& x    = *tmp; 
     
-    con_->applyAdjointHessian_un_un( *(ahwvp.get(0), *(w.get(0)), *(v.get(0)), *u_zero_, 
-                                     *(u.get(0)), *(z.get(0)), timeStamp_->at(k) );
+//    con_->applyAdjointHessian_un_un( *(ahwvp.get(0), *(w.get(0)), *(v.get(0)), *u_zero_, 
+//                                     *(u.get(0)), *(z.get(0)), timeStamp_->at(0) );
 
-    for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyAdjointHessian_un_uo( , *(w.get(0)), *vo, *u_zero_, *(u
-    }
+//    for( size_type k=1; k<Nt_; ++k ) 
+//      con_->applyAdjointHessian_un_uo( , *(w.get(0)), *vo, *u_zero_, *(u
+    
 
   }
 
@@ -294,9 +264,7 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) override {
-
-  }
+                                      Real &tol) override {}
 
 
   virtual void applyAdjointHessian_21(Vector<Real> &ahwv,
@@ -304,38 +272,25 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) override {
+                                      Real &tol) override {}
 
-  }
+  virtual void applyAdjointHessian_22(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
+                                      const Vector<Real> &u, const Vector<Real> &z, Real &tol) override {
 
-  
-  virtual void applyAdjointHessian_22(Vector<Real> &ahwv,
-                                      const Vector<Real> &w,
-                                      const Vector<Real> &v,
-                                      const Vector<Real> &u,
-                                      const Vector<Real> &z,
-                                      Real &tol) override {
-
-    auto& ahwvp = partition(jv);   auto& vp = partition(v);   auto& wp = partition(w);
+    auto& ahwvp = partition(ahwv); auto& vp = partition(v);   auto& wp = partition(w);
     auto& up    = partition(u);    auto& zp = partition(z);
   
     con_->applyAdjointHessian_z_z( *(ahwvp.get(0)), *(wp.get(0)), *(vp.get(0)), *u_initial_, 
-                                   *(up.get(0)),    *(zp.get(0)), timeStamps_->at(0) );
+                                   *(up.get(0)),    *(zp.get(0)), timeStamp_->at(0) );
   
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyHessian_z_z( *(ahwvp.get(k)), *(wp.get(k), *(vp.get(k)), *(up.get(k-1)), 
-                              *(up.get(k)), *(zp.get(k)), timeStamps_->at(k) );
+      con_->applyAdjointHessian_z_z( *(ahwvp.get(k)), *(wp.get(k)), *(vp.get(k)), *(up.get(k-1)), 
+                                     *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
     }
-
   } // applyAdjointHessian_22
 
 
-
-
-
-}; // Serial::Constraint
-
-
+}; // details::SerialConstraint
 
 } // namespace details
 
