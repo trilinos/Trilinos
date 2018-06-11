@@ -408,8 +408,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("LTG");
   if(!params.is_null()) {
-    if(params->isParameter("openmp: algorithm"))
-      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: jacobi algorithm"))
+      myalg = params->get("openmp: jacobi algorithm",myalg);
     if(params->isParameter("openmp: team work size"))
       team_work_size = params->get("openmp: team work size",team_work_size);
   }
