@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_DECL_HPP_
-#define MUELU_AGGREGATIONPHASE1ALGORITHM_DECL_HPP_
+#ifndef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_DECL_HPP_
+#define MUELU_AGGREGATIONSTRUCTUREDALGORITHM_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_AggregationAlgorithmBase.hpp"
