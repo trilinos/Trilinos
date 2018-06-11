@@ -134,7 +134,8 @@ public:
     auto& zp = partition(z);
  
     // First interval solve uses initial condition
-    con_->solve( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+    if(!skipInitialCond_) 
+      con_->solve( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
     for( size_type k=1; k<Nt_; ++k ) 
       con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -180,7 +181,8 @@ public:
      auto& jvp = partition(jv);   auto& vp = partition(v);
      auto& up  = partition(u);    auto& zp = partition(z);
 
-     con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+     if(!skipInitialCond_) 
+       con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
 
      for( size_type k=1; k<Nt_; ++k ) 
        con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -217,7 +219,8 @@ public:
      auto  tmp  = workspace_.clone(ajv); 
      auto& tmpp = partition(*tmp); 
 
-     con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+     if(!skipInitialCond_) 
+       con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
      for( size_type k=1; k<Nt_; ++k ) {
        con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -233,7 +236,8 @@ public:
      auto& ajvp  = partition(ajv);   auto& vp = partition(v);
      auto& up    = partition(u);     auto& zp = partition(z);
 
-     con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+     if(!skipInitialCond_) 
+       con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
 
      for( size_type k=1; k<Nt_; ++k ) 
        con_->applyAdjointJacobian_z( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );

@@ -238,15 +238,16 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
 
   // dynamic_cast<ROL::PinTVector<RealT>&>(*v_u).getVectorPtr(-1)->zero();
   // v_u->zero(); 
+  
+  double tol = 5e-14;
 
   // check the solve
   //////////////////////////////////////////////////////////////////////
-/*
   {
     if(myRank==0)
       *outStream << "Checking solve" << std::endl;
 
-    double solveNorm = pint_constraint->checkSolve(*u,*z,*c,true,*outStream);
+    double solveNorm = pint_constraint.checkSolve(*u,*z,*c,true,*outStream);
 
     if(solveNorm>tol) {
       std::stringstream ss;
@@ -258,7 +259,6 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       *outStream << "Solve checked out for p=" << numRanks << " with residual = " << solveNorm << std::endl; 
     }
   }
-*/
 
   // check the Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
@@ -271,14 +271,13 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       throw std::logic_error("Constraint apply jacobian 1 is incorrect");
   }
 
-#if 0
   // check the Jacobian_2
   /////////////////////////////////////////////////////////////////////////////
   {
     if(myRank==0)
       *outStream << "Checking apply Jacobian 2" << std::endl;
 
-    auto errors = pint_constraint->checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
+    auto errors = pint_constraint.checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
     if(errors[6][3]/errors[6][1] >= 1e-6)
       throw std::logic_error("Constraint apply jacobian 2 is incorrect");
   }
@@ -289,7 +288,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     if(myRank==0)
       *outStream << "Checking apply Adjoint Jacobian 1" << std::endl;
 
-    auto error = pint_constraint->checkAdjointConsistencyJacobian_1(*w_u,*v_u,*u,*z,true,*outStream);
+    auto error = pint_constraint.checkAdjointConsistencyJacobian_1(*w_u,*v_u,*u,*z,true,*outStream);
     if(error >= 1e-8)
       throw std::logic_error("Constraint apply adjoint jacobian 1 is incorrect");
   }
@@ -300,11 +299,12 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     if(myRank==0)
       *outStream << "Checking apply Adjoint Jacobian 2" << std::endl;
 
-    auto error = pint_constraint->checkAdjointConsistencyJacobian_2(*w_u,*v_z,*u,*z,true,*outStream);
+    auto error = pint_constraint.checkAdjointConsistencyJacobian_2(*w_u,*v_z,*u,*z,true,*outStream);
     if(error >= 1e-8)
       throw std::logic_error("Constraint apply adjoint jacobian 2 is incorrect");
   }
 
+#if 0
   // check the Adjoint Hessian 11
   /////////////////////////////////////////////////////////////////////////////
   {

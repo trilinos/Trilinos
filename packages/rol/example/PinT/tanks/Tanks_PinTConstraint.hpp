@@ -117,10 +117,7 @@ private:
    
     std::vector<Ptr<Vector<Real>>> vecs;
 
-    int timeRank = src.communicators().getTimeRank();
-    timeRank = 1;
-    if(timeRank!=0) 
-      vecs.push_back(src.getVectorPtr(-1));  // inject the intiial condition
+    vecs.push_back(src.getVectorPtr(-1));  // inject the intiial condition
 
     for(int i=0;i<src.numOwnedSteps();i++) { // ignore the intial step...ignoring the stencil
       vecs.push_back(src.getVectorPtr(i)); 
@@ -142,12 +139,8 @@ private:
 
   // Get the state vector required by the serial constraint object
   Ptr<SerialConstraint<Real>> 
-  getSerialConstraint(int timeRank,const Ptr<ROL::Vector<Real>> & ui,int Nt)
+  getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int Nt)
   {
-    timeRank = 1;
-    // if(timeRank!=0)
-    //   Nt++; // add one time step
-
     if(ROL::is_nullPtr(timeDomainConstraint_)) {
       timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,ui,Nt);
     }
@@ -156,10 +149,7 @@ private:
       timeDomainConstraint_->setInitialCondition(ui);
     }
 
-    if(timeRank!=0)
-      timeDomainConstraint_->setSkipInitialCondition(true);
-    else
-      timeDomainConstraint_->setSkipInitialCondition(false);
+    timeDomainConstraint_->setSkipInitialCondition(true);
     
     return timeDomainConstraint_;
   }
@@ -205,7 +195,45 @@ public:
   }
 
   void solve( V& c, V& u, const V& z, Real& tol ) override { 
+    // solve is weird because it serializes in time. But we want to get it
+    // working so that we can test, but it won't be a performant way to do this. 
+    // We could do a parallel in time solve here but thats not really the focus.
+    
+    PinTVector<Real>       & pint_c = dynamic_cast<PinTVector<Real>&>(c);
+    PinTVector<Real>       & pint_u = dynamic_cast<PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 
+    pint_z.boundaryExchange();
+    pint_u.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
+
+    // satisfy the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_c.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+
+        // update the old time information
+        pint_u.getVectorPtr(offset)->set(*pint_u.getRemoteBufferPtr(offset));        // this is the local value
+
+        // this should be zero!
+        pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
+        pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+      }
+    }
+
+    auto part_c = getStateVector(pint_c);   // strip out initial condition/constraint
+    auto part_u = getStateVector(pint_u);   // strip out initial condition/constraint
+    auto part_z = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_c.numOwnedSteps());
+
+    constraint->solve(*part_c,*part_u,*part_z,tol);
+
+    pint_u.boundaryExchange(PinTVector<Real>::SEND_ONLY);
   }  
 
   void value( V& c, const V& u, const V& z, Real& tol ) override {
@@ -218,8 +246,6 @@ public:
        // its possible we won't always want to cast to a PinT vector here
        
     TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
-
-    int timeRank = pint_u.communicators().getTimeRank();
 
     // communicate neighbors, these are block calls
     pint_u.boundaryExchange();
@@ -240,7 +266,7 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(timeRank,pint_u.getVectorPtr(-1),pint_c.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_c.numOwnedSteps());
 
     constraint->value(*part_c,*part_u,*part_z,tol);
   } 
@@ -285,14 +311,48 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(timeRank,pint_u.getVectorPtr(-1),pint_jv.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_jv.numOwnedSteps());
 
     constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   }
 
-   void applyJacobian_2( V& jv, const V& v, const V& u,
-                         const V &z, Real &tol ) override { 
+  void applyJacobian_2( V& jv, const V& v, const V& u,
+                        const V &z, Real &tol ) override { 
 
+    jv.zero();
+
+    PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
+    const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    // differentiate the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_jv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_jv.getVectorPtr(offset)->zero();
+      }
+    }
+
+    auto part_jv = getStateVector(pint_jv);   // strip out initial condition/constraint
+    auto part_v  = getControlVector(pint_v);   
+    auto part_u  = getStateVector(pint_u);    // strip out initial condition/constraint
+    auto part_z  = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_jv.numOwnedSteps());
+
+    constraint->applyJacobian_2(*part_jv,*part_v,*part_u,*part_z,tol);
    }
 
 
@@ -302,14 +362,84 @@ public:
    }
 
 
-   void applyAdjointJacobian_1( V& ajv, const V& v, const V& u,
-                                const V& z, const V& dualv, Real& tol) override {
+   void applyAdjointJacobian_1( V& ajv, 
+                                const V& v, 
+                                const V& u,
+                                const V& z, 
+                                Real& tol) override {
+    PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
+    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+      
+    TEUCHOS_ASSERT(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
 
+    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+    pint_ajv.zeroAll();
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    auto part_ajv = getStateVector(pint_ajv);   // strip out initial condition/constraint
+    auto part_v   = getStateVector(pint_v);   
+    auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
+    auto part_z   = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+
+    constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
+
+    // handle the constraint adjoint
+    const std::vector<int> & stencil = pint_u.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_ajv.getVectorPtr(offset)->axpy(1.0,*pint_v.getVectorPtr(offset));
+        pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
+        pint_ajv.getRemoteBufferPtr(offset)->scale(-1.0);
+      }
+    }
+
+    // this sums from the remote buffer into the local buffer which is part of the vector
+    pint_ajv.boundaryExchangeSumInto();
    }
 
    void applyAdjointJacobian_2( V& ajv,  const V& v, const V& u,
                                 const V& z, Real& tol ) override {
 
+    PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
+    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+      
+    TEUCHOS_ASSERT(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+
+    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+    pint_ajv.zeroAll();
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    auto part_ajv = getControlVector(pint_ajv);   // strip out initial condition/constraint
+    auto part_v   = getStateVector(pint_v);   
+    auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
+    auto part_z   = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+
+    constraint->applyAdjointJacobian_2(*part_ajv,*part_v,*part_u,*part_z,tol);
+
+    // no constraint for controls hanlding because that doesn't work yet!
    }
 
    void applyInverseAdjointJacobian_1( V& iajv, const V& v, const V& u,
