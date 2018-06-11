@@ -108,7 +108,8 @@ private:
   typedef enum {PAST,CURRENT,FUTURE,ALL} ETimeAccessor;
 
   Ptr<DynamicConstraint<Real>> stepConstraint_;
-  Ptr<SerialConstraint<Real>> timeDomainConstraint_;
+  Ptr<SerialConstraint<Real>>  timeDomainConstraint_;
+  Ptr<const Vector<Real>>            initialCond_;
 
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
@@ -117,9 +118,9 @@ private:
    
     std::vector<Ptr<Vector<Real>>> vecs;
 
-    vecs.push_back(src.getVectorPtr(-1));  // inject the intiial condition
+    vecs.push_back(src.getVectorPtr(-1));  // inject the initial condition
 
-    for(int i=0;i<src.numOwnedSteps();i++) { // ignore the intial step...ignoring the stencil
+    for(int i=0;i<src.numOwnedSteps();i++) { // ignoring the stencil
       vecs.push_back(src.getVectorPtr(i)); 
     }
     return makePtr<PartitionedVector<Real>>(vecs);
@@ -131,6 +132,14 @@ private:
     // notice this ignores the stencil for now
 
     std::vector<Ptr<Vector<Real>>> vecs;
+ 
+    vecs.push_back(src.getVectorPtr(0)->clone());
+      // FIXME-A: this control index is never used. This stems from not wanting to set
+      //          an intial condition for the test function. But instead use the 
+      //          "setSkipInitialCondition" option. This all needs to be rethought. 
+      //          This is linked to the FIXME's in "getStateConstraint"
+      //             -- ECC, June 11, 2018
+
     for(int i=0;i<src.numOwnedSteps();i++) { // ignore the intial step...ignoring the stencil
       vecs.push_back(src.getVectorPtr(i)); 
     }
@@ -142,10 +151,12 @@ private:
   getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int Nt)
   {
     if(ROL::is_nullPtr(timeDomainConstraint_)) {
-      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,ui,Nt);
+      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,ui,Nt+1);
+        // FIXME-A: Change the Nt+1 back to Nt...
     }
     else {
-      timeDomainConstraint_->setNumberOfTimeSteps(Nt);
+      timeDomainConstraint_->setNumberOfTimeSteps(Nt+1);
+        // FIXME-A: Change the Nt+1 back to Nt...
       timeDomainConstraint_->setInitialCondition(ui);
     }
 
@@ -169,27 +180,25 @@ public:
    * any communication you might need between processors and steps using "stencils".
    * 
    * \param[in] stepConstraint Constraint for a single step.
-   * \param[in] steps The number of steps to take.
-   * \param[in] stepState State vector step value, also the initial condition
-   * \param[in] stateStencil Stencil for parallel stepping.
-   * \param[in] controlState Control vector step value, also the initial condition
-   * \param[in] controlStencil Stencil for control parallel stepping.
+   * \param[in] initialCond Initial condition
    */
-  PinTConstraint(const Ptr<DynamicConstraint<Real>> & stepConstraint)
+  PinTConstraint(const Ptr<DynamicConstraint<Real>> & stepConstraint,
+                 const Ptr<const Vector<Real>> & initialCond)
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
   { 
-    initialize(stepConstraint);
+    initialize(stepConstraint,initialCond);
   }
 
   /** \brief Initialize this class, setting up parallel distribution.
    
    */
-  void initialize(const Ptr<DynamicConstraint<Real>> & stepConstraint)
+  void initialize(const Ptr<DynamicConstraint<Real>> & stepConstraint,
+                  const Ptr<const Vector<Real>> & initialCond)
   {
     // initialize user member variables
     stepConstraint_ = stepConstraint;
-
+    initialCond_ = initialCond;
   
     isInitialized_ = true;
   }
@@ -211,9 +220,10 @@ public:
 
     // satisfy the time continuity constraint, note that this just using the identity matrix
     const std::vector<int> & stencil = pint_c.stencil();
+    int timeRank = pint_u.communicators().getTimeRank();
     for(size_t i=0;i<stencil.size();i++) {
       int offset = stencil[i];
-      if(offset<0) {
+      if(offset<0 and timeRank>0) {
 
         // update the old time information
         pint_u.getVectorPtr(offset)->set(*pint_u.getRemoteBufferPtr(offset));        // this is the local value
@@ -222,14 +232,24 @@ public:
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
         pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
       }
+      else if(offset<0 and timeRank==0) {  
+        // this is the intial condition
+
+        // update the old time information
+        pint_u.getVectorPtr(offset)->set(*initialCond_);        
+
+        // this should be zero!
+        pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));
+        pint_c.getVectorPtr(offset)->axpy(-1.0,*initialCond_);
+      }
     }
 
-    auto part_c = getStateVector(pint_c);   // strip out initial condition/constraint
-    auto part_u = getStateVector(pint_u);   // strip out initial condition/constraint
+    auto part_c = getStateVector(pint_c);   
+    auto part_u = getStateVector(pint_u);   
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_c.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
 
     constraint->solve(*part_c,*part_u,*part_z,tol);
 
@@ -251,13 +271,20 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
+    int timeRank = pint_u.communicators().getTimeRank();
+
     // build in the time continuity constraint, note that this is just using the identity matrix
     const std::vector<int> & stencil = pint_c.stencil();
     for(size_t i=0;i<stencil.size();i++) {
       int offset = stencil[i];
-      if(offset<0) {
+      if(offset<0 and timeRank>0) {
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
         pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+      }
+      else if(offset<0 and timeRank==0) {  
+        // set the initial condition
+        pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));            
+        pint_c.getVectorPtr(offset)->axpy(-1.0,*initialCond_); 
       }
     }
 
@@ -266,7 +293,7 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_c.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
 
     constraint->value(*part_c,*part_u,*part_z,tol);
   } 
@@ -311,7 +338,7 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_jv.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
 
     constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   }

@@ -177,6 +177,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
   auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
   auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
 
+  ROL::Ptr<ROL::Vector<RealT>> initial_cond;
   {
     // control
     auto  z      = Control::create( pl, "Control (z)"     );    
@@ -211,10 +212,11 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     state        = Tanks::buildStatePinTVector<Real>(   communicators, Nt,     u_old);
     control      = Tanks::buildControlPinTVector<Real>( communicators, Nt,         z);
 
+    initial_cond = u_initial;
     state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
   }
 
-  Tanks::PinTConstraint<RealT> pint_constraint(con);
+  Tanks::PinTConstraint<RealT> pint_constraint(con,initial_cond);
 
   PtrVector u    = state;
   PtrVector z    = control->clone();
@@ -349,21 +351,22 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
   }
 
+#endif
+
   // This computes and returns the last value of the 'u' component and shares
   // it with all processors.
   /////////////////////////////////////////////////////////////////////////////
   double final_result = 0.0;
   {
-    PtrVector z_unit = control_unit->clone();
-    z->scale(0.0); // z can't be random as the different processor counts won't give the same values
-    z->axpy(3.0,*z_unit); 
+    PtrVector z_unit = control->clone();
+    z->setScalar(3.0); 
  
     *outStream << "ZNORM = " << z->norm() << std::endl;
   
-    pint_constraint->solve(*c,*u,*z,tol);
+    pint_constraint.solve(*c,*u,*z,tol);
   
     // pull out the last value
-    if(myRank==numRanks-1) {
+    {
       PtrVector final_state = state->getVectorPtr(state->numOwnedSteps()-1);
       // *outStream << "Final state = " << final_state << std::endl;
       // final_state->print(*outStream);
@@ -376,7 +379,4 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
   }
 
   return final_result;
-#endif
-
-  return 0.0;
 }
