@@ -52,8 +52,8 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-#include "MueLu_StructuredAggregationFactory_decl.hpp"
 #include "MueLu_AggregationStructuredAlgorithm.hpp"
+#include "MueLu_StructuredAggregationFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
@@ -292,7 +292,7 @@ namespace MueLu {
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
     RCP<MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node> >
-      myStructuredAlgorithm = rcp(new MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>(graphFact));
+      myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
     myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
