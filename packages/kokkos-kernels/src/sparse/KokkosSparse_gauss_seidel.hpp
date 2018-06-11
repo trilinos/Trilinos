@@ -193,7 +193,75 @@ namespace Experimental{
 
 	  GAUSS_SEIDEL_NUMERIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric
 	  	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, const_a_v, is_graph_symmetric);
+  }
 
+  template <typename KernelHandle,
+            typename lno_row_view_t_,
+            typename lno_nnz_view_t_,
+            typename scalar_nnz_view_t_>
+  void gauss_seidel_numeric(KernelHandle *handle,
+                            typename KernelHandle::const_nnz_lno_t num_rows,
+                            typename KernelHandle::const_nnz_lno_t num_cols,
+                            lno_row_view_t_ row_map,
+                            lno_nnz_view_t_ entries,
+                            scalar_nnz_view_t_ values,
+                            scalar_nnz_view_t_ given_inverse_diagonal,
+                            bool is_graph_symmetric = true
+      ){
+
+	  static_assert (std::is_same<typename KernelHandle::const_size_type,
+			  typename lno_row_view_t_::const_value_type>::value,
+			  "KokkosSparse::gauss_seidel_symbolic: Size type of the matrix should be same as kernelHandle sizetype.");
+
+	  static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
+			  typename lno_nnz_view_t_::const_value_type>::value,
+			  "KokkosSparse::gauss_seidel_symbolic: lno type of the matrix should be same as kernelHandle lno_t.");
+
+	  static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
+	  			  typename scalar_nnz_view_t_::const_value_type>::value,
+	  			  "KokkosSparse::gauss_seidel_symbolic: scalar type of the matrix should be same as kernelHandle scalar_t.");
+
+
+	  typedef typename KernelHandle::const_size_type c_size_t;
+	  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
+	  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
+
+	  typedef typename KernelHandle::HandleExecSpace c_exec_t;
+	  typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
+	  typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+
+	  typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
+	  //const_handle_type tmp_handle = *handle;
+	  const_handle_type tmp_handle (*handle);
+
+	  typedef Kokkos::View<
+			  typename lno_row_view_t_::const_value_type*,
+			  typename KokkosKernels::Impl::GetUnifiedLayout<lno_row_view_t_>::array_layout,
+			  typename lno_row_view_t_::device_type,
+			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_row_view_t_;
+
+	  typedef Kokkos::View<
+			  typename lno_nnz_view_t_::const_value_type*,
+			  typename KokkosKernels::Impl::GetUnifiedLayout<lno_nnz_view_t_>::array_layout,
+			  typename lno_nnz_view_t_::device_type,
+			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_nnz_view_t_;
+
+	  typedef Kokkos::View<
+			  typename scalar_nnz_view_t_::const_value_type*,
+			  typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
+			  typename scalar_nnz_view_t_::device_type,
+			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
+
+	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_d (given_inverse_diagonal.data(), given_inverse_diagonal.extent(0));
+
+
+	  using namespace KokkosSparse::Impl;
+
+	  GAUSS_SEIDEL_NUMERIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric
+            (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, const_a_v, const_a_d, is_graph_symmetric);
   }
 
   template <typename KernelHandle,
@@ -234,6 +302,7 @@ namespace Experimental{
       y_scalar_view_t y_rhs_input_vec,
       bool init_zero_x_vector = false,
       bool update_y_vector = true,
+      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
       int numIter = 1){
 
 	  static_assert (std::is_same<typename KernelHandle::const_size_type,
@@ -328,6 +397,7 @@ namespace Experimental{
 			  nonconst_x_v, const_y_v,
 			  init_zero_x_vector,
 			  update_y_vector,
+                          omega,
 			  numIter, true, true);
 
 
@@ -379,6 +449,7 @@ namespace Experimental{
       y_scalar_view_t y_rhs_input_vec,
       bool init_zero_x_vector = false,
       bool update_y_vector = true,
+      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
       int numIter = 1){
 
 	  static_assert (std::is_same<typename KernelHandle::const_size_type,
@@ -474,6 +545,7 @@ namespace Experimental{
 			  nonconst_x_v, const_y_v,
 			  init_zero_x_vector,
 			  update_y_vector,
+                          omega,
 			  numIter, true, false);
 
 
@@ -498,6 +570,7 @@ namespace Experimental{
       y_scalar_view_t y_rhs_input_vec,
       bool init_zero_x_vector = false,
       bool update_y_vector = true,
+      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
       int numIter = 1){
 	  handle->get_gs_handle()->set_block_size(block_size);
 	  forward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
@@ -508,6 +581,7 @@ namespace Experimental{
 		      y_rhs_input_vec,
 		      init_zero_x_vector,
 		      update_y_vector,
+                      omega,
 		      numIter);
   }
   template <class KernelHandle,
@@ -526,6 +600,7 @@ namespace Experimental{
       y_scalar_view_t y_rhs_input_vec,
       bool init_zero_x_vector = false,
       bool update_y_vector = true,
+      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
       int numIter = 1){
 
 	  static_assert (std::is_same<typename KernelHandle::const_size_type,
@@ -619,6 +694,7 @@ namespace Experimental{
 			  nonconst_x_v, const_y_v,
 			  init_zero_x_vector,
 			  update_y_vector,
+                          omega,
 			  numIter, false, true);
 
 
@@ -642,6 +718,7 @@ namespace Experimental{
       y_scalar_view_t y_rhs_input_vec,
       bool init_zero_x_vector = false,
       bool update_y_vector = true,
+      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
       int numIter = 1){
 	  handle->get_gs_handle()->set_block_size(block_size);
 	  backward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
@@ -652,6 +729,7 @@ namespace Experimental{
 		      y_rhs_input_vec,
 		      init_zero_x_vector,
 		      update_y_vector,
+                      omega,
 		      numIter);
   }
 }

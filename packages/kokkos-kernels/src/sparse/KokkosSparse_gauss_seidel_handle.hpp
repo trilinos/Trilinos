@@ -108,7 +108,7 @@ private:
   int suggested_vector_size;
   int suggested_team_size;
 
-  scalar_persistent_work_view_t permuted_diagonals;
+  scalar_persistent_work_view_t permuted_inverse_diagonal;
   nnz_lno_t block_size; //this is for block sgs
 
   nnz_lno_t max_nnz_input_row, num_values_in_l1, num_values_in_l2, num_big_rows;
@@ -124,7 +124,7 @@ private:
     color_set_xadj(), color_sets(), numColors(0),
     permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
     called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
-    suggested_vector_size(0), suggested_team_size(0), permuted_diagonals(), block_size(1), max_nnz_input_row(-1),
+    suggested_vector_size(0), suggested_team_size(0), permuted_inverse_diagonal(), block_size(1), max_nnz_input_row(-1),
 	num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0)
     {
     if (gs == GS_DEFAULT){
@@ -247,12 +247,12 @@ private:
   void set_old_to_new_map(const nnz_lno_persistent_work_view_t &old_to_new_map_) {
     this->old_to_new_map = old_to_new_map_;
   }
-  void set_permuted_diagonals (const scalar_persistent_work_view_t permuted_diagonals_){
-    this->permuted_diagonals = permuted_diagonals_;
+  void set_permuted_inverse_diagonal (const scalar_persistent_work_view_t permuted_inverse_diagonal_){
+    this->permuted_inverse_diagonal = permuted_inverse_diagonal_;
   }
 
-  scalar_persistent_work_view_t get_permuted_diagonals (){
-    return this->permuted_diagonals;
+  scalar_persistent_work_view_t get_permuted_inverse_diagonal (){
+    return this->permuted_inverse_diagonal;
   }
 
 

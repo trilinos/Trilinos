@@ -178,6 +178,17 @@ struct GAUSS_SEIDEL_NUMERIC{
       a_scalar_view_t values,
       bool is_graph_symmetric
       );
+
+  static void
+  gauss_seidel_numeric (KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      a_scalar_view_t values,
+      a_scalar_view_t given_inverse_diagonal,
+      bool is_graph_symmetric
+      );
 };
 
 
@@ -204,7 +215,7 @@ struct GAUSS_SEIDEL_APPLY{
     y_scalar_view_t y_rhs_input_vec,
     bool init_zero_x_vector,
     bool update_y_vector,
-    int numIter, bool apply_forward, bool apply_backward);
+    typename KernelHandle::nnz_scalar_t omega, int numIter, bool apply_forward, bool apply_backward);
 };
 
 
@@ -251,6 +262,23 @@ struct GAUSS_SEIDEL_NUMERIC<KernelHandle,
         a_lno_view_t,a_scalar_view_t> SGS;
     SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
     sgs.initialize_numeric();
+  }
+
+  static void
+  gauss_seidel_numeric(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      a_scalar_view_t values,
+      a_scalar_view_t given_inverse_diagonal,
+      bool is_graph_symmetric
+      ){
+    typedef typename Impl::GaussSeidel
+        <KernelHandle,a_size_view_t_,
+        a_lno_view_t,a_scalar_view_t> SGS;
+    SGS sgs(handle, num_rows, num_cols, row_map, entries, values, given_inverse_diagonal, is_graph_symmetric);
+    sgs.initialize_numeric();
 }
 };
 
@@ -271,7 +299,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle,
     y_scalar_view_t y_rhs_input_vec,
     bool init_zero_x_vector,
     bool update_y_vector,
-    int numIter, bool apply_forward, bool apply_backward){
+    typename KernelHandle::nnz_scalar_t omega, int numIter, bool apply_forward, bool apply_backward){
 
     typedef typename Impl::GaussSeidel <KernelHandle,
             a_size_view_t_, a_lno_view_t,a_scalar_view_t > SGS;
@@ -281,6 +309,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle,
         y_rhs_input_vec,
         init_zero_x_vector,
         numIter,
+        omega,
     apply_forward,
     apply_backward, update_y_vector);
 }
