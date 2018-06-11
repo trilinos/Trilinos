@@ -480,7 +480,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
     TEST_EQUALITY(m3,!m1);
 }
 
-TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit)
+TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit_v)
 {
     constexpr int ensemble_size = 8;
     
@@ -492,10 +492,35 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit)
     scalar a = (scalar) 1.;
     a[2] = -2.5;
     
-    mask m1 = signbit_v(a);
+    auto m1 = signbit_v(a);
     mask m2;
     m2[2] = true;
     TEST_EQUALITY(m1,m2);
+}
+
+TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_copysign)
+{
+    constexpr int ensemble_size = 8;
+    
+    typedef Kokkos::DefaultExecutionSpace execution_space;
+    typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
+    typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
+    
+    scalar a = (scalar) 1.;
+    a[2] = -2.5;
+    
+    scalar b = (scalar) 2.;
+    
+    using std::copysign;
+    
+    std::cout << std::endl;
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+    b = copysign(b,a);
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+    TEST_EQUALITY(b[2],-2.);
 }
 
 
