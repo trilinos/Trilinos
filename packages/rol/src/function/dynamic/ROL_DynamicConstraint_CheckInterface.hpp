@@ -165,7 +165,7 @@ public:
                  ph::_3, cref(un), cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> adjointHessian_un_z( const V& un, const V& uo, const V& l ) {
+  f_dderiv_t<Real> adjointHessian_un_z( const V& uo, const V& un, const V& l ) {
     return bind( &Con::applyAdjointHessian_un_z, &con_, ph::_1, cref(l), ph::_2, 
                  cref(uo), cref(un), ph::_3, ts_ );
   } 
@@ -182,7 +182,7 @@ public:
                  cref(uo), ph::_3, cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> adjointHessian_uo_z( const V& un, const V& uo, const V& l ) {
+  f_dderiv_t<Real> adjointHessian_uo_z( const V& uo, const V& un, const V& l ) {
     return bind( &Con::applyAdjointHessian_uo_z, &con_, ph::_1, cref(l), ph::_2, 
                  cref(uo), cref(un), ph::_3, ts_ );
   } 
@@ -199,7 +199,7 @@ public:
                  ph::_3, cref(un), cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> adjointHessian_z_z( const V& un, const V& uo, const V& l ) {
+  f_dderiv_t<Real> adjointHessian_z_z( const V& uo, const V& un, const V& l ) {
     return bind( &Con::applyAdjointHessian_z_z, &con_, ph::_1, cref(l), ph::_2, 
                  cref(uo), cref(un), ph::_3, ts_ );
   } 

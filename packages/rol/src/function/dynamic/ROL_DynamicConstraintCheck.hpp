@@ -83,8 +83,8 @@ struct DynamicConstraintCheck {
     auto update_un = con_check.update_un( uo, z );
     auto update_z  = con_check.update_z( un, uo );
   
-    auto value_uo = con_check.value_uo( un, z  );
-    auto value_un = con_check.value_un( uo, z  );
+    auto value_uo = con_check.value_uo( un, z );
+    auto value_un = con_check.value_un( uo, z );
     auto value_z  = con_check.value_z( uo, un );
     
     //-------------------------------------------------------------------------
@@ -143,7 +143,7 @@ struct DynamicConstraintCheck {
       auto aJ  = con_check.adjointJacobian_un( uo, z );
       auto iaJ = con_check.inverseAdjointJacobian_un( uo, z );
       validator.inverse_check( aJ, iaJ, update_un, *vu, un, 
-                               "adjoint Jacobian with respect to un", "adj(J_un)");
+                               "adjoint Jacobian with respect to un", "aJ_un");
     } //else os << "\napplyInverseAdjointJacobian_un not implemented.\n";
 
 
@@ -167,11 +167,13 @@ struct DynamicConstraintCheck {
       auto aJ  = con_check.adjointJacobian_uo( un, z );
       auto aJl = fix_direction( aJ, *l );
       auto aH  = con_check.adjointHessian_uo_z( uo, un, *l );
-      validator.derivative_check( aJl, aH, update_uo, *c, *vz, z, "H_uo_z");
+      validator.derivative_check( aJl, aH, update_z, *c, *vz, z, "H_uo_z");
     } //else os << "\napplyAdjointHessian_uo_z not implemented.\n";
+
+
     
     if( std::find(methods.begin(),methods.end(),"applyAdjointHessian_un_uo") != methods.end() ) {
-      auto aJ  = con_check.adjointJacobian_un( un, z );
+      auto aJ  = con_check.adjointJacobian_un( uo, z );
       auto aJl = fix_direction( aJ, *l );
       auto aH  = con_check.adjointHessian_un_uo( un, z, *l );
       validator.derivative_check( aJl, aH, update_uo, *c, *vu, uo, "H_un_uo");
@@ -185,31 +187,33 @@ struct DynamicConstraintCheck {
     } //else os << "\napplyAdjointHessian_un_un not implemented.\n";
 
     if( std::find(methods.begin(),methods.end(),"applyAdjointHessian_un_z") != methods.end() ) {
-      auto aJ  = con_check.adjointJacobian_un( uo, un );
+      auto aJ  = con_check.adjointJacobian_un( uo, z );
       auto aJl = fix_direction( aJ, *l );
       auto aH  = con_check.adjointHessian_un_z( uo, un, *l );
       validator.derivative_check( aJl, aH, update_z, *c, *vz, z, "H_un_z");
     } //else os << "\napplyAdjointHessian_uo_uo not implemented.\n";
 
+
+
     if( std::find(methods.begin(),methods.end(),"applyAdjointHessian_z_uo") != methods.end() ) {
       auto aJ  = con_check.adjointJacobian_z( uo, un );
       auto aJl = fix_direction( aJ, *l );
-      auto aH  = con_check.adjointHessian_z_un( uo, z, *l );
-      validator.derivative_check( aJl, aH, update_un, *c, *vu, un, "H_z_un");
+      auto aH  = con_check.adjointHessian_z_uo( uo, z, *l );
+      validator.derivative_check( aJl, aH, update_uo, *vz, *vu, uo, "H_z_uo");
     } //else os << "\napplyAdjointHessian_z_uo not implemented.\n";
 
     if( std::find(methods.begin(),methods.end(),"applyAdjointHessian_z_un") != methods.end() ) {
       auto aJ  = con_check.adjointJacobian_z( uo, un );
       auto aJl = fix_direction( aJ, *l );
       auto aH  = con_check.adjointHessian_z_un( uo, z, *l );
-      validator.derivative_check( aJl, aH, update_un, *c, *vu, un, "H_z_un");
+      validator.derivative_check( aJl, aH, update_un, *vz, *vu, un, "H_z_un");
     } //else os << "\napplyAdjointHessian_z_un not implemented.\n";
 
     if( std::find(methods.begin(),methods.end(),"applyAdjointHessian_z_z") != methods.end() ) {
       auto aJ  = con_check.adjointJacobian_z( uo, un );
       auto aJl = fix_direction( aJ, *l );
       auto aH  = con_check.adjointHessian_z_z( uo, un, *l );
-      validator.derivative_check( aJl, aH, update_z, *c, *vz, z, "H_z_z");
+      validator.derivative_check( aJl, aH, update_z, *vz, *vz, z, "H_z_z");
     } //else os << "\napplyAdjointHessian_z_z not implemented.\n";
 
   } // check()

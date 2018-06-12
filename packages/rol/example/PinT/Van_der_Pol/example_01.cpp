@@ -77,7 +77,8 @@ int main( int argc, char* argv[] ) {
   ROL::ValidateFunction<RealT> validator( 1, 13, 20, 11, true, *outStream);
 
   ROL::DynamicConstraintCheck<RealT>::check( dyn_con, validator, *uo, *un, *z, 
-    { "applyJacobian_uo",
+    { 
+      "applyJacobian_uo",
       "applyJacobian_un",
       "applyJacobian_z",
       "applyAdjointJacobian_uo",
@@ -86,7 +87,12 @@ int main( int argc, char* argv[] ) {
       "applyInverseJacobian_un",
       "applyInverseAdjointJacobian_un",
       "applyAdjointHessian_uo_uo",
-      "applyAdjointHessian_un_un"} );
+      "applyAdjointHessian_uo_z",
+      "applyAdjointHessian_un_un",
+      "applyAdjointHessian_un_z",
+      "applyAdjointHessian_z_uo",
+      "applyAdjointHessian_z_un" 
+} );
 
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";

@@ -168,9 +168,6 @@ public:
                                                  (1-un0*un0)*un1 ) + uo0 + un0 );
   }
 
-//  void solve( V& c, const V& uo, V& un, 
-//                    const V& z, const TS& ts ) const override {}
-
   //----------------------------------------------------------------------------
   // Partial Jacobians
   void applyJacobian_uo( V& jv, const V& v,  const V& uo, 
@@ -282,9 +279,16 @@ public:
   void applyAdjointHessian_uo_z( V& ahwv, const V& w,  const V& v,
                                           const V& uo, const V& un, 
                                           const V& z,  const TS& ts ) const override {
+    auto ahwvp = getVector(ahwv);    
+    auto wp    = getVector(w);
+    auto vp    = getVector(v);     
 
-    
+    Real v0 = vp->at(0);   
+    Real w0 = wp->at(0); 
+    Real w1 = wp->at(1); 
 
+    ahwvp->at(0) = ( w0*Hzo_[0][0] + w1*Hzo_[1][0] )*v0 ;
+    ahwvp->at(1) = ( w0*Hzo_[0][1] + w1*Hzo_[1][1] )*v0 ;
    
   }
 
@@ -307,6 +311,16 @@ public:
   void applyAdjointHessian_un_z( V& ahwv, const V& w,  const V& v,
                                           const V& uo, const V& un, 
                                           const V& z,  const TS& ts ) const override {
+    auto ahwvp = getVector(ahwv);    
+    auto wp    = getVector(w);
+    auto vp    = getVector(v);     
+
+    Real v0 = vp->at(0);   
+    Real w0 = wp->at(0); 
+    Real w1 = wp->at(1); 
+
+    ahwvp->at(0) = ( w0*Hzn_[0][0] + w1*Hzn_[1][0] )*v0 ;
+    ahwvp->at(1) = ( w0*Hzn_[0][1] + w1*Hzn_[1][1] )*v0 ;
   }
 
 
@@ -314,12 +328,32 @@ public:
                                           const V& uo, const V& un, 
                                           const V& z,  const TS& ts ) const override {
 
+    auto ahwvp = getVector(ahwv);    
+    auto wp    = getVector(w);
+    auto vp    = getVector(v);     
+
+    Real v0 = vp->at(0);   
+    Real v1 = vp->at(1);   
+    Real w0 = wp->at(0); 
+    Real w1 = wp->at(1); 
+
+    ahwvp->at(0) = ( w0*Hzo_[0][0] + w1*Hzo_[1][0] )*v0 + ( w0*Hzo_[0][1] + w1*Hzo_[1][1] )*v1 ;
 
   }
 
   void applyAdjointHessian_z_un( V& ahwv, const V& w,  const V& v,
                                           const V& uo, const V& un, 
                                           const V& z,  const TS& ts ) const override {
+    auto ahwvp = getVector(ahwv);    
+    auto wp    = getVector(w);
+    auto vp    = getVector(v);     
+
+    Real v0 = vp->at(0);   
+    Real v1 = vp->at(1);   
+    Real w0 = wp->at(0); 
+    Real w1 = wp->at(1); 
+
+    ahwvp->at(0) = ( w0*Hzn_[0][0] + w1*Hzn_[1][0] )*v0 + ( w0*Hzn_[0][1] + w1*Hzn_[1][1] )*v1 ;
   }
  
 //   void applyAdjointHessian_z_z( V& ahwv, const V& w,  const V& v,
