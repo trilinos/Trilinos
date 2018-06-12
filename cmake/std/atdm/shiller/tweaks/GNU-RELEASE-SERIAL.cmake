@@ -9,3 +9,6 @@ ATDM_SET_ENABLE(Piro_MatrixFreeDecorator_UnitTests_MPI_4_DISABLE ON)
 
 # Disable test that times out randomly for some unkown reason (#2925)
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
+
+# Disable expensive test that started timing out (#2919)
+ATDM_SET_ENABLE(Belos_rcg_hb_MPI_4_DISABLE ON)
