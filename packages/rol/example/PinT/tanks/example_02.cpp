@@ -215,7 +215,6 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     control      = ROL::buildControlPinTVector<Real>( communicators, Nt,         z);
 
     initial_cond = u_initial;
-    state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
   }
 
   auto timeStamp = makePtr<std::vector<ROL::TimeStamp<Real>>>(state->numOwnedSteps());
