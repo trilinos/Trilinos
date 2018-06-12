@@ -79,15 +79,15 @@ public:
  
   virtual ~DynamicConstraint() {}
 
-  virtual void update( const V& uo, const V& un, const V& z ) {
-    update_uo( uo );
-    update_un( un );
-    update_z( z );
+  virtual void update( const V& uo, const V& un, const V& z, const TS& ts ) {
+    update_uo( uo, ts );
+    update_un( un, ts );
+    update_z( z, ts );
   }
 
-  virtual void update_uo( const V& uo ) { }
-  virtual void update_un( const V& un ) { }
-  virtual void update_z( const V& z ) { }
+  virtual void update_uo( const V& uo, const TS& ts ) { }
+  virtual void update_un( const V& un, const TS& ts ) { }
+  virtual void update_z( const V& z, const TS& ts ) { }
 
   virtual void value( V& c, const V& uo, const V& un, 
                       const V& z, const TS& ts ) const = 0;

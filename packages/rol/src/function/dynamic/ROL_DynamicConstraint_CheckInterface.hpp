@@ -80,16 +80,16 @@ public:
     ts_.t.at(1) = 1.0;
   }
  
-  f_update_t<Real> update_uo() {
-    return bind( &Con::update_uo, &con_, ph::_1 );
+  f_update_t<Real> update_uo( const V& un, const V& z ) {
+    return bind( &Con::update, &con_, ph::_1, cref(un), cref(z), ts_ );
   }
 
-  f_update_t<Real> update_un() {
-    return bind( &Con::update_un, &con_, ph::_1 );
+  f_update_t<Real> update_un( const V& uo, const V& z ) {
+    return bind( &Con::update, &con_, cref(uo), ph::_1, cref(z), ts_ );
   }
 
-  f_update_t<Real> update_z() {
-    return bind( &Con::update_z, &con_, ph::_1 );
+  f_update_t<Real> update_z( const V& uo, const V& un ) {
+    return bind( &Con::update, &con_, cref(uo), cref(un), ph::_1, ts_ );
   }
 
   //----------------------------------------------------------------------------
