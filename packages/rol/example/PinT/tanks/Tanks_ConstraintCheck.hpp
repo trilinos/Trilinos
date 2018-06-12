@@ -34,9 +34,9 @@ void check( DynamicConstraint<Real>& con,
   ROL::RandomizeVector( *l  );
 
   auto con_check = ROL::make_check( con );
-  auto up_uo = con_check.update_uo();
-  auto up_un = con_check.update_un();
-  auto up_z  = con_check.update_z();
+  auto up_uo = con_check.update_uo(*un,*z);
+  auto up_un = con_check.update_un(*uo,*z);
+  auto up_z  = con_check.update_z(*uo,*un);
 
   auto val_uo = con_check.value_uo( *un, *z  );
   auto val_un = con_check.value_un( *uo, *z  );
