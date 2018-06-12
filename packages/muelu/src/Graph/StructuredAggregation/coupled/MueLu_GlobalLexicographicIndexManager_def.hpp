@@ -91,7 +91,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
+  getGhostedNodesData(const RCP<const Map> fineMap,
                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
 
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
@@ -173,14 +173,12 @@ namespace MueLu {
       }
     }
 
-    coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
-                                                     this->gNumCoarseNodes,
-                                                     lCoarseNodeCoarseGIDs(),
-                                                     fineMap->getIndexBase(),
-                                                     fineMap->getComm());
+    RCP<const Map> coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
+                                                                    this->gNumCoarseNodes,
+                                                                    lCoarseNodeCoarseGIDs(),
+                                                                    fineMap->getIndexBase(),
+                                                                    fineMap->getComm());
 
-    // Array<int> ghostedCoarseNodeCoarsePIDs(this->numGhostedNodes);
-    // Array<LO>  ghostedCoarseNodeCoarseLIDs(this->numGhostedNodes);
     coarseMap->getRemoteIndexList(ghostedNodeCoarseGIDs(),
                                   ghostedNodeCoarsePIDs(),
                                   ghostedNodeCoarseLIDs());
