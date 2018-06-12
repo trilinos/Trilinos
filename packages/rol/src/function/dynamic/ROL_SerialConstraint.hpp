@@ -77,6 +77,7 @@ private:
   Ptr<std::vector<TimeStamp<Real>>>  timeStamp_; // Set of all time stamps
   VectorWorkspace<Real>              workspace_;  // For efficient cloning
   size_type                          Nt_;         // Number of time steps  
+  bool                               skipInitialCond_; // skip the initial condition application
 
   PV& partition ( Vector<Real>& x ) const { return static_cast<PV&>(x); }
   const PV& partition ( const Vector<Real>& x ) const { return static_cast<const PV&>(x); }
@@ -88,7 +89,8 @@ public:
                     const Ptr<vector<TimeStamp<Real>>>& timeStamp ) : 
     con_(con), u_initial_(u_initial.clone()), 
     u_zero_(u_initial.clone()), 
-    timeStamp_(timeStamp), Nt_(timeStamp_->size()) {
+    timeStamp_(timeStamp), Nt_(timeStamp_->size()),
+    skipInitialCond_(false) {
     u_initial_->set(u_initial);
     u_zero_->zero();
   }
@@ -98,6 +100,12 @@ public:
   const Vector<Real>& getInitialCondition() const { return *u_initial_; }
   void setInitialCondition( const Vector<Real>& u_initial ) { u_initial_->set(u_initial); }
 
+  bool getSkipInitialCondition() const { return skipInitialCond_; }
+  void setSkipInitialCondition(bool skip) { skipInitialCond_ = skip; }
+
+  Ptr<vector<TimeStamp<Real>>> getTimeStamp() const { return timeStamp_; }
+  void setTimeStamp(const Ptr<vector<TimeStamp<Real>>>& timeStamp ) 
+  { Nt_ = timeStamp_->size(); timeStamp_ = timeStamp; } 
 
   virtual void solve( Vector<Real>& c, Vector<Real>& u,
                       const Vector<Real>& z, Real& tol ) override {
@@ -105,7 +113,8 @@ public:
     auto& up = partition(u);
     auto& zp = partition(z);
 
-    con_->solve( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->solve( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) 
        con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -119,7 +128,8 @@ public:
     auto& up = partition(u);
     auto& zp = partition(z);
   
-    con_->value( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->value( *(cp.get(0)), *u_initial_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
     
     for( size_type k=1; k<Nt_; ++k ) 
       con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -136,7 +146,8 @@ public:
     auto  tmp = workspace_.clone(jvp.get(0));
     auto& x   = *tmp; 
 
-    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
     
     for( size_type k=1; k<Nt_; ++k ) {
       con_->applyJacobian_uo( x, *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -175,7 +186,8 @@ public:
     auto  tmp  = workspace_.clone(ajvp.get(0)); 
     auto& x    = *tmp; 
 
-    con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
    
     for( size_type k=1; k<Nt_; ++k ) {
       con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -218,7 +230,8 @@ public:
     auto& jvp = partition(jv);   auto& vp = partition(v);
     auto& up  = partition(u);    auto& zp = partition(z);
   
-    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
   
     for( size_type k=1; k<Nt_; ++k ) 
       con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -231,7 +244,8 @@ public:
     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
     auto& up    = partition(u);     auto& zp = partition(z);
 
-    con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) 
       con_->applyAdjointJacobian_z( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );

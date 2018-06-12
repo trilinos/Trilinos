@@ -50,7 +50,7 @@
 #include "ROL_VectorWorkspace.hpp"
 #include "ROL_PinTVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
-#include "Tanks_SerialConstraint.hpp"
+#include "ROL_SerialConstraint.hpp"
 
 namespace Tanks {
 
@@ -109,7 +109,10 @@ private:
 
   Ptr<DynamicConstraint<Real>> stepConstraint_;
   Ptr<SerialConstraint<Real>>  timeDomainConstraint_;
-  Ptr<const Vector<Real>>            initialCond_;
+  Ptr<const Vector<Real>>      initialCond_;
+
+  Ptr<const std::vector<TimeStamp<Real>>>  userTimeStamps_;   // these are the untouched ones the user passes in
+  Ptr<std::vector<TimeStamp<Real>>>        timeStamps_;       // these are used internally
 
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
@@ -151,13 +154,13 @@ private:
   getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int Nt)
   {
     if(ROL::is_nullPtr(timeDomainConstraint_)) {
-      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,ui,Nt+1);
+      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,*ui,timeStamps_);
         // FIXME-A: Change the Nt+1 back to Nt...
     }
     else {
-      timeDomainConstraint_->setNumberOfTimeSteps(Nt+1);
+      timeDomainConstraint_->setTimeStamp(timeStamps_);
         // FIXME-A: Change the Nt+1 back to Nt...
-      timeDomainConstraint_->setInitialCondition(ui);
+      timeDomainConstraint_->setInitialCondition(*ui);
     }
 
     timeDomainConstraint_->setSkipInitialCondition(true);
@@ -183,22 +186,45 @@ public:
    * \param[in] initialCond Initial condition
    */
   PinTConstraint(const Ptr<DynamicConstraint<Real>> & stepConstraint,
-                 const Ptr<const Vector<Real>> & initialCond)
+                 const Ptr<const Vector<Real>> & initialCond,
+                 const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
   { 
-    initialize(stepConstraint,initialCond);
+    initialize(stepConstraint,initialCond,timeStamps);
   }
 
   /** \brief Initialize this class, setting up parallel distribution.
    
    */
   void initialize(const Ptr<DynamicConstraint<Real>> & stepConstraint,
-                  const Ptr<const Vector<Real>> & initialCond)
+                  const Ptr<const Vector<Real>> & initialCond,
+                 const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
   {
     // initialize user member variables
     stepConstraint_ = stepConstraint;
     initialCond_ = initialCond;
+    userTimeStamps_ = timeStamps;
+
+    // build up the internally used time stamps
+    ////////////////////////////////////////////////////////////////
+   
+    timeStamps_ = makePtr<std::vector<TimeStamp<Real>>>(timeStamps->size()+1);
+
+    // setup false step (this is to ensure the control is properly handled
+    {
+      Real ta = timeStamps->at(0).t.at(0);
+      Real tb = timeStamps->at(0).t.at(1);
+      Real dt =  tb-ta;
+
+      // the serial constraint should never see this!
+      timeStamps_->at(0).t.resize(2);
+      timeStamps_->at(0).t.at(0) = ta-dt;
+      timeStamps_->at(0).t.at(1) = ta;
+    }
+
+    for(size_type k=0;k<timeStamps->size();k++) 
+      timeStamps_->at(k+1).t = timeStamps->at(k).t;
   
     isInitialized_ = true;
   }

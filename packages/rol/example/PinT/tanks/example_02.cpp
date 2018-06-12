@@ -50,7 +50,6 @@
 #include "ROL_Vector_SimOpt.hpp"
 
 #include "Tanks_DynamicConstraint.hpp"
-#include "Tanks_SerialConstraint.hpp"
 #include "Tanks_ConstraintCheck.hpp"
 #include "Tanks_PinTConstraint.hpp"
 
@@ -176,6 +175,9 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
   auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
   auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
   auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
+  auto  T       = pl.get("Total Time", 20.0);
+
+  RealT dt = T/Nt;
 
   ROL::Ptr<ROL::Vector<RealT>> initial_cond;
   {
@@ -216,7 +218,14 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
   }
 
-  Tanks::PinTConstraint<RealT> pint_constraint(con,initial_cond);
+  auto timeStamp = makePtr<std::vector<ROL::TimeStamp<Real>>>(state->numOwnedSteps());
+  for( size_type k=0; k<timeStamp->size(); ++k ) {
+    timeStamp->at(k).t.resize(2);
+    timeStamp->at(k).t.at(0) = k*dt;
+    timeStamp->at(k).t.at(1) = (k+1)*dt;
+  }
+
+  Tanks::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
 
   PtrVector u    = state;
   PtrVector z    = control->clone();
