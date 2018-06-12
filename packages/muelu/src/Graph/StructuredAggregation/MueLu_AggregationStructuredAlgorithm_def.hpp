@@ -83,10 +83,9 @@ namespace MueLu {
     RCP<IndexManager> geoData = aggregates.GetIndexManager();
     Array<LO>  ghostedCoarseNodeCoarseLIDs;
     Array<int> ghostedCoarseNodeCoarsePIDs;
-    RCP<const Map> coarseMap;
 
     *out << "Extract data for ghosted nodes" << std::endl;
-    geoData->getGhostedNodesData(graph.GetDomainMap(), coarseMap, ghostedCoarseNodeCoarseLIDs,
+    geoData->getGhostedNodesData(graph.GetDomainMap(), ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs);
 
     LO iGhosted, jGhosted, kGhosted, iCoarse, jCoarse, kCoarse, iRem, jRem, kRem;
