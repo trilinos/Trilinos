@@ -48,10 +48,10 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
+#include "ROL_PinTConstraint.hpp"
 
 #include "Tanks_DynamicConstraint.hpp"
 #include "Tanks_ConstraintCheck.hpp"
-#include "Tanks_PinTConstraint.hpp"
 
 typedef double Real;
 
@@ -211,8 +211,8 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       }
     }
 
-    state        = Tanks::buildStatePinTVector<Real>(   communicators, Nt,     u_old);
-    control      = Tanks::buildControlPinTVector<Real>( communicators, Nt,         z);
+    state        = ROL::buildStatePinTVector<Real>(   communicators, Nt,     u_old);
+    control      = ROL::buildControlPinTVector<Real>( communicators, Nt,         z);
 
     initial_cond = u_initial;
     state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
@@ -225,7 +225,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     timeStamp->at(k).t.at(1) = (k+1)*dt;
   }
 
-  Tanks::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
+  ROL::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
 
   PtrVector u    = state;
   PtrVector z    = control->clone();

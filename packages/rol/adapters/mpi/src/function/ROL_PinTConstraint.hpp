@@ -42,21 +42,15 @@
 // @HEADER
 
 
-#pragma once
-#ifndef TANKS_PINTCONSTRAINT_HPP
-#define TANKS_PINTCONSTRAINT_HPP
+#ifndef ROL_PINTCONSTRAINT_HPP
+#define ROL_PINTCONSTRAINT_HPP
 
 #include "ROL_TimeStamp.hpp"
-#include "ROL_VectorWorkspace.hpp"
 #include "ROL_PinTVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_SerialConstraint.hpp"
 
-namespace Tanks {
-
-using namespace ROL;
-
-using namespace std;
+namespace ROL {
 
 /** This helper method builds a pint "state" vector for use in the 
     PinTConstraint class. 
@@ -96,7 +90,7 @@ class PinTConstraint : public ROL::Constraint_SimOpt<Real> {
   using V  = ROL::Vector<Real>;
   using PV = ROL::PartitionedVector<Real>;
 
-  using size_type = typename vector<Real>::size_type;
+  using size_type = typename std::vector<Real>::size_type;
   template<typename T> using Ptr = ROL::Ptr<T>;
 
 private:
@@ -501,12 +495,10 @@ public:
    }
 
 
-}; // Tanks::PinTConstraint
+}; // ROL::PinTConstraint
 
 
-} // namespace Tanks
+} // namespace ROL 
 
-
-
-#endif // TANKS_PINTCONSTRAINT_HPP
+#endif // ROL_PINTCONSTRAINT_HPP
 
