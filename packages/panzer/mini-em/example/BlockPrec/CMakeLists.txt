@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
-    SOURCE_FILES solverDefaultsAugmentation.xml solverDefaultsRefMaxwell.xml solverDefaultsRefMaxwellOpenMP.xml solverDefaultsRefMaxwellCuda.xml solverAugmentationUseILU.xml
+    SOURCE_FILES solverDefaultsAugmentation.xml solverDefaultsAugmentationEpetra.xml solverDefaultsRefMaxwell.xml solverDefaultsRefMaxwellEpetra.xml solverDefaultsRefMaxwellOpenMP.xml solverDefaultsRefMaxwellCuda.xml solverAugmentationUseILU.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
@@ -18,7 +18,15 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_Augmentation"
-   ARGS "--numTimeSteps=1"
+   ARGS "--numTimeSteps=1 --linAlgebra=Tpetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--numTimeSteps=1 --linAlgebra=Epetra"
    COMM serial mpi
    NUM_MPI_PROCS 1
    )
@@ -26,15 +34,32 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_Augmentation"
-   ARGS "--numTimeSteps=1"
+   ARGS "--numTimeSteps=1 --linAlgebra=Tpetra"
    COMM mpi
    NUM_MPI_PROCS 4
    )
 
 TRIBITS_ADD_TEST(
    BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--numTimeSteps=1 --linAlgebra=Epetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
+
+
+TRIBITS_ADD_TEST(
+   BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell"
-   ARGS "--numTimeSteps=1 --use-refmaxwell"
+   ARGS "--numTimeSteps=1 --use-refmaxwell --linAlgebra=Tpetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--numTimeSteps=1 --use-refmaxwell --linAlgebra=Epetra"
    COMM serial mpi
    NUM_MPI_PROCS 1
    )
@@ -42,7 +67,15 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell"
-   ARGS "--numTimeSteps=1 --use-refmaxwell"
+   ARGS "--numTimeSteps=1 --use-refmaxwell --linAlgebra=Tpetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--numTimeSteps=1 --use-refmaxwell --linAlgebra=Epetra"
    COMM mpi
    NUM_MPI_PROCS 4
    )

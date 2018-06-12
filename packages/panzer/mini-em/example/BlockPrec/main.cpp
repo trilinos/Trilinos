@@ -20,8 +20,9 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
-#include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedDOFManagerFactory.hpp"
@@ -51,11 +52,11 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
-//#include "MiniEM_RefMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
 
 #include <string>
 #include <iostream>
+
 
 Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu);
 std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
@@ -99,18 +100,18 @@ void writeToExodus(double time_stamp,
  * ******************************************************************************
  */
 
-int main(int argc,char * argv[])
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory>
+int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
-  Kokkos::initialize(argc, argv);
-
   { // Put main inside braces to delete all views prior to finalize of device
+
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+
+    Teuchos::oblackholestream blackhole;
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
     if (mpiSession.getNProc() > 1) {
@@ -126,7 +127,7 @@ int main(int argc,char * argv[])
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
 
       // defaults for command-line options
-      int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=1,z_procs=1,basis_order=1;
+      int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=-1,z_procs=-1,basis_order=1;
       double cfl=4.0;
       std::size_t workset_size = 20;
       bool exodus_output = false;
@@ -140,6 +141,7 @@ int main(int argc,char * argv[])
       bool doSolveTimings = false;
       int numReps = 0;
       std::string xml = "";
+      std::string linAlgebra = "Tpetra";
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
       clp.setOption("y-elements",&y_elements);
@@ -150,16 +152,17 @@ int main(int argc,char * argv[])
       clp.setOption("filename",&filename);
       clp.setOption("basis-order",&basis_order);
       clp.setOption("cfl",&cfl);
-      clp.setOption("workset-size",&workset_size);
+      clp.setOption("workset-size",&workset_size,"size of the worksets");
       clp.setOption("exodus-output","no-exodus-output",&exodus_output);
       clp.setOption("matrix-output","no-matrix-output",&matrix_output);
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
       clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
       clp.setOption("numTimeSteps",&numTimeSteps);
-      clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve 'numTimeSteps' times");
+      clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
       clp.setOption("epsilon",&epsilon);
       clp.setOption("mu",&mu);
-      clp.setOption("xml",&xml);
+      clp.setOption("xml",&xml,"XML file with solver parameters");
+      clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
 
       // parse command-line argument
       clp.recogniseAllOptions(true);
@@ -337,11 +340,11 @@ int main(int argc,char * argv[])
       // build DOF Managers and linear object factories
 
       // build the connection manager
-      const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> >
-        conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+      const Teuchos::RCP<panzer::ConnManager<LocalOrdinal,GlobalOrdinal> >
+        conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<GlobalOrdinal>(mesh));
 
       // blocked degree of freedom manager
-      panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+      panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
       std::string fieldOrder = "blocked: B_face E_edge";
       RCP<panzer::UniqueGlobalIndexerBase > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
 
@@ -350,10 +353,8 @@ int main(int argc,char * argv[])
       RCP<panzer::UniqueGlobalIndexerBase > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
       // construct some linear algebra objects, build object to pass to evaluators
-      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-           = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits, double, int, panzer::Ordinal64>(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager,true)));
-      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory
-           = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits, double, int, panzer::Ordinal64>(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(auxDofManager,true)));
+      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true)));
+      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
 
       // Assign the dof managers to worksets
       wkstContainer->setGlobalIndexer(dofManager);
@@ -382,11 +383,11 @@ int main(int argc,char * argv[])
       // coordinate information to MueLu
       Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
       req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
-      Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,panzer::Ordinal64> > callback =
-                  rcp(new panzer_stk::ParameterListCallbackBlocked<int,panzer::Ordinal64>(
-                             rcp_dynamic_cast<panzer_stk::STKConnManager<panzer::Ordinal64> >(conn_manager,true),
-                             rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager,true),
-                             rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(auxDofManager,true)));
+      Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
+                  rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
+                             rcp_dynamic_cast<panzer_stk::STKConnManager<GlobalOrdinal> >(conn_manager,true),
+                             rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
+                             rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
       req_handler->addRequestCallback(callback);
 
       // add discrete gradient
@@ -398,9 +399,15 @@ int main(int argc,char * argv[])
 
       std::string defaultXMLfile;
       if (!use_refmaxwell)
-        defaultXMLfile = "solverDefaultsAugmentation.xml";
+        if (linAlgebra == "Tpetra")
+          defaultXMLfile = "solverDefaultsAugmentation.xml";
+        else
+          defaultXMLfile = "solverDefaultsAugmentationEpetra.xml";
       else {
-        defaultXMLfile = "solverDefaultsRefMaxwell.xml";
+        if (linAlgebra == "Tpetra")
+          defaultXMLfile = "solverDefaultsRefMaxwell.xml";
+        else
+          defaultXMLfile = "solverDefaultsRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
         if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
           defaultXMLfile = "solverDefaultsRefMaxwellOpenMP.xml";
@@ -435,7 +442,7 @@ int main(int argc,char * argv[])
         std::vector<std::string> eBlocks;
         mesh->getElementBlockNames(eBlocks);
 
-        panzer::FunctionalResponse_Builder<int,int> builder;
+        panzer::FunctionalResponse_Builder<LocalOrdinal,GlobalOrdinal> builder;
 
         builder.comm = MPI_COMM_WORLD;
         builder.cubatureDegree = 2*basis_order;
@@ -599,8 +606,36 @@ int main(int argc,char * argv[])
     stacked_timer->report(*out, comm, options);
 
   }
-  Kokkos::finalize();
   return 0;
+}
+
+int main(int argc,char * argv[]){
+  Kokkos::initialize(argc, argv);
+
+  Teuchos::CommandLineProcessor clp(false);
+  std::string linAlgebra = "Tpetra";
+  clp.setOption("linAlgebra",&linAlgebra);
+  clp.recogniseAllOptions(false);
+  switch (clp.parse(argc, argv, NULL)) {
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
+  }
+
+  int retVal;
+  if (linAlgebra == "Tpetra") {
+    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> blockedLinObjFactory;
+    retVal = main_<double,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
+  } else if (linAlgebra == "Epetra") {
+    typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
+    retVal = main_<double,int,int,blockedLinObjFactory>(clp, argc, argv);
+  } else
+    TEUCHOS_ASSERT(false);
+
+  Kokkos::finalize();
+
+  return retVal;
 }
 
 //! Create a parameter list defining the Maxwell equations physics block

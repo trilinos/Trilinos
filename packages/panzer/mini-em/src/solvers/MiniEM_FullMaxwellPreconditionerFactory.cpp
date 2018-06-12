@@ -17,6 +17,8 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Panzer_NodeType.hpp"
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_BlockMapOut.h"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
@@ -33,6 +35,7 @@ void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
   using Teuchos::RCP;
   using NT = panzer::TpetraNodeType;
   const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
+  const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
   if(tOp != Teuchos::null) {
     *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
     const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
@@ -41,7 +44,16 @@ void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("domainmap_"+s).c_str(),*(crsOp->getDomainMap()));
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("rangemap_"+s).c_str(),*(crsOp->getRangeMap()));
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeSparseFile(s.c_str(),crsOp);
-  }
+  } else if (eOp != Teuchos::null) {
+    *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
+    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+    EpetraExt::BlockMapToMatrixMarketFile(("rowmap_"+s).c_str(), crsOp->RowMap());
+    EpetraExt::BlockMapToMatrixMarketFile(("colmap_"+s).c_str(), crsOp->ColMap());
+    EpetraExt::BlockMapToMatrixMarketFile(("domainmap_"+s).c_str(), crsOp->DomainMap());
+    EpetraExt::BlockMapToMatrixMarketFile(("rangemap_"+s).c_str(), crsOp->RangeMap());
+    EpetraExt::RowMatrixToMatrixMarketFile(s.c_str(), *crsOp);
+  } else
+    TEUCHOS_ASSERT(false);
 }
 
 
@@ -51,11 +63,17 @@ void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
   if (out!=Teuchos::null) {
     const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
+    const RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
     if(tOp != Teuchos::null) {
       const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
       *out << "\nDebug: " << s << std::endl;
       crsOp->describe(*out,Teuchos::VERB_MEDIUM);
-    }
+    } else if (eOp != Teuchos::null) {
+      const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      *out << "\nDebug: " << s << std::endl;
+      // crsOp->describe(*out,Teuchos::VERB_MEDIUM);
+    } else
+      TEUCHOS_ASSERT(false);
   }
 }
 
@@ -66,6 +84,8 @@ void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op
 
 Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Teko::BlockedLinearOp & blo, Teko::BlockPreconditionerState & /* state */) const
 {
+   typedef double Scalar;
+
    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("MaxwellPreconditioner::build")));
 
    // Output stream for debug information
@@ -90,6 +110,10 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
    // pull in nodal mass matrix
    Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
+
+   // Check whether we are using Tpetra or Epetra
+   Teuchos::RCP<const Thyra::EpetraLinearOp> EOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Q_rho);
+   bool useTpetra = (EOp == Teuchos::null);
 
    if (dump) {
      writeOut("Q_B.mm",*Q_B);
@@ -195,8 +219,8 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
          // Correction term
          Teko::LinearOp Z_E = Thyra::add(Q_E, Thyra::scale(scaling,GGt));
 
-         if (dump)
-           writeOut("Z_E.mm",*Z_E);
+         // if (dump)
+         //   writeOut("Z_E.mm",*Z_E);
          describeMatrix("Z_E",*Z_E,debug);
 
          // Mass inverse - diagonal approximation
@@ -216,27 +240,36 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        Teuchos::ParameterList S_E_prec_pl = *S_E_prec_factory->getParameterList();
 
        // Get coordinates
-       Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > >("Coordinates");
-       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Coordinates",Coordinates);
-       S_E_prec_pl.remove("Coordinates");
+       if (useTpetra) {
+         TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuRefMaxwell-Tpetra");
+         typedef int LocalOrdinal;
+         typedef panzer::Ordinal64 GlobalOrdinal;
+
+         Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > >("Coordinates");
+         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+       } else {
+         TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuRefMaxwell");
+         Teuchos::RCP<Epetra_MultiVector> Coordinates = S_E_prec_pl.get<Teuchos::RCP<Epetra_MultiVector> >("Coordinates");
+         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+       }
 
        // Set M1 = Q_E.
        // We do this here, since we cannot get it from the request handler.
-       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M1",Q_E);
+       S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E);
 
        // Get inverse of lumped Q_rho
-       RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
-       RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
+       RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(Q_rho->domain());
+       RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(Q_rho->range());
        Thyra::assign(ones.ptr(),1.0);
        // compute lumped diagonal
        Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
        Thyra::reciprocal(*diagonal,diagonal.ptr());
-       RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
-       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
+       RCP<const Thyra::DiagonalLinearOpBase<Scalar> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
+       S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M0inv",invDiagQ_rho);
 
        Teko::InverseLibrary myInvLib = invLib;
-       S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
-       myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra"));
+       S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Type",S_E_prec_type_);
+       myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_));
        S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
 
        // Are we building a solver or a preconditioner?
@@ -352,7 +385,8 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 
      // add discrete gradient
      Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("D0",T);
+     S_E_prec_type_ = S_E_prec_pl.get<std::string>("Type");
+     S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("D0",T);
 
      if (dump) {
        writeOut("DiscreteGradient.mm",*T);
@@ -362,7 +396,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      // add edge mass matrix
      // commented out, since the edge mass matrix isn't registered in the request handler
      // Teko::LinearOp Q_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix E_edge"));
-     // S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra-Tpetra").set("M1",Q_E);
+     // S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E);
 
      invLib.addInverse("S_E Preconditioner",S_E_prec_pl);
    }
