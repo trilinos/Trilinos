@@ -139,7 +139,7 @@ template<typename scalar> class Mask
             return sum != v*size;
         }
     
-        bool operator== (Mask<scalar> m2)
+        bool operator== (const Mask<scalar> &m2)
         {
             bool all = true;
             for (int i = 0; i < size; ++i) {
@@ -148,12 +148,12 @@ template<typename scalar> class Mask
             return all;
         }
     
-        bool operator!= (Mask<scalar> m2)
+        bool operator!= (const Mask<scalar> &m2)
         {
             return !(this==m2);
         }
 
-        Mask<scalar> operator&& (Mask<scalar> m2)
+        Mask<scalar> operator&& (const Mask<scalar> &m2)
         {
             Mask<scalar> m3;
             for(int i=0; i<size; ++i)
@@ -162,7 +162,7 @@ template<typename scalar> class Mask
             return m3;
         } 
 
-        Mask<scalar> operator|| (Mask<scalar> m2)
+        Mask<scalar> operator|| (const Mask<scalar> &m2)
         {
             Mask<scalar> m3;
             for(int i=0; i<size; ++i)
@@ -189,7 +189,7 @@ template<typename scalar> class Mask
             return m3;
         }
     
-        Mask<scalar> operator+ (Mask<scalar> m2)
+        Mask<scalar> operator+ (const Mask<scalar> &m2)
         {
             Mask<scalar> m3;
             for(int i=0; i<size; ++i)
@@ -198,7 +198,7 @@ template<typename scalar> class Mask
             return m3;
         } 
 
-        Mask<scalar> operator- (Mask<scalar> m2)
+        Mask<scalar> operator- (const Mask<scalar> &m2)
         {
             Mask<scalar> m3;
             for(int i=0; i<size; ++i)
@@ -207,7 +207,7 @@ template<typename scalar> class Mask
             return m3;
         }
 
-        scalar operator* (scalar v)       
+        scalar operator* (const scalar &v)
         {
             typedef EnsembleTraits_m<scalar> ET; 
             scalar v2;
@@ -258,30 +258,39 @@ template<typename scalar> std::ostream &operator<<(std::ostream &os, const Mask<
     return os << "]";
 }
 
-template<typename S>  Sacado::MP::Vector<S> operator* (Sacado::MP::Vector<S> a1, Mask<Sacado::MP::Vector<S>> m)
+template<typename S>  Sacado::MP::Vector<S> operator* (const Sacado::MP::Vector<S> &a1, const Mask<Sacado::MP::Vector<S>> &m)
 {
+    typedef EnsembleTraits_m<Sacado::MP::Vector<S>> ET;
     Sacado::MP::Vector<S> mul;
-    mul = m*a1;
+    for(int i=0; i<ET::size; ++i){
+        ET::coeff(mul,i) = ET::coeff(a1,i)*m[i];
+    }
     return mul;
 }
 
-template<typename S>  Sacado::MP::Vector<S> operator* (typename S::value_type a1, Mask<Sacado::MP::Vector<S>> m)
+template<typename S>  Sacado::MP::Vector<S> operator* (const typename S::value_type &a1, const Mask<Sacado::MP::Vector<S>> &m)
 {
     Sacado::MP::Vector<S> mul;
-    mul = m* (Sacado::MP::Vector<S>) a1;
+    typedef EnsembleTraits_m<Sacado::MP::Vector<S>> ET;
+    for(int i=0; i<ET::size; ++i){
+        ET::coeff(mul,i) = m[i]*a1;
+    }
     return mul;
 }
 
-template<typename S>  Sacado::MP::Vector<S> operator* (Mask<Sacado::MP::Vector<S>> m, typename S::value_type a1)
+template<typename S>  Sacado::MP::Vector<S> operator* (const Mask<Sacado::MP::Vector<S>> &m, const typename S::value_type &a1)
 {
     Sacado::MP::Vector<S> mul;
-    mul = m* (Sacado::MP::Vector<S>) a1;
+    typedef EnsembleTraits_m<Sacado::MP::Vector<S>> ET;
+    for(int i=0; i<ET::size; ++i){
+        ET::coeff(mul,i) = m[i]*a1;
+    }
     return mul;
 }
 
 namespace Sacado {
     namespace MP {
-        template <typename S> Vector<S> copysign(Vector<S> a1,Vector<S> a2)
+        template <typename S> Vector<S> copysign(const Vector<S> &a1, const Vector<S> &a2)
         {
             typedef EnsembleTraits_m< Vector<S> > ET;
             
@@ -298,7 +307,7 @@ namespace Sacado {
 }
 
 
-template<typename S> Mask<Sacado::MP::Vector<S> > signbit_v(Sacado::MP::Vector<S> a1)
+template<typename S> Mask<Sacado::MP::Vector<S> > signbit_v(const Sacado::MP::Vector<S> &a1)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     using std::signbit;
@@ -311,7 +320,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > signbit_v(Sacado::MP::Vector<S
 
 // Vector - vector comparisons
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<S> a1, Sacado::MP::Vector<S> a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator> (const Sacado::MP::Vector<S> &a1, const Sacado::MP::Vector<S> &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -321,7 +330,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector<S> a1, Sacado::MP::Vector<S> a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (const Sacado::MP::Vector<S> &a1, const Sacado::MP::Vector<S> &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -331,7 +340,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<S> a1, Sacado::MP::Vector<S> a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator< (const Sacado::MP::Vector<S> &a1, const Sacado::MP::Vector<S> &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -341,7 +350,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector<S> a1, Sacado::MP::Vector<S> a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (const Sacado::MP::Vector<S> &a1, const Sacado::MP::Vector<S> &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -353,7 +362,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector
 
 // Vector - scalar comparisons
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<S> a1, typename S::value_type a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator> (const Sacado::MP::Vector<S> &a1, const typename S::value_type &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -363,7 +372,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator> (Sacado::MP::Vector<
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector<S> a1, typename S::value_type a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (const Sacado::MP::Vector<S> &a1, const typename S::value_type &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -373,7 +382,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (Sacado::MP::Vector
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<S> a1, typename S::value_type a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator< (const Sacado::MP::Vector<S> &a1, const typename S::value_type &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -383,7 +392,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator< (Sacado::MP::Vector<
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector<S> a1, typename S::value_type a2)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (const Sacado::MP::Vector<S> &a1, const typename S::value_type &a2)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -395,7 +404,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (Sacado::MP::Vector
 
 // Scalar -vector comparisons
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator> (typename S::value_type a2, Sacado::MP::Vector<S> a1)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator> (const typename S::value_type &a2, Sacado::MP::Vector<S> &a1)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -405,7 +414,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator> (typename S::value_t
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (typename S::value_type a2, Sacado::MP::Vector<S> a1)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (const typename S::value_type &a2, const Sacado::MP::Vector<S> &a1)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -415,7 +424,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator>= (typename S::value_
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator< (typename S::value_type a2, Sacado::MP::Vector<S> a1)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator< (const typename S::value_type &a2, const Sacado::MP::Vector<S> &a1)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
@@ -425,7 +434,7 @@ template<typename S> Mask<Sacado::MP::Vector<S> > operator< (typename S::value_t
     return mask;
 }
 
-template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (typename S::value_type a2, Sacado::MP::Vector<S> a1)
+template<typename S> Mask<Sacado::MP::Vector<S> > operator<= (const typename S::value_type &a2, const Sacado::MP::Vector<S> &a1)
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     
