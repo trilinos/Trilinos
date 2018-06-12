@@ -157,6 +157,18 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
+    void SetColorsCardinality(typename Kokkos::View<LO*, execution_space>::HostMirror colorsCardinality) {
+      colorsCardinality_ = colorsCardinality;
+    }
+
+    typename Kokkos::View<LO*, execution_space>::HostMirror& GetColorsCardinality() {return colorsCardinality_;}
+
+    void SetColorPermutation(Kokkos::View<LO*, execution_space> colorPermutation) {
+      colorPermutation_ = colorPermutation;
+    }
+
+    Kokkos::View<LO*, execution_space>& GetColorPermutation() {return colorPermutation_;}
+
     //! @brief Record whether aggregates include DOFs from other processes.
     KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
       aggregatesIncludeGhosts_ = flag;
@@ -248,6 +260,9 @@ namespace MueLu {
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;
+
+    typename Kokkos::View<LO*, execution_space>::HostMirror colorsCardinality_;
+    Kokkos::View<LO*, execution_space> colorPermutation_;
 
     //! Array of sizes of each local aggregate.
     mutable

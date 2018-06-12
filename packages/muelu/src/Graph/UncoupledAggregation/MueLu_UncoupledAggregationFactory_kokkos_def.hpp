@@ -74,6 +74,10 @@
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp" // for sum_all and similar stuff...
 
+#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_graph_color_d2.hpp"
+
+
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -96,8 +100,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: ordering");
     validParamList->getEntry("aggregation: ordering").setValidator(
       rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
+    SET_VALID_ENTRY("aggregation: coloring algorithm");
+    SET_VALID_ENTRY("aggregation: permute nodes by color");
     SET_VALID_ENTRY("aggregation: enable phase 1");
-    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
@@ -225,10 +230,11 @@ namespace MueLu {
     LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
 
-    Kokkos::View<LO*, memory_space> colorsDevice("graph colors", numRows);
     LO numColors = 0;
+    Kokkos::View<LO*, memory_space> colorsDevice("graph colors", numRows);
 
-    if (pL.get<std::string>("aggregation: phase 1 algorithm") == "Distance2") {
+    if (pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - serial" ||
+        pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - wml") {
       SubFactoryMonitor subM(*this, "Coloring", currentLevel);
 
       // The local CRS graph to Kokkos device views, then compute graph squared
@@ -242,15 +248,23 @@ namespace MueLu {
                             memory_space, memory_space> KernelHandle;
 
       KernelHandle kh;
-      //leave gc algorithm choice as the default
-      kh.create_graph_coloring_handle();
+      if (pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - serial") {
+        kh.create_graph_coloring_handle();
+      } else if (pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - wml") {
+        kh.create_graph_coloring_handle(KokkosGraph::ColoringAlgorithm::COLORING_D2);
+      }
 
       //run d2 graph coloring
       //graph is symmetric so row map/entries and col map/entries are the same
-      KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows,
-						graph->getRowPtrs(), graph->getEntries(),
-						graph->getRowPtrs(), graph->getEntries());
-                                                // aRowptrs, aColinds, aRowptrs, aColinds);
+      if (pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - serial") {
+        KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows,
+                                                  graph->getRowPtrs(), graph->getEntries(),
+                                                  graph->getRowPtrs(), graph->getEntries());
+      } else if (pL.get<std::string>("aggregation: coloring algorithm") == "Distance 2 - wml") {
+        KokkosGraph::Experimental::graph_color_d2(&kh, numRows, numRows,
+                                                  graph->getRowPtrs(), graph->getEntries(),
+                                                  graph->getRowPtrs(), graph->getEntries());
+      }
 
       // extract the colors
       auto coloringHandle = kh.get_graph_coloring_handle();
@@ -259,9 +273,52 @@ namespace MueLu {
 
       //clean up coloring handle
       kh.destroy_graph_coloring_handle();
-      
-      GetOStream(Statistics1) << "  colors needed : " << numColors << std::endl;
+      GetOStream(Statistics1) << "colors on graph: " << numColors << std::endl;
     }
+
+    typename Kokkos::View<LO*, memory_space>::HostMirror colorsCardinality;
+    Kokkos::View<LO*, memory_space> nodesOrderedByColor("node permutation by color", numRows);
+    {
+      SubFactoryMonitor subM(*this, "Colors ordering", currentLevel);
+
+      Kokkos::View<LO*, memory_space> dev_colorsCardinality("colors cardinality on device", numColors + 1);
+
+      // First find the cardinality of each color.
+      Kokkos::parallel_for("Compute colors cardinality", numRows,
+                           KOKKOS_LAMBDA(const int node) {
+                             Kokkos::atomic_add(&dev_colorsCardinality(colorsDevice(node)), 1);
+                           });
+
+      // Second do a scan on colorsCardinality.
+      // The number of colors is fairly small so a serial scan is probably faster
+      // than the kernel launch?
+      printf("Colors cardinality: {");
+      Kokkos::parallel_for("Scan on color cardinality in serial", 1,
+                           KOKKOS_LAMBDA(const int i) {
+                             for(int color = 1; color < numColors + 1; ++color) {
+                               dev_colorsCardinality(color) = dev_colorsCardinality(color) +
+                                 dev_colorsCardinality(color - 1);
+                               printf("%d, ", dev_colorsCardinality(color - 1));
+                             }
+                           });
+      printf("%d}\n", dev_colorsCardinality(numColors));
+
+      // Third store node indices by color using color carinalities as offsets
+      Kokkos::View<LO*, memory_space> colorsCount("colors count", numColors);
+      Kokkos::parallel_for("permute nodes by color", numRows,
+                           KOKKOS_LAMBDA(const int node) {
+                             LO myColor = colorsDevice(node);
+                             LO myColorCount = Kokkos::atomic_fetch_add(&colorsCount(myColor - 1), 1);
+                             LO myNodeIdx = myColorCount + dev_colorsCardinality(myColor - 1);
+                             nodesOrderedByColor(myNodeIdx) = node;
+                           });
+
+      colorsCardinality = Kokkos::create_mirror_view(dev_colorsCardinality);
+      Kokkos::deep_copy(colorsCardinality, dev_colorsCardinality);
+    }
+
+    aggregates->SetColorsCardinality(colorsCardinality);
+    aggregates->SetColorPermutation(nodesOrderedByColor);
 
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
@@ -276,28 +333,28 @@ namespace MueLu {
                                    Exceptions::RuntimeError,
                                    "the number of nodes aggregated is larger than the number of "
                                    "nodes in the problem!");
-      }
 
-      if (IsPrint(Statistics1)) {
-        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
-        GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
-        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        MueLu_sumAll(comm, numLocalAggs,       numGlobalAggs);
+        if (IsPrint(Statistics1)) {
+          GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
+          GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
+          MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
+          MueLu_sumAll(comm, numLocalAggs,       numGlobalAggs);
 
-        double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
-        if (aggPercent > 99.99 && aggPercent < 100.00) {
-          // Due to round off (for instance, for 140465733/140466897), we could
-          // get 100.00% display even if there are some remaining nodes. This
-          // is bad from the users point of view. It is much better to change
-          // it to display 99.99%.
-          aggPercent = 99.99;
+          double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
+          if (aggPercent > 99.99 && aggPercent < 100.00) {
+            // Due to round off (for instance, for 140465733/140466897), we could
+            // get 100.00% display even if there are some remaining nodes. This
+            // is bad from the users point of view. It is much better to change
+            // it to display 99.99%.
+            aggPercent = 99.99;
+          }
+          GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
+                                  << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
+                                  << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
+                                  << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
+          numGlobalAggregatedPrev = numGlobalAggregated;
+          numGlobalAggsPrev       = numGlobalAggs;
         }
-        GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
-                                   << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
-                                   << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
-                                   << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
-        numGlobalAggregatedPrev = numGlobalAggregated;
-        numGlobalAggsPrev       = numGlobalAggs;
       }
     }
 

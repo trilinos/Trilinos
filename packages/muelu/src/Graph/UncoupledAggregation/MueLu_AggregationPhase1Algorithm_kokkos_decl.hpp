@@ -127,7 +127,8 @@ namespace MueLu {
                                   memory_space>& aggStatView, LO& numNonAggregatedNodes,
                                   LO maxAggSize, Kokkos::View<LO*, typename MueLu::
                                   LWGraph_kokkos<LO, GO, Node>::local_graph_type::device_type::
-                                  memory_space>& colorsDevice, LO& numColors) const;
+                                  memory_space>& colorsDevice, LO& numColors,
+                                  const bool colorPermuted) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
@@ -140,8 +141,9 @@ namespace MueLu {
 
     static Algorithm algorithmFromName(const std::string& name)
     {
-      if(name == "Distance2")
+      if((name == "Distance 2 - serial") || (name == "Distance 2 - wml")) {
         return Algorithm::Distance2;
+      }
       return Algorithm::Serial;
     }
 

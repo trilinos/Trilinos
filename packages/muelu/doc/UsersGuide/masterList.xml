@@ -430,10 +430,18 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: phase 1 algorithm</name>
+      <name>aggregation: permute nodes by color</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Flag enable the use of an optimized version of the kokkos aggregation algorithms</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: coloring algorithm</name>
       <type>string</type>
       <default>Serial</default>
-      <description>Choice of algorithm for aggregation phase 1.</description>
+      <description>Choice of algorithm for graph coloring during aggregation.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

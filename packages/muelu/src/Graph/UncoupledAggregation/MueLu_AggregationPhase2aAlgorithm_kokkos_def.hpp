@@ -78,11 +78,15 @@ namespace MueLu {
     int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 
+    bool colorPermuted          = params.get<bool>       ("aggregation: permute nodes by color");
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
     auto vertex2AggId = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
     auto procWinner   = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto colorsCardinality = aggregates.GetColorsCardinality();
+    auto colorPermutation = aggregates.GetColorPermutation();
 
     LO numLocalNodes      = numRows;
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
@@ -102,55 +106,109 @@ namespace MueLu {
     for(int color = 2; color < numColors + 1; ++color) {
 
       LO tmpNumNonAggregatedNodes = 0;
-      Kokkos::parallel_reduce("Aggregation Phase 2a: loop over each individual color", numRows,
-                              KOKKOS_LAMBDA (const LO rootCandidate, LO& lNumNonAggregatedNodes) {
-                                if(aggStatView(rootCandidate) == READY &&
-                                   colorsDevice(rootCandidate) == color) {
+      if(colorPermuted) {
+        int nodesInMyColor = colorsCardinality(color) - colorsCardinality(color - 1);
+        int myColorOffset  = colorsCardinality(color - 1);
+        Kokkos::parallel_reduce("Aggregation Phase 2a: loop over each individual color", nodesInMyColor,
+                                KOKKOS_LAMBDA (const LO nodeInColor, LO& lNumNonAggregatedNodes) {
+                                  LO rootCandidate = colorPermutation(nodeInColor + myColorOffset);
+                                  if(aggStatView(rootCandidate) == READY) {
 
-                                  LO aggSize = 0;
-                                  auto neighbors = graph.getNeighborVertices(rootCandidate);
+                                    LO aggSize = 0;
+                                    auto neighbors = graph.getNeighborVertices(rootCandidate);
 
-                                  // Loop over neighbors to count how many nodes could join
-                                  // the new aggregate
-                                  LO numNeighbors = 0;
-                                  for(int j = 0; j < neighbors.length; ++j) {
-                                    LO neigh = neighbors(j);
-                                    if(neigh != rootCandidate) {
-                                      if(graph.isLocalNeighborVertex(neigh) &&
-                                         aggStatView(neigh) == READY &&
-                                         aggSize < maxNodesPerAggregate) {
-                                        // aggList(aggSize) = neigh;
-                                        ++aggSize;
-                                      }
-                                      ++numNeighbors;
-                                    }
-                                  }
-
-                                  // If a sufficient number of nodes can join the new aggregate
-                                  // then we actually create the aggregate.
-                                  if(aggSize > minNodesPerAggregate &&
-                                     aggSize > factor*numNeighbors) {
-
-                                    // aggregates.SetIsRoot(rootCandidate);
-                                    LO aggIndex = Kokkos::
-                                      atomic_fetch_add(&numLocalAggregates(), 1);
-
+                                    // Loop over neighbors to count how many nodes could join
+                                    // the new aggregate
+                                    LO numNeighbors = 0;
                                     for(int j = 0; j < neighbors.length; ++j) {
                                       LO neigh = neighbors(j);
                                       if(neigh != rootCandidate) {
                                         if(graph.isLocalNeighborVertex(neigh) &&
                                            aggStatView(neigh) == READY &&
                                            aggSize < maxNodesPerAggregate) {
-                                          aggStatView(neigh)   = AGGREGATED;
-                                          vertex2AggId(neigh, 0) = aggIndex;
-                                          procWinner(neigh, 0)   = myRank;
+                                          // aggList(aggSize) = neigh;
+                                          ++aggSize;
                                         }
+                                        ++numNeighbors;
                                       }
                                     }
-                                    lNumNonAggregatedNodes -= aggSize;
+
+                                    // If a sufficient number of nodes can join the new aggregate
+                                    // then we actually create the aggregate.
+                                    if(aggSize > minNodesPerAggregate &&
+                                       aggSize > factor*numNeighbors) {
+
+                                      // aggregates.SetIsRoot(rootCandidate);
+                                      LO aggIndex = Kokkos::
+                                        atomic_fetch_add(&numLocalAggregates(), 1);
+
+                                      for(int j = 0; j < neighbors.length; ++j) {
+                                        LO neigh = neighbors(j);
+                                        if(neigh != rootCandidate) {
+                                          if(graph.isLocalNeighborVertex(neigh) &&
+                                             aggStatView(neigh) == READY &&
+                                             aggSize < maxNodesPerAggregate) {
+                                            aggStatView(neigh)   = AGGREGATED;
+                                            vertex2AggId(neigh, 0) = aggIndex;
+                                            procWinner(neigh, 0)   = myRank;
+                                          }
+                                        }
+                                      }
+                                      lNumNonAggregatedNodes -= aggSize;
+                                    }
                                   }
-                                }
-                              }, tmpNumNonAggregatedNodes);
+                                }, tmpNumNonAggregatedNodes);
+      } else {
+        Kokkos::parallel_reduce("Aggregation Phase 2a: loop over each individual color", numRows,
+                                KOKKOS_LAMBDA (const LO rootCandidate, LO& lNumNonAggregatedNodes) {
+                                  if(aggStatView(rootCandidate) == READY &&
+                                     colorsDevice(rootCandidate) == color) {
+
+                                    LO aggSize = 0;
+                                    auto neighbors = graph.getNeighborVertices(rootCandidate);
+
+                                    // Loop over neighbors to count how many nodes could join
+                                    // the new aggregate
+                                    LO numNeighbors = 0;
+                                    for(int j = 0; j < neighbors.length; ++j) {
+                                      LO neigh = neighbors(j);
+                                      if(neigh != rootCandidate) {
+                                        if(graph.isLocalNeighborVertex(neigh) &&
+                                           aggStatView(neigh) == READY &&
+                                           aggSize < maxNodesPerAggregate) {
+                                          // aggList(aggSize) = neigh;
+                                          ++aggSize;
+                                        }
+                                        ++numNeighbors;
+                                      }
+                                    }
+
+                                    // If a sufficient number of nodes can join the new aggregate
+                                    // then we actually create the aggregate.
+                                    if(aggSize > minNodesPerAggregate &&
+                                       aggSize > factor*numNeighbors) {
+
+                                      // aggregates.SetIsRoot(rootCandidate);
+                                      LO aggIndex = Kokkos::
+                                        atomic_fetch_add(&numLocalAggregates(), 1);
+
+                                      for(int j = 0; j < neighbors.length; ++j) {
+                                        LO neigh = neighbors(j);
+                                        if(neigh != rootCandidate) {
+                                          if(graph.isLocalNeighborVertex(neigh) &&
+                                             aggStatView(neigh) == READY &&
+                                             aggSize < maxNodesPerAggregate) {
+                                            aggStatView(neigh)   = AGGREGATED;
+                                            vertex2AggId(neigh, 0) = aggIndex;
+                                            procWinner(neigh, 0)   = myRank;
+                                          }
+                                        }
+                                      }
+                                      lNumNonAggregatedNodes -= aggSize;
+                                    }
+                                  }
+                                }, tmpNumNonAggregatedNodes);
+      }
       numNonAggregatedNodes += tmpNumNonAggregatedNodes;
     }
 

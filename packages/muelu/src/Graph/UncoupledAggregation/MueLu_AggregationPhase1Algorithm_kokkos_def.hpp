@@ -83,11 +83,13 @@ namespace MueLu {
     int minNodesPerAggregate    = params.get<int>        ("aggregation: min agg size");
     int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
 
+    bool colorPermuted          = params.get<bool>       ("aggregation: permute nodes by color");
+
     Algorithm algorithm         = Algorithm::Serial;
-    std::string algoParamName   = "aggregation: phase 1 algorithm";
+    std::string algoParamName   = "aggregation: coloring algorithm";
     if(params.isParameter(algoParamName))
     {
-      algorithm = algorithmFromName(params.get<std::string>("aggregation: phase 1 algorithm"));
+      algorithm = algorithmFromName(params.get<std::string>("aggregation: coloring algorithm"));
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
@@ -96,12 +98,7 @@ namespace MueLu {
     //Distance-2 gives less control than serial uncoupled phase 1
     //no custom row reordering because would require making deep copy of local matrix entries and permuting it
     //can only enforce max aggregate size
-    if(algorithm == Algorithm::Distance2)
-    {
-      BuildAggregatesDistance2(graph, aggregates, aggStatView, numNonAggregatedNodes,
-                               maxNodesPerAggregate, colorsDevice, numColors);
-    }
-    else
+    if (algorithm == Algorithm::Serial)
     {
       const LO numRows = graph.GetNodeNumVertices();
       std::vector<unsigned> aggStat(numRows);
@@ -119,6 +116,11 @@ namespace MueLu {
                             maxNodesPerAggregate, maxNeighAlreadySelected, orderingStr);
       for(LO i = 0; i < numRows; ++i) {h_aggStatView(i) = aggStat[i];}
       Kokkos::deep_copy(aggStatView, h_aggStatView);
+    }
+    else if (algorithm == Algorithm::Distance2)
+    {
+      BuildAggregatesDistance2(graph, aggregates, aggStatView, numNonAggregatedNodes,
+                               maxNodesPerAggregate, colorsDevice, numColors, colorPermuted);
     }
   }
 
@@ -291,7 +293,7 @@ namespace MueLu {
                            LO& numNonAggregatedNodes, LO maxAggSize,
                            Kokkos::View<LO*, typename MueLu::LWGraph_kokkos<LO, GO, Node>::
                            local_graph_type::device_type::memory_space>& colorsDevice,
-                           LO& numColors) const
+                           LO& numColors, const bool colorPermuted) const
   {
     typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
     typedef typename graph_t::device_type::memory_space memory_space;
@@ -302,6 +304,8 @@ namespace MueLu {
 
     auto vertex2AggIdView = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
     auto procWinnerView = aggregates.GetProcWinner()    ->template getLocalView<memory_space>();
+    auto colorsCardinality = aggregates.GetColorsCardinality();
+    auto colorPermutation = aggregates.GetColorPermutation();
 
     LO numNonAggregatedNodesSerial = numNonAggregatedNodes;
     LO numLocalAggregatesSerial = aggregates.GetNumAggregates();
@@ -311,23 +315,33 @@ namespace MueLu {
       HostMirror h_colors = Kokkos::create_mirror_view(colorsDevice);
     Kokkos::deep_copy(h_colors, colorsDevice);
 
-    // Kokkos::View<unsigned*, memory_space> aggStatView("aggStat", numRows);
-    // auto h_aggStatView = Kokkos::create_mirror_view (aggStatView);
-    // for(LO i = 0; i< numRows; ++i) {h_aggStatView(i) = aggStat[i];}
-    // Kokkos::deep_copy (aggStatView, h_aggStatView);
-
     Kokkos::View<LO, memory_space> aggCount("aggCount");
     LO tmpNumLocalAggregates = 0;
-    Kokkos::parallel_reduce("Aggregation Phase 1: initial reduction over color == 1", numRows,
-                            KOKKOS_LAMBDA (const LO i, LO& lnumLocalAggregates) {
-                              if(colorsDevice(i) == 1 && aggStatView(i) == READY) {
-                                const LO idx = Kokkos::atomic_fetch_add (&aggCount(), 1);
-                                vertex2AggIdView(i, 0) = idx;
-                                aggStatView(i) = AGGREGATED;
-                                ++lnumLocalAggregates;
-                                procWinnerView(i, 0) = myRank;
-                              }
-                            }, tmpNumLocalAggregates);
+
+    if(colorPermuted) {
+      Kokkos::parallel_reduce("Aggregation Phase 1: initial reduction over color == 1", colorsCardinality(1),
+                              KOKKOS_LAMBDA (const LO i, LO& lnumLocalAggregates) {
+                                LO nodeIdx = colorPermutation(i);
+                                if(aggStatView(nodeIdx) == READY) {
+                                  const LO aggIdx = Kokkos::atomic_fetch_add (&aggCount(), 1);
+                                  vertex2AggIdView(nodeIdx, 0) = aggIdx;
+                                  aggStatView(nodeIdx) = AGGREGATED;
+                                  ++lnumLocalAggregates;
+                                  procWinnerView(nodeIdx, 0) = myRank;
+                                }
+                              }, tmpNumLocalAggregates);
+    } else {
+      Kokkos::parallel_reduce("Aggregation Phase 1: initial reduction over color == 1", numRows,
+                              KOKKOS_LAMBDA (const LO i, LO& lnumLocalAggregates) {
+                                if(colorsDevice(i) == 1 && aggStatView(i) == READY) {
+                                  const LO aggIdx = Kokkos::atomic_fetch_add (&aggCount(), 1);
+                                  vertex2AggIdView(i, 0) = aggIdx;
+                                  aggStatView(i) = AGGREGATED;
+                                  ++lnumLocalAggregates;
+                                  procWinnerView(i, 0) = myRank;
+                                }
+                              }, tmpNumLocalAggregates);
+    }
     numLocalAggregates += tmpNumLocalAggregates;
 
     // Compute the initial size of the aggregates.
@@ -351,71 +365,145 @@ namespace MueLu {
     if(maxAggSize == std::numeric_limits<int>::max()) {
       // When aggSize is "unlimited" we do not need to check aggSize and atomically decrement
       // if we reach the maximum set by users.
-      Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", numRows,
-                              KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
-                                if(colorsDevice(i) != 1
-                                   && (aggStatView(i) == READY || aggStatView(i) == NOTSEL)) {
-                                  // Get neighbors of vertex i and look for local, aggregated,
-                                  // color 1 neighbor (valid root).
-                                  auto neighbors = graph.getNeighborVertices(i);
-                                  for(LO j = 0; j < neighbors.length; ++j) {
-                                    auto nei = neighbors.colidx(j);
-                                    if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
-                                       && aggStatView(nei) == AGGREGATED) {
+      if(colorPermuted) {
+        int colorRange = colorsCardinality(numColors) - colorsCardinality(1);
+        int colorOffset = colorsCardinality(1);
+        Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", colorRange,
+                                KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
+                                  LO nodeIdx = colorPermutation(i + colorOffset);
+                                  if(aggStatView(nodeIdx) == READY || aggStatView(nodeIdx) == NOTSEL) {
+                                    // Get neighbors of vertex i and look for local, aggregated,
+                                    // color 1 neighbor (valid root).
+                                    auto neighbors = graph.getNeighborVertices(nodeIdx);
+                                    for(LO j = 0; j < neighbors.length; ++j) {
+                                      auto nei = neighbors.colidx(j);
+                                      if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
+                                         && aggStatView(nei) == AGGREGATED) {
 
-                                      // This atomic guarentees that any other node trying to
-                                      // join aggregate agg has the correct size.
-                                      LO agg = vertex2AggIdView(nei, 0);
-                                      Kokkos::atomic_add (&aggSizesView(agg), 1);
-                                      //assign vertex i to aggregate with root j
-                                      vertex2AggIdView(i, 0) = agg;
-                                      procWinnerView(i, 0)   = myRank;
-                                      aggStatView(i)         = AGGREGATED;
-                                      break;
+                                        // This atomic guarentees that any other node trying to
+                                        // join aggregate agg has the correct size.
+                                        LO agg = vertex2AggIdView(nei, 0);
+                                        Kokkos::atomic_add (&aggSizesView(agg), 1);
+                                        //assign vertex i to aggregate with root j
+                                        vertex2AggIdView(nodeIdx, 0) = agg;
+                                        procWinnerView(nodeIdx, 0)   = myRank;
+                                        aggStatView(nodeIdx)         = AGGREGATED;
+                                        break;
+                                      }
                                     }
                                   }
-                                }
-                                if(aggStatView(i) != AGGREGATED) {
-                                  lNumNonAggregatedNodes++;
-                                  if(aggStatView(i) == NOTSEL) { aggStatView(i) = READY; }
-                                }
-                              }, numNonAggregatedNodes);
-    } else {
-      Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", numRows,
-                              KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
-                                if(colorsDevice(i) != 1
-                                   && (aggStatView(i) == READY || aggStatView(i) == NOTSEL)) {
-                                  // Get neighbors of vertex i and look for local, aggregated,
-                                  // color 1 neighbor (valid root).
-                                  auto neighbors = graph.getNeighborVertices(i);
-                                  for(LO j = 0; j < neighbors.length; ++j) {
-                                    auto nei = neighbors.colidx(j);
-                                    if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
-                                       && aggStatView(nei) == AGGREGATED) {
+                                  if(aggStatView(nodeIdx) != AGGREGATED) {
+                                    lNumNonAggregatedNodes++;
+                                    if(aggStatView(nodeIdx) == NOTSEL) { aggStatView(nodeIdx) = READY; }
+                                  }
+                                }, numNonAggregatedNodes);
+      } else {
+        Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", numRows,
+                                KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
+                                  if(colorsDevice(i) != 1
+                                     && (aggStatView(i) == READY || aggStatView(i) == NOTSEL)) {
+                                    // Get neighbors of vertex i and look for local, aggregated,
+                                    // color 1 neighbor (valid root).
+                                    auto neighbors = graph.getNeighborVertices(i);
+                                    for(LO j = 0; j < neighbors.length; ++j) {
+                                      auto nei = neighbors.colidx(j);
+                                      if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
+                                         && aggStatView(nei) == AGGREGATED) {
 
-                                      // This atomic guarentees that any other node trying to
-                                      // join aggregate agg has the correct size.
-                                      LO agg = vertex2AggIdView(nei, 0);
-                                      const LO aggSize =
-                                        Kokkos::atomic_fetch_add (&aggSizesView(agg), 1);
-                                      if(aggSize < maxAggSize) {
+                                        // This atomic guarentees that any other node trying to
+                                        // join aggregate agg has the correct size.
+                                        LO agg = vertex2AggIdView(nei, 0);
+                                        Kokkos::atomic_add (&aggSizesView(agg), 1);
                                         //assign vertex i to aggregate with root j
                                         vertex2AggIdView(i, 0) = agg;
                                         procWinnerView(i, 0)   = myRank;
                                         aggStatView(i)         = AGGREGATED;
                                         break;
-                                      } else {
-                                        // Decrement back the value of aggSizesView(agg)
-                                        Kokkos::atomic_decrement(&aggSizesView(agg));
                                       }
                                     }
                                   }
-                                }
-                                if(aggStatView(i) != AGGREGATED) {
-                                  lNumNonAggregatedNodes++;
-                                  if(aggStatView(i) == NOTSEL) { aggStatView(i) = READY; }
-                                }
-                              }, numNonAggregatedNodes);
+                                  if(aggStatView(i) != AGGREGATED) {
+                                    lNumNonAggregatedNodes++;
+                                    if(aggStatView(i) == NOTSEL) { aggStatView(i) = READY; }
+                                  }
+                                }, numNonAggregatedNodes);
+      }
+    } else {
+      if(colorPermuted) {
+        int colorRange = colorsCardinality(numColors) - colorsCardinality(1);
+        int colorOffset = colorsCardinality(1);
+        Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", colorRange,
+                                KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
+                                  LO nodeIdx = colorPermutation(i + colorOffset);
+                                  if((aggStatView(nodeIdx) == READY || aggStatView(nodeIdx) == NOTSEL)) {
+                                    // Get neighbors of vertex i and look for local, aggregated,
+                                    // color 1 neighbor (valid root).
+                                    auto neighbors = graph.getNeighborVertices(nodeIdx);
+                                    for(LO j = 0; j < neighbors.length; ++j) {
+                                      auto nei = neighbors.colidx(j);
+                                      if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
+                                         && aggStatView(nei) == AGGREGATED) {
+
+                                        // This atomic guarentees that any other node trying to
+                                        // join aggregate agg has the correct size.
+                                        LO agg = vertex2AggIdView(nei, 0);
+                                        const LO aggSize =
+                                          Kokkos::atomic_fetch_add (&aggSizesView(agg), 1);
+                                        if(aggSize < maxAggSize) {
+                                          //assign vertex i to aggregate with root j
+                                          vertex2AggIdView(nodeIdx, 0) = agg;
+                                          procWinnerView(nodeIdx, 0)   = myRank;
+                                          aggStatView(nodeIdx)         = AGGREGATED;
+                                          break;
+                                        } else {
+                                          // Decrement back the value of aggSizesView(agg)
+                                          Kokkos::atomic_decrement(&aggSizesView(agg));
+                                        }
+                                      }
+                                    }
+                                  }
+                                  if(aggStatView(nodeIdx) != AGGREGATED) {
+                                    lNumNonAggregatedNodes++;
+                                    if(aggStatView(nodeIdx) == NOTSEL) { aggStatView(nodeIdx) = READY; }
+                                  }
+                                }, numNonAggregatedNodes);
+      } else {
+        Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", numRows,
+                                KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
+                                  if(colorsDevice(i) != 1
+                                     && (aggStatView(i) == READY || aggStatView(i) == NOTSEL)) {
+                                    // Get neighbors of vertex i and look for local, aggregated,
+                                    // color 1 neighbor (valid root).
+                                    auto neighbors = graph.getNeighborVertices(i);
+                                    for(LO j = 0; j < neighbors.length; ++j) {
+                                      auto nei = neighbors.colidx(j);
+                                      if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
+                                         && aggStatView(nei) == AGGREGATED) {
+
+                                        // This atomic guarentees that any other node trying to
+                                        // join aggregate agg has the correct size.
+                                        LO agg = vertex2AggIdView(nei, 0);
+                                        const LO aggSize =
+                                          Kokkos::atomic_fetch_add (&aggSizesView(agg), 1);
+                                        if(aggSize < maxAggSize) {
+                                          //assign vertex i to aggregate with root j
+                                          vertex2AggIdView(i, 0) = agg;
+                                          procWinnerView(i, 0)   = myRank;
+                                          aggStatView(i)         = AGGREGATED;
+                                          break;
+                                        } else {
+                                          // Decrement back the value of aggSizesView(agg)
+                                          Kokkos::atomic_decrement(&aggSizesView(agg));
+                                        }
+                                      }
+                                    }
+                                  }
+                                  if(aggStatView(i) != AGGREGATED) {
+                                    lNumNonAggregatedNodes++;
+                                    if(aggStatView(i) == NOTSEL) { aggStatView(i) = READY; }
+                                  }
+                                }, numNonAggregatedNodes);
+      }
     }
 
     // update aggregate object

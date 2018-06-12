@@ -1,0 +1,19 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="use kokkos refactor"                  type="bool"     value="true"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+  <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>
+  <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.1"/> -->
+  <Parameter        name="aggregation: coloring algorithm"      type="string"   value="Distance2"/>
+  <Parameter        name="aggregation: permute nodes by color"  type="bool"     value="false"/>
+
+</ParameterList>
