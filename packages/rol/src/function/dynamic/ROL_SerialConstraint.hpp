@@ -166,7 +166,8 @@ public:
     auto  tmp  = workspace_.clone(ijvp.get(0));
     auto& x    = *tmp;
 
-    con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+    if(!skipInitialCond_)
+      con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
 
     for( size_type k=1; k<Nt_; ++k ) {
       con_->applyJacobian_uo( x, *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
@@ -219,7 +220,13 @@ public:
     con_->applyAdjointJacobian_uo( x, *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
     x.scale(-1.0);
     x.plus( *(vp.get(0) ) );
-    con_->applyInverseAdjointJacobian_un( *(iajvp.get(0)), x, *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );           
+    if(!skipInitialCond_) {
+      con_->applyInverseAdjointJacobian_un( *(iajvp.get(0)), x, *u_zero_, *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );           
+    }
+    else {
+      // this weird condition places iajvp in the final vector slot
+      iajvp.get(0)->set(x);
+    }
      
   } // applyInverseAdjointJacobian_1
 
