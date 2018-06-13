@@ -102,18 +102,11 @@ public:
   void internal_default_sort_bucket_entities();
   void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);
 
-  void optimize_buckets();
-
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
   template <class RankType>
   inline
   Bucket *get_bucket(RankType rank_id) const;
-
-  //  Bucket *get_bucket(Node node) const;
-  //  Bucket *get_bucket(Edge edge) const;
-  //  Bucket *get_bucket(Face face) const;
-  //  Bucket *get_bucket(Element elem) const;
 
   ////
   //// Partitions are now the primary location of buckets.

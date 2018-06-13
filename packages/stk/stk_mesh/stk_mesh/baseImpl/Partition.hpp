@@ -81,9 +81,6 @@ public:
   /// Remove an entity from this partition.
   bool remove(Entity entity);
 
-  /// Compress this partition into a single bucket of sorted Entities.
-  void compress(bool force = false);
-
   /// Sort the entities in this partition by EntityKey without changing
   /// the number or sizes of buckets.
   void default_sort_if_needed();
@@ -148,8 +145,6 @@ private:
 
   // Number of entities in this partition.
   size_t m_size;
-
-  bool m_updated_since_compress;
 
   bool m_updated_since_sort;
 

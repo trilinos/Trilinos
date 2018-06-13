@@ -116,12 +116,11 @@ void FieldBaseImpl::insert_restriction(
 {
   FieldRestriction tmp( arg_selector );
 
+  tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
   if ( m_field_rank ) {
-    tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
     tmp.set_dimension(arg_first_dimension);
   }
-  else { // Scalar field is 0 == m_field_rank
-    tmp.set_num_scalars_per_entity(1);
+  else { // Scalar field has m_field_rank==0
     tmp.set_dimension(1);
   }
 
@@ -140,11 +139,7 @@ void FieldBaseImpl::insert_restriction(
 
     //length in bytes is num-scalars X sizeof-scalar:
 
-    size_t num_scalars = 1;
-    //if rank > 0, then field is not a scalar field, so num-scalars is
-    //obtained from the stride array:
-    if (m_field_rank > 0) num_scalars = tmp.num_scalars_per_entity();
-
+    size_t num_scalars = arg_num_scalars_per_entity;
     size_t sizeof_scalar = m_data_traits.size_of;
     size_t nbytes = sizeof_scalar * num_scalars;
 
@@ -152,7 +147,6 @@ void FieldBaseImpl::insert_restriction(
     if (get_initial_value() != NULL) {
       old_nbytes = get_initial_value_num_bytes();
     }
-
     if (nbytes > old_nbytes) {
       set_initial_value(arg_init_value, num_scalars, nbytes);
     }
@@ -280,14 +274,14 @@ unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
 {
   unsigned max = 0 ;
 
-  const FieldRestrictionVector & rMap = restrictions();
-  const FieldRestrictionVector::const_iterator ie = rMap.end() ;
-        FieldRestrictionVector::const_iterator i = rMap.begin();
-
   if(static_cast<unsigned>(entity_rank()) == ent_rank)
   {
+      const FieldRestrictionVector & rMap = restrictions();
+      const FieldRestrictionVector::const_iterator ie = rMap.end() ;
+            FieldRestrictionVector::const_iterator i = rMap.begin();
+
       for ( ; i != ie ; ++i ) {
-          const unsigned len = m_field_rank ? i->num_scalars_per_entity() : 1 ;
+          const unsigned len = i->num_scalars_per_entity();
           if ( max < len ) { max = len ; }
       }
   }

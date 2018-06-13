@@ -295,7 +295,8 @@ report_message(
         report(message, message_type);
 
         std::ostringstream s;
-        s << "Maximum count for this " << get_message_name(message_type) << " has been exceeded and will no longer be displayed";
+        s << "Maximum count for this " << get_message_name(message_type) << " (previous message)"
+          << " has been exceeded and will no longer be displayed";
         report(s.str().c_str(), MSG_WARNING | MSG_SYMMETRIC);
       }
     

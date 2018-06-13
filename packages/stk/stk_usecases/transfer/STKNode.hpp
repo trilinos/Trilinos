@@ -105,7 +105,7 @@ public :
       for (unsigned j=0; j<dimension; ++j) {
         center[j] = c[j];
       }
-      v.push_back( std::make_pair( Sphere(center,r), EntityProc(id, proc_id)));
+      v.emplace_back( Sphere(center,r), EntityProc(id, proc_id));
     }
   }
 

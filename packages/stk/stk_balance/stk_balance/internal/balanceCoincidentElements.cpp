@@ -55,8 +55,10 @@ void move_coincidents_to_same_proc(const stk::mesh::ElemElemGraph& graph,
 {
     stk::mesh::impl::LocalId elemLocalId = graph.get_local_element_id(elem);
     std::vector<stk::mesh::impl::LocalId> coincidents = graph.get_coincident_elements(elemLocalId);
-    stk::mesh::impl::LocalId minCoinLocalId = get_min_coincident(elemLocalId, coincidents);
-    set_all_coincidents_to_min_destination(graph, coincidents, elem, minCoinLocalId, changeList);
+    if (!coincidents.empty()) {
+        stk::mesh::impl::LocalId minCoinLocalId = get_min_coincident(elemLocalId, coincidents);
+        set_all_coincidents_to_min_destination(graph, coincidents, elem, minCoinLocalId, changeList);
+    }
 }
 
 void keep_coincident_elements_together(stk::mesh::BulkData &bulk, DecompositionChangeList &changeList)

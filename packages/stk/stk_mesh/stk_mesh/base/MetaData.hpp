@@ -809,7 +809,6 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
                                       const std::string & name ,
                                       unsigned number_of_states )
 {
-
   typedef FieldTraits< field_type > Traits ;
 
   const DataTraits & traits = data_traits< typename Traits::data_type >();
@@ -846,10 +845,23 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   field_type * f[ MaximumFieldStates ] = {nullptr};
 
-  f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
-      arg_entity_rank , name ,
-      traits , Traits::Rank , dim_tags , number_of_states
-      ));
+  FieldBase* rawField = m_field_repo.get_field(arg_entity_rank , name ,
+                                               traits , Traits::Rank , dim_tags , number_of_states);
+  
+
+  f[0] = dynamic_cast<field_type*>(rawField);
+
+
+  /*
+  //
+  //  NKC, this error would check that a field is not registred with the same name, but a differnt template type.
+  //  Seems like would never want to do this.  But percept does.  Maybe in all cases a lurking error....
+  //
+  if(rawField != nullptr) {
+    ThrowRequireMsg(f[0] == rawField, "Internal STK Error: Reregistration of field: '"<<name<<"' "
+                    <<"with a different template type.  ");
+  }
+  */
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < number_of_states ; ++i ) {

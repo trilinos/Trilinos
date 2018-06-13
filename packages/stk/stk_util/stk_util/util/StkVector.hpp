@@ -119,7 +119,7 @@ public:
     }
 
 protected:
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_HAVE_CUDA
   using DeviceSpace = Kokkos::CudaSpace;
 #else
   using DeviceSpace = Kokkos::HostSpace;

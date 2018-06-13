@@ -34,25 +34,23 @@
 #ifndef STK_IO_MeshField_h
 #define STK_IO_MeshField_h
 
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string, basic_string
-#include <vector>                       // for vector
-#include "stk_mesh/base/Types.hpp"      // for EntityRank
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stddef.h>                 // for size_t
+#include <string>                   // for string
+#include <vector>                   // for vector
+#include "stk_mesh/base/Types.hpp"  // for EntityRank
 namespace Ioss { class GroupingEntity; }
+namespace Ioss { class Region; }
 namespace stk { namespace io { class DBStepTimeInterval; } }
-namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
-
-namespace Ioss {
-  class Region;
-}
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+namespace stk { namespace io { class InputFile; } }
 
 namespace stk {
-  namespace mesh {
-  }
-  
   namespace io {
     
     class MeshFieldPart {
@@ -103,8 +101,6 @@ namespace stk {
 	CLOSEST,
 	SPECIFIED }; // Use time specified on MeshField
 
-      MeshField();
-
       // Read 'db_name' field data into 'field' using 'tmo' (default CLOSEST) time on database.
       // Analysis time will be mapped to db time.
       MeshField(stk::mesh::FieldBase *field,
@@ -124,6 +120,7 @@ namespace stk {
       MeshField& set_inactive();
       MeshField& set_single_state(bool yesno);
       MeshField& set_read_once(bool yesno);
+      MeshField& set_classic_restart();
       
       // Limit the field to part(s) specified by this call.
       // Default is to restore field on all parts that it is defined on.
@@ -136,10 +133,14 @@ namespace stk {
       // time.
       double restore_field_data(stk::mesh::BulkData &bulk,
 				const DBStepTimeInterval &sti,
-				bool ignore_missing_fields = false);
+				bool ignore_missing_fields = false,
+				std::vector<std::string>* multiStateSuffixes=nullptr);
       
-      double restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
-                                        int step, bool ignore_missing_fields = false);
+      double restore_field_data_at_step(Ioss::Region *region,
+                                        stk::mesh::BulkData &bulk,
+                                        int step,
+                                        bool ignore_missing_fields = false,
+                                        std::vector<std::string>* multiStateSuffixes=nullptr);
 
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
@@ -152,6 +153,8 @@ namespace stk {
       bool operator==(const MeshField &other) const;
 
     private:
+      MeshField();
+
       std::vector<const stk::mesh::Part*> m_subsetParts;
       std::vector<MeshFieldPart> m_fieldParts;
       

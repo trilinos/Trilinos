@@ -635,12 +635,6 @@ int mpi_filebuf::sync()
   return 0 ;
 }
 
-
-std::streambuf * mpi_filebuf::setbuf( char * s , std::streamsize n )
-{
-  return this ;
-}
-
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 namespace {
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)

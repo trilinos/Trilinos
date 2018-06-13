@@ -1470,7 +1470,9 @@ TEST(ElementGraph, test_element_death)
             }
 
             std::cerr << os.str();
-            stk::io::write_mesh("out.exo", bulkData);
+
+            stk::mesh::Selector activeSelector(active);
+            stk::io::write_mesh_subset("out.exo", bulkData, activeSelector);
         }
     }
 }

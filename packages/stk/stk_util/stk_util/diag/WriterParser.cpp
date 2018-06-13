@@ -35,10 +35,12 @@
 #include <iomanip>
 #include <map>
 
+#include <iostream>
+#include <stdexcept>
 #include <stk_util/diag/WriterParser.hpp>
 #include <stk_util/environment/Trace.hpp>
 #include <stk_util/util/Writer_fwd.hpp>
-#include <iostream>
+
 
 namespace stk {
 namespace diag {
@@ -109,10 +111,6 @@ WriterParser::parseArg(
       m_optionMask |= LOG_TRACE_SUB_CALLS;
   }
 
-  else if (name == "coverage") {
-    Trace::enableCoverage();
-  }
-
   else {
     OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name.c_str());
 
@@ -124,7 +122,11 @@ WriterParser::parseArg(
       if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
         m_optionMask |= mask_hex;
       else
+      {
         m_status = false;
+        throw std::runtime_error("Error: Unrecognized option flag argument" + name + "\n");
+      }
+
     }
   }
 }

@@ -30,7 +30,7 @@ TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
          {
              stk::mesh::Selector sel = activeSelector;
              stk::mesh::Selector air = !activeSelector;
-             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, &air);
+             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 2u});
@@ -60,7 +60,7 @@ TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
          {
              stk::mesh::Selector sel = activeSelector;
              stk::mesh::Selector air = !activeSelector;
-             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, &air);
+             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
@@ -90,7 +90,7 @@ TEST_F(TwoElemThreeSharedSideNoAuraTester, skin_one_hex)
          {
              stk::mesh::Selector sel = activeSelector;
              stk::mesh::Selector air = !activeSelector;
-             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, &air);
+             stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});

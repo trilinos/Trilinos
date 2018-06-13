@@ -36,6 +36,7 @@
 
 #include <stk_util/environment/ReportHandler.hpp>
 #include <iosfwd>
+#include <Kokkos_Core.hpp>
 
 namespace stk { namespace search {
 
@@ -61,6 +62,12 @@ public:
   {
     ThrowAssert(index < Dim);
     return m_value[index];
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION void operator=(const Point<value_type> &pt) {
+    for (unsigned i =0; i < Dim; ++i) {
+      m_value[i] = pt.m_value[i];
+    }
   }
 
   bool operator==(Point<value_type> const& p) const

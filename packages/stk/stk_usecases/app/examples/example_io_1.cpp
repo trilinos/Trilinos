@@ -43,10 +43,7 @@
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
 
 namespace stk_examples {
 
@@ -55,22 +52,6 @@ typedef stk::mesh::Field<int>                                   ScalarIntField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian>          CartesianField ;
 typedef stk::mesh::Field<double, stk::mesh::FullTensor>         FullTensorField ;
 typedef stk::mesh::Field<double, stk::mesh::SymmetricTensor>    SymmetricTensorField ;
-
-
-CartesianField &
-declare_vector_field_on_all_nodes(
-  stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
-{
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, s), meta_data.universal_part() , n1 );
-}
-
-
-CartesianField &
-declare_vector_field_on_all_elements(
-  stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
-{
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::ELEMENT_RANK, s), meta_data.universal_part() , n1 );
-}
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

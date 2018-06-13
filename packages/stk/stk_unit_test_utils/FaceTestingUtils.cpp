@@ -43,6 +43,9 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <string>
+#include <vector>
+#include <set>
 
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 {
@@ -290,7 +293,7 @@ stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, 
     stk::mesh::Entity side = mesh.get_entity(stk::topology::EDGE_RANK, global_sub_topology_id);
     if(!mesh.is_valid(side))
     {
-        side = mesh.declare_edge(global_sub_topology_id, {&part});
+        side = mesh.declare_edge(global_sub_topology_id, stk::mesh::ConstPartVector{&part});
         for(unsigned i = 0; i < sub_topology_nodes.size(); ++i)
             mesh.declare_relation(side, sub_topology_nodes[i], i);
     }
@@ -310,4 +313,21 @@ stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, 
     mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);
     return side;
 }
+
+
+stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int id)
+{
+    const stk::mesh::PartVector &all_parts = meta.get_parts();
+
+    for(auto part : all_parts)
+    {
+        if((part->primary_entity_rank() == meta.side_rank()) && (part->id() == id))
+        {
+            return part;
+        }
+    }
+
+    return nullptr;
+}
+
 }}

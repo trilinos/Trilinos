@@ -92,7 +92,10 @@ public:
     // Graph (parmetis) based options only
     virtual bool includeSearchResultsInGraph() const;
 
-    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                             const stk::mesh::FieldBase & coordField,
+                                             const stk::mesh::Entity * faceNodes,
+                                             const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
 
     virtual double getToleranceForParticleSearch() const;
@@ -132,6 +135,11 @@ public:
     virtual bool shouldFixMechanisms() const;
 };
 
+class BasicGeomtricSettings : public BalanceSettings
+{
+    virtual std::string getDecompMethod() const { return "rcb"; }
+};
+
 class GraphCreationSettings : public BalanceSettings
 {
 public:
@@ -163,7 +171,10 @@ public:
     virtual bool includeSearchResultsInGraph() const ;
     virtual double getToleranceForParticleSearch() const ;
 
-    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                             const stk::mesh::FieldBase & coordField,
+                                             const stk::mesh::Entity * faceNodes,
+                                             const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
 
     virtual bool getEdgesForParticlesUsingSearch() const ;
@@ -173,6 +184,9 @@ public:
     virtual void setDecompMethod(const std::string& input_method);
     virtual void setToleranceForFaceSearch(double tol);
     virtual void setToleranceForParticleSearch(double tol) ;
+    virtual void setEdgeWeightForSearch(double w) ;
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) ;
+
     virtual bool shouldFixMechanisms() const;
 
 protected:
@@ -279,12 +293,14 @@ protected:
 class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
 {
 public:
-    MultipleCriteriaSettings(const std::vector<stk::mesh::Field<double>*> critFields,
+    MultipleCriteriaSettings(const std::vector<const stk::mesh::Field<double>*> critFields,
                              const double default_weight = 0.0)
       : m_critFields(critFields), m_defaultWeight(default_weight)
     { }
 
-    MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch, const std::vector<stk::mesh::Field<double>*> critFields,
+    MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch,
+                             const std::string& decompMethod, double multiplierVWSearch,
+                             const std::vector<const stk::mesh::Field<double>*> critFields,
                              bool includeSearchResults, const double default_weight = 0.0)
       : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch),
         m_critFields(critFields), m_includeSearchResults(includeSearchResults), m_defaultWeight(default_weight)
@@ -299,6 +315,8 @@ public:
     virtual double getImbalanceTolerance() const { return 1.05; }
     virtual int getNumCriteria() const { return m_critFields.size(); }
     virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool isIncrementalRebalance() const override { return true; }
+
 
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
     {
@@ -320,7 +338,7 @@ protected:
     MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
 
-    const std::vector<stk::mesh::Field<double>*> m_critFields;
+    const std::vector<const stk::mesh::Field<double>*> m_critFields;
     bool m_includeSearchResults = false;
     const double m_defaultWeight;
 };

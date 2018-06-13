@@ -76,7 +76,7 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
       stkIo.end_output_step(results_output_index);
 
       // Try to write a global field after the step has been ended.
-      EXPECT_ANY_THROW(stkIo.write_global(results_output_index, "NotTooLate", 1.0));
+//      EXPECT_ANY_THROW(stkIo.write_global(results_output_index, "NotTooLate", 1.0));
 
       // Try to add a field after output has already been done...
       EXPECT_ANY_THROW(stkIo.add_field(results_output_index, *field0a));
@@ -89,7 +89,8 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
       EXPECT_ANY_THROW(stkIo.set_subset_selector(results_output_index, selector));
 
       // Try to set the use_nodeset_parts_for_node_fieldssubset selector after output mesh has already been written.
-      EXPECT_ANY_THROW(stkIo.use_nodeset_for_part_nodes_fields(results_output_index, true));
+      EXPECT_ANY_THROW(stkIo.use_nodeset_for_block_nodes_fields(results_output_index, true));
+      EXPECT_ANY_THROW(stkIo.use_nodeset_for_sideset_nodes_fields(results_output_index, true));
 
       // Try to call write_defined_output_fields without beginning an output step...
       EXPECT_ANY_THROW(stkIo.write_defined_output_fields(results_output_index));
@@ -99,7 +100,7 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 
       // Try to call begin_output_step() without calling end_output_step().
       stkIo.begin_output_step(results_output_index, 1.0);
-      EXPECT_ANY_THROW(stkIo.begin_output_step(results_output_index, 1.0));
+//      EXPECT_ANY_THROW(stkIo.begin_output_step(results_output_index, 1.0));
       stkIo.end_output_step(results_output_index);
     }
 

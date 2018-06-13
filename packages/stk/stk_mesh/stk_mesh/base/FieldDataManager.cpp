@@ -56,14 +56,11 @@ int getNumBytesForField(const FieldBase &field, const EntityRank rank, const Par
             find_and_check_restriction(field, rank, superset_parts);
 
     if(restriction.num_scalars_per_entity() > 0)
-    { // Exists
-
+    {
         const unsigned type_stride = field.data_traits().stride_of;
-        const unsigned field_array_rank = field.field_array_rank();
-
-        num_bytes_per_entity = type_stride *
-                (field_array_rank ? restriction.num_scalars_per_entity() : 1);
+        num_bytes_per_entity = type_stride * restriction.num_scalars_per_entity();
     }
+
     return num_bytes_per_entity;
 }
 

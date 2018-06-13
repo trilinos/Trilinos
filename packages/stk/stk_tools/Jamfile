@@ -71,6 +71,7 @@ explicit install-targets ;
 alias install-targets
   : stk_block_extractor
     stk_tools_utest
+    stk_tools_integration_tester
   ;
 
 #
@@ -120,6 +121,17 @@ exe stk_tools_utest
   :
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/block_extractor/*.cpp ]
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_clone/*.cpp ]
+    stk_tools_lib
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_tools_integration_tester
+  :
+    [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/*.cpp ]
     stk_tools_lib
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_unit_test_utils
