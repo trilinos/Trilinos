@@ -171,7 +171,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
-    if ( (level != print_level) || (level > options.max_levels) )
+    if ( (level != print_level) || (level >= options.max_levels) )
       continue;
     auto split_names = getPrefix(flat_names_[i]);
     if ( prefix != split_names.first)
@@ -232,6 +232,10 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   merge(comm);
   collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
+    if ( (options.max_levels != INT_MAX) && options.print_warnings) {
+      os << "Teuchos::StackedTimer::report() - max_levels set to " << options.max_levels
+         << ", to print more levels, increase value of OutputOptions::max_levels." << std::endl;
+    }
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
