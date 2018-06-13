@@ -304,6 +304,15 @@ $ srun ./checkin-test-sems.sh intel-opt-openmp \
   --local-do-all
 ```
 
+WARNING: One must use `srun` and **not** `salloc` to allocate and run on a
+compute node.  The way that these machines are currently set up, running with
+`salloc` the command `squeue` will seem to show that the job is allocated and
+running on a compute node but the job is actually running on the login node!
+(Running `ps -AF | grep <script-name>` and `top` on the login node will
+clearly show that that the job is actually running on the login node and
+presumably the actual compute node is idle.)
+
+
 ### chama/serrano
 
 Once logged on to `chama` or `serrano`, one can directly configure and build
