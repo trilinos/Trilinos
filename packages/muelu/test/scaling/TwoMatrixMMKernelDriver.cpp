@@ -689,7 +689,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
             TimeMonitor t(*TimeMonitor::getNewTimer("MM2 LTG: Total"));
-            MM2_Wrapper(*A,*B1,*B2,*C,Bcolmap,std::string("SPGEMM_KK"),kk_team_work_size);
+            MM2_Wrapper(*A,*B1,*B2,*C,Bcolmap,std::string("LTG"),kk_team_work_size);
           }
           break;
 
