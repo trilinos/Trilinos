@@ -86,7 +86,15 @@ namespace MueLu {
     }
 
     this->computeMeshParameters();
+    computeGlobalCoarseParameters();
 
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  computeGlobalCoarseParameters() {
+    this->gNumCoarseNodes10 = this->gCoarseNodesPerDir[0]*this->gCoarseNodesPerDir[1];
+    this->gNumCoarseNodes   = this->gNumCoarseNodes10*this->gCoarseNodesPerDir[2];
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

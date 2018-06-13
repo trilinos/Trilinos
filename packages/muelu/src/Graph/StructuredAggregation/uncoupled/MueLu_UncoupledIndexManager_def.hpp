@@ -83,6 +83,15 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  computeGlobalCoarseParameters() {
+    this->gNumCoarseNodes10 = -1;
+    GO input[1] = {as<GO>(this->lNumCoarseNodes)}, output[1] = {0};
+    Teuchos::reduceAll(*(this->comm_), Teuchos::REDUCE_SUM, 1, input, output);
+    this->gNumCoarseNodes = output[0];
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map>fineMap,
                       Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
 

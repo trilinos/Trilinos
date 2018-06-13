@@ -193,6 +193,15 @@ namespace MueLu {
       lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
     }
 
+
+    // First make sure that input parameters are set logically based on dimension
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim >= numDimensions) {
+        gFineNodesPerDir[dim] = 1;
+        lFineNodesPerDir[dim] = 1;
+      }
+    }
+
     // Get the coarsening rate
     std::string coarseningRate = pL.get<std::string>("aggregation: coarsening rate");
     Teuchos::Array<LO> coarseRate;

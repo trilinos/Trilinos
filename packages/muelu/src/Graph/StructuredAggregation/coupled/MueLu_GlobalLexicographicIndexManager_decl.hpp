@@ -97,6 +97,8 @@ namespace MueLu {
 
     virtual ~GlobalLexicographicIndexManager() {}
 
+    void computeGlobalCoarseParameters();
+
     void getGhostedNodesData(const RCP<const Map> fineMap,
                             Array<LO>& ghostedNodeCoarseLIDs,
                             Array<int>& ghostedNodeCoarsePIDs) const;
