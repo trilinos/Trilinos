@@ -103,9 +103,17 @@ namespace MueLu {
     }
 
     this->computeMeshParameters();
-    if(this->coupled_) {computeCoarseLocalLexicographicData();}
+    computeGlobalCoarseParameters();
+    computeCoarseLocalLexicographicData();
     *out << "LocalLexicographicIndexManager has been constructed!" << std::endl;
   } // Constructor
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  computeGlobalCoarseParameters() {
+    this->gNumCoarseNodes10 = this->gCoarseNodesPerDir[0]*this->gCoarseNodesPerDir[1];
+    this->gNumCoarseNodes   = this->gNumCoarseNodes10*this->gCoarseNodesPerDir[2];
+  };
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::

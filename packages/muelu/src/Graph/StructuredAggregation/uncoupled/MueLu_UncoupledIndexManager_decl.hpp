@@ -97,6 +97,8 @@ namespace MueLu {
 
     virtual ~UncoupledIndexManager() {}
 
+    void computeGlobalCoarseParameters();
+
     std::vector<std::vector<GO> > getCoarseMeshData() const;
 
     void getGhostedNodesData(const RCP<const Map> fineMap,
