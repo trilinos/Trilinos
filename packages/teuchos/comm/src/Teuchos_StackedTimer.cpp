@@ -171,7 +171,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
-    if (level != print_level)
+    if ( (level != print_level) || (level > options.max_levels) )
       continue;
     auto split_names = getPrefix(flat_names_[i]);
     if ( prefix != split_names.first)
