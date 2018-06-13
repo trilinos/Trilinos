@@ -85,15 +85,50 @@ inline void copy_view(const View1 x1, View2 x2) {
 
 
 
+template <class V1, class V2>
+void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
+  printf("%s rowptr[%d] = ",name.c_str(),rowptr.extent(0));
+  for(size_t i=0; i<rowptr.extent(0); i++)
+    printf(" %d",(int)rowptr[i]);
+  printf("\n%s colind[%d] = ",name.c_str(),colind.extent(0));
+  for(size_t i=0; i<colind.extent(0); i++)
+    printf(" %d",(int)colind[i]);
+  printf("\n");
+}
+
+
 // =========================================================================
 // MKL Testing
 // =========================================================================
 #ifdef HAVE_MUELU_MKL
 #include "mkl.h"
 
+
+std::string mkl_error(sparse_status_t code) {
+  switch(code) {
+  case SPARSE_STATUS_SUCCESS:
+    return std::string("Success");
+  case SPARSE_STATUS_NOT_INITIALIZED:
+    return std::string("Empty handle or matrix array");
+  case SPARSE_STATUS_ALLOC_FAILED:
+    return std::string("Memory allocation failed");
+  case SPARSE_STATUS_INVALID_VALUE:
+    return std::string("Input contains an invalid value");
+  case SPARSE_STATUS_EXECUTION_FAILED:
+    return std::string("Execution failed");
+  case SPARSE_STATUS_INTERNAL_ERROR:
+    return std::string("Internal error");
+  case SPARSE_STATUS_NOT_SUPPORTED:
+    return std::string("Operation not supported");
+  };
+
+}
+
+   
+
   // mkl_sparse_spmm
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B1, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B2, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C,Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&colmap, std::string algorithm_name) {
+void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B1, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B2, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C,Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&Ccolmap, std::string algorithm_name) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -111,6 +146,9 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
     typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
     typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+    typedef Tpetra::Map<LO,GO,NO>                                     map_type;
+    typedef typename map_type::local_map_type                         local_map_type;
+
 
     typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
 
@@ -120,8 +158,8 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
 
     const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & B1mat = Bu->getLocalMatrix();
-    const KCRS & B2mat = Bu->getLocalMatrix();
+    const KCRS & B1mat = B1u->getLocalMatrix();
+    const KCRS & B2mat = B2u->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
     if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
 
@@ -131,6 +169,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
     scalar_view_t Cvals = Cmat.values;
+    RCP<const Tpetra::Map<LO,GO,Node> > Ccolmap_t = Xpetra::toTpetra(Ccolmap);
+    local_map_type Bcolmap_local = B1u->getColMap()->getLocalMap();
+    local_map_type Icolmap_local = B2u->getColMap()->getLocalMap();
+    local_map_type Ccolmap_local = Ccolmap_t->getLocalMap();
 
     sparse_matrix_t AMKL;
     sparse_matrix_t B1MKL;
@@ -144,24 +186,41 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL "+algorithm_name+": Matrix CopyIn")));
 
     mkl_int_type ArowptrMKL("Arowptr",Arowptr.extent(0));
-    mkl_int_type B1rowptrMKL("B1rowptr",B1rowptr.extent(0));
-    mkl_int_type B2rowptrMKL("B2rowptr",B2rowptr.extent(0));
-
     mkl_int_type AcolindMKL("Acolind",Acolind.extent(0));
     mkl_int_type B1colindMKL("B1colind",B1colind.extent(0));
     mkl_int_type B2colindMKL("B2colind",B2colind.extent(0));
 
+    // Generate new rowptrs that have all the rows for both B and I (as MKL requires)
+    size_t Nb = B1rowptr.extent(0)-1, Ni=B2rowptr.extent(0)-1;
+    mkl_int_type B1rowptrMKL("B1rowptr",Nb+Ni+1);
+    mkl_int_type B2rowptrMKL("B2rowptr",Nb+Ni+1);
+    Kokkos::parallel_for(Nb+1,KOKKOS_LAMBDA(const size_t i) {
+        B1rowptrMKL[i] = B1rowptr[i];
+        if(i!= Nb) B2rowptrMKL[i] = 0;
+      });
+    Kokkos::parallel_for(Ni+1,KOKKOS_LAMBDA(const size_t i) {
+        if(i!=0) B1rowptrMKL[Nb+i] = B1rowptr[Nb-1];
+        B2rowptrMKL[Nb+i] = B2rowptr[i]; 
+      });
+
+    // Reindex the column indices into C's column map
+    Kokkos::parallel_for(B1colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
+        B1colindMKL[i] = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(B1colind(i)));
+    });
+
+    Kokkos::parallel_for(B2colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
+        B2colindMKL[i] = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(B2colind(i)));
+    });
+
+
+    // Copy in A
     copy_view(Arowptr,ArowptrMKL);
-    copy_view(B1rowptr,B1rowptrMKL);
-    copy_view(B2rowptr,B2rowptrMKL);
     copy_view(Acolind,AcolindMKL);
-    copy_view(B1colind,B1colindMKL);
-    copy_view(B2colind,21colindMKL);
 
     if(Kokkos::Impl::is_same<Scalar,double>::value) {
       mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, B1u->getNodeNumRows(), B1u->getNodeNumCols(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
-      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, B2u->getNodeNumRows(), B2u->getNodeNumCols(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
+      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
+      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -177,21 +236,21 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1")));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp1MKL);
       KCRS::execution_space::fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed");
+      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 1 failed: "+mkl_error(result));
 
       // **********************************
       // Multiply #2 (A*B2) 
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2")));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp2MKL);
       KCRS::execution_space::fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed");
+      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 2 failed: "+mkl_error(result));
 
       // **********************************
       // Add (A*B1) + (A*B2)
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Add")));
       result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,Temp1MKL,1.0,Temp2MKL,&CMKL);
       KCRS::execution_space::fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed");
+      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
     }
     else if(algorithm_name == "ADD_MULT" ) {      
       // **********************************
@@ -199,14 +258,14 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add")));
       result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,B1MKL,1.0,B2MKL,&Temp1MKL);
       KCRS::execution_space::fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed");
+      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
 
       // **********************************
       // Multiply A*(B1+B2)
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Multiply")));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, Temp1MKL, &CMKL);
       KCRS::execution_space::fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed");
+      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed: "+mkl_error(result));
     }
     else
       throw std::runtime_error("Invalid MKL algorithm");
@@ -514,16 +573,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<Matrix> B = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileNameB), lib, comm);
     RCP<Matrix> B1,B2,C;
 
-
-      RCP<const Map> Browmap = B->getRowMap();
-      RCP<const Map> Bcolmap = B->getColMap();
-
+    
+    RCP<const Map> Browmap = B->getRowMap();
+    RCP<const Map> Bcolmap = B->getColMap();
+    
     // Do some surgery to generate B1 and B2
+    const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    size_t brows = Browmap->getNodeNumElements();
+    size_t b2rows = std::max((size_t)0,std::min((size_t)(brows * percent_rows_to_remove/100.0),brows));
+    size_t b1rows = brows - b2rows;
     {
-      const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-      size_t brows = Browmap->getNodeNumElements();
-      size_t b2rows = std::max((size_t)0,std::min((size_t)(brows * percent_rows_to_remove),brows));
-      size_t b1rows = brows - b2rows;
 
       Teuchos::Array<GO> b1list(b1rows), b2list(b2rows);
       for(size_t i=0,i1=0, i2=0; i<brows; i++) {
@@ -537,10 +596,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       RCP<const Import> B1import = Xpetra::ImportFactory<LO,GO,Node>::Build(Browmap,B1rowmap);
       RCP<const Import> B2import = Xpetra::ImportFactory<LO,GO,Node>::Build(Browmap,B2rowmap);
-      B1 = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(B,*B1import);
-      B2 = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(B,*B2import);
+      RCP<const Map> dummy;
+      B1 = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(B,*B1import,dummy,B1rowmap);
+      B2 = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(B,*B2import,dummy,B2rowmap);
     }
-
 
 
 
@@ -551,10 +610,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "Matrix A:" << endl
         << *A
         << "========================================================" << endl
-        << "Matrix B1:" << endl
+        << "Matrix B1: rows " << b1rows << endl
         << *B1
         << "========================================================" << endl
-        << "Matrix B2:" << endl
+        << "Matrix B2: rows " << b2rows << endl
         << *B2
         << "========================================================" << endl;
 
@@ -571,6 +630,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if (comm->getRank() == 0 ) {
         std::shuffle(my_experiments.begin(), my_experiments.end(), random_source);
       }
+
       // Broadcast this ordering to the other processes
       comm->broadcast(0,
                       static_cast<int>(sizeof(Experiments::LTG)*my_experiments.size()),
