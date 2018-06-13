@@ -57,7 +57,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Create_8)
     scalar a = (scalar) 1.;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     std::cout << std::endl;
@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Create_16)
     scalar a = (scalar) 1.;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     std::cout << std::endl;
@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Not_8)
     scalar a = (scalar) 1.;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     auto m2 = !m1;
@@ -131,10 +131,10 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     scalar mul = m1*a;
@@ -142,8 +142,8 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
     scalar mul2 = m1*b;
     scalar mul3 = b*m1;
 
-    scalar mul4 = m1*2;
-    scalar mul5 = 2*m1;
+    scalar mul4 = m1*2.0;
+    scalar mul5 = 2.0*m1;
     
     std::cout << m1 << std::endl;
     std::cout << mul << std::endl;
@@ -154,10 +154,10 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
     std::cout << mul5 << std::endl;
     
     TEST_EQUALITY( mul[0], 2.5 );
-    TEST_EQUALITY( mul[1], 0. );
+    TEST_EQUALITY( mul[1], 0.0 );
     TEST_EQUALITY( mul[2], 2.5 );
     for (auto i=3; i<ensemble_size; ++i)
-        TEST_EQUALITY( mul[i], 0. );
+        TEST_EQUALITY( mul[i], 0.0 );
     
     TEST_EQUALITY( mul2, mul3 );
     TEST_EQUALITY( mul2, mul4 );
@@ -172,10 +172,10 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_16)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     scalar mul = m1*a;
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_16)
     std::cout << mul << std::endl;
     
     TEST_EQUALITY( mul[0], 2.5 );
-    TEST_EQUALITY( mul[1], 0. );
+    TEST_EQUALITY( mul[1], 0.0 );
     TEST_EQUALITY( mul[2], 2.5 );
     for (auto i=3; i<ensemble_size; ++i)
         TEST_EQUALITY( mul[i], 0. );
@@ -197,10 +197,10 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mul_Add_8)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     scalar mul = m1*a + !m1*b;
@@ -210,10 +210,10 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mul_Add_8)
     std::cout << mul2 << std::endl;
     
     TEST_EQUALITY( mul[0], 2.5 );
-    TEST_EQUALITY( mul[1], 2. );
+    TEST_EQUALITY( mul[1], 2.0 );
     TEST_EQUALITY( mul[2], 2.5 );
     for (auto i=3; i<ensemble_size; ++i)
-        TEST_EQUALITY( mul[i], 2. );
+        TEST_EQUALITY( mul[i], 2.0 );
     
     TEST_EQUALITY( mul, mul2 );
 }
@@ -228,15 +228,15 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_DEFAULT)
     
     using namespace MaskLogic;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[1] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
-    auto m2 = a>(scalar) 0.;
-    auto m3 = a> 0.;
-    auto m4 = 0.<a;
+    auto m2 = a>(scalar) 0.0;
+    auto m3 = a> 0.0;
+    auto m4 = 0.0<a;
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
     std::cout << m3<< std::endl;
@@ -272,13 +272,13 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_AND)
     
     using namespace MaskLogic;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
-    auto m2 = a>0.;
+    auto m2 = a>0.0;
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
 
@@ -301,13 +301,13 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_OR)
     
     using namespace MaskLogic;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[0] = 2.5;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
-    auto m2 = a>0.;
+    auto m2 = a>0.0;
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
     
@@ -330,12 +330,12 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_XOR)
     
     using namespace MaskLogic;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
-    auto m2 = a>0.;
+    auto m2 = a>0.0;
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
     
@@ -356,12 +356,12 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_compared_to_double)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
-    auto m2 = a>0.;
+    auto m2 = a>0.0;
     
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
@@ -398,9 +398,9 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_AND_Mask)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     auto m2 = a>0.;
@@ -420,9 +420,9 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_OR_Mask)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
     
-    scalar a = (scalar) 1.;
+    scalar a = (scalar) 1.0;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     auto m2 = a>0.;
@@ -444,7 +444,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_ADD_Mask)
     
     scalar a = (scalar) 1.;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     std::cout << a << std::endl;
     std::cout << b << std::endl;
@@ -469,7 +469,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
     
     scalar a = (scalar) 1.;
     a[2] = 2.5;
-    scalar b = (scalar) 2;
+    scalar b = (scalar) 2.0;
     
     auto m1 = a>b;
     auto m2 = a>0.;
