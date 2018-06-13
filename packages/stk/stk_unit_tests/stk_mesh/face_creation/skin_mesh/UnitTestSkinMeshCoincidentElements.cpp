@@ -238,7 +238,7 @@ class CoincidentHex8sWithAdjacentAirHex : public CoincidentHex8sWithAdjacentHex
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
         stk::mesh::Selector air = *block2;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, &air);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, air);
 
         expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 3});
     }
@@ -255,7 +255,7 @@ class Hex8WithAdjacentCoincidentAirHex8s : public CoincidentHex8sWithAdjacentHex
         create_coincident_hex8s_with_adjacent_hex(auraOption);
 
         stk::mesh::Selector air = *block1;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, &air);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, air);
         expect_faces_connected_to_num_elements_locally({3, 1, 1, 1, 1, 1});
     }
 };
@@ -316,7 +316,7 @@ protected:
     }
     void skin_part_with_part2_as_air(stk::mesh::Selector partToSkin, stk::mesh::Selector partToConsiderAsAir)
     {
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), partToSkin, {}, &partToConsiderAsAir);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), partToSkin, {}, partToConsiderAsAir);
     }
     stk::mesh::Part *block2;
 };

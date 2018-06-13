@@ -127,7 +127,7 @@ crc32_write(
 
   TypeNameMap::iterator it = s_typeNameMap.find(crc);
   if (it == s_typeNameMap.end())
-    s_typeNameMap.insert(std::make_pair(crc, std::string(name)));
+    s_typeNameMap.emplace(crc, std::string(name));
                          
   os.write(reinterpret_cast<char*>(&crc), sizeof(uint32_t));
 }
@@ -150,7 +150,7 @@ crc32_check(
   {
     TypeNameMap::iterator it = s_typeNameMap.find(crc_check);
     if (it == s_typeNameMap.end())
-      s_typeNameMap.insert(std::make_pair(crc_check, std::string(name)));
+      s_typeNameMap.emplace(crc_check, std::string(name));
   }
                          
   is.read(reinterpret_cast<char *>(&crc), sizeof(uint32_t));

@@ -140,7 +140,7 @@ struct ViewTraits {
   MemoryTraits;
 
   // figure out default layout based on execution space
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_HAVE_CUDA
   static constexpr bool is_device_gpu = std::is_same<ExecutionSpace , Kokkos::Cuda>::value;
 #else
   static constexpr bool is_device_gpu = false;
@@ -328,7 +328,7 @@ class View
   operator() (const I0& i0, const I1& i1) const {
     static_assert(rank==2, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
-    return stk::simd::simd_ref_cast(this->data()[simd_width*(i1 + this->dimension_1()*int_index(i0))]);
+    return stk::simd::simd_ref_cast(this->data()[simd_width*(i1 + this->extent(1)*int_index(i0))]);
   }
 
   template< typename I0, typename I1 >
@@ -350,8 +350,8 @@ class View
     static_assert(rank==3, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
     static_assert( !std::is_same<I2, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
-    return stk::simd::simd_ref_cast(this->data()[simd_width*(i2 + this->dimension_2()*(
-                                                             i1 + this->dimension_1()*(
+    return stk::simd::simd_ref_cast(this->data()[simd_width*(i2 + this->extent(2)*(
+                                                             i1 + this->extent(1)*(
                                                              int_index(i0))))]);
   }
 
@@ -368,7 +368,7 @@ class View
 
   STK_FORCE_INLINE
   size_t simd_dimension() const {
-    return is_device_gpu ? this->dimension_0() : simd_pad<base_type>( this->dimension_0() ) / simd_width;
+    return is_device_gpu ? this->extent(0) : simd_pad<base_type>( this->extent(0) ) / simd_width;
   }
 };
 

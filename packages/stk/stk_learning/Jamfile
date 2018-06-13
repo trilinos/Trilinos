@@ -66,6 +66,7 @@ alias install-targets
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
     stk_learning_imbalance_utest
+    stk_learning_code_katas
 #    stk_learning_sphere_utest
 ;
 
@@ -74,7 +75,7 @@ alias install-targets
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-bin install-user-include install-user-lib ;
+                          install-user-bin install-user-include ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -95,12 +96,6 @@ explicit install-user-include ;
 install install-user-include
   : [ path.glob-tree $(stk_learning-root) : *.h *.hpp ]
   : <location>$(install-root)/stk/stk_learning/include <install-source-root>$(stk_learning-root)
-  ;
-
-explicit install-user-lib ;
-install install-user-lib
-  : stk_learning_ngp
-  : <location>$(install-root)/stk/stk_learning/lib
   ;
 
 explicit install-exe-targets ;
@@ -124,7 +119,7 @@ exe stk_learning_dgelement_utest
 
 exe stk_learning_openmp_utest
   :
-    $(gtest-root)/src/gtest_main.cc
+    $(gtest-root)/gtest/src/gtest_main.cc
     [ glob $(stk_learning-root)/OpenMP/*.C ]
     /tpl/gtest//gtest
     /sierra/stk_util//stk_util_environment
@@ -231,25 +226,6 @@ exe stk_learning_mesh_builder_utest
     <tag>@sierra-exec-tag
   ;
 
-lib stk_learning_ngp
-  :
-    [ ifdevbuild 
-      [ glob $(stk_learning-root)/ngp/*.cpp ]
-    ]
-    /tpl/trilinos-kokkoscore//kokkoscore
-    /sierra/stk_util//stk_util_environment
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_util//stk_util_parallel
-    /sierra/stk_util//stk_util_util
-    /sierra/stk_topology//stk_topology
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(stk_learning-root)/lib/libstk_learning_ngp.a
-    ]
-  ;
-
 exe stk_learning_kokkos_utest 
   :
     [ glob $(stk_learning-root)/Kokkos/*.C ]
@@ -263,7 +239,19 @@ exe stk_learning_kokkos_utest
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
     /sierra/stk_topology//stk_topology
-    stk_learning_ngp
+    /sierra/stk_ngp//stk_ngp
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe    stk_learning_code_katas
+  :
+    [ glob $(stk_learning-root)/CodeKatas/*.C ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /tpl/scalapack//scalapack
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
   :
     <tag>@sierra-exec-tag
   ;

@@ -3,6 +3,8 @@
 #ifndef STK_SIMD_AVX_H
 #define STK_SIMD_AVX_H
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 #include <immintrin.h>
 #include <stdio.h>
 #include <cmath>
@@ -15,7 +17,6 @@ constexpr int nfloats = 8;
 }
 }
 
-// IWYU pragma: begin_exports
 #include "./AvxDouble.hpp"
 #include "./AvxFloat.hpp"
 #include "./AvxBool.hpp"
@@ -28,7 +29,6 @@ constexpr int nfloats = 8;
 #include "./AvxFloatOperators.hpp"
 #include "./AvxFloatLoadStore.hpp"
 #include "./AvxFloatMath.hpp"
-// IWYU pragma: end_exports
 
 namespace stk {
 namespace simd {

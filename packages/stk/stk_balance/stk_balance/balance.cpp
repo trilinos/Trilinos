@@ -13,6 +13,8 @@
 #include "internal/LastStepFieldWriter.hpp"
 #include "stk_balance/internal/TransientFieldTransferById.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include <stk_balance/internal/balanceDefaults.hpp>
+#include <stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp>
 #include "fixSplitCoincidentElements.hpp"
 
 namespace stk
@@ -22,13 +24,15 @@ namespace balance
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
 {
-    internal::logMessage(stkMeshBulkData.parallel(), "Starting rebalance.");
+    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition");
 
     stk::mesh::EntityProcVec decomp;
     internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
 
     DecompositionChangeList changeList(stkMeshBulkData, decomp);
     balanceSettings.modifyDecomposition(changeList);
+
+    internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
     keep_coincident_elements_together(stkMeshBulkData, changeList);
     const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
     const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
@@ -38,15 +42,14 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
         internal::rebalance(changeList);
         if(balanceSettings.shouldFixMechanisms())
         {
-            bool mechanismsFound = stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
-            if(mechanismsFound)
-                internal::logMessage(stkMeshBulkData.parallel(), "Mechanisms were found and fixed during decomposition\n");
+            internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
+            stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
         }
         if(balanceSettings.shouldPrintMetrics())
             internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
     }
 
-    internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance.");
+    internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
 
     return (num_global_entity_migrations > 0);
 }
@@ -83,6 +86,7 @@ void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, st
     }
     else
     {
+        internal::logMessage(inputBulk.parallel(), "Copying input mesh to handle transient fields");
         stk::tools::copy_mesh(inputBulk, inputBulk.mesh_meta_data().universal_part(), bulkB);
         balancedBulk = &bulkB;
     }
@@ -95,6 +99,9 @@ void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, st
 
     stk::balance::internal::TransientFieldTransferById transfer(stkInput, stkOutput);
     transfer.transfer_and_write_transient_fields(outputFilename);
+
+    internal::logMessage(inputBulk.parallel(), "Finished writing output mesh");
+
 }
 
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
@@ -103,8 +110,11 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                       const std::string& outputFilename)
 {
     stk::io::StkMeshIoBroker stkInput;
-    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+
+    internal::logMessage(bulk.parallel(), "Reading mesh and performing initial decomposition");
     stk::io::fill_mesh_preexisting(stkInput, exodusFilename, bulk);
+
     make_mesh_consistent_with_parallel_mesh_rule1(bulk);
     run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
 }
@@ -116,9 +126,17 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
     initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm)
+void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
 {
     stk::balance::GraphCreationSettings graphOptions;
+
+    if(appType == stk::balance::SM_DEFAULTS)
+    {
+        graphOptions.setEdgeWeightForSearch(3.0);
+        graphOptions.setVertexWeightMultiplierForVertexInSearch(10.0);
+        graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    }
+
     std::string outputFilename = outputDirectory + "/" + exodusFilename;
     run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
 }

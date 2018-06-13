@@ -36,6 +36,7 @@
 #ifndef BULKDATA_INLINED_METHODS_HPP
 #define BULKDATA_INLINED_METHODS_HPP
 
+// IWYU pragma: private, include "stk_mesh/base/BulkData.hpp"
 
 namespace stk {
 namespace mesh {
@@ -641,14 +642,6 @@ inline void BulkData::copy_entity_fields( Entity src, Entity dst)
                        src_mesh_idx.bucket_ordinal);
 }
 
-inline Entity BulkData::get_entity( EntityRank ent_rank , EntityId entity_id ) const
-{
-  if (!is_good_rank_and_id(ent_rank, entity_id)) {
-      return Entity();
-  }
-  return m_entity_repo.get_entity( EntityKey(ent_rank, entity_id));
-}
-
 inline bool BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
 {
   bool found = false;
@@ -749,28 +742,36 @@ inline MeshIndex& BulkData::mesh_index(Entity entity)
 
 inline EntityId BulkData::identifier(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()].id();
 }
 
 inline EntityRank BulkData::entity_rank(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()].rank();
 }
 
 inline EntityKey BulkData::entity_key(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()];
 }
 
 inline EntityState BulkData::state(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
   return m_meshModification.get_entity_state(entity.local_offset());
 }
 
@@ -791,35 +792,45 @@ inline bool BulkData::internal_add_node_sharing_called() const
 
 inline Bucket & BulkData::bucket(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return *mesh_index(entity).bucket;
 }
 
 inline Bucket * BulkData::bucket_ptr(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return mesh_index(entity).bucket;
 }
 
 inline Bucket::size_type BulkData::bucket_ordinal(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return mesh_index(entity).bucket_ordinal;
 }
 
 inline int BulkData::parallel_owner_rank(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return bucket(entity).parallel_owner_rank(bucket_ordinal(entity));
 }
 
 inline unsigned BulkData::local_id(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_local_ids[entity.local_offset()];
 }
@@ -827,7 +838,9 @@ inline unsigned BulkData::local_id(Entity entity) const
 #ifdef SIERRA_MIGRATION
 inline BulkData::FmwkId BulkData::global_id(stk::mesh::Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_fmwk_global_ids[entity.local_offset()];
 }
@@ -854,7 +867,7 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
   return *m_fmwk_aux_relations[entity.local_offset()];
 }
 
-inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
+inline void BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
   entity_setter_debug_check(entity);
 

@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stdlib.h>
 #include <stdexcept>
@@ -77,9 +77,14 @@ CommNeighbors::CommNeighbors( ParallelMachine comm, const std::vector<int>& neig
     m_send_procs(neighbor_procs),
     m_recv_procs(neighbor_procs)
 {
+  sort_procs_and_resize_buffers();
+}
+
+void CommNeighbors::sort_procs_and_resize_buffers() {
   m_send.resize(m_size);
   m_recv.resize(m_size);
-  std::sort(m_neighbor_procs.begin(), m_neighbor_procs.end());
+  stk::util::sort_and_unique(m_send_procs);
+  stk::util::sort_and_unique(m_recv_procs);
 }
 
 CommNeighbors::CommNeighbors( ParallelMachine comm, const std::vector<int>& send_procs, const std::vector<int>& recv_procs)
@@ -93,10 +98,7 @@ CommNeighbors::CommNeighbors( ParallelMachine comm, const std::vector<int>& send
     m_send_procs(send_procs),
     m_recv_procs(recv_procs)
 {
-  m_send.resize(m_size);
-  m_recv.resize(m_size);
-  stk::util::sort_and_unique(m_send_procs);
-  stk::util::sort_and_unique(m_recv_procs);
+  sort_procs_and_resize_buffers();
 }
 
 void CommNeighbors::communicate()
@@ -134,7 +136,7 @@ void CommNeighbors::communicate()
           m_recv[p].resize(recv_sizes[idx]);
           MPI_Irecv(m_recv[p].raw_buffer(), m_recv[p].size_in_bytes(), MPI_BYTE, p, mpitag2, m_comm, &requests3[numRecvProcs]);
           numRecvProcs++;
-      }   
+      }
   }
 
   if (numRecvProcs > 0) {

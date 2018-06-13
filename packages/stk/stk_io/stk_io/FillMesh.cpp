@@ -1,7 +1,11 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "stk_io/FillMesh.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/MetaData.hpp"
+#include "Ioss_Property.h"             // for Property
+#include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {
@@ -15,6 +19,10 @@ void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo, const std::string& 
     stkIo.create_input_mesh();
     stkIo.add_all_mesh_fields_as_input_fields();
     stkIo.populate_bulk_data();
+
+    if(stkIo.check_integer_size_requirements() == 8) {
+        bulkData.set_large_ids_flag(true);
+    }
 }
 
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)

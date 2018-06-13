@@ -1,3 +1,4 @@
+#include <cmath>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/GeometricVertices.hpp>
@@ -25,6 +26,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
+#include <stk_util/environment/Env.hpp>
 
 namespace stk {
 namespace balance {
@@ -196,18 +198,14 @@ void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const B
     std::ostringstream os;
     size_t max = 0, min = 0, avg = 0;
     stk::get_max_min_avg(stkMeshBulkData.parallel(), graphEdges.size(), max, min, avg);
-    os << "Before search, have following distribution of edges: min = " << min << "\tavg = " << avg << "\tmax = " << max << std::endl;
+    os << "Starting search, have following distribution of graph edges: min=" << min << ", avg=" << avg << ", max=" << max;
     logMessage(stkMeshBulkData.parallel(), os.str());
     os.str("");
 
-    logMessage(stkMeshBulkData.parallel(), "Starting search");
-
     StkSearchResults searchResults = stk::balance::internal::getSearchResultsForFacesParticles(stkMeshBulkData, balanceSettings, searchSelector);
 
-    logMessage(stkMeshBulkData.parallel(), "Finished search");
-
     stk::get_max_min_avg(stkMeshBulkData.parallel(), searchResults.size(), max, min, avg);
-    os << "Finished search, have following distribution of search results: min = " << min << "\tavg = " << avg << "\tmax = " << max << std::endl;
+    os << "Finished search, have following distribution of search results: min=" << min << ", avg=" << avg << ", max=" << max;
     logMessage(stkMeshBulkData.parallel(), os.str());
     os.str("");
 
@@ -231,7 +229,7 @@ void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const B
     }
 
     stk::get_max_min_avg(stkMeshBulkData.parallel(), graphEdges.size(), max, min, avg);
-    os << "After search, have following distribution of edges: min = " << min << "\tavg = " << avg << "\tmax = " << max << std::endl;
+    os << "After search, have following distribution of graph edges: min=" << min << ", avg=" << avg << ", max=" << max;
     logMessage(stkMeshBulkData.parallel(), os.str());
 }
 
@@ -344,13 +342,8 @@ void logMessage(MPI_Comm communicator, const std::string &message)
     size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
     stk::get_memory_high_water_mark_across_processors(communicator, hwm_max, hwm_min, hwm_avg);
 
-    int rank=-1;
-    MPI_Comm_rank(communicator, &rank);
-    if (rank == 0)
-    {
-        std::cerr << "[time:" << std::left << std::setfill('0') << std::setw(12) << now-startTime << ", hwm:"
-                << std::setfill(' ') << std::right << std::setw(8) << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
-    }
+    sierra::Env::outputP0() << "[time:" << std::fixed << std::setprecision(3) << std::setw(10) << now-startTime << " s, hwm:"
+              << std::setfill(' ') << std::right << std::setw(8) << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
 }
 
 
@@ -414,12 +407,8 @@ void get_multicriteria_decomp_using_selectors_as_segregation(const stk::mesh::Bu
 void fill_decomp_using_geometric_method(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp,
                                         stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    std::ostringstream os;
-    os << "Using Zoltan2 version: " << Zoltan2::Zoltan2_Version();
-    logMessage(stkMeshBulkData.parallel(), os.str());
-    os.str("");
-    os << "Filling in vertex data for decomp method = " << balanceSettings.getDecompMethod() << std::endl;
-    logMessage(stkMeshBulkData.parallel(), os.str());
+    logMessage(stkMeshBulkData.parallel(), "Using Zoltan2 version: " + Zoltan2::Zoltan2_Version());
+    logMessage(stkMeshBulkData.parallel(), "Filling in vertex data for decomp method = " + balanceSettings.getDecompMethod());
 
     size_t numEntities = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
@@ -433,7 +422,7 @@ void fill_decomp_using_geometric_method(const BalanceSettings& balanceSettings, 
         for(const stk::mesh::Selector selector : selectors)
             get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, std::vector<stk::mesh::Selector>{selector}, balanceSettings, numSubdomainsToCreate, decomp, localIds);
 
-    logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve.");
+    logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve");
 }
 
 void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const BalanceSettings& balanceSettings, Zoltan2ParallelGraph &zoltan2Graph, Teuchos::ParameterList &params,
@@ -448,10 +437,15 @@ void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const Ba
     logMessage(mesh.parallel(), "Solving");
 
     if(balanceSettings.shouldPrintMetrics())
-        internal::print_statistics(stkMeshAdapter, mesh.parallel_rank());
+    {
+        internal::print_statistics(stkMeshAdapter, mesh.parallel(), mesh.parallel_rank());
+    }
+
+    std::srand(mesh.parallel_rank()); // KHP: Temporary until an API is added to Zoltan2 for random seeds.
     problem.solve();
+
     if(balanceSettings.shouldPrintMetrics())
-        internal::print_solution_statistics(stkMeshAdapter, problem.getSolution(), mesh.parallel_rank());
+        internal::print_solution_statistics(stkMeshAdapter, problem.getSolution(), mesh.parallel(), mesh.parallel_rank());
 
 #if defined(WRITE_OUT_DEBUGGING_INFO)
     std::vector<int> local_ids_of_elements_to_balance;
@@ -504,6 +498,7 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     if (balanceSettings.isIncrementalRebalance())
     {
         params.set("partitioning_approach", "repartition");
+        params.set("remap_parts", true);
     }
 
     // should not hurt other methods, only affects RCB.
@@ -603,7 +598,7 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
         }
     }
 
-    logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve.");
+    logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve");
 
     #if defined(WRITE_OUT_DECOMP_METRICS)
     std::vector<double> weights_per_proc(numSubdomainsToCreate,0);
@@ -673,7 +668,7 @@ bool compareEntityEqualityOnly(const std::pair<stk::mesh::Entity,int> &a, const 
 void add_if_owned(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity, int newOwningProc, std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs)
 {
     if(stkMeshBulkData.bucket(entity).owned())
-        entityProcPairs.push_back(std::make_pair(entity, newOwningProc));
+        entityProcPairs.emplace_back(entity, newOwningProc);
 }
 
 void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element, int newOwningProc, stk::mesh::EntityRank rank, std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs)
@@ -689,7 +684,7 @@ void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::m
 void fillEntityProcPairsForEntityAndItsClosure(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity elementToMove, int newOwningProc,
         std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs)
 {
-    entityProcPairs.push_back(std::make_pair(elementToMove, newOwningProc));
+    entityProcPairs.emplace_back(elementToMove, newOwningProc);
     add_connected_entities_of_rank(stkMeshBulkData, elementToMove, newOwningProc, stk::topology::FACE_RANK, entityProcPairs);
     add_connected_entities_of_rank(stkMeshBulkData, elementToMove, newOwningProc, stk::topology::EDGE_RANK, entityProcPairs);
     add_connected_entities_of_rank(stkMeshBulkData, elementToMove, newOwningProc, stk::topology::NODE_RANK, entityProcPairs);

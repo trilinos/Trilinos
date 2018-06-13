@@ -373,6 +373,8 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
 
     delete_range_points_found(range_vector, rng_to_dom);
 
+    if (expansion_factor<1.0) break;
+
     for (typename std::vector<BoundingBoxB>::iterator i=range_vector.begin(); i!=range_vector.end(); ++i) {
       // If points were missed, increase search radius.
       search::scale_by(i->first, expansion_factor);

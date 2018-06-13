@@ -162,11 +162,11 @@ TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
   }
   stk::mesh::EntityId nodeID=1;
   bulk.modification_begin();
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   nodeID=3;
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   nodeID=5;
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   bulk.modification_end();
 
   const stk::mesh::BucketVector& node_buckets_1 = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());

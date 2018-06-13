@@ -31,15 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for ostream
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <gtest/gtest.h>                        // for AssertHelper, etc
+#include <stddef.h>                             // for size_t
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
-#include "stk_mesh/base/Types.hpp"      // for EntityRank
-#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+#include <stk_mesh/base/MetaData.hpp>           // for MetaData
+#include "stk_mesh/base/Field.hpp"              // for Field
+#include "stk_mesh/base/FieldBase.hpp"          // for FieldBase
+#include "stk_mesh/base/Types.hpp"              // for EntityRank
+#include "stk_topology/topology.hpp"            // for topology::rank_t, etc
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace {
 

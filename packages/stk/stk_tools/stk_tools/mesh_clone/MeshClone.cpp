@@ -391,6 +391,7 @@ void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSe
     copy_selected(inputBulk, inputSelector, outputBulk);
     outputBulk.modification_end();
 
+    outputBulk.set_large_ids_flag(inputBulk.supports_large_ids());
 //    if(inputBulk.has_face_adjacent_element_graph())
 //        outputBulk.initialize_face_adjacent_element_graph();
 }

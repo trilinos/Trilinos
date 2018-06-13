@@ -275,7 +275,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   // Coverage of element_side_polarity in TopologyHelpers.cpp
   fix.bulk.modification_begin();
 
-  PartVector part_intersection;
+  stk::mesh::ConstPartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
   Entity element = fix.bulk.declare_element(fix.nextEntityId(), part_intersection);
   ASSERT_TRUE( fix.bulk.bucket(element).topology() == stk::topology::INVALID_TOPOLOGY );
@@ -822,7 +822,7 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
 
         mesh.modification_begin();
-        stk::mesh::Entity Quad9 = mesh.declare_element(1, {&meta.get_topology_root_part(stk::topology::QUAD_9_2D)});
+        stk::mesh::Entity Quad9 = mesh.declare_element(1, stk::mesh::ConstPartVector{&meta.get_topology_root_part(stk::topology::QUAD_9_2D)});
         unsigned node_ids[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         stk::mesh::EntityVector nodes(9);

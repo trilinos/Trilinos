@@ -38,10 +38,6 @@
 #include <iostream>
 #include <utility>
 
-#if STK_SEARCH_HAVE_MODERN_COMPILER
-#include <boost/type_traits.hpp>
-#endif
-
 namespace stk { namespace search {
 
 template <typename Ident, typename Proc = int>
@@ -92,9 +88,6 @@ private:
 template <typename T>
 struct get_proc
 {
-#if STK_SEARCH_HAVE_MODERN_COMPILER
-  typedef boost::false_type supported;
-#endif
   int operator()(T const& id) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
@@ -106,9 +99,6 @@ struct get_proc
 template <typename T>
 struct get_proc<std::pair<T, int> >
 {
-#if STK_SEARCH_HAVE_MODERN_COMPILER
-  typedef boost::false_type supported;
-#endif
   int operator()(std::pair<T, int> const& id) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
@@ -120,9 +110,6 @@ struct get_proc<std::pair<T, int> >
 template <typename Ident, typename Proc>
 struct get_proc< stk::search::IdentProc<Ident,Proc> >
 {
-#if STK_SEARCH_HAVE_MODERN_COMPILER
-  typedef boost::true_type supported;
-#endif
   int operator()(stk::search::IdentProc<Ident,Proc> const& id) const
   {
     return id.proc();

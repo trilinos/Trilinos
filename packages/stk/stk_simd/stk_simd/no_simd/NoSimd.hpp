@@ -1,72 +1,40 @@
 // Copyright 2013 Sandia Corporation, Albuquerque, NM.
 
-#ifndef STK_NO_SIMD_H
-#define STK_NO_SIMD_H
+#ifndef STK_SIMD_FW_H
+#define STK_SIMD_FW_H
+
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
 
 #include <stdio.h>
-#include <Kokkos_Macros.hpp>
+#include <cmath>
+#include <assert.h>
+#include "NoSimdSizes.hpp"
+
+#include "NoSimdDouble.hpp"
+#include "NoSimdFloat.hpp"
+#include "NoSimdBool.hpp"
+#include "NoSimdBoolF.hpp"
+
+#include "NoSimdDoubleOperators.hpp"
+#include "NoSimdDoubleLoadStore.hpp"
+#include "NoSimdDoubleMath.hpp"
+
+#include "NoSimdFloatOperators.hpp"
+#include "NoSimdFloatLoadStore.hpp"
+#include "NoSimdFloatMath.hpp"
 
 namespace stk {
 namespace simd {
 
-typedef double Double;
-typedef bool Bool;
-typedef float Float;
-typedef bool Boolf;
-
-constexpr int ndoubles = 1; 
-constexpr int nfloats = 1; 
-
-KOKKOS_INLINE_FUNCTION Double load_aligned(const double* x) {
-  return *x;
+STK_MATH_FORCE_INLINE double reduce_sum(const Double& x) {
+  return x[0];
 }
 
-KOKKOS_INLINE_FUNCTION Double load(const double* x) {
-  return *x;
-}
-    
-KOKKOS_INLINE_FUNCTION Double load(const double* x, const int offset) {
-  return *x;
+STK_MATH_FORCE_INLINE float reduce_sum(const Float& x) {
+  return x[0]+x[1];
 }
 
-KOKKOS_INLINE_FUNCTION void store_aligned(double* x, const Double& z) {
-  *x = z;
+}
 }
 
-KOKKOS_INLINE_FUNCTION void store(double* x, const Double& z) {
-  *x = z;
-}
-  
-KOKKOS_INLINE_FUNCTION void store(double* x, const Double& z, const int offset) {
-  *x = z;
-}
-
-KOKKOS_INLINE_FUNCTION Float load_aligned(const float* x) {
-  return *x;
-}
-
-KOKKOS_INLINE_FUNCTION Float load(const float* x) {
-  return *x;
-}
-    
-KOKKOS_INLINE_FUNCTION Float load(const float* x, const int offset) {
-  return *x;
-}
-
-KOKKOS_INLINE_FUNCTION void store_aligned(float* x, const Float& z) {
-  *x = z;
-}
-
-KOKKOS_INLINE_FUNCTION void store(float* x, const Float& z) {
-  *x = z;
-}
-  
-KOKKOS_INLINE_FUNCTION void store(float* x, const Float& z, const int offset) {
-  *x = z;
-}
-
-} // namespace simd
-} // namespace stk
-
-#endif // STK_NO_SIMD_H
-
+#endif // STK_SIMD_FW_H

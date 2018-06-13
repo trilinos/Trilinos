@@ -4,7 +4,6 @@
 #include <algorithm>
 #include "SimdFixture.hpp"
 
-
 namespace stk
 {
 namespace unit_test_simd
@@ -195,23 +194,25 @@ TEST_F(MathFunctionWithOneDoubleArg, PowMinus2_ScalarAndSimdMatch)
 
 TEST_F(MathFunctionWithOneDoubleArg, Copysign0_ScalarAndSimdMatch)
 {
+
+  
   test_simd_operator([](double x) { return std::copysign(x, 0.0); },
                      [](stk::simd::Double x) { return stk::math::copysign(x, 0.0); },
-                     fullRange);
+                     mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Multiplysign0_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return x; },
                      [](stk::simd::Double x) { return stk::math::multiplysign(x, 0.0); },
-                     fullRange);
+                     mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, CopysignMinus0_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::copysign(x, -0.0); },
                      [](stk::simd::Double x) { return stk::math::copysign(x, -0.0); },
-                     fullRange);
+                     mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, MultiplysignMinus0_ScalarAndSimdMatch)
@@ -527,7 +528,6 @@ TEST(StkSimd, SimdSpecialFunctions)
 
 TEST(StkSimd, SimdAddSubtractMultDivide) 
 {
-
   int N = 400000;
   double t0; // timing variable
 
@@ -546,6 +546,7 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const stk::simd::Double b = stk::simd::load(&y[n]);
+    //const stk::simd::Double c = a*b+(a+b);
     const stk::simd::Double c = ( a+b*(a-b) )/a;
     stk::simd::store(&out1[n],c);
   }
@@ -556,6 +557,7 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   for (int n=0; n < N; ++n) {
     const double a = x[n];
     const double b = y[n];
+    //out2[n] = a*b+(a+b);
     out2[n] = ( a+b*(a-b) )/a;
   }
   t0 += stk::get_time_in_seconds();
@@ -567,13 +569,11 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( maxerr, 0.0, 1e-8 );
 }
 
 TEST(StkSimd, SimdMiscSelfAddSubEtc) 
 {
-
   int N = 10000;
 
   std::vector<double> x(N);
@@ -612,7 +612,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 1.0e-14 );
+  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
   
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -635,7 +635,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -705,13 +705,12 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
 
 }
 
 TEST(StkSimd, Simd_fmadd)
 {
-
   int N = 400000;
   double t0; // timing variable
 
@@ -762,10 +761,8 @@ TEST(StkSimd, Simd_fmadd)
   
 }
 
-
 TEST(StkSimd, SimdSqrt) 
 {
-
   int N = 400000;
   double t0; // timing variable
 
@@ -809,12 +806,10 @@ TEST(StkSimd, SimdSqrt)
 
 TEST(StkSimd, SimdLog) 
 {
-
   int N = 400000;
   double t0; // timing variable
 
   std::vector<double> x(N);
- 
   std::vector<double> out1(N);
   std::vector<double> out2(N);
 
@@ -842,18 +837,16 @@ TEST(StkSimd, SimdLog)
   double maxerr = 0.0;
   for (int n=0; n < N; ++n) {
     double err = stk::math::abs(out1[n]-out2[n]);
-    ASSERT_NEAR( err, 0.0, 0.0) << "n = " << n;
+    ASSERT_NEAR( err, 0.0, 2*std::numeric_limits<double>::epsilon()) << "n = " << n;
     maxerr = stk::math::max(err, maxerr);
   }
 
-  //ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
+  ASSERT_NEAR( maxerr, 0.0, 2*std::numeric_limits<double>::epsilon() ); 
 }
 
 TEST(StkSimd, SimdExp) 
 {
-
   int N = 400000;
-  double t0; // timing variable
 
   std::vector<double> x(N);
  
@@ -864,7 +857,7 @@ TEST(StkSimd, SimdExp)
     x[n] = 5.4*(rand()/RAND_MAX-0.5);
   }
   
-  t0 = -stk::get_time_in_seconds();
+  double t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const stk::simd::Double b = stk::math::exp(a);
@@ -892,7 +885,6 @@ TEST(StkSimd, SimdExp)
 
 TEST(StkSimd, SimdPowA) 
 {
-
   int N = 2000;
   double t0; // timing variable
 
@@ -933,16 +925,14 @@ TEST(StkSimd, SimdPowA)
   double maxerr = 0.0;
   for (int n=0; n < N; ++n) {
     double err = stk::math::abs(out1[n]-out2[n]);
-    std::cout << x[n] << " " << out1[n] << " " << out2[n] << "\n";
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 0.0 ); 
+  ASSERT_NEAR( maxerr, 0.0, 0.0 );
 }
 
 TEST(StkSimd, SimdPowB) 
 {
-
   int N = 2000;
   double t0; // timing variable
 
@@ -987,15 +977,12 @@ TEST(StkSimd, SimdPowB)
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
 }
 
-
 TEST(StkSimd, SimdPowC) 
 {
-
   int N = 100000;
   double t0; // timing variable
 
   std::vector<double> x(N);
- 
   std::vector<double> out1(N);
   std::vector<double> out2(N);
 
@@ -1031,15 +1018,12 @@ TEST(StkSimd, SimdPowC)
 
 TEST(StkSimd, SimdCbrt)
 {
-
   int N = 100000;
   double t0; // timing variable
 
   std::vector<double> x(N);
- 
   std::vector<double> out1(N);
   std::vector<double> out2(N);
-  
 
   for (int n=0; n < N; ++n) {
     x[n] = 21*(rand()-0.5)/RAND_MAX;
@@ -1191,7 +1175,7 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayout)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  printf("maxerror = %g\n",maxerr);
+  //printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
   
@@ -1202,7 +1186,7 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayout)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  printf("maxerror = %g\n",maxerr);
+  //printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
 
@@ -1332,7 +1316,7 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProduct)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  printf("maxerror = %g\n",maxerr);
+  //printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
   
@@ -1343,7 +1327,7 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProduct)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  printf("maxerror = %g\n",maxerr);
+  //printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
 
@@ -1717,13 +1701,11 @@ TEST(StkSimd, SimdIfThenBool)
   }
 
 #endif
-
 }
 
 
 TEST(StkSimd, SimdTimeSet1VsConstDoubles)
 {
-
   int N = 1000000;
   double t0; // timing variable
   double maxerr;
@@ -1765,7 +1747,6 @@ TEST(StkSimd, SimdTimeSet1VsConstDoubles)
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "Adding a 3.0 (with load1_pd) took " << t0 << " seconds" <<  std::endl;
-
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; ++n) {
     out4[n] = two+(x[n] + three);
@@ -1924,7 +1905,7 @@ TEST(StkSimd, ReduceSum)
     std::cout << "OMP: Real reduce took " << t0 << " seconds" <<  std::endl;
   }
 
-  printf("sums = %g %g\n",sum_val, save_sum);
+  //printf("sums = %g %g\n",sum_val, save_sum);
 
   ASSERT_NEAR( sum_val-save_sum, 0.0, 1e-12*sum_val );  
 }

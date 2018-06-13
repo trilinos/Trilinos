@@ -265,26 +265,17 @@ protected:
         stk::mesh::put_field(myField2, myPart1 & myPart2, 3, initValue);
     }
 
-    stk::mesh::EntityId get_maximium_entity_id(stk::topology::rank_t rank)
-    {
-        stk::mesh::const_entity_iterator iter = get_bulk().end_entities(rank);
-        --iter;
-        stk::mesh::Entity lastEntity = iter->second;
-        stk::mesh::EntityId localMaxId = get_bulk().identifier(lastEntity);
-        stk::mesh::EntityId maxId;
-        stk::all_reduce_max( MPI_COMM_WORLD , &localMaxId , &maxId, 1 );
-        return maxId;
-    }
-
     void add_orphan_nodes(const unsigned numOrphansPerProc)
     {
-        stk::mesh::EntityId currentMaxNodeId = get_maximium_entity_id(stk::topology::NODE_RANK);
         stk::mesh::Part* myPart1 = get_meta().get_part("myPart1");
+
+        std::vector<stk::mesh::EntityId> newIds;
+        get_bulk().generate_new_ids(stk::topology::NODE_RANK, numOrphansPerProc, newIds);
 
         get_bulk().modification_begin();
         for(unsigned i=0; i<numOrphansPerProc; i++)
         {
-            stk::mesh::EntityId id = currentMaxNodeId + numOrphansPerProc*get_bulk().parallel_rank() + i + 1;
+            stk::mesh::EntityId id = newIds[i];
             get_bulk().declare_entity(stk::topology::NODE_RANK, id, *myPart1);
         }
         get_bulk().modification_end();

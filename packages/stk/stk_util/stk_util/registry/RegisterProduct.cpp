@@ -53,7 +53,7 @@ register_product()
   stk::ProductRegistry::AttributeMap &attr_map = stk::ProductRegistry::instance().addProduct(get_product_name());
   attr_map[stk::ProductRegistry::VERSION]      = stk::ProductRegistry::version();
   attr_map[stk::ProductRegistry::TITLE] = "Utility library routines";
-  attr_map[stk::ProductRegistry::CONTACT] = "framework-developers@sourceforge.sandia.gov";
+  attr_map[stk::ProductRegistry::CONTACT] = "sierra-help@sandia.gov";
 
   // Register TPL's and other things which may not be properly registered but used directly.
 

@@ -154,7 +154,7 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
 
     std::ostringstream os;
     size_t aboutToAllocate = mOffsets[numElements]*(sizeof(BalanceGlobalNumber) + sizeof(int) + sizeof(double));
-    os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes.";
+    os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes";
     stk::balance::internal::logMessage(stkMeshBulkData.parallel(), os.str());
 
     mAdjacency.resize(mOffsets[numElements]);
@@ -228,7 +228,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
 
     std::vector<stk::balance::GraphEdge> graphEdges;
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using node connectivity.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using node connectivity");
 
     // Set vertexWeights based on topology of entity
     createGraphEdgesUsingNodeConnectivity(stkMeshBulkData, balanceSettings, numElements,
@@ -236,7 +236,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
 
     if ( !this->amCheckingForMechanisms() && balanceSettings.includeSearchResultsInGraph() )
     {
-        stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results.");
+        stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results");
 
         stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, balanceSettings, graphEdges, searchSelector);
 
@@ -265,7 +265,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
         }
     }
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Convert edges to a graph.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Convert edges to a graph");
 
     convertGraphEdgesToZoltanGraph(stkMeshBulkData,
                                    graphEdges,
@@ -273,7 +273,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
                                    adjacencyProcs,
                                    localIds);
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Finished creating graph.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Finished creating graph");
 }
 
 

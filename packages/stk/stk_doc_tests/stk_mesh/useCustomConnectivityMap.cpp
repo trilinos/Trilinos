@@ -76,7 +76,7 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
 
     stk::mesh::Entity elemNodes[3];
     stk::mesh::Entity elemEdges[3];
-    stk::mesh::Entity elem = mesh.declare_element(elemId, {&tri_part});
+    stk::mesh::Entity elem = mesh.declare_element(elemId, stk::mesh::ConstPartVector{&tri_part});
     elemNodes[0] = mesh.declare_node(elemNodeIds[0]);
     elemNodes[1] = mesh.declare_node(elemNodeIds[1]);
     elemNodes[2] = mesh.declare_node(elemNodeIds[2]);

@@ -71,6 +71,11 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 

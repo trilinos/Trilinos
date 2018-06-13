@@ -135,13 +135,13 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
     
       //declare a node that is not in newPart:
       EntityId node_id = p_rank+1;
-      Entity node = mesh.declare_node(node_id, {&meta_data.universal_part()});
+      Entity node = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&meta_data.universal_part()});
 
       //declare two nodes that *are* in newPart:
       node_id = p_rank+2;
-      Entity node_tmp = mesh.declare_node(node_id, {&newPart});
+      Entity node_tmp = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
       node_id = p_rank+3;
-      Entity node_tmp2 = mesh.declare_node(node_id, {&newPart});
+      Entity node_tmp2 = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
     
       mesh.modification_end();
     

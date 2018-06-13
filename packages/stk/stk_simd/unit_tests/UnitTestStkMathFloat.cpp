@@ -21,7 +21,8 @@ TEST(StkSimd, StkMathFloat_sqrt)
 
 TEST(StkSimd, StkMathFloat_cbrt)
 {
-  EXPECT_NEAR( stk::math::cbrt(a), std::pow(a, float(1.0/3.0) ), 4e-7 );
+  const float epsilon = 2 * std::numeric_limits<float>::epsilon();
+  EXPECT_NEAR( stk::math::cbrt(a), std::pow(a, float(1.0/3.0) ), epsilon );
 }
 
 TEST(StkSimd, StkMathFloat_log)
@@ -41,8 +42,9 @@ TEST(StkSimd, StkMathFloat_exp)
 
 TEST(StkSimd, StkMathFloat_pow)
 {
-  EXPECT_NEAR( stk::math::pow(a,d), std::pow(a,d), 4e-7 );
-  EXPECT_NEAR( stk::math::pow(a,b), std::pow(a,b), 4e-7 );
+  const float epsilon = 2 * std::numeric_limits<float>::epsilon();
+  EXPECT_NEAR( stk::math::pow(a,d), std::pow(a,d), epsilon );
+  EXPECT_NEAR( stk::math::pow(a,b), std::pow(a,b), epsilon );
 }
 
 TEST(StkSimd, StkMathFloat_sin)
@@ -117,12 +119,33 @@ TEST(StkSimd, StkMathFloat_erf)
 
 TEST(StkSimd, StkMathFloat_multiplysign)
 {
-  EXPECT_EQ( stk::math::multiplysign(a,c), a * (c>=0 ? 1.0 : -1.0) );
+  EXPECT_EQ( stk::math::multiplysign(a,c), a*std::copysign(1.0,c) );
+}
+
+
+TEST(StkSimd, StkMathFloat_multiplysignNegZero)
+{
+  EXPECT_EQ( stk::math::multiplysign(a,-0.f), a*std::copysign(1.0,-0.f) );
+}
+
+TEST(StkSimd, StkMathFloat_multiplysignZero)
+{
+  EXPECT_EQ( stk::math::multiplysign(a,0.f), a*std::copysign(1.0,0.f) );
 }
 
 TEST(StkSimd, StkMathFloat_copysign)
 {
   EXPECT_EQ( stk::math::copysign(a,c), std::copysign(a,c) );
+}
+
+TEST(StkSimd, StkMathFloat_copysignNegZero)
+{
+  EXPECT_EQ( stk::math::copysign(a,-0.f), std::copysign(a,-0.f) );
+}
+
+TEST(StkSimd, StkMathFloat_copysignZero)
+{
+  EXPECT_EQ( stk::math::copysign(a,0.f), std::copysign(a,0.f) );
 }
 
 TEST(StkSimd, StkMathFloat_abs)

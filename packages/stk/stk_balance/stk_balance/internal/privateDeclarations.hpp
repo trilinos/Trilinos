@@ -45,6 +45,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
+#include <stk_util/environment/Env.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <stk_balance/internal/StkMeshAdapterForZoltan2.hpp>
@@ -115,36 +116,34 @@ void print_zoltan_statistics(const ZoltanAdapter& stkMeshAdapter, Zoltan2::Evalu
     stkMeshAdapter.getWeightsView(kdd, kddstride, 0);
     double localsum = 0.;
     for (size_t i = 0; i< stkMeshAdapter.getLocalNumIDs(); i++) localsum += kdd[i];
-    if (parallel_rank == 0)
-    {
-        std::cout << parallel_rank
-                << " PRINTING METRICS nObj " << stkMeshAdapter.getLocalNumIDs()
-                << " nwgts " << stkMeshAdapter.getNumWeightsPerID()
-                << " sumwgt " << localsum << std::endl;
-        zoltanEvaluateParition.printMetrics(std::cout);
-        //std::cout << parallel_rank
-        //        << " PRINTING GRAPH METRICS" << std::endl;
-        //zoltanEvaluateParition.printGraphMetrics(std::cout);
-    }
+
+    sierra::Env::outputP0() << parallel_rank
+            << " PRINTING METRICS nObj " << stkMeshAdapter.getLocalNumIDs()
+            << " nwgts " << stkMeshAdapter.getNumWeightsPerID()
+            << " sumwgt " << localsum << std::endl;
+    zoltanEvaluateParition.printMetrics(sierra::Env::outputP0());
+    //sierra::Env::outputP0() << parallel_rank
+    //        << " PRINTING GRAPH METRICS" << std::endl;
+    //zoltanEvaluateParition.printGraphMetrics(sierra::Env::outputP0());
 }
 
 template <class ZoltanAdapter>
-void print_statistics(const ZoltanAdapter& stkMeshAdapter, int parallel_rank )
+void print_statistics(const ZoltanAdapter& stkMeshAdapter, MPI_Comm comm, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto teuchos_comm = Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
     Teuchos::ParameterList pl;
-    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, nullptr);
+    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, teuchos_comm, nullptr);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 
 template <class ZoltanAdapter>
-void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan2::PartitioningSolution<ZoltanAdapter>& solution, int parallel_rank )
+void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan2::PartitioningSolution<ZoltanAdapter>& solution, MPI_Comm comm, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto teuchos_comm = Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
     Teuchos::ParameterList pl;
-    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, &solution);
+    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, teuchos_comm, &solution);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 
