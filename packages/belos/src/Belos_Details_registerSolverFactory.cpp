@@ -65,11 +65,11 @@ namespace Details {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
-  Impl::registerSolverSubclassForTypes<manager<ST,MV,OP>, ST, MV, OP> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<cST,cMV,cOP>, cST, cMV, cOP> (name);
+  Impl::registerSolverSubclassForTypesBelos<manager<ST,MV,OP>, ST, MV, OP> (name);        \
+  Impl::registerSolverSubclassForTypesBelos<manager<cST,cMV,cOP>, cST, cMV, cOP> (name);
 #else // HAVE_TEUCHOS_COMPLEX
 #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
-  Impl::registerSolverSubclassForTypes<manager<ST,MV,OP>, ST, MV, OP> (name);
+  Impl::registerSolverSubclassForTypesBelos<manager<ST,MV,OP>, ST, MV, OP> (name);
 #endif // HAVE_TEUCHOS_COMPLEX
 
 void registerSolverFactory () {

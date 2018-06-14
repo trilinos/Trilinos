@@ -264,13 +264,34 @@ template<class Scalar, class MV, class OP>
 std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::custom_solver_factory_type> >
 SolverFactoryParent<Scalar, MV, OP>::factories_;
 
-template<class SolverClass, class Scalar, class MV, class OP>
-void registerSolverSubclassForTypes (const std::string & solverName) {
-  if(!SolverFactoryParent<Scalar, MV, OP>::isSolverRegistered(solverName)) {
-    Teuchos::RCP<SolverClass> solver (new SolverClass);
-    SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);
-  }
+// Purpose of this is to bypass an issue where the static unloading ordering
+// was getting messed up. This could be replicated on a simple 1 proc case
+// where XpetraSolverFactory did a single premain solver registration and then
+// GenericSolverFactory registers the same solver. The shylu frosh test was
+// modified to do nothing but create GenericSolverFactory and that replicated
+// the issue. Even though the GenericSolverFactory is doing nothing but calling
+// this method and then identifying it was already registered (so take no action)
+// that was causing the static holding all the solver managers to unload in 
+// a different order. Attempting to use atexit did not bypass this issue and the
+// ordering was still incorrect. The XpetraSolverFactory would unload after
+// Teuchos rcp_node_list and then assert when RCP debug tracking was on.
+// Experimentation indicates that providing a different named method here
+// for each package is sufficient to bypass this problem.
+#define BELOS_DECLARE_REGISTRATION_METHOD(package_name)                         \
+template<class SolverClass, class Scalar, class MV, class OP>                   \
+void registerSolverSubclassForTypes##package_name                                \
+  (const std::string & solverName) {                                            \
+  if(!SolverFactoryParent<Scalar, MV, OP>::isSolverRegistered(solverName)) {    \
+    Teuchos::RCP<SolverClass> solver (new SolverClass);                         \
+    SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);   \
+  }                                                                             \
 }
+
+BELOS_DECLARE_REGISTRATION_METHOD(Belos)
+BELOS_DECLARE_REGISTRATION_METHOD(Epetra)
+BELOS_DECLARE_REGISTRATION_METHOD(Tpetra)
+BELOS_DECLARE_REGISTRATION_METHOD(Xpetra)
+BELOS_DECLARE_REGISTRATION_METHOD(Generic)
 
 // specializations get a typedef "type"
 // If this compile fails then the error is likely that BelosSolverFactory.hpp
