@@ -40,7 +40,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with salloc or some other command, see below
+$ ctest -j16  # Might need to be run with srun or some other command, see below
 ```
 
 The command:
@@ -271,7 +271,7 @@ $ bsub -x -I -q rhel7F -n 16 \
 Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
-`salloc` command.  For example, to configure, build and run the tests for say
+`srun` command.  For example, to configure, build and run the tests for say
 `MueLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
 would do:
 
@@ -289,7 +289,7 @@ $ cmake \
 
 $ make NP=16
 
-$ salloc ctest -j16
+$ srun ctest -j16
 ```
 
 Note that one can also run the same build a tests using the <a
@@ -298,17 +298,26 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ salloc ./checkin-test-sems.sh intel-opt-openmp \
+$ srun ./checkin-test-sems.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
 
+WARNING: One must use `srun` and **not** `salloc` to allocate and run on a
+compute node.  The way that these machines are currently set up, running with
+`salloc` the command `squeue` will seem to show that the job is allocated and
+running on a compute node but the job is actually running on the login node!
+(Running `ps -AF | grep <script-name>` and `top` on the login node will
+clearly show that that the job is actually running on the login node and
+presumably the actual compute node is idle.)
+
+
 ### chama/serrano
 
 Once logged on to `chama` or `serrano`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `salloc` command.  For
+tests, one must run on the compute nodes using the `srun` command.  For
 example, to configure, build and run the tests for say `MueLu` on `serrano`
 or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 
