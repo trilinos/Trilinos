@@ -42,8 +42,11 @@
 // @HEADER
 
 #include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_Stream.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
+#include "ROL_DynamicObjectiveCheck.hpp"
+#include "ROL_DynamicTrackingObjective.hpp"
 
 #include "VdP_DynamicConstraint.hpp"
 
@@ -55,26 +58,43 @@ int main( int argc, char* argv[] ) {
   using ROL::Ptr;
   using ROL::makePtr;
 
-  using vector = std::vector<RealT>;
-  using SV     = ROL::StdVector<RealT>;
+  using vector    = std::vector<RealT>;
+  using SV        = ROL::StdVector<RealT>;
+  using PV        = ROL::PartitionedVector<RealT>;
+  using size_type = typename PV::size_type;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );    
-  int errorFlag  = 0;
+  int  errorFlag = 0;
+
+  size_type Nt = 100; // Number of Time Steps
 
   auto uo = makePtr<SV>( makePtr<vector>(2) );
   auto un = makePtr<SV>( makePtr<vector>(2) );
   auto z  = makePtr<SV>( makePtr<vector>(1) );
-    
+
   ROL::RandomizeVector<RealT>(*uo);
   ROL::RandomizeVector<RealT>(*un);
   ROL::RandomizeVector<RealT>(*z);
+  
+  // Tracking term is zero
+  auto tracking = PV::create( *uo, Nt );
+  tracking->zero();
 
-  VdP::DynamicConstraint<RealT> dyn_con;
+  // Control regularization parameter is unity
+  RealT alpha = 1.0;
+
+  VdP::DynamicConstraint<RealT>        dyn_con;
+  ROL::DynamicTrackingObjective<RealT> dyn_obj( tracking, alpha );
 
   ROL::ValidateFunction<RealT> validator( 1, 13, 20, 11, true, *outStream);
+
+  ROL::DynamicObjectiveCheck<RealT>::check( dyn_obj, validator, *uo, *un, *z, {
+    "gradient_uo", "gradient_un", "gradient_z"  });
+
+  
+
 
   ROL::DynamicConstraintCheck<RealT>::check( dyn_con, validator, *uo, *un, *z, 
     { 
@@ -93,6 +113,10 @@ int main( int argc, char* argv[] ) {
       "applyAdjointHessian_z_uo",
       "applyAdjointHessian_z_un" 
 } );
+
+  
+
+
 
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";

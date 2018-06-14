@@ -72,12 +72,10 @@ public:
     ts_.t.resize(2);
     ts_.t.at(0) = 0.0;
     ts_.t.at(1) = 1.0;
+    ts_.k = 0;
   }
 
   DynamicConstraint_CheckInterface( Con& con, TimeStamp<Real>& ts ) : con_(con), ts_(ts) { 
-    ts_.t.resize(2);
-    ts_.t.at(0) = 0.0;
-    ts_.t.at(1) = 1.0;
   }
  
   f_update_t<Real> update_uo( const V& un, const V& z ) {
