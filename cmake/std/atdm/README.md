@@ -225,11 +225,11 @@ the `checkin-test-atdm.sh` script is run.
 
 ### ride/white
 
-Once logged on to `white` (on the SON) or `ride` (on the SRN), one can
+Once logged on to `white` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `bsub` command to run if using a CUDA build.  For example, to configure, build
-and run the tests for the `cuda-debug` build for say `MueLu` on `white`,
+and run the tests for the `cuda-debug` build for say `MueuLu` on `white`,
 (after cloning Trilinos on the `develop` branch) one would do:
 
 ```
@@ -272,7 +272,7 @@ Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `salloc` command.  For example, to configure, build and run the tests for say
-`MueLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
+`MueuLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
 would do:
 
 
@@ -309,7 +309,7 @@ $ salloc ./checkin-test-sems.sh intel-opt-openmp \
 Once logged on to `chama` or `serrano`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
 tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueLu` on `serrano`
+example, to configure, build and run the tests for say `MueuLu` on `serrano`
 or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 
 
@@ -350,7 +350,7 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 Once logged on to `mutrino`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
 tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueLu` on `mutrino`, 
+example, to configure, build and run the tests for say `MueuLu` on `mutrino`, 
 (after cloning Trilinos on the `develop` branch) one would:
 
 
@@ -373,7 +373,7 @@ $ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
 
 Once logged on to a rhel6 machine with the sems NFS, one can directly
 configure, build, and run tests.  For example, to configure, build and run the
-tests for `MueLu` one would clone Trilinos on the `develop` branch and then
+tests for `MueuLu` one would clone Trilinos on the `develop` branch and then
 do the following:
 
 

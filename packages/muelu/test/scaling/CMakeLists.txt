@@ -343,20 +343,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      TwoMatrixMMKernelDriver
-      SOURCES TwoMatrixMMKernelDriver.cpp
-      COMM serial mpi
-      )
-  
-
-    TRIBITS_ADD_TEST(
-      TwoMatrixMMKernelDriver
-      NAME "TwoMatrixMMKernelDriver"
-      ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
 
   ENDIF()
 ENDIF()

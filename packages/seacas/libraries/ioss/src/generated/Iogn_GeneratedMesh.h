@@ -35,7 +35,6 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
-#include <array>
 #include <cstddef>           // for size_t
 #include <cstdint>           // for int64_t
 #include <map>               // for map, etc
@@ -491,7 +490,7 @@ namespace Iogn {
     std::vector<ShellLocation> shellBlocks;
     std::vector<ShellLocation> nodesets;
     std::vector<ShellLocation> sidesets;
-    std::array<std::array<double, 3>, 3> rotmat;
+    double                     rotmat[3][3]{};
     size_t                     numX, numY, numZ;
     size_t                     myNumZ, myStartZ;
 
