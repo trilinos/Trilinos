@@ -271,8 +271,8 @@ $ bsub -x -I -q rhel7F -n 16 \
 Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
-`salloc` command.  For example, to configure, build and run the tests for say
-`MueuLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
+`srun` command.  For example, to configure, build and run the tests for say
+`MueLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
 would do:
 
 
@@ -308,8 +308,8 @@ $ salloc ./checkin-test-sems.sh intel-opt-openmp \
 
 Once logged on to `chama` or `serrano`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueuLu` on `serrano`
+tests, one must run on the compute nodes using the `srun` command.  For
+example, to configure, build and run the tests for say `MueLu` on `serrano`
 or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 
 
