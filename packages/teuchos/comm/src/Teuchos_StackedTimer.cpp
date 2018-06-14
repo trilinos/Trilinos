@@ -179,7 +179,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
 
     // Output the data
     for (int l=0; l<level; ++l)
-      os << "    ";
+      os << "|   ";
     os << split_names.second << ": ";
     // output averge time
     os << sum_[i]/active_[i];
@@ -215,7 +215,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_[i]/active_[i], options);
     if (sub_time > 0 ) {
       for (int l=0; l<=level; ++l)
-        os << "    ";
+        os << "|   ";
       os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
       if ( options.output_fraction && parent_time > 0 )
         os << " - "<< (sum_[i]/active_[i]- sub_time)/parent_time*100 << "%";
