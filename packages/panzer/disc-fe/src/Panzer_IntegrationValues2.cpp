@@ -41,6 +41,7 @@
 // @HEADER
 
 #include "Panzer_IntegrationValues2.hpp"
+#include "Panzer_UtilityAlgs.hpp"
 
 #include "Shards_CellTopology.hpp"
 
@@ -495,6 +496,71 @@ convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
 
 }
 
+template <typename Scalar>
+void IntegrationValues2<Scalar>::
+swapQuadraturePoints(int cell,
+                     int a,
+                     int b)
+{
+  const int new_cell_point = a;
+  const int old_cell_point = b;
+
+  const int cell_dim = ref_ip_coordinates.extent(2);
+
+  Scalar hold;
+
+  hold = weighted_measure(cell,new_cell_point);
+  weighted_measure(cell,new_cell_point) = weighted_measure(cell,old_cell_point);
+  weighted_measure(cell,old_cell_point) = hold;
+
+  hold = jac_det(cell,new_cell_point);
+  jac_det(cell,new_cell_point) = jac_det(cell,old_cell_point);
+  jac_det(cell,old_cell_point) = hold;
+
+  for(int dim=0;dim<cell_dim;++dim){
+
+    hold = ref_ip_coordinates(cell,new_cell_point,dim);
+    ref_ip_coordinates(cell,new_cell_point,dim) = ref_ip_coordinates(cell,old_cell_point,dim);
+    ref_ip_coordinates(cell,old_cell_point,dim) = hold;
+
+    hold = ip_coordinates(cell,new_cell_point,dim);
+    ip_coordinates(cell,new_cell_point,dim) = ip_coordinates(cell,old_cell_point,dim);
+    ip_coordinates(cell,old_cell_point,dim) = hold;
+
+    hold = surface_normals(cell,new_cell_point,dim);
+    surface_normals(cell,new_cell_point,dim) = surface_normals(cell,old_cell_point,dim);
+    surface_normals(cell,old_cell_point,dim) = hold;
+
+    for(int dim2=0;dim2<cell_dim;++dim2){
+
+      hold = jac(cell,new_cell_point,dim,dim2);
+      jac(cell,new_cell_point,dim,dim2) = jac(cell,old_cell_point,dim,dim2);
+      jac(cell,old_cell_point,dim,dim2) = hold;
+
+      hold = jac_inv(cell,new_cell_point,dim,dim2);
+      jac_inv(cell,new_cell_point,dim,dim2) = jac_inv(cell,old_cell_point,dim,dim2);
+      jac_inv(cell,old_cell_point,dim,dim2) = hold;
+    }
+  }
+}
+
+template <typename Scalar>
+void IntegrationValues2<Scalar>::
+uniqueCoordOrdering(Array_CellIPDim & coords,
+                    int cell,
+                    int offset,
+                    std::vector<int> & order)
+{
+  for(size_t point_index=0;point_index<order.size();++point_index){
+    order[point_index] = point_index;
+  }
+
+  // We need to sort the indexes in point_indexes by their ip_coordinate's position in space.
+  // We will then use that to sort all of our arrays.
+
+  point_sorter_t<Array_CellIPDim,Scalar> sorter(coords,cell,offset);
+  std::sort(order.begin(),order.end(),sorter);
+}
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
@@ -660,8 +726,9 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         weighted_measure(cell,cell_point) = side_weighted_measure(cell,side_point);
         jac_det(cell,cell_point) = side_det_jacobian(cell,side_point);
         for(int dim=0;dim<cell_dim;++dim){
-          ip_coordinates(cell,cell_point,dim) = side_ip_coordinates(cell,side_point,dim);
-          surface_normals(cell,cell_point,dim) = side_normals(cell,side_point,dim);
+          ref_ip_coordinates(cell,cell_point,dim) = cub_points(cell_point,dim);
+          ip_coordinates(cell,cell_point,dim)     = side_ip_coordinates(cell,side_point,dim);
+          surface_normals(cell,cell_point,dim)    = side_normals(cell,side_point,dim);
 
           for(int dim2=0;dim2<cell_dim;++dim2){
             jac(cell,cell_point,dim,dim2) = side_jacobian(cell,side_point,dim,dim2);
@@ -682,56 +749,12 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       std::vector<int> point_indexes(num_points_on_face,-1);
 
       for(int cell=0; cell<num_cells; ++cell){
-        for(int point_index=0;point_index<num_points_on_face;++point_index){
-          point_indexes[point_index] = point_index;
-        }
 
-        // We need to sort the indexes in point_indexes by their ip_coordinate's position in space.
-        // We will then use that to sort all of our arrays.
-
-        point_sorter_t<Array_CellIPDim,Scalar> sorter(ip_coordinates,cell,point_offset);
-        std::sort(point_indexes.begin(),point_indexes.end(),sorter);
+        // build a  point index array based on point coordinates
+        uniqueCoordOrdering(ip_coordinates,cell,point_offset,point_indexes);
 
         // Indexes are now sorted, now we swap everything around
-        for(int old_point_idx=0;old_point_idx<num_points_on_face;++old_point_idx){
-          const int new_cell_point = point_offset + point_indexes[old_point_idx];
-          const int old_cell_point = point_offset+old_point_idx;
-
-          Scalar hold;
-
-          hold = weighted_measure(cell,new_cell_point);
-          weighted_measure(cell,new_cell_point) = weighted_measure(cell,old_cell_point);
-          weighted_measure(cell,old_cell_point) = hold;
-
-          hold = jac_det(cell,new_cell_point);
-          jac_det(cell,new_cell_point) = jac_det(cell,old_cell_point);
-          jac_det(cell,old_cell_point) = hold;
-
-          for(int dim=0;dim<cell_dim;++dim){
-
-            ref_ip_coordinates(cell,new_cell_point,dim) = cub_points(old_cell_point,dim);
-
-            hold = ip_coordinates(cell,new_cell_point,dim);
-            ip_coordinates(cell,new_cell_point,dim) = ip_coordinates(cell,old_cell_point,dim);
-            ip_coordinates(cell,old_cell_point,dim) = hold;
-
-            hold = surface_normals(cell,new_cell_point,dim);
-            surface_normals(cell,new_cell_point,dim) = surface_normals(cell,old_cell_point,dim);
-            surface_normals(cell,old_cell_point,dim) = hold;
-
-            for(int dim2=0;dim2<cell_dim;++dim2){
-
-              hold = jac(cell,new_cell_point,dim,dim2);
-              jac(cell,new_cell_point,dim,dim2) = jac(cell,old_cell_point,dim,dim2);
-              jac(cell,old_cell_point,dim,dim2) = hold;
-
-              hold = jac_inv(cell,new_cell_point,dim,dim2);
-              jac_inv(cell,new_cell_point,dim,dim2) = jac_inv(cell,old_cell_point,dim,dim2);
-              jac_inv(cell,old_cell_point,dim,dim2) = hold;
-
-            }
-          }
-        }
+        reorder(point_indexes,[=](int a,int b) { swapQuadraturePoints(cell,point_offset+a,point_offset+b); });
       }
     }
   }
