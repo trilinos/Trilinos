@@ -25,7 +25,7 @@ namespace panzer {
   template<typename LO, typename GO>
   void panzer::L2Projection<LO,GO>::setup(const panzer::BasisDescriptor& targetBasis,
                                           const panzer::IntegrationDescriptor& integrationDescriptor,
-                                          const Teuchos::RCP<Teuchos::MpiComm<int>>& comm,
+                                          const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
                                           const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                                           const std::vector<std::string>& elementBlockNames,
                                           const Teuchos::RCP<panzer::WorksetContainer>& worksetContainer)
