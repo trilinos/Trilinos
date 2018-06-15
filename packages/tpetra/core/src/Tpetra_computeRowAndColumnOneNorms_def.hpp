@@ -157,6 +157,7 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
   using KAT = Kokkos::ArithTraits<SC>;
   using val_type = typename KAT::val_type;
   using mag_type = typename KAT::mag_type;
+  using KAM = Kokkos::ArithTraits<mag_type>;
   using device_type = typename NT::device_type;
 
   const auto& rowMap = * (A.getRowMap ());
@@ -202,6 +203,9 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
       // row Map, then the global result might differ.
       if (diagVal == KAT::zero ()) {
         result_h.foundZeroDiag = true;
+      }
+      if (rowNorm == KAM::zero ()) {
+        result_h.foundZeroRowNorm = true;
       }
       // NOTE (mfh 24 May 2018) We could actually compute local
       // rowScaledColNorms in situ at this point, if ! assumeSymmetric
@@ -339,6 +343,7 @@ public:
   // (result & 1) != 0 means "found Inf."
   // (result & 2) != 0 means "found NaN."
   // (result & 4) != 0 means "found zero diag."
+  // (result & 8) != 0 means "found zero row norm."
   // Pack into a single int so the reduction is cheaper,
   // esp. on GPU.
   using value_type = int;
@@ -360,6 +365,7 @@ public:
   {
     using KAT = Kokkos::ArithTraits<val_type>;
     using mag_type = typename KAT::mag_type;
+    using KAM = Kokkos::ArithTraits<mag_type>;
 
     const GO gblRow = rowMap_.getGlobalElement (lclRow);
     // OK if invalid(); then we simply won't find the diagonal entry.
@@ -395,6 +401,9 @@ public:
     // row Map, then the global result might differ.
     if (diagVal == KAT::zero ()) {
       dst |= 4;
+    }
+    if (rowNorm == KAM::zero ()) {
+      dst |= 8;
     }
     // NOTE (mfh 24 May 2018) We could actually compute local
     // rowScaledColNorms in situ at this point, if ! assumeSymmetric
@@ -445,6 +454,7 @@ computeLocalRowAndColumnOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, 
   equib.foundInf = (result & 1) != 0;
   equib.foundNan = (result & 2) != 0;
   equib.foundZeroDiag = (result & 4) != 0;
+  equib.foundZeroRowNorm = (result & 8) != 0;
   return equib;
 }
 
@@ -610,13 +620,15 @@ globalizeRowOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_ty
     // nontrival Export, so it's OK for this to cost an additional
     // pass over rowDiagonalEntries.
     equib.foundZeroDiag = findZero (equib.rowDiagonalEntries);
+    equib.foundZeroRowNorm = findZero (equib.rowNorms);
   }
 
-  constexpr int allReduceCount = 3;
+  constexpr int allReduceCount = 4;
   int lclNaughtyMatrix[allReduceCount];
   lclNaughtyMatrix[0] = equib.foundInf ? 1 : 0;
   lclNaughtyMatrix[1] = equib.foundNan ? 1 : 0;
   lclNaughtyMatrix[2] = equib.foundZeroDiag ? 1 : 0;
+  lclNaughtyMatrix[3] = equib.foundZeroRowNorm ? 1 : 0;
 
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
@@ -629,6 +641,7 @@ globalizeRowOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_ty
   equib.foundInf = gblNaughtyMatrix[0] == 1;
   equib.foundNan = gblNaughtyMatrix[1] == 1;
   equib.foundZeroDiag = gblNaughtyMatrix[2] == 1;
+  equib.foundZeroRowNorm = gblNaughtyMatrix[3] == 1;
 }
 
 template<class SC, class LO, class GO, class NT>

@@ -86,7 +86,8 @@ struct EquilibrationInfo {
   EquilibrationInfo () :
     foundInf (false),
     foundNan (false),
-    foundZeroDiag (false)
+    foundZeroDiag (false),
+    foundZeroRowNorm (false)
   {}
 
   EquilibrationInfo (const std::size_t lclNumRows,
@@ -106,7 +107,8 @@ struct EquilibrationInfo {
     assumeSymmetric (assumeSymmetric_),
     foundInf (false),
     foundNan (false),
-    foundZeroDiag (false)
+    foundZeroDiag (false),
+    foundZeroRowNorm (false)
   {}
 
   EquilibrationInfo (const Kokkos::View<mag_type*, device_type>& rowNorms_,
@@ -117,7 +119,8 @@ struct EquilibrationInfo {
                      const bool assumeSymmetric_,
                      const bool foundInf_,
                      const bool foundNan_,
-                     const bool foundZeroDiag_) :
+                     const bool foundZeroDiag_,
+                     const bool foundZeroRowNorm_) :
     rowNorms (rowNorms_),
     rowDiagonalEntries (rowDiagonalEntries_),
     colNorms (colNorms_),
@@ -126,7 +129,8 @@ struct EquilibrationInfo {
     assumeSymmetric (assumeSymmetric_),
     foundInf (foundInf_),
     foundNan (foundNan_),
-    foundZeroDiag (foundZeroDiag_)
+    foundZeroDiag (foundZeroDiag_),
+    foundZeroRowNorm (foundZeroRowNorm_)
   {}
 
   //! Deep-copy src into *this.
@@ -156,6 +160,7 @@ struct EquilibrationInfo {
     foundInf = src.foundInf;
     foundNan = src.foundNan;
     foundZeroDiag = src.foundZeroDiag;
+    foundZeroRowNorm = src.foundZeroRowNorm;
   }
 
   typename EquilibrationInfo<val_type, device_type>::HostMirror
@@ -169,7 +174,7 @@ struct EquilibrationInfo {
 
     return HostMirror {rowNorms_h, rowDiagonalEntries_h, colNorms_h,
         colDiagonalEntries_h, rowScaledColNorms_h, assumeSymmetric,
-        foundInf, foundNan, foundZeroDiag};
+        foundInf, foundNan, foundZeroDiag, foundZeroRowNorm};
   }
 
   // We call a row a "diagonally dominant row" if the absolute value
@@ -222,6 +227,9 @@ struct EquilibrationInfo {
 
   //! Found a zero diagonal entry somewhere in the matrix.
   bool foundZeroDiag;
+
+  //! At least one row of the matrix has a zero norm.
+  bool foundZeroRowNorm;
 };
 
 } // namespace Details

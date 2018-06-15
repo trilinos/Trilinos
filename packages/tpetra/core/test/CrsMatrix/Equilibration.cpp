@@ -244,9 +244,11 @@ struct EquilibrationTest {
   bool lclFoundInf;
   bool lclFoundNan;
   bool lclFoundZeroDiag;
+  bool lclFoundZeroRowNorm;
   bool gblFoundInf;
   bool gblFoundNan;
   bool gblFoundZeroDiag;
+  bool gblFoundZeroRowNorm;
 };
 
 template<class SC, class LO, class GO, class NT>
@@ -292,6 +294,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.lclFoundInf, result0.foundInf );
       TEST_EQUALITY( test.lclFoundNan, result0.foundNan );
       TEST_EQUALITY( test.lclFoundZeroDiag, result0.foundZeroDiag );
+      TEST_EQUALITY( test.lclFoundZeroRowNorm, result0.foundZeroRowNorm );
     }
 
     {
@@ -454,6 +457,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.gblFoundInf, result0.foundInf );
       TEST_EQUALITY( test.gblFoundNan, result0.foundNan );
       TEST_EQUALITY( test.gblFoundZeroDiag, result0.foundZeroDiag );
+      TEST_EQUALITY( test.gblFoundZeroRowNorm, result0.foundZeroRowNorm );
     }
 
     {
@@ -633,6 +637,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.lclFoundInf, result1.foundInf );
       TEST_EQUALITY( test.lclFoundNan, result1.foundNan );
       TEST_EQUALITY( test.lclFoundZeroDiag, result1.foundZeroDiag );
+      TEST_EQUALITY( test.lclFoundZeroRowNorm, result1.foundZeroRowNorm );
     }
 
     {
@@ -759,6 +764,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.gblFoundInf, result2.foundInf );
       TEST_EQUALITY( test.gblFoundNan, result2.foundNan );
       TEST_EQUALITY( test.gblFoundZeroDiag, result2.foundZeroDiag );
+      TEST_EQUALITY( test.gblFoundZeroRowNorm, result2.foundZeroRowNorm );
     }
 
     {
@@ -1236,9 +1242,11 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = false;
+  const bool lclFoundZeroRowNorm = false;
   const bool gblFoundInf = false;
   const bool gblFoundNan = false;
   const bool gblFoundZeroDiag = false;
+  const bool gblFoundZeroRowNorm = false;
 
   return EquilibrationTest<SC, LO, GO, NT> {
     A,
@@ -1255,9 +1263,11 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
+    lclFoundZeroRowNorm,
     gblFoundInf,
     gblFoundNan,
-    gblFoundZeroDiag
+    gblFoundZeroDiag,
+    gblFoundZeroRowNorm
   };
 }
 
@@ -1469,9 +1479,11 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = myRank == 1 ? true : false;
+  const bool lclFoundZeroRowNorm = myRank == 1 ? true : false;
   const bool gblFoundInf = false;
   const bool gblFoundNan = false;
   const bool gblFoundZeroDiag = numProcs == 1 ? false : true;
+  const bool gblFoundZeroRowNorm = numProcs == 1 ? false : true;
 
   return EquilibrationTest<SC, LO, GO, NT> {
     A,
@@ -1488,9 +1500,11 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
+    lclFoundZeroRowNorm,
     gblFoundInf,
     gblFoundNan,
-    gblFoundZeroDiag
+    gblFoundZeroDiag,
+    gblFoundZeroRowNorm
   };
 }
 
@@ -1705,9 +1719,11 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = myRank == 1 ? true : false;
+  const bool lclFoundZeroRowNorm = myRank == 1 ? true : false;
   const bool gblFoundInf = false;
   const bool gblFoundNan = false;
   const bool gblFoundZeroDiag = numProcs == 1 ? false : true;
+  const bool gblFoundZeroRowNorm = numProcs == 1 ? false : true;
 
   return EquilibrationTest<SC, LO, GO, NT> {
     A,
@@ -1724,9 +1740,11 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
+    lclFoundZeroRowNorm,
     gblFoundInf,
     gblFoundNan,
-    gblFoundZeroDiag
+    gblFoundZeroDiag,
+    gblFoundZeroRowNorm
   };
 }
 
@@ -1984,9 +2002,11 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
   const bool lclFoundInf = myRank == 1 ? true : false;
   const bool lclFoundNan = myRank == 2 ? true : false;
   const bool lclFoundZeroDiag = false;
+  const bool lclFoundZeroRowNorm = false;
   const bool gblFoundInf = numProcs > 1;
   const bool gblFoundNan = numProcs > 2;
   const bool gblFoundZeroDiag = false;
+  const bool gblFoundZeroRowNorm = false;
 
   return EquilibrationTest<SC, LO, GO, NT> {
     A,
@@ -2003,9 +2023,11 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
+    lclFoundZeroRowNorm,
     gblFoundInf,
     gblFoundNan,
-    gblFoundZeroDiag
+    gblFoundZeroDiag,
+    gblFoundZeroRowNorm
   };
 }
 
