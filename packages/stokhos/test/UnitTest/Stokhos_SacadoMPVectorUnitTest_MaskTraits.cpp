@@ -147,8 +147,6 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
     
     std::cout << mul2 << std::endl;
     std::cout << mul3 << std::endl;
-    std::cout << mul4 << std::endl;
-    std::cout << mul5 << std::endl;
     
     TEST_EQUALITY( mul[0], 2.5 );
     TEST_EQUALITY( mul[1], 0.0 );
@@ -157,8 +155,6 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
         TEST_EQUALITY( mul[i], 0.0 );
     
     TEST_EQUALITY( mul2, mul3 );
-    TEST_EQUALITY( mul2, mul4 );
-    TEST_EQUALITY( mul2, mul5 );
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_16)
