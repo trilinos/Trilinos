@@ -358,6 +358,20 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
+    TRIBITS_ADD_EXECUTABLE(
+      MatvecKernelDriver
+      SOURCES MatvecKernelDriver.cpp
+      COMM serial mpi
+      )
+  
+
+    TRIBITS_ADD_TEST(
+      MatvecKernelDriver
+      NAME "MatvecKernelDriver"
+      ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
   ENDIF()
 ENDIF()
 
