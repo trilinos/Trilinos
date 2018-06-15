@@ -141,9 +141,6 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Multiplication_8)
     
     scalar mul2 = m1*b;
     scalar mul3 = b*m1;
-
-    scalar mul4 = m1*2.0;
-    scalar mul5 = 2.0*m1;
     
     std::cout << m1 << std::endl;
     std::cout << mul << std::endl;
