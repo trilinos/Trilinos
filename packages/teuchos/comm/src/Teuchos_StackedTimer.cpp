@@ -217,8 +217,8 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
       for (int l=0; l<=level; ++l)
         os << "|   ";
       os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
-      if ( options.output_fraction && parent_time > 0 )
-        os << " - "<< (sum_[i]/active_[i]- sub_time)/parent_time*100 << "%";
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) )
+        os << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
       os <<std::endl;
     }
     total_time += sum_[i]/active_[i];
@@ -232,6 +232,12 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   merge(comm);
   collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
+    if (options.print_warnings) {
+      os << "*** Teuchos::StackedTimer::report() - Remainder for a block will be ***"
+         << "\n*** incorrect if a timer in the block does not exist on every rank  ***"
+         << "\n*** of the MPI Communicator.                                        ***"
+         << std::endl;
+    }
     if ( (options.max_levels != INT_MAX) && options.print_warnings) {
       os << "Teuchos::StackedTimer::report() - max_levels set to " << options.max_levels
          << ", to print more levels, increase value of OutputOptions::max_levels." << std::endl;

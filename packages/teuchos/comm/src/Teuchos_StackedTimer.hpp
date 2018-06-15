@@ -561,7 +561,7 @@ protected:
     * Recursive call to print a level of timer data.
     */
   double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed,
-      double parent_time, const OutputOptions &options);
+                    double parent_time, const OutputOptions &options);
 
 };  //StackedTimer
 
