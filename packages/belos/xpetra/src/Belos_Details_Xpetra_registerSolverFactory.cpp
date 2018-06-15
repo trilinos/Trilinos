@@ -103,7 +103,7 @@ void registerSolverFactory() {
 #endif
 
   #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)              \
-    Impl::registerSolverSubclassForTypesXpetra<manager<                        \
+    Impl::registerSolverSubclassForTypes<manager<                              \
               SC,                                                              \
               ::Xpetra::MultiVector<SC, LO, GO, NT>,                           \
               ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>>,      \
@@ -163,7 +163,7 @@ void registerSolverFactory() {
   BELOS_XPETRA_CALL( LCL_CALL )
 }
 
-} // namespace Xpetra
+} // namespace Tpetra
 } // namespace Details
 } // namespace Belos
 

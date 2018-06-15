@@ -68,7 +68,7 @@ namespace Tpetra {
 
 void registerSolverFactory() {
   #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)   \
-    Impl::registerSolverSubclassForTypesTpetra<                     \
+    Impl::registerSolverSubclassForTypes<                           \
       manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
       ::Tpetra::Operator<SC, LO, GO, NT>>, SC,                      \
       ::Tpetra::MultiVector<SC, LO, GO, NT>,                        \
