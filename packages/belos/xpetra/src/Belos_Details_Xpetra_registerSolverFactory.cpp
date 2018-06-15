@@ -163,21 +163,7 @@ void registerSolverFactory() {
   BELOS_XPETRA_CALL( LCL_CALL )
 }
 
-} // namespace Tpetra
+} // namespace Xpetra
 } // namespace Details
 } // namespace Belos
 
-namespace { // (anonymous)
-  class Register_Belos_Details_Xpetra_SolverFactory {
-  public:
-    Register_Belos_Details_Xpetra_SolverFactory () {
-      Belos::Details::Xpetra::registerSolverFactory();
-    }
-  };
-
-  // SolverFactoryParent constructor calls above registerSolverFactory which
-  // then causes this to link and execute registerSolverFactory pre-main.
-  Register_Belos_Details_Xpetra_SolverFactory
-    register_belos_details_xpetra_solverFactory;
-
-} // namespace (anonymous)

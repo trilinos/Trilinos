@@ -101,16 +101,3 @@ void registerSolverFactory () {
 } // namespace Details
 } // namespace Belos
 
-namespace { // (anonymous)
-  class Register_Belos_Details_SolverFactory {
-  public:
-    Register_Belos_Details_SolverFactory () {
-      Belos::Details::registerSolverFactory();
-    }
-  };
-
-  // SolverFactoryParent constructor calls above registerSolverFactory which
-  // then causes this to link and execute registerSolverFactory pre-main.
-  Register_Belos_Details_SolverFactory register_belos_details_solverFactory;
-
-} // namespace (anonymous)

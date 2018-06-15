@@ -88,17 +88,3 @@ void registerSolverFactory() {
 } // namespace Details
 } // namespace Belos
 
-namespace { // (anonymous)
-  class Register_Belos_Details_Epetra_SolverFactory {
-  public:
-    Register_Belos_Details_Epetra_SolverFactory () {
-      Belos::Details::Epetra::registerSolverFactory();
-    }
-  };
-
-  // SolverFactoryParent constructor calls above registerSolverFactory which
-  // then causes this to link and execute registerSolverFactory pre-main.
-  Register_Belos_Details_Epetra_SolverFactory
-    register_belos_details_epetra_solverFactory;
-
-} // namespace (anonymous)
