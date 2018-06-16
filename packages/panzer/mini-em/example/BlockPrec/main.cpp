@@ -132,7 +132,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       std::size_t workset_size = 20;
       bool exodus_output = false;
       bool matrix_output = false;
-      bool use_refmaxwell = false;
+      std::string solver = "Augmentation";
       std::string filename;
       int numTimeSteps = 1;
       double epsilon = 8.854187817e-12;
@@ -140,7 +140,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       bool build_tet_mesh = false;
       bool doSolveTimings = false;
       int numReps = 0;
-      std::string xml = "";
       std::string linAlgebra = "Tpetra";
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
@@ -155,13 +154,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       clp.setOption("workset-size",&workset_size,"size of the worksets");
       clp.setOption("exodus-output","no-exodus-output",&exodus_output);
       clp.setOption("matrix-output","no-matrix-output",&matrix_output);
-      clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
+      clp.setOption("solver",&solver);
       clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
       clp.setOption("numTimeSteps",&numTimeSteps);
       clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
       clp.setOption("epsilon",&epsilon);
       clp.setOption("mu",&mu);
-      clp.setOption("xml",&xml,"XML file with solver parameters");
       clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
 
       // parse command-line argument
@@ -178,7 +176,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         numReps = numTimeSteps;
         numTimeSteps = 1;
       }
-
+      TEUCHOS_ASSERT(solver == "Augmentation" || solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
+      bool use_refmaxwell = (solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
 
       RCP<panzer_stk::STK_Interface> mesh;
       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
@@ -228,6 +227,48 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       double c  = std::sqrt(1.0/epsilon/mu);
       double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
       double dt = cfl*min_dx/c;
+
+      std::string xml;
+      if (solver == "Augmentation")
+        if (linAlgebra == "Tpetra")
+          xml = "solverAugmentation.xml";
+        else
+          xml = "solverAugmentationEpetra.xml";
+      else if (solver == "MueLu-RefMaxwell") {
+        if (linAlgebra == "Tpetra")
+          xml = "solverMueLuRefMaxwell.xml";
+        else
+          xml = "solverMueLuRefMaxwellEpetra.xml";
+#ifdef KOKKOS_ENABLE_OPENMP
+        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
+          if (linAlgebra == "Tpetra")
+            xml = "solverMueLuRefMaxwellOpenMP.xml";
+          else {
+            std::cout << std::endl
+                      << "WARNING" << std::endl
+                      << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
+                      << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
+            return -1;
+            xml = "solverMueLuRefMaxwellEpetra.xml";
+          }
+        }
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+          xml = "solverMueLuRefMaxwellCuda.xml";
+#endif
+      } else if (solver == "ML-RefMaxwell") {
+        xml = "solverMLRefMaxwell.xml";
+      }
+
+      RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("mu",mu);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("epsilon",epsilon);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("cfl",cfl);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("min_dx",min_dx);
+      lin_solver_pl->print(*out);
 
       *out << std::endl << "epsilon: " << epsilon << std::endl;
       *out << "mu:      " << mu << std::endl;
@@ -395,37 +436,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
         addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
       }
-
-
-      std::string defaultXMLfile;
-      if (!use_refmaxwell)
-        if (linAlgebra == "Tpetra")
-          defaultXMLfile = "solverDefaultsAugmentation.xml";
-        else
-          defaultXMLfile = "solverDefaultsAugmentationEpetra.xml";
-      else {
-        if (linAlgebra == "Tpetra")
-          defaultXMLfile = "solverDefaultsRefMaxwell.xml";
-        else
-          defaultXMLfile = "solverDefaultsRefMaxwellEpetra.xml";
-#ifdef KOKKOS_ENABLE_OPENMP
-        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
-          defaultXMLfile = "solverDefaultsRefMaxwellOpenMP.xml";
-#endif
-#ifdef KOKKOS_ENABLE_CUDA
-        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
-          defaultXMLfile = "solverDefaultsRefMaxwellCuda.xml";
-#endif
-      }
-      RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
-      Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,lin_solver_pl.ptr(),*comm);
-      if (xml != "")
-        Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("mu",mu);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("epsilon",epsilon);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("cfl",cfl);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("min_dx",min_dx);
 
       // build linear solver
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
@@ -614,7 +624,9 @@ int main(int argc,char * argv[]){
 
   Teuchos::CommandLineProcessor clp(false);
   std::string linAlgebra = "Tpetra";
+  std::string solver = "Augmentation";
   clp.setOption("linAlgebra",&linAlgebra);
+  clp.setOption("solver",&solver);
   clp.recogniseAllOptions(false);
   switch (clp.parse(argc, argv, NULL)) {
     case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
@@ -622,6 +634,9 @@ int main(int argc,char * argv[]){
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
   }
+
+  if (solver == "ML-RefMaxwell")
+    TEUCHOS_ASSERT(linAlgebra == "Epetra");
 
   int retVal;
   if (linAlgebra == "Tpetra") {
