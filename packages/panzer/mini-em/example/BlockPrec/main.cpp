@@ -104,211 +104,205 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLi
 int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 {
 
-  { // Put main inside braces to delete all views prior to finalize of device
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::rcp_dynamic_cast;
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+    = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+  if (comm->getSize() > 1) {
+    out->setOutputToRootOnly(0);
+  }
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer(new Teuchos::StackedTimer("Mini-EM"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
-    Teuchos::oblackholestream blackhole;
-    Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
+  {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
 
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-    if (mpiSession.getNProc() > 1) {
-      out->setOutputToRootOnly(0);
+    // defaults for command-line options
+    int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=-1,z_procs=-1,basis_order=1;
+    double cfl=4.0;
+    std::size_t workset_size = 20;
+    bool exodus_output = false;
+    bool matrix_output = false;
+    std::string solver = "Augmentation";
+    std::string filename;
+    int numTimeSteps = 1;
+    double epsilon = 8.854187817e-12;
+    double mu = 1.2566370614e-6;
+    bool build_tet_mesh = false;
+    bool doSolveTimings = false;
+    int numReps = 0;
+    std::string linAlgebra = "Tpetra";
+    Teuchos::CommandLineProcessor clp;
+    clp.setOption("x-elements",&x_elements);
+    clp.setOption("y-elements",&y_elements);
+    clp.setOption("z-elements",&z_elements);
+    clp.setOption("x-procs",&x_procs);
+    clp.setOption("y-procs",&y_procs);
+    clp.setOption("z-procs",&z_procs);
+    clp.setOption("filename",&filename);
+    clp.setOption("basis-order",&basis_order);
+    clp.setOption("cfl",&cfl);
+    clp.setOption("workset-size",&workset_size,"size of the worksets");
+    clp.setOption("exodus-output","no-exodus-output",&exodus_output);
+    clp.setOption("matrix-output","no-matrix-output",&matrix_output);
+    clp.setOption("solver",&solver);
+    clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
+    clp.setOption("numTimeSteps",&numTimeSteps);
+    clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
+    clp.setOption("epsilon",&epsilon);
+    clp.setOption("mu",&mu);
+    clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
+
+    // parse command-line argument
+    clp.recogniseAllOptions(true);
+    clp.throwExceptions(false);
+    const Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse (argc, argv);
+    switch (parseResult) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+    if (doSolveTimings) {
+      numReps = numTimeSteps;
+      numTimeSteps = 1;
+    }
+    TEUCHOS_ASSERT(solver == "Augmentation" || solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
+    bool use_refmaxwell = (solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
+
+    RCP<panzer_stk::STK_Interface> mesh;
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
+    {
+      Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
+
+      if ( filename != "") { // Exodus file reader...
+        *out << "Reading from mesh file "<<filename<<std::endl;
+        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+        pl->set("File Name", filename);
+        mesh_factory = Teuchos::RCP<panzer_stk::STK_MeshFactory>(new panzer_stk::STK_ExodusReaderFactory());
+        mesh_factory->setParameterList(pl);
+        // build mesh
+        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+      } else { // Inline mesh generator
+        // set mesh factory parameters
+        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+        pl->set("X Blocks",1);
+        pl->set("Y Blocks",1);
+        pl->set("Z Blocks",1);
+        pl->set("X Elements",x_elements);
+        pl->set("Y Elements",y_elements);
+        pl->set("Z Elements",z_elements);
+        pl->set("X Procs",x_procs);
+        pl->set("Y Procs",y_procs);
+        pl->set("Z Procs",z_procs);
+
+        // periodic boundaries
+        //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+        //      per_pl.set("Count", 3);
+        //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
+        //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
+        //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+
+        // build mesh
+        if (build_tet_mesh) {
+          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+        } else {
+          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+        }
+        mesh_factory->setParameterList(pl);
+        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+      }
     }
 
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
-      = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
-    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer(new Teuchos::StackedTimer("Mini-EM"));
-    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+    // compute dt from cfl
+    double c  = std::sqrt(1.0/epsilon/mu);
+    double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
+    double dt = cfl*min_dx/c;
 
-    {
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
-
-      // defaults for command-line options
-      int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=-1,z_procs=-1,basis_order=1;
-      double cfl=4.0;
-      std::size_t workset_size = 20;
-      bool exodus_output = false;
-      bool matrix_output = false;
-      std::string solver = "Augmentation";
-      std::string filename;
-      int numTimeSteps = 1;
-      double epsilon = 8.854187817e-12;
-      double mu = 1.2566370614e-6;
-      bool build_tet_mesh = false;
-      bool doSolveTimings = false;
-      int numReps = 0;
-      std::string linAlgebra = "Tpetra";
-      Teuchos::CommandLineProcessor clp;
-      clp.setOption("x-elements",&x_elements);
-      clp.setOption("y-elements",&y_elements);
-      clp.setOption("z-elements",&z_elements);
-      clp.setOption("x-procs",&x_procs);
-      clp.setOption("y-procs",&y_procs);
-      clp.setOption("z-procs",&z_procs);
-      clp.setOption("filename",&filename);
-      clp.setOption("basis-order",&basis_order);
-      clp.setOption("cfl",&cfl);
-      clp.setOption("workset-size",&workset_size,"size of the worksets");
-      clp.setOption("exodus-output","no-exodus-output",&exodus_output);
-      clp.setOption("matrix-output","no-matrix-output",&matrix_output);
-      clp.setOption("solver",&solver);
-      clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
-      clp.setOption("numTimeSteps",&numTimeSteps);
-      clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
-      clp.setOption("epsilon",&epsilon);
-      clp.setOption("mu",&mu);
-      clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
-
-      // parse command-line argument
-      clp.recogniseAllOptions(true);
-      clp.throwExceptions(false);
-      const Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse (argc, argv);
-      switch (parseResult) {
-        case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
-        case Teuchos::CommandLineProcessor::PARSE_ERROR:
-        case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-        case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-      }
-      if (doSolveTimings) {
-        numReps = numTimeSteps;
-        numTimeSteps = 1;
-      }
-      TEUCHOS_ASSERT(solver == "Augmentation" || solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
-      bool use_refmaxwell = (solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
-
-      RCP<panzer_stk::STK_Interface> mesh;
-      Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-      {
-        Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
-
-        if ( filename != "") { // Exodus file reader...
-          *out << "Reading from mesh file "<<filename<<std::endl;
-          RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-          pl->set("File Name", filename);
-          mesh_factory = Teuchos::RCP<panzer_stk::STK_MeshFactory>(new panzer_stk::STK_ExodusReaderFactory());
-          mesh_factory->setParameterList(pl);
-          // build mesh
-          mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-        } else { // Inline mesh generator
-          // set mesh factory parameters
-          RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-          pl->set("X Blocks",1);
-          pl->set("Y Blocks",1);
-          pl->set("Z Blocks",1);
-          pl->set("X Elements",x_elements);
-          pl->set("Y Elements",y_elements);
-          pl->set("Z Elements",z_elements);
-          pl->set("X Procs",x_procs);
-          pl->set("Y Procs",y_procs);
-          pl->set("Z Procs",z_procs);
-
-          // periodic boundaries
-          //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-          //      per_pl.set("Count", 3);
-          //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-          //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-          //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
-
-          // build mesh
-          if (build_tet_mesh) {
-            mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-          } else {
-            mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
-          }
-          mesh_factory->setParameterList(pl);
-          mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-        }
-      }
-
-      // compute dt from cfl
-      double c  = std::sqrt(1.0/epsilon/mu);
-      double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
-      double dt = cfl*min_dx/c;
-
-      std::string xml;
-      if (solver == "Augmentation")
-        if (linAlgebra == "Tpetra")
-          xml = "solverAugmentation.xml";
-        else
-          xml = "solverAugmentationEpetra.xml";
-      else if (solver == "MueLu-RefMaxwell") {
-        if (linAlgebra == "Tpetra")
-          xml = "solverMueLuRefMaxwell.xml";
-        else
-          xml = "solverMueLuRefMaxwellEpetra.xml";
+    std::string xml;
+    if (solver == "Augmentation")
+      if (linAlgebra == "Tpetra")
+        xml = "solverAugmentation.xml";
+      else
+        xml = "solverAugmentationEpetra.xml";
+    else if (solver == "MueLu-RefMaxwell") {
+      if (linAlgebra == "Tpetra")
+        xml = "solverMueLuRefMaxwell.xml";
+      else
+        xml = "solverMueLuRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
-        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
-          if (linAlgebra == "Tpetra")
-            xml = "solverMueLuRefMaxwellOpenMP.xml";
-          else {
-            std::cout << std::endl
-                      << "WARNING" << std::endl
-                      << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
-                      << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
-            return -1;
-            xml = "solverMueLuRefMaxwellEpetra.xml";
-          }
+      if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
+        if (linAlgebra == "Tpetra")
+          xml = "solverMueLuRefMaxwellOpenMP.xml";
+        else {
+          std::cout << std::endl
+                    << "WARNING" << std::endl
+                    << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
+                    << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
+          return -1;
+          xml = "solverMueLuRefMaxwellEpetra.xml";
         }
+      }
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
-          xml = "solverMueLuRefMaxwellCuda.xml";
+      if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+        xml = "solverMueLuRefMaxwellCuda.xml";
 #endif
-      } else if (solver == "ML-RefMaxwell") {
-        xml = "solverMLRefMaxwell.xml";
-      }
+    } else if (solver == "ML-RefMaxwell") {
+      xml = "solverMLRefMaxwell.xml";
+    }
 
-      RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
-      Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("mu",mu);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("epsilon",epsilon);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("cfl",cfl);
-      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("min_dx",min_dx);
-      lin_solver_pl->print(*out);
+    RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
+    lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("mu",mu);
+    lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
+    lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("epsilon",epsilon);
+    lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("cfl",cfl);
+    lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("min_dx",min_dx);
+    lin_solver_pl->print(*out);
 
-      *out << std::endl << "epsilon: " << epsilon << std::endl;
-      *out << "mu:      " << mu << std::endl;
-      *out << "c:       " << c << std::endl;
-      *out << "min_dx:  " << min_dx << std::endl;
-      *out << "cfl:     " << cfl << std::endl;
-      *out << "dt:      " << dt << std::endl << std::endl;
+    *out << std::endl << "epsilon: " << epsilon << std::endl;
+    *out << "mu:      " << mu << std::endl;
+    *out << "c:       " << c << std::endl;
+    *out << "min_dx:  " << min_dx << std::endl;
+    *out << "cfl:     " << cfl << std::endl;
+    *out << "dt:      " << dt << std::endl << std::endl;
 
-      // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
-      Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
+    // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
+    Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
 
-      // factory definitions
-      Teuchos::RCP<mini_em::EquationSetFactory> eqset_factory =
-        Teuchos::rcp(new mini_em::EquationSetFactory(auxGlobalData)); // where the maxwell equations are defined
-      mini_em::BCFactory bc_factory;                                  // where boundary conditions are defined
+    // factory definitions
+    Teuchos::RCP<mini_em::EquationSetFactory> eqset_factory =
+      Teuchos::rcp(new mini_em::EquationSetFactory(auxGlobalData)); // where the maxwell equations are defined
+    mini_em::BCFactory bc_factory;                                  // where boundary conditions are defined
 
-      // GobalData sets ostream and parameter interface to physics
-      Teuchos::RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
+    // GobalData sets ostream and parameter interface to physics
+    Teuchos::RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
 
-      // define physics block parameter list and boundary conditions
-      Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
-      std::vector<panzer::BC> bcs = homogeneousBoundaries(mesh);
-      std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
+    // define physics block parameter list and boundary conditions
+    Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
+    std::vector<panzer::BC> bcs = homogeneousBoundaries(mesh);
+    std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
 
-      // build the physics blocks objects
-      std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
-      {
-        Teuchos::TimeMonitor tMphysics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build physics blocks")));
+    // build the physics blocks objects
+    std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
+    {
+      Teuchos::TimeMonitor tMphysics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build physics blocks")));
 
-        bool build_transient_support = true;
+      bool build_transient_support = true;
 
-        std::vector<std::string> block_names;
-        mesh->getElementBlockNames(block_names);
-        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
+      std::vector<std::string> block_names;
+      mesh->getElementBlockNames(block_names);
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
 
-        // Can be overridden by the equation set
-        int default_integration_order = 2;
+      // Can be overridden by the equation set
+      int default_integration_order = 2;
 
-        // the physics block knows how to build and register evaluator with the field manager
-        RCP<panzer::PhysicsBlock> pb
+      // the physics block knows how to build and register evaluator with the field manager
+      RCP<panzer::PhysicsBlock> pb
         = rcp(new panzer::PhysicsBlock(physicsBlock_pl,
                                        block_names[0],
                                        default_integration_order,
@@ -317,34 +311,34 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                        globalData,
                                        build_transient_support));
 
-        // we can have more than one physics block, one per element block
-        physicsBlocks.push_back(pb);
-      }
+      // we can have more than one physics block, one per element block
+      physicsBlocks.push_back(pb);
+    }
 
-      // build the auxiliary physics blocks objects
-      Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
-      if (use_refmaxwell) {
-        auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
-        // We actually want Q_rho with weight 1/mu but for that we
-        // would need to be able to request a Q_E with weight 1
-        // instead of eps/dt.
-      } else
-        auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
-      std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
-      {
-        Teuchos::TimeMonitor tMaux_physics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks")));
+    // build the auxiliary physics blocks objects
+    Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
+    if (use_refmaxwell) {
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
+      // We actually want Q_rho with weight 1/mu but for that we
+      // would need to be able to request a Q_E with weight 1
+      // instead of eps/dt.
+    } else
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
+    std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
+    {
+      Teuchos::TimeMonitor tMaux_physics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks")));
 
-        bool build_transient_support = false;
+      bool build_transient_support = false;
 
-        std::vector<std::string> block_names;
-        mesh->getElementBlockNames(block_names);
-        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
+      std::vector<std::string> block_names;
+      mesh->getElementBlockNames(block_names);
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
 
-        // Can be overridden by the equation set
-        int default_integration_order = 2;
+      // Can be overridden by the equation set
+      int default_integration_order = 2;
 
-        // the physics block knows how to build and register evaluator with the field manager
-        RCP<panzer::PhysicsBlock> pb
+      // the physics block knows how to build and register evaluator with the field manager
+      RCP<panzer::PhysicsBlock> pb
         = rcp(new panzer::PhysicsBlock(auxPhysicsBlock_pl,
                                        block_names[0],
                                        default_integration_order,
@@ -353,199 +347,199 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                        globalData,
                                        build_transient_support));
 
-        // we can have more than one physics block, one per element block
-        auxPhysicsBlocks.push_back(pb);
-      }
+      // we can have more than one physics block, one per element block
+      auxPhysicsBlocks.push_back(pb);
+    }
 
-      // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
-      // fields to be setup)
-      createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output);
+    // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
+    // fields to be setup)
+    createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output);
 
-      // build worksets
-      Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-         = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-      Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-         = Teuchos::rcp(new panzer::WorksetContainer);
-      Teuchos::RCP<panzer::WorksetContainer> auxWkstContainer  // attach it to a workset container (uses lazy evaluation)
-         = Teuchos::rcp(new panzer::WorksetContainer);
-      wkstContainer->setFactory(wkstFactory);
-      auxWkstContainer->setFactory(wkstFactory);
-      for(size_t i=0;i<physicsBlocks.size();i++)
+    // build worksets
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+      = Teuchos::rcp(new panzer::WorksetContainer);
+    Teuchos::RCP<panzer::WorksetContainer> auxWkstContainer  // attach it to a workset container (uses lazy evaluation)
+      = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    auxWkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++)
       {
         wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
         auxWkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),auxPhysicsBlocks[i]->getWorksetNeeds());
       }
-      wkstContainer->setWorksetSize(workset_size);
-      auxWkstContainer->setWorksetSize(workset_size);
+    wkstContainer->setWorksetSize(workset_size);
+    auxWkstContainer->setWorksetSize(workset_size);
 
-      // build DOF Managers and linear object factories
+    // build DOF Managers and linear object factories
 
-      // build the connection manager
-      const Teuchos::RCP<panzer::ConnManager<LocalOrdinal,GlobalOrdinal> >
-        conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<GlobalOrdinal>(mesh));
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager<LocalOrdinal,GlobalOrdinal> >
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<GlobalOrdinal>(mesh));
 
-      // blocked degree of freedom manager
-      panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
-      std::string fieldOrder = "blocked: B_face E_edge";
-      RCP<panzer::UniqueGlobalIndexerBase > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
+    // blocked degree of freedom manager
+    panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
+    std::string fieldOrder = "blocked: B_face E_edge";
+    RCP<panzer::UniqueGlobalIndexerBase > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
 
-      // auxiliary dof manager
-      std::string auxFieldOrder = "blocked: AUXILIARY_NODE AUXILIARY_EDGE";
-      RCP<panzer::UniqueGlobalIndexerBase > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
+    // auxiliary dof manager
+    std::string auxFieldOrder = "blocked: AUXILIARY_NODE AUXILIARY_EDGE";
+    RCP<panzer::UniqueGlobalIndexerBase > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
-      // construct some linear algebra objects, build object to pass to evaluators
-      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true)));
-      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
+    // construct some linear algebra objects, build object to pass to evaluators
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true)));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
 
-      // Assign the dof managers to worksets
-      wkstContainer->setGlobalIndexer(dofManager);
-      auxWkstContainer->setGlobalIndexer(auxDofManager);
+    // Assign the dof managers to worksets
+    wkstContainer->setGlobalIndexer(dofManager);
+    auxWkstContainer->setGlobalIndexer(auxDofManager);
 
-      // setup closure model
-      panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
-      mini_em::ClosureModelFactory_TemplateBuilder cm_builder;
-      cm_factory.buildObjects(cm_builder);
-      Teuchos::ParameterList closure_models("Closure Models");
-      {
-        closure_models.sublist("electromagnetics").sublist("CURRENT").set<std::string>("Type","GAUSSIAN PULSE"); // a gaussian current source
-        closure_models.sublist("electromagnetics").sublist("CURRENT").set<double>("dt",dt); // set pulse width such that dt resolves it
-        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY"); // compute 1/2(eps*||E||^2 + 1/mu*||B||^2)
-        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("mu",mu);
-        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("epsilon",epsilon);
-      }
+    // setup closure model
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    mini_em::ClosureModelFactory_TemplateBuilder cm_builder;
+    cm_factory.buildObjects(cm_builder);
+    Teuchos::ParameterList closure_models("Closure Models");
+    {
+      closure_models.sublist("electromagnetics").sublist("CURRENT").set<std::string>("Type","GAUSSIAN PULSE"); // a gaussian current source
+      closure_models.sublist("electromagnetics").sublist("CURRENT").set<double>("dt",dt); // set pulse width such that dt resolves it
+      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY"); // compute 1/2(eps*||E||^2 + 1/mu*||B||^2)
+      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("epsilon",epsilon);
+    }
 
-      Teuchos::ParameterList user_data("User Data"); // user data can be empty here
+    Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
-      // add full maxwell solver to teko
-      RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
-      Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
+    // add full maxwell solver to teko
+    RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
+    Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
 
-      // add callbacks to request handler. these are for requesting auxiliary operators and for providing
-      // coordinate information to MueLu
-      Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
-      req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
-      Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
-                  rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
-                             rcp_dynamic_cast<panzer_stk::STKConnManager<GlobalOrdinal> >(conn_manager,true),
-                             rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
-                             rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
-      req_handler->addRequestCallback(callback);
+    // add callbacks to request handler. these are for requesting auxiliary operators and for providing
+    // coordinate information to MueLu
+    Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
+    req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
+    Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
+      rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
+                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager<GlobalOrdinal> >(conn_manager,true),
+                                                                                   rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
+                                                                                   rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
+    req_handler->addRequestCallback(callback);
 
-      // add discrete gradient
-      {
-        Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
-        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-      }
+    // add discrete gradient
+    {
+      Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
+      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+    }
 
-      // build linear solver
-      RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
+    // build linear solver
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
       = panzer_stk::buildLOWSFactory(true, dofManager, conn_manager,
-          Teuchos::as<int>(mesh->getDimension()),
-          comm, lin_solver_pl,req_handler, false, false, auxDofManager);
+                                     Teuchos::as<int>(mesh->getDimension()),
+                                     comm, lin_solver_pl,req_handler, false, false, auxDofManager);
 
-      //setup model evaluators
-      RCP<panzer::ModelEvaluator<double> > physics = rcp(new panzer::ModelEvaluator<double> (linObjFactory, lowsFactory, globalData, true, 0.0));
-      RCP<panzer::ModelEvaluator<double> > auxPhysics = rcp(new panzer::ModelEvaluator<double> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
+    //setup model evaluators
+    RCP<panzer::ModelEvaluator<double> > physics = rcp(new panzer::ModelEvaluator<double> (linObjFactory, lowsFactory, globalData, true, 0.0));
+    RCP<panzer::ModelEvaluator<double> > auxPhysics = rcp(new panzer::ModelEvaluator<double> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
 
-      // add a response to output total electromagnetic energy
-      {
-        std::vector<std::string> eBlocks;
-        mesh->getElementBlockNames(eBlocks);
+    // add a response to output total electromagnetic energy
+    {
+      std::vector<std::string> eBlocks;
+      mesh->getElementBlockNames(eBlocks);
 
-        panzer::FunctionalResponse_Builder<LocalOrdinal,GlobalOrdinal> builder;
+      panzer::FunctionalResponse_Builder<LocalOrdinal,GlobalOrdinal> builder;
 
-        builder.comm = MPI_COMM_WORLD;
-        builder.cubatureDegree = 2*basis_order;
-        builder.requiresCellIntegral = true;
-        builder.quadPointField = "EM_ENERGY";
+      builder.comm = MPI_COMM_WORLD;
+      builder.cubatureDegree = 2*basis_order;
+      builder.requiresCellIntegral = true;
+      builder.quadPointField = "EM_ENERGY";
 
-        std::vector<panzer::WorksetDescriptor> wkst_descs;
-        for(std::size_t i=0;i<eBlocks.size();i++)
-          wkst_descs.push_back(panzer::blockDescriptor(eBlocks[i]));
+      std::vector<panzer::WorksetDescriptor> wkst_descs;
+      for(std::size_t i=0;i<eBlocks.size();i++)
+        wkst_descs.push_back(panzer::blockDescriptor(eBlocks[i]));
 
-        physics->addResponse("Electromagnetic Energy",wkst_descs,builder);
-      }
+      physics->addResponse("Electromagnetic Energy",wkst_descs,builder);
+    }
 
-      {
-        Teuchos::TimeMonitor tMphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup physics model evaluator")));
-        physics->setupModel(wkstContainer,physicsBlocks,bcs,
-                            *eqset_factory,
-                            bc_factory,
-                            cm_factory,
-                            cm_factory,
-                            closure_models,
-                            user_data,false,"");
+    {
+      Teuchos::TimeMonitor tMphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup physics model evaluator")));
+      physics->setupModel(wkstContainer,physicsBlocks,bcs,
+                          *eqset_factory,
+                          bc_factory,
+                          cm_factory,
+                          cm_factory,
+                          closure_models,
+                          user_data,false,"");
 
-        // add auxiliary data to model evaluator
-        for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-          physics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-      }
+      // add auxiliary data to model evaluator
+      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
+        physics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
+    }
 
-      {
-        Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator")));
+    {
+      Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator")));
 
-        auxPhysics->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
-                               *eqset_factory,
-                               bc_factory,
-                               cm_factory,
-                               cm_factory,
-                               closure_models,
-                               user_data,false,"");
+      auxPhysics->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
+                             *eqset_factory,
+                             bc_factory,
+                             cm_factory,
+                             cm_factory,
+                             closure_models,
+                             user_data,false,"");
 
-        // evaluate the auxiliary model to obtain auxiliary operators
-        for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-          auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-      }
+      // evaluate the auxiliary model to obtain auxiliary operators
+      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
+        auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
+    }
 
-      Thyra::ModelEvaluatorBase::InArgs<double> auxInArgs = auxPhysics->getNominalValues();
-      Thyra::ModelEvaluatorBase::OutArgs<double> auxOutArgs = auxPhysics->createOutArgs();
-      Teuchos::RCP<Thyra::LinearOpBase<double> > aux_W_op = auxPhysics->create_W_op();
-      auxOutArgs.set_W_op(aux_W_op);
-      auxPhysics->evalModel(auxInArgs, auxOutArgs);
+    Thyra::ModelEvaluatorBase::InArgs<double> auxInArgs = auxPhysics->getNominalValues();
+    Thyra::ModelEvaluatorBase::OutArgs<double> auxOutArgs = auxPhysics->createOutArgs();
+    Teuchos::RCP<Thyra::LinearOpBase<double> > aux_W_op = auxPhysics->create_W_op();
+    auxOutArgs.set_W_op(aux_W_op);
+    auxPhysics->evalModel(auxInArgs, auxOutArgs);
 
-      // setup a response library to write to the mesh
-      RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
+    // setup a response library to write to the mesh
+    RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
-          closure_models);
+                                  closure_models);
 
 
 
-      // set up the solution vector, jacobian, and residual
-      RCP<Thyra::VectorBase<double> > solution_vec = Thyra::createMember(physics->get_x_space());
-      Thyra::assign(solution_vec.ptr(),0.0);
-      RCP<Thyra::LinearOpWithSolveBase<double> > jacobian = physics->create_W();
+    // set up the solution vector, jacobian, and residual
+    RCP<Thyra::VectorBase<double> > solution_vec = Thyra::createMember(physics->get_x_space());
+    Thyra::assign(solution_vec.ptr(),0.0);
+    RCP<Thyra::LinearOpWithSolveBase<double> > jacobian = physics->create_W();
 
-      RCP<Thyra::VectorBase<double> > residual = Thyra::createMember(physics->get_f_space());
+    RCP<Thyra::VectorBase<double> > residual = Thyra::createMember(physics->get_f_space());
 
-      // set up the model evaluator
-      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = physics->createInArgs();
-      inArgs.set_alpha(1.0/dt);
-      inArgs.set_beta(1.0);
+    // set up the model evaluator
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgs = physics->createInArgs();
+    inArgs.set_alpha(1.0/dt);
+    inArgs.set_beta(1.0);
 
-      // initial condition is zero, define x_dot accordingly
-      RCP<const Thyra::VectorBase<double> > x = inArgs.get_x();
-      RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(physics->get_x_space());
-      Thyra::V_StV(x_dot.ptr(),1.0/dt,*x);
-      inArgs.set_x_dot(x_dot);
-      Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = physics->createOutArgs();
-      outArgs.set_f(residual);
-      outArgs.set_W(jacobian);
+    // initial condition is zero, define x_dot accordingly
+    RCP<const Thyra::VectorBase<double> > x = inArgs.get_x();
+    RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(physics->get_x_space());
+    Thyra::V_StV(x_dot.ptr(),1.0/dt,*x);
+    inArgs.set_x_dot(x_dot);
+    Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = physics->createOutArgs();
+    outArgs.set_f(residual);
+    outArgs.set_W(jacobian);
 
-      // compute the jacobian matrix only once
-      Kokkos::fence();
-      physics->evalModel(inArgs,outArgs);
-      outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<double> >(NULL));
+    // compute the jacobian matrix only once
+    Kokkos::fence();
+    physics->evalModel(inArgs,outArgs);
+    outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<double> >(NULL));
 
-      // take time-steps with Backward Euler
-      if (exodus_output)
-        writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
+    // take time-steps with Backward Euler
+    if (exodus_output)
+      writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
 
-      RCP<Thyra::VectorBase<double> > correction_vec = Thyra::createMember(physics->get_x_space());
-      Thyra::assign(correction_vec.ptr(),0.0);
+    RCP<Thyra::VectorBase<double> > correction_vec = Thyra::createMember(physics->get_x_space());
+    Thyra::assign(correction_vec.ptr(),0.0);
 
-      {
-        Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
-        for(int ts = 1; ts < numTimeSteps+1; ts++)
+    {
+      Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
+      for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
 
@@ -601,25 +595,26 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
           // write to an exodus file
           if (exodus_output)
-          {
-            Teuchos::TimeMonitor tMexodus(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper: writeToExodus")));
-            writeToExodus(dt*ts,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
-          }
+            {
+              Teuchos::TimeMonitor tMexodus(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper: writeToExodus")));
+              writeToExodus(dt*ts,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
+            }
 
           (*out) << "finished time step " << ts << std::endl;
         }
-      }
     }
-//    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union);
-    Teuchos::StackedTimer::OutputOptions options;
-    options.output_fraction = options.output_histogram = options.output_minmax = true;
-    stacked_timer->report(*out, comm, options);
-
   }
+  //    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union);
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = options.output_histogram = options.output_minmax = true;
+  stacked_timer->report(*out, comm, options);
+
   return 0;
 }
 
 int main(int argc,char * argv[]){
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
   Kokkos::initialize(argc, argv);
 
   Teuchos::CommandLineProcessor clp(false);
