@@ -634,19 +634,16 @@ void Relaxation<MatrixType>::initialize ()
     }
 
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
-      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (A_.get());
       TEUCHOS_TEST_FOR_EXCEPTION
         (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::initialize: "
          "Multithreaded Gauss-Seidel methods currently only work when the input "
          "matrix is a Tpetra::CrsMatrix.");
 
       if(this->ifpack2_dump_matrix_){
-        int random_integer = rand();
-        std::stringstream ss;
-        ss << random_integer;
-        std::string str = ss.str();
+        static int sequence_number = 0;
+        const std::string file_name = "Ifpack2_MT_GS_" + std::to_string (sequence_number++) + ".mtx";
         Tpetra::MatrixMarket::Writer<crs_matrix_type> crs_writer;
-        std::string file_name = str + "_Ifpack2_MT_GS.mtx";
         Teuchos::RCP<const crs_matrix_type> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
         crs_writer.writeSparseFile(file_name, rcp_crs_mat);
       }
@@ -1235,7 +1232,7 @@ void Relaxation<MatrixType>::compute ()
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       //KokkosKernels GaussSeidel Initialization.
 
-      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (A_.get());
       TEUCHOS_TEST_FOR_EXCEPTION
         (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::compute: "
          "Multithreaded Gauss-Seidel methods currently only work when the input "
@@ -1759,7 +1756,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (A_.get());
   TEUCHOS_TEST_FOR_EXCEPTION
     (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::apply: "
      "Multithreaded Gauss-Seidel methods currently only work when the input "
