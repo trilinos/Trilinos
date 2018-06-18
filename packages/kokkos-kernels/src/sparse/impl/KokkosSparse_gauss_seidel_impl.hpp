@@ -147,13 +147,14 @@ namespace KokkosSparse{
 
         PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
              scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t color_adj_,
+             nnz_scalar_t omega_,
              scalar_persistent_work_view_t permuted_inverse_diagonal_):
           _xadj( xadj_),
           _adj( adj_),
           _adj_vals( adj_vals_),
           _Xvector( Xvector_),
           _Yvector( Yvector_), _permuted_inverse_diagonal(permuted_inverse_diagonal_),
-          omega(Kokkos::Details::ArithTraits<nnz_scalar_t>::one()){}
+          omega(omega_){}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t &ii) const {
@@ -206,6 +207,7 @@ namespace KokkosSparse{
                   pool_memory_space pms,
                   nnz_lno_t _num_max_vals_in_l1 = 0,
                   nnz_lno_t _num_max_vals_in_l2 = 0,
+                  nnz_scalar_t omega_ = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
 
                   nnz_lno_t block_size_ = 1,
                   nnz_lno_t team_work_size_ = 1,
@@ -226,7 +228,7 @@ namespace KokkosSparse{
           thread_shared_memory_scalar_size(((shared_memory_size / suggested_team_size / 8) * 8 ) / sizeof(nnz_scalar_t) ),
           vector_size(vector_size_), pool (pms), num_max_vals_in_l1(_num_max_vals_in_l1),
           num_max_vals_in_l2(_num_max_vals_in_l2), is_backward(false),
-          omega(Kokkos::Details::ArithTraits<nnz_scalar_t>::one()){}
+          omega(omega_){}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const team_member_t & teamMember) const {
@@ -1225,6 +1227,7 @@ namespace KokkosSparse{
                        y_value_array_type y_rhs_input_vec,
                        bool init_zero_x_vector = false,
                        int numIter = 1,
+                       nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
                        bool apply_forward = true,
                        bool apply_backward = true,
                        bool update_y_vector = true){
@@ -1332,6 +1335,7 @@ namespace KokkosSparse{
         Team_PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
                      Permuted_Xvector, Permuted_Yvector,0,0, permuted_inverse_diagonal, m_space,
                      num_values_in_l1, num_values_in_l2,
+                     omega,
                      block_size, team_row_chunk_size, l1_shmem_size, suggested_team_size,
                      suggested_vector_size);
 
@@ -1436,7 +1440,7 @@ namespace KokkosSparse{
 
         if (gsHandler->get_algorithm_type()== GS_PERMUTED){
           PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
-                  Permuted_Xvector, Permuted_Yvector, color_adj, permuted_inverse_diagonal);
+                  Permuted_Xvector, Permuted_Yvector, color_adj, omega, permuted_inverse_diagonal);
 
           this->IterativePSGS(
                               gs,
@@ -1451,7 +1455,7 @@ namespace KokkosSparse{
           pool_memory_space m_space(0, 0, 0,  KokkosKernels::Impl::ManyThread2OneChunk, false);
 
           Team_PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
-                       Permuted_Xvector, Permuted_Yvector,0,0, permuted_inverse_diagonal, m_space);
+                       Permuted_Xvector, Permuted_Yvector,0,0, permuted_inverse_diagonal, m_space,0,0,omega);
 
           this->IterativePSGS(
                               gs,
@@ -1507,7 +1511,7 @@ namespace KokkosSparse{
         else {
           this->block_apply(
                             x_lhs_output_vec, y_rhs_input_vec,
-                            init_zero_x_vector, numIter ,
+                            init_zero_x_vector, numIter, omega,
                             apply_forward, apply_backward,
                             update_y_vector);
         }
