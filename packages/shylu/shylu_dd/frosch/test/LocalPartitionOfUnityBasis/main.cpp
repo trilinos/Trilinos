@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
         //        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
         //        partitionOfUnity->describe(*fancy,Teuchos::VERB_EXTREME);
         //        globalBasis->describe(*fancy,Teuchos::VERB_EXTREME);
+
     }
     
     MPI_Finalize();

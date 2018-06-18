@@ -86,104 +86,109 @@ using namespace EpetraExt;
 
 int main(int argc, char *argv[])
 {
-    MPI_Init(&argc,&argv);
-    
-    RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
-    RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));
-    
-    RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-    
-    {
-        ///////////////////
-        // ParameterList //
-        ///////////////////
-        RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
-        if (Comm->MyPID()==0) {
-            cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
-            parameterList->print(cout);
-            cout << "--------------------------------------------------------------------------------\n\n";
-        }
+	MPI_Init(&argc,&argv);
 
-        //////////////////
-        // Repeated Map //
-        //////////////////
-        Epetra_Map *repeatedMap;
-        MatrixMarketFileToMap("repeatedMap.dat",*Comm,repeatedMap);
-        RCP<Map<LO,GO,NO> > RepeatedMap = ConvertToXpetra<LO,GO,NO>(UseTpetra,*repeatedMap,TeuchosComm);
-        
-        ////////////////
-        // Unique Map //
-        ////////////////
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedNodesMap;
-        Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps;
-        BuildDofMaps(RepeatedMap,2,NodeWise,repeatedNodesMap,dofsMaps);
-        RCP<Map<LO,GO,NO> > uniqueNodesMap = BuildUniqueMap<LO,GO,NO>(repeatedNodesMap);
-        RCP<Map<LO,GO,NO> > UniqueMap = BuildMapFromNodeMap(uniqueNodesMap,2,NodeWise);
-        
-        //////////////////////
-        // Stiffness Matrix //
-        //////////////////////
-        Epetra_CrsMatrix *KEpetra;
-        MatrixMarketFileToCrsMatrix("system_matrix.dat",*Comm,KEpetra);
-        RCP<Matrix<SC,LO,GO,NO> > Ktmp = ConvertToXpetra<SC,LO,GO,NO>(UseTpetra,*KEpetra,TeuchosComm);
-//        Ktmp->describe(*fancy,VERB_EXTREME);
-        
-        RCP<Matrix<SC,LO,GO,NO> > K = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,2*Ktmp->getGlobalMaxNumRowEntries());
-        RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Ktmp->getRowMap(),UniqueMap);
-        K->doImport(*Ktmp,*scatter,Xpetra::ADD);
-        K->fillComplete();
-        //    K->describe(*fancy,VERB_EXTREME);
-        
-        ///////////////
-        // Node List //
-        ///////////////
-        Epetra_Map *nodeMapEpetra;
-        EpetraExt::MatrixMarketFileToMap("nodeMap.dat",*Comm,nodeMapEpetra);
-        Epetra_MultiVector *nodeList;
-        EpetraExt::MatrixMarketFileToMultiVector("nodeList.dat",*nodeMapEpetra,nodeList);
-        RCP<MultiVector<SC,LO,GO,NO> > NodeList = ConvertToXpetra<SC,LO,GO,NO>(UseTpetra,*nodeList,TeuchosComm);
-//        NodeList->describe(*fancy,VERB_EXTREME);
+	{
 
-        
-        if (Comm->MyPID()==0) cout << "CONSTRUCTING PRECONDITIONER...";
-        RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));
+		RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+		RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));
 
-        if (Comm->MyPID()==0) cout << "INITIALIZE...";
-        TwoLevelPrec->initialize(2,1,RepeatedMap,2,NodeWise,NodeList);
-        if (Comm->MyPID()==0) cout << "COMPUTE...";
-        TwoLevelPrec->compute();
-        if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
-        RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-        RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-        
-        xSolution->putScalar(0.0);
-        xRightHandSide->putScalar(1.0);
-        
-        RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpK = rcp(new XpetraOp<SC, LO, GO, NO>(K));
-        RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(TwoLevelPrec));
-        
-        RCP<LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosLinearProblem(new LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
-        SolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
-        RCP<ParameterList> solverParameterList = sublist(parameterList,"Solver");
-        RCP<SolverManager<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosSoverManager = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
-        belosSoverManager->setProblem(belosLinearProblem);
-        
-        if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
-            belosLinearProblem->setLeftPrec(OpP);
-        } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
-            belosLinearProblem->setRightPrec(OpP);
-        } else {
-            FROSCH_ASSERT(0!=0,"PreconditionerPosition unknown...");
-        }
-        
-        belosLinearProblem->setProblem(xSolution,xRightHandSide);
-        belosSoverManager->solve();
-        belosSoverManager->getNumIters();
-        
-        if (Comm->MyPID()==0) cout << "done" << endl;
-    }
-    
-    MPI_Finalize();
-    
-    return(EXIT_SUCCESS);
+		RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
+
+		{
+			///////////////////
+			// ParameterList //
+			///////////////////
+			RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
+			if (Comm->MyPID()==0) {
+				cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
+				parameterList->print(cout);
+				cout << "--------------------------------------------------------------------------------\n\n";
+			}
+
+			//////////////////
+			// Repeated Map //
+			//////////////////
+			Epetra_Map *repeatedMap;
+			MatrixMarketFileToMap("repeatedMap.dat",*Comm,repeatedMap);
+			RCP<Map<LO,GO,NO> > RepeatedMap = ConvertToXpetra<LO,GO,NO>(UseTpetra,*repeatedMap,TeuchosComm);
+
+			////////////////
+			// Unique Map //
+			////////////////
+			Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedNodesMap;
+			Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps;
+			BuildDofMaps(RepeatedMap,2,NodeWise,repeatedNodesMap,dofsMaps);
+			RCP<Map<LO,GO,NO> > uniqueNodesMap = BuildUniqueMap<LO,GO,NO>(repeatedNodesMap);
+			RCP<Map<LO,GO,NO> > UniqueMap = BuildMapFromNodeMap(uniqueNodesMap,2,NodeWise);
+
+			//////////////////////
+			// Stiffness Matrix //
+			//////////////////////
+			Epetra_CrsMatrix *KEpetra;
+			MatrixMarketFileToCrsMatrix("system_matrix.dat",*Comm,KEpetra);
+			RCP<Matrix<SC,LO,GO,NO> > Ktmp = ConvertToXpetra<SC,LO,GO,NO>(UseTpetra,*KEpetra,TeuchosComm);
+			//        Ktmp->describe(*fancy,VERB_EXTREME);
+
+			RCP<Matrix<SC,LO,GO,NO> > K = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,2*Ktmp->getGlobalMaxNumRowEntries());
+			RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Ktmp->getRowMap(),UniqueMap);
+			K->doImport(*Ktmp,*scatter,Xpetra::ADD);
+			K->fillComplete();
+			//    K->describe(*fancy,VERB_EXTREME);
+
+			///////////////
+			// Node List //
+			///////////////
+			Epetra_Map *nodeMapEpetra;
+			EpetraExt::MatrixMarketFileToMap("nodeMap.dat",*Comm,nodeMapEpetra);
+			Epetra_MultiVector *nodeList;
+			EpetraExt::MatrixMarketFileToMultiVector("nodeList.dat",*nodeMapEpetra,nodeList);
+			RCP<MultiVector<SC,LO,GO,NO> > NodeList = ConvertToXpetra<SC,LO,GO,NO>(UseTpetra,*nodeList,TeuchosComm);
+			//        NodeList->describe(*fancy,VERB_EXTREME);
+
+
+			if (Comm->MyPID()==0) cout << "CONSTRUCTING PRECONDITIONER...";
+			RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));
+
+			if (Comm->MyPID()==0) cout << "INITIALIZE...";
+			TwoLevelPrec->initialize(2,1,RepeatedMap,2,NodeWise,NodeList);
+			if (Comm->MyPID()==0) cout << "COMPUTE...";
+			TwoLevelPrec->compute();
+			if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
+			RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+			RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+
+			xSolution->putScalar(0.0);
+			xRightHandSide->putScalar(1.0);
+
+			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpK = rcp(new XpetraOp<SC, LO, GO, NO>(K));
+			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(TwoLevelPrec));
+
+			RCP<LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosLinearProblem(new LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
+			SolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
+			RCP<ParameterList> solverParameterList = sublist(parameterList,"Solver");
+			RCP<SolverManager<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosSoverManager = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
+			belosSoverManager->setProblem(belosLinearProblem);
+
+			if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
+				belosLinearProblem->setLeftPrec(OpP);
+			} else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
+				belosLinearProblem->setRightPrec(OpP);
+			} else {
+				FROSCH_ASSERT(0!=0,"PreconditionerPosition unknown...");
+			}
+
+			belosLinearProblem->setProblem(xSolution,xRightHandSide);
+			belosSoverManager->solve();
+			belosSoverManager->getNumIters();
+
+			if (Comm->MyPID()==0) cout << "done" << endl;
+
+		}
+
+	}
+
+	MPI_Finalize();
+
+	return(EXIT_SUCCESS);
 }

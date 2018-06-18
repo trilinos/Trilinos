@@ -72,93 +72,100 @@ typedef EpetraNode NO;
 
 int main(int argc, char *argv[])
 {
-    using namespace std;
-    using namespace Teuchos;
-    using namespace Xpetra;
-    using namespace FROSch;
-    
-    MPI_Init(&argc,&argv);
-    Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
-    
-    CommandLineProcessor My_CLP;
-    
-    int M = 4;
-    My_CLP.setOption("M",&M,"H / h.");
-    int Dimension = 3;
-    My_CLP.setOption("DIM",&Dimension,"Dimension.");
-    
-    My_CLP.recogniseAllOptions(true);
-    My_CLP.throwExceptions(false);
-    CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
-    if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
-        MPI_Finalize();
-        return 0;
-    }
-    
-    int N;
-    MPI_Comm COMM;
-    int color=1;
-    //bool onFirstLevelComm=false;
-    if (Dimension == 2) {
-        N = (int) (pow(CommWorld.NumProc(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
-        if (CommWorld.MyPID()<N*N) {
-            color=0;
-        }
-    } else if (Dimension == 3) {
-        N = (int) (pow(CommWorld.NumProc(),1/3.) + 100*numeric_limits<double>::epsilon()); // 1/H
-        if (CommWorld.MyPID()<N*N*N) {
-            color=0;
-        }
-    } else {
-        assert(0!=0);
-    }
-    
-    MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);
-    RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(COMM));
-    
-    if (color==0) {
-        
-        if (Comm->MyPID()==0) cout << "ASSEMBLY...";
-        
-        ParameterList GalerList;
-        GalerList.set("nx", N*M);
-        GalerList.set("ny", N*M);
-        GalerList.set("nz", N*M);
-        GalerList.set("mx", N);
-        GalerList.set("my", N);
-        GalerList.set("mz", N);
-        
-        RCP<Epetra_Map> UniqueMap;
-        RCP<Epetra_CrsMatrix> K;
-        if (Dimension==2) {
-            UniqueMap.reset(Galeri::CreateMap("Cartesian2D", *Comm, GalerList));
-            K.reset(Galeri::CreateCrsMatrix("Laplace2D", UniqueMap.get(), GalerList));
-        } else if (Dimension==3) {
-            UniqueMap.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
-            K.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMap.get(), GalerList));
-        }
-        EpetraCrsMatrixT<GO,NO> xK(K);
-        RCP<CrsMatrix<SC,LO,GO,NO> > xCrsMat = rcpFromRef(xK);
-        RCP<Matrix<SC,LO,GO,NO> > xMat = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xCrsMat));
-        
-        if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING REPEATEDMAP...";
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(xMat);
-        if (Comm->MyPID()==0) cout << "done" << endl;
-        
-        RCP<Map<LO,GO,NO> > RepeatedNodesMap;
-        ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedDofMaps;
-        BuildDofMaps(RepeatedMap,1,NodeWise,RepeatedNodesMap,RepeatedDofMaps);
-        
-        RCP<const Teuchos::Comm<int> > SerialComm = createSerialComm<int>();
-        
-        RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");;
-        RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
-        IPOU->removeDirichletNodes();
-        IPOU->sortInterface(xMat);
-        IPOU->computePartitionOfUnity();                
-    }
-    
-    MPI_Finalize();
-    
-    return(EXIT_SUCCESS);
+	using namespace std;
+	using namespace Teuchos;
+	using namespace Xpetra;
+	using namespace FROSch;
+
+	MPI_Init(&argc,&argv);
+
+	{
+
+		Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
+
+		CommandLineProcessor My_CLP;
+
+		int M = 4;
+		My_CLP.setOption("M",&M,"H / h.");
+		int Dimension = 3;
+		My_CLP.setOption("DIM",&Dimension,"Dimension.");
+
+		My_CLP.recogniseAllOptions(true);
+		My_CLP.throwExceptions(false);
+		CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
+		if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
+			MPI_Finalize();
+			return 0;
+		}
+
+		int N;
+		MPI_Comm COMM;
+		int color=1;
+		//bool onFirstLevelComm=false;
+		if (Dimension == 2) {
+			N = (int) (pow(CommWorld.NumProc(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
+			if (CommWorld.MyPID()<N*N) {
+				color=0;
+			}
+		} else if (Dimension == 3) {
+			N = (int) (pow(CommWorld.NumProc(),1/3.) + 100*numeric_limits<double>::epsilon()); // 1/H
+			if (CommWorld.MyPID()<N*N*N) {
+				color=0;
+			}
+		} else {
+			assert(0!=0);
+		}
+
+		MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);
+		RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(COMM));
+
+		if (color==0) {
+
+			if (Comm->MyPID()==0) cout << "ASSEMBLY...";
+
+			ParameterList GalerList;
+			GalerList.set("nx", N*M);
+			GalerList.set("ny", N*M);
+			GalerList.set("nz", N*M);
+			GalerList.set("mx", N);
+			GalerList.set("my", N);
+			GalerList.set("mz", N);
+
+			RCP<Epetra_Map> UniqueMap;
+			RCP<Epetra_CrsMatrix> K;
+			if (Dimension==2) {
+				UniqueMap.reset(Galeri::CreateMap("Cartesian2D", *Comm, GalerList));
+				K.reset(Galeri::CreateCrsMatrix("Laplace2D", UniqueMap.get(), GalerList));
+			} else if (Dimension==3) {
+				UniqueMap.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
+				K.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMap.get(), GalerList));
+			}
+			EpetraCrsMatrixT<GO,NO> xK(K);
+			RCP<CrsMatrix<SC,LO,GO,NO> > xCrsMat = rcpFromRef(xK);
+			RCP<Matrix<SC,LO,GO,NO> > xMat = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xCrsMat));
+
+			if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING REPEATEDMAP...";
+			RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(xMat);
+			if (Comm->MyPID()==0) cout << "done" << endl;
+
+			RCP<Map<LO,GO,NO> > RepeatedNodesMap;
+			ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedDofMaps;
+			BuildDofMaps(RepeatedMap,1,NodeWise,RepeatedNodesMap,RepeatedDofMaps);
+
+			RCP<const Teuchos::Comm<int> > SerialComm = createSerialComm<int>();
+
+			RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");;
+			RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
+			IPOU->removeDirichletNodes();
+			IPOU->sortInterface(xMat);
+			IPOU->computePartitionOfUnity();
+		}
+
+		MPI_Comm_free(&COMM);
+
+	}
+
+	MPI_Finalize();
+
+	return(EXIT_SUCCESS);
 }
