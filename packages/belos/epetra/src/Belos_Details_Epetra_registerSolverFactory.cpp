@@ -39,34 +39,52 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef BELOSSOLVERFACTORY_TPETRA_HPP
-#define BELOSSOLVERFACTORY_TPETRA_HPP
 
-#include "Belos_Details_Tpetra_registerSolverFactory.hpp"
+/// \file Belos_Details_Epetra_registerSolverFactory
+/// \brief Implement Injection and Inversion (DII) for Epetra
+
 #include "BelosSolverFactory.hpp"
-#include "BelosMultiVecTraits_Tpetra.hpp"
-#include "BelosOperatorTraits_Tpetra.hpp"
+#include "BelosEpetraAdapter.hpp"
+
+#include "BelosBiCGStabSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosFixedPointSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
+#include "BelosLSQRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
+#include "BelosPCPGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockTFQMRSolMgr.hpp"
+#include "BelosRCGSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
 
 namespace Belos {
+namespace Details {
+namespace Epetra {
 
-template<class SC, class MV, class OP>
-class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
-{
-  public:
-    TpetraSolverFactory() {
-      Details::Tpetra::registerSolverFactory();
-    };
-};
+void registerSolverFactory() {
+  typedef double ST;
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
 
-namespace Impl {
+  Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<ST,MV,OP>, ST, MV, OP> ("BICGSTAB");
+  Impl::registerSolverSubclassForTypes<BlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK CG");
+  Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK GMRES");
+  Impl::registerSolverSubclassForTypes<FixedPointSolMgr<ST,MV,OP>, ST, MV, OP> ("FIXED POINT");
+  Impl::registerSolverSubclassForTypes<GCRODRSolMgr<ST,MV,OP>, ST, MV, OP> ("GCRODR");
+  Impl::registerSolverSubclassForTypes<LSQRSolMgr<ST,MV,OP>, ST, MV, OP> ("LSQR");
+  Impl::registerSolverSubclassForTypes<MinresSolMgr<ST,MV,OP>, ST, MV, OP> ("MINRES");
+  Impl::registerSolverSubclassForTypes<PCPGSolMgr<ST,MV,OP>, ST, MV, OP> ("PCPG");
+  Impl::registerSolverSubclassForTypes<PseudoBlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK CG");
+  Impl::registerSolverSubclassForTypes<PseudoBlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK GMRES");
+  Impl::registerSolverSubclassForTypes<PseudoBlockTFQMRSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK TFQMR");
+  Impl::registerSolverSubclassForTypes<RCGSolMgr<ST,MV,OP>, ST, MV, OP> ("RCG");
+  Impl::registerSolverSubclassForTypes<TFQMRSolMgr<ST,MV,OP>, ST, MV, OP> ("TFQMR");
+}
 
-template<class SC, class LO, class GO, class NT>
-class SolverFactorySelector<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> {
-  public:
-    typedef TpetraSolverFactory<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> type;
-};
-
-} // namespace Impl
+} // namespace Epetra
+} // namespace Details
 } // namespace Belos
 
-#endif // BELOSSOLVERFACTORY_TPETRA_HPP

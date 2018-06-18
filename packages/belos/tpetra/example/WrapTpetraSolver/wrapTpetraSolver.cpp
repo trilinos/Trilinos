@@ -509,40 +509,44 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  const Belos::LinearProblem<ScalarType,MV,OP>& getProblem () const {
+  const Belos::LinearProblem<ScalarType,MV,OP>& getProblem () const override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const {
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters () const {
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters () const override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  int getNumIters () const {
+  int getNumIters () const override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  bool isLOADetected () const {
+  bool isLOADetected () const override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  void setProblem (const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> >& problem) {
+  void setProblem (const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> >& problem) override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  void reset (const Belos::ResetType type) {
+  void reset (const Belos::ResetType type) override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  Belos::ReturnType solve () {
+  Belos::ReturnType solve () override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+  }
+
+  Teuchos::RCP<Belos::SolverManager<ScalarType, MV, OP> > clone () const override {
+    return rcp(new CgWrapper<ScalarType, MV, OP>);
   }
 };
 
@@ -640,6 +644,10 @@ public:
     SolverOutput<SC, LO, GO, NT> result = solver_.solve (*X, *B);
     lastSolverOutput_ = result;
     return result.converged ? Belos::Converged : Belos::Unconverged;
+  }
+
+  Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const override {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "clone() not implemented");
   }
 
 private:

@@ -72,7 +72,7 @@
 #include <TpetraCore_config.h>
 #endif
 
-namespace Belos { // should be moved to Belos or Xpetra?
+namespace Belos {
 
   using Teuchos::RCP;
   using Teuchos::rcp;

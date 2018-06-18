@@ -39,34 +39,33 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef BELOSSOLVERFACTORY_TPETRA_HPP
-#define BELOSSOLVERFACTORY_TPETRA_HPP
+#ifndef BELOSSOLVERFACTORY_EPETRA_HPP
+#define BELOSSOLVERFACTORY_EPETRA_HPP
 
-#include "Belos_Details_Tpetra_registerSolverFactory.hpp"
+#include "Belos_Details_Epetra_registerSolverFactory.hpp"
 #include "BelosSolverFactory.hpp"
-#include "BelosMultiVecTraits_Tpetra.hpp"
-#include "BelosOperatorTraits_Tpetra.hpp"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Operator.h"
 
 namespace Belos {
 
-template<class SC, class MV, class OP>
-class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
+class EpetraSolverFactory : public Impl::SolverFactoryParent<double, Epetra_MultiVector, Epetra_Operator>
 {
   public:
-    TpetraSolverFactory() {
-      Details::Tpetra::registerSolverFactory();
+    EpetraSolverFactory() {
+      Details::Epetra::registerSolverFactory();
     };
 };
 
 namespace Impl {
 
-template<class SC, class LO, class GO, class NT>
-class SolverFactorySelector<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> {
+template<>
+class SolverFactorySelector<double, Epetra_MultiVector, Epetra_Operator> {
   public:
-    typedef TpetraSolverFactory<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> type;
+    typedef EpetraSolverFactory type;
 };
 
 } // namespace Impl
 } // namespace Belos
 
-#endif // BELOSSOLVERFACTORY_TPETRA_HPP
+#endif // BELOSSOLVERFACTORY_EPETRA_HPP

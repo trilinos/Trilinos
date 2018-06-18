@@ -1,9 +1,8 @@
-// @HEADER
+//@HEADER
+// ************************************************************************
 //
-// ***********************************************************************
-//
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,18 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//
-// @HEADER
-#ifndef BELOS_XPETRA_ADAPTER_HPP
-#define BELOS_XPETRA_ADAPTER_HPP
+// ************************************************************************
+//@HEADER
 
-#include <BelosXpetraAdapterOperator.hpp>
-#include <BelosXpetraAdapterMultiVector.hpp>
 
-#endif // BELOS_XPETRA_ADAPTER_HPP
+#ifndef BELOS_DETAILS_REGISTERSOLVERFACTORY_HPP
+#define BELOS_DETAILS_REGISTERSOLVERFACTORY_HPP
+
+namespace Belos {
+namespace Details {
+  void registerSolverFactory();
+} // Details
+} // Belos
+
+#endif // BELOS_DETAILS_REGISTERSOLVERFACTORY_HPP

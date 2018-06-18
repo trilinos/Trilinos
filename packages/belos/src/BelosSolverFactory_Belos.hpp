@@ -39,34 +39,46 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef BELOSSOLVERFACTORY_TPETRA_HPP
-#define BELOSSOLVERFACTORY_TPETRA_HPP
+#ifndef BELOSSOLVERFACTORY_BELOS_HPP
+#define BELOSSOLVERFACTORY_BELOS_HPP
 
-#include "Belos_Details_Tpetra_registerSolverFactory.hpp"
-#include "BelosSolverFactory.hpp"
-#include "BelosMultiVecTraits_Tpetra.hpp"
-#include "BelosOperatorTraits_Tpetra.hpp"
+#include "Belos_Details_registerSolverFactory.hpp"
+
+// Note that this file is currently included by BelosSolverFactory.hpp
+// to maintain backwards compatibility. We don't include it here because
+// gcc won't resolve the circular includes for namespacing
+// #include "BelosSolverFactory.hpp"
+
+#include "BelosMultiVec.hpp"
+#include "BelosOperator.hpp"
 
 namespace Belos {
 
-template<class SC, class MV, class OP>
-class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
+class BelosSolverFactory : public Impl::SolverFactoryParent<double,MultiVec<double>,Operator<double>>
 {
   public:
-    TpetraSolverFactory() {
-      Details::Tpetra::registerSolverFactory();
+    BelosSolverFactory() {
+      Details::registerSolverFactory();
     };
 };
 
 namespace Impl {
 
-template<class SC, class LO, class GO, class NT>
-class SolverFactorySelector<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> {
+template<>
+class SolverFactorySelector<double,MultiVec<double>,Operator<double>> {
   public:
-    typedef TpetraSolverFactory<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> type;
+    typedef BelosSolverFactory type;
 };
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+template<>
+class SolverFactorySelector<std::complex<double>,MultiVec<std::complex<double>>,Operator<std::complex<double>>> {
+  public:
+    typedef BelosSolverFactory type;
+};
+#endif
 
 } // namespace Impl
 } // namespace Belos
 
-#endif // BELOSSOLVERFACTORY_TPETRA_HPP
+#endif // BELOSSOLVERFACTORY_BELOS_HPP
