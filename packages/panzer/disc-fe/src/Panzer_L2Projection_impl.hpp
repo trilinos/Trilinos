@@ -28,7 +28,7 @@ namespace panzer {
                                           const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
                                           const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                                           const std::vector<std::string>& elementBlockNames,
-                                          const Teuchos::RCP<panzer::WorksetContainer>& worksetContainer)
+                                          const Teuchos::RCP<panzer::WorksetContainer> worksetContainer)
   {
     targetBasisDescriptor_ = targetBasis;
     integrationDescriptor_ = integrationDescriptor;
