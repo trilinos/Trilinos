@@ -421,6 +421,7 @@ namespace KokkosSparse{
                                             y_scalar_view_t y_rhs_input_vec,
                                             bool init_zero_x_vector = false,
                                             bool update_y_vector = true,
+                                            typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
                                             int numIter = 1){
       handle->get_gs_handle()->set_block_size(block_size);
       symmetric_gauss_seidel_apply(handle,num_rows,num_cols,
@@ -431,6 +432,7 @@ namespace KokkosSparse{
                                    y_rhs_input_vec,
                                    init_zero_x_vector,
                                    update_y_vector,
+                                   omega,
                                    numIter);
     }
     template <class KernelHandle,
