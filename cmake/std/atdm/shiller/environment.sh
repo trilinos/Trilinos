@@ -17,19 +17,6 @@ export ATDM_CONFIG_BUILD_COUNT=32
 
 module purge
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-  export OMP_NUM_THREADS=2
-  # NOTE: With hyper-threading enabled, the 16 cores can run two threads each
-  # or 32 threads total.
-else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-  # NOTE: When running in serial, the second hyperthread can't see to run a
-  # sperate MPI process and if you try to run with -j32 with ctest, you get a
-  # bunch of failures that say "libgomp: Thread creation failed: Resource
-  # temporarily unavailable".  Therefore, we need to run with -j16, not -j32.
-fi
-
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   export ATDM_CONFIG_KOKKOS_ARCH=HSW
   module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
@@ -38,6 +25,18 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
   export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
+  if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+    export OMP_NUM_THREADS=2
+    # NOTE: For some reason, tests run with the GNU OPenMP builds don't seem
+    # to have too much of a problem with running on all 16 cores with two
+    # threads per core (with hyperthreading turned on).
+  else
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+    # NOTE: For some reason, the tests run with the GNU serial builds seem to
+    # be running on top of each other really badly so we need to reduce the
+    # parallel level to avoid timeouts.  See #2976.
+  fi
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
   module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
   export OMPI_CXX=`which icpc`
@@ -45,6 +44,16 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
   export OMPI_FC=`which ifort`
   export ATDM_CONFIG_LAPACK_LIB="-mkl"
   export ATDM_CONFIG_BLAS_LIB="-mkl"
+  if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+    export OMP_NUM_THREADS=2
+  else
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  fi
+  # NOTE: For some reason the tests run with the Intel builds (serial or
+  # OpenMP) don't seem to have the problem of running on top of each other and
+  # causing the tests to take longer.  Therefore, we can use all 16 cores (and
+  # two threads per core with OpenMP and hyper threading).
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
     export ATDM_CONFIG_COMPILER=CUDA-8.0  # The default CUDA version currently
@@ -88,7 +97,7 @@ export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;-lhdf5_hl;-lhdf5;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 
 # Use manually installed cmake and ninja (see TRIL-209)
-export PATH=/ascldap/users/rabartl/install/hansen-shiller/cmake-3.11.2/bin:/ascldap/users/rabartl/install/hansen-shiller/ninja-1.8.2/bin:$PATH
+export PATH=/home/rabartl/install/hansen-shiller/cmake-3.11.2/bin:/home/rabartl/install/hansen-shiller/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
