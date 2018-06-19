@@ -145,13 +145,21 @@ struct PackTraits {
     typedef Kokkos::View<value_type*, D> view_type;
     typedef typename view_type::size_type size_type;
 
-    // This exploits the fact that Kokkos::View's constructor ignores
+    // When the traits::specialize type is non-void this exploits 
+    // the fact that Kokkos::View's constructor ignores
     // size arguments beyond what the View's type specifies.  For
     // value_type = Stokhos::UQ::PCE<S>, numValuesPerScalar returns
     // something other than 1, and the constructor will actually use
     // that value.
+    // Otherwise, the number of arguments must match the dynamic rank
+    // (i.e. number *'s with the value_type of the View)
     const size_type numVals = numValuesPerScalar (x);
-    return view_type (label, static_cast<size_type> (numEnt), numVals);
+    if ( std::is_same< typename view_type::traits::specialize, void >::value ) {
+      return view_type (label, static_cast<size_type> (numEnt));
+    } 
+    else {
+      return view_type (label, static_cast<size_type> (numEnt), numVals);
+    }
   }
 
   /// \brief Pack the first numEnt entries of the given input buffer

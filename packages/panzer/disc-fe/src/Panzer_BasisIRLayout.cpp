@@ -86,9 +86,9 @@ void panzer::BasisIRLayout::
 setup(const panzer::PointRule & point_rule)
 {
   basis_name_ = basis_data_->name() + ":" + point_rule.getName();
-  num_cells_ = point_rule.dl_vector->dimension(0);
-  num_points_ = point_rule.dl_vector->dimension(1);
-  dimension_ = point_rule.dl_vector->dimension(2);
+  num_cells_ = point_rule.dl_vector->extent(0);
+  num_points_ = point_rule.dl_vector->extent(1);
+  dimension_ = point_rule.dl_vector->extent(2);
   
   using Teuchos::rcp;
   using PHX::MDALayout;

@@ -59,6 +59,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET(CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT} -k")
   ENDIF()
+  ATDM_SET_CACHE(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}" CACHE STRING)
+  # NOTE: Above, we need to set this as a cache var because this var is also
+  # set as a cache var in ATDMDevEnvSettings.cmake that gets included below.
   
   SET(EXTRA_CONFIGURE_OPTIONS)
   

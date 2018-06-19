@@ -1531,7 +1531,7 @@ namespace Iogn {
     double sinang = std::sin(ang);
 
     assert(n1 >= 0 && n2 >= 0 && n3 >= 0);
-    double by[3][3];
+    std::array<std::array<double, 3>, 3> by;
     by[n1][n1] = cosang;
     by[n2][n1] = -sinang;
     by[n1][n3] = 0.0;
@@ -1542,21 +1542,13 @@ namespace Iogn {
     by[n3][n2] = 0.0;
     by[n3][n3] = 1.0;
 
-    double res[3][3];
+    std::array<std::array<double, 3>, 3> res;
     for (int i = 0; i < 3; i++) {
       res[i][0] = rotmat[i][0] * by[0][0] + rotmat[i][1] * by[1][0] + rotmat[i][2] * by[2][0];
       res[i][1] = rotmat[i][0] * by[0][1] + rotmat[i][1] * by[1][1] + rotmat[i][2] * by[2][1];
       res[i][2] = rotmat[i][0] * by[0][2] + rotmat[i][1] * by[1][2] + rotmat[i][2] * by[2][2];
     }
 
-#if 1
-    std::memcpy(rotmat, res, 9 * sizeof(double));
-#else
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        rotmat[i][j] = res[i][j];
-      }
-    }
-#endif
+    rotmat = res;
   }
 } // namespace Iogn

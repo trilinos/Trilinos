@@ -172,8 +172,8 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a = 2, b = 2, c = 2;
 
     if (alpha == ATA::zero ()) {
@@ -265,8 +265,8 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     }
     #endif
  
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a = 2, b = 2, c = 2;
 
     if (alpha == ATA::zero ()) {

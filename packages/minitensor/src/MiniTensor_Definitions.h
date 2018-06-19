@@ -52,7 +52,7 @@
 #define KOKKOS_INLINE_FUNCTION  inline
 #endif
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #define MT_ERROR_EXIT(...) \
   Kokkos::abort(#__VA_ARGS__)
 #else
@@ -61,9 +61,9 @@
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
   exit(1)
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #define MT_WARNING(...) \
   Kokkos::abort(#__VA_ARGS__)
 #else
@@ -71,7 +71,7 @@
   fprintf(stderr, "WARNING in: %s\n", __PRETTY_FUNCTION__); \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n")
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 namespace minitensor {
 

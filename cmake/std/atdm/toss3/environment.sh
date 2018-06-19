@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on toss3 (chama/serrano) for ATMD builds of Trilinos
+# Set up env on toss3 (chama and serrano) for ATMD builds of Trilinos
 #
 # This source script gets the settings from the JOB_NAME var.
 #
@@ -33,7 +33,6 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-    export ATDM_CONFIG_KOKKOS_ARCH=BDW
     module load sems-python/2.7.9
     module load sems-intel/17.0.0
     module load sems-openmpi/1.10.5
@@ -171,6 +170,8 @@ function atdm_run_script_on_compute_node {
   echo
 
 }
+
+export -f atdm_run_script_on_compute_node
 
 # NOTE: The above function is implemented in this way using 'sbatch' so that
 # we can avoid using 'salloc' which is belived to cause ORTE errors.  But we

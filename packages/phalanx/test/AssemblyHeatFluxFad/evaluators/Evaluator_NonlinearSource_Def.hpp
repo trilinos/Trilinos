@@ -63,7 +63,7 @@ NonlinearSource(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
+postRegistrationSetup(typename Traits::SetupData /* d */,
 		      PHX::FieldManager<Traits>& vm)
 {
   // NOTE: We no longer need manually call setFieldData(). It happens
@@ -81,7 +81,7 @@ template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void NonlinearSource<EvalT, Traits>::operator () (const int i) const
 {
-  for (PHX::index_size_type ip = 0; ip < static_cast<PHX::index_size_type>(density.dimension_1()); ++ip)
+  for (PHX::index_size_type ip = 0; ip < static_cast<PHX::index_size_type>(density.extent(1)); ++ip)
     source(i,ip) =  density(i,ip) * temp(i,ip) * temp(i,ip);
 }
 
@@ -96,7 +96,7 @@ evaluateFields(typename Traits::EvalData d)
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-preEvaluate(typename Traits::PreEvalData d)
+preEvaluate(typename Traits::PreEvalData /* d */)
 { 
   using namespace std;
   cout << "In Source Pre Op" << endl;
@@ -105,7 +105,7 @@ preEvaluate(typename Traits::PreEvalData d)
 //**********************************************************************
 template< typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-postEvaluate(typename Traits::PostEvalData d)
+postEvaluate(typename Traits::PostEvalData /* d */)
 { 
   using namespace std;
   cout << "In Source Post Op" << endl;

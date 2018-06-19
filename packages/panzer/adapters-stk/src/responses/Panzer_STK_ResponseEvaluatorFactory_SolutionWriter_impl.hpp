@@ -300,7 +300,7 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
 
       // take the average
       for(int d=0;d<coords.extent_int(1);d++)
-         centroid(0,d) /= coords.dimension(0);
+         centroid(0,d) /= coords.extent(0);
 
       return;
    }

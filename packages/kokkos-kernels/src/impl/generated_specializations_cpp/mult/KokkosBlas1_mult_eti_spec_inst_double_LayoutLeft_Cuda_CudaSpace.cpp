@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas1_mult_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
+#include "KokkosBlas1_mult_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS1_MULT_ETI_SPEC_INST(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

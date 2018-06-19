@@ -76,11 +76,11 @@ benchmarkKokkos (std::ostream& out,
   using Kokkos::ALL;
   using Kokkos::subview;
   using std::endl;
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef Kokkos::Serial execution_space;
 #else
   typedef Kokkos::View<double**, Kokkos::LayoutLeft>::execution_space execution_space;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, execution_space> mv_type;
   bool success = true;
 

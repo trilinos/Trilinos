@@ -511,11 +511,11 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // because, for CudaUVMSpace, the HostMirror is the same as the
   // original.  This causes segfaults in the pseudorandom number
   // generator, due to CUDA code trying to access host memory.
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> host_device_type;
 #else
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, device_type>::host_mirror_space host_device_type;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
   typedef host_device_type::execution_space host_execution_space;
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, host_device_type> block_type;
 

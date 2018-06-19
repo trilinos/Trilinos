@@ -5,3 +5,8 @@ TRIBITS_ADD_EXECUTABLE(
   ex1
   SOURCES ex1.cpp
 )
+
+TRIBITS_ADD_EXECUTABLE(
+  RelaxationWithEquilibration
+  SOURCES RelaxationWithEquilibration.cpp
+)

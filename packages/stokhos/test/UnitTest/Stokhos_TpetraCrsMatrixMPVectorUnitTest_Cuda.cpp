@@ -58,17 +58,17 @@ int main( int argc, char* argv[] ) {
   Kokkos::global_sacado_mp_vector_size = VectorSize;
 
   // Initialize Cuda
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
-  Kokkos::Cuda::print_configuration(std::cout);
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
   // Run tests
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Cuda::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

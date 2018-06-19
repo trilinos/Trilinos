@@ -384,15 +384,17 @@ TEUCHOS_UNIT_TEST( UQ_PCE_Serialization, FadPCEEmptyAll ) {
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  Kokkos::HostSpace::execution_space::initialize();
-  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-    Kokkos::DefaultExecutionSpace::initialize();
+  Kokkos::initialize();
+//  Kokkos::HostSpace::execution_space::initialize();
+//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
+//    Kokkos::DefaultExecutionSpace::initialize();
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-  Kokkos::HostSpace::execution_space::finalize();
-  if (Kokkos::DefaultExecutionSpace::is_initialized())
-    Kokkos::DefaultExecutionSpace::finalize();
+  Kokkos::finalize();
+//  Kokkos::HostSpace::execution_space::finalize();
+//  if (Kokkos::DefaultExecutionSpace::is_initialized())
+//    Kokkos::DefaultExecutionSpace::finalize();
 
   return res;
 }

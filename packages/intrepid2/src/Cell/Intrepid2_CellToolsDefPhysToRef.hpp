@@ -86,8 +86,8 @@ namespace Intrepid2 {
     getReferenceCellCenter(cellCenter, cellVertex, cellTopo);
 
     // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
-    const auto numCells = worksetCell.dimension(0);
-    const auto numPoints = physPoints.dimension(1);
+    const auto numCells = worksetCell.extent(0);
+    const auto numPoints = physPoints.extent(1);
     
     // init guess is created locally and non fad whatever refpoints type is 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
@@ -125,8 +125,8 @@ namespace Intrepid2 {
 
     // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. 
     // Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
-    const auto numCells = worksetCell.dimension(0);
-    const auto numPoints = physPoints.dimension(1);
+    const auto numCells = worksetCell.extent(0);
+    const auto numPoints = physPoints.extent(1);
 
     typedef RealSpaceTools<SpT> rst;
     const auto tol = tolerence();

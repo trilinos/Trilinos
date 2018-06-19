@@ -61,44 +61,6 @@ namespace Details {
 //
 namespace FHT {
 
-// Is it worth actually using building the FixedHashTable using
-// parallel threads, instead of just counting in a sequential loop?
-//
-// The parallel version of FixedHashTable construction isn't just a
-// parallelization of the sequential loops.  It incurs additional
-// overheads.  For example, the CountBuckets kernel uses atomic update
-// instructions to count the number of "buckets" per offsets array
-// (ptr) entry.  Atomic updates have overhead, even if only one thread
-// issues them.  The Kokkos kernels are still correct in that case,
-// but I would rather not incur overhead then.  It might make sense to
-// set the minimum number of threads to something greater than 1, but
-// we would need experiments to find out.
-//
-// FixedHashTable code should call the nonmember function below, that
-// has the same name but starts with a lower-case w.
-template<class ExecSpace>
-struct WorthBuildingFixedHashTableInParallel {
-  typedef typename ExecSpace::execution_space execution_space;
-
-  static bool isWorth () {
-    // NOTE: Kokkos::Cuda does NOT have this method.  That's why we
-    // need the partial specialization below.
-    return execution_space::max_hardware_threads () > 1;
-  }
-};
-
-#ifdef KOKKOS_HAVE_CUDA
-template<>
-struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
-  // There could be more complicated expressions for whether this is
-  // actually worthwhile, but for now I'll just say that with Cuda, we
-  // will ALWAYS count buckets in parallel (that is, run a Kokkos
-  // parallel kernel).
-  static bool isWorth () {
-    return true;
-  }
-};
-#endif // KOKKOS_HAVE_CUDA
 
 // Is it worth actually using building the FixedHashTable using
 // parallel threads, instead of just counting in a sequential loop?
@@ -114,7 +76,7 @@ struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-  return WorthBuildingFixedHashTableInParallel<ExecSpace>::isWorth ();
+  return ExecSpace::concurrency() > 1;
 }
 
 // If the input kokkos::View<const KeyType*, ArrayLayout,

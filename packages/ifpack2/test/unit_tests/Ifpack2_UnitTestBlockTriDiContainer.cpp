@@ -70,7 +70,7 @@ struct Input {
   double tol;
   bool use_seq_method, use_overlap_comm, jacobi;
 
-  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) { init(comm); }
+  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) { init(icomm); }
 
   Input (int argc, char** argv, const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) {
     init(icomm);
@@ -132,7 +132,7 @@ struct Input {
        << " bs " << bs
        << " nrhs " << nrhs
        << " isplit " << isplit << " jsplit " << jsplit;
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     os << " nthreads " << omp_get_max_threads();
 #endif
     if (nonuniform_lines) os << " nonuniform-lines";
@@ -270,7 +270,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
       }
       for (const bool jacobi : {false, true})
         for (const bool seq_method : {false, true})
-          for (const bool overlap_comm : {false, true}) {
+          for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               if (jacobi && nonuniform_lines) continue;
@@ -294,6 +294,9 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                 } catch (const std::exception& e) {
                   threw = true;
                 }
+                if (threw)
+                  printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
+                
                 TEUCHOS_TEST(ne == 0 && ! threw, details);
               }
             }

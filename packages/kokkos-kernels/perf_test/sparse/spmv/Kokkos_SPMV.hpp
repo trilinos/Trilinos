@@ -177,7 +177,7 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
   double s_b = 0.0;
   SPMV_Functor<matrix_type,x_type,y_type,0,false> func (s_a,A,x,s_b,y,rows_per_team);
 
-  int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
+  int worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
   Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> > policy(1,1);
 

@@ -5498,10 +5498,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  checkSizes (const SrcDistObject& source)
+  checkSizes (const SrcDistObject& /* source */)
   {
-    (void) source; // forestall "unused variable" compiler warnings
-
     // It's not clear what kind of compatibility checks on sizes can
     // be performed here.  Epetra_CrsGraph doesn't check any sizes for
     // compatibility.

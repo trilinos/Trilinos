@@ -66,8 +66,8 @@ public:
     this->addDependentField(b);
   }
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& vm) override
+  void postRegistrationSetup(typename Traits::SetupData /* d */,
+                             PHX::FieldManager<Traits>& /* vm */) override
   {}
   
   void evaluateFields(typename Traits::EvalData ) override
@@ -92,8 +92,8 @@ public:
     this->addEvaluatedField(c);
   }
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& vm) override
+  void postRegistrationSetup(typename Traits::SetupData /* d */,
+                             PHX::FieldManager<Traits>& /* vm */) override
   {}
   
   void evaluateFields(typename Traits::EvalData ) override

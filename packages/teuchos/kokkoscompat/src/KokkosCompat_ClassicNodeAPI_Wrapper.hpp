@@ -52,21 +52,21 @@ public:
   static std::string name ();
 };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   typedef KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   // The above definitions / initializations of class (static)
   // variables need to precede the first use of these variables.

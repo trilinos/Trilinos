@@ -373,7 +373,7 @@ I2(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
       Kokkos::abort("I2 for N > 3 not implemented.");
 #else
       std::cerr << "I2 for N > 3 not implemented." << std::endl;
@@ -418,7 +418,7 @@ I3(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
       Kokkos::abort("I3 for N > 3 not implemented.");
 #else 
       std::cerr << "I3 for N > 3 not implemented." << std::endl;

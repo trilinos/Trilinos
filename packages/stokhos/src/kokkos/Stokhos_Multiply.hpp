@@ -129,7 +129,7 @@ compute_work_range( const execution_space device,
                     const size_type thread_count,
                     const size_type thread_rank)
 {
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   enum { cache_line =
          Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value ? 128 : 64 };
 #else

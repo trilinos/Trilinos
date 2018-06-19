@@ -72,18 +72,18 @@ template<class ViewType1,
          class IndexType = int>
 struct GemmCanUseMkl {
 #ifdef HAVE_KOKKOSKERNELS_MKL
-#  ifdef KOKKOS_HAVE_CUDA
+#  ifdef KOKKOS_ENABLE_CUDA
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
                           CoefficientType, IndexType>::value &&
     ! std::is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
     ! std::is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
     ! std::is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
-#  else // NOT KOKKOS_HAVE_CUDA
+#  else // NOT KOKKOS_ENABLE_CUDA
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
                                                 CoefficientType, IndexType>::value;
-#  endif // KOKKOS_HAVE_CUDA
+#  endif // KOKKOS_ENABLE_CUDA
 #else // NOT HAVE_KOKKOSKERNELS_MKL
   static constexpr bool value = false;
 #endif // NOT HAVE_KOKKOSKERNELS_MKL

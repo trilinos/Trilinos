@@ -49,7 +49,7 @@ namespace phx_example {
       do_graph_analysis_(true)
     {
       // Set better defaults for team/vector size based on arcitecture
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
       vector_size_ = 32;
       team_size_ = 256 / vector_size_;
 #endif

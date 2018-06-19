@@ -340,7 +340,7 @@ namespace panzer {
     // TEST_EQUALITY(bases->basis.size(),basis.size());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->basis_scalar.dimension(2);k++) {
+        for(unsigned int k=0;k<bases->basis_scalar.extent(2);k++) {
           TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k).val(),1e-10);
         }
       }
@@ -492,8 +492,8 @@ namespace panzer {
 
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->curl_basis_scalar.dimension(2);k++) {
-          for(unsigned int d=0;d<bases->basis_vector.dimension(3);d++) {
+        for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
+          for(unsigned int d=0;d<bases->basis_vector.extent(3);d++) {
             TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d).val(),1e-10);
           }
         }
@@ -502,7 +502,7 @@ namespace panzer {
 
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->curl_basis_scalar.dimension(2);k++) {
+        for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
           TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k).val(),1e-10);
         }
       }

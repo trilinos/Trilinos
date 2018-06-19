@@ -111,9 +111,9 @@ void
 FaceConnectivity::
 setup(const panzer::LocalMeshPartition<int,int> & partition)
 {
-  const int num_cells = partition.cell_to_faces.dimension_0();
-  const int num_faces = partition.face_to_cells.dimension_0();
-  const int num_faces_per_cell = partition.cell_to_faces.dimension_1();
+  const int num_cells = partition.cell_to_faces.extent(0);
+  const int num_faces = partition.face_to_cells.extent(0);
+  const int num_faces_per_cell = partition.cell_to_faces.extent(1);
   const int num_cells_per_face = 2;
 
   _num_subcells = num_faces;

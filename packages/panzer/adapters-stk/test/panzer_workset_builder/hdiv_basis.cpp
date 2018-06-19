@@ -159,37 +159,37 @@ namespace panzer {
 
     // check some sizing stuff
     ///////////////////////////////////////////////////////////////////////
+    
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_basis_vector.extent(1)),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(hdiv_basis_vector.extent(1),hdiv_basis_vector.extent(2));
 
-    TEST_EQUALITY(Teuchos::as<int>(hdiv_basis_vector.dimension_1()),hdiv_intrepid_basis->getCardinality());
-    TEST_EQUALITY(hdiv_basis_vector.dimension_1(),hdiv_basis_vector.dimension_2());
+    TEST_EQUALITY(Teuchos::as<int>(hcurl_curl_basis.extent(1)),hcurl_intrepid_basis->getCardinality());
+    TEST_EQUALITY(hcurl_curl_basis.extent(2),hdiv_basis_vector.extent(2));
 
-    TEST_EQUALITY(Teuchos::as<int>(hcurl_curl_basis.dimension_1()),hcurl_intrepid_basis->getCardinality());
-    TEST_EQUALITY(hcurl_curl_basis.dimension_2(),hdiv_basis_vector.dimension_2());
+    TEST_EQUALITY(Teuchos::as<int>(point_values.coords_ref.extent(0)),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(point_values.coords_ref.extent(1),3u);
 
-    TEST_EQUALITY(Teuchos::as<int>(point_values.coords_ref.dimension_0()),hdiv_intrepid_basis->getCardinality());
-    TEST_EQUALITY(point_values.coords_ref.dimension_1(),3u);
-
-    TEST_EQUALITY(Teuchos::as<int>(point_values.point_coords.dimension_1()),hdiv_intrepid_basis->getCardinality());
-    TEST_EQUALITY(point_values.point_coords.dimension_2(),3u);
+    TEST_EQUALITY(Teuchos::as<int>(point_values.point_coords.extent(1)),hdiv_intrepid_basis->getCardinality());
+    TEST_EQUALITY(point_values.point_coords.extent(2),3u);
 
     // print out basis values
     ///////////////////////////////////////////////////////////////////////
 
     // print out phi_i(x_j).phi_j(x_j)
-    for(size_t c=0;c<hdiv_basis_vector.dimension_0();c++) {
+    for(size_t c=0;c<hdiv_basis_vector.extent(0);c++) {
       out << "cell " << c << std::endl;
-      for(size_t i=0;i<hdiv_basis_vector.dimension_1();i++) {
+      for(size_t i=0;i<hdiv_basis_vector.extent(1);i++) {
         // compute diagonal magnitude
         double diagonal = 0.0;
-        for(size_t d=0;d<hdiv_basis_vector.dimension_3();d++)
+        for(size_t d=0;d<hdiv_basis_vector.extent(3);d++)
           diagonal += hdiv_basis_vector(c,i,i,d)* hdiv_basis_vector(c,i,i,d);
 
         out << "   ";
-        for(size_t j=0;j<hdiv_basis_vector.dimension_2();j++) {
+        for(size_t j=0;j<hdiv_basis_vector.extent(2);j++) {
           double entry = 0.0;
 
           // loop over dimension
-          for(size_t d=0;d<hdiv_basis_vector.dimension_3();d++)
+          for(size_t d=0;d<hdiv_basis_vector.extent(3);d++)
             entry += hdiv_basis_vector(c,i,j,d)* hdiv_basis_vector(c,j,j,d);
 
           out << std::fixed << std::setprecision(2) << std::setw(8) << entry / diagonal;
@@ -309,10 +309,10 @@ namespace panzer {
     ///////////////////////////////////////////////////////////////////////
 
     TEST_EQUALITY(worksets[0].num_cells,2);
-    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.dimension_0()),2);
-    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.dimension_1()),6);
-    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.dimension_2()),8);
-    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.dimension_3()),3);
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(0)),2);
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(1)),6);
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(2)),8);
+    TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(3)),3);
 
     // print out basis values
     ///////////////////////////////////////////////////////////////////////
@@ -328,11 +328,11 @@ namespace panzer {
         out << g << " ";
       out << std::endl;
 
-      for(size_t b=0;b<hdiv_basis_vector.dimension_1();b++) {
+      for(size_t b=0;b<hdiv_basis_vector.extent(1);b++) {
         out << "    basis " << b << " = ";
-        for(size_t q=0;q<hdiv_basis_vector.dimension_2();q++) {
+        for(size_t q=0;q<hdiv_basis_vector.extent(2);q++) {
           out << "[ ";
-          for(size_t d=0;d<hdiv_basis_vector.dimension_3();d++) {
+          for(size_t d=0;d<hdiv_basis_vector.extent(3);d++) {
             out << hdiv_basis_vector(c,b,q,d) << ", ";
           } // end d
           out << "], ";
@@ -357,11 +357,11 @@ namespace panzer {
         out << g << " ";
       out << std::endl;
 
-      for(size_t b=0;b<hdiv_weighted_basis_vector.dimension_1();b++) {
+      for(size_t b=0;b<hdiv_weighted_basis_vector.extent(1);b++) {
         out << "    basis " << b << " = ";
-        for(size_t q=0;q<hdiv_weighted_basis_vector.dimension_2();q++) {
+        for(size_t q=0;q<hdiv_weighted_basis_vector.extent(2);q++) {
           out << "[ ";
-          for(size_t d=0;d<hdiv_weighted_basis_vector.dimension_3();d++) {
+          for(size_t d=0;d<hdiv_weighted_basis_vector.extent(3);d++) {
             out << hdiv_weighted_basis_vector(c,b,q,d) << ", ";
           } // end d
           out << "], ";

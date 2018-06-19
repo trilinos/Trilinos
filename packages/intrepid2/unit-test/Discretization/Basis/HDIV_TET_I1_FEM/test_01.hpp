@@ -135,7 +135,7 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(tetNodes, 10, 3);
 
         const auto numFields = tetBasis.getCardinality();
-        const auto numPoints = tetNodes.dimension(0);
+        const auto numPoints = tetNodes.extent(0);
         const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
         DynRankView vals("vals", numFields, numPoints, spaceDim);
@@ -177,23 +177,23 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_VALUE));
 
         // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals3, tetBasis.getCardinality() + 1, tetNodes.dimension(0), 3);
+        DynRankView ConstructWithLabel(badVals3, tetBasis.getCardinality() + 1, tetNodes.extent(0), 3);
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals3, tetNodes, OPERATOR_VALUE));
 
         // exception #13 incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals4, tetBasis.getCardinality() + 1, tetNodes.dimension(0));
+        DynRankView ConstructWithLabel(badVals4, tetBasis.getCardinality() + 1, tetNodes.extent(0));
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4, tetNodes, OPERATOR_DIV));
 
         // exception #14 incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals5, tetBasis.getCardinality(), tetNodes.dimension(0) + 1, 3);
+        DynRankView ConstructWithLabel(badVals5, tetBasis.getCardinality(), tetNodes.extent(0) + 1, 3);
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals5, tetNodes, OPERATOR_VALUE));
     
         // exception #15 incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals6, tetBasis.getCardinality(), tetNodes.dimension(0) + 1);
+        DynRankView ConstructWithLabel(badVals6, tetBasis.getCardinality(), tetNodes.extent(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals6, tetNodes, OPERATOR_DIV));
     
         // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
-        DynRankView ConstructWithLabel(badVals7, tetBasis.getCardinality(), tetNodes.dimension(0), 4);
+        DynRankView ConstructWithLabel(badVals7, tetBasis.getCardinality(), tetNodes.extent(0), 4);
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals7, tetNodes, OPERATOR_VALUE));
 #endif
       } catch (std::logic_error err) {
@@ -213,7 +213,7 @@ namespace Intrepid2 {
         const auto allTags = tetBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
+        const auto dofTagSize = allTags.extent(0);
         for (unsigned i = 0; i < dofTagSize; i++) {
           int bfOrd  = tetBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -321,7 +321,7 @@ namespace Intrepid2 {
   
           // Dimensions for the output arrays:
         const auto numFields = tetBasis.getCardinality();
-        const auto numPoints = tetNodes.dimension(0);
+        const auto numPoints = tetNodes.extent(0);
         const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
         {

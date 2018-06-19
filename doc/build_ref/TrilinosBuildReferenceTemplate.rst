@@ -159,18 +159,29 @@ C++11 and OpenMP are selected by the Kokkos system and the values of the cache
 vars ``Trilinos_CXX11_FLAGS`` and ``OpenMP_CXX_FLAGS`` set by the user will be
 ignored.
 
-``KOKKOS_ARCH`` can be set to a list of entries using semi-colons as::
+``KOKKOS_ARCH`` can be set to a list of entries with different values for the
+host code and the device code using semi-colons as::
 
   -DKOKKOS_ARCH="<arch0>;<arch1>"
 
-or as a list of etries using comas as::
+or as a list of entries separated using comas as::
 
   -DKOKKOS_ARCH=<arch0>,<arch1>
 
-Using commas is more robust since it will not get accidentally interepreted as
-a shell command sperator or with differnet CMake logic that is trying to
-handle an array of entries which include one being `${KOKKOS_ARCH}`.
+(Using commas is more robust since it will not get accidentally interpreted as
+a shell command separator or with CMake code that is trying to handle an array
+of entries which include one being ``${KOKKOS_ARCH}`` (which itself is an
+array of values).)
+
+The order of the ``<archi>>`` values is not significant.  Each ``<archi>>``
+value is interpreted on its own as the list is read.  Some of these
+``<archi>>`` values apply to host code (e.g. ``HSW``, ``BDW``, and ``Power9``)
+and other values apply to device code (like for a specific GPU like
+``Kepler35`` or ``Kepler37``).  If multiple ``<archi>>`` values conflict
+(e.g. ``-DKOKKOS_ARCH=BDW,Power8``) then the behavior is undefined (so be
+careful not to do that).  Error-checking for conflicting values may be added
+in the future.
 
 To see more documentation for each of these options, run a configure with
-``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the CMakeCache.txt file (as
-raw text or using the CMake QT GUI or ``ccmake``).
+``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file
+(as raw text or using the CMake QT GUI or ``ccmake``).

@@ -160,8 +160,8 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     wkst->cell_local_ids_k = cell_local_ids_k;
     
     wkst->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
-					 vertex_coordinates.dimension(1),
-					 vertex_coordinates.dimension(2));
+					 vertex_coordinates.extent(1),
+					 vertex_coordinates.extent(2));
     wkst->block_id = elementBlock;
     wkst->subcell_dim = needs.cellData.baseCellDimension();
     wkst->subcell_index = 0;
@@ -173,8 +173,8 @@ panzer::buildWorksets(const WorksetNeeds & needs,
   std::size_t offset = 0;
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
     for (index_t cell = 0; cell < wkst->num_cells; ++cell)
-      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.dimension(1)); ++ vertex)
-	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.dimension(2)); ++ dim) {
+      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.extent(1)); ++ vertex)
+	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.extent(2)); ++ dim) {
 	  //wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
 	  wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
         }
@@ -182,7 +182,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     offset += wkst->num_cells;
   }
 
-  TEUCHOS_ASSERT(offset == Teuchos::as<std::size_t>(vertex_coordinates.dimension(0)));
+  TEUCHOS_ASSERT(offset == Teuchos::as<std::size_t>(vertex_coordinates.extent(0)));
   
   // Set ir and basis arrayskset
   RCP<vector<int> > ir_degrees = rcp(new vector<int>(0));
@@ -228,7 +228,7 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
   // a local side for the element
   
   TEUCHOS_ASSERT(local_side_ids.size() == local_cell_ids.size());
-  TEUCHOS_ASSERT(local_side_ids.size() == static_cast<std::size_t>(vertex_coordinates.dimension(0)));
+  TEUCHOS_ASSERT(local_side_ids.size() == static_cast<std::size_t>(vertex_coordinates.extent(0)));
 
   // key is local face index, value is a pair of cell index and vector of element local ids
   std::map<unsigned,std::vector<std::pair<std::size_t,std::size_t> > > element_list;
@@ -245,15 +245,15 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
 
     worksets[side->first].cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",
                                                           side->second.size(),
-                                                          vertex_coordinates.dimension(1),
-                                                          vertex_coordinates.dimension(2));
+                                                          vertex_coordinates.extent(1),
+                                                          vertex_coordinates.extent(2));
     Workset::CellCoordArray coords = worksets[side->first].cell_vertex_coordinates;
 
     for (std::size_t cell = 0; cell < side->second.size(); ++cell) {
       cell_local_ids.push_back(side->second[cell].second);
 
-      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.dimension(1)); ++ vertex)
-	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.dimension(2)); ++ dim) {
+      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.extent(1)); ++ vertex)
+	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.extent(2)); ++ dim) {
 	  coords(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
         }
     }
@@ -391,8 +391,8 @@ panzer::buildBCWorkset(const WorksetNeeds & needs_a,
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > mwa = Teuchos::rcp(new std::map<unsigned,panzer::Workset>);
     std::vector<std::size_t> lci_a, lci_b, lsi_a, lsi_b;
     panzer::MDFieldArrayFactory mdArrayFactory("", true);
-    const int d1 = Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(1)),
-      d2 = Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(2));
+    const int d1 = Teuchos::as<std::size_t>(vertex_coordinates_a.extent(1)),
+      d2 = Teuchos::as<std::size_t>(vertex_coordinates_a.extent(2));
     for (auto it : *side_id_associations) {
       const auto& idxs = it.second;
       impl::subset(local_cell_ids_a, idxs, lci_a);
@@ -450,9 +450,9 @@ panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
 
   TEUCHOS_ASSERT(total_num_cells_a==total_num_cells_b);
   TEUCHOS_ASSERT(local_side_ids_a.size() == local_cell_ids_a.size());
-  TEUCHOS_ASSERT(local_side_ids_a.size() == static_cast<std::size_t>(vertex_coordinates_a.dimension(0)));
+  TEUCHOS_ASSERT(local_side_ids_a.size() == static_cast<std::size_t>(vertex_coordinates_a.extent(0)));
   TEUCHOS_ASSERT(local_side_ids_b.size() == local_cell_ids_b.size());
-  TEUCHOS_ASSERT(local_side_ids_b.size() == static_cast<std::size_t>(vertex_coordinates_b.dimension(0)));
+  TEUCHOS_ASSERT(local_side_ids_b.size() == static_cast<std::size_t>(vertex_coordinates_b.extent(0)));
 
   std::size_t total_num_cells = total_num_cells_a;
 
@@ -582,14 +582,14 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
     wkst->details(0).subcell_index = local_side_ids_a[cell_indices[current_cell_index]];
     wkst->details(0).block_id = eblock_a;
     wkst->details(0).cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
-					 vertex_coordinates_a.dimension(1),
-					 vertex_coordinates_a.dimension(2));
+					 vertex_coordinates_a.extent(1),
+					 vertex_coordinates_a.extent(2));
 
     wkst->details(1).subcell_index = local_side_ids_b[cell_indices[current_cell_index]];
     wkst->details(1).block_id = eblock_b; 
     wkst->details(1).cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
-					 vertex_coordinates_a.dimension(1),
-					 vertex_coordinates_a.dimension(2));
+					 vertex_coordinates_a.extent(1),
+					 vertex_coordinates_a.extent(2));
 
     std::size_t remaining_cells = cell_indices.size()-current_cell_index;
     if(remaining_cells<workset_size)
@@ -605,8 +605,8 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
       wkst->details(0).cell_local_ids[cell] = local_cell_ids_a[cell_indices[current_cell_index]];
       wkst->details(1).cell_local_ids[cell] = local_cell_ids_b[cell_indices[current_cell_index]];
 
-      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(1)); ++ vertex) {
-	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(2)); ++ dim) {
+      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates_a.extent(1)); ++ vertex) {
+	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.extent(2)); ++ dim) {
           wkst->details(0).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
           wkst->details(1).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
         }

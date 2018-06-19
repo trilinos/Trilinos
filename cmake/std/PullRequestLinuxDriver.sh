@@ -16,6 +16,7 @@ which -a env
 : ${PULLREQUESTNUM:?}
 : ${JOB_BASE_NAME:?}
 : ${BUILD_NUMBER:?}
+: ${WORKSPACE:?}
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
@@ -139,17 +140,14 @@ else
   exit $ierror
 fi
 
-#load a newer cmake. The single submit requires at least 3.10.*
-module unload sems-cmake
-export PATH=/ascldap/users/bmpersc/bin/cmake-3.10.2/bin:$PATH
+# The single submit requires at least cmake 3.10.*
 cmake --version
 
 module list
 
 echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 
-# CDASH_TRACK="Pull Request"
-CDASH_TRACK="Experimental"
+CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
 
 
@@ -168,7 +166,13 @@ if [ "icc" == ${CC:?} ]
 then
   CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
 else
-  CONFIG_SCRIPT=PullRequestLinuxGCCTestingSettings.cmake
+  if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
+  then
+    CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
+  elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]
+  then
+    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+  fi
 fi
 
 ctest -S simple_testing.cmake \
@@ -177,8 +181,8 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=13 \
-  -Dbuild_dir="$WORKSPACE/pull_request_test" \
+  -DPARALLEL_LEVEL=22 \
+  -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=../Trilinos/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \
   -Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake

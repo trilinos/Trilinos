@@ -62,7 +62,7 @@ namespace Tacho {
 
       // grow buffer dimension
       const size_type size = _m*_n;
-      if (static_cast<size_type>(_a.dimension_0()) < size)
+      if (static_cast<size_type>(_a.extent(0)) < size)
         _a = value_type_array(_label+"::ValuesArray", size);
     }
 
@@ -237,7 +237,7 @@ namespace Tacho {
          << "    Col Stride             = " << _cs << endl
          << "    Row Stride             = " << _rs << endl
          << endl
-         << "    ValueArray dimensions  = " << _a.dimension_0() << endl
+         << "    ValueArray dimensions  = " << _a.extent(0) << endl
          << endl;
       
       const int w = 10;

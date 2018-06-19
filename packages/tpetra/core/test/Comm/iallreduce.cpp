@@ -230,7 +230,7 @@ namespace {
 
     // Fill input buffer with value chosen so that we know what its
     // sum across processes should be.
-    sendbuf_h_0d(0) = STS::one ();
+    sendbuf_h_0d() = STS::one ();
     Kokkos::deep_copy (sendbuf_0d, sendbuf_h_0d);
 
     // Make a "back-up" of the send buffer with input values, just in

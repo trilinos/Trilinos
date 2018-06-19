@@ -193,12 +193,12 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
     //     = Teuchos::rcp_dynamic_cast<Intrepid2::DofCoordsInterface<ArrayDynamic> >(intrepid_basis);
     // if (!Teuchos::is_null(coords)) {
 /*
-      ArrayDynamic dyn_basis_coordinates_ref = af.buildArray<Scalar,BASIS,Dim>("basis_coordinates_ref",basis_coordinates_ref.dimension(0),basis_coordinates_ref.dimension(1));
+      ArrayDynamic dyn_basis_coordinates_ref = af.buildArray<Scalar,BASIS,Dim>("basis_coordinates_ref",basis_coordinates_ref.extent(0),basis_coordinates_ref.extent(1));
       coords->getDofCoords(dyn_basis_coordinates_ref);
 
       // fill in basis coordinates
-      for (size_type i = 0; i < basis_coordinates_ref.dimension(0); ++i)
-        for (size_type j = 0; j < basis_coordinates_ref.dimension(1); ++j)
+      for (size_type i = 0; i < basis_coordinates_ref.extent(0); ++i)
+        for (size_type j = 0; j < basis_coordinates_ref.extent(1); ++j)
            basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j); 
 */
 
@@ -226,8 +226,8 @@ evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coord
   // We use an auxiliary 'dyn' array to get around this
   using coordsScalarType = typename Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar>::scalarType;
   auto dyn_basis_coordinates_ref = af.buildArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref",
-                                                                             basis_coordinates_ref.dimension(0),
-                                                                             basis_coordinates_ref.dimension(1));
+                                                                             basis_coordinates_ref.extent(0),
+                                                                             basis_coordinates_ref.extent(1));
   intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
 
   // fill in basis coordinates
@@ -373,7 +373,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   const int num_points = basis_layout->numPoints();
   const int num_basis  = basis.cardinality();
   const int num_dim    = basis_layout->dimension();
-  const int num_cells  = cub_points.dimension_0();
+  const int num_cells  = cub_points.extent(0);
 
   auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
   auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
@@ -677,7 +677,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
   int num_card  = basis_layout->cardinality();
   int num_dim   = basis_layout->dimension();
 
-  size_type num_cells = jac.dimension(0);
+  size_type num_cells = jac.extent(0);
 
   PureBasis::EElementSpace elmtspace = getElementSpace();
   ArrayDynamic dyn_cub_points = af.buildArray<Scalar,IP,Dim>("dyn_cub_points", num_ip, num_dim);
@@ -982,8 +982,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     if (elmtspace != PureBasis::CONST) {
       using coordsScalarType = typename Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar>::scalarType;
       auto dyn_basis_coordinates_ref = af.buildArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref",
-                                                                                 basis_coordinates_ref.dimension(0),
-                                                                                 basis_coordinates_ref.dimension(1));
+                                                                                 basis_coordinates_ref.extent(0),
+                                                                                 basis_coordinates_ref.extent(1));
       intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
       
       // fill in basis coordinates
@@ -1028,9 +1028,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_scalar = Kokkos::subview(basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_scalar_tmp = Kokkos::createDynRankView(basis_scalar.get_view(),
                                                               "drv_basis_scalar_tmp", 
-                                                              drv_basis_scalar.dimension(0),  // C
-                                                              drv_basis_scalar.dimension(1),  // F
-                                                              drv_basis_scalar.dimension(2)); // P
+                                                              drv_basis_scalar.extent(0),  // C
+                                                              drv_basis_scalar.extent(1),  // F
+                                                              drv_basis_scalar.extent(2)); // P
         Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
         ots::modifyBasisByOrientation(drv_basis_scalar, 
                                       drv_basis_scalar_tmp, 
@@ -1041,9 +1041,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_scalar_tmp = Kokkos::createDynRankView(weighted_basis_scalar.get_view(),
                                                               "drv_basis_scalar_tmp", 
-                                                              drv_basis_scalar.dimension(0),  // C
-                                                              drv_basis_scalar.dimension(1),  // F
-                                                              drv_basis_scalar.dimension(2)); // P
+                                                              drv_basis_scalar.extent(0),  // C
+                                                              drv_basis_scalar.extent(1),  // F
+                                                              drv_basis_scalar.extent(2)); // P
         Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
         ots::modifyBasisByOrientation(drv_basis_scalar, 
                                       drv_basis_scalar_tmp, 
@@ -1058,10 +1058,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_grad_basis = Kokkos::subview(grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_grad_basis_tmp = Kokkos::createDynRankView(grad_basis.get_view(),
                                                             "drv_grad_basis_tmp", 
-                                                            drv_grad_basis.dimension(0),  // C
-                                                            drv_grad_basis.dimension(1),  // F
-                                                            drv_grad_basis.dimension(2),  // P
-                                                            drv_grad_basis.dimension(3)); // D
+                                                            drv_grad_basis.extent(0),  // C
+                                                            drv_grad_basis.extent(1),  // F
+                                                            drv_grad_basis.extent(2),  // P
+                                                            drv_grad_basis.extent(3)); // D
         Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
         ots::modifyBasisByOrientation(drv_grad_basis, 
                                       drv_grad_basis_tmp, 
@@ -1072,10 +1072,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_grad_basis_tmp = Kokkos::createDynRankView(weighted_grad_basis.get_view(),
                                                             "drv_grad_basis_tmp", 
-                                                            drv_grad_basis.dimension(0),  // C
-                                                            drv_grad_basis.dimension(1),  // F
-                                                            drv_grad_basis.dimension(2),  // P
-                                                            drv_grad_basis.dimension(3)); // D
+                                                            drv_grad_basis.extent(0),  // C
+                                                            drv_grad_basis.extent(1),  // F
+                                                            drv_grad_basis.extent(2),  // P
+                                                            drv_grad_basis.extent(3)); // D
         Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
         ots::modifyBasisByOrientation(drv_grad_basis, 
                                       drv_grad_basis_tmp, 
@@ -1094,10 +1094,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1108,10 +1108,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1125,9 +1125,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_curl_basis_scalar = Kokkos::subview(curl_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_scalar_tmp = Kokkos::createDynRankView(curl_basis_scalar.get_view(),
                                                                    "drv_curl_basis_scalar_tmp", 
-                                                                   drv_curl_basis_scalar.dimension(0),  // C
-                                                                   drv_curl_basis_scalar.dimension(1),  // F
-                                                                   drv_curl_basis_scalar.dimension(2));  // P        
+                                                                   drv_curl_basis_scalar.extent(0),  // C
+                                                                   drv_curl_basis_scalar.extent(1),  // F
+                                                                   drv_curl_basis_scalar.extent(2));  // P        
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
         ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
                                       drv_curl_basis_scalar_tmp, 
@@ -1139,9 +1139,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_curl_basis_scalar = Kokkos::subview(weighted_curl_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_scalar_tmp = Kokkos::createDynRankView(weighted_curl_basis_scalar.get_view(),
                                                                    "drv_curl_basis_scalar_tmp", 
-                                                                   drv_curl_basis_scalar.dimension(0),  // C
-                                                                   drv_curl_basis_scalar.dimension(1),  // F
-                                                                   drv_curl_basis_scalar.dimension(2));  // P        
+                                                                   drv_curl_basis_scalar.extent(0),  // C
+                                                                   drv_curl_basis_scalar.extent(1),  // F
+                                                                   drv_curl_basis_scalar.extent(2));  // P        
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
         ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
                                       drv_curl_basis_scalar_tmp, 
@@ -1160,10 +1160,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1174,10 +1174,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1191,10 +1191,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_curl_basis_vector = Kokkos::subview(curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_vector_tmp = Kokkos::createDynRankView(curl_basis_vector.get_view(),
                                                                    "drv_curl_basis_vector_tmp", 
-                                                                   drv_curl_basis_vector.dimension(0),  // C
-                                                                   drv_curl_basis_vector.dimension(1),  // F
-                                                                   drv_curl_basis_vector.dimension(2),  // P
-                                                                   drv_curl_basis_vector.dimension(3));  // D        
+                                                                   drv_curl_basis_vector.extent(0),  // C
+                                                                   drv_curl_basis_vector.extent(1),  // F
+                                                                   drv_curl_basis_vector.extent(2),  // P
+                                                                   drv_curl_basis_vector.extent(3));  // D        
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
         ots::modifyBasisByOrientation(drv_curl_basis_vector, 
                                       drv_curl_basis_vector_tmp, 
@@ -1205,10 +1205,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_vector_tmp = Kokkos::createDynRankView(weighted_curl_basis_vector.get_view(),
                                                                    "drv_curl_basis_vector_tmp", 
-                                                                   drv_curl_basis_vector.dimension(0),  // C
-                                                                   drv_curl_basis_vector.dimension(1),  // F
-                                                                   drv_curl_basis_vector.dimension(2),  // P
-                                                                   drv_curl_basis_vector.dimension(3));  // D        
+                                                                   drv_curl_basis_vector.extent(0),  // C
+                                                                   drv_curl_basis_vector.extent(1),  // F
+                                                                   drv_curl_basis_vector.extent(2),  // P
+                                                                   drv_curl_basis_vector.extent(3));  // D        
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
         ots::modifyBasisByOrientation(drv_curl_basis_vector, 
                                       drv_curl_basis_vector_tmp, 
@@ -1226,10 +1226,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1240,10 +1240,10 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
                                                               "drv_basis_vector_tmp", 
-                                                              drv_basis_vector.dimension(0),  // C
-                                                              drv_basis_vector.dimension(1),  // F
-                                                              drv_basis_vector.dimension(2),  // P
-                                                              drv_basis_vector.dimension(3)); // D
+                                                              drv_basis_vector.extent(0),  // C
+                                                              drv_basis_vector.extent(1),  // F
+                                                              drv_basis_vector.extent(2),  // P
+                                                              drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
         ots::modifyBasisByOrientation(drv_basis_vector, 
                                       drv_basis_vector_tmp, 
@@ -1256,9 +1256,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_div_basis = Kokkos::subview(div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_div_basis_tmp = Kokkos::createDynRankView(div_basis.get_view(),
                                                            "drv_div_basis_tmp", 
-                                                           drv_div_basis.dimension(0),  // C
-                                                           drv_div_basis.dimension(1),  // F
-                                                           drv_div_basis.dimension(2));  // P        
+                                                           drv_div_basis.extent(0),  // C
+                                                           drv_div_basis.extent(1),  // F
+                                                           drv_div_basis.extent(2));  // P        
         Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
         ots::modifyBasisByOrientation(drv_div_basis, 
                                       drv_div_basis_tmp, 
@@ -1269,9 +1269,9 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
         auto drv_div_basis = Kokkos::subview(weighted_div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_div_basis_tmp = Kokkos::createDynRankView(weighted_div_basis.get_view(),
                                                            "drv_div_basis_tmp", 
-                                                           drv_div_basis.dimension(0),  // C
-                                                           drv_div_basis.dimension(1),  // F
-                                                           drv_div_basis.dimension(2));  // P
+                                                           drv_div_basis.extent(0),  // C
+                                                           drv_div_basis.extent(1),  // F
+                                                           drv_div_basis.extent(2));  // P
         Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
         ots::modifyBasisByOrientation(drv_div_basis, 
                                       drv_div_basis_tmp, 
@@ -1290,8 +1290,8 @@ applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::applyOrientations : this should not be called.");
 
-  int num_cell  = orientations.dimension(0);
-  int num_basis = orientations.dimension(1);
+  int num_cell  = orientations.extent(0);
+  int num_basis = orientations.extent(1);
   int num_dim   = basis_layout->dimension();
   int num_ip    = basis_layout->numPoints();
   PureBasis::EElementSpace elmtspace = getElementSpace();

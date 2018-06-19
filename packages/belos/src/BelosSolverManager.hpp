@@ -81,6 +81,11 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Destructor.
   virtual ~SolverManager() {};
+
+  /// \brief clone the solver manager.
+  ///
+  /// Implements the DII inversion and injection pattern
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const = 0;
   //@}
 
   //! @name Accessor methods
@@ -239,8 +244,8 @@ namespace Details {
     public SolverManager<ScalarType, MV, OP> {
   public:
     RealSolverManager () {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-        "This solver is not implemented for complex ScalarType." );
+      // Do not throw on constructor. The DII system registers all class types
+      // and must construct even if the class will not be usable.
     }
     virtual ~RealSolverManager () {}
 
@@ -454,11 +459,8 @@ namespace Details {
     public SolverManager<ScalarType, MV, OP> {
   public:
     SolverManagerRequiresRealLapack () {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error, "This solver is not implemented for complex "
-         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
-         "does not have a valid implementation."
-         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+      // Do not throw on constructor. The DII system registers all class types
+      // and must construct even if the class will not be usable.
     }
     virtual ~SolverManagerRequiresRealLapack () {}
 
