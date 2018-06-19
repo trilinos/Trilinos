@@ -8,6 +8,12 @@
 #include "ml_viz_stats.h"
 #include "ml_mat_formats.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 #ifdef GREG
 #endif
 #define ML_NOTALWAYS_LOWEST
@@ -2255,10 +2261,17 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
                                   ML_Operator **Tmat_trans_array,
                                   int finelevel, int coarselevel)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int i;
   double d1, *vec, *Pn_vec, *Tfine_Pn_vec;
   char filename[80];
   ML_Operator *Pn, *Tfine, *Tcoarse, *Pe, *Ttrans;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /*********************** start of execution *******************************/
 

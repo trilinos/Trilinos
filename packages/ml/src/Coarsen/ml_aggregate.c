@@ -25,6 +25,11 @@
 #include "ml_agg_VBMETIS.h"
 #include "ml_viz_stats.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
 
 /* ************************************************************************* */
 /* variables used for parallel debugging  (Ray)                              */
@@ -2094,7 +2099,14 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 #if defined(ML_TIMING)
   t0 = GetClock() - t0;
 #endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#endif
   ML_Operator_Copy_Statistics(mat,permuted_Amat);
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 #if defined(ML_TIMING)
   permuted_Amat->build_time += t0;
 #endif
@@ -2188,6 +2200,10 @@ int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions)
 ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
                ML_Aggregate *ag, int R_is_Ptranspose, int ReturnPerm)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
   ML_Operator **permvec=NULL;
   int status, offset1, offset2, j, flag = 0;
@@ -2202,6 +2218,9 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   int N_dimensions=0;
   int haveCoordinates = 0;
   double t0=0.0,delta=0.0;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   StartTimer(&t0);
 

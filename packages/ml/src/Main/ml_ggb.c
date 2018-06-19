@@ -26,6 +26,11 @@
 
 #include "ml_ggb.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
 
 
 void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
@@ -118,6 +123,10 @@ void  ML_ARPACK_driver(char which[],
     int Debug_Flag, int GGB_alp_flag)
 {
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int        j, kk, ldv, lworkl;
   int        nloc,  nloc2, ido, flag, counter;
   int        count, nconv, ierr, info;
@@ -135,6 +144,9 @@ void  ML_ARPACK_driver(char which[],
 
 
   USR_COMM  comm;                                      /* MPI communicator */
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /********************************  Begin ************************************/
 
@@ -1035,6 +1047,10 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
 int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
     struct ML_CSR_MSRdata *mydata)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int            Nrows, Ncols, level;
   int            ggb_flag = 0, count;
   double         tm;
@@ -1043,6 +1059,9 @@ int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 #ifndef HAVE_ML_PARPACK
   int             i, kk;
   double          *rhs, *rhs1, epsilon = 30.0, theta, *Rq, *dumm;
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
 

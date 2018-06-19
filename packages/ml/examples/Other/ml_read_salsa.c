@@ -26,6 +26,11 @@
 #include "az_aztec.h"
 #include <math.h>
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
 
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
@@ -39,6 +44,10 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
 	int num_PDE_eqns=5, N_levels=3;
     /* int nsmooth=1; */
 
@@ -74,6 +83,10 @@ int *vbr_cnptr, *vbr_rnptr, *vbr_indx, *vbr_bindx, *vbr_bnptr, total_blk_rows;
 int total_blk_cols, blk_space, nz_space;
 double *vbr_val;
 struct ML_CSR_MSRdata *csr_data;
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
 

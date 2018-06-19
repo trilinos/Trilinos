@@ -33,6 +33,12 @@
 #include "az_aztec.h"
 #include "ml_read_utils.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
 int    parasails_sym        = 1;
@@ -114,8 +120,16 @@ int coarse_iterations = 0, use_cg = 0, num_levels = 2;
 
 int main(int argc, char *argv[])
 {
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int    i, j, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /* See Aztec User's Guide for more information on the */
   /* variables that follow.                             */
@@ -135,6 +149,10 @@ int main(int argc, char *argv[])
   /* data structures for multilevel grid, discrete operators */
   /* and preconditioners                                     */
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
   AZ_PRECOND  *Pmat = NULL;
   AZ_MATRIX   *Amat = NULL;
   ML          *ml   = NULL;
@@ -146,6 +164,9 @@ int main(int argc, char *argv[])
 #endif
 #ifdef MATLAB
 	FILE *xfile, *rhsfile;
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
   /* ----------------------- execution begins --------------------------------*/

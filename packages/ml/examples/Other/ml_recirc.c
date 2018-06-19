@@ -26,6 +26,17 @@
 #include "az_aztec.h"
 #include "ml_read_utils.h"
 
+#ifdef ML_BENCHMARK
+#if !defined(SUPERLU) && !defined(HAVE_ML_AMESOS)
+#define ML_NO_DIRECT_SOLVER
+#endif
+#endif
+
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
 int    parasails_factorized = 0;
 int    parasails_sym        = 0;
 double parasails_thresh     = 0.0;
@@ -102,6 +113,10 @@ struct reader_context *context;
 
 int main(int argc, char *argv[])
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int    i, j, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
   FILE *ifp;
@@ -133,6 +148,10 @@ int main(int argc, char *argv[])
   ML_Aggregate *ml_ag = NULL;
 #ifdef MATLAB
 	FILE *xfile, *rhsfile;
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
 

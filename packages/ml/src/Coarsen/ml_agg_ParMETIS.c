@@ -48,6 +48,12 @@
 #include "ml_agg_ParMETIS.h"
 #include "ml_op_utils.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
@@ -469,7 +475,10 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int N_nonzeros,
 					    int current_level)
 {
-
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int i, j,jj,  count;
   int Nrows;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
@@ -507,6 +516,9 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int skip_check = 0;
   double t0;
   double debug_starting_time = 0.;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /* ------------------- execution begins --------------------------------- */
 
