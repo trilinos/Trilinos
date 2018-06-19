@@ -4,7 +4,7 @@
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxGCCTestingSettings.cmake 
+# Usage: cmake -C PullRequestLinuxCommonTestingSettings.cmake
 
 # Misc options typically added by CI testing mode in TriBITS
 
@@ -33,7 +33,6 @@ set (Trilinos_ENABLE_DEBUG_SYMBOLS ON CACHE BOOL "Set by default for PR testing"
 set (Trilinos_ENABLE_EXPLICIT_INSTANTIATION ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL "Set by default for PR testing")
 set (Teuchos_ENABLE_DEFAULT_STACKTRACE OFF CACHE BOOL "Set by default for PR testing")
-
 
 # Options from cmake/std/BasicCiTestingSettings.cmake
 
