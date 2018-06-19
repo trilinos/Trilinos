@@ -273,6 +273,11 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     //! Destructor.
     virtual ~GCRODRSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new GCRODRSolMgr<ScalarType,MV,OP,true>);
+    }
     //@}
 
     //! @name Accessor methods
@@ -280,17 +285,17 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     /*! \brief Get current linear problem being solved for in this object.
      */
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override {
       return params_;
     }
 
@@ -308,18 +313,18 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -327,12 +332,12 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) {
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override {
       problem_ = problem;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
     //@}
 
@@ -342,7 +347,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) {
+    void reset( const ResetType type ) override {
       if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) {
         bool set = problem_->setProblem();
         if  (!set)
@@ -383,14 +388,14 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      *   - ::Unconverged: the linear problem was not solved to the
      *     specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
     //! \name Implementation of Teuchos::Describable
     //@{
 
     //! Return a one-line description of this object.
-    std::string description() const;
+    std::string description() const override;
 
     //@}
 

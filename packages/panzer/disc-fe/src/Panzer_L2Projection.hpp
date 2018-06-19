@@ -39,7 +39,7 @@ namespace panzer {
 
     panzer::BasisDescriptor targetBasisDescriptor_;
     panzer::IntegrationDescriptor integrationDescriptor_;
-    Teuchos::RCP<Teuchos::MpiComm<int>> comm_;
+    Teuchos::RCP<const Teuchos::MpiComm<int>> comm_;
     Teuchos::RCP<const panzer::ConnManager<LO,GO>> connManager_;
     std::vector<std::string> elementBlockNames_;
     mutable Teuchos::RCP<panzer::WorksetContainer> worksetContainer_;
@@ -63,10 +63,10 @@ namespace panzer {
     */
     void setup(const panzer::BasisDescriptor& targetBasis,
                const panzer::IntegrationDescriptor& integrationDescriptor,
-               const Teuchos::RCP<Teuchos::MpiComm<int>>& comm,
+               const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
                const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                const std::vector<std::string>& elementBlockNames,
-               const Teuchos::RCP<panzer::WorksetContainer>& worksetContainer = nullptr);
+               const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.

@@ -260,20 +260,25 @@ namespace Belos {
 
     //! Destructor.
     virtual ~PseudoBlockGmresSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new PseudoBlockGmresSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
     //@{
 
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     //! A list of valid default parameters for this solver.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     //! The current parameters for this solver.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
     /*! \brief Return the timers for this object.
      *
@@ -294,12 +299,12 @@ namespace Belos {
     ///   of accuracy during the solve.  You should first call \c
     ///   isLOADetected() to check for a loss of accuracy during the
     ///   last solve.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
@@ -358,7 +363,7 @@ namespace Belos {
     /// \note Calling \c solve() again resets the flag that reports
     ///   whether a loss of accuracy was detected.  Thus, you should
     ///   call this method immediately after calling \c solve().
-    bool isLOADetected() const { return loaDetected_; }
+    bool isLOADetected() const override { return loaDetected_; }
 
     //@}
 
@@ -366,12 +371,12 @@ namespace Belos {
     //@{
 
     //! Set the linear problem to solve.
-    void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+    void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) override {
       problem_ = problem;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params);
+    void setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params) override;
 
     /// \brief Set a custom status test.
     ///
@@ -383,10 +388,10 @@ namespace Belos {
       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
       const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType =
           StatusTestCombo<ScalarType,MV,OP>::SEQ
-      );
+      ) override;
 
     //! Set a debug status test that will be checked at the same time as the top-level status test.
-    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest );
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest ) override;
 
     //@}
 
@@ -396,7 +401,7 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
 
     //! @name Solver application methods
@@ -419,7 +424,7 @@ namespace Belos {
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
 
@@ -435,10 +440,10 @@ namespace Belos {
     void
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
-              Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const override;
 
     //! Return a one-line description of this object.
-    std::string description () const;
+    std::string description () const override;
 
     //@}
 

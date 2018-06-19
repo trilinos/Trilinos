@@ -57,6 +57,8 @@
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
 
+#include "BelosSolverFactory_Epetra.hpp"
+
 #ifdef HAVE_BELOS_TSQR
 // This header file actually lives in the Tpetra package.
 //
