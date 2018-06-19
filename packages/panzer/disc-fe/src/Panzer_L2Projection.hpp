@@ -27,6 +27,7 @@ namespace panzer {
   class IntegrationDescriptor;
   template<typename LO,typename GO> class ConnManager;
   template<typename LO,typename GO> class DOFManager;
+  template<typename LO,typename GO> class UniqueGlobalIndexer;
   class WorksetContainer;
 
   /** \brief Unified set of tools for building objects for lumped and
@@ -107,8 +108,8 @@ namespace panzer {
         \returns Alocated and filled Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildRHSMatrix(const Teuchos::RCP<panzer::DOFManager<LO,GO>>& sourceDOFManager,
-                     const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
+      buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceDOFManager,
+                     const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,
                      const int vectorOrGradientDirectionIndex = -1);

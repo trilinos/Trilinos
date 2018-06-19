@@ -253,16 +253,16 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   const int yDir = 1;
   const int zDir = 2;
   using NodeType = Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>;
-  auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
-  auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
-  auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
-  auto rhsMatrix_DPHI_DZ = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,zDir); // Project gradient from scalar basis
-  auto rhsMatrix_E0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,xDir);  // Project value from vector basis
-  auto rhsMatrix_E1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,yDir);  // Project value from vector basis
-  auto rhsMatrix_E2 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,zDir);  // Project value from vector basis
-  auto rhsMatrix_B0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,xDir);   // Project value from vector basis
-  auto rhsMatrix_B1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,yDir);   // Project value from vector basis
-  auto rhsMatrix_B2 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,zDir);   // Project value from vector basis
+  auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
+  auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
+  auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
+  auto rhsMatrix_DPHI_DZ = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,zDir); // Project gradient from scalar basis
+  auto rhsMatrix_E0 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,xDir);  // Project value from vector basis
+  auto rhsMatrix_E1 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,yDir);  // Project value from vector basis
+  auto rhsMatrix_E2 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,zDir);  // Project value from vector basis
+  auto rhsMatrix_B0 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,xDir);   // Project value from vector basis
+  auto rhsMatrix_B1 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,yDir);   // Project value from vector basis
+  auto rhsMatrix_B2 = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,zDir);   // Project value from vector basis
   timer->stop("projectionFactory.buildRHSMatrix()");
 
   // Store in vector for convenience
