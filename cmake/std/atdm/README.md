@@ -298,11 +298,20 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ ./checkin-test-sems.sh intel-opt-openmp \
+  --enable-all-packages=off --no-enable-fwd-packages \
+  --enable-packages=MueLu \
+  --configure --build
 $ srun ./checkin-test-sems.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
-  --local-do-all
+  --test
 ```
+
+When using `srun`, for some reason, one must configure and build on the login
+node but then use `srun` to run tests on the compute node.  For some reason,
+the `ninja` program in the `PATH` can't be found on the compute node when
+using `srun` with the checkin-test-atdm.sh script.
 
 WARNING: One must use `srun` and **not** `salloc` to allocate and run on a
 compute node.  The way that these machines are currently set up, running with
