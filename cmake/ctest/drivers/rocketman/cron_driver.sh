@@ -41,6 +41,7 @@ export https_proxy="https://sonproxy.sandia.gov:80"
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
+module load sems-env
 module load sems-cmake/3.5.2
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
