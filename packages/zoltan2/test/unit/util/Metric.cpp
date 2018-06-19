@@ -141,31 +141,6 @@ void evaluate_imbalance_results(RCP<const Comm<int> > comm,
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
 
-  // now verify the imbalance
-  // I didn't want to 'redo' all the calculations for imbalance here but just
-  // want some simple measure it's not busted. The way things are currently
-  // set up we can predict this value simply as 1.0 unless;
-  //   numLocalParts > 1 - then it will be 2 due to the empties
-  //   givePartSizes true - then it will be 2 due to how the ratios are setup
-  // So this is not general - it's just meant to create a fail situation
-  // if the imbalanace metrics were completely broken.
-  // Note for weight imbalances below that would be more complicated to
-  // replicate here so I'll just check for exceptions but not the specific
-  // numbers. To implement that we'd pretty much need to duplicate all the logic
-  // which seems inappropriate here.
-  zscalar_t expected_imbalance = 1.0;
-  bool testEmptyParts = (original_numLocalParts < 1);
-  if(original_numLocalParts > 1 ||
-    (givePartSizes && !testEmptyParts)) {
-    expected_imbalance = 2.0; // not general - but true for these current tests
-  }
-  if(rank == 0) {
-    cout << "Expected object imbalance: " << expected_imbalance << endl;
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, object_count_imbalance == expected_imbalance,
-    "Object count imbalance was not calculated correctly.", 1);
-
   if (nWeights > 0){
     try{
       for (int i=0; i < nWeights; i++){
