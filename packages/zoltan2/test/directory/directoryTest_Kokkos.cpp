@@ -43,8 +43,6 @@
 //
 // @HEADER
 
-#define CONVERT_DIRECTORY_KOKKOS
-
 #include "directoryTest_Impl.hpp"
 
 int main(int narg, char **arg)

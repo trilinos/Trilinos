@@ -47,22 +47,6 @@
 #ifndef ZOLTAN2_DIRECTORY_H_
 #define ZOLTAN2_DIRECTORY_H_
 
-// Note on file structure
-// Currently Zoltan2_Directory_Impl.hpp contains a lot of the method code
-// But as this evolved the point of that file is now doubtful - though we may
-// like to keep some separation of API and implementation.
-//
-// The Zoltan2_Directory class is an abstract base class from which we derive:
-//    Zoltan2_Directory_Simple - for simple user data of a type (int,long)
-//    Zoltan2_Directory_Vector - for std::vector user data of variable length
-//
-// I have kept all the code specific to the derived classes in this file.
-
-
-// Block everything out for Original - this is because Original mode points
-// back to the original zoltan code and should not be referencing anything here.
-#ifndef CONVERT_DIRECTORY_ORIGINAL
-
 #include <Teuchos_DefaultComm.hpp> // currently using Teuchos comm throughout
 
 #ifndef HAVE_MPI
@@ -74,24 +58,9 @@
 #include <mpi.h>
 #endif
 
-#ifdef CONVERT_DIRECTORY_TPETRA
-  #include <Tpetra_Vector.hpp> // tpetra impleemnts behavior with maps/vectors
-#endif
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  #include <Kokkos_UnorderedMap.hpp> // unordered map stores the local nodes
-#endif
-
-
-// This is temporary for timing and debugging - to be deleted eventually
-// The clock times a block of code and also has some debug printing options
-// Running test category PERFORMANCE will enable tests which log out time
-// data for the modes.
-#include "Zoltan2_Directory_Clock.hpp"
+#include <Kokkos_UnorderedMap.hpp> // unordered map stores the local nodes
 
 namespace Zoltan2 {
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
 
 // The new Kokkos mode maps over the gid using unordered map
 // Originally was thinking we don't want ptrs here and want the user data
@@ -115,26 +84,6 @@ class Zoltan2_Directory_Node {
     user_t userData; /* user data */
     int free;        /* flag whether node is free or used     */
 };
-#endif
-
-#ifdef CONVERT_DIRECTORY_RELIC
-
-// relic just implements the node as it was in the orignal zoltan code.
-typedef int relice_idx_t;  /* nodeList index is signed since -1 = NULL */
-template <typename gid_t, typename lid_t,typename user_t>
-class Zoltan2_Directory_Node {
-  public:
-    int owner;                 /* processor hosting global ID object    */
-    int partition;             /* Optional data                         */
-    int errcheck;              /* Error checking(inconsistent updates)  */
-    relice_idx_t next;         /* index in nodelist of next DD_Node     */
-    gid_t *gid;                /* gid used as key for update & lookup   */
-                               /* lid starts at gid + sizeof(gid_t)     */
-                               /* user data starts at                   */
-                               /*   gid + sizeof(gid_t) + sizeof(lid_t) */
-    int free;                  /* flag whether node is free or used     */
-};
-#endif
 
 // TODO: These message structures should become MPI datatypes(KDD)
 // Currently these are implemented as they were in the original zoltan code.
@@ -194,18 +143,10 @@ class Zoltan2_Directory {
         Teuchos::RCP<const Teuchos::Comm<int> > comm_,
           /*!< \brief Teuchos comm provided by user. */
         bool use_lid_, /*!< \brief are local IDs being submitted and read. */
-    #ifdef CONVERT_DIRECTORY_RELIC
-        int table_length_, /*!< \brief table length estimate */
-    #endif
         int debug_level_) /*!< \brief debug level controls output */
           : comm(comm_), use_lid(use_lid_),
           debug_level(debug_level_)
-    #ifdef CONVERT_DIRECTORY_RELIC
-        , table_length(table_length_)
-    #endif
     {
-      // construct clock tracks total construct time
-      Zoltan2_Directory_Clock clock("construct");
     }
 
     /*! \brief Destructor currently does nothing. */
@@ -247,7 +188,6 @@ class Zoltan2_Directory {
     /*! \brief returns true if the directory is handling local ids. */
     bool is_use_lid() const { return use_lid; }
 
-  #ifdef CONVERT_DIRECTORY_KOKKOS
     void get_locally_managed_gids(std::vector<gid_t> & local_gids) const {
       // resize
       local_gids.resize(node_map.size());
@@ -290,10 +230,8 @@ class Zoltan2_Directory {
     size_t node_map_size() const {
       return node_map.size();
     }
-  #endif
 
   protected:
-  #ifndef CONVERT_DIRECTORY_TPETRA
     // handled updating the local node information when the proc receives
     // a new gid to store or updated data for a preexisting node
     int update_local(gid_t* gid, lid_t* lid, user_t *user,
@@ -305,34 +243,22 @@ class Zoltan2_Directory {
 
     // remove the locally stored node for this gid
     int remove_local(gid_t* gid);
-  #endif
 
     size_t find_msg_size;    /* Total allocation for Zoltan2_DD_FindMsg       */
     size_t update_msg_size;  /* Total allocation for Zoltan2_DD_Update_Msg    */
     size_t remove_msg_size;  /* Total allocation for Zoltan2_DD_Remove_Msg    */
 
-  #ifdef CONVERT_DIRECTORY_KOKKOS
     // originally the nodes are stored in a hash but in the new Kokkos mode
     // they are stored using Kokkos::UnorderedMap
     typedef Kokkos::UnorderedMap<gid_t,
       Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
     node_map_t node_map;
-  #endif
 
     // this method exists so constructor and copy constructor don't duplicate
     void allocate();
 
     // this method exists so operator= and copy constructor don't duplicate
     int copy(const Zoltan2_Directory<gid_t,lid_t,user_t> &dd);
-
-  #ifdef CONVERT_DIRECTORY_RELIC
-    // original zoltan methods for creating and freeing nodes
-    int allocate_node_list(relice_idx_t count, float overalloc);
-    relice_idx_t allocate_node();
-    void free_node(relice_idx_t freenode);
-    int equal_id(int n, gid_t* a, gid_t* b) const;
-    unsigned int hash_table(const gid_t& key) const;
-  #endif
 
     // TODO: Decide if this stays and how to incorporate with variable length
     // data. See comments in Zoltan2_Directory_Impl.hpp
@@ -349,19 +275,6 @@ class Zoltan2_Directory {
 
     size_t max_id_size;          /* Stores: max(sizeof(gid_t),sizeof(lid_t)) */
     Update_Mode mode; /* Last mode sent using update */
-
-  #ifdef CONVERT_DIRECTORY_RELIC
-    int table_length;                      /* # of heads of linked lists */
-    unsigned int recommended_hash_size (unsigned int n);
-     /* Memory for storing all nodes in the directory */
-    Teuchos::ArrayRCP<Zoltan2_Directory_Node<gid_t,lid_t,user_t>> nodelist;
-    relice_idx_t nodelistlen;        /* Length of the nodelist. */
-    /* Index of first free node in nodelist; -1 if no nodes are free */
-    relice_idx_t nextfreenode;
-    Teuchos::ArrayRCP<relice_idx_t> table;  /* Hash table heads of link lists */
-    Teuchos::ArrayRCP<char> nodedata;     /* Memory for data in the directory */
-    size_t nodedata_size;              /* Malloc for GID & LID & user storage */
-  #endif
 
     // abstract methods are implemented below by Zoltan2_Directory_Simple
     // or Zoltan2_Directory_Vector. These methods contain all the places where
@@ -391,26 +304,9 @@ class Zoltan2_Directory {
     #endif
     }
 
-  #ifdef CONVERT_DIRECTORY_KOKKOS
     void rehash_node_map(size_t new_hash_size) {
       node_map.rehash(new_hash_size);
     }
-  #endif
-
-  #ifdef CONVERT_DIRECTORY_TPETRA
-    // Tpetra implemented as an example for comparison - in this case the
-    // directory class is more of a wrapper which just implements standard
-    // Tpetra calls to export data.
-    typedef Tpetra::Map<lid_t, gid_t> map_t;
-    typedef Teuchos::RCP<const map_t> rcp_map_t;
-    typedef Tpetra::Vector<user_t, lid_t, gid_t> vector_t;
-    typedef Teuchos::RCP<vector_t> rcp_vector_t;
-    typedef Tpetra::Export<lid_t, gid_t> export_t;
-    typedef Teuchos::RCP<const export_t> rcp_export_t;
-    typedef Teuchos::ArrayRCP<user_t> vectordata_t;
-    rcp_map_t oto_idMap;
-    rcp_vector_t oto_idVec;
-  #endif
 };
 
 template <typename gid_t, typename lid_t, typename user_t>
@@ -420,14 +316,8 @@ class Zoltan2_Directory_Simple : public Zoltan2_Directory<gid_t, lid_t, user_t> 
 
     /*! \brief Constructo directory which handles simple user data types. */
     Zoltan2_Directory_Simple(Teuchos::RCP<const Teuchos::Comm<int> > comm_, bool use_lid_,
-    #ifdef CONVERT_DIRECTORY_RELIC
-      int table_length_,
-    #endif
       int debug_level_) :
       Zoltan2_Directory<gid_t, lid_t, user_t>(comm_, use_lid_,
-      #ifdef CONVERT_DIRECTORY_RELIC
-        table_length_,
-      #endif
         debug_level_) {
       // Note that allocate() must be called in the derived class, not the
       // base class or inheritance of the methods will break
@@ -438,9 +328,6 @@ class Zoltan2_Directory_Simple : public Zoltan2_Directory<gid_t, lid_t, user_t> 
     Zoltan2_Directory_Simple (
       const Zoltan2_Directory_Simple<gid_t,lid_t,user_t> &src) :
         Zoltan2_Directory<gid_t, lid_t, user_t>(src.comm, src.use_lid,
-    #ifdef CONVERT_DIRECTORY_RELIC
-          src.table_length,
-    #endif
           src.debug_level) {
       this->allocate();
       this->copy(src);
@@ -451,9 +338,6 @@ class Zoltan2_Directory_Simple : public Zoltan2_Directory<gid_t, lid_t, user_t> 
       (const Zoltan2_Directory_Simple<gid_t,lid_t,user_t> &src) {
       this->comm = src.comm;
       this->use_lid = src.use_lid;
-    #ifdef CONVERT_DIRECTORY_RELIC
-      this->table_length = src.table_length;
-    #endif
       this->debug_level = src.debug_level;
       this->allocate(); // operator= was setup in derived class so this inherits
       this->copy(src);
@@ -539,9 +423,6 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
     Zoltan2_Directory_Vector (
       const Zoltan2_Directory_Vector<gid_t,lid_t,user_t> &src) :
         Zoltan2_Directory<gid_t, lid_t, user_t>(src.comm, src.use_lid,
-    #ifdef CONVERT_DIRECTORY_RELIC
-          src.table_length,
-    #endif
           src.debug_level) {
       this->allocate(); // operator= was setup in derived class so this inherits
       this->copy(src);
@@ -552,9 +433,6 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
       (const Zoltan2_Directory_Vector<gid_t,lid_t,user_t> &src) {
       this->comm = src.comm;
       this->use_lid = src.use_lid;
-    #ifdef CONVERT_DIRECTORY_RELIC
-      this->table_length = src.table_length;
-    #endif
       this->debug_level = src.debug_level;
       this->allocate(); // operator= was setup in derived class so this inherits
       this->copy(src);
@@ -745,7 +623,6 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
     // read the std::vector size (which is added to base length find_msg_size.
     virtual size_t get_local_find_msg_size(gid_t * gid,
       bool throw_if_missing = true) const {
-      #ifdef CONVERT_DIRECTORY_KOKKOS
         if(this->node_map.exists(*gid)) {
           Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
             this->node_map.value_at(this->node_map.find(*gid));
@@ -760,10 +637,6 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
           // remove command actually works.
           return this->find_msg_size; // will not have any data content
         }
-      #else
-        throw std::logic_error( "Did not implement variable array support for "
-          "the non kokkos modes yet." );
-      #endif
     }
 
     // here we have a find msg coming in and we need to extract the vector length
@@ -785,7 +658,5 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
 };
 
 } // end namespace Zoltan2
-
-#endif // CONVERT_DIRECTORY_ORIGINAL - should not be using this code at all
 
 #endif

@@ -27,9 +27,6 @@
 
 //#define gnuPlot
 #include "Zoltan2_XpetraMultiVectorAdapter.hpp"
-
-// TODO: Delete this define once other temporary development modes are removed
-#define CONVERT_DIRECTORY_KOKKOS
 #include <Zoltan2_Directory_Impl.hpp>
 
 namespace Teuchos{

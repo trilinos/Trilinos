@@ -47,30 +47,8 @@
 #ifndef ZOLTAN2_DIRECTORY_IMPL_H_
 #define ZOLTAN2_DIRECTORY_IMPL_H_
 
-// TODO: A note on the file structure
-// We currently have Zoltan2_Directory.hpp and Zoltan2_Directory_Impl.hpp
-// This evolved and the point of the second file is now doubtful so probably
-// should be all merged into one, especially since all templated now.
-// However there might be utility in keeping the API separate.
 #include "Zoltan2_Directory.hpp"
-
-// original points back to zoltan code - block this out completely to make
-// sure we don't have any dependencies - eventually this gets deleted
-#ifndef CONVERT_DIRECTORY_ORIGINAL
-
-// Relic mode uses the new directory class but points back to the original
-// zoltan communicator. It's a halfway point between the new Kokkos mode
-// and the original mode which was useful for debugging some stuff.
-#ifdef CONVERT_DIRECTORY_RELIC
-  #include <comm.h>
-#endif
-
-// Only Kokkos mode uses the new Zoltan2_Directory_Comm class which is pulled
-// from the original zoltan code and modified to handle variable length
-// user data.
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  #include "Zoltan2_Directory_Comm.hpp"
-#endif
+#include "Zoltan2_Directory_Comm.hpp"
 
 // Supplies the current hash - rolled over from zoltan
 // Right now the hash_proc method is still being used for the new Kokkos mode
@@ -115,13 +93,6 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
 {
   const char * yo = "Zoltan2_Directory::allocate";
 
-#ifdef CONVERT_DIRECTORY_RELIC
-  if (table_length < 0)  {
-    throw std::invalid_argument(
-     "Zoltan2_Directory() Invalid table_length argument");
-  }
-#endif
-
   if (debug_level > 4) {
     ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
   }
@@ -141,24 +112,6 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
       "Zoltan2_Directory() LID, GID, USER data lengths differ globally");
   }
 
-#ifdef CONVERT_DIRECTORY_RELIC
-  if(!table_length) {
-    table_length = 100000; // relic value for hash table count
-  }
-  table_length = recommended_hash_size(table_length);
-
-  // Note that in the original Zoltan implementation memory was allocated for
-  // the main struct with additional memory for the table - so this step mimics
-  // that part of the code where we allocate memory for the table
-  table = Teuchos::arcp(new relice_idx_t[table_length], 0, table_length, true);
-  for(Teuchos::ArrayRCP<relice_idx_t>::size_type i = 0; i < table.size(); ++i) {
-    table[i] = -1;
-  }
-
-  nodelistlen = 0;
-  nextfreenode = -1;
-#endif
-
   // get the base size of the user data component
   // for simple mode, this is going to just be the sizeof(user_t)
   // for vector mode, this is sizeof(size_t) for the std::vector length
@@ -168,10 +121,6 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
 
   // set up the base size to include the gid and the lid (if used) + user size
   size_t size = sizeof(gid_t) + (use_lid?sizeof(lid_t):0) + user_base_size;
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  nodedata_size = size;
-#endif
 
   // now calculate the full update msg size
   update_msg_size = size + sizeof(Zoltan2_DD_Update_Msg<gid_t,lid_t>);
@@ -203,9 +152,6 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
   // comparisons. I was not sure yet the implications of this and how it would
   // best integrate if we have variable length user data
 /*
-#ifdef CONVERT_DIRECTORY_RELIC
-    nodedata_size   = align_size_t(nodedata_size);
-#endif
     update_msg_size = align_size_t(update_msg_size);
     remove_msg_size = align_size_t(remove_msg_size);
     find_msg_size   = align_size_t(find_msg_size);
@@ -220,21 +166,7 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::copy(
   const Zoltan2_Directory<gid_t,lid_t,user_t> & src) {
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  nodelist = src.nodelist;
-  nodedata = src.nodedata;
-#endif
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   node_map = src.node_map;
-#endif
-
-#ifdef CONVERT_DIRECTORY_TPETRA
-  oto_idMap = src.oto_idMap;
-  oto_idVec = src.oto_idVec;
-#endif
-
   return 0;
 }
 
@@ -298,108 +230,25 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // should a directory allow mixed modes (Replace, then Aggregate... for ex)
   this->mode = update_mode;
 
-  Zoltan2_Directory_Clock clock("update");
-
   const char * yo = "Zoltan2_Directory::update";
 
   if (debug_level > 4) {
     ZOLTAN2_TRACE_IN(comm->getRank(), yo, NULL);
   }
 
-  Zoltan2_Directory_Clock update_setup_clock("update_setup", 1);
-
   // part of initializing the error checking process
   // for each linked list head, walk its list resetting errcheck
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   if(debug_level) {
     for(size_t n = 0; n < node_map.size(); ++n) {
       node_map.value_at(n).errcheck = -1; // not possible processor
     }
   }
-#endif
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  if(debug_level) {
-    for (int i = 0; i < table_length; i++) {
-      relice_idx_t nodeidx;
-      for (nodeidx = table[i]; nodeidx != -1;
-        nodeidx = nodelist[nodeidx].next) {
-        nodelist[nodeidx].errcheck = -1;  // not possible processor
-      }
-    }
-  }
-#endif
-
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After reset errcheck");
   }
 
-  update_setup_clock.complete();
-
   int err = 0;
-
-#ifdef CONVERT_DIRECTORY_TPETRA
-  // Build Tpetra::Map for the given local ids
-  gid_t indexBase = 0;
-  size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  std::vector<gid_t> gid_vector(gid, gid + count); // make std::vector from ptr
-  rcp_map_t idMap = Teuchos::rcp(new map_t(dummy, gid_vector, indexBase, comm), true);
-
-  // Create Vector using this map.
-  rcp_vector_t idVec = Teuchos::rcp(new vector_t(idMap, 0.));
-
-  // Now set the tpetra data to match the input data
-  vectordata_t idData = idVec->getDataNonConst();
-  for (size_t i = 0; i < idVec->getLocalLength(); i++) {
-    idData[i] = user[i];
-  }
-
-  // I pulled this for now as I didn't want to have the API requiring the
-  // contiguous option just for Tpetra which is just a side show here anyways.
-  // If we want to restore this optimization we might scan the ids to auto
-  // determine if they are contiguous (or make a different API for Tpetra)
-  // I used to pass this in from the unit tests but eliminated that.
-  /*
-  if (contiguous) {
-    // For contigous ids, can use Tpetra default Map
-    gid_t gnUnique = idMap->getMaxAllGlobalIndex() - indexBase + 1;
-    oto_idMap = Teuchos::rcp(new map_t(gnUnique, indexBase, comm));
-  }
-  else
-  */
-  {
-    // Since ids may not be contiguous, cannot use default Tpetra Map
-    oto_idMap = Tpetra::createOneToOne(idMap);
-  }
-
-  oto_idMap = Tpetra::createOneToOne(idMap);
-
-  oto_idVec = Teuchos::rcp(new vector_t(oto_idMap));
-
-  // Create an exporter between the two maps
-  rcp_export_t idExporter = Teuchos::rcp(new export_t(idMap, oto_idMap));
-
-  // Now we can use Tpetra for Replace or Add (doesn't support Aggregate)
-  switch(mode) {
-    case Update_Mode::Replace:
-      oto_idVec->doExport(*idVec, *idExporter, Tpetra::REPLACE);
-      break;
-    case Update_Mode::Add:
-      oto_idVec->doExport(*idVec, *idExporter, Tpetra::ADD);
-      break;
-    case Update_Mode::Aggregate:
-      throw std::logic_error("Tpetra mode won't support Aggregate.");
-      break;
-    case Update_Mode::AggregateAdd:
-      throw std::logic_error("Tpetra mode won't support AggregateAdd.");
-      break;
-  }
-
-#else
-
-  Zoltan2_Directory_Clock update_alloc_clock("update_alloc", 1);
 
   // allocate memory for list of processors to contact
   Teuchos::ArrayRCP<int> procs;
@@ -422,20 +271,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     sum_msg_size = update_msg_size * count; // simple case
   }
 
-  update_alloc_clock.complete();
-
-  Zoltan2_Directory_Clock update_alloc_sbuff_clock("update_alloc_sbuff", 1);
-
   Teuchos::ArrayRCP<char> sbuff;
   if(sum_msg_size) {
     sbuff = Teuchos::arcp(new char[sum_msg_size], 0, sum_msg_size, true);
   }
 
-  update_alloc_sbuff_clock.complete();
-
   typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
-
-  Zoltan2_Directory_Clock update_build_raw_clock("update_build_raw", 1);
 
   // build update messages
   int track_offset = 0;
@@ -510,24 +351,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill contact list");
   }
 
-  update_build_raw_clock.complete();
-
   // now create efficient communication plan
 
-  Zoltan2_Directory_Clock update_build_plan_clock("update_build_plan", 1);
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   // Kokkos mode uses the new refactored C++ communicator class
   Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_UPDATE_MSG_TAG);
   int nrec = directoryComm.getNRec();
-#else
-  // The relic mode will be working with the original zoltan code
-  ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
-  int nrec = 0;       // number of receives to expect
-  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
-    getRawComm(), ZOLTAN2_DD_UPDATE_MSG_TAG, &nrec);
-#endif
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::update() Comm_Create error");
@@ -537,20 +366,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Create");
   }
 
-  update_build_plan_clock.complete();
-
-  Zoltan2_Directory_Clock update_resize_clock("update_resize", 1);
-
   int sum_recv_sizes = 0;
   if(is_Zoltan2_Directory_Vector()) {
     // Only vector mode has to use the resizing options for getting receive info
-#ifdef CONVERT_DIRECTORY_KOKKOS
     err = directoryComm.resize(msg_sizes,
       ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
-#else
-    err = Zoltan_Comm_Resize(plan, msg_sizes.getRawPtr(),
-      ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
-#endif
   }
   else {
     sum_recv_sizes = update_msg_size * nrec;
@@ -560,19 +380,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     throw std::logic_error("directoryComm.execute_resize error");
   }
 
-  update_resize_clock.complete();
-
   // If dd has no nodes allocated (e.g., first call to DD_Update;
   // create the nodelist and freelist
-  Zoltan2_Directory_Clock build_hash_clock("update_build_hash", 1);
 
-#ifdef CONVERT_DIRECTORY_RELIC
-  if (nrec && nodelistlen == 0) {
-    allocate_node_list((relice_idx_t) nrec, 0.);
-  }
-#endif
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   // TODO upgrade nrec as size_t and all corresponding changes...
   if(nrec && static_cast<int>(node_map.size()) < nrec) {
     // some things to consider here if we will have multiple update calls in
@@ -582,9 +392,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     // out so skipping this call would be logically ok (but not best performance)
     rehash_node_map(nrec);
   }
-#endif
-
-  build_hash_clock.complete();
 
   // allocate receive buffer for nrec DD_Update_Msg structures
   Teuchos::ArrayRCP<char> rbuff;
@@ -597,17 +404,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   //if resizing we send size 1 because the sizes will be built individually
   const int nbytes = is_Zoltan2_Directory_Vector() ? 1 : update_msg_size;
 
-  Zoltan2_Directory_Clock update_forward_clock("update_forward", 1);
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
     sbuff, nbytes, rbuff);
-#else
-  err = Zoltan_Comm_Do(plan, ZOLTAN2_DD_UPDATE_MSG_TAG+1,
-    sbuff.getRawPtr(), nbytes, rbuff.getRawPtr());
-#endif
-
-  update_forward_clock.complete();
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::update() Comm_Do error");
@@ -616,8 +414,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Do");
   }
-
-  Zoltan2_Directory_Clock update_locals_clock("update_locals", 1);
 
   int errcount = 0;
 
@@ -682,8 +478,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   }
 #endif
 
-  update_locals_clock.complete();
-
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Local update");
   }
@@ -694,18 +488,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     err = (errcount) ? 1 : 0;
   }
 
-#ifdef CONVERT_DIRECTORY_RELIC
-  Zoltan_Comm_Destroy (&plan);
-#endif
-
   if (debug_level)  {
     char str[100];      // used to build message string
     sprintf (str, "Processed %lu GIDs (%d local), %d GID errors", count,
-#ifdef CONVERT_DIRECTORY_RELIC
-      nrec,
-#else
       directoryComm.getNRec(),
-#endif
       errcount);
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
   }
@@ -714,11 +500,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_TRACE_OUT(comm->getRank(), yo, NULL);
   }
 
-#endif
   return err;
 }
 
-#ifndef CONVERT_DIRECTORY_TPETRA
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
  gid_t* gid,                 /* GID to update (in)                        */
@@ -748,151 +532,85 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
   }
 
   // compute offset into hash table to find head of linked list
-#ifdef CONVERT_DIRECTORY_RELIC
-  int index = hash_table(*gid);
-  // walk linked list until end looking for matching gid
-  for (relice_idx_t nodeidx = table[index]; nodeidx != -1;
-    nodeidx = nodelist[nodeidx].next) {
-    Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-    if (*gid == *node.gid) {
-#else
   size_t node_index = node_map.find(*gid);
   if(node_map.valid_at(node_index)) {
     Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
       node_map.value_at(node_index);
-#endif
 
-#ifdef CONVERT_DIRECTORY_RELIC
-      // found match, update directory information
-      if (lid) {
-        lid_t* plid = reinterpret_cast<lid_t*>(node.gid + 1);
-        *plid = lid[0];
-      }
-      if (user) {
-        user_t * puser = reinterpret_cast<user_t*>(
-          reinterpret_cast<char*>(node.gid) +
-          sizeof(gid_t) + (use_lid?sizeof(lid_t):0));
-        switch(mode) {
-          case Update_Mode::Replace:
-            *puser = *user;
-            break;
-          case Update_Mode::Add:
-            *puser += *user;
-            break;
-          case Update_Mode::Aggregate:
-            throw std::logic_error("Aggregate doesn't have meaning for single type.");
-            break;
-          case Update_Mode::AggregateAdd:
-            throw std::logic_error("Aggregate doesn't have meaning for single type.");
-            break;
-        }
-      }
-#else
-      // found match, update directory information
-      if (lid) {
-        node.lid = *lid;
-      }
-      if (user) {
-        update_local_user(user, node.userData);
-      }
-#endif
-
-      node.owner = owner;
-      if (partition != -1) {
-        node.partition = partition;
-      }
-
-      // errcheck is reset to -1 at beginning of update for debug mode
-      // then it will get set to the provider of the data when the node is
-      // created or on the first call to be updated locally.
-      // So if errcheck -1, then we do nothing - it's the first action.
-      if(debug_level) {
-        // if node.errcheck is -1 we are detecting the first update to a node
-        // which already existed at the beginning of the update call so it's ok.
-        // if mode is not Replace then duplicate calls are ok (expected) since
-        // Add and Aggregate combine from many procs are the outcome is not
-        // order dependent.
-        if(node.errcheck != -1 && mode == Replace) {
-          // here we have detected two actions on a single node in the same
-          // update call for replace.
-          // The actions could have been:    create node -> change node
-          // or if the node already existed: change node -> change node
-
-          // in Replace mode, two actions are potentially problematic.
-          // If two procs update the same gid with different data it will
-          // be order dependent.
-
-          // For performance testing it's convenient to allow
-          // Replace to be called from different procs but expect the data
-          // to always be identical. That means we can compare Replace and
-          // Aggregate more meaningfully since the gid setup for update is
-          // the same.
-
-          // To discuss - should one proc be allowed to submit duplicate
-          // gids in an update call using Replace mode. Should two different
-          // procs be allowed to submit duplicate gids with the same data
-          // for a replace call, in which case the outcome is determined
-          // regardless of order but we would be relying on the user to have
-          // accurate data submission. Then we might consider a debug check
-          // here to validate the data is coming in matches the local data.
-
-          // TODO: Probably add this throw in, but currently the testing
-          // framework will feed multiple Replace calls with the same data
-          // from different gids - so we would have to change the tests
-          // to guarantee Replace was a unique gid lists for each proc.
-          // That is easy to do but not ideal at the moment for performance
-          // testing reasons. I'd like the pattern of calls to be the same
-          // as Add and Aggregate as a reference.
-
-          //   throw std::logic_error( "Two replace calls were detected on."
-          //     " the same gid which can be an undefined results.");
-        }
-      }
-
-      node.errcheck = owner;
-
-      if (debug_level > 5) {
-        ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
-      }
-
-      // TODO: Change logic flow to avoid this internal return
-      return 0;          // ignore all errors
-#ifdef CONVERT_DIRECTORY_RELIC
+    // found match, update directory information
+    if (lid) {
+      node.lid = *lid;
     }
-#endif
+    if (user) {
+      update_local_user(user, node.userData);
+    }
+
+    node.owner = owner;
+    if (partition != -1) {
+      node.partition = partition;
+    }
+
+    // errcheck is reset to -1 at beginning of update for debug mode
+    // then it will get set to the provider of the data when the node is
+    // created or on the first call to be updated locally.
+    // So if errcheck -1, then we do nothing - it's the first action.
+    if(debug_level) {
+      // if node.errcheck is -1 we are detecting the first update to a node
+      // which already existed at the beginning of the update call so it's ok.
+      // if mode is not Replace then duplicate calls are ok (expected) since
+      // Add and Aggregate combine from many procs are the outcome is not
+      // order dependent.
+      if(node.errcheck != -1 && mode == Replace) {
+        // here we have detected two actions on a single node in the same
+        // update call for replace.
+        // The actions could have been:    create node -> change node
+        // or if the node already existed: change node -> change node
+
+        // in Replace mode, two actions are potentially problematic.
+        // If two procs update the same gid with different data it will
+        // be order dependent.
+
+        // For performance testing it's convenient to allow
+        // Replace to be called from different procs but expect the data
+        // to always be identical. That means we can compare Replace and
+        // Aggregate more meaningfully since the gid setup for update is
+        // the same.
+
+        // To discuss - should one proc be allowed to submit duplicate
+        // gids in an update call using Replace mode. Should two different
+        // procs be allowed to submit duplicate gids with the same data
+        // for a replace call, in which case the outcome is determined
+        // regardless of order but we would be relying on the user to have
+        // accurate data submission. Then we might consider a debug check
+        // here to validate the data is coming in matches the local data.
+
+        // TODO: Probably add this throw in, but currently the testing
+        // framework will feed multiple Replace calls with the same data
+        // from different gids - so we would have to change the tests
+        // to guarantee Replace was a unique gid lists for each proc.
+        // That is easy to do but not ideal at the moment for performance
+        // testing reasons. I'd like the pattern of calls to be the same
+        // as Add and Aggregate as a reference.
+
+        //   throw std::logic_error( "Two replace calls were detected on."
+        //     " the same gid which can be an undefined results.");
+      }
+    }
+
+    node.errcheck = owner;
+
+    if (debug_level > 5) {
+      ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
+    }
+
+    // TODO: Change logic flow to avoid this internal return
+    return 0;          // ignore all errors
   }
 
   // gid not found.
   // Create new Zoltan2_Directory_Node<gid_t,lid_t> and fill it in
-#ifdef CONVERT_DIRECTORY_RELIC
-  relice_idx_t nodeidx = allocate_node();
-  Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-#else
   Zoltan2_Directory_Node<gid_t,lid_t,user_t> node; // will add to hash at end
   node.free = 0; // TODO - is this necessary - see notes in rehash_node_map
-#endif
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  *node.gid = *gid;
-
-  lid_t *plid = reinterpret_cast<lid_t*>(node.gid + 1);
-  if (lid) {
-    *plid = *lid;
-  }
-  else {
-    *plid = 0;
-  }
-
-  user_t * puser = reinterpret_cast<user_t*>(
-    reinterpret_cast<char*>(node.gid) + sizeof(gid_t)
-      + (use_lid?sizeof(lid_t):0));
-  if (user) {
-    *puser = *user;
-  }
-  else {
-    *puser = user_t();
-  }
-#else
   node.lid = lid ? (*lid) : lid_t();
 
   // this is more or less doing what above relic commands did except for
@@ -905,17 +623,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
     node.userData = user_t();
   }
 
-#endif
-
   node.partition = partition;
   node.owner = owner;
   node.errcheck = owner;
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  // Add node to the linked list
-  node.next = table[index];
-  table[index] = nodeidx;
-#else
 
   if(node_map.insert(*gid, node).failed()) {
     // Need more nodes (that's the assumption here if we have failure)
@@ -932,8 +642,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
     }
   }
 
-#endif
-
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, "Created new directory item");
   }
@@ -944,7 +652,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 
   return 0;
 }
-#endif
 
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
@@ -956,10 +663,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
  int * owner,       /* Outgoing optional list of data owners      */
  bool throw_if_missing)         /* default true - throw if gid is not found.  */
 {
-  Zoltan2_Directory_Clock clock("find");
-
-  Zoltan2_Directory_Clock find_init_clock("  find_init");
-
   const char * yo = "Zoltan2_Directory::find";
 
   if (debug_level > 4) {
@@ -968,29 +671,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 
   int err = 0;
 
-#ifdef CONVERT_DIRECTORY_TPETRA
-  // Build Tpetra::Map for the given ids
-  gid_t indexBase = 0;
-  size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  std::vector<gid_t> gid_vector(gid, gid + count); // make std::vector from ptr
-  rcp_map_t idMap = Teuchos::rcp(
-    new map_t(dummy, gid_vector, indexBase, comm), true);
-
-  // Create Vector using this map.
-  // This vector will store number of occurrences of each id across procs
-  rcp_vector_t idVec = Teuchos::rcp(new vector_t(idMap, 0.));
-
-  // Create an exporter between the two maps
-  rcp_export_t idExporter = Teuchos::rcp(new export_t(idMap, oto_idMap));
-
-  idVec->doImport(*oto_idVec, *idExporter, Tpetra::REPLACE);
-
-  // Copy the result - TODO - make it pretty - make it fast
-  vectordata_t idData = idVec->getDataNonConst();
-  for (size_t i = 0; i < idVec->getLocalLength(); i++) {
-    user[i] = idData[i];
-  }
-#else
   /* allocate memory for processors to contact for directory info */
   Teuchos::ArrayRCP<int> procs;
   if(count > 0) {
@@ -1004,22 +684,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   }
 
   // create efficient communication plan
-#ifdef CONVERT_DIRECTORY_RELIC
-  ZOLTAN_COMM_OBJ *plan  = NULL;     // efficient MPI communication
-  int nrec;                          // number of messages to receive
-#ifdef HAVE_MPI
-  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
-    Teuchos::getRawMpiComm(*comm), ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
-#else
-  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
-    MPI_COMM_WORLD, ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
-#endif
-
-#else
   Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_FIND_MSG_TAG);
   int nrec = directoryComm.getNRec();
-#endif
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Create");
@@ -1029,18 +696,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     throw std::logic_error("Zoltan2_Directory::find() error");
   }
 
-  find_init_clock.complete();
-
-  Zoltan2_Directory_Clock find_sbuff_alloc_clock("  find_sbuff_alloc");
-
   Teuchos::ArrayRCP<char> sbuff;
   if(count > 0) {
     sbuff = Teuchos::arcp(new char[find_msg_size*count],
       0, find_msg_size*count, true); // send buffer
   }
-  find_sbuff_alloc_clock.complete();
-
-  Zoltan2_Directory_Clock find_prep_clock("  find_prep");
 
   typedef Zoltan2_DD_Find_Msg<gid_t,lid_t> msg_t;
 
@@ -1062,10 +722,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     throw std::logic_error("directoryComm.execute_resize error");
   }
 
-  find_prep_clock.complete();
-
-  Zoltan2_Directory_Clock find_rbuff_alloc_clock("  find_rbuff_alloc");
-
   // allocate receive buffer
   Teuchos::ArrayRCP<char> rbuff;
   if(nrec > 0) {
@@ -1073,19 +729,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
       0, nrec * find_msg_size, true);
   }
 
-  find_rbuff_alloc_clock.complete();
-
-  Zoltan2_Directory_Clock find_comm_clock("  find_comm");
-
   const int nbytes = find_msg_size; // just getting length not full vector data
 
-#ifdef CONVERT_DIRECTORY_RELIC
-  err = Zoltan_Comm_Do (plan, ZOLTAN2_DD_FIND_MSG_TAG+1, sbuff.getRawPtr(),
-    nbytes, rbuff.getRawPtr());
-#else
   err = directoryComm.do_forward(ZOLTAN2_DD_FIND_MSG_TAG+1, sbuff,
     nbytes, rbuff);
-#endif
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::find() error");
@@ -1094,10 +741,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Do");
   }
-
-  find_comm_clock.complete();
-
-  Zoltan2_Directory_Clock find_build_sizes_clock("  find_build_sizes");
 
   // get find messages directed to me and determine total recv size
   // and a list of individual sizes (rmsg_sizes_resized)
@@ -1116,10 +759,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     rmsg_sizes_resized[i] = find_rmsg_size_resized;
     sum_rmsg_sizes_resized += find_rmsg_size_resized;
   }
-
-  find_build_sizes_clock.complete();
-
-  Zoltan2_Directory_Clock find_cpy_clock("  find_cpy");
 
   Teuchos::ArrayRCP<char>::size_type track_offset_resized = 0;
 
@@ -1144,10 +783,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   // and use the original rbuff (there is no resizing to consider)
   Teuchos::ArrayRCP<char> rbuff_resized = is_Zoltan2_Directory_Vector() ?
     rbuff_resized_build : rbuff;
-
-  find_cpy_clock.complete();
-
-  Zoltan2_Directory_Clock find_locals_clock("  find_locals");
 
   // Fill it with the true array data
   track_offset_resized = 0; // for debugging
@@ -1174,10 +809,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     throw std::logic_error("Bad sum!");
   }
 
-  find_locals_clock.complete();
-
-  Zoltan2_Directory_Clock find_reverse_clock("  find_reverse");
-
   // This section is handled differently if it's variable sized array
   size_t size_scale = is_Zoltan2_Directory_Vector() ? 1 : find_msg_size;
 
@@ -1187,23 +818,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   }
 
   if(is_Zoltan2_Directory_Vector()) {
-#ifdef CONVERT_DIRECTORY_RELIC
-    err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2,
-      rbuff_resized.getRawPtr(), size_scale, rmsg_sizes_resized.getRawPtr(),
-      sbuff_resized.getRawPtr());
-#else
     err = directoryComm.do_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2,
       rbuff_resized, size_scale, rmsg_sizes_resized, sbuff_resized);
-#endif
   }
   else {
-#ifdef CONVERT_DIRECTORY_RELIC
-    err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN2_DD_FIND_MSG_TAG+2,
-     rbuff_resized.getRawPtr(), size_scale, NULL, sbuff_resized.getRawPtr());
-#else
     err = directoryComm.do_reverse(ZOLTAN2_DD_FIND_MSG_TAG+2,
       rbuff_resized, size_scale, Teuchos::null, sbuff_resized);
-#endif
   }
 
   if (err) {
@@ -1213,10 +833,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Reverse");
   }
-
-  find_reverse_clock.complete();
-
-  Zoltan2_Directory_Clock find_collect_reverse_clock("  find_reverse");
 
   // fill in user supplied lists with returned information
   track_offset_resized = 0;
@@ -1269,10 +885,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill return lists");
   }
 
-  find_collect_reverse_clock.complete();
-
-  Zoltan2_Directory_Clock find_cleanup_clock("  find_cleanup");
-
   int errcount = 0;
   Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, 1, &errcount, &err);
   err = (err) ? 1 : 0;
@@ -1284,14 +896,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
   }
 
-  find_cleanup_clock.complete();
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  Zoltan_Comm_Destroy (&plan);
-#endif
-
-#endif
-
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT(comm->getRank(), yo, NULL);
   }
@@ -1299,7 +903,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   return err;
 }
 
-#ifndef CONVERT_DIRECTORY_TPETRA
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
   gid_t* gid,                 /* incoming GID to locate (in)            */
@@ -1321,7 +924,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
   }
 
   /* compute offset into hash table to find head of linked list */
-#ifdef CONVERT_DIRECTORY_KOKKOS
   // Note performance is better if we first get index, then check valid_at,
   // and use index to call value_at. Alternative is to call exists(*gid) and
   // then node_map.value_at(node_map.find(*gid))) which is slower.
@@ -1331,46 +933,22 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
   {
     const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
       node_map.value_at(node_index);
-#else
-  int index = hash_table(*gid);
-  /* walk link list until end looking for matching global ID */
-  for (relice_idx_t nodeidx = table[index]; nodeidx != -1;
-    nodeidx = nodelist[nodeidx].next) {
-    const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-    if (*gid == *node.gid) {
-#endif
-      /* matching global ID found! Return gid's information */
-#ifdef CONVERT_DIRECTORY_RELIC
-      if (lid) {
-        lid_t *plid = reinterpret_cast<lid_t*>(node.gid + 1);
-        *lid = *plid;
-      }
-      if (user) {
-        user_t * puser = reinterpret_cast<user_t*>(
-          reinterpret_cast<char*>(node.gid) + sizeof(gid_t) +
-          (use_lid?sizeof(lid_t):0));
-        *user = *puser;
-      }
-#else
-      if(lid) {
-        *lid = node.lid;
-      }
-
-      if (user) {
-        user_to_raw(node.userData, user);
-      }
-#endif
-
-      if (owner)     *owner     = node.owner;
-      if (partition) *partition = node.partition;
-
-      if (debug_level > 5) {
-        ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
-      }
-      return 0; // success point
-#ifdef CONVERT_DIRECTORY_RELIC
+    /* matching global ID found! Return gid's information */
+    if(lid) {
+      *lid = node.lid;
     }
-#endif
+
+    if (user) {
+      user_to_raw(node.userData, user);
+    }
+
+    if (owner)     *owner     = node.owner;
+    if (partition) *partition = node.partition;
+
+    if (debug_level > 5) {
+      ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
+    }
+    return 0; // success point
   }
 
   // failure point
@@ -1389,86 +967,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
 
   return 0;
 }
-#endif
-
-#ifdef CONVERT_DIRECTORY_RELIC
-template <typename gid_t,typename lid_t,typename user_t>
-int Zoltan2_Directory<gid_t,lid_t,user_t>::allocate_node_list(
-  relice_idx_t count,         /* Number of GIDs in update list  */
-  float overalloc             /* Percentage to extra nodes to
-                               allocate (for future dynamic
-                               additions).                    */
-)
-{
-  // Allocate node memory and initialize it to be all free.
-  // Return error code if memory alloc fails.
-  relice_idx_t len = count * (1. + overalloc);
-  nodelistlen = len;
-  if (len > 0) {
-    nodelist = Teuchos::arcp<Zoltan2_Directory_Node<gid_t,lid_t,user_t>>(
-      new Zoltan2_Directory_Node<gid_t,lid_t,user_t>[len], 0, len, true);
-    nodedata = Teuchos::arcp<char>(
-      new char[nodedata_size * len], 0, nodedata_size * len, true);
-    nextfreenode = 0;
-    for(relice_idx_t nodeidx = 0; nodeidx < len; ++nodeidx) {
-      Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-      node.next = nodeidx + 1;
-      node.gid = reinterpret_cast<gid_t*>(&(nodedata[nodeidx*nodedata_size]));
-      node.free = 1;
-    }
-    nodelist[len-1].next = -1;  // NULL value at end of list
-  }
-  return 0;
-}
-
-template <typename gid_t,typename lid_t,typename user_t>
-relice_idx_t Zoltan2_Directory<gid_t,lid_t,user_t>::allocate_node()
-{
-  // "allocate" a node by removing it from the free list and returning
-  // its NodeIdx.
-  if (nextfreenode == -1) {
-    // No more room for new nodes in the node list.
-    // Realloc memory and set up a new freelist.
-    relice_idx_t newlen = nodelistlen * 2;
-
-    nodelist.resize(newlen);
-    nodedata.resize(nodedata_size * newlen);
-
-    // Reinitialize the gid pointers in the realloc'ed nodelist.
-    for(relice_idx_t nodeidx = 0; nodeidx < newlen; ++nodeidx) {
-      Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-      node.gid = (gid_t*)(&(nodedata[nodeidx*nodedata_size]));
-    }
-
-    // Initialize free list in the newly extended memory
-    nextfreenode = nodelistlen;
-    for (relice_idx_t i = nodelistlen; i < newlen-1; i++) {
-      nodelist[i].next = i+1;
-      nodelist[i].free = 1;
-    }
-    nodelist[newlen-1].next = -1;
-    nodelist[newlen-1].free = 1;
-    nodelistlen = newlen;
-  }
-
-  relice_idx_t returnnode = nextfreenode;
-  nextfreenode = nodelist[returnnode].next;
-  nodelist[returnnode].next = -1;
-  nodelist[returnnode].free = 0;
-  return returnnode;
-}
-
-template <typename gid_t,typename lid_t,typename user_t>
-void Zoltan2_Directory<gid_t,lid_t,user_t>::free_node(
-  relice_idx_t freenode)
-{
-  // "free" a node by returning it to the free list.
-  // TODO Error check:  freenode should be < nodelistlen
-  nodelist[freenode].next = nextfreenode;
-  nodelist[freenode].free = 1;
-  nextfreenode = freenode;
-}
-#endif
 
 // Print block
 template <typename gid_t,typename lid_t,typename user_t>
@@ -1480,63 +978,33 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
     ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
   }
 
-#ifdef CONVERT_DIRECTORY_TPETRA
-  printf( "Tpetra mode does not have print() method implemented.\n" );
-#else
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  /* walk linked list printing each node */
-  for (int i = 0; i < table_length; i++) {
-    for (relice_idx_t nodeidx = table[i]; nodeidx != -1;
-      nodeidx = nodelist[nodeidx].next) {
-      const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
-      printf ("ZOLTAN DD Print(%d): \tList %3d, \tGID ", comm->getRank(), i);
-      printf("(");
-      printf("%zu ", static_cast<size_t>(node.gid[0]));
-#endif
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   for (size_t i = 0; i < node_map.size(); i++) {
-      Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
-        node_map.value_at(i);
-      printf ("ZOLTAN DD Print(%d): \tList, \tGID ", comm->getRank());
-      printf("(");
-      //  the issue here is that gid could be a simple type (int/long) or it
-      //  could be an arbitrary structure such as:
-      //  struct some_type {
-      //    int x[4];
-      //  }
-      // Directory works for such arbitrary type but only knows sizeof,
-      // not details of the internal implementation. In the testing framework
-      // the length of above x array is stored so it can be printed.
-      // TODO: Decide how to handle this - if we want directory to be able to
-      // print nice output of the gid (and lid) then perhaps we need to require
-      // that such structs define a to_string() method.
-      printf( "TODO: Decide how to print gid of arbitrary type.");
-#endif
-
+    Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
+      node_map.value_at(i);
+    printf ("ZOLTAN DD Print(%d): \tList, \tGID ", comm->getRank());
+    printf("(");
+    //  the issue here is that gid could be a simple type (int/long) or it
+    //  could be an arbitrary structure such as:
+    //  struct some_type {
+    //    int x[4];
+    //  }
+    // Directory works for such arbitrary type but only knows sizeof,
+    // not details of the internal implementation. In the testing framework
+    // the length of above x array is stored so it can be printed.
+    // TODO: Decide how to handle this - if we want directory to be able to
+    // print nice output of the gid (and lid) then perhaps we need to require
+    // that such structs define a to_string() method.
+    printf( "TODO: Decide how to print gid of arbitrary type.");
+    printf(") ");
+    if (use_lid) {
+      printf("\tLID (");
+      // see above note on the gid and printing
+      printf( "TODO: Decide how to print lid of arbitrary type.");
       printf(") ");
-      if (use_lid) {
-        printf("\tLID (");
-#ifdef CONVERT_DIRECTORY_RELIC
-        lid_t * ptr = reinterpret_cast<lid_t*>(node.gid + 1);
-        printf( "%zu ", static_cast<size_t>(*ptr));
-#endif
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-        // see above note on the gid and printing
-        printf( "TODO: Decide how to print lid of arbitrary type.");
-#endif
-        printf(") ");
-      }
-      printf ("\tPart %d\n", node.partition);
-      printf ("\tOwner %d\n", node.owner);
-#ifdef CONVERT_DIRECTORY_RELIC
     }
-#endif
-
+    printf ("\tPart %d\n", node.partition);
+    printf ("\tOwner %d\n", node.owner);
   }
-#endif // #ifndef CONVERT_DIRECTORY_TPETRA
 
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
@@ -1554,51 +1022,11 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::stats() const
     ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
   }
 
-#ifdef CONVERT_DIRECTORY_TPETRA
-  printf( "Tpetra mode does not have stats() method implemented.\n" );
-#else
-
   char str[100];      // used to build message string
-
-#ifdef CONVERT_DIRECTORY_RELIC
-  /* walk down each list in hash table to find every Node */
-  int node_count = 0;     /* counts Nodes in local directory      */
-  int maxlength  = 0;     /* length of longest linked list        */
-  int list_count = 0;     /* number of linked lints in hash table */
-  for (int i = 0; i < table_length; i++) {
-    int length = 0;                    /* reset length for next count */
-    if (table[i] != -1)
-      list_count++;               /* count of distict linked lists */
-    for (relice_idx_t nodeidx = table[i]; nodeidx != -1;
-      nodeidx = nodelist[nodeidx].next) {
-
-      if (debug_level > 6) {
-        char str2[100];      // used to build message string
-   //     sprintf(str, "GID %zu, Owner %d, Table Index %d.",
-   //       (size_t) *nodelist[nodeidx].gid, nodelist[nodeidx].owner, i);
-        ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str2);
-      }
-
-      length++;                  /* linked list length */
-      node_count++;              /* count of Nodes */
-
-      if (length > maxlength)
-        maxlength = length;        /* save length of longest linked list */
-    }
-  }
-
-  sprintf(str, "Hash table size %d, %d nodes on %d lists, max list length %d.",
-          table_length, node_count, list_count, maxlength);
-#else
   // not much to do here for equivalent to stats
   // TODO: Consider removing stats()
   sprintf(str, "Kokkos unordered map %d nodes.", node_map.size());
-#endif
-
   ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
-
-#endif // #ifndef CONVERT_DIRECTORY_TPETRA
-
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
   }
@@ -1609,8 +1037,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   size_t count,
   const gid_t * gid)   /* Incoming list of GIDs to remove */
 {
-  Zoltan2_Directory_Clock clock("remove");
-
   const char * yo = "Zoltan2_Directory::remove";
 
   if (debug_level > 4) {
@@ -1618,10 +1044,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   }
 
   int err = 0;
-
-#ifdef CONVERT_DIRECTORY_TPETRA
-  throw std::logic_error("Tpetra does not support remove yet.");
-#else
 
   // allocate memory for processor contact list
   Teuchos::ArrayRCP<int> procs;
@@ -1646,16 +1068,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   }
 
   // now create efficient communication plan
-#ifdef CONVERT_DIRECTORY_KOKKOS
   Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_UPDATE_MSG_TAG);
   int nrec = directoryComm.getNRec();
-#else
-  ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
-  int nrec;       // number of receives to expect
-  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
-    getRawComm(), ZOLTAN2_DD_REMOVE_MSG_TAG, &nrec);
-#endif
 
   if (err) {
     throw std::logic_error("Zoltan_Comm_Create failed");
@@ -1673,13 +1088,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   }
 
   // send my update messages & receive updates directed to me
-#ifdef CONVERT_DIRECTORY_KOKKOS
   err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
     sbuff, remove_msg_size, rbuff);
-#else
-  err = Zoltan_Comm_Do (plan, ZOLTAN2_DD_UPDATE_MSG_TAG+1, sbuff.getRawPtr(),
-    remove_msg_size, rbuff.getRawPtr());
-#endif
 
   if (err) {
     throw std::logic_error("Comm_Do error");
@@ -1699,23 +1109,15 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   // eliminating remove_local and just calling here but will keep for now to
   // keep symmetry with other modes.
   if(nrec > 0) {
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
   node_map.begin_erase();
-#endif
-
-  for (int i = 0; i < nrec; i++)  {
-    msg_t *ptr = reinterpret_cast<msg_t*>(&(rbuff[i*remove_msg_size]));
-    err = remove_local(ptr->adjData);
-    if (err == 1) { // TODO eliminate warns (1) make all errors
-      ++errcount;
+    for (int i = 0; i < nrec; i++)  {
+      msg_t *ptr = reinterpret_cast<msg_t*>(&(rbuff[i*remove_msg_size]));
+      err = remove_local(ptr->adjData);
+      if (err == 1) { // TODO eliminate warns (1) make all errors
+        ++errcount;
+      }
     }
-  }
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  node_map.end_erase();
-#endif
-
+    node_map.end_erase();
   } // if nrec > 0
 
   err = 0;
@@ -1727,12 +1129,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
     err = (errcount) ? 1 : 0;
   }
-#endif
 
   return err;
 }
 
-#ifndef CONVERT_DIRECTORY_TPETRA
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
   gid_t* gid)                /* GID to be removed (in)  */
@@ -1748,35 +1148,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
     ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
   }
 
-#ifdef CONVERT_DIRECTORY_KOKKOS
   if(node_map.exists(*gid)) {
     node_map.erase(*gid);
     return 0;
   }
-#else
-  /* compute offset into hash table to find head of linked list */
-  int index = hash_table(*gid);
-
-  /* walk linked list until end looking for matching gid (key) */
-  relice_idx_t prevnodeidx = -1;
-  for (relice_idx_t nodeidx = table[index]; nodeidx != -1;
-    nodeidx = nodelist[nodeidx].next) {
-    if (*gid == *nodelist[nodeidx].gid) {
-      /* found node to remove, need to preserve its next ptr */
-        if (prevnodeidx != -1)
-          nodelist[prevnodeidx].next = nodelist[nodeidx].next;
-        else
-          table[index] = nodelist[nodeidx].next;
-        free_node(nodeidx);       /* now OK to delete node */
-
-        if (debug_level > 5) {
-          ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
-        }
-        return 0;
-    }
-    prevnodeidx = nodeidx;
-  }
-#endif
 
   /* We get here only if the global ID has not been found */
   if (debug_level > 5) {
@@ -1785,24 +1160,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
 
   return 1;
 }
-#endif // CONVERT_DIRECTORY_TPETRA
-
-#ifdef CONVERT_DIRECTORY_RELIC
-template <typename gid_t,typename lid_t,typename user_t>
-int Zoltan2_Directory<gid_t,lid_t,user_t>::equal_id(int n, gid_t* a, gid_t* b) const
-{
-  /*
-   * Returns 1 if a == b; 0 otherwise.
-   * a == b if for all i, a[i] == b[i].
-   */
-  for (int i = 0; i < n; i++) {
-    if (a[i] != b[i]) {
-      return(0);
-    }
-  }
-  return(1);
-}
-#endif
 
 template <typename gid_t,typename lid_t,typename user_t>
 unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(const gid_t & gid) const
@@ -1812,46 +1169,6 @@ unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(const gid_t & gid)
   return(k % comm->getSize());
 }
 
-#ifdef CONVERT_DIRECTORY_RELIC
-template <typename gid_t,typename lid_t,typename user_t>
-unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_table(const gid_t& key) const
-{
-  uint32_t k;
-  MurmurHash3_x86_32((void *)(&key), sizeof(gid_t), 14, (void *)&k);
-  return(k % table_length);
-}
-
-template <typename gid_t,typename lid_t,typename user_t>
-unsigned int
-Zoltan2_Directory<gid_t,lid_t,user_t>::recommended_hash_size(unsigned int n)
-{
-    /* Prime number approximately in the middle of the range [2^x..2^(x+1)]
-     * is in primes[x-1]. Every prime number stored is approximately two times
-     * the previous one, so hash table size doubles every time.
-     */
-    unsigned int primes[] = {
-    3, 7, 13, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593,
-    49157, 98317, 196613, 393241, 786433, 1572869, 3145739, 6291469,
-    12582917, 25165842, 50331653, 100663319, 201326611, 402653189,
-    805306457, 1610612741 } ;
-
-    /* SRSR : err on the side of performance and choose the next largest prime
-     * number. One can also choose primes[i-1] below to cut the memory by half.
-     */
-    int hsize = primes[29] ;
-    for (int i = 0 ; i < 30 ; i++)
-    {
-        if (n <= primes[i])
-        {
-            /*hsize = (i == 0 ? n : primes[i-1]) ;*/
-            hsize = primes[i] ;
-            break ;
-        }
-    }
-
-    return hsize ;
-}
-#endif
 
 /* TODO: Currently disabled - I need to review the benefits of this and see if
    we need this in the new version. Also how do we best handle this for variable
@@ -1866,7 +1183,5 @@ size_t Zoltan2_Directory<gid_t,lid_t,user_t>::align_size_t(size_t a) const
 */
 
 } // end namespace Zoltan2
-
-#endif // CONVERT_DIRECTORY_ORIGINAL
 
 #endif // ZOLTAN2_DIRECTORY_IMPL_H_

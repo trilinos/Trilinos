@@ -43,10 +43,6 @@
 //
 // @HEADER
 
-// Eventually this macro will be removed and only the Kokkos mode will exist
-// The other modes (Original, Tpetra, Relic) are for development and
-// performance testing purposes
-#define CONVERT_DIRECTORY_KOKKOS
 #include "Zoltan2_Directory_Impl.hpp"
 
 // This type will be used by some of these tests

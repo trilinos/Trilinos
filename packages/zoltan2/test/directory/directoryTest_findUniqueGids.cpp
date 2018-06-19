@@ -57,8 +57,6 @@
 #include <typeinfo>
 
 #include <Zoltan2_Standards.hpp>
-
-#define CONVERT_DIRECTORY_KOKKOS // temp - use the kokkos mode
 #include <Zoltan2_Directory_Impl.hpp>
 
 namespace Zoltan2

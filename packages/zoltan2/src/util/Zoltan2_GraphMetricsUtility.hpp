@@ -49,10 +49,7 @@
 #ifndef ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 #define ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 
-// TODO: Delete this define once other temporary development modes are removed
-#define CONVERT_DIRECTORY_KOKKOS
 #include <Zoltan2_Directory_Impl.hpp>
-
 #include <Zoltan2_ImbalanceMetrics.hpp>
 #include <Zoltan2_MetricUtility.hpp>
 #include <zoltan_dd.h>

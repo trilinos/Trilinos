@@ -46,13 +46,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Zoltan2_TPLTraits.hpp>
-
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-#include <zoltan_dd_cpp.h>
-#include "Zoltan2_Directory_Clock.hpp"
-#else
 #include "Zoltan2_Directory_Impl.hpp"
-#endif
 
 namespace Zoltan2 {
 
@@ -98,17 +92,10 @@ void print_proc_safe(const std::string& message,
   comm->barrier();
 }
 
-// This is checked when remove is called and then find is called on a removed
-// gid. The Original mode will update 0 to missing gid but the new code has an
-// optional flag to indicate whether to throw (default true) but set false for
-// this test. For the new code we use -1 as the 'unset' value to make it easier
+// For the new code we use -1 as the 'unset' value to make it easier
 // to see it worked but it's arbitrary. TODO: Discuss error behaviors for
 // remove when not found.
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-#define NOT_FOUND_VALUE 0
-#else
 #define NOT_FOUND_VALUE -1 // easier to tell it's the unset value as -1
-#endif
 
 // This class manages the IDs that we will update to the directory and which
 // ids to remove and find. The class also handles error checking at the end
@@ -355,10 +342,6 @@ class IDs {
       // for a few gid's duplicate - I keep this a small percentage because
       // I want performance testing to be based on mostly unique ids.
       int test_duplicate_count = 2;
-      // Note Tpetra requires unique IDs so proc_find_gid must be 1 for it to work
-  #ifdef CONVERT_DIRECTORY_TPETRA
-      test_duplicate_count = 1;
-  #endif
       if(subset1(index, rank)) {
         return (index < 100) ? test_duplicate_count : 1;
       }
@@ -373,11 +356,6 @@ class IDs {
       // values for good testing - we want to remove more than we wrote locally
       // and check for proper removal
       int index = convert_gid_to_index(gid); // convert back to 0,1,2,...indexing
-
-  #ifdef CONVERT_DIRECTORY_TPETRA
-      return 0; // Tpetra not supporting remove right now
-  #endif
-
       int test_duplicate_count = 2;
       if(subset2(index, rank)) {
         return (index < 100) ? test_duplicate_count : 1;
@@ -525,9 +503,6 @@ class IDs {
 
     // preparation for running the test
     virtual void setup() {
-      // this clock is not part of the actual directory work, just test setup
-      Zoltan2_Directory_Clock setupClock("setup");
-
       // sanity check - make sure we have our internal logic correct - in case
       // the class hierarchy gets more complicated this is a reminder to make
       // sure the execute() method is being called once by the highest level.
@@ -597,49 +572,16 @@ class IDs {
     // this is where we actually make a directory and do things on it
     virtual void test() = 0;
 
-#ifndef CONVERT_DIRECTORY_ORIGINAL
     template<typename directory_t>
-#endif
     void test_implement() {
-      Zoltan2_Directory_Clock allClock("all");
-
       const int debug_level = 0;
-
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-      if (update_gids.size() > std::numeric_limits<int>::max())
-        throw std::runtime_error("Problem too large for zoltan");
-      int gid_length = TPL_Traits<ZOLTAN_ID_PTR, gid_t>::NUM_ID;
-      int lid_length = TPL_Traits<ZOLTAN_ID_PTR, lid_t>::NUM_ID;
-#ifdef HAVE_MPI
-      MPI_Comm mpicomm = Teuchos::getRawMpiComm(*comm); // TODO comm fixes
-#else
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-#endif
-      Zoltan2_Directory_Clock constructClock("construct");
-      Zoltan_DD zz1(mpicomm, gid_length, lid_length, sizeof(user_t),
-        update_gids.size(), debug_level);
-      constructClock.complete(); // to match with new directory clocks...
-
-      // this step is not necessary but implemented to provide coverage of the
-      // copy constructor and the operator= method.
-      // Can be removed and then change above zz1 to just zz
-      Zoltan_DD zz2(zz1); // validate the copy constructor works
-      Zoltan_DD zz = zz2; // then validate the operator= works
-#else
-
-    #ifdef CONVERT_DIRECTORY_RELIC
-      directory_t zz1(comm, bUseLocalIDs, update_gids.size(), debug_level);
-    #else
       directory_t zz1(comm, bUseLocalIDs, debug_level);
-    #endif
 
       // this step is not necessary but implemented to provide coverage of the
       // copy constructor and the operator= method.
       // Can be removed and then change above zz1 to just zz
       directory_t zz2(zz1);
       directory_t zz = zz2;
-
-#endif // CONVERT_DIRECTORY_ORIGINAL
 
       // usually this step is not necessary - for this test we initialize all
       // the find_user values to a specific number and then check that it's not
@@ -657,31 +599,6 @@ class IDs {
         initialize_with_not_found_lid();
       }
 
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-      // Original zoltan code only supports the replace mode
-      // the tests were setup so Original only runs Replace ... make sure:
-      if(mode != Replace) {
-        throw std::logic_error("Bad setup. Original mode can only run replace.");
-      }
-      Zoltan2_Directory_Clock updateClock("update");
-      zz.Update(reinterpret_cast<ZOLTAN_ID_PTR>(&(update_gids[0])),
-        bUseLocalIDs ? reinterpret_cast<ZOLTAN_ID_PTR>(&(update_lids[0])) : NULL,
-        update_gids.size() ? reinterpret_cast<char*>(&(update_user[0])) : NULL,
-        NULL, update_gids.size());
-      updateClock.complete(); // to match with new directory clocks...
-
-      Zoltan2_Directory_Clock removeClock("remove");
-      zz.Remove(reinterpret_cast<ZOLTAN_ID_PTR>(&(remove_gids[0])),
-        remove_gids.size());
-      removeClock.complete(); // to match with new directory clocks...
-
-      Zoltan2_Directory_Clock findClock("find");
-      zz.Find(reinterpret_cast<ZOLTAN_ID_PTR>(&(find_gids[0])),
-        bUseLocalIDs ? reinterpret_cast<ZOLTAN_ID_PTR>(&(find_lids[0])) : NULL,
-        find_gids.size() ? reinterpret_cast<char*>(&(find_user[0])) : NULL,
-        NULL, find_gids.size(), NULL);
-      findClock.complete(); // to match with new directory clocks...
-#else
       // convert generic mode to Zoltan2Directory mode. This awkward step exists
       // because the Original mode doesn't have a directory since it's the
       // original zoltan code. When Original mode is running the new directory
@@ -709,20 +626,13 @@ class IDs {
         bUseLocalIDs ? &update_lids[0] : NULL,
         &update_user[0], NULL, directoryMode);
 
-      // tpetra was never implemented to call remove and it will throw if
-      // that is tried, so block it here. The remove_gids is setup to be empty
-      // for Tpetra so that the validation step will still work and it can pass.
-      // TODO: Fix this special case to make performance comparions easier.
-      #ifndef CONVERT_DIRECTORY_TPETRA
       zz.remove(remove_gids.size(), &remove_gids[0]);
-      #endif
 
       // Now call find which will fill find_user with the correct data.
       // Some of the tests use lids and will also fill find_lids with lid values.
       zz.find(find_gids.size(), &find_gids[0],
         bUseLocalIDs ? &find_lids[0] : NULL,
         &find_user[0], NULL, NULL, false);
-#endif
     }
 
     // set passed true/false based on the results gotten back from the directory
@@ -920,13 +830,9 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
 
   protected:
     virtual void test() {
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-      this->test_implement(); // no templated type
-#else
       typedef typename Zoltan2::Zoltan2_Directory_Simple<gid_t,lid_t,user_t>
         directory_t;
       this->template test_implement<directory_t>();
-#endif
     }
 
     virtual user_t get_not_found_user() const {
@@ -1075,13 +981,9 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
 
   protected:
     virtual void test() {
-#ifdef CONVERT_DIRECTORY_ORIGINAL
-      this->test_implement(); // no templated type
-#else
       typedef typename Zoltan2::Zoltan2_Directory_Vector<gid_t,lid_t,user_t>
         directory_t;
       this->template test_implement<directory_t>();
-#endif
     }
 
     virtual user_t get_not_found_user() const {
@@ -1474,115 +1376,6 @@ class TestManager {
     bool bUseLocalIDs;
 };
 
-// Performance tests are turned on with test category PERFORMANCE in CMake
-// Currently all the performance tests just run a Replace operation since all
-// modes can do that. The Kokkos performance test does the same, but then runs
-// a second test using aggregation, using the same gids for update, remove, find.
-// The log outputs will give some clock times and the most important would be:
-//    all - the total test time
-//      update - time for update call
-//      remove - time for remove call
-//      find - time for find call
-//
-// Since Kokkos is running Replace and then Aggregate, the test total time
-// should not be compared, instead compare the all time for the first Replace
-// test with the other modes. Also there is significant overhead for the setup
-// and evaluation steps so time to run the entire thing is not meaningful.
-int runPerformanceTest(Teuchos::RCP<const Teuchos::Comm<int> > comm,
-  bool bVectorMode, TestMode mode) {
-
-  int err = 0;
-
-  // just run 100000000 for now. Tpetra has a lot of overhead so
-  // looping that many times is too slow.
-  std::vector<size_t> test_totalIds = { 10000000 };
-  for(auto itr_totalIds = test_totalIds.begin();
-    itr_totalIds != test_totalIds.end(); ++itr_totalIds) {
-    const size_t & totalIds = (*itr_totalIds);
-
-    // can loop these more for more accurate times - just use 1 for now
-    size_t total_loops = 1;
-
-    const bool print_output = false; // noisy output with values for each gid
-    const bool performance_test = true;
-    const bool bUseLocalIDs = false;
-
-    // build the manager which mostly just provides some API calls to generate
-    // the testing classes.
-    TestManager manager(comm, totalIds, print_output,
-      performance_test, bUseLocalIDs);
-
-    for(size_t n = 0; n < total_loops; ++n) {
-      if(bVectorMode) {
-#ifdef CONVERT_DIRECTORY_KOKKOS
-        manager.run_vector_user_single_gid<int, int, std::vector<int>>
-          ("contiguous int", mode, 0, 1);
-#else
-        throw std::logic_error("This non-kokkos mode doesn't support vectors.");
-#endif
-      }
-      else {
-        manager.run_single_user_single_gid<int, int, int>
-          ("contiguous int", mode, 0, 1);
-      }
-      if(!manager.did_all_pass()) {
-        err = 1; // if we fail at some point just drop out
-      }
-    }
-
-    Zoltan2_Directory_Clock::logAndClearTimes(
-      std::string("Times for Total IDs: ") + std::to_string(totalIds), comm);
-  }
-
-  // Get the global err results so we fail properly if any proc failed
-  int errGlobal;
-  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, err,
-    Teuchos::outArg(errGlobal));
-  return errGlobal; // only 0 if all tests and all proc return 0
-}
-
-// The performance test is used to compare times of different sub sections in
-// the zoltan2. This is probably temporary and the 'true' unit test is
-// runDirectoryTests below, which grinds through all combinations and validates
-// results are returned correctly.
-int runPerformanceDirectoryTests(int narg, char **arg) {
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  Kokkos::initialize(narg, arg);
-#endif
-
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
-
-  int err = 0;
-
-  // What the performance tests currently do:
-  //   Original:   Replace
-  //   Relic:      Replace
-  //   Tpetra:     Replace
-  //   Kokkos:     Replace   then    Aggregate     ( 2 tests )
-
-  // first run a simple replace - all modes can do this
-  err += runPerformanceTest(comm, false, Replace);
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  // then we can compare with a vector Aggregate
-  err += runPerformanceTest(comm, true, Aggregate); // the 2nd Kokkos test
-#endif
-
-  // Get the global err results so we fail properly if any proc failed
-  int errGlobal;
-  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, err,
-    Teuchos::outArg(errGlobal));
-
-#ifdef CONVERT_DIRECTORY_KOKKOS
-  Kokkos::finalize();
-#endif
-
-  return errGlobal; // only 0 if all tests and all proc return 0
-}
-
 // This is a systematic grind through all the possible options the directory
 // can do and makes use of above classes to hit on various features like
 // vector user type versus single user type, multiple gid, different types,
@@ -1597,9 +1390,7 @@ int runPerformanceDirectoryTests(int narg, char **arg) {
 // lids after running find.
 int runDirectoryTests(int narg, char **arg) {
 
-#ifdef CONVERT_DIRECTORY_KOKKOS
   Kokkos::initialize(narg, arg);
-#endif
 
 #ifndef HAVE_MPI
   // TODO what is cleanest way to support a serial test case?
@@ -1627,11 +1418,6 @@ int runDirectoryTests(int narg, char **arg) {
   const bool performance_test = false;
 
   for(int run_with_local_ids = 0; run_with_local_ids <= 1; ++run_with_local_ids) {
-    #ifdef CONVERT_DIRECTORY_TPETRA
-      if(run_with_local_ids == 1) {
-        continue; // all modes support local ids except tpetra
-      }
-    #endif
 
     for(size_t n = 0; n < run_with_totalIds.size(); ++n) {
 
@@ -1648,19 +1434,6 @@ int runDirectoryTests(int narg, char **arg) {
       // some of the non-kokkos modes don't support everything and skip tests but
       // eventually they will all be deleted leaving only Kokkos
       for(int test_mode = 0; test_mode < TestMode_Max; ++test_mode) {
-
-  #ifndef CONVERT_DIRECTORY_KOKKOS
-        if(test_mode == Aggregate) {
-          continue; // only Kokkos supports Aggregate right now
-        }
-  #endif
-
-  #ifdef CONVERT_DIRECTORY_ORIGINAL
-        if(test_mode == Add) {
-          continue; // Original mode does not support Add
-        }
-  #endif
-
         // Aggregate mode is for vector user type only
         if(test_mode != Aggregate) {
           manager.run_single_user_single_gid<int, int, int>
@@ -1668,14 +1441,10 @@ int runDirectoryTests(int narg, char **arg) {
           manager.run_single_user_single_gid<int, int, int>
             ("non-contiguous int", test_mode, 20, 3);
 
-  #ifndef CONVERT_DIRECTORY_ORIGINAL // long long not set up for original mode
           manager.run_single_user_single_gid<long long, int, int>
             ("long long", test_mode, 200, 4);
-  #endif
-
         }
 
-  #ifdef CONVERT_DIRECTORY_KOKKOS
         manager.run_vector_user_single_gid<int, int, std::vector<int>>
           ("contiguous int", TestMode::Aggregate, 0, 1);
         manager.run_vector_user_single_gid<int, int, std::vector<int>>
@@ -1693,7 +1462,6 @@ int runDirectoryTests(int narg, char **arg) {
 
         manager.run_vector_user_multiple_gid<gid_set_t, lid_set_t, std::vector<int>>
           (GID_SET_LENGTH, LID_SET_LENGTH, "contiguous int", test_mode, 0, 1);
-  #endif
 
         if(!manager.did_all_pass()) {
           err = 1; // if we fail at some point just drop out
@@ -1707,9 +1475,7 @@ int runDirectoryTests(int narg, char **arg) {
   Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, err,
     Teuchos::outArg(errGlobal));
 
-#ifdef CONVERT_DIRECTORY_KOKKOS
   Kokkos::finalize();
-#endif
 
   return errGlobal; // only 0 if all tests and all proc return 0
 }
