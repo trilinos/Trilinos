@@ -58,8 +58,10 @@
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
+#ifdef HAVE_BELOS_TPETRA
 # include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
+#endif
 
 namespace Belos {
 namespace Details {
