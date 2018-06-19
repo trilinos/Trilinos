@@ -113,7 +113,7 @@ namespace MueLu {
   computeGlobalCoarseParameters() {
     this->gNumCoarseNodes10 = this->gCoarseNodesPerDir[0]*this->gCoarseNodesPerDir[1];
     this->gNumCoarseNodes   = this->gNumCoarseNodes10*this->gCoarseNodesPerDir[2];
-  };
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
