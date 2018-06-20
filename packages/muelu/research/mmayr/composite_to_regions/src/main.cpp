@@ -118,6 +118,10 @@ int myRank;
 };
 
 /*! \brief Transform composite vector to regional layout
+ *
+ *  Starting from a \c Epetra_Vector in composite layout, we
+ *  1. import it into an auxiliary vector in the quasiRegional layout
+ *  2. replace the quasiRegional map of the auxiliary vector with the regional map
  */
 void compositeToRegional(Teuchos::RCP<const Epetra_Vector> compVec, ///< Vector in composite layout [in]
     std::vector<Teuchos::RCP<Epetra_Vector> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
@@ -150,6 +154,16 @@ void compositeToRegional(Teuchos::RCP<const Epetra_Vector> compVec, ///< Vector 
 }
 
 /*! \brief Transform regional vector to composite layout
+ *
+ *  Starting from a \c Epetra_Vector in regional layout, we
+ *  1. replace the regional map with the quasiRegional map
+ *  2. export it into a vector with composite layout using the \c CombineMode \c Add.
+ *     Note: on-process values also have to be added to account for region interfaces inside a process.
+ *
+ *  \note The \c Add operation in the \c Export() can be done twofold, depending on the linear algebra package:
+ *  - Epetra provides a \c CombineMode \c Eptra_AddLocalAlso that adds on-process values.
+ *  - Tpetra does not provide such a capability (as it is not unique), so we perform the local summation
+ *    manually.
  */
 void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec, ///< Vector in region layout [in]
     Teuchos::RCP<Epetra_Vector> compVec, ///< Vector in composite layout [in/out]
@@ -208,6 +222,7 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec
   return;
 }
 
+//! Print an Epetra_Vector in regional layout to screen
 void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
     const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
     const int myRank ///< rank of calling proc
@@ -220,6 +235,7 @@ void printRegionalVector(const std::string vectorName, ///< string to be used fo
   }
 }
 
+//! Print an Epetra_Map in regional layout to screen
 void printRegionalMap(const std::string mapName, ///< string to be used for screen output
     const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
     const int myRank ///< rank of calling proc
@@ -233,6 +249,11 @@ void printRegionalMap(const std::string mapName, ///< string to be used for scre
 }
 
 /*! \brief Sum region interface values
+ *
+ *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
+ *  exchange/summation of interace data by exporting a regional vector to the composite layout and
+ *  then immediately importing it back to the regional layout. The Export() involved when going to the
+ *  composite layout takes care of the summation of interface values.
  */
 void sumInterfaceValues(std::vector<Teuchos::RCP<Epetra_Vector> >& regVec,
     Teuchos::RCP<const Epetra_Map> compMap,
@@ -255,8 +276,11 @@ void sumInterfaceValues(std::vector<Teuchos::RCP<Epetra_Vector> >& regVec,
   return;
 }
 
-void createRegionalVector(std::vector<Teuchos::RCP<Epetra_Vector> >& regVecs,
-    const int maxRegPerProc, const std::vector<Teuchos::RCP<Epetra_Map> > revisedRowMapPerGrp)
+//! Create an empty Epetra_Vector in the regional layout
+void createRegionalVector(std::vector<Teuchos::RCP<Epetra_Vector> >& regVecs, ///< regional vector to be filled
+    const int maxRegPerProc, ///< max number of regions per process
+    const std::vector<Teuchos::RCP<Epetra_Map> > revisedRowMapPerGrp ///< regional map
+    )
 {
   regVecs.resize(maxRegPerProc);
   for (int j = 0; j < maxRegPerProc; j++)
@@ -264,6 +288,13 @@ void createRegionalVector(std::vector<Teuchos::RCP<Epetra_Vector> >& regVecs,
   return;
 }
 
+/*! \brief Compute the residual \f$r = b - Ax\f$
+ *
+ *  The residual is computed based on matrices and vectors in a regional layout.
+ *  1. Compute y = A*x in regional layout.
+ *  2. Sum interface valus of y to account for duplication of interface DOFs.
+ *  3. Compute r = b - y
+ */
 std::vector<Teuchos::RCP<Epetra_Vector> > computeResidual(
     std::vector<Teuchos::RCP<Epetra_Vector> >& regRes, ///< residual (to be evaluated)
     const std::vector<Teuchos::RCP<Epetra_Vector> > regX, ///< left-hand side (solution)
@@ -301,6 +332,11 @@ std::vector<Teuchos::RCP<Epetra_Vector> > computeResidual(
   return regRes;
 }
 
+/*! \brief Do Jacobi smoothing
+ *
+ *  Perform Jacobi smoothing in the region layout using the true diagonal value
+ *  recovered from the splitted matrix.
+ */
 void jacobiIterate(const int maxIter,
     const double omega,
     std::vector<Teuchos::RCP<Epetra_Vector> >& regX, // left-hand side (or solution)
@@ -438,6 +474,7 @@ std::vector<int> findCommonRegions(const int nodeA, ///< GID of first node
   return finalCommonRegions;
 }
 
+//! Recursive V-cycle in region fashion
 void vCycle(const int l, ///< ID of current level
     const int numLevels, ///< Total number of levels
     const int maxFineIter, ///< max. sweeps on fine and intermediate levels
