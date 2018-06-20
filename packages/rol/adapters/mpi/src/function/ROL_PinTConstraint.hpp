@@ -143,25 +143,6 @@ private:
     return makePtr<PartitionedVector<Real>>(vecs);
   }
 
-  // Get the state vector required by the serial constraint object
-  Ptr<SerialConstraint<Real>> 
-  getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int Nt)
-  {
-    if(ROL::is_nullPtr(timeDomainConstraint_)) {
-      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,*ui,timeStamps_);
-        // FIXME-A: Change the Nt+1 back to Nt...
-    }
-    else {
-      timeDomainConstraint_->setTimeStamp(timeStamps_);
-        // FIXME-A: Change the Nt+1 back to Nt...
-      timeDomainConstraint_->setInitialCondition(*ui);
-    }
-
-    timeDomainConstraint_->setSkipInitialCondition(true);
-    
-    return timeDomainConstraint_;
-  }
-
 public:
 
   //! Default constructor
@@ -186,6 +167,78 @@ public:
     , isInitialized_(false)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
+  }
+
+  
+  /**
+   * \brief Get the time stamps for by level
+   *
+   * The current implementation is recursive and expensive, but its the easiest
+   * way to do this right now. FIXME-B
+   */
+  Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel(int level) const
+  {
+    assert(level>=0); // precondition
+
+    // base case
+    if(level==0)
+      return timeStamps_;
+
+    Ptr<std::vector<TimeStamp<Real>>> higherLevel = getTimeStampsByLevel(level-1);
+
+    // let's start easy!
+    assert((higherLevel->size()-1) % 2 == 0);
+
+    Ptr<std::vector<TimeStamp<Real>>> currentLevel 
+        = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>((higherLevel->size()-1)/2+1);
+
+    // build up the current level
+    for(size_t k=0;k<currentLevel->size()-1;k++) {
+      currentLevel->at(k+1).t.resize(2);
+      currentLevel->at(k+1).t.at(0) = higherLevel->at(1+2*k+0).t.at(0);
+      currentLevel->at(k+1).t.at(1) = higherLevel->at(1+2*k+1).t.at(1);
+    }
+
+    // setup false step (this is to ensure the control is properly handled
+    {
+      Real ta = currentLevel->at(1).t.at(0);
+      Real tb = currentLevel->at(1).t.at(1);
+      Real dt =  tb-ta;
+
+      // the serial constraint should never see this!
+      currentLevel->at(0).t.resize(2);
+      currentLevel->at(0).t.at(0) = ta-dt;
+      currentLevel->at(0).t.at(1) = ta;
+    }
+
+    return currentLevel;
+  }
+
+  /**
+   * \brief Get the serial constraint associated with a level and 
+   *        with an initial condition
+   *
+   * \param[in] ui    Initial condition 
+   * \param[in] level Multigrid level (used only in preconditioning), level=0 is the finest
+   */
+  Ptr<SerialConstraint<Real>> 
+  getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int level=0)
+  {
+    auto timeStamps = getTimeStampsByLevel(level);
+
+    if(ROL::is_nullPtr(timeDomainConstraint_)) {
+      timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,*ui,timeStamps);
+        // FIXME-A: Change the Nt+1 back to Nt...
+    }
+    else {
+      timeDomainConstraint_->setTimeStamp(timeStamps);
+        // FIXME-A: Change the Nt+1 back to Nt...
+      timeDomainConstraint_->setInitialCondition(*ui);
+    }
+
+    timeDomainConstraint_->setSkipInitialCondition(true);
+    
+    return timeDomainConstraint_;
   }
 
   /** \brief Initialize this class, setting up parallel distribution.
@@ -233,7 +286,7 @@ public:
     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
  
-    TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 
     pint_z.boundaryExchange();
     pint_u.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
@@ -269,7 +322,7 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->solve(*part_c,*part_u,*part_z,tol);
 
@@ -285,7 +338,7 @@ public:
     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
        
-    TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 
     // communicate neighbors, these are block calls
     pint_u.boundaryExchange();
@@ -313,7 +366,7 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->value(*part_c,*part_u,*part_z,tol);
   } 
@@ -329,8 +382,8 @@ public:
     const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
  
-    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
-    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+    assert(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
 
     // communicate neighbors, these are block calls
     pint_v.boundaryExchange();
@@ -358,7 +411,7 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   }
@@ -374,8 +427,8 @@ public:
     const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
  
-    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
-    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+    assert(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
 
     // communicate neighbors, these are block calls
     pint_v.boundaryExchange();
@@ -397,7 +450,7 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_jv.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->applyJacobian_2(*part_jv,*part_v,*part_u,*part_z,tol);
    }
@@ -420,8 +473,8 @@ public:
     const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
       
-    TEUCHOS_ASSERT(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
-    TEUCHOS_ASSERT(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
 
     // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
     pint_ajv.zeroAll();
@@ -437,7 +490,7 @@ public:
     auto part_z   = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
@@ -465,8 +518,8 @@ public:
     const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
       
-    TEUCHOS_ASSERT(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
-    TEUCHOS_ASSERT(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
 
     // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
     pint_ajv.zeroAll();
@@ -482,7 +535,7 @@ public:
     auto part_z   = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
     constraint->applyAdjointJacobian_2(*part_ajv,*part_v,*part_u,*part_z,tol);
 
@@ -516,7 +569,7 @@ public:
      auto part_z   = getControlVector(pint_z); 
 
      // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
      constraint->applyInverseJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
    }
@@ -534,7 +587,7 @@ public:
      auto part_z   = getControlVector(pint_z); 
 
      // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),pint_u.numOwnedSteps());
+     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
 
      constraint->applyInverseAdjointJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
     
@@ -582,7 +635,7 @@ public:
      }
  
      // compute J_1 * J_1^T
-     applyAdjointJacobian_1(*scratch_u,v,u,z,tol);
+     applyAdjointJacobian_1(*scratch_u,v,u,z,tol)  ;
      applyJacobian_1(sc_v,*scratch_u,u,z,tol);
  
      // compute J_2 * J_2^T
@@ -651,8 +704,8 @@ public:
      const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(*z);
        // its possible we won't always want to cast to a PinT vector here
   
-     TEUCHOS_ASSERT(pint_pv.numOwnedSteps()==pint_u.numOwnedSteps());
-     TEUCHOS_ASSERT(pint_pv.numOwnedSteps()==pint_v.numOwnedSteps());
+     assert(pint_pv.numOwnedSteps()==pint_u.numOwnedSteps());
+     assert(pint_pv.numOwnedSteps()==pint_v.numOwnedSteps());
  
      // these don't change, do boundary exchange
      pint_u.boundaryExchange();
@@ -669,6 +722,219 @@ public:
      // pv.set(v.dual());
    }
 
+   // restriction and prolongation functions
+   ///////////////////////////////////////////////////////////////////////////////////////////
+   
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level.
+    */
+   Ptr<Vector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = pint_ref.communicatorsPtr();
+     
+     Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
+     return buildStatePinTVector(comm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+   }
+
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level.
+    */
+   Ptr<Vector<Real>> allocateOptVector(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = pint_ref.communicatorsPtr();
+     
+     Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
+     return buildControlPinTVector(comm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+   }
+   
+   /**
+    * \brief Restrict a simulation space vector
+    *
+    * Currently doing the following. Let the coarse distribution be defined locally
+    * to contain Np steps. The fine discretization is denoted by a X, while the coarse
+    * discretization is denoted by a x. A superscript indicates the relative processor index.
+    * If no index is included then it is assumed to be 0 (denoting no relative change in
+    * processor index). The restriction for the sim vector thus computes
+    *
+    *   x_i = X_i                                  i = -1           (this is the "virtual variable")
+    *   x_i = X_{2*i} + X_{2*i+1} + X_{2*i+2}      0 <= i < Np - 1
+    *   x_i = X_{2*i} + X_{2*i+1} + X_0^1          i = Np-1         (this is the end boundary on this processor)
+    *
+    * This ensures that for all interior points the coarse grid is the sum of the three neighbors.
+    * So now we need to divide the coarse x vector by 1/3 except at the end point at the final
+    * time step. This needs to be scaled by 1/2. Note that in the code we scale each component as needed
+    * rather than scaling the global vector and the fixing up only the final time step. There is a (very) modest
+    * efficiency gain here.
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
+   void restrictSimVector(const Vector<Real> & input,Vector<Real> & output)
+   {
+     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
+     PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
+
+     int Np_input = pint_input.numOwnedSteps();
+     int Np = pint_output.numOwnedSteps();
+
+     // this is the virtual variable (set it to -1)
+     //     x_i = X_i                                  i = -1           (this is the "virtual variable")
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     {
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(-1);
+       out.set(*pint_input.getVectorPtr(-1));
+     }
+
+     // handle interior points
+     //     x_i = X_{2*i} + X_{2*i+1} + X_{2*i+2}      0 <= i < Np - 1
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     for(int k=0;k<Np-1;k++) {
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
+
+       out.zero();
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+2)); 
+       
+       out.scale(1.0/3.0);
+     }
+
+     // handle the end point on this processor
+     //   x_i = X_{2*i} + X_{2*i+1} + X_0^1          i = Np-1         (this is the end boundary on this processor)
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     {
+       int k = Np-1;
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
+       out.zero();
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
+     
+       pint_output.getRemoteBufferPtr(-1)->set(*pint_input.getVectorPtr(0));
+       pint_output.boundaryExchangeSumInto();   // this adds the X_0^1 into the previous rank
+
+       // scale end boundary point by 1/2, or the other end points by 1/3
+       int timeRank = pint_input.communicators().getTimeRank();
+       int timeSize = pint_input.communicators().getTimeSize();
+
+       if(timeRank+1==timeSize)
+         out.scale(1.0/2.0);
+       else
+         out.scale(1.0/3.0);
+     }
+
+   }
+   
+   /**
+    * \brief Restrict a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
+   void restrictOptVector(const Vector<Real> & input,Vector<Real> & output)
+   {
+     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
+     PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
+
+     // handle interior
+     for(int k=0;k<pint_output.numOwnedSteps();k++) {
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
+
+       out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+0)); 
+       out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+1)); 
+     }
+   }
+
+   /**
+    * \brief Prolong a simulation space vector
+    *
+    * Currently doing the following. Let the coarse distribution be defined locally
+    * to contain Np steps. The fine discretization is denoted by a X, while the coarse
+    * discretization is denoted by a x. A superscript indicates the relative processor index.
+    * If no index is included then it is assumed to be 0 (denoting no relative change in
+    * processor index). The restriction for the sim vector thus computes
+    *
+    *   X_0 = (x_0 + x_{Np-1}^{-1})/2                               (initial condition on time domain)
+    *   X_{2*i+1} = x_i                           -1 <= i < Np      (injection variables, including virtual variable)
+    *   X_{2*i+2} = (x_i + x_{i+1})/2              0 <= i < Np - 1  (averaged variables, created at fine level)
+    *
+    * Note: Currently if the timeRank==0, the initial condition is assumed to be zero. 
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
+   void prolongSimVector(const Vector<Real> & input,Vector<Real> & output)
+   {
+     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input); // coarse vector
+     PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
+
+     int Np = pint_input.numOwnedSteps();
+
+     //   X_0 = (x_0 + x_{Np-1}^{-1})/2                               (initial condition on time domain)
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     {
+       int timeRank = pint_input.communicators().getTimeRank();
+
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(0);
+
+       pint_input.boundaryExchange(); // fill remote buffer
+
+       out.zero(); 
+
+       if(timeRank!=-1)
+         out.axpy(1.0/2.0,*pint_input.getRemoteBufferPtr(-1)); 
+       out.axpy(1.0/2.0,*pint_input.getVectorPtr(0)); 
+     } 
+
+     //   X_{2*i+1} = x_i                            -1 <= i < Np          (includes "virtual variable")
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     for(int k=-1;k<Np;k++) {
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(2*k+1);
+       out.set(*pint_input.getVectorPtr(k));
+     }
+
+     //   X_{2*i+2} = (x_i + x_{i+1})/2              0 <= i < Np - 1  (averaged variables, created at fine level)
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     for(int k=0;k<Np-1;k++) {
+       ROL::Vector<Real> & out = *pint_output.getVectorPtr(2*k+2);
+
+       out.zero(); 
+       out.axpy(1.0/2.0,*pint_input.getVectorPtr(k+0)); 
+       out.axpy(1.0/2.0,*pint_input.getVectorPtr(k+1)); 
+     }
+   }
+
+   /**
+    * \brief Prolong a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
+   void prolongOptVector(const Vector<Real> & input,Vector<Real> & output)
+   {
+     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
+     PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
+
+     // handle interior
+     for(int k=0;k<pint_input.numOwnedSteps();k++) {
+
+       pint_output.getVectorPtr(2*k+0)->set(*pint_input.getVectorPtr(k)); 
+       pint_output.getVectorPtr(2*k+1)->set(*pint_input.getVectorPtr(k)); 
+     }
+   }
 
 }; // ROL::PinTConstraint
 
