@@ -10,7 +10,22 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=INTEL
 fi
 
-echo "Using mutrino compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=HSW
+fi
+
+if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "HSW" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" != "KNL" ]; then
+  echo
+  echo "***"
+  echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option on this system."
+  echo "*** '$ATDM_CONFIG_KOKKOS_ARCH' appears in $JOB_NAME which then sets the KOKKOS_ARCH."
+  echo "*** On Mutrino 'HSW' and 'KNL' are the only valid KOKKOS_ARCH settings."
+  echo "*** If no KOKKOS_ARCH is specified then 'HSW' will be used by default."
+  echo "***"
+  return
+fi
+
+echo "Using mutrino compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=OFF
 export ATDM_CONFIG_BUILD_COUNT=8
@@ -26,10 +41,9 @@ export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
 # srun does not accept "-np" for # of processors
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
 export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
-export ATDM_CONFIG_KOKKOS_ARCH=HSW
 export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 
-if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
+if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
     module load devpack/20180124/cray/7.6.2/intel/17.0.4
     module load gcc/4.9.3
     module load cmake/3.9.0
@@ -43,9 +57,14 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export ATDM_CONFIG_LAPACK_LIB="-mkl"
     export ATDM_CONFIG_BLAS_LIB="-mkl"
 else
+    echo
     echo "***"
-    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
-    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not"
+    echo "*** a supported combination on this system!"
+    echo "*** Combinations that are supported: "
+    echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
+    echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
+   echo "***"
     return
 fi
 
@@ -96,6 +115,11 @@ function atdm_run_script_on_compute_node {
   echo "***"
   echo
 
+  if [ "${output_file}" == "" ] ; then
+    echo "ERROR: must specify output file as second argument!"
+    return
+  fi
+
   if [ "${timeout_input}" == "" ] ; then
     timeout=1:30:00
   else
@@ -117,14 +141,25 @@ function atdm_run_script_on_compute_node {
   
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
-  set -x
-#  sbatch --output=$output_file --wait -N1 --time=${timeout} \
-#    -J $JOB_NAME --account=${account} ${script_to_run} &
-#  SBATCH_PID=$!
-  sbatch --output=$output_file --wait -N1 --time=${timeout} \
-    -J $JOB_NAME ${script_to_run} &
-  SBATCH_PID=$!
-  set +x
+  if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ] ; then
+    set -x
+    sbatch --output=$output_file --wait -N1 -p knl -C cache --hint=multithread \
+      --time=${timeout} -J $JOB_NAME ${script_to_run} &
+    SBATCH_PID=$!
+    set +x
+  elif [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ] ; then
+    set -x
+    sbatch --output=$output_file --wait -N1 --time=${timeout} \
+      -J $JOB_NAME ${script_to_run} &
+    SBATCH_PID=$!
+    set +x
+  else
+   echo
+   echo "***"
+   echo "*** ERROR: Invalid value ATDM_CONFIG_KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} specified!" 
+   echo "***"
+   return
+  fi
   
   echo
   echo "Tailing output file $output_file in the background ..."
