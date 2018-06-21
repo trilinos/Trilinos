@@ -84,16 +84,20 @@ namespace MueLu {
 
 
   private:
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
+    // Utility functions
     Teuchos::ArrayRCP<std::string> ReadAvatarStringsFromFiles() const;
+    void GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const;
+
+    // FIXME: Placeholder for an actual Avatar thing
+    typedef int Avatar;
+
 
     // Cached data
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::ParameterList params_;
     Teuchos::ArrayRCP<std::string> avatarStrings_;
+    Teuchos::RCP<Avatar> avatarHandle_;
 
-
-    // FIXME: Need to store the handle to avatar
 
 
   };

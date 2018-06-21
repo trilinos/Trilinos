@@ -62,12 +62,16 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   Teuchos::ParameterList pl_dummy;
   Teuchos::Array<std::string> ar_dummy;
+  std::string s_dummy;
 
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
 
   // This is a general, app-specified parameter list
   validParamList->set<Teuchos::ParameterList>("avatar: problem features",pl_dummy,"Problem features as computed by the application");
+
+  // Avatar command line args
+  validParamList->set<std::string>("avatar: args",s_dummy,"Arguments to control the execution of Avatar");
 
   // This should be a MueLu parameter-to-Avatar parameter mapping (e.g. if Avatar doesn't like spaces)
   validParamList->set<Teuchos::ParameterList>("avatar: muelu parameter mapping",pl_dummy,"Mapping of MueLu to Avatar Parameters");
@@ -105,19 +109,50 @@ void AvatarInterface::Setup() {
   avatarStrings_ = ReadAvatarStringsFromFiles();
 
   // Now actually set up avatar
+  std::string avatarArgs = params_.get("avatar: args",std::string(""));
+#if 0
+  if(comm_->getRank() == 0)
+    avatarHandle_ = Teuchos::rcp(new Avatar(avatarArgs));
+#endif
 
   throw std::runtime_error("Not yet implemented!");
 
 }
 
 // ***********************************************************************
+void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const {
+  // NOTE: Assumes that the features are in the same order Avatar wants them.
+  // FIXME: This ordering should be checked against the names file
+  std::stringstream ss;
+  for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
+    //    const std::string& name = problemFeatures.name(i);
+    const Teuchos::ParameterEntry& entry = problemFeatures.entry(i);
+    if(i!==problemFeatures.begin()) ss<<",";
+    ss<<entry;
+  }
+  featureString = ss.str();
+}
+
+
+
+// ***********************************************************************
 void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const {
   Teuchos::ParameterList newParams;
   std::string paramString;
   int strsize;
-  if (comm_->getRank() == 0) {
-    // FIXME: Now actually call Avatar, but only on Rank 0
 
+  if (comm_->getRank() == 0) {
+    // Only Rank 0 calls Avatar
+    if(avatarHandle_.is_null()) throw std::runtime_error("MueLu::AvatarInterface::SetMueLuParameters(): Setup has not been run");
+
+    // Turn the problem features into a "trial" string for Avatar
+    std::string trialString;
+    GenerateFeatureString(problemFeatures,trialString);
+    
+    // Now we add the MueLu parameters
+
+
+    // Serialize for broadcasting
     paramString = toString(newParams);
     strsize = static_cast<int>(paramString.size());
   }
