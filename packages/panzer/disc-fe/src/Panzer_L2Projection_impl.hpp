@@ -172,14 +172,12 @@ namespace panzer {
 
   template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-  panzer::L2Projection<LO,GO>::buildRHSMatrix(const Teuchos::RCP<panzer::DOFManager<LO,GO>>& sourceGlobalIndexer,
-                                              const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& inputOwnedSourceMap,
+  panzer::L2Projection<LO,GO>::buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceGlobalIndexer,
+                                              const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& inputOwnedSourceMap,
                                               const std::string& sourceFieldName,
                                               const panzer::BasisDescriptor& sourceBasisDescriptor,
                                               const int directionIndex)
   {
-    TEUCHOS_ASSERT(nonnull(sourceGlobalIndexer));
-
     // *******************
     // Create Retangular matrix (both ghosted and owned).
     // *******************
@@ -204,7 +202,7 @@ namespace panzer {
     RCP<MapType> ghostedSourceMap;
     {
       std::vector<GO> indices;
-      sourceGlobalIndexer->getOwnedAndGhostedIndices(indices);
+      sourceGlobalIndexer.getOwnedAndGhostedIndices(indices);
       ghostedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
 
@@ -223,7 +221,7 @@ namespace panzer {
 
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
         targetGlobalIndexer_->getElementGIDs(elements[elmt],row_gids);
-        sourceGlobalIndexer->getElementGIDs(elements[elmt],col_gids);
+        sourceGlobalIndexer.getElementGIDs(elements[elmt],col_gids);
         for(std::size_t row=0;row<row_gids.size();row++)
           ghostedGraph->insertGlobalIndices(row_gids[row],col_gids);
       }
@@ -242,10 +240,10 @@ namespace panzer {
       ownedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
 
-    RCP<MapType> ownedSourceMap = inputOwnedSourceMap;
+    RCP<const MapType> ownedSourceMap = inputOwnedSourceMap;
     if (is_null(ownedSourceMap)) {
       std::vector<GO> indices;
-      sourceGlobalIndexer->getOwnedIndices(indices);
+      sourceGlobalIndexer.getOwnedIndices(indices);
       ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
 
@@ -298,12 +296,12 @@ namespace panzer {
         Kokkos::View<LO**,PHX::Device> targetLocalIds("buildRHSMatrix: targetLocalIds", workset.numOwnedCells(),
                                                       targetGlobalIndexer_->getElementBlockGIDCount(block));
         Kokkos::View<LO**,PHX::Device> sourceLocalIds("buildRHSMatrix: sourceLocalIds", workset.numOwnedCells(),
-                                                      sourceGlobalIndexer->getElementBlockGIDCount(block));
+                                                      sourceGlobalIndexer.getElementBlockGIDCount(block));
         {
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
           const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,targetLocalIds);
-          sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,sourceLocalIds);
+          sourceGlobalIndexer.getElementLIDs(cellLocalIdsNoGhost,sourceLocalIds);
         }
 
         // Get the offsets
@@ -321,8 +319,8 @@ namespace panzer {
 
         Kokkos::View<LO*,PHX::Device> sourceFieldOffsets;
         {
-          const auto fieldIndex = sourceGlobalIndexer->getFieldNum(sourceFieldName);
-          const std::vector<LO>& offsets = sourceGlobalIndexer->getGIDFieldOffsets(block,fieldIndex);
+          const auto fieldIndex = sourceGlobalIndexer.getFieldNum(sourceFieldName);
+          const std::vector<LO>& offsets = sourceGlobalIndexer.getGIDFieldOffsets(block,fieldIndex);
           sourceFieldOffsets = Kokkos::View<LO*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(sourceFieldOffsets);
           for(size_t i=0; i <offsets.size(); ++i)

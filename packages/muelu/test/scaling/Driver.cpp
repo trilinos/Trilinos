@@ -170,9 +170,9 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
   bool equilibrate_no    = (equilibrate == "no");
   bool assumeSymmetric = false;
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type,typename Node::device_type> equil_type;
-  
+
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Utilities::Op2NonConstTpetraCrs(Axpetra);
-  
+
   if(Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
      equil_type equibResult_ = computeRowAndColumnOneNorms (*A, assumeSymmetric);
      if (equilibrate_1norm) {
@@ -180,13 +180,13 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
         using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
         using mag_view_type = Kokkos::View<mag_type*, device_type>;
         using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;
-        
-        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));                                  
+
+        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));
         //        KokkosBlas::abs (rowDiagAbsVals, equibResult_.rowDiagonalEntries);
         Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(rowDiagAbsVals, equibResult_.rowDiagonalEntries);
 
         mag_view_type colDiagAbsVals ("colDiagAbsVals",equibResult_.colDiagonalEntries.extent (0));
-                                  
+
         //        KokkosBlas::abs (colDiagAbsVals, equibResult_.colDiagonalEntries);
         Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(colDiagAbsVals, equibResult_.colDiagonalEntries);
 
@@ -263,7 +263,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)"); 
+  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
@@ -386,7 +386,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
     }
-  
+
     int runCount = 1;
     do {
       solveType = dsolveType;
@@ -494,7 +494,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
 
-      for(int solveno = 1; solveno<=numResolves; solveno++) {
+      for(int solveno = 0; solveno<=numResolves; solveno++) {
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
         X->putScalar(zero);
         tm = Teuchos::null;
@@ -509,7 +509,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 #if defined(HAVE_MUELU_EPETRA)
           if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
-#endif        
+#endif
         } else if (solveType == "standalone") {
           tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
 #ifdef HAVE_MUELU_CUDA
@@ -529,7 +529,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           // Operator and Multivector type that will be used with Belos
           typedef MultiVector          MV;
           typedef Belos::OperatorT<MV> OP;
-          
+
           // Define Operator and Preconditioner
           Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
           Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
@@ -547,11 +547,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             H->IsPreconditioner(true);
             belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
           }
-          
+
           // Construct a Belos LinearProblem object
           RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
           if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-          
+
           bool set = belosProblem->setProblem();
           if (set == false) {
             out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
@@ -562,7 +562,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             }
             return EXIT_FAILURE;
           }
-          
+
           // Belos parameter list
           Teuchos::ParameterList belosList;
           belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
@@ -572,7 +572,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           belosList.set("Output Style",          Belos::Brief);
           if (!scaleResidualHist)
             belosList.set("Implicit Residual Scaling", "None");
-          
+
           // Create an iterative solver manager
           RCP< Belos::SolverManager<SC, MV, OP> > solver;
           if (solveType == "cg") {
@@ -582,11 +582,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           } else if (solveType == "bicgstab") {
             solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
           }
-          
+
           // Perform solve
           Belos::ReturnType ret = Belos::Unconverged;
           ret = solver->solve();
-          
+
           // Get the number of iterations for this solve.
           out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
           // Check convergence
