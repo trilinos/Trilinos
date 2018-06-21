@@ -104,8 +104,8 @@ void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
 //
 void PrettyPrintQuad4(scalar_2d_array_t & elementMatrix)
 {
-  size_t nr = elementMatrix.dimension(0);
-  size_t nc = elementMatrix.dimension(1);
+  size_t nr = elementMatrix.extent(0);
+  size_t nc = elementMatrix.extent(1);
   for(size_t row_idx=0; row_idx<nr; row_idx++)
   { 
     std::cout << "[ ";

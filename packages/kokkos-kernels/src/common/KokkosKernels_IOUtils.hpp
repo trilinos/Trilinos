@@ -462,7 +462,7 @@ inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename){
   Kokkos::deep_copy (host_view , view);
   Kokkos::fence();
   std::ofstream myFile (filename, std::ios::out );
-  for (size_t i = 0; i < view.dimension_0(); ++i){
+  for (size_t i = 0; i < view.extent(0); ++i){
 	  myFile << host_view(i) << std::endl;
   }
   myFile.close();
@@ -476,7 +476,7 @@ inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename)
   host_type host_view = Kokkos::create_mirror_view (view);
   std::ifstream myFile (filename, std::ios::in );
 
-  for (size_t i = 0; i < view.dimension_0(); ++i){
+  for (size_t i = 0; i < view.extent(0); ++i){
 	  myFile >> host_view(i);
   }
   myFile.close();
@@ -798,7 +798,7 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
   std::string strfilename(filename);
   if (endswith(strfilename, ".mtx")){
     write_graph_mtx<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.entries.extent(0),
         a_crsmat.graph.row_map.data(),
         a_crsmat.graph.entries.data(),
         a_crsmat.values.data(),filename);
@@ -806,21 +806,21 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
 
   else if (endswith(strfilename, ".bin")){
     write_graph_bin<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.entries.extent(0),
         a_crsmat.graph.row_map.data(),
         a_crsmat.graph.entries.data(),
         a_crsmat.values.data(),filename);
   }
   else if (endswith(strfilename, ".ligra")){
     write_graph_ligra<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.entries.extent(0),
         a_crsmat.graph.row_map.data(),
         a_crsmat.graph.entries.data(),
         a_crsmat.values.data(),filename);
   }
   else if (endswith(strfilename, ".crs")){
     write_graph_crs<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.entries.extent(0),
         a_crsmat.graph.row_map.data(),
         a_crsmat.graph.entries.data(),
         a_crsmat.values.data(),filename);

@@ -162,13 +162,12 @@ namespace Tpetra {
                                               const std::string& label = std::string(),
                                               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    // Kernel wrappers struct
-    // Because C++ doesn't support partial template specialization of functions.
+    // This struct contains the kernels that have a separate specialization for Node = OpenMP
     template<class Scalar,
              class LocalOrdinal,
              class GlobalOrdinal,
              class Node>
-    struct KernelWrappers3MMM {
+    struct KernelWrappers3MMM_Specialized {
       static inline void mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
@@ -191,6 +190,15 @@ namespace Tpetra {
                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                               const std::string& label = std::string(),
                                                               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    };
+
+    // Kernel wrappers struct (for non-specialized kernels)
+    // Because C++ doesn't support partial template specialization of functions.
+    template<class Scalar,
+             class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node>
+    struct KernelWrappers3MMM {
 
       static inline void mult_PT_A_P_newmatrix_kernel_wrapper_2pass(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
@@ -202,7 +210,6 @@ namespace Tpetra {
                                                                     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                                     const std::string& label = std::string(),
                                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
     };
 
   }//end namespace MMdetails

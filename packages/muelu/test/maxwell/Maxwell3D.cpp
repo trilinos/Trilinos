@@ -129,7 +129,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\")");
-    std::string xml = "";                              clp.setOption("xml",                   &solverName, "xml file with solver parameters");
+    std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -338,7 +338,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\" or \"Stratimikos\")");
-    std::string xml = "";                              clp.setOption("xml",                   &solverName, "xml file with solver parameters");
+    std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {

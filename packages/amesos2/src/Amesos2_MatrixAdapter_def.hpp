@@ -232,9 +232,8 @@ namespace Amesos2 {
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		         EDistribution distribution,
 				     EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     has_special_impl) const
   {
-    hsi.set = false;
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
 						     nnz, rowmap, ordering);
   }
@@ -364,7 +363,7 @@ namespace Amesos2 {
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		         EDistribution distribution,
 				     EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     has_special_impl) const
   {
     static_cast<const adapter_t*>(this)->getCcs_spec(nzval, rowind, colptr,
 						     nnz, colmap, ordering);

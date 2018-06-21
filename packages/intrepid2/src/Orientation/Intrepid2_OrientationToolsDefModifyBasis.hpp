@@ -67,7 +67,7 @@ namespace Intrepid2 {
 #endif
     typedef typename ptViewType::value_type value_type;
     
-    const auto dim = pts.dimension(1);
+    const auto dim = pts.extent(1);
     value_type det = 0.0;
     switch (dim) {
     case 2: {
@@ -114,7 +114,7 @@ namespace Intrepid2 {
     auto elemOrtsHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemOrts);
     auto elemNodesHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemNodes);
     
-    const ordinal_type numCells = elemNodes.dimension(0);
+    const ordinal_type numCells = elemNodes.extent(0);
     for (auto cell=0;cell<numCells;++cell) {
       const auto nodes = Kokkos::subview(elemNodesHost, cell, Kokkos::ALL());
       elemOrtsHost(cell) = Orientation::getOrientation(cellTopo, nodes);
@@ -139,10 +139,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( input.rank() != output.rank(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output rank are not 3.");
       for (size_type i=0;i<input.rank();++i)
-        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(i), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
 
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.extent(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif
@@ -156,10 +156,10 @@ namespace Intrepid2 {
       Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
       
       const ordinal_type 
-        numCells  = output.dimension(0),
-        //numBasis  = output.dimension(1),
-        numPoints = output.dimension(2),
-        dimBasis  = output.dimension(3); //returns 1 when output.rank() < 4;
+        numCells  = output.extent(0),
+        //numBasis  = output.extent(1),
+        numPoints = output.extent(2),
+        dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
       
       const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
       const shards::CellTopology cellTopo = basis->getBaseCellTopology();
@@ -175,7 +175,7 @@ namespace Intrepid2 {
         
         // vertex copy (no orientation)
         for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
-          const ordinal_type i = (static_cast<size_type>(vertId) < tagToOrdinal.dimension(1) ? tagToOrdinal(0, vertId, 0) : -1);
+          const ordinal_type i = (static_cast<size_type>(vertId) < tagToOrdinal.extent(1) ? tagToOrdinal(0, vertId, 0) : -1);
           if (i != -1) // if dof does not exist i returns with -1
             for (ordinal_type j=0;j<numPoints;++j)
               for (ordinal_type k=0;k<dimBasis;++k)
@@ -185,7 +185,7 @@ namespace Intrepid2 {
         // interior copy
         {
           const ordinal_type cellDim = cellTopo.getDimension();
-          const ordinal_type ordIntr = (static_cast<size_type>(cellDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(cellDim, 0, 0) : -1);
+          const ordinal_type ordIntr = (static_cast<size_type>(cellDim) < tagToOrdinal.extent(0) ? tagToOrdinal(cellDim, 0, 0) : -1);
           if (ordIntr != -1) {
             const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
             for (ordinal_type i=0;i<ndofIntr;++i) {
@@ -205,7 +205,7 @@ namespace Intrepid2 {
           
           // apply coeff matrix
           for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
-            const ordinal_type ordEdge = (1 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.dimension(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
+            const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.extent(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
             
             if (ordEdge != -1) {
               existEdgeDofs = 1;
@@ -238,7 +238,7 @@ namespace Intrepid2 {
           
           // apply coeff matrix
           for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
-            const ordinal_type ordFace = (2 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.dimension(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
+            const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
             
             if (ordFace != -1) {
               const ordinal_type ndofFace = ordinalToTag(ordFace, 3);

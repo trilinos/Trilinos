@@ -96,6 +96,7 @@ TEUCHOS_UNIT_TEST( LSQR, ComplexThrows )
   // typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::LSQRSolMgr<ST, MV, OP> sol_mgr_type;
 
-  RCP<sol_mgr_type> solver;
-  TEST_THROW( solver = rcp (new sol_mgr_type ()), std::logic_error );
+  // no longer throws due to DII system needing to make dummy constructor
+  RCP<sol_mgr_type> solver = rcp (new sol_mgr_type ());
+  TEST_THROW( solver->getNumIters() , std::logic_error ); // throws!
 }

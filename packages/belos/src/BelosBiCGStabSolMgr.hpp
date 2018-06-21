@@ -141,22 +141,27 @@ namespace Belos {
 
     //! Destructor.
     virtual ~BiCGStabSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new BiCGStabSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
     //@{
 
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
     /*! \brief Return the timers for this object.
      *
@@ -178,19 +183,19 @@ namespace Belos {
     ///   of accuracy during the solve.  You should first call \c
     ///   isLOADetected() to check for a loss of accuracy during the
     ///   last solve.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
         \note This flag will be reset the next time solve() is called.
      */
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -198,10 +203,10 @@ namespace Belos {
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
     //@}
 
@@ -211,7 +216,7 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
 
     //! @name Solver application methods
@@ -234,7 +239,7 @@ namespace Belos {
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
 
@@ -242,7 +247,7 @@ namespace Belos {
     //@{
 
     /** \brief Method to return description of the block BiCGStab solver manager */
-    std::string description() const;
+    std::string description() const override;
 
     //@}
   private:
@@ -271,7 +276,6 @@ namespace Belos {
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
     // Default solver values.
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
     static constexpr int maxIters_default_ = 1000;
     static constexpr bool showMaxResNormOnly_default_ = false;
     static constexpr int verbosity_default_ = Belos::Errors;
@@ -301,7 +305,7 @@ namespace Belos {
 template<class ScalarType, class MV, class OP>
 BiCGStabSolMgr<ScalarType,MV,OP>::BiCGStabSolMgr() :
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -321,7 +325,7 @@ BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
+  convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
   verbosity_(verbosity_default_),
@@ -446,7 +450,13 @@ void BiCGStabSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -568,7 +578,7 @@ BiCGStabSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
     // The static_cast is to resolve an issue with older clang versions which
     // would cause the constexpr to link fail. With c++17 the problem is resolved.
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linera system to be declared converged.");
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),

@@ -87,8 +87,8 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void
       operator()(const ordinal_type cl) const {
-        const ordinal_type P = _output.dimension_1();
-        const ordinal_type N = _workset.dimension_1();
+        const ordinal_type P = _output.extent(1);
+        const ordinal_type N = _workset.extent(1);
 
         double buf[10]; Kokkos::View<double*,Kokkos::Impl::ActiveExecutionMemorySpace> val(&buf[0], N); // N
         auto nodes = Kokkos::subview(_workset, cl, Kokkos::ALL(), Kokkos::ALL()); // N,D
@@ -122,7 +122,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void
       operator()(const ordinal_type cl) const {
-        const ordinal_type P = _output.dimension_1();
+        const ordinal_type P = _output.extent(1);
 
         auto nodes = Kokkos::subview(_workset, cl, Kokkos::ALL(), Kokkos::ALL()); // N,D
         for (ordinal_type i=0;i<P;++i) {

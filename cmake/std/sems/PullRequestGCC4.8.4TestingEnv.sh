@@ -19,7 +19,7 @@ module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.8.12/parallel
 module load sems-netcdf/4.4.1/exo_parallel
 module load sems-parmetis/4.0.3/parallel
-module load sems-scotch/6.0.3/parallel
+module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
 
 # Using CMake and Ninja modules from the ATDM project space.
@@ -31,3 +31,6 @@ module load sems-superlu/4.3/base
 module load atdm-env
 module load atdm-cmake/3.11.1
 module load atdm-ninja_fortran/1.7.2
+
+# add the OpenMP environment variable we need
+export OMP_NUM_THREADS=2

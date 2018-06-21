@@ -119,8 +119,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator () (const size_type c) const
   {
-    const size_type num_ip = a_.dimension_1();
-    const size_type num_dim = a_.dimension_2();
+    const size_type num_ip = a_.extent(1);
+    const size_type num_dim = a_.extent(2);
     for (size_type i = 0; i < num_ip; ++i) {
       for (size_type d = 0; d < num_dim; ++d) {
 	a_(c,i,d) =  b_(c,i,d) * c_(c,i,d) + b_(c,i,d) + b_(c,i,d) / c_(c,i,d);

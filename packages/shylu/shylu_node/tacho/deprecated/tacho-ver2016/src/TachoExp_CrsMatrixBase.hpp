@@ -46,17 +46,17 @@ namespace Tacho {
         _n = n;
         _nnz = nnz;
 
-        if (static_cast<ordinal_type>(_ap.dimension_0()) < (m+1)) 
+        if (static_cast<ordinal_type>(_ap.extent(0)) < (m+1)) 
           _ap = size_type_array("CrsMatrixBase::RowPtrArray", m+1);
         else 
           Kokkos::Impl::ViewFill<size_type_array>(_ap, size_type());
 
-        if (static_cast<size_type>(_aj.dimension_0()) < nnz) 
+        if (static_cast<size_type>(_aj.extent(0)) < nnz) 
           _aj = ordinal_type_array("CrsMatrixBase::ColsArray", nnz);
         else 
           Kokkos::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
 
-        if (static_cast<size_type>(_ax.dimension_0()) < nnz) 
+        if (static_cast<size_type>(_ax.extent(0)) < nnz) 
           _ax = value_type_array("CrsMatrixBase::ValuesArray", nnz);
         else 
           Kokkos::Impl::ViewFill<value_type_array>(_ax, value_type());
@@ -275,9 +275,9 @@ namespace Tacho {
            << "    # of Cols          = " << _n << std::endl
            << "    # of NonZeros      = " << _nnz << std::endl
            << std::endl
-           << "    RowPtrArray length = " << _ap.dimension_0() << std::endl
-           << "    ColArray length    = " << _aj.dimension_0() << std::endl 
-           << "    ValueArray length  = " << _ax.dimension_0() << std::endl
+           << "    RowPtrArray length = " << _ap.extent(0) << std::endl
+           << "    ColArray length    = " << _aj.extent(0) << std::endl 
+           << "    ValueArray length  = " << _ax.extent(0) << std::endl
            << std::endl;
       
         if (detail) {

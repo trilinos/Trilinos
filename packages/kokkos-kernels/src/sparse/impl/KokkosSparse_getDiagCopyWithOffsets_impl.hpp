@@ -152,7 +152,7 @@ struct CrsMatrixGetDiagCopyWithOffsets {
                const crs_matrix_type& A)
   {
     typedef typename device_type::execution_space execution_space;
-    const ordinal_type numRows = static_cast<ordinal_type> (D.dimension_0 ());
+    const ordinal_type numRows = static_cast<ordinal_type> (D.extent(0));
     CrsMatrixGetDiagCopyWithOffsetsFunctor<diag_type, offsets_type,
       crs_matrix_type> functor (D, offsets, A);
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> policy_type;

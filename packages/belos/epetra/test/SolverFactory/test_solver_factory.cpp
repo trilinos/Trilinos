@@ -69,6 +69,21 @@
 #include <sstream>
 #include <stdexcept>
 
+// These are added to so we can preserve the type checking of the manager.
+// TODO: With the new DII system we can consider adding a second test like
+// this which does not have these included and does not do the type check.
+// However the test should still work.
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
+#include "BelosLSQRSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
+#include "BelosRCGSolMgr.hpp"
+#include "BelosPseudoBlockTFQMRSolMgr.hpp"
+
 using std::cout;
 using std::endl;
 using std::vector;

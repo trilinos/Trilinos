@@ -216,7 +216,7 @@ private:
    */
   void choose_default_algorithm()
   {
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
@@ -225,7 +225,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -234,7 +234,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -247,12 +247,12 @@ private:
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -454,7 +454,7 @@ private:
         lower_triangle_src,
         lower_triangle_dst);
 
-    size_of_edge_list = lower_triangle_src.dimension_0();
+    size_of_edge_list = lower_triangle_src.extent(0);
 
   }
 
@@ -578,7 +578,7 @@ private:
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.dimension_0()),
+      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)),
           ReduceMaxFunctor(vertex_colors) ,num_colors);
     }
     return num_colors;

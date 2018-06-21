@@ -132,11 +132,11 @@ postRegistrationSetup(typename Traits::SetupData d,
     this->utils.setFieldData(gatherFieldNormals,fm);
   }
 
-  num_pts  = result.dimension(1);
-  num_dim  = vector_values[0].dimension(2);
+  num_pts  = result.extent(1);
+  num_dim  = vector_values[0].extent(2);
 
-  TEUCHOS_ASSERT(result.dimension(1) == normals.dimension(1));
-  TEUCHOS_ASSERT(vector_values[0].dimension(2) == normals.dimension(2));
+  TEUCHOS_ASSERT(result.extent(1) == normals.extent(1));
+  TEUCHOS_ASSERT(vector_values[0].extent(2) == normals.extent(2));
 }
 
 // **********************************************************************
@@ -199,7 +199,7 @@ evaluateFields(typename Traits::EvalData workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
       // get nodal coordinates for this cell 
-      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
+      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
         for (int ict(0); ict < num_dim; ict++)

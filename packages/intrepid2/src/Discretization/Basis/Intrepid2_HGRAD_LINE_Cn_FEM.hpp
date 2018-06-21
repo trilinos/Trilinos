@@ -43,7 +43,7 @@
 /** \file   Intrepid2_HGRAD_LINE_Cn_FEM.hpp
     \brief  Header file for the Intrepid2::Basis_HGRAD_LINE_Cn_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
-            Kokkorized by Kyungjoo Kim
+    Kokkorized by Kyungjoo Kim
 */
 
 #ifndef __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
@@ -76,13 +76,13 @@ namespace Intrepid2 {
   namespace Impl {
 
     /**
-      \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
+       \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
     */
     class Basis_HGRAD_LINE_Cn_FEM {
     public:
       typedef struct Line<2> cell_topology_type;
       /**
-        \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
+         \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
       */
       template<EOperator opType>
       struct Serial {
@@ -93,14 +93,10 @@ namespace Intrepid2 {
         KOKKOS_INLINE_FUNCTION
         static void
         getValues(       outputValueViewType outputValues,
-                   const inputPointViewType  inputPoints,
+                         const inputPointViewType  inputPoints,
                          workViewType        work,
-                   const vinvViewType        vinv,
-                   const ordinal_type        operatorDn = 0 );
-
-        KOKKOS_INLINE_FUNCTION
-        static ordinal_type
-        getWorkSizePerPoint(ordinal_type order) {return getPnCardinality<1>(order);}
+                         const vinvViewType        vinv,
+                         const ordinal_type        operatorDn = 0 );
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -109,12 +105,12 @@ namespace Intrepid2 {
                typename vinvValueType,        class ...vinvProperties>
       static void
       getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                  const EOperator operatorType );
+                        const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                        const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+                        const EOperator operatorType );
       
       /**
-        \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
+         \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM
       */
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -123,10 +119,10 @@ namespace Intrepid2 {
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
-              outputValueViewType _outputValues;
+        outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
-              workViewType        _work;
+        workViewType        _work;
         const ordinal_type        _opDn;
         
         KOKKOS_INLINE_FUNCTION
@@ -134,22 +130,22 @@ namespace Intrepid2 {
                        inputPointViewType  inputPoints_,
                        vinvViewType        vinv_,
                        workViewType        work_,
-                 const ordinal_type        opDn_ = 0 )
+                       const ordinal_type        opDn_ = 0 )
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
             _vinv(vinv_), _work(work_), _opDn(opDn_) {}
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.extent(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.extent(0));
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+          typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
           auto vcprop = Kokkos::common_view_alloc_prop(_work);
-          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -183,22 +179,29 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+
+  private:
+
+    /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
+        coefficients of the nodal basis in terms of phis_ */
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+
+  public:
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);  
-
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
     getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const {
+                     const pointViewType  inputPoints,
+                     const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -222,10 +225,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
@@ -239,10 +242,16 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getdofCoeffs) rank = 1 required for dofCoeffs array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getdofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
 #endif
       Kokkos::deep_copy(dofCoeffs, 1.0);
+    }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_LINE_Cn_FEM";
     }
 
     void
@@ -250,18 +259,17 @@ namespace Intrepid2 {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);      
     }
+
+    Kokkos::DynRankView<typename scalarViewType::const_value_type,ExecSpaceType>
+    getVandermondeInverse() const {
+      return vinv_;
+    }
     
-    virtual
-    const char*
-    getName() const {
-      return "Intrepid2_HGRAD_LINE_Cn_FEM";
+    ordinal_type
+    getWorkSizePerPoint(const EOperator operatorType) const {
+      return getPnCardinality<1>(this->basisDegree_);
     }
 
-  private:
-
-    /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
-               coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2

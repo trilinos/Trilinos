@@ -235,36 +235,36 @@ namespace PHX {
     {return m_field_data.extent_int(r);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_0() const 
-    {return m_field_data.dimension_0();}
+    size_type extent(0) const 
+    {return m_field_data.extent(0);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_1() const 
-    {return m_field_data.dimension_1();}
+    size_type extent(1) const 
+    {return m_field_data.extent(1);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_2() const 
-    {return m_field_data.dimension_2();}
+    size_type extent(2) const 
+    {return m_field_data.extent(2);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_3() const 
-    {return m_field_data.dimension_3();}
+    size_type extent(3) const 
+    {return m_field_data.extent(3);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_4() const 
-    {return m_field_data.dimension_4();}
+    size_type extent(4) const 
+    {return m_field_data.extent(4);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_5() const 
-    {return m_field_data.dimension_5();}
+    size_type extent(5) const 
+    {return m_field_data.extent(5);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_6() const 
-    {return m_field_data.dimension_6();}
+    size_type extent(6) const 
+    {return m_field_data.extent(6);}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    size_type dimension_7() const 
-    {return m_field_data.dimension_7();}
+    size_type extent(7) const 
+    {return m_field_data.extent(7);}
 
     template<typename iType>
     KOKKOS_FORCEINLINE_FUNCTION

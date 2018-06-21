@@ -403,107 +403,122 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
 #endif
 
+//The LTG kernel is only defined for the Kokkos OpenMP node, so
+//its test must only be enabled for OpenMP
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,  Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C) {
+struct LTG_Tests
+{
+  static void Multiply_LTG(
+      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&,
+      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&,
+      Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&)
+  {}
+};
+
+#ifdef HAVE_TPETRA_INST_OPENMP
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>
+{
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  static void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,  Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C)
+  {
 #include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::TimeMonitor;
 
-  Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
-  RCP<TimeMonitor> tm;
+    Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
+    RCP<TimeMonitor> tm;
 
-  if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
-    typedef typename KCRS::device_type device_t;
-    typedef typename KCRS::StaticCrsGraphType graph_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type scalar_view_t;
-    typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
-    typedef Tpetra::Map<LO,GO,NO>                                     map_type;
-    typedef typename map_type::local_map_type                         local_map_type;
-    typedef typename Node::execution_space execution_space;
-    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-    LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-    RCP<const import_type> Cimport;
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
-    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
-    RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
+    if (lib == Xpetra::UseTpetra) {
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+      typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
+      typedef typename crs_matrix_type::local_matrix_type    KCRS;
+      typedef typename KCRS::device_type device_t;
+      typedef typename KCRS::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+      typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+      typedef typename KCRS::values_type::non_const_type scalar_view_t;
+      typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+      typedef Tpetra::Map<LO,GO,NO>                                     map_type;
+      typedef typename map_type::local_map_type                         local_map_type;
+      typedef typename Node::execution_space execution_space;
+      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+      LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      RCP<const import_type> Cimport;
+      RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
+      RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
+      RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+      RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    //    if(!Au->getComm()->getRank())
-    //      std::cout<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
-
+      //    if(!Au->getComm()->getRank())
+      //      std::cout<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
 
 
-    // **********************************
-    // Copy in the data for LTG
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: CopyIn")));
 
-    Tpetra::CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Aview, Bview;
-    Aview.origMatrix   = Au;
-    Aview.origRowMap   = Au->getRowMap();
-    Aview.rowMap       = Au->getRowMap();
-    Aview.colMap       = Au->getColMap();
-    Aview.domainMap    = Au->getDomainMap();
-    Aview.importColMap = Teuchos::null;
+      // **********************************
+      // Copy in the data for LTG
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: CopyIn")));
 
-    Bview.origMatrix   = Bu;
-    Bview.origRowMap   = Bu->getRowMap();
-    Bview.rowMap       = Bu->getRowMap();
-    Bview.colMap       = Bu->getColMap();
-    Bview.domainMap    = Bu->getDomainMap();
-    Bview.importColMap = Teuchos::null;
+      Tpetra::CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Aview, Bview;
+      Aview.origMatrix   = Au;
+      Aview.origRowMap   = Au->getRowMap();
+      Aview.rowMap       = Au->getRowMap();
+      Aview.colMap       = Au->getColMap();
+      Aview.domainMap    = Au->getDomainMap();
+      Aview.importColMap = Teuchos::null;
+
+      Bview.origMatrix   = Bu;
+      Bview.origRowMap   = Bu->getRowMap();
+      Bview.rowMap       = Bu->getRowMap();
+      Bview.colMap       = Bu->getColMap();
+      Bview.domainMap    = Bu->getDomainMap();
+      Bview.importColMap = Teuchos::null;
 
 
-    // Because we're in serial...
-    Cnc->replaceColMap(Bu->getColMap());
+      // Because we're in serial...
+      Cnc->replaceColMap(Bu->getColMap());
 
-    // Bcol2Ccol is trivial
-    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
-                         Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
-                         KOKKOS_LAMBDA(const LO i) {
-                           Bcol2Ccol(i) = i;
-                         });
+      // Bcol2Ccol is trivial
+      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+      const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+      Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
+                           Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
+                           [=](const LO i) {
+                             Bcol2Ccol(i) = i;
+                           });
 
-    // Acol2Brow
-    local_map_type Acolmap_local = Aview.colMap->getLocalMap();
-    local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-    lo_view_t targetMapToImportRow;
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
-      GO aidx = Acolmap_local.getGlobalElement(i);
-      LO B_LID = Browmap_local.getLocalElement(aidx);
-      if (B_LID != LO_INVALID) {
-        targetMapToOrigRow(i)   = B_LID;
-        //        targetMapToImportRow(i) = LO_INVALID;
-      } else {
-        // This shouldn't happen here
-      }
-    });
-    tm = Teuchos::null;
-    Au->getComm()->barrier();
+      // Acol2Brow
+      local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+      local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToImportRow;
+      Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),[&](const LO i) {
+        GO aidx = Acolmap_local.getGlobalElement(i);
+        LO B_LID = Browmap_local.getLocalElement(aidx);
+        if (B_LID != LO_INVALID) {
+          targetMapToOrigRow(i)   = B_LID;
+          //        targetMapToImportRow(i) = LO_INVALID;
+        } else {
+          // This shouldn't happen here
+        }
+      });
+      tm = Teuchos::null;
+      Au->getComm()->barrier();
 
-    // **********************************
-    // Multiply
-    Teuchos::RCP<Teuchos::ParameterList> params;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: Multiply")));
-    Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,std::string("LTG Test"),params);
+      // **********************************
+      // Multiply
+      Teuchos::RCP<Teuchos::ParameterList> params;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: Multiply")));
+      Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,std::string("LTG Test"),params);
 
-    tm = Teuchos::null;
-    Au->getComm()->barrier();
-
-#endif
-
+      tm = Teuchos::null;
+      Au->getComm()->barrier();
+    }
   }
-
-}
+};
+#endif  //Tpetra and OpenMP
 
 // =========================================================================
 // =========================================================================
@@ -723,7 +738,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
             TimeMonitor t(*TimeMonitor::getNewTimer("MM LTG: Total"));
-            Multiply_LTG(*A,*B,*C);
+            LTG_Tests<SC,LO,GO,NO>::Multiply_LTG(*A,*B,*C);
           }
           break;
         default:

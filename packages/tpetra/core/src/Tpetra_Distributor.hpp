@@ -2131,12 +2131,12 @@ namespace Tpetra {
     typedef ImpView imports_view_type;
 
     const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
                    "Please do not use Tpetra::Distributor with UVM "
                    "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
@@ -2587,12 +2587,12 @@ namespace Tpetra {
     typedef ImpView imports_view_type;
     const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
                    "Please do not use Tpetra::Distributor with UVM "
                    "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
     Teuchos::OSTab tab (out_);
 

@@ -1069,11 +1069,7 @@ public:
                           size_t col,
                           const impl_scalar_type& value);
   template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
   typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-#else
-  typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
   replaceGlobalValue(GlobalOrdinal globalRow,
                      size_t col,
                      const T& value);
@@ -1081,11 +1077,7 @@ public:
                           size_t col,
                           const impl_scalar_type& value);
   template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
   typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-#else
-  typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
   sumIntoGlobalValue(GlobalOrdinal globalRow,
                      size_t col,
                      const T& value);
@@ -1093,11 +1085,7 @@ public:
                          size_t col,
                          const impl_scalar_type& value);
   template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
   typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-#else
-  typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
   replaceLocalValue(LocalOrdinal localRow,
                     size_t col,
                     const T& value);
@@ -1105,11 +1093,7 @@ public:
                          size_t col,
                          const impl_scalar_type& value);
   template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
   typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-#else
-  typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
   sumIntoLocalValue(LocalOrdinal localRow,
                     size_t col,
                     const T& value);

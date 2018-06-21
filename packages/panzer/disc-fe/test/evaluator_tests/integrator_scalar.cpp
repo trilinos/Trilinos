@@ -138,7 +138,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
   // add in some evaluators
   ///////////////////////////////////////////////////
@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
   // add in some evaluators
   ///////////////////////////////////////////////////
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
   // add in some evaluators
   ///////////////////////////////////////////////////

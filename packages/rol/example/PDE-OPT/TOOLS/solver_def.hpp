@@ -66,6 +66,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverFactory.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
 

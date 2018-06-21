@@ -53,21 +53,21 @@
 namespace Kokkos {
   namespace Compat {
 
-#if defined(KOKKOS_HAVE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
 #define COMPAT_INSTANT_SERIAL(T) \
     COMPAT_INSTANT(T,Kokkos::Serial)
 #else
 #  define COMPAT_INSTANT_SERIAL(T)
-#endif // defined(KOKKOS_HAVE_SERIAL)
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
-#if defined(KOKKOS_HAVE_PTHREAD)
+#if defined(KOKKOS_ENABLE_THREADS)
 #define COMPAT_INSTANT_THREADS(T) \
     COMPAT_INSTANT(T,Kokkos::Threads)
 #else
 #define COMPAT_INSTANT_THREADS(T)
 #endif
 
-#if defined(KOKKOS_HAVE_OPENMP)
+#if defined(KOKKOS_ENABLE_OPENMP)
 #define COMPAT_INSTANT_OPENMP(T) \
     COMPAT_INSTANT(T,Kokkos::OpenMP)
 #else
@@ -89,14 +89,14 @@ namespace Kokkos {
     COMPAT_INSTANT_ALL(char)
     COMPAT_INSTANT_ALL(short)
 
-#if defined(KOKKOS_HAVE_OPENMP)
+#if defined(KOKKOS_ENABLE_OPENMP)
 #define COMPAT_INSTANT_CUDA(T) \
     COMPAT_INSTANT(T,Kokkos::Cuda)
 #else
     COMPAT_INSTANT_CUDA(T)
 #endif
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #define COMPAT_INSTANT_CUDA_UVM(T) \
     COMPAT_INSTANT(T,Kokkos::CudaUVMSpace)
 #else

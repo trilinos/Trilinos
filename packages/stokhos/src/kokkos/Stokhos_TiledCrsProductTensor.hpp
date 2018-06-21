@@ -78,7 +78,7 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;

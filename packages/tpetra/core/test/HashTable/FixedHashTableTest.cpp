@@ -53,8 +53,8 @@ namespace { // (anonymous)
   // space, if it is currently initialized.
   template<class ExecSpace>
   void finalizeExecSpace () {
-    if (ExecSpace::is_initialized ()) {
-      ExecSpace::finalize ();
+    if (Kokkos::is_initialized ()) {
+      Kokkos::finalize ();
     }
   }
 
@@ -66,8 +66,8 @@ namespace { // (anonymous)
   template<class ExecSpace>
   struct InitExecSpace {
     InitExecSpace () {
-      if (! ExecSpace::is_initialized ()) {
-        ExecSpace::initialize ();
+      if (! Kokkos::is_initialized ()) {
+        Kokkos::initialize ();
       }
       // How should we respond if atexit() fails to register our hook?
       // That means that the Kokkos execution space won't get
@@ -82,13 +82,13 @@ namespace { // (anonymous)
     }
 
     bool isInitialized () {
-      return ExecSpace::is_initialized ();
+      return Kokkos::is_initialized ();
     }
 
     static bool registeredExitHook_;
   };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   template<>
   struct InitExecSpace<Kokkos::Cuda> {
     typedef Kokkos::Cuda ExecSpace;
@@ -98,8 +98,8 @@ namespace { // (anonymous)
       // first.  Otherwise, Cuda::initialize() throws an exception.
       InitExecSpace<Kokkos::HostSpace::execution_space> init2;
 
-      if (! ExecSpace::is_initialized ()) {
-        ExecSpace::initialize ();
+      if (! Kokkos::is_initialized ()) {
+        Kokkos::initialize ();
       }
       // How should we respond if atexit() fails to register our hook?
       // That means that the Kokkos execution space won't get
@@ -114,28 +114,28 @@ namespace { // (anonymous)
     }
 
     bool isInitialized () {
-      return ExecSpace::is_initialized ();
+      return Kokkos::is_initialized ();
     }
 
     static bool registeredExitHook_;
   };
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<> bool InitExecSpace<Kokkos::Serial>::registeredExitHook_ = false;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   template<> bool InitExecSpace<Kokkos::OpenMP>::registeredExitHook_ = false;
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   template<> bool InitExecSpace<Kokkos::Threads>::registeredExitHook_ = false;
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   bool InitExecSpace<Kokkos::Cuda>::registeredExitHook_ = false;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 
   template<class KeyType, class ValueType, class DeviceType>
@@ -784,7 +784,6 @@ namespace { // (anonymous)
           const bool testValues = true)
     {
       using std::endl;
-      typedef typename InDeviceType::execution_space execution_space;
 
       out << "Test FixedHashTable copy constructor from " << inDeviceName
            << " to " << outDeviceName << endl;
@@ -792,8 +791,8 @@ namespace { // (anonymous)
 
       // Make sure that the input device's execution space has been
       // initialized.
-      TEST_EQUALITY_CONST( execution_space::is_initialized (), true );
-      if (! execution_space::is_initialized ()) {
+      TEST_EQUALITY_CONST( Kokkos::is_initialized (), true );
+      if (! Kokkos::is_initialized ()) {
         return; // avoid crashes if initialization failed
       }
 
@@ -913,7 +912,7 @@ namespace { // (anonymous)
     // copy constructor.
     bool testedAtLeastOnce = false;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (! std::is_same<execution_space, Kokkos::Serial>::value) {
       out << "Testing copy constructor to Serial" << endl;
       // The test initializes the output device's execution space if necessary.
@@ -923,9 +922,9 @@ namespace { // (anonymous)
                            typeid(DeviceType).name ());
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (! std::is_same<execution_space, Kokkos::OpenMP>::value) {
       out << "Testing copy constructor to OpenMP" << endl;
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
@@ -934,9 +933,9 @@ namespace { // (anonymous)
                            typeid(DeviceType).name ());
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (! std::is_same<execution_space, Kokkos::Threads>::value) {
       out << "Testing copy constructor to Threads" << endl;
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
@@ -945,9 +944,9 @@ namespace { // (anonymous)
                            typeid(DeviceType).name ());
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     {
       // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
       // because Tpetra (and FixedHashTable in particular) assume UVM.
@@ -967,7 +966,7 @@ namespace { // (anonymous)
         testedAtLeastOnce = true;
       }
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
         "copy constructor, since only one Kokkos execution space is enabled!"
@@ -1063,7 +1062,7 @@ namespace { // (anonymous)
     // copy constructor.
     bool testedAtLeastOnce = false;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (! std::is_same<execution_space, Kokkos::Serial>::value) {
       out << "Testing copy constructor to Serial" << endl;
       // The test initializes the output device's execution space if necessary.
@@ -1073,9 +1072,9 @@ namespace { // (anonymous)
                            typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (! std::is_same<execution_space, Kokkos::OpenMP>::value) {
       out << "Testing copy constructor to OpenMP" << endl;
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
@@ -1084,9 +1083,9 @@ namespace { // (anonymous)
                            typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (! std::is_same<execution_space, Kokkos::Threads>::value) {
       out << "Testing copy constructor to Threads" << endl;
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
@@ -1095,9 +1094,9 @@ namespace { // (anonymous)
                            typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     {
       // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
       // because Tpetra (and FixedHashTable in particular) assume UVM.
@@ -1117,7 +1116,7 @@ namespace { // (anonymous)
         testedAtLeastOnce = true;
       }
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
         "copy constructor, since only one Kokkos execution space is enabled!"
@@ -1159,7 +1158,7 @@ namespace { // (anonymous)
   // The typedefs below are there because macros don't like arguments
   // with commas in them.
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> serial_device_type;
 
 #define UNIT_TEST_GROUP_SERIAL( LO, GO ) \
@@ -1169,10 +1168,10 @@ namespace { // (anonymous)
 
 #else
 #  define UNIT_TEST_GROUP_SERIAL( LO, GO )
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> openmp_device_type;
 
 #define UNIT_TEST_GROUP_OPENMP( LO, GO ) \
@@ -1182,10 +1181,10 @@ namespace { // (anonymous)
 
 #else
 #  define UNIT_TEST_GROUP_OPENMP( LO, GO )
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> threads_device_type;
 
 #define UNIT_TEST_GROUP_PTHREAD( LO, GO ) \
@@ -1195,7 +1194,7 @@ namespace { // (anonymous)
 
 #else
 #  define UNIT_TEST_GROUP_PTHREAD( LO, GO )
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
 
 // NOTE (mfh 12 Jan 2016) Both Tpetra and the above test assume UVM.
@@ -1206,7 +1205,7 @@ namespace { // (anonymous)
 // "Kokkos::CudaSpace::access_error attempt to execute Cuda function
 // from non-Cuda space".
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_uvm_device_type;
 
 #define UNIT_TEST_GROUP_CUDA_UVM( LO, GO ) \
@@ -1216,6 +1215,6 @@ namespace { // (anonymous)
 
 #else
 #  define UNIT_TEST_GROUP_CUDA_UVM( LO, GO )
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 } // namespace (anonymous)

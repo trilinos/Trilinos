@@ -171,7 +171,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
-    if (level != print_level)
+    if ( (level != print_level) || (level >= options.max_levels) )
       continue;
     auto split_names = getPrefix(flat_names_[i]);
     if ( prefix != split_names.first)
@@ -179,7 +179,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
 
     // Output the data
     for (int l=0; l<level; ++l)
-      os << "    ";
+      os << "|   ";
     os << split_names.second << ": ";
     // output averge time
     os << sum_[i]/active_[i];
@@ -215,10 +215,10 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_[i]/active_[i], options);
     if (sub_time > 0 ) {
       for (int l=0; l<=level; ++l)
-        os << "    ";
+        os << "|   ";
       os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
-      if ( options.output_fraction && parent_time > 0 )
-        os << " - "<< (sum_[i]/active_[i]- sub_time)/parent_time*100 << "%";
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) )
+        os << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
       os <<std::endl;
     }
     total_time += sum_[i]/active_[i];
@@ -232,6 +232,16 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   merge(comm);
   collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
+    if (options.print_warnings) {
+      os << "*** Teuchos::StackedTimer::report() - Remainder for a block will be ***"
+         << "\n*** incorrect if a timer in the block does not exist on every rank  ***"
+         << "\n*** of the MPI Communicator.                                        ***"
+         << std::endl;
+    }
+    if ( (options.max_levels != INT_MAX) && options.print_warnings) {
+      os << "Teuchos::StackedTimer::report() - max_levels set to " << options.max_levels
+         << ", to print more levels, increase value of OutputOptions::max_levels." << std::endl;
+    }
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }

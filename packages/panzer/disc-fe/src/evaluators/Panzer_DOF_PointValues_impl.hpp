@@ -146,7 +146,7 @@ void DOF_PointValues<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
   if(is_vector_basis) {
-    int spaceDim  = basisValues->basis_vector.dimension(3);
+    int spaceDim  = basisValues->basis_vector.extent(3);
     if(spaceDim==3) {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
@@ -266,7 +266,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   if(is_vector_basis) {
     if(accelerate_jacobian) {
-      int spaceDim  = basisValues->basis_vector.dimension(3);
+      int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
@@ -277,7 +277,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
     else {
-      int spaceDim  = basisValues->basis_vector.dimension(3);
+      int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);

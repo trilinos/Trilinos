@@ -129,20 +129,23 @@ def setup_timers(input_files, display, top, ax = None, custom_filter = None):
         ax.set_ylim([-0.5, len(timers_f)-0.5])
 
     else:
-        index = dfs.index.tolist()
-        d1    = dfs ['maxT']
-        d2    = dfs1['maxT']
+        if diff_mode == False:
+            print(dfs['maxT'])
+        else:
+            index = dfs.index.tolist()
+            d1 = dfs ['maxT']
+            d2 = dfs1['maxT']
 
-        max_len = len(max(index, key=len)) + 3
+            max_len = len(max(index, key=len)) + 3
 
-        print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), input_files[0], input_files[1], 'ratio'))
-        for i in range(top-1, -1, -1):
-            if not math.isnan(d1[i]) and not math.isnan(d2[i]):
-                print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
-            elif math.isnan(d1[i]):
-                print('%s %10s %10.3f %10s' % (dfs.index[i].ljust(max_len, " "), '-', d2[i], '-'))
-            elif math.isnan(d2[i]):
-                print('%s %10.3f %10s %10s' % (dfs.index[i].ljust(max_len, " "), d1[i], '-', '-'))
+            print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), input_files[0], input_files[1], 'ratio'))
+            for i in range(top-1, -1, -1):
+                if not math.isnan(d1[i]) and not math.isnan(d2[i]):
+                    print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
+                elif math.isnan(d1[i]):
+                    print('%s %10s %10.3f %10s' % (dfs.index[i].ljust(max_len, " "), '-', d2[i], '-'))
+                elif math.isnan(d2[i]):
+                    print('%s %10.3f %10s %10s' % (dfs.index[i].ljust(max_len, " "), d1[i], '-', '-'))
 
 
 def muelu_strong_scaling(input_files, display, ax, top, style):

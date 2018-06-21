@@ -243,20 +243,6 @@ size_t DropFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow) co
 
 //==========================================================================
 template<class MatrixType>
-global_size_t DropFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
 size_t DropFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
@@ -274,20 +260,6 @@ template<class MatrixType>
 bool DropFilter<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-//==========================================================================
-template<class MatrixType>
-bool DropFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
-bool DropFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 //==========================================================================

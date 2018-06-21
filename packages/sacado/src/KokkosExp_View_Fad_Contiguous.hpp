@@ -314,7 +314,7 @@ struct ThreadLocalScalarType<
 
 namespace Impl {
 
-#if defined (KOKKOS_HAVE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined (KOKKOS_ENABLE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 template< class OutputView >
 struct SacadoViewFill<
   OutputView,
@@ -355,7 +355,7 @@ struct SacadoViewFill<
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
     for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
+      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
     }}}}}}}
   }
 
@@ -514,7 +514,7 @@ public:
   enum { PartitionedFadStaticDimension =
            computeFadPartitionSize(FadStaticDimension,PartitionedFadStride) };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename Sacado::LocalScalarType< fad_type, unsigned(PartitionedFadStride) >::type strided_scalar_type;
   typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Cuda>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #else

@@ -447,18 +447,16 @@ namespace Tpetra {
     //! \name Mathematical methods
     //@{
 
-    /**
-     * \brief Scale the RowMatrix on the left with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
-     */
+    /// \brief Scale the matrix on the left with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(i)*A(i,j)\f$.
     virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
-    /**
-     * \brief Scale the RowMatrix on the right with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
-     */
+    /// \brief Scale the matrix on the right with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(j)*A(i,j)\f$.
     virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.

@@ -82,12 +82,12 @@ void graph_color_symbolic(
 
   switch (algorithm){
   case COLORING_SERIAL:
-    gc = new BaseGraphColoring(num_rows, entries.dimension_0(), row_map, entries, gch);
+    gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
   case COLORING_SERIAL2:
     gc = new Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>(
-        num_rows, entries.dimension_0(),
+        num_rows, entries.extent(0),
         row_map, entries, gch);
     break;
 
@@ -95,12 +95,12 @@ void graph_color_symbolic(
   case COLORING_VBBIT:
   case COLORING_VBCS:
     typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
-    gc = new VBGraphColoring(num_rows, entries.dimension_0(), row_map, entries, gch);
+    gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
   case COLORING_EB:
     typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
-    gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
+    gc = new EBGraphColoring(num_rows, entries.extent(0),row_map, entries, gch);
     break;
  
   case COLORING_SPGEMM:
@@ -109,10 +109,10 @@ void graph_color_symbolic(
 
     if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
         typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoringSPGEMM;
-        gc = new EBGraphColoringSPGEMM(num_rows, entries.dimension_0(),row_map, entries, gch);
+        gc = new EBGraphColoringSPGEMM(num_rows, entries.extent(0),row_map, entries, gch);
     } else {
         typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoringSPGEMM;
-        gc = new VBGraphColoringSPGEMM(num_rows, entries.dimension_0(), row_map, entries, gch);
+        gc = new VBGraphColoringSPGEMM(num_rows, entries.extent(0), row_map, entries, gch);
     }
     break;
 
@@ -192,7 +192,7 @@ void d2_graph_color(
     case COLORING_SERIAL:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      BaseGraphColoring gc(num_rows, row_entries.dimension_0(), row_map, row_entries, gch);
+      BaseGraphColoring gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
       gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);
       gch->set_vertex_colors(colors_out);
@@ -203,7 +203,7 @@ void d2_graph_color(
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
       Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> 
-          gc(num_rows, row_entries.dimension_0(), row_map, row_entries, gch);
+          gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
       gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);
       gch->set_vertex_colors(colors_out);
@@ -213,7 +213,7 @@ void d2_graph_color(
     default:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      BaseGraphColoring gc(num_rows, row_entries.dimension_0(), row_map, row_entries, gch);
+      BaseGraphColoring gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
       gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);
       gch->set_vertex_colors(colors_out);

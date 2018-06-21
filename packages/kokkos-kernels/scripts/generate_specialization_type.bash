@@ -28,18 +28,19 @@ filename_spec_decl_hpp=generated_specializations_hpp/${FunctionExtended}_eti_spe
 cat ${KokkosKernelsPath}/scripts/header > ${filename_cpp}
 echo "" >> ${filename_cpp}
 echo "#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true" >> ${filename_cpp}
+echo "#include \"KokkosKernels_config.h\"" >> ${filename_cpp}
+echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_cpp}
+echo " && defined (KOKKOSKERNELS_INST_${Layout_UpperCase}) \\" >> ${filename_cpp}
+echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_cpp}
+echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_cpp}
 echo "#include \"${filename_master_hpp}\"" >> ${filename_cpp}
 echo "" >> ${filename_cpp}
 echo "namespace ${NameSpace} {" >> ${filename_cpp}
 echo "namespace Impl {" >> ${filename_cpp}
-echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_cpp} 
-echo " && defined (KOKKOSKERNELS_INST_${Layout_UpperCase}) \\" >> ${filename_cpp} 
-echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_cpp} 
-echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_cpp} 
 echo " ${Macro}_ETI_SPEC_INST(${Scalar}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_cpp}
-echo "#endif" >> ${filename_cpp}
 echo "} // Impl" >> ${filename_cpp} 
 echo "} // ${NameSpace}" >> ${filename_cpp}
+echo "#endif" >> ${filename_cpp}
 
 echo "" >> ${filename_spec_avail_hpp}
 echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_spec_avail_hpp}

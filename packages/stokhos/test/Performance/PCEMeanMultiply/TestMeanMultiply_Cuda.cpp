@@ -45,7 +45,7 @@
 // Devices
 #include "Kokkos_Core.hpp"
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 using Kokkos::Cuda;
 INST_PERF_DRIVER(double, int, Cuda)
 #endif
