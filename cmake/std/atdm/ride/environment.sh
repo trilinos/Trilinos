@@ -10,7 +10,38 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU
 fi
 
-echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
+  export ATDM_CONFIG_QUEUE=rhel7F
+elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power8" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
+  export ATDM_CONFIG_QUEUE=rhel7F
+elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Kepler37" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8,$ATDM_CONFIG_KOKKOS_ARCH
+  export ATDM_CONFIG_QUEUE=rhel7F
+elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Kepler35" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8,$ATDM_CONFIG_KOKKOS_ARCH
+  export ATDM_CONFIG_QUEUE=rhel7T
+elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Pascal60" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8,$ATDM_CONFIG_KOKKOS_ARCH
+  export ATDM_CONFIG_QUEUE=rhel7G
+fi
+
+if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "Power8,Kepler35" ]  && \
+   [ "$ATDM_CONFIG_KOKKOS_ARCH" != "Power8,Kepler37" ]  && \
+   [ "$ATDM_CONFIG_KOKKOS_ARCH" != "Power8,Pascal60" ]; then
+     echo "***"
+     echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option on this system."
+     echo "*** Replace '$ATDM_CONFIG_KOKKOS_ARCH' in the job name with one of the following options:"
+     echo "*** 'Kepler35' Power8 with Kepler K-40 GPU"
+     echo "*** 'Kepler37' Power8 with Kepler K-80 GPU (Default)"
+     echo "*** 'Pascal60' Power8 with Pascal P-100 GPU"
+     echo "***"
+   return
+fi
+
+
+echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=128
@@ -26,7 +57,6 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
 fi
 
-export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     module load devpack/20180308/openmpi/2.1.2/gcc/7.2.0/cuda/9.0.176
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
