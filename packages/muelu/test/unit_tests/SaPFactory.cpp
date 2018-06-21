@@ -161,6 +161,7 @@ namespace MueLuTests {
         RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
         FactoryManager M;
+        M.SetKokkosRefactor(false);
         M.SetFactory("P", Pfact);
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
