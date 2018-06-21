@@ -107,8 +107,8 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcast ) {
   std::string inputFile="input.xml";
   ParameterList A;
   ParameterList B;
-  if(comm->getRank() == 0)
-    updateParametersFromXmlFile(inputFile, outArg(A));
+
+  updateParametersFromXmlFile(inputFile, outArg(A));
   updateParametersAndBroadcast(outArg(A),outArg(B),*comm,0);
   out << "B = " << B;
   TEST_ASSERT( B.begin() != B.end() ); // Avoid false positive from empty lists
@@ -119,8 +119,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcast ) {
   reduceAll(*comm, Teuchos::REDUCE_SUM, local_failed, outArg(global_failed));
   TEST_EQUALITY_CONST(global_failed, 0);
 }
-
-
 
 
 TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcastNoOverWrite ) {
@@ -135,8 +133,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcastNoOverWrite ) {
   B.set("Transient",true);
   B.set("Phalanx Graph Visualization Detail",2);
 
-  if(comm->getRank() == 0)
-    updateParametersFromXmlFile(inputFile, outArg(A));
+  updateParametersFromXmlFile(inputFile, outArg(A));
   updateParametersAndBroadcast(outArg(A),outArg(B),*comm,0);
   out << "B = " << B;
   TEST_ASSERT( B.begin() != B.end() ); // Avoid false positive from empty lists
