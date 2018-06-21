@@ -48,6 +48,7 @@
 
 #include <string>
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "MueLu_BaseClass.hpp"
 
@@ -62,14 +63,31 @@ namespace MueLu {
 
   public:
 
-    AvatarInterface() {}
+    AvatarInterface(const Teuchos::Comm<int> & comm ):comm_(comm) {}
 
-    AvatarInterface(Teuchos::ParameterList& inParams):params_(inParams){};
+    AvatarInterface(const Teuchos::Comm<int> & comm, Teuchos::ParameterList& inParams):comm_(comm),params_(inParams){};
 
-    void SetParameterList(Teuchos::ParameterList& inParams);
+    Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const;
+
+    // Sets the input parameters for the AvatarInterface
+    void SetParameterList(Teuchos::ParameterList& inParams) {params_ = inParams;}
+
+    // Calls Avatar to set MueLu Parameters
+    void SetMueLuParameters(Teuchos::ParameterList & pl) const;
+
 
   private:
+    const Teuchos::Comm<int> & comm_;
+
+    Teuchos::ArrayRCP<std::string> ReadAvatarStringsFromFiles() const;
+
+    Teuchos::ArrayRCP<std::string> ReadAvatarStringsFromParameterList() const;
+
+
     Teuchos::ParameterList params_;
+
+    // FIXME: Need to store the handle to avatar
+
 
   };
 
