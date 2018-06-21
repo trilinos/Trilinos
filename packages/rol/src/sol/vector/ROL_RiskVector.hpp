@@ -90,7 +90,7 @@ private:
       augmentedObj_ = false;
       nStatObj_     = 0;
     }
-  } 
+  }
 
   void initializeCon(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist,
                const Real stat = 1) {

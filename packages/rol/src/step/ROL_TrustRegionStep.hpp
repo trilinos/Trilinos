@@ -430,7 +430,9 @@ public:
     }
 
     // Evaluate Objective Function at Cauchy Point
+    bool autoRad = false;
     if ( step_state->searchSize <= zero ) {
+      autoRad = true;
       Ptr<Vector<Real>> Bg = g.clone();
       if ( useSecantHessVec_ ) {
         secant_->applyB(*Bg,(step_state->gradientVec)->dual());
@@ -482,6 +484,9 @@ public:
         else {
           step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
         }
+      }
+      if (step_state->searchSize <= ROL_EPSILON<Real>()*algo_state.gnorm && autoRad) {
+        step_state->searchSize = one;
       }
     }
     // Build trust-region model

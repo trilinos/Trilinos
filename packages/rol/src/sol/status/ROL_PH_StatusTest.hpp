@@ -41,113 +41,55 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
+#ifndef ROL_PH_STATUSTEST_H
+#define ROL_PH_STATUSTEST_H
 
-#include <memory>
-#include <type_traits>
+#include "ROL_StatusTest.hpp"
 
-/* \file ROL_Ptr.hpp
- * \brief Provides unified interface Teuchos::RCP for legacy support.
- *        ROL will be build with this implementation by default  
- *        unless ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- */
+/** \class ROL::PH_StatusTest
+    \brief Provides an interface to check status of the progressive hedging algorithm.
+*/
 
-#include <cstddef>
-#include <utility>
-
-#include "Teuchos_RCP.hpp"
 
 namespace ROL {
 
-template<class T> using Ptr = Teuchos::RCP<T>;
+template <class Real>
+class PH_StatusTest : public StatusTest<Real> {
+private:
 
-static const Teuchos::ENull nullPtr = Teuchos::null;
+  Real mu_;
+  Real epsilon_;
+  Ptr<const Vector<Real>> xbar_;
+  Real tol_;
+  Ptr<Vector<Real>> x_;
 
-}
+public:
 
-namespace ROL {
+  PH_StatusTest( ROL::ParameterList &parlist, const Vector<Real> &x ) {
+    mu_      = parlist.sublist("SOL").sublist("Progressive Hedging").get("Fixed Tolerance", 1e-4);
+    epsilon_ = parlist.sublist("SOL").sublist("Progressive Hedging").get("Dynamic Tolerance", 0.1);
+    x_       = x.clone();
+  }
 
-// Special case handling until C++14 (auto type deduction) is required
-// because template type deduction does not work for initializer_list here. 
+  void setData(const int iter, const Ptr<const Vector<Real>> &xbar) {
+    const Real one(1);
+    tol_   = mu_*std::pow(one-epsilon_,iter+1);
+    xbar_  = xbar;
+  }
 
-template<class T, class U>
-inline
-Ptr<T> makePtr( std::initializer_list<U>&& u ) {
-  return Teuchos::rcp( new T(std::forward<std::initializer_list<U>>(u)) );
-}
+  bool check( AlgorithmState<Real> &state ) {
+    const Real one(1);
+    x_->set(*state.iterateVec); x_->axpy(-one,*xbar_);
+    Real xnorm = x_->norm();
+    if ( state.gnorm <= tol_*std::min(one,xnorm) ) {
+      state.statusFlag = EXITSTATUS_USERDEFINED;
+      return false;
+    }
+    return true;
+  }
 
-
-template<class T, class... Args>
-inline 
-Ptr<T> makePtr( Args&&... args ) {
-  return Teuchos::rcp( new T(std::forward<Args>(args)...) );
-}
-
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return Teuchos::rcpFromRef(obj);
-}
-
-template<class T, class U> 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return Teuchos::rcp_static_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return Teuchos::rcp_const_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return Teuchos::rcp_dynamic_cast<T>(r);
-}
-
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-int getCount( const Ptr<T>& x ) {
-  return x.strong_count();
-}
-
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x.is_null();
-}
-
-template<typename T>
-inline 
-Ptr<T> toPtr( const Ptr<T>& ptr ) { 
-  return ptr;
-}
-
-template<typename T>
-inline 
-Ptr<const T> toPtr( const Ptr<const T>& ptr ) { 
-  return ptr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+}; // class PH_StatusTest
 
 } // namespace ROL
 
+#endif
