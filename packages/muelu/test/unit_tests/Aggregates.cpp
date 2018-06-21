@@ -232,7 +232,7 @@ class AggregateGenerator {
     // Little utility to generate hybrid structured and uncoupled aggregates
     static RCP<Aggregates>
     gimmeHybridAggregates(const RCP<Matrix>&A, RCP<AmalgamationInfo> & amalgInfo,
-                          const std::string regionType, 
+                          const std::string regionType,
                           Array<GO> gNodesPerDir, Array<LO> lNodesPerDir,
                           const LO numDimensions, const std::string meshLayout,
                           const Array<GO> meshData)
@@ -255,22 +255,22 @@ class AggregateGenerator {
       RCP<HybridAggregationFactory> aggFact = rcp(new HybridAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
       // Structured
-      aggFact->SetParameter("aggregation: coupling", Teuchos::ParameterEntry(coupling));
-      aggFact->SetParameter("aggregation: mesh layout", Teuchos::ParameterEntry(meshLayout));
+      aggFact->SetParameter("aggregation: coupling",                     Teuchos::ParameterEntry(coupling));
+      aggFact->SetParameter("aggregation: mesh layout",                  Teuchos::ParameterEntry(meshLayout));
       aggFact->SetParameter("aggregation: number of spatial dimensions", Teuchos::ParameterEntry(numDimensions));
-      aggFact->SetParameter("aggregation: coarsening order", Teuchos::ParameterEntry(0));
-      aggFact->SetParameter("aggregation: coarsening rate", Teuchos::ParameterEntry(std::string("{3}")));
+      aggFact->SetParameter("aggregation: coarsening order",             Teuchos::ParameterEntry(0));
+      aggFact->SetParameter("aggregation: coarsening rate",              Teuchos::ParameterEntry(std::string("{3}")));
       // Uncoupled
-      aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(false));
-      aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
-      aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
-      aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
-      aggFact->SetParameter("aggregation: ordering",Teuchos::ParameterEntry(std::string("natural")));
-      aggFact->SetParameter("aggregation: enable phase 1",  Teuchos::ParameterEntry(true));
-      aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(true));
-      aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(true));
-      aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(true));
-      
+      aggFact->SetParameter("aggregation: use interface aggregation",    Teuchos::ParameterEntry(false));
+      aggFact->SetParameter("aggregation: max agg size",                 Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: min agg size",                 Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: max selected neighbors",       Teuchos::ParameterEntry(0));
+      aggFact->SetParameter("aggregation: ordering",                     Teuchos::ParameterEntry(std::string("natural")));
+      aggFact->SetParameter("aggregation: enable phase 1",               Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 2a",              Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 2b",              Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 3",               Teuchos::ParameterEntry(true));
+
       // Hybrid
       level.Set("aggregationRegionType", regionType);
 
@@ -800,7 +800,7 @@ class AggregateGenerator {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    // Get MPI parameter
+    // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     LO numRanks = comm->getSize();
     LO myRank   = comm->getRank();

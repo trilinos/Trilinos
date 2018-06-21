@@ -117,6 +117,11 @@ namespace MueLu {
     // general variables needed in AggregationFactory
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+    // special variables necessary for OnePtAggregationAlgorithm
+    validParamList->set<std::string>            ("OnePt aggregate map name",           "",
+                                                 "Name of input map for single node aggregates. (default='')");
+    validParamList->set<std::string>            ("OnePt aggregate map factory",        "",
+                                                 "Generating factory of (DOF) map for single node aggregates.");
 
     // InterfaceAggregation parameters
     validParamList->set< std::string >           ("Interface aggregate map name",                "",
@@ -146,11 +151,6 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
                                                  "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
 
-    // special variables necessary for OnePtAggregationAlgorithm
-    validParamList->set<std::string>            ("OnePt aggregate map name",           "",
-                                                 "Name of input map for single node aggregates. (default='')");
-    validParamList->set<std::string>            ("OnePt aggregate map factory",        "",
-                                                 "Generating factory of (DOF) map for single node aggregates.");
 
     // Hybrid Aggregation Params
     validParamList->set<RCP<const FactoryBase> >            ("aggregationRegionType",          Teuchos::null,
@@ -183,8 +183,8 @@ namespace MueLu {
     /* UncoupledAggregation */
     Input(currentLevel, "DofsPerNode");
 
-    // request special data necessary for InterfaceAggregation  
-    if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+    // request special data necessary for InterfaceAggregation
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true){
       if(currentLevel.GetLevelID() == 0) {
         if(currentLevel.IsAvailable("nodeOnInterface", NoFactory::get())) {
           currentLevel.DeclareInput("nodeOnInterface", NoFactory::get(), this);
@@ -197,6 +197,20 @@ namespace MueLu {
         Input(currentLevel, "nodeOnInterface");
       }
     }
+
+    // request special data necessary for OnePtAggregationAlgorithm
+    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
+    if (mapOnePtName.length() > 0) {
+      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
+      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
+        currentLevel.DeclareInput(mapOnePtName, NoFactory::get());
+      } else {
+        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
+        currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
+      }
+    }
+
+
 
     /* StructuredAggregation */
     std::string coupling = pL.get<std::string>("aggregation: coupling");
@@ -230,21 +244,6 @@ namespace MueLu {
     }
 
 
-
-    /* OnePtAggregation */
-    // request special data necessary for OnePtAggregationAlgorithm
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
-    if (mapOnePtName.length() > 0) {
-      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
-      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
-        currentLevel.DeclareInput(mapOnePtName, NoFactory::get());
-      } else {
-        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
-        currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
-      }
-    }
-
-    
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -301,7 +300,7 @@ namespace MueLu {
     if (regionType == "structured") {
       // Add AggregationStructuredAlgorithm
       algos_.push_back(rcp(new AggregationStructuredAlgorithm(graphFact)));
-      
+
       // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
       // obtain a nodeMap.
       const int numDimensions      = pL.get<int>("aggregation: number of spatial dimensions");
@@ -325,9 +324,10 @@ namespace MueLu {
         lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
       }
 
-      // Fix lFineNodesPerDir for two dimensional problems
-      if( numDimensions == 2 )
-          lFineNodesPerDir[2] = 1;
+      // Set lFineNodesPerDir to 1 for directions beyond numDimensions
+      for(int dim = numDimensions; dim < 3; ++dim) {
+        lFineNodesPerDir[dim - 1] = 1;
+      }
 
       // Get the coarsening rate
       std::string coarseningRate = pL.get<std::string>("aggregation: coarsening rate");
@@ -400,8 +400,8 @@ namespace MueLu {
       // Set map for interface aggregates
       std::string mapInterfaceName = pL.get<std::string>("Interface aggregate map name");
       RCP<Map> InterfaceMap = Teuchos::null;
-      // interface 
-      if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+      // interface
+      if (pL.get<bool>("aggregation: use interface aggregation")       == true){
         Teuchos::Array<LO> nodeOnInterface = Get<Array<LO>>(currentLevel,"nodeOnInterface");
         for (LO i = 0; i < numRows; i++) {
           if (nodeOnInterface[i])
@@ -464,7 +464,7 @@ namespace MueLu {
     Set(currentLevel, "Aggregates",         aggregates);
 
     Set(currentLevel, "aggregationRegionTypeCoarse", regionType);
-    
+
     GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 

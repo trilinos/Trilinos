@@ -78,7 +78,7 @@ namespace MueLu {
     validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
     validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
     validParamList->set<bool>                   ("hybrid aggregation",           false, "Flag specifying that hybrid aggregation data is transfered for HybridAggregationFactory");
-    
+
 
     return validParamList;
   }
