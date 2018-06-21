@@ -115,6 +115,9 @@ void AvatarInterface::Setup() {
     avatarHandle_ = Teuchos::rcp(new Avatar(avatarArgs));
 #endif
 
+  // Unpack the MueLu Mapping into something actionable
+  UnpackMueLuMapping();
+
   throw std::runtime_error("Not yet implemented!");
 
 }
@@ -133,7 +136,35 @@ void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & probl
   featureString = ss.str();
 }
 
+// ***********************************************************************
+void AvatarInterface::UnpackMueLuMapping() {
+  const Teuchos::ParameterList & mapping = params_.get<Teuchos::ParameterList>("avatar: muelu parameter mapping");
+  // Each MueLu/Avatar parameter pair gets its own sublist.  These must be numerically ordered with no gap
 
+
+  bool done=false; 
+  int idx=0;
+  while(!done) {
+    std::stringstream ss << "param"<<toString(idx);
+    if(params_.isSublist(ss.str())) {
+      const Teuchos::ParameterList & sublist = params_.sublist(ss.str());
+
+      // Get the names
+      mueluParameterName_.push_back(sublist.get<std::string>("muelu parameter"));
+      avatarParameterName_.push_back(sublist.get<std::string>("avatar parameter"));
+
+      // Get the values
+
+    }
+    else {
+      done=true;
+    }
+    idx++;
+  }
+  
+
+
+}
 
 // ***********************************************************************
 void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const {

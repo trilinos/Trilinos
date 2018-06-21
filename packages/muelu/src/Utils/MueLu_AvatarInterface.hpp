@@ -87,6 +87,7 @@ namespace MueLu {
     // Utility functions
     Teuchos::ArrayRCP<std::string> ReadAvatarStringsFromFiles() const;
     void GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const;
+    void UnpackMueLuMapping();
 
     // FIXME: Placeholder for an actual Avatar thing
     typedef int Avatar;
@@ -98,7 +99,11 @@ namespace MueLu {
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::RCP<Avatar> avatarHandle_;
 
+    Teuchos::Array<std::string> mueluParameterName_;
+    Teuchos::Array<std::string> avatarParameterName_;
 
+    //    Teuchos::Array<Teuchos::ArrayRCP<double> > mueluParameterName_;
+    //    Teuchos::Array<Teuchos::ArrayRCP<double> avatarParameterName_;
 
   };
 
