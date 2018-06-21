@@ -109,6 +109,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         "-DTPL_ENABLE_MPI=ON"
             "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
             "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
+        "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
+        "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
        )
 
     SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
