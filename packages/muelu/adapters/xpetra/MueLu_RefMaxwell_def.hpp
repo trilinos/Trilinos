@@ -138,14 +138,14 @@ namespace MueLu {
     // Remove zero entries from D0 if necessary.
     // In the construction of the prolongator we use the graph of the
     // matrix, so zero entries mess it up.
-    if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+    if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getNodeMaxNumRowEntries()>2) {
       Level fineLevel;
       fineLevel.SetFactoryManager(Teuchos::null);
       fineLevel.SetLevelID(0);
       fineLevel.Set("A",D0_Matrix_);
       fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
       // We expect D0 to have entries +-1, so any threshold value will do.
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false));
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false,/*expectedNNZperRow=*/2));
       fineLevel.Request("A",ThreshFact.get());
       ThreshFact->Build(fineLevel);
       D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
