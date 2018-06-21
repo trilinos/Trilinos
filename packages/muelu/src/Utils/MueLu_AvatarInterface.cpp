@@ -127,7 +127,7 @@ void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & probl
   for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
     //    const std::string& name = problemFeatures.name(i);
     const Teuchos::ParameterEntry& entry = problemFeatures.entry(i);
-    if(i!==problemFeatures.begin()) ss<<",";
+    if(i!=problemFeatures.begin()) ss<<",";
     ss<<entry;
   }
   featureString = ss.str();
