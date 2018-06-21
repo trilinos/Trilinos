@@ -80,7 +80,7 @@ namespace MueLu {
     void Setup();
 
     // Calls Avatar to set MueLu Parameters
-    void SetMueLuParameters(Teuchos::ParameterList & pl) const;
+    void SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const;
 
 
   private:

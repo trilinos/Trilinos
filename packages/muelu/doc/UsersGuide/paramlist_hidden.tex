@@ -216,7 +216,7 @@
         
 \cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
         
-\cba{matrixmatrix: kernel params}{parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+\cba{matrixmatrix: kernel params}{\parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
         
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
         
@@ -225,4 +225,12 @@
 \cba{amgx:params}{\parameterlist}{Sublist for listing AMGX configuration parameters}
         
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}
+        
+\cba{avatar: decision tree strings}{\parameterlist}{Decision trees (stored as strings) for Avatar}
+        
+\cba{avatar: decision tree files}{\parameterlist}{Names of Avatar decision tree files}
+        
+\cba{avatar: problem features}{\parameterlist}{Problem features as computed by the application}
+        
+\cba{avatar: muelu parameter mapping}{\parameterlist}{Mapping of MueLu to Avatar Parameters}
         

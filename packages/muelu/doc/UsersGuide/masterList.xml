@@ -1065,7 +1065,7 @@
   <matrixmatrix>
     <parameter>
       <name>matrixmatrix: kernel params</name>
-      <type>parameterlist</type>
+      <type>\parameterlist</type>
       <description>Controls the kernel algorithms for matrix-matrix operations</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
@@ -1116,5 +1116,7 @@
     </parameter>
 
   </debug>
+
+
 
 </masterlist>

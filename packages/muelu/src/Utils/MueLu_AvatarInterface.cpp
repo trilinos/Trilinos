@@ -49,6 +49,7 @@
 #include <fstream> 
 #include <sstream> 
 #include "Teuchos_Array.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "MueLu_BaseClass.hpp"
 
 
@@ -110,11 +111,23 @@ void AvatarInterface::Setup() {
 }
 
 // ***********************************************************************
-void AvatarInterface::SetMueLuParameters(Teuchos::ParameterList & pl) const {
- 
+void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const {
+  Teuchos::ParameterList newParams;
+  std::string paramString;
+  int strsize;
+  if (comm_->getRank() == 0) {
+    // FIXME: Now actually call Avatar, but only on Rank 0
 
-  // FIXME: Now actually call Avatar
+    paramString = toString(newParams);
+    strsize = static_cast<int>(paramString.size());
+  }
 
+  if (comm_->getSize() > 1) {
+    // Now broadcast parameters to all procs
+    Teuchos::broadcast<int, int>(*comm_, 0, &strsize);
+    Teuchos::broadcast<int, char>(*comm_, 0, strsize, &paramString[0]);
+    // FIXME: Deserialize
+  }
 
 }
 
