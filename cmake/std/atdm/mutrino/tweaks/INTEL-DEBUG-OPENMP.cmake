@@ -8,3 +8,6 @@ ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON)
 ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetra_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetraHeavy_MPI_1_DISABLE ON)
 ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetraHeavy_MPI_4_DISABLE ON)
+
+# Disable SEACAS test that fails on mutrino (#2815)
+ATDM_SET_ENABLE(SEACASExodus_exodus_unit_tests_DISABLE ON)
