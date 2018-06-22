@@ -34,18 +34,18 @@
 #include "matrix.h"
 #include "mex.h"
 
-#define ASSERT(a) mxAssert(a,"")
-#define REALLOC(ptr,size) mxRealloc(ptr, size)
-#define CALLOC(num, size) mxCalloc(num, size)
+#define BASKERASSERT(a) mxAssert(a,"")
+#define BASKERREALLOC(ptr,size) mxRealloc(ptr, size)
+#define BASKERCALLOC(num, size) mxCalloc(num, size)
 #define BASKERFREE(ptr)
 
 #else
 #include <assert.h>
 #include <stdlib.h>
 
-#define ASSERT(a) assert(a)
-#define REALLOC(ptr, size) realloc(ptr, size)
-#define CALLOC(num, size)  calloc(num,size)
+#define BASKERASSERT(a) assert(a)
+#define BASKERREALLOC(ptr, size) realloc(ptr, size)
+#define BASKERCALLOC(num, size)  calloc(num,size)
 #define BASKERFREE(ptr)          free(ptr)
 
 #endif

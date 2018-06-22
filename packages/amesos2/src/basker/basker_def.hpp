@@ -150,7 +150,7 @@ namespace BaskerClassicNS{
           }
         else
           {
-            ASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
+            BASKERASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
             start = store[j];
           }
         done = 1;
@@ -197,9 +197,9 @@ namespace BaskerClassicNS{
     /*Initalize A basker matrix struc */
 #ifdef  BASKER_DEBUG
 
-    ASSERT(nrow > 0);
-    ASSERT(ncol > 0);
-    ASSERT(nnz > 0);
+    BASKERASSERT(nrow > 0);
+    BASKERASSERT(ncol > 0);
+    BASKERASSERT(nnz > 0);
 
 #endif
 
@@ -218,11 +218,11 @@ namespace BaskerClassicNS{
       {
         L->nnz = 2*A->nnz;
       }
-    //L->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    //L->col_ptr = (Int *) BASKERCALLOC(ncol+1, sizeof(Int));
     L->col_ptr = new Int[ncol+1]();
-    //L->row_idx = (Int *) CALLOC(L->nnz, sizeof(Int));
+    //L->row_idx = (Int *) BASKERCALLOC(L->nnz, sizeof(Int));
     L->row_idx = new Int[L->nnz]();
-    //L->val =     (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    //L->val =     (Entry *) BASKERCALLOC(L->nnz, sizeof(Entry));
     L->val =  new Entry[L->nnz]();
 
     U->nrow = nrow;
@@ -231,11 +231,11 @@ namespace BaskerClassicNS{
       {
         U->nnz = 2*A->nnz;
       }
-    //U->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    //U->col_ptr = (Int *) BASKERCALLOC(ncol+1, sizeof(Int));
     U->col_ptr = new Int[ncol+1]();
-    //U->row_idx = (Int *) CALLOC(U->nnz, sizeof(Int));
+    //U->row_idx = (Int *) BASKERCALLOC(U->nnz, sizeof(Int));
     U->row_idx = new Int[U->nnz]();
-    //U->val =     (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    //U->val =     (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     U->val = new Entry[U->nnz]();
 
     if((L->col_ptr == NULL) || (L->row_idx == NULL) || (L->val == NULL) ||
@@ -249,11 +249,11 @@ namespace BaskerClassicNS{
     /*Creating working space*/
     Int *tptr;
     Entry *X;
-    //tptr = (Int *)   CALLOC( (ncol)+(4*nrow), sizeof(Int));
+    //tptr = (Int *)   BASKERCALLOC( (ncol)+(4*nrow), sizeof(Int));
     tptr = new Int[(ncol)+(4*nrow)]();
-    //X =    (Entry *) CALLOC(2*nrow, sizeof(Entry));
+    //X =    (Entry *) BASKERCALLOC(2*nrow, sizeof(Entry));
     X = new Entry[2*nrow]();
-    //pinv = (Int * )  CALLOC(ncol+1, sizeof(Int)); //Note extra pad
+    //pinv = (Int * )  BASKERCALLOC(ncol+1, sizeof(Int)); //Note extra pad
     pinv = new Int[ncol+1]();
 
 
@@ -314,15 +314,15 @@ namespace BaskerClassicNS{
         ucnt = 0;
 
 #ifdef BASKER_DEBUG
-        ASSERT (top == ncol);
+        BASKERASSERT (top == ncol);
 
         for(i = 0; i < nrow; i++)
           {
-            ASSERT(X[i] == (Entry)0);
+            BASKERASSERT(X[i] == (Entry)0);
           }
         for(i = 0; i < ncol; i++)
           {
-            ASSERT(color[i] == 0);
+            BASKERASSERT(color[i] == 0);
           }
 #endif
         /* Reachability for every nonzero in Ak */
@@ -345,7 +345,7 @@ namespace BaskerClassicNS{
         cout << top << endl;
         cout << ncol << endl;
         cout << xnnz << endl;
-        //ASSERT(xnnz <= nrow);
+        //BASKERASSERT(xnnz <= nrow);
 #endif
         /*Lx = b where x will be the column k in L and U*/
         top1 = top;
@@ -414,7 +414,7 @@ namespace BaskerClassicNS{
 #ifdef BASKER_DEBUG
             cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
 #endif
-            //L->row_idx = (Int *) REALLOC(L->row_idx, newsize*sizeof(Int));
+            //L->row_idx = (Int *) BASKERREALLOC(L->row_idx, newsize*sizeof(Int));
             L->row_idx = int_realloc(L->row_idx , L->nnz, newsize);
             if(!(L->row_idx))
               {
@@ -422,7 +422,7 @@ namespace BaskerClassicNS{
                 ierr = -3;
                 return ierr;
               }
-            //L->val = (Entry *) REALLOC(L->val, newsize*sizeof(Entry));
+            //L->val = (Entry *) BASKERREALLOC(L->val, newsize*sizeof(Entry));
             L->val = entry_realloc(L->val, L->nnz, newsize);
             if(!(L->val))
               {
@@ -440,7 +440,7 @@ namespace BaskerClassicNS{
 #ifdef BASKER_DEBUG
             cout << "Out of memory -- Reallocating.  Old Size: " << U->nnz << " New Size: " << newsize << endl;
 #endif
-            //U->row_idx = (Int *) REALLOC(U->row_idx, newsize*sizeof(Int));
+            //U->row_idx = (Int *) BASKERREALLOC(U->row_idx, newsize*sizeof(Int));
             U->row_idx = int_realloc(U->row_idx, U->nnz, newsize);
             if(!(U->row_idx))
               {
@@ -449,7 +449,7 @@ namespace BaskerClassicNS{
                 return ierr;
               }
 
-            //U->val = (Entry *) REALLOC(U->val, newsize*sizeof(Entry));
+            //U->val = (Entry *) BASKERREALLOC(U->val, newsize*sizeof(Entry));
             U->val = entry_realloc(U->val, U->nnz, newsize);
             if(!(U->val))
               {
@@ -638,11 +638,11 @@ namespace BaskerClassicNS{
 
     /*Does a bad copy*/
 
-    //*col_ptr = (Int *)   CALLOC(L->nrow+1, sizeof(Int));
+    //*col_ptr = (Int *)   BASKERCALLOC(L->nrow+1, sizeof(Int));
     *col_ptr = new Int[L->nrow+1];
-    //*row_idx = (Int *)   CALLOC(L->nnz, sizeof(Int));
+    //*row_idx = (Int *)   BASKERCALLOC(L->nnz, sizeof(Int));
     *row_idx = new Int[L->nnz];
-    //*val     = (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    //*val     = (Entry *) BASKERCALLOC(L->nnz, sizeof(Entry));
     *val = new Entry[L->nnz];
 
     if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
@@ -671,11 +671,11 @@ namespace BaskerClassicNS{
     *dim = U->nrow;
     *nnz = U->nnz;
     /*Does a bad copy*/
-    //*col_ptr = (Int *)   CALLOC(U->nrow+1, sizeof(Int));
+    //*col_ptr = (Int *)   BASKERCALLOC(U->nrow+1, sizeof(Int));
     *col_ptr = new Int[U->nrow+1];
-    //*row_idx = (Int *)   CALLOC(U->nnz, sizeof(Int));
+    //*row_idx = (Int *)   BASKERCALLOC(U->nnz, sizeof(Int));
     *row_idx = new Int[U->nnz];
-    //*val     = (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    //*val     = (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     *val = new Entry[U->nnz];
 
     if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
@@ -699,7 +699,7 @@ namespace BaskerClassicNS{
   int BaskerClassic<Int, Entry>::returnP(Int** p)
   {
     Int i;
-    //*p = (Int *) CALLOC(A->nrow, sizeof(Int));
+    //*p = (Int *) BASKERCALLOC(A->nrow, sizeof(Int));
     *p = new Int[A->nrow];
 
     if( (*p == NULL ) )
@@ -768,7 +768,7 @@ namespace BaskerClassicNS{
       {
         return -10;
       }
-    //Entry* temp = (Entry *)CALLOC(A->nrow, sizeof(Entry));
+    //Entry* temp = (Entry *)BASKERCALLOC(A->nrow, sizeof(Entry));
     Entry* temp = new Entry[A->nrow]();
     Int i;
     int result = 0;
@@ -798,7 +798,7 @@ namespace BaskerClassicNS{
     for(i = 0; i < n ; i++)
       {
 #ifdef BASKER_DEBUG
-        ASSERT(val[col_ptr[i]] != (Entry)0);
+        BASKERASSERT(val[col_ptr[i]] != (Entry)0);
 #else
         if(val[col_ptr[i]] == (Entry) 0)
           {
@@ -824,7 +824,7 @@ namespace BaskerClassicNS{
       {
         int ii = i-1;
 #ifdef BASKER_DEBUG
-        ASSERT(val[col_ptr[i]-1] != (Entry)0);
+        BASKERASSERT(val[col_ptr[i]-1] != (Entry)0);
 #else
         if(val[col_ptr[i]-1] == (Entry) 0)
           {
@@ -854,9 +854,9 @@ namespace BaskerClassicNS{
     B->nrow = A->nrow;
     B->ncol = A->ncol;
     B->nnz = A->nnz;
-    B->col_ptr = (Int *) CALLOC(A->ncol + 1, sizeof(Int));
-    B->row_idx = (Int *) CALLOC(A->nnz, sizeof(Int));
-    B->val     = (Entry *) CALLOC(A->val, sizeof(Int));
+    B->col_ptr = (Int *) BASKERCALLOC(A->ncol + 1, sizeof(Int));
+    B->row_idx = (Int *) BASKERCALLOC(A->nnz, sizeof(Int));
+    B->val     = (Entry *) BASKERCALLOC(A->val, sizeof(Int));
 
     if( (B->col_ptr == NULL) || (B->row_idx == NULL) || (B->val == NULL) )
       {

@@ -1,17 +1,7 @@
 #ifndef SHYLUBASKER_TRILINOS_DECL_HPP
 #define SHYLUBASKER_TRILINOS_DECL_HPP
 
-#if 0
-namespace BaskerNS {
-
-  template <class Int, class Entry, class Exe_Space>
-  class BaskerTrilinosInterface ;
-}
-#endif
-
-
 #include "shylubasker_decl.hpp"
-//#include "shylubasker_def.hpp"
 
 namespace BaskerNS {
   // This handles two different types for ints for example with Tpetra CRS Matrix
