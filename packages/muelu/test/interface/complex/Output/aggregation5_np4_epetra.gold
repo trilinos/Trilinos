@@ -59,6 +59,7 @@ Level 1
  Geometric = 0   [default]
  write start = -1   [default]
  write end = -1   [default]
+ hybrid aggregation = 0   [default]
  
  transpose: use implicit = 0   [default]
  rap: triple product = 0   [default]
@@ -128,6 +129,7 @@ Level 2
  Geometric = 0   [default]
  write start = -1   [default]
  write end = -1   [default]
+ hybrid aggregation = 0   [default]
  
  transpose: use implicit = 0   [default]
  rap: triple product = 0   [default]

@@ -326,7 +326,7 @@ namespace MueLu {
 
       // Set lFineNodesPerDir to 1 for directions beyond numDimensions
       for(int dim = numDimensions; dim < 3; ++dim) {
-        lFineNodesPerDir[dim - 1] = 1;
+        lFineNodesPerDir[dim] = 1;
       }
 
       // Get the coarsening rate
