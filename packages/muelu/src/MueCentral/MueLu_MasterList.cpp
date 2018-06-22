@@ -524,6 +524,7 @@ namespace MueLu {
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
       
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
+      
          ("aggregation: use interface aggregation","aggregation: use interface aggregation")
       
          ("aggregation: export visualization data","aggregation: export visualization data")

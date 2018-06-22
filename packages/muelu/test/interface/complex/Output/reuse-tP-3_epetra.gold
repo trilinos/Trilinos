@@ -33,9 +33,12 @@ Level 1
      aggregation: enable phase 3 = 1   [default]
      aggregation: preserve Dirichlet points = 0   [default]
      aggregation: allow user-specified singletons = 0   [default]
+     aggregation: use interface aggregation = 0   [default]
      aggregation: error on nodes with no on-rank neighbors = 0   [default]
      OnePt aggregate map name =    [default]
      OnePt aggregate map factory =    [default]
+     Interface aggregate map name =    [default]
+     Interface aggregate map factory =    [default]
      
      Nullspace factory (MueLu::NullspaceFactory)
      Fine level nullspace = Nullspace
@@ -59,6 +62,7 @@ Level 1
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
+   hybrid aggregation = 0   [default]
    
    transpose: use implicit = 0   [default]
    rap: triple product = 0   [default]
@@ -133,9 +137,12 @@ Level 2
      aggregation: enable phase 3 = 1   [default]
      aggregation: preserve Dirichlet points = 0   [default]
      aggregation: allow user-specified singletons = 0   [default]
+     aggregation: use interface aggregation = 0   [default]
      aggregation: error on nodes with no on-rank neighbors = 0   [default]
      OnePt aggregate map name =    [default]
      OnePt aggregate map factory =    [default]
+     Interface aggregate map name =    [default]
+     Interface aggregate map factory =    [default]
      
      Nullspace factory (MueLu::NullspaceFactory)
      Fine level nullspace = Nullspace
@@ -159,6 +166,7 @@ Level 2
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
+   hybrid aggregation = 0   [default]
    
    transpose: use implicit = 0   [default]
    rap: triple product = 0   [default]
@@ -268,6 +276,7 @@ Level 1
   Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
+  hybrid aggregation = 0   [default]
   
   transpose: use implicit = 0   [default]
   rap: triple product = 0   [default]
@@ -313,9 +322,12 @@ Level 2
      aggregation: enable phase 3 = 1   [default]
      aggregation: preserve Dirichlet points = 0   [default]
      aggregation: allow user-specified singletons = 0   [default]
+     aggregation: use interface aggregation = 0   [default]
      aggregation: error on nodes with no on-rank neighbors = 0   [default]
      OnePt aggregate map name =    [default]
      OnePt aggregate map factory =    [default]
+     Interface aggregate map name =    [default]
+     Interface aggregate map factory =    [default]
      
      Nullspace factory (MueLu::NullspaceFactory)
      Fine level nullspace = Nullspace
@@ -339,6 +351,7 @@ Level 2
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
+   hybrid aggregation = 0   [default]
    
    transpose: use implicit = 0   [default]
    rap: triple product = 0   [default]
