@@ -272,70 +272,90 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
        // TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
 
-       // Inverse of Schur complement
-       Teuchos::RCP<Teko::InverseFactory> S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
-       Teuchos::ParameterList S_E_prec_pl = *S_E_prec_factory->getParameterList();
-
-       // Get coordinates
-       if (useTpetra) {
-         TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuRefMaxwell-Tpetra");
-         typedef int LocalOrdinal;
-         typedef panzer::Ordinal64 GlobalOrdinal;
-
-         Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > >("Coordinates");
-         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
-       } else if (S_E_prec_type_ == "MueLuRefMaxwell") {
-         Teuchos::RCP<Epetra_MultiVector> Coordinates = S_E_prec_pl.get<Teuchos::RCP<Epetra_MultiVector> >("Coordinates");
-         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
-       } else if (S_E_prec_type_ == "ML") {
-         double* x_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("x-coordinates");
-         S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates",x_coordinates);
-         double* y_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("y-coordinates");
-         S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("y-coordinates",y_coordinates);
-         double* z_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("z-coordinates");
-         S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates",z_coordinates);
-       } else
-         TEUCHOS_ASSERT(false);
-
-       // Get inverse of lumped Q_rho
-       RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(Q_rho->domain());
-       RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(Q_rho->range());
-       Thyra::assign(ones.ptr(),1.0);
-       // compute lumped diagonal
-       Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
-       Thyra::reciprocal(*diagonal,diagonal.ptr());
-       RCP<const Thyra::DiagonalLinearOpBase<Scalar> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
-
-       Teko::InverseLibrary myInvLib = invLib;
-       if (S_E_prec_type_ == "ML") {
-         // Set M1 = Q_E.
-         // We do this here, since we cannot get it from the request handler.
-         RCP<const Epetra_CrsMatrix> eQ_E = get_Epetra_CrsMatrix(*Q_E);
-         S_E_prec_pl.sublist("ML Settings").set("M1",eQ_E);
-         S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E);
-         RCP<const Epetra_CrsMatrix> eInvDiagQ_rho = get_Epetra_CrsMatrix(*invDiagQ_rho,eQ_E->RowMap().Comm());
-         S_E_prec_pl.sublist("ML Settings").set("M0inv",eInvDiagQ_rho);
-
-         S_E_prec_pl.set("Type",S_E_prec_type_);
-         myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl);
-       } else {
-         // Set M1 = Q_E.
-         // We do this here, since we cannot get it from the request handler.
-         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E);
-         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M0inv",invDiagQ_rho);
-
-         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Type",S_E_prec_type_);
-         myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_));
+       Teuchos::RCP<Teko::InverseFactory> S_E_prec_factory;
+       Teuchos::ParameterList S_E_prec_pl;
+       { 
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Pull S_E prec PL"));
+         S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
+         S_E_prec_pl = *S_E_prec_factory->getParameterList();
        }
-       S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
+       
+       {
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Get coordinates"));
+         // Get coordinates
+         if (useTpetra) {
+           TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuRefMaxwell-Tpetra");
+           typedef int LocalOrdinal;
+           typedef panzer::Ordinal64 GlobalOrdinal;
+
+           Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > >("Coordinates");
+           S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+         } else if (S_E_prec_type_ == "MueLuRefMaxwell") {
+           Teuchos::RCP<Epetra_MultiVector> Coordinates = S_E_prec_pl.get<Teuchos::RCP<Epetra_MultiVector> >("Coordinates");
+           S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+         } else if (S_E_prec_type_ == "ML") {
+           double* x_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("x-coordinates");
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates",x_coordinates);
+           double* y_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("y-coordinates");
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("y-coordinates",y_coordinates);
+           double* z_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("z-coordinates");
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates",z_coordinates);
+         } else
+           TEUCHOS_ASSERT(false);
+       }
+
+       RCP<const Thyra::DiagonalLinearOpBase<Scalar> > invDiagQ_rho;
+       {
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Lumped diagonal Q_rho"));
+         
+         // Get inverse of lumped Q_rho
+         RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(Q_rho->domain());
+         RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(Q_rho->range());
+         Thyra::assign(ones.ptr(),1.0);
+         // compute lumped diagonal
+         Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
+         Thyra::reciprocal(*diagonal,diagonal.ptr());
+         invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
+       }
+
+       {
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Build S_E preconditioner factory"));
+         
+         Teko::InverseLibrary myInvLib = invLib;
+         if (S_E_prec_type_ == "ML") {
+           // Set M1 = Q_E.
+           // We do this here, since we cannot get it from the request handler.
+           RCP<const Epetra_CrsMatrix> eQ_E = get_Epetra_CrsMatrix(*Q_E);
+           S_E_prec_pl.sublist("ML Settings").set("M1",eQ_E);
+           S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E);
+           RCP<const Epetra_CrsMatrix> eInvDiagQ_rho = get_Epetra_CrsMatrix(*invDiagQ_rho,eQ_E->RowMap().Comm());
+           S_E_prec_pl.sublist("ML Settings").set("M0inv",eInvDiagQ_rho);
+
+           S_E_prec_pl.set("Type",S_E_prec_type_);
+           myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl);
+         } else {
+           // Set M1 = Q_E.
+           // We do this here, since we cannot get it from the request handler.
+           S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E);
+           S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M0inv",invDiagQ_rho);
+
+           S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Type",S_E_prec_type_);
+           myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_));
+         }
+         S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
+       }
 
        // Are we building a solver or a preconditioner?
-       if (useAsPreconditioner)
-         invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
-       else {
-         Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
-         invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
-       }
+       {
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Build S_E preconditioner"));
+         
+         if (useAsPreconditioner)
+           invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+         else {
+           Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
+           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+         }
+       } 
      }
    }
 

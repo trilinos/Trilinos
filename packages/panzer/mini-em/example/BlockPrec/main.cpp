@@ -114,12 +114,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   if (comm->getSize() > 1) {
     out->setOutputToRootOnly(0);
   }
-  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer(new Teuchos::StackedTimer("Mini-EM"));
-  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  bool use_stacked_timer;
 
   {
-    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
-
     // defaults for command-line options
     int x_elements=10,y_elements=10,z_elements=10,x_procs=-1,y_procs=-1,z_procs=-1,basis_order=1;
     double cfl=4.0;
@@ -135,6 +134,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool doSolveTimings = false;
     int numReps = 0;
     std::string linAlgebra = "Tpetra";
+    use_stacked_timer = true;
     Teuchos::CommandLineProcessor clp;
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
@@ -155,6 +155,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("epsilon",&epsilon);
     clp.setOption("mu",&mu);
     clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
+    clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
 
     // parse command-line argument
     clp.recogniseAllOptions(true);
@@ -166,6 +167,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
+
+    if (use_stacked_timer)
+      stacked_timer = rcp(new Teuchos::StackedTimer("Mini-EM"));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
+
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
+
     if (doSolveTimings) {
       numReps = numTimeSteps;
       numTimeSteps = 1;
@@ -604,10 +613,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         }
     }
   }
-  //    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union);
-  Teuchos::StackedTimer::OutputOptions options;
-  options.output_fraction = options.output_histogram = options.output_minmax = true;
-  stacked_timer->report(*out, comm, options);
+
+  if (use_stacked_timer) {
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
+  } else
+    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
 
   return 0;
 }
