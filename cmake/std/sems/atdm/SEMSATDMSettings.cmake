@@ -11,3 +11,9 @@ SET(KokkosCore_UnitTest_PushFinalizeHook_EXE_DISABLE ON CACHE BOOL
   "Set in SEMSATDMSettings.cmake")
 SET(KokkosCore_UnitTest_PushFinalizeHook_MPI_1_DISABLE ON CACHE BOOL
   "Set in SEMSATDMSettings.cmake")
+
+# Disable randomly failing MueLu tests (#2311)
+SET(MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON
+  CACHE BOOL "Set in SEMSATDMSettings.cmake")
+SET(MueLu_ParameterListInterpreterTpetraHeavy_MPI_1_DISABLE ON
+  CACHE BOOL "Set in SEMSATDMSettings.cmake")
