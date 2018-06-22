@@ -39,53 +39,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_CONFIGDEFS_H
-#define STOKHOS_CONFIGDEFS_H
+namespace Sacado {
+  namespace MP {
 
-#ifndef __cplusplus
-#define __cplusplus
+    template <typename O, typename T, int N, typename D>
+    KOKKOS_INLINE_FUNCTION
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >
+    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a)
+    {
+      using std::OPNAME;
+      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
 #endif
-
-/*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and
- * need to be undef'd here to avoid warnings when this file is included from
- * another package.
- * KL 11/25/02
- */
-#ifdef PACKAGE
-#undef PACKAGE
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
 #endif
+      for (O i=0; i<a.size(); ++i)
+        c.fastAccessCoeff(i) = OPNAME(a.fastAccessCoeff(i));
+      return c;
+    }
 
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
+    template <typename O, typename T, int N, typename D>
+    KOKKOS_INLINE_FUNCTION
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >
+    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a)
+    {
+      using std::OPNAME;
+      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
 #endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
 #endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
 #endif
+      for (O i=0; i<a.size(); ++i)
+        c.fastAccessCoeff(i) = ONAME(a.fastAccessCoeff(i));
+      return c;
+    }
 
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#ifndef TRILINOS_NO_CONFIG_H
-#include <Stokhos_config.h>
-#endif
-
-// Whether to use the Static-Fixed-Storage specialization of Sacado::MP::Vector,
-// which does not use expression templates (default is to not)
-#define STOKHOS_USE_MP_VECTOR_SFS_SPEC 0
-
-#endif /* STOKHOS_CONFIGDEFS_H */
+  }
+}
