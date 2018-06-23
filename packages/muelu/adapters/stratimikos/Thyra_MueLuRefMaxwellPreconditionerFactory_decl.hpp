@@ -62,6 +62,7 @@
 #endif
 #ifdef HAVE_MUELU_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 #endif
 
 #include "Teuchos_Ptr.hpp"
@@ -343,6 +344,7 @@ namespace Thyra {
         if (bIsTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
+          typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      tV;
           typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tMV;
           typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TpCrsMat;
           if (paramList.isType<Teuchos::RCP<tMV> >("Nullspace")) {
@@ -404,29 +406,10 @@ namespace Thyra {
             } else if (paramList.isType<Teuchos::RCP<const ThyDiagLinOpBase> >("M0inv")) {
               RCP<const ThyDiagLinOpBase> thyM0inv = paramList.get<RCP<const ThyDiagLinOpBase> >("M0inv");
               paramList.remove("M0inv");
-
-              RCP<const Teuchos::Comm<int> > comm = A->getDomainMap()->getComm();
-              RCP<XpMap> map = XpThyUtils::toXpetra(thyM0inv->range(), comm);
               RCP<const Thyra::VectorBase<Scalar> > diag = thyM0inv->getDiag();
-              RCP<XpCrsMatWrap> matrixWrap = Teuchos::rcp(new XpCrsMatWrap(map, map, 0, Xpetra::StaticProfile));
-              RCP<XpCrsMat> crsMatrix = matrixWrap->getCrsMatrix();
-              Teuchos::ArrayRCP<size_t> rowPtr;
-              Teuchos::ArrayRCP<LocalOrdinal> colInd;
-              Teuchos::ArrayRCP<Scalar> values;
-
-              RTOpPack::SubVectorView<Scalar> view;
-              size_t nodeNumElements = map->getNodeNumElements();
-              diag->acquireDetachedView(Thyra::Range1D(),&view);
-              crsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
-              for (size_t i = 0; i < nodeNumElements; i++) {
-                rowPtr[i] = i;  colInd[i] = i; values[i] = view[i];
-              }
-              diag->releaseDetachedView(&view);
-
-              rowPtr[nodeNumElements] = nodeNumElements;
-              crsMatrix->setAllValues(rowPtr, colInd, values);
-              crsMatrix->expertStaticFillComplete(map, map);
-              RCP<XpMat> M0inv = Teuchos::rcp_dynamic_cast<XpMat>(matrixWrap);
+              RCP<const Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ttDiag = rcp_dynamic_cast<const Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(diag);
+              RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
+              RCP<XpMat> M0inv = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::toXpetra(tDiag));
               paramList.set<RCP<XpMat> >("M0inv", M0inv);
             } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("M0inv")) {
               RCP<const ThyLinOpBase> thyM0inv = paramList.get<RCP<const ThyLinOpBase> >("M0inv");
@@ -525,27 +508,14 @@ namespace Thyra {
               paramList.remove("M0inv");
 
               RCP<const Teuchos::Comm<int> > comm = A->getDomainMap()->getComm();
-              RCP<XpMap> map = XpThyUtils::toXpetra(thyM0inv->range(), comm);
-              RCP<const Thyra::VectorBase<Scalar> > diag = thyM0inv->getDiag();
-              RCP<XpCrsMatWrap> matrixWrap = Teuchos::rcp(new XpCrsMatWrap(map, map, 0, Xpetra::StaticProfile));
-              RCP<XpCrsMat> crsMatrix = matrixWrap->getCrsMatrix();
-              Teuchos::ArrayRCP<size_t> rowPtr;
-              Teuchos::ArrayRCP<LocalOrdinal> colInd;
-              Teuchos::ArrayRCP<Scalar> values;
-
-              RTOpPack::SubVectorView<Scalar> view;
-              size_t nodeNumElements = map->getNodeNumElements();
-              diag->acquireDetachedView(Thyra::Range1D(),&view);
-              crsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
-              for (size_t i = 0; i < nodeNumElements; i++) {
-                rowPtr[i] = i;  colInd[i] = i; values[i] = view[i];
-              }
-              diag->releaseDetachedView(&view);
-
-              rowPtr[nodeNumElements] = nodeNumElements;
-              crsMatrix->setAllValues(rowPtr, colInd, values);
-              crsMatrix->expertStaticFillComplete(map, map);
-              RCP<XpMat> M0inv = Teuchos::rcp_dynamic_cast<XpMat>(matrixWrap);
+              RCP<const Epetra_Map> map = Thyra::get_Epetra_Map(*(thyM0inv->range()), Xpetra::toEpetra(comm));
+              // RCP<XpMap> map = XpThyUtils::toXpetra(thyM0inv->range(), comm);
+              RCP<const Thyra::VectorBase<double> > diag = thyM0inv->getDiag();
+              RCP<const Epetra_Vector> eDiag = Thyra::get_Epetra_Vector(*map, diag);
+              RCP<Epetra_Vector> nceDiag = Teuchos::rcp_const_cast<Epetra_Vector>(eDiag);
+              RCP<Xpetra::EpetraVectorT<int,Node> > xpEpDiag = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(nceDiag));
+              RCP<const Xpetra::Vector<double,int,int,Node> > xpDiag = rcp_dynamic_cast<const Xpetra::Vector<double,int,int,Node> >(xpEpDiag, true);
+              RCP<XpMat> M0inv = Xpetra::MatrixFactory<double,int,int,Node>::Build(xpDiag);
               paramList.set<RCP<XpMat> >("M0inv", M0inv);
             } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("M0inv")) {
               RCP<const ThyLinOpBase> thyM0inv = paramList.get<RCP<const ThyLinOpBase> >("M0inv");
