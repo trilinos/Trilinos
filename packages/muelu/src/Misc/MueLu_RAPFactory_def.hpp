@@ -119,6 +119,7 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
       levelstr << coarseLevel.GetLevelID();
+      std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
       TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
         "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
@@ -153,7 +154,7 @@ namespace MueLu {
           SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
           AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::A*P-")+levelstr.str(), APparams);
         }
 
         // Reuse coarse matrix memory if available (multiple solve)
@@ -188,7 +189,7 @@ namespace MueLu {
           SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
           Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
 
         } else {
           RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
@@ -196,7 +197,7 @@ namespace MueLu {
           SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
           Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
         }
         CheckRepairMainDiagonal(Ac);
 
@@ -229,7 +230,7 @@ namespace MueLu {
 
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
+                        doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
                         RAPparams);
 
         } else {
@@ -240,7 +241,7 @@ namespace MueLu {
 
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
+                        doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
                         RAPparams);
         }
         CheckRepairMainDiagonal(Ac);
