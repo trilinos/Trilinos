@@ -108,8 +108,12 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcast ) {
   ParameterList A;
   ParameterList B;
 
+  // Set root to something != 0, if we can
+  int root = 0;
+  if(comm->getSize() > 1) root = 1;
+
   updateParametersFromXmlFile(inputFile, outArg(A));
-  updateParametersAndBroadcast(outArg(A),outArg(B),*comm,0);
+  updateParametersAndBroadcast(outArg(A),outArg(B),*comm,root);
   out << "B = " << B;
   TEST_ASSERT( B.begin() != B.end() ); // Avoid false positive from empty lists
 
@@ -133,8 +137,12 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcastNoOverWrite ) {
   B.set("Transient",true);
   B.set("Phalanx Graph Visualization Detail",2);
 
+  // Set root to something != 0, if we can
+  int root = 0;
+  if(comm->getSize() > 1) root = 1;
+
   updateParametersFromXmlFile(inputFile, outArg(A));
-  updateParametersAndBroadcast(outArg(A),outArg(B),*comm,0);
+  updateParametersAndBroadcast(outArg(A),outArg(B),*comm,root);
   out << "B = " << B;
   TEST_ASSERT( B.begin() != B.end() ); // Avoid false positive from empty lists
 
