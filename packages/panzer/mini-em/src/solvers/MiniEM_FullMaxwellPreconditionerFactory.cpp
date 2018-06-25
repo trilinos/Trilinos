@@ -52,14 +52,16 @@ namespace mini_em {
   RCP<const Epetra_CrsMatrix> get_Epetra_CrsMatrix(const Thyra::DiagonalLinearOpBase<double> & op, const Epetra_Comm& comm) {
     RCP<const Epetra_Map> map = Thyra::get_Epetra_Map(*op.range(),Teuchos::rcpFromRef(comm));
     int nodeNumElements = map->NumMyElements();
-    RCP<Epetra_CrsMatrix> crsMatrix = Teuchos::rcp(new Epetra_CrsMatrix(View,*map,*map,1,true));
+    RCP<Epetra_CrsMatrix> crsMatrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*map,*map,1,true));
 
     RCP<const Thyra::VectorBase<double> > diag = op.getDiag();
     RTOpPack::SubVectorView<double> view;
     diag->acquireDetachedView(Thyra::Range1D(),&view);
 
-    for (int i = 0; i < nodeNumElements; i++)
-      crsMatrix->InsertMyValues(i, 1, &(view[i]), &i);
+    for (int i = 0; i < nodeNumElements; i++) {
+      int err = crsMatrix->InsertMyValues(i, 1, &(view[i]), &i);
+      TEUCHOS_ASSERT(err==0);
+    }
 
     diag->releaseDetachedView(&view);
     crsMatrix->FillComplete();
@@ -296,10 +298,13 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
          } else if (S_E_prec_type_ == "ML") {
            double* x_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("x-coordinates");
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates",x_coordinates);
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 22list").set("x-coordinates",x_coordinates);
            double* y_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("y-coordinates");
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("y-coordinates",y_coordinates);
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 22list").set("y-coordinates",y_coordinates);
            double* z_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("z-coordinates");
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates",z_coordinates);
+           S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 22list").set("z-coordinates",z_coordinates);
          } else
            TEUCHOS_ASSERT(false);
        }

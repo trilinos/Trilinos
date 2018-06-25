@@ -130,10 +130,10 @@
               <Parameter name="refmaxwell: mode" type="string" value="additive"/>
               <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
 
-              <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-              <Parameter name="smoother: sweeps" type="int" value="2"/>
-              <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
-              <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
+              <!-- <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/> -->
+              <!-- <Parameter name="smoother: sweeps" type="int" value="2"/> -->
+              <!-- <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="false"/> -->
+              <!-- <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/> -->
 
               <ParameterList name="refmaxwell: 11list">
                 <Parameter name="ML output" type="int" value="10"/>
@@ -144,10 +144,10 @@
                 <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
                 <Parameter name="aggregation: threshold" type="double" value="0.02"/>
 
-                <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-                <Parameter name="smoother: sweeps" type="int" value="2"/>
-                <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
-                <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
+                <!-- <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/> -->
+                <!-- <Parameter name="smoother: sweeps" type="int" value="2"/> -->
+                <!-- <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/> -->
+                <!-- <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/> -->
 
                 <ParameterList name="edge matrix free: coarse">
                   <Parameter name="ML output" type="int" value="10"/>
@@ -164,7 +164,8 @@
                   <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
                   <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
-                  <Parameter name="repartition: enable" type="int" value="1"/>
+                  <!-- Repartitioning switched off, since EdgeMatrixFreePreconditioner::BuildProlongator does not forward coordinates to the coarse level -->
+                  <Parameter name="repartition: enable" type="int" value="0"/>
                   <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
                   <Parameter name="repartition: min per proc" type="int" value="800"/>
