@@ -85,7 +85,7 @@ IF( ROL_ENABLE_TriKota )
 ADD_SUBDIRECTORY(adapters/trikota)
 ENDIF()
 
-IF( ROL_ENABLE_PEBBL )
+IF( ROL_ENABLE_pebbl )
 ADD_SUBDIRECTORY(adapters/pebbl)
 ENDIF()
 

@@ -32,6 +32,9 @@ typedef MueLu::AggregationPhase3Algorithm<LocalOrdinal,GlobalOrdinal,Node> Aggre
 #ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
 typedef MueLu::AggregationPhase3Algorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase3Algorithm_kokkos;
 #endif
+#ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
+typedef MueLu::AggregationStructuredAlgorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationStructuredAlgorithm;
+#endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo;
 #endif
@@ -50,8 +53,14 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 #ifdef MUELU_GRAPHBASE_SHORT
 typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> GraphBase;
 #endif
+#ifdef MUELU_HYBRIDAGGREGATIONFACTORY_SHORT
+typedef MueLu::HybridAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> HybridAggregationFactory;
+#endif
 #ifdef MUELU_INDEXMANAGER_SHORT
 typedef MueLu::IndexManager<LocalOrdinal,GlobalOrdinal,Node> IndexManager;
+#endif
+#ifdef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+typedef MueLu::InterfaceAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationAlgorithm;
 #endif
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm;

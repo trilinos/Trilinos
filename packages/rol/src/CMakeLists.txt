@@ -161,6 +161,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/randvarfunctional/regret
                     ${DIR}/function/randvarfunctional/deviation
                     ${DIR}/function/randvarfunctional/probability
+                    ${DIR}/function/progressivehedging
 #                    ${DIR}/function/riskmeasure
 #                    ${DIR}/function/riskmeasure/quadrangle
 #                    ${DIR}/function/riskmeasure/fdivergence
@@ -169,6 +170,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/vector
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM
+                    ${DIR}/status
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
@@ -182,6 +184,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/randvarfunctional/regret/*.hpp
                     ${DIR}/function/randvarfunctional/deviation/*.hpp
                     ${DIR}/function/randvarfunctional/probability/*.hpp
+                    ${DIR}/function/progressivehedging/*.hpp
 #                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
 #                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
 #                    ${DIR}/function/errormeasure/*.hpp
@@ -189,6 +192,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
                     ${DIR}/sampler/SROM/*.hpp
+                    ${DIR}/status/*.hpp
                    )
 
 #

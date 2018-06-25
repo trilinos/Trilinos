@@ -103,98 +103,86 @@ namespace MueLu {
     }
 
     this->computeMeshParameters();
-    if(this->coupled_) {computeCoarseLocalLexicographicData();}
+    computeGlobalCoarseParameters();
+    computeCoarseLocalLexicographicData();
     *out << "LocalLexicographicIndexManager has been constructed!" << std::endl;
   } // Constructor
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodesData(const RCP<const Map>fineMap, RCP<const Map> coarseMap,
+  computeGlobalCoarseParameters() {
+    this->gNumCoarseNodes10 = this->gCoarseNodesPerDir[0]*this->gCoarseNodesPerDir[1];
+    this->gNumCoarseNodes   = this->gNumCoarseNodes10*this->gCoarseNodesPerDir[2];
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getGhostedNodesData(const RCP<const Map>fineMap,
                       Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
 
     // First we allocated memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
     ghostedNodeCoarsePIDs.resize(this->getNumLocalGhostedNodes());
 
-    if(this->coupled_) {
-      // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
-      // This requires finding what their GID on the fine mesh is. They need to be ordered
-      // lexicographically to allow for fast sweeps through the mesh.
+    // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
+    // This requires finding what their GID on the fine mesh is. They need to be ordered
+    // lexicographically to allow for fast sweeps through the mesh.
 
-      // We loop over all ghosted coarse nodes by increasing global lexicographic order
-      Array<LO>  ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3);
-      Array<LO>  lCoarseNodeCoarseIndices(3);
-      Array<GO>  lCoarseNodeCoarseGIDs(this->lNumCoarseNodes);
-      LO currentIndex = -1, countCoarseNodes = 0;
-      for(int k = 0; k < this->ghostedNodesPerDir[2]; ++k) {
-        for(int j = 0; j < this->ghostedNodesPerDir[1]; ++j) {
-          for(int i = 0; i < this->ghostedNodesPerDir[0]; ++i) {
-            currentIndex = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
-            ghostedCoarseNodeCoarseIndices[0] = this->startGhostedCoarseNode[0] + i;
-            ghostedCoarseNodeFineIndices[0] = ghostedCoarseNodeCoarseIndices[0]*this->coarseRate[0];
-            if(ghostedCoarseNodeFineIndices[0] > this->gFineNodesPerDir[0] - 1) {
-              ghostedCoarseNodeFineIndices[0] = this->gFineNodesPerDir[0] - 1;
-            }
-            ghostedCoarseNodeCoarseIndices[1] = this->startGhostedCoarseNode[1] + j;
-            ghostedCoarseNodeFineIndices[1] = ghostedCoarseNodeCoarseIndices[1]*this->coarseRate[1];
-            if(ghostedCoarseNodeFineIndices[1] > this->gFineNodesPerDir[1] - 1) {
-              ghostedCoarseNodeFineIndices[1] = this->gFineNodesPerDir[1] - 1;
-            }
-            ghostedCoarseNodeCoarseIndices[2] = this->startGhostedCoarseNode[2] + k;
-            ghostedCoarseNodeFineIndices[2] = ghostedCoarseNodeCoarseIndices[2]*this->coarseRate[2];
-            if(ghostedCoarseNodeFineIndices[2] > this->gFineNodesPerDir[2] - 1) {
-              ghostedCoarseNodeFineIndices[2] = this->gFineNodesPerDir[2] - 1;
-            }
+    // We loop over all ghosted coarse nodes by increasing global lexicographic order
+    Array<LO>  ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3);
+    Array<LO>  lCoarseNodeCoarseIndices(3);
+    Array<GO>  lCoarseNodeCoarseGIDs(this->lNumCoarseNodes);
+    LO currentIndex = -1, countCoarseNodes = 0;
+    for(int k = 0; k < this->ghostedNodesPerDir[2]; ++k) {
+      for(int j = 0; j < this->ghostedNodesPerDir[1]; ++j) {
+        for(int i = 0; i < this->ghostedNodesPerDir[0]; ++i) {
+          currentIndex = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
+          ghostedCoarseNodeCoarseIndices[0] = this->startGhostedCoarseNode[0] + i;
+          ghostedCoarseNodeFineIndices[0] = ghostedCoarseNodeCoarseIndices[0]*this->coarseRate[0];
+          if(ghostedCoarseNodeFineIndices[0] > this->gFineNodesPerDir[0] - 1) {
+            ghostedCoarseNodeFineIndices[0] = this->gFineNodesPerDir[0] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[1] = this->startGhostedCoarseNode[1] + j;
+          ghostedCoarseNodeFineIndices[1] = ghostedCoarseNodeCoarseIndices[1]*this->coarseRate[1];
+          if(ghostedCoarseNodeFineIndices[1] > this->gFineNodesPerDir[1] - 1) {
+            ghostedCoarseNodeFineIndices[1] = this->gFineNodesPerDir[1] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[2] = this->startGhostedCoarseNode[2] + k;
+          ghostedCoarseNodeFineIndices[2] = ghostedCoarseNodeCoarseIndices[2]*this->coarseRate[2];
+          if(ghostedCoarseNodeFineIndices[2] > this->gFineNodesPerDir[2] - 1) {
+            ghostedCoarseNodeFineIndices[2] = this->gFineNodesPerDir[2] - 1;
+          }
 
-            GO myGID = -1, myCoarseGID = -1;
-            LO myLID = -1, myPID = -1, myCoarseLID = -1;
-            getGIDLocalLexicographic(i, j, k, ghostedCoarseNodeFineIndices, myGID, myPID, myLID);
+          GO myGID = -1, myCoarseGID = -1;
+          LO myLID = -1, myPID = -1, myCoarseLID = -1;
+          getGIDLocalLexicographic(i, j, k, ghostedCoarseNodeFineIndices, myGID, myPID, myLID);
 
-            int rankIndex = rankIndices[myPID];
-            for(int dim = 0; dim < 3; ++dim) {
-              if(dim < this->numDimensions) {
-                lCoarseNodeCoarseIndices[dim] = ghostedCoarseNodeCoarseIndices[dim]
-                  - coarseMeshData[rankIndex][3 + 2*dim];
-              }
+          int rankIndex = rankIndices[myPID];
+          for(int dim = 0; dim < 3; ++dim) {
+            if(dim < this->numDimensions) {
+              lCoarseNodeCoarseIndices[dim] = ghostedCoarseNodeCoarseIndices[dim]
+                - coarseMeshData[rankIndex][3 + 2*dim];
             }
-            LO myRankIndexCoarseNodesInDir0 = coarseMeshData[rankIndex][4]
-              - coarseMeshData[rankIndex][3] + 1;
-            LO myRankIndexCoarseNodes10 = (coarseMeshData[rankIndex][6]
-                                           - coarseMeshData[rankIndex][5] + 1)
-              *myRankIndexCoarseNodesInDir0;
-            myCoarseLID = lCoarseNodeCoarseIndices[2]*myRankIndexCoarseNodes10
-              + lCoarseNodeCoarseIndices[1]*myRankIndexCoarseNodesInDir0
-              + lCoarseNodeCoarseIndices[0];
-            myCoarseGID = myCoarseLID + coarseMeshData[rankIndex][9];
+          }
+          LO myRankIndexCoarseNodesInDir0 = coarseMeshData[rankIndex][4]
+            - coarseMeshData[rankIndex][3] + 1;
+          LO myRankIndexCoarseNodes10 = (coarseMeshData[rankIndex][6]
+                                         - coarseMeshData[rankIndex][5] + 1)
+            *myRankIndexCoarseNodesInDir0;
+          myCoarseLID = lCoarseNodeCoarseIndices[2]*myRankIndexCoarseNodes10
+            + lCoarseNodeCoarseIndices[1]*myRankIndexCoarseNodesInDir0
+            + lCoarseNodeCoarseIndices[0];
+          myCoarseGID = myCoarseLID + coarseMeshData[rankIndex][9];
 
-            ghostedNodeCoarseLIDs[currentIndex] = myCoarseLID;
-            ghostedNodeCoarsePIDs[currentIndex] = myPID;
+          ghostedNodeCoarseLIDs[currentIndex] = myCoarseLID;
+          ghostedNodeCoarsePIDs[currentIndex] = myPID;
 
-            if(myPID == myRank) {
-              lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
-              ++countCoarseNodes;
-            }
+          if(myPID == myRank) {
+            lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
+            ++countCoarseNodes;
           }
         }
       }
-
-      coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
-                                                       this->getNumGlobalCoarseNodes(),
-                                                       lCoarseNodeCoarseGIDs(),
-                                                       fineMap->getIndexBase(),
-                                                       fineMap->getComm());
-
-    } else {
-      // In the uncoupled case the data required is trivial to provide!
-      for(LO idx = 0; idx < this->getNumLocalGhostedNodes(); ++idx) {
-        ghostedNodeCoarseLIDs[idx] = idx;
-        ghostedNodeCoarsePIDs[idx] = myRank;
-      }
-      coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
-                                                       this->getNumGlobalCoarseNodes(),
-                                                       this->getNumLocalCoarseNodes(),
-                                                       fineMap->getIndexBase(),
-                                                       fineMap->getComm());
     }
 
   }
