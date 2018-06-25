@@ -80,7 +80,7 @@ namespace MueLu {
     void Setup();
 
     // Calls Avatar to set MueLu Parameters
-    void SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const;
+    void SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite=true) const;
 
 
   private:
@@ -102,8 +102,8 @@ namespace MueLu {
     Teuchos::Array<std::string> mueluParameterName_;
     Teuchos::Array<std::string> avatarParameterName_;
 
-    //    Teuchos::Array<Teuchos::ArrayRCP<double> > mueluParameterName_;
-    //    Teuchos::Array<Teuchos::ArrayRCP<double> avatarParameterName_;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > mueluParameterValues_;
+    Teuchos::ArrayRCP<Teuchos::Array<int> > avatarParameterValues_;
 
   };
 

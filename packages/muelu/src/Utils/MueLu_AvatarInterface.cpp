@@ -144,17 +144,27 @@ void AvatarInterface::UnpackMueLuMapping() {
 
   bool done=false; 
   int idx=0;
+  int numParams = mapping.numParams();
+
+  mueluParameterName_.resize(numParams);
+  avatarParameterName_.resize(numParams);
+  mueluParameterValues_.resize(numParams);
+  avatarParameterValues_.resize(numParams);
+
   while(!done) {
-    std::stringstream ss << "param"<<toString(idx);
-    if(params_.isSublist(ss.str())) {
-      const Teuchos::ParameterList & sublist = params_.sublist(ss.str());
+    std::stringstream ss; 
+    ss << "param" << idx;
+    if(mapping.isSublist(ss.str())) {
+      const Teuchos::ParameterList & sublist = mapping.sublist(ss.str());
 
       // Get the names
-      mueluParameterName_.push_back(sublist.get<std::string>("muelu parameter"));
-      avatarParameterName_.push_back(sublist.get<std::string>("avatar parameter"));
+      mueluParameterName_[idx] = sublist.get<std::string>("muelu parameter");
+      avatarParameterName_[idx] = sublist.get<std::string>("avatar parameter");
 
       // Get the values
-
+      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are ints
+      mueluParameterValues_[idx]  = sublist.get<Teuchos::Array<double> >("muelu values");
+      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<int> >("avatar values");            
     }
     else {
       done=true;
@@ -162,15 +172,14 @@ void AvatarInterface::UnpackMueLuMapping() {
     idx++;
   }
   
-
-
+  if(idx!=numParams) 
+    throw std::runtime_error("MueLu::AvatarInterface::UnpackMueLuMapping(): 'avatar: muelu parameter mapping' has unknown fields");
 }
 
 // ***********************************************************************
-void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams) const {
-  Teuchos::ParameterList newParams;
+  void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite) const {
+  Teuchos::ParameterList avatarParams;
   std::string paramString;
-  int strsize;
 
   if (comm_->getRank() == 0) {
     // Only Rank 0 calls Avatar
@@ -180,20 +189,14 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     std::string trialString;
     GenerateFeatureString(problemFeatures,trialString);
     
-    // Now we add the MueLu parameters
-
-
-    // Serialize for broadcasting
-    paramString = toString(newParams);
-    strsize = static_cast<int>(paramString.size());
+    // Now we add the MueLu parameters into one, enormous Avatar trial string (with linebreaks)
+    
   }
 
-  if (comm_->getSize() > 1) {
-    // Now broadcast parameters to all procs
-    Teuchos::broadcast<int, int>(*comm_, 0, &strsize);
-    Teuchos::broadcast<int, char>(*comm_, 0, strsize, &paramString[0]);
-    // FIXME: Deserialize
-  }
+# if 0
+  Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
+#endif
+
 
 }
 
