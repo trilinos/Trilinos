@@ -255,10 +255,6 @@ namespace MueLu {
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
-  "<ParameterList name=\"avatar: decision tree strings\"/>"
-  "<ParameterList name=\"avatar: decision tree files\"/>"
-  "<ParameterList name=\"avatar: problem features\"/>"
-  "<ParameterList name=\"avatar: muelu parameter mapping\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -654,14 +650,6 @@ namespace MueLu {
          ("amgx:params","amgx:params")
       
          ("debug: graph level","debug: graph level")
-      
-         ("avatar: decision tree strings","avatar: decision tree strings")
-      
-         ("avatar: decision tree files","avatar: decision tree files")
-      
-         ("avatar: problem features","avatar: problem features")
-      
-         ("avatar: muelu parameter mapping","avatar: muelu parameter mapping")
       ;
 
 }

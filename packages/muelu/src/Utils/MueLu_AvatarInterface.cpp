@@ -48,6 +48,7 @@
 #include <string> 
 #include <fstream> 
 #include <sstream> 
+#include <vector> 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -141,7 +142,6 @@ void AvatarInterface::UnpackMueLuMapping() {
   const Teuchos::ParameterList & mapping = params_.get<Teuchos::ParameterList>("avatar: muelu parameter mapping");
   // Each MueLu/Avatar parameter pair gets its own sublist.  These must be numerically ordered with no gap
 
-
   bool done=false; 
   int idx=0;
   int numParams = mapping.numParams();
@@ -175,9 +175,46 @@ void AvatarInterface::UnpackMueLuMapping() {
   if(idx!=numParams) 
     throw std::runtime_error("MueLu::AvatarInterface::UnpackMueLuMapping(): 'avatar: muelu parameter mapping' has unknown fields");
 }
+// ***********************************************************************
+std::string AvatarInterface::ParamsToString(const std::vector<int> & indices) const {
+  std::stringstream ss;
+  for(Teuchos_Ordinal i=0; i<avatarParameterValues_.size(); i++) {
+    ss << "," << avatarParameterValues_[i][indices[i]];
+  }
+  return ss.str();
+}
 
 // ***********************************************************************
-  void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite) const {
+void AvatarInterface::SetIndices(int id,std::vector<int> & indices) const {
+  // The combo numbering here starts with the first guy
+  int numParams = (int)avatarParameterValues_.size();
+  int curr_id = id;
+  for(int i=0; i<numParams; i++) {
+    int div = avatarParameterValues_[i].size();
+    int mod = curr_id % div;
+    indices[i] = mod;
+    curr_id = (curr_id - mod)/div;
+  }
+}
+
+
+
+// ***********************************************************************
+void AvatarInterface::GenerateMueLuParametersFromIndex(int id,Teuchos::ParameterList & pl) const {
+  // The combo numbering here starts with the first guy
+  int numParams = (int)avatarParameterValues_.size();
+  int curr_id = id;
+  for(int i=0; i<numParams; i++) {
+    int div = avatarParameterValues_[i].size();
+    int mod = curr_id % div;
+    pl.set(mueluParameterName_[i],mueluParameterValues_[mod]);
+    curr_id = (curr_id - mod)/div;
+  }
+}
+
+
+// ***********************************************************************
+void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite) const {
   Teuchos::ParameterList avatarParams;
   std::string paramString;
 
@@ -189,8 +226,53 @@ void AvatarInterface::UnpackMueLuMapping() {
     std::string trialString;
     GenerateFeatureString(problemFeatures,trialString);
     
-    // Now we add the MueLu parameters into one, enormous Avatar trial string (with linebreaks)
-    
+    // Compute the number of things we need to test
+    int numParams = (int)avatarParameterValues_.size();
+    std::vector<int> indices(numParams);
+    std::vector<int> sizes(numParams);
+    int num_combos = 1;
+    for(int i=0; i<numParams; i++) {
+      sizes[i]    = avatarParameterValues_[i].size();
+      num_combos *= avatarParameterValues_[i].size();
+    }
+    GetOStream(Runtime0)<< "MueLu::AvatarInterface: Testing "<< num_combos << " option combinations"<<std::endl;
+
+    // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
+    // views as acceptable
+    std::vector<int> avatarOutput;
+    {
+      std::string avatarString;
+      for(int i=0; i<num_combos; i++) {
+        SetIndices(i,indices);
+        // Now we add the MueLu parameters into one, enormous Avatar trial string and run avatar once
+        avatarString += trialString + ParamsToString(indices) + "\n";
+      }
+      
+#if 0
+      avatarOutput= avatarHandle_->evaluate(avatarString);
+#endif      
+    }
+
+    // Look at the list of acceptable combinations of options 
+    std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
+    for(int i=0; i<num_combos; i++) {    
+      if(avatarOutput[i] == 1) acceptableCombos.push_back(i);      
+    }
+    GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
+
+    // Did we have any good combos at all?
+    int chosen_option_id = 0;
+    if(acceptableCombos.size() == 0) { 
+      GetOStream(Runtime0) << "WARNING: MueLu::AvatarInterface: found *no* combinations of options which it believes will perform well on this problem" <<std::endl
+                           << "         An arbitrary set of options will be chosen instead"<<std::endl;    
+    }
+    else {
+      // As a placeholder, we'll choose the first acceptable combination.  Later we can do something smarter
+      chosen_option_id = acceptableCombos[0];
+    }
+
+    // Generate the parameterList from the chosen option
+    GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
   }
 
 # if 0
