@@ -1,5 +1,8 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Tpetra_Import.hpp"
 
 class GradientRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
 private:
@@ -65,8 +68,8 @@ void addDiscreteGradientToRequestHandler(
     typedef GlobalOrdinalTpetra GlobalOrdinal;
     typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
-    typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal> ThLOp;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
 
     RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = tblof->getGlobalIndexer();
 
@@ -82,18 +85,20 @@ void addDiscreteGradientToRequestHandler(
     // extract ghosted and global linear object containers
     RCP<panzer::GlobalEvaluationData> dataObject
       = rcp(new panzer::LOCPair_GlobalEvaluationData(tblof,panzer::LinearObjContainer::Mat));
-    RCP<panzer::LinearObjContainer> loc = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
-    RCP<linObjContainer> ghosted_tloc = rcp_dynamic_cast<linObjContainer>(loc,true);
     RCP<panzer::LinearObjContainer> global_loc
       = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGlobalLOC();
-    RCP<linObjContainer> global_tloc = rcp_dynamic_cast<linObjContainer>(global_loc,true);
+    RCP<panzer::LinearObjContainer> ghosted_loc
+      = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
 
-    // get the node-to-edge block from the ghosted LOC to fill as the gradient
-    RCP<Thyra::BlockedLinearOpBase<double> > blocked_op = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(ghosted_tloc->get_A_th(),true);
-    RCP<ThLOp> thyra_TpetraOp = rcp_dynamic_cast<ThLOp>(blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex),true);
-    RCP<matrix> grad_matrix = rcp_dynamic_cast<matrix>(thyra_TpetraOp->getTpetraOperator(),true);
-    grad_matrix->resumeFill();
- 
+    RCP<linObjContainer> global_tloc = rcp_dynamic_cast<linObjContainer>(global_loc,true);
+    RCP<linObjContainer> ghosted_tloc = rcp_dynamic_cast<linObjContainer>(ghosted_loc,true);
+
+    RCP<const map> rangemap  = global_tloc->getMapForBlock(eBlockIndex);
+    RCP<const map> domainmap = global_tloc->getMapForBlock(nBlockIndex);
+    RCP<const map> rowmap    = global_tloc->getMapForBlock(eBlockIndex);
+    RCP<const map> colmap    = ghosted_tloc->getMapForBlock(nBlockIndex);
+    RCP<matrix> grad_matrix = rcp(new matrix(rowmap, colmap, 2, Tpetra::StaticProfile));
+
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();
     std::vector<Intrepid2::Orientation> orientations = *panzer::buildIntrepidOrientation(blockedDOFMngr);
@@ -139,18 +144,17 @@ void addDiscreteGradientToRequestHandler(
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
  
             // insert values in matrix
-            int err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
-            TEUCHOS_ASSERT_EQUALITY(err,2);
+            LocalOrdinal err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
+            if (err<2)
+              grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
           }//end if
         }//end edge loop
       }//end element loop
     }//end element block loop
-    grad_matrix->fillComplete();
+    grad_matrix->fillComplete(domainmap,rangemap);
 
-    // get global linear object from ghosted linear object
-    tblof->ghostToGlobalContainer(*ghosted_tloc, *global_tloc,panzer::LinearObjContainer::Mat);
-    RCP<Thyra::BlockedLinearOpBase<double> > global_blocked_op = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(global_tloc->get_A_th(),true);
-    RCP<Thyra::LinearOpBase<double> > thyra_gradient = global_blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex);
+    RCP<Thyra::LinearOpBase<double> > thyra_gradient = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(domainmap),
+                                                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(rangemap),grad_matrix);
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
@@ -159,8 +163,8 @@ void addDiscreteGradientToRequestHandler(
     typedef GlobalOrdinalEpetra GlobalOrdinal;
     typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
-    typedef Thyra::EpetraLinearOp ThLOp;
     typedef Epetra_CrsMatrix matrix;
+    typedef Epetra_Map map;
 
     RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = eblof->getGlobalIndexer();
 
@@ -176,17 +180,19 @@ void addDiscreteGradientToRequestHandler(
     // extract ghosted and global linear object containers
     RCP<panzer::GlobalEvaluationData> dataObject
       = rcp(new panzer::LOCPair_GlobalEvaluationData(eblof,panzer::LinearObjContainer::Mat));
-    RCP<panzer::LinearObjContainer> loc = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
-    RCP<linObjContainer> ghosted_tloc = rcp_dynamic_cast<linObjContainer>(loc,true);
     RCP<panzer::LinearObjContainer> global_loc
       = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGlobalLOC();
-    RCP<linObjContainer> global_tloc = rcp_dynamic_cast<linObjContainer>(global_loc,true);
+    RCP<panzer::LinearObjContainer> ghosted_loc
+      = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
 
-    // get the node-to-edge block from the ghosted LOC to fill as the gradient
-    RCP<Thyra::BlockedLinearOpBase<double> > blocked_op = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(ghosted_tloc->get_A_th(),true);
-    RCP<ThLOp> thyra_TpetraOp = rcp_dynamic_cast<ThLOp>(blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex),true);
-    RCP<matrix> grad_matrix = rcp_dynamic_cast<matrix>(thyra_TpetraOp->epetra_op(),true);
-    // grad_matrix->resumeFill();
+    RCP<linObjContainer> global_tloc = rcp_dynamic_cast<linObjContainer>(global_loc,true);
+    RCP<linObjContainer> ghosted_tloc = rcp_dynamic_cast<linObjContainer>(ghosted_loc,true);
+
+    RCP<const map> rangemap  = global_tloc->getMapForBlock(eBlockIndex);
+    RCP<const map> domainmap = global_tloc->getMapForBlock(nBlockIndex);
+    RCP<const map> rowmap    = global_tloc->getMapForBlock(eBlockIndex);
+    RCP<const map> colmap    = ghosted_tloc->getMapForBlock(nBlockIndex);
+    RCP<matrix> grad_matrix = rcp(new matrix(Copy, *rowmap, *colmap, 2, /*StaticProfile=*/true));
 
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();
@@ -233,21 +239,22 @@ void addDiscreteGradientToRequestHandler(
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
 
             // insert values in matrix
-            // int err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
             int err = grad_matrix->ReplaceMyValues(eLIDs[eIter], 2, values, indices);
-            // TEUCHOS_ASSERT_EQUALITY(err,2);
+            if (err != 0)
+              err = grad_matrix->InsertMyValues(eLIDs[eIter], 2, values, indices);
             TEUCHOS_ASSERT_EQUALITY(err,0);
           }//end if
         }//end edge loop
       }//end element loop
     }//end element block loop
-    // grad_matrix->fillComplete();
-    grad_matrix->FillComplete();
+    grad_matrix->FillComplete(*domainmap, *rangemap);
 
-    // get global linear object from ghosted linear object
-    eblof->ghostToGlobalContainer(*ghosted_tloc, *global_tloc,panzer::LinearObjContainer::Mat);
-    RCP<Thyra::BlockedLinearOpBase<double> > global_blocked_op = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(global_tloc->get_A_th(),true);
-    RCP<Thyra::LinearOpBase<double> > thyra_gradient = global_blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex);
+    RCP<const Thyra::LinearOpBase<double> > thyra_gradient = Thyra::epetraLinearOp(grad_matrix,
+                                                                                   Thyra::NOTRANS,
+                                                                                   Thyra::EPETRA_OP_APPLY_APPLY,
+                                                                                   Thyra::EPETRA_OP_ADJOINT_SUPPORTED,
+                                                                                   Thyra::create_VectorSpace(rangemap),
+                                                                                   Thyra::create_VectorSpace(domainmap));
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
