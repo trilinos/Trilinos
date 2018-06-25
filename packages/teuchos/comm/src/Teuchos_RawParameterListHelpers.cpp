@@ -59,7 +59,7 @@ void Teuchos::updateParametersAndBroadcast(
     else paramList->setParametersNotAlreadySet(*inParamList);
   }
   else {
-    if (comm.getRank()==0) {
+    if (comm.getRank()==root) {
       XMLParameterListWriter w;
       std::string xmlString = toString(w.toXML(*inParamList));
       int strsize = static_cast<int>(xmlString.size());
