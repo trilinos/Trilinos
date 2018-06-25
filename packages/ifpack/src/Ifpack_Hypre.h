@@ -433,10 +433,10 @@ public:
   }
 
   //! Returns a reference to the map that should be used for domain.
-  const Epetra_Map& OperatorDomainMap() const{ return *MySimpleMap_;}
+  const Epetra_Map& OperatorDomainMap() const{ return *GloballyContiguousRowMap_;}
 
   //! Returns a reference to the map that should be used for range.
-  const Epetra_Map& OperatorRangeMap() const{ return *MySimpleMap_;}
+  const Epetra_Map& OperatorRangeMap() const{ return *GloballyContiguousRowMap_;}
 
   //! Returns 0.0 because this class cannot compute Inf-norm.
   double NormInf() const {return(0.0);};
@@ -663,8 +663,8 @@ private:
   //! Is the system to be solved or apply preconditioner
   Hypre_Chooser SolveOrPrec_;
   //! These are linear maps that meet the needs of Hypre
-  Teuchos::RCP<Epetra_Map> MySimpleMap_;
-  Teuchos::RCP<Epetra_Map> MySimpleColumnMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousRowMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousColMap_;
   //! Counter of the number of parameters set
   int NumFunsToCall_;
   //! Which solver was chosen
@@ -675,8 +675,6 @@ private:
   bool UsePreconditioner_;
   //! This contains a list of function pointers that will be called in compute
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
-  //! true if the row map of provided matrix is in form that Hypre likes
-  bool NiceRowMap_;
 };
 
 #endif // HAVE_HYPRE
