@@ -54,8 +54,33 @@
 #include "MueLu_BaseClass.hpp"
 
 
+// ***********************************************************************
+/* Notional Parameterlist Structure
+   "avatar: decision tree files"   "{'mytree.dat'}"
+   "avatar: args"                  "-s 23 -y 14"
+
+   "avatar: muelu parameter mapping"
+     - "param0'
+       - "muelu parameter"          "aggregation: threshold"
+       - "avatar parameter"         "DROP_TOL"
+       - "muelu values"             "{0,1e-4,1e-3,1e-2}"
+       - "avatar values"            "{1,2,3,4}
+     - "param1'
+       - "muelu parameter"          "smoother: sweeps"
+       - "avatar parameter"         "SWEEPS"
+       - "muelu values"             "{1,2,3}"
+       - "avatar values"            "{1,2,3}"
+
+   Notional SetMueLuParameters "problemFeatures"  Structure
+   "my feature #1"                "246.01"
+   "my feature #2"                "123.45"
+
+ */
+
+
 #ifdef HAVE_MUELU_AVATAR
 namespace MueLu {
+
 
 // ***********************************************************************
 RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
@@ -67,9 +92,6 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
-
-  // This is a general, app-specified parameter list
-  validParamList->set<Teuchos::ParameterList>("avatar: problem features",pl_dummy,"Problem features as computed by the application");
 
   // Avatar command line args
   validParamList->set<std::string>("avatar: args",s_dummy,"Arguments to control the execution of Avatar");
