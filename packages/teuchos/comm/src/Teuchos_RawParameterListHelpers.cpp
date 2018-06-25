@@ -63,16 +63,16 @@ void Teuchos::updateParametersAndBroadcast(
       XMLParameterListWriter w;
       std::string xmlString = toString(w.toXML(*inParamList));
       int strsize = static_cast<int>(xmlString.size());
-      broadcast<int, int>(comm, 0, &strsize);
-      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
+      broadcast<int, int>(comm, root, &strsize);
+      broadcast<int, char>(comm, root, strsize, &xmlString[0]);
       updateParametersFromXmlString(xmlString, paramList,overwrite);
     }
     else {
       int strsize;
-      broadcast<int, int>(comm, 0, &strsize);
+      broadcast<int, int>(comm, root, &strsize);
       std::string xmlString;
       xmlString.resize(strsize);
-      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
+      broadcast<int, char>(comm, root, strsize, &xmlString[0]);
       updateParametersFromXmlString(xmlString, paramList,overwrite);
     }
   }
