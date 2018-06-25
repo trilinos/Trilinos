@@ -93,6 +93,7 @@
 #include <Xpetra_Map.hpp>
 
 #include "Teuchos_Assert.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
 
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
 int LID2Dregion(void *ptr, int LIDcomp, int whichGrp);
@@ -593,6 +594,7 @@ int main(int argc, char *argv[]) {
   char command[40];
   bool doing1D = false;
   int  globalNx, globalNy;
+  std::string xmlFileName;
 
   myRank = Comm.MyPID();
 
@@ -600,6 +602,32 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using Teuchos::Array;
+
+  Comm.Barrier();
+
+  // read xml filename from command line
+  Teuchos::CommandLineProcessor clp;
+  {
+    // define a help message
+    clp.setDocString("Driver for region multigrid\n\nUse Matlab script 'createInput.m' to create necessary input data on the hard dist.\n\nProvide filename of MueLu xml configuration via '--xml=...'.");
+
+    // define command line arguments
+    clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration");
+
+    // force user to specify all options
+    clp.recogniseAllOptions(true);
+
+    /* We now parse the command line where argc and argv are passed to
+     * the parse method.
+     */
+    Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn = clp.parse(argc, argv);
+    if(parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+      return 0;
+    }
+    if(parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return 1; // Error!
+    }
+  }
 
   Comm.Barrier();
 
@@ -1318,9 +1346,6 @@ int main(int argc, char *argv[]) {
       RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, 3);
       coordinates->putScalar(1.0);
 
-//        const std::string xmlFileName = "/home/mmayr/wdir/codes/mayrmt-trilinos/Trilinos/packages/muelu/research/mmayr/composite_to_regions/src/muelu_expert.xml";
-//        const std::string xmlFileName = "/home/mmayr/wdir/codes/mayrmt-trilinos/Trilinos/packages/muelu/research/mmayr/composite_to_regions/src/muelu_simple.xml";
-      const std::string xmlFileName = "/home/mmayr/wdir/codes/mayrmt-trilinos/Trilinos/packages/muelu/research/mmayr/composite_to_regions/src/muelu_structured.xml";
       RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::DefaultComm<int>::getComm();
       Teuchos::ParameterList paramList;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *teuchosComm);
@@ -2061,46 +2086,51 @@ int main(int argc, char *argv[]) {
     // forcing vector
     Teuchos::RCP<Epetra_Vector> compB = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
 
-    // 1D
+    if (doing1D)
     {
+      // 1D
       {
-        compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0e-3);
+        {
+          compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0e-3);
+        }
+//        {
+//        compB->PutScalar(1.0);
+//        compB->ReplaceGlobalValue(0, 0, 0.0);
+//        }
+//        {
+//          compB->ReplaceGlobalValue(15, 0, 1.0);
+//        }
+//        {
+//          compB->ReplaceGlobalValue(16, 0, 1.0);
+//        }
       }
-//      {
-//      compB->PutScalar(1.0);
-//      compB->ReplaceGlobalValue(0, 0, 0.0);
-//      }
-//      {
-//        compB->ReplaceGlobalValue(15, 0, 1.0);
-//      }
-//      {
-//        compB->ReplaceGlobalValue(16, 0, 1.0);
-//      }
     }
-
-    std::vector<int> dirichletGIDs;
-
-    // 2D
+    else //2D
     {
-      const int nx = 19; // global number of nodes in x-direction
-      for (int i = 0; i < nx; ++i)
-        dirichletGIDs.push_back(i);
-      for (int i = 0; i < nx; ++i) {
-        dirichletGIDs.push_back(i*nx);
-        dirichletGIDs.push_back((i+1)*nx - 1);
+      std::vector<int> dirichletGIDs;
+
+      // 2D
+      {
+        const int nx = 19; // global number of nodes in x-direction
+        for (int i = 0; i < nx; ++i)
+          dirichletGIDs.push_back(i);
+        for (int i = 0; i < nx; ++i) {
+          dirichletGIDs.push_back(i*nx);
+          dirichletGIDs.push_back((i+1)*nx - 1);
+        }
+        for (int i = 0; i < nx; ++i)
+          dirichletGIDs.push_back((nx*(nx-1) + i));
       }
-      for (int i = 0; i < nx; ++i)
-        dirichletGIDs.push_back((nx*(nx-1) + i));
-    }
 
-//    for (auto gid : dirichletGIDs)
-//      std::cout << gid << ", ";
-//    std::cout << std::endl;
+//      for (auto gid : dirichletGIDs)
+//        std::cout << gid << ", ";
+//      std::cout << std::endl;
 
-    {
-      compB->PutScalar(1.0e-3);
-      for (std::size_t i = 0; i < dirichletGIDs.size(); ++i)
-        compB->ReplaceGlobalValue(dirichletGIDs[i], 0, 0.0);
+      {
+        compB->PutScalar(1.0e-3);
+        for (std::size_t i = 0; i < dirichletGIDs.size(); ++i)
+          compB->ReplaceGlobalValue(dirichletGIDs[i], 0, 0.0);
+      }
     }
 
     // residual vector
