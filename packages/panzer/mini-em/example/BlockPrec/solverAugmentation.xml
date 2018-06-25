@@ -64,7 +64,7 @@
                 <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
                 <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
                 <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                 <ParameterList name="repartition: params">
                   <Parameter name="algorithm" type="string" value="multijagged"/>
                 </ParameterList>
@@ -103,7 +103,7 @@
             <Parameter name="repartition: min rows per proc" type="int" value="2500"/>
             <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
             <Parameter name="repartition: remap parts" type="bool" value="true"/>
-            <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+            <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
             <ParameterList name="repartition: params">
               <Parameter name="algorithm" type="string" value="multijagged"/>
             </ParameterList>

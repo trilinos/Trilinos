@@ -17,8 +17,6 @@
           <Parameter name="Num Blocks" type="int" value="40"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
-          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
-          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
         </ParameterList>
         <ParameterList name="Pseudo Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
@@ -114,10 +112,10 @@
                 <Parameter name="repartition: enable" type="bool" value="true"/>
                 <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                 <Parameter name="repartition: start level" type="int" value="2"/>
-                <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                 <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                 <ParameterList name="repartition: params">
                   <Parameter name="algorithm" type="string" value="multijagged"/>
                 </ParameterList>
@@ -156,7 +154,7 @@
                 <Parameter name="refmaxwell: mode" type="string" value="additive"/>
                 <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
                 <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
-                <Parameter name="refmaxwell: max coarse size" type="int" value="1000"/>
+                <Parameter name="refmaxwell: max coarse size" type="int" value="2500"/>
 
                 <!-- <Parameter name="rap: triple product" type="bool" value="true"/> -->
                 <!-- <Parameter name="transpose: use implicit" type="bool" value="true"/> -->
@@ -180,7 +178,7 @@
 
                 <ParameterList name="refmaxwell: 11list">
                   <Parameter name="use kokkos refactor" type="bool" value="true"/>
-                  <Parameter name="coarse: max size" type="int" value="1000"/>
+                  <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
@@ -202,10 +200,10 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                   <ParameterList name="repartition: params">
                     <Parameter name="algorithm" type="string" value="multijagged"/>
                   </ParameterList>
@@ -213,9 +211,9 @@
 
                 <ParameterList name="refmaxwell: 22list">
                   <Parameter name="use kokkos refactor" type="bool" value="true"/>
-                  <Parameter name="coarse: max size" type="int" value="1000"/>
+                  <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
 
                   <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                   <!-- <ParameterList name="smoother: params"> -->
@@ -234,10 +232,10 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                   <ParameterList name="repartition: params">
                     <Parameter name="algorithm" type="string" value="multijagged"/>
                   </ParameterList>

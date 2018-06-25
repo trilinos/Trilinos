@@ -111,10 +111,10 @@
                 <Parameter name="repartition: enable" type="bool" value="true"/>
                 <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                 <Parameter name="repartition: start level" type="int" value="2"/>
-                <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                 <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                 <ParameterList name="repartition: params">
                   <Parameter name="algorithm" type="string" value="multijagged"/>
                 </ParameterList>
@@ -176,7 +176,7 @@
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 11list">
-                  <Parameter name="coarse: max size" type="int" value="1000"/>
+                  <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
@@ -198,19 +198,19 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                   <ParameterList name="repartition: params">
                     <Parameter name="algorithm" type="string" value="multijagged"/>
                   </ParameterList>
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
-                  <Parameter name="coarse: max size" type="int" value="1000"/>
+                  <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
-                  <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
+                  <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
 
                   <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                   <!-- <ParameterList name="smoother: params"> -->
@@ -229,10 +229,10 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1024"/>
-                  <Parameter name="repartition: max imbalance" type="double" value="1.327"/>
+                  <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+                  <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
                   <ParameterList name="repartition: params">
                     <Parameter name="algorithm" type="string" value="multijagged"/>
                   </ParameterList>
