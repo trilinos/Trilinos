@@ -8354,7 +8354,6 @@ namespace Tpetra {
     // we use this in isMM neighbor discovery, for which reverseMode == false
     ArrayView<const int> neigDiscExportPIDs =  rowTransfer.getExportPIDs (); 
 
-
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
     Teuchos::Array<int> TargetPids;
@@ -8601,8 +8600,8 @@ namespace Tpetra {
 #else
    
 
-      //cbl     Teuchos::Array<int> SourcePids;
-      // packAndPrepare* methods modify numExportPacketsPerLID_.
+
+    // CBL packAndPrepare* methods modify numExportPacketsPerLID_.
       destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
@@ -8893,8 +8892,6 @@ namespace Tpetra {
 	Teuchos::Array<LocalOrdinal> type3LIDs;
 	Teuchos::Array<int> type3PIDs;
    
-	Teuchos::Array<std::pair<int,GlobalOrdinal> > fromRemoteGID;
-
 	size_type NumRemoteIDs = 0;
 	Teuchos::ArrayView<const GO> targetGIDs = MyColMap->getNodeElementList ();
 	Teuchos::ArrayView<const GO> sourceGIDs = MyDomainMap->getNodeElementList ();
@@ -8929,7 +8926,7 @@ namespace Tpetra {
 						  type3PIDs,
 						  type3LIDs,
 						  type3GIDs,
-						  fromRemoteGID,
+//						  fromRemoteGID,
 						  ReducedComm);
 	}
        
@@ -9030,11 +9027,13 @@ namespace Tpetra {
             bool added_entry=false;
 
             bool dumpit = false;
-            if(true) {
-		// filter against the communicated RemoteGID's for ProcsTo
-		std::pair<int,GlobalOrdinal> pgPair(MIN_PID,MIN_GID);
-		dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());                      
-            }
+
+	    // testing no filtering of fromRemoteGID's
+            // if(true) {
+	    // 	// filter against the communicated RemoteGID's for ProcsTo
+	    // 	std::pair<int,GlobalOrdinal> pgPair(MIN_PID,MIN_GID);
+	    // 	dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());                      
+            // }
 
             // Case 1: Add off list 1
             if(PID1 == MIN_PID && GID1 == MIN_GID){
