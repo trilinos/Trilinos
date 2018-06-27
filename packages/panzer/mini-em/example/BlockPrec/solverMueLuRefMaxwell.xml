@@ -2,9 +2,8 @@
   <Parameter name="Linear Solver Type" type="string" value="Belos"/>
   <ParameterList name="Linear Solver Types">
     <ParameterList name="Belos">
-      <!-- If the Maxwell solver has "Use as preconditioner"==true, we don't need flexible GMRES -->
-      <!-- <Parameter name="Solver Type" type="string" value="Block GMRES"/> -->
-      <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
+      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+      <!-- <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/> -->
       <ParameterList name="Solver Types">
         <ParameterList name="Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
