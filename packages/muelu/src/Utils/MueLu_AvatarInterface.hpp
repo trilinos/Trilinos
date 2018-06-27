@@ -85,7 +85,7 @@ namespace MueLu {
 
   private:
     // Utility functions
-    Teuchos::ArrayRCP<std::string> ReadAvatarStringsFromFiles() const;
+    Teuchos::ArrayRCP<std::string> ReadFromFiles(const char * param_name) const;
     void GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const;
     std::string ParamsToString(const std::vector<int> & indices) const;
     void SetIndices(int id,std::vector<int> & indices) const;
@@ -100,6 +100,7 @@ namespace MueLu {
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::ParameterList params_;
     Teuchos::ArrayRCP<std::string> avatarStrings_;
+    Teuchos::ArrayRCP<std::string> namesStrings_;
     Teuchos::RCP<Avatar> avatarHandle_;
 
     Teuchos::Array<std::string> mueluParameterName_;
