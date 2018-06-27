@@ -61,7 +61,7 @@ bool checkFads(const FadType1& x, const FadType2& x2,
   TEUCHOS_TEST_EQUALITY(x.size(), x2.size(), out, success);
 
   // Check values match
-  TEUCHOS_TEST_EQUALITY(x.val(), x2.val(), out, success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(x.val(), x2.val(), tol, out, success);
 
   // Check derivatives match
   for (int i=0; i<x.size(); ++i)
@@ -373,6 +373,69 @@ struct AssignRank2Rank1Kernel {
     else {
       range_policy_type policy( 0, nrow );
       Kokkos::parallel_for( policy, AssignRank2Rank1Kernel(v1,v2,col) );
+    }
+  }
+};
+
+// Kernel to test atomic_add
+template <typename ViewType, typename ScalarViewType>
+struct AtomicAddKernel {
+  typedef typename ViewType::execution_space execution_space;
+  typedef typename ViewType::size_type size_type;
+  typedef Kokkos::TeamPolicy< execution_space> team_policy_type;
+  typedef Kokkos::RangePolicy< execution_space> range_policy_type;
+  typedef typename team_policy_type::member_type team_handle;
+  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_scalar_type;
+  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+
+  const ViewType m_v;
+  const ScalarViewType m_s;
+
+  AtomicAddKernel(const ViewType& v, const ScalarViewType& s) :
+    m_v(v), m_s(s) {};
+
+  // Multiply entries for row 'i' with a value
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type i) const {
+    Kokkos::atomic_add(&(m_s()), m_v(i));
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const team_handle& team ) const
+  {
+    const size_type i = team.league_rank()*team.team_size() + team.team_rank();
+    if (i < m_v.extent(0))
+      (*this)(i);
+  }
+
+  // Kernel launch
+  static void apply(const ViewType& v, const ScalarViewType& s) {
+    const size_type nrow = v.extent(0);
+
+#if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Cuda>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Cuda>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      is_dfad<typename ViewType::non_const_value_type>::value;
+#else
+    const bool use_team = false;
+#endif
+
+    if (use_team) {
+      const size_type team_size = 256 / stride;
+      team_policy_type policy( (nrow+team_size-1)/team_size, team_size, stride );
+      Kokkos::parallel_for( policy, AtomicAddKernel(v,s) );
+    }
+    else {
+      range_policy_type policy( 0, nrow );
+      Kokkos::parallel_for( policy, AtomicAddKernel(v,s) );
     }
   }
 };
@@ -932,6 +995,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Check
   FadType f3 = f0 * f1;
   success = checkFads(f3, f2, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AtomicAdd, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType*,Layout,Device> ViewType;
+  typedef Kokkos::View<FadType,Layout,Device> ScalarViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ScalarViewType::HostMirror host_scalar_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v;
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  v = ViewType ("view", num_rows);
+#else
+  v = ViewType ("view", num_rows, fad_size+1);
+#endif
+  FadType a(fad_size, 2.3456);
+  for (size_type i=0; i<fad_size; ++i)
+    a.fastAccessDx(i) = 7.89+i;
+  Kokkos::deep_copy( v, a );
+
+  // Create scalar view
+  ScalarViewType s;
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  s = ScalarViewType ("scalar view");
+#else
+  s = ScalarViewType ("scalar view", fad_size+1);
+#endif
+  Kokkos::deep_copy( s, FadType(fad_size,0.0) );
+
+  // Call atomic_add kernel, which adds up entries in v
+  AtomicAddKernel<ViewType,ScalarViewType>::apply( v, s );
+
+  // Copy to host
+  host_scalar_view_type hs = Kokkos::create_mirror_view(s);
+  Kokkos::deep_copy(hs, s);
+
+  // Check
+  FadType b = num_rows*a;
+  success = checkFads(b, hs(), out);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1976,6 +2083,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyUpdate, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AtomicAdd, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignDifferentStrides, F, L, D ) \

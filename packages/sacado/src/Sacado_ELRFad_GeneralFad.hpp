@@ -215,6 +215,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
+      //! Cache values
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
