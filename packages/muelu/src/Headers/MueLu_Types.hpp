@@ -79,9 +79,11 @@ namespace MueLu {
     IGNORED    = 5, // indicates that the node is removed from consideration,
                     // and is not aggregated
 
-    BOUNDARY   = 6  // node is a Dirichlet node
+    BOUNDARY   = 6, // node is a Dirichlet node
                     // During aggregation, it is transformed either to AGGREGATED
                     // or to IGNORED
+    INTERFACE  = 7  // node is chosen as root node on an interface where coordinated
+                    // coarsening across the interface is required.
   };
 
 }

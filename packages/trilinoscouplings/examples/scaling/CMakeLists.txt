@@ -432,3 +432,41 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
 ENDIF()
+
+# pbo 19 June 2018
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# lbv 21 June 2018
+# Actually this will be activated in a subsequent PR so for now it's
+# commented out.
+#
+# IF(${PACKAGE_NAME}_ENABLE_Belos AND
+#    ${PACKAGE_NAME}_ENABLE_Intrepid AND
+#    ${PACKAGE_NAME}_ENABLE_Pamgen AND
+#    ${PACKAGE_NAME}_ENABLE_Tpetra)
+#   TRIBITS_ADD_EXECUTABLE(
+#     HybridIntrepidPoisson3D_Pamgen_Tpetra
+#     SOURCES HybridIntrepidPoisson3D_Pamgen_Tpetra_main.cpp
+#       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+#       TrilinosCouplings_TpetraIntrepidHybridPoisson3DExample.cpp
+#       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+#       TrilinosCouplings_Pamgen_Utils.cpp
+#     COMM serial mpi
+#     )
+#   TRIBITS_ADD_EXECUTABLE(
+#     HybridIntrepidPoisson2D_Pamgen_Tpetra
+#     SOURCES HybridIntrepidPoisson2D_Pamgen_Tpetra_main.cpp
+#       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+#       TrilinosCouplings_TpetraIntrepidHybridPoisson2DExample.cpp
+#       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+#       TrilinosCouplings_Pamgen_Utils.cpp
+#     COMM serial mpi
+#     )
+
+#  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuHybridFiles
+#    SOURCE_FILES muelu_hybrid_aggregation_2D.xml muelu_hybrid_aggregation_3D.xml
+#    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+#    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+#    )
+# ENDIF()

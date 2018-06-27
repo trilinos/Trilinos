@@ -44,10 +44,8 @@
 #ifndef ROL_MINIMAX1_HPP
 #define ROL_MINIMAX1_HPP
 
-#include "ROL_Objective.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_StdVector.hpp"
 #include "ROL_TestProblem.hpp"
+#include "ROL_StdVector.hpp"
 #include "ROL_Ptr.hpp"
 
 namespace ROL {
@@ -62,11 +60,11 @@ class Minimax1 : public Objective<Real> {
 
 private:
 
-  ROL::Ptr<const vector> getVector( const V& x ) {
+  Ptr<const vector> getVector( const V& x ) {
     return dynamic_cast<const SV&>(x).getVector();
   }
 
-  ROL::Ptr<vector> getVector( V& x ) {
+  Ptr<vector> getVector( V& x ) {
     return dynamic_cast<SV&>(x).getVector();
   }
 
@@ -74,7 +72,7 @@ public:
   Minimax1(void) {}
 
   Real value(const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const vector> xp = getVector(x);
+    Ptr<const vector> xp = getVector(x);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);
@@ -82,8 +80,8 @@ public:
   }
 
   void gradient(Vector<Real> &g, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const vector> xp = getVector(x);
-    ROL::Ptr<vector> gp = getVector(g);
+    Ptr<const vector> xp = getVector(x);
+    Ptr<vector> gp = getVector(g);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);
@@ -114,13 +112,13 @@ public:
   }
 
   Ptr<Vector<Real>> getInitialGuess(void) const {
-    ROL::Ptr<std::vector<Real> > x_ptr = ROL::makePtr<std::vector<Real>>(2, 0.0);
+    Ptr<std::vector<Real> > x_ptr = makePtr<std::vector<Real>>(2, 0.0);
     (*x_ptr)[0] = 1.0; (*x_ptr)[1] = -0.1;
     return makePtr<StdVector<Real>>(x_ptr);
   }
 
   Ptr<Vector<Real>> getSolution(const int i = 0) const {
-    ROL::Ptr<std::vector<Real> > z_ptr = ROL::makePtr<std::vector<Real>>(2, 0.0);
+    Ptr<std::vector<Real> > z_ptr = makePtr<std::vector<Real>>(2, 0.0);
     (*z_ptr)[0] = 1.13904; (*z_ptr)[1] = 0.89956;
     return makePtr<StdVector<Real>>(z_ptr);
   }

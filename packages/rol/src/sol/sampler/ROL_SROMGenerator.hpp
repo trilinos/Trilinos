@@ -291,6 +291,10 @@ private:
     coeff[0] = tmp_coeff[0]; coeff[1] = tmp_coeff[1];
     return makePtr<LinearCombinationObjective<Real>>(coeff,obj_vec);
   }
+
+  int numGlobalSamples(void) const {
+    return numSamples_;
+  }
 };
 
 }

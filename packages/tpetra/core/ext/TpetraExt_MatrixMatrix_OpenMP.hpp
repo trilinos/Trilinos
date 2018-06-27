@@ -173,7 +173,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
     // Grab the  Kokkos::SparseCrsMatrices
     const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-    const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+    // const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
 
     // Get the algorithm mode
     std::string alg = nodename+std::string(" algorithm");

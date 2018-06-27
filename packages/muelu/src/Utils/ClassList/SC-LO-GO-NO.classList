@@ -8,6 +8,7 @@ BlockedCoarseMapFactory
 BlockedCoordinatesTransferFactory
 BlockedDirectSolver
 BlockedGaussSeidelSmoother
+BlockedJacobiSmoother
 BlockedPFactory
 BlockedRAPFactory
 BrickAggregationFactory
