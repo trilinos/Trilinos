@@ -128,4 +128,30 @@ BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
 
+#if defined(HAVE_SACADO_KOKKOSCORE)
+
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+    template <typename S> class GeneralFad;
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+
+    template <typename S>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
+
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+  }
+}
+
+namespace Kokkos {
+  using Sacado::Fad::Exp::atomic_add;
+}
+
+#endif
+
 #endif // SACADO_FAD_EXP_MATHFUNCTIONS_HPP
