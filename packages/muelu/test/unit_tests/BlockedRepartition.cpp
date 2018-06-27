@@ -364,7 +364,18 @@ namespace MueLuTests {
       out << "Skip detailed tests. Matrix was not rebalanced" << std::endl;
       return;
     }
-    TEST_EQUALITY(nNumProcsReb, 2);
+    int expectedPartitions=2;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+    using execution_space = typename Node::device_type::execution_space;
+    if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+    {
+       int thread_per_mpi_rank = execution_space::concurrency();
+       if (thread_per_mpi_rank > 1)
+          expectedPartitions=1;
+    }
+#endif
+    
+    TEST_EQUALITY(nNumProcsReb, expectedPartitions);
 
     //////////////////////////////////////////////////
     // extract partitions
