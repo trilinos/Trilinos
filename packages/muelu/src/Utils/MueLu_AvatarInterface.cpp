@@ -56,8 +56,9 @@
 
 // ***********************************************************************
 /* Notional Parameterlist Structure
-   "avatar: decision tree files"   "{'mytree.dat'}"
-   "avatar: args"                  "-s 23 -y 14"
+   "avatar: decision tree files"   "{'mytree1.dat','mytree2.dat'}"
+   "avatar: names files"           "{'mynames1.dat','mynames2.dat'}"
+   "avatar: args"                  "{'-s','23','-y','14'}"
 
    "avatar: muelu parameter mapping"
      - "param0'
@@ -78,6 +79,12 @@
  */
 
 
+/*
+TODO List:
+Modify MueLu
+    Parameter name checking (make sure names match between Avatar’s names file and the parameter / feature names that MueLu sees).
+*/
+
 #ifdef HAVE_MUELU_AVATAR
 namespace MueLu {
 
@@ -88,13 +95,15 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   Teuchos::ParameterList pl_dummy;
   Teuchos::Array<std::string> ar_dummy;
-  std::string s_dummy;
 
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
 
+  // Files from which to read Avatar names
+  validParamList->set<Teuchos::Array<std::string> >("avatar: names files",ar_dummy,"Names of Avatar decision names files");
+
   // Avatar command line args
-  validParamList->set<std::string>("avatar: args",s_dummy,"Arguments to control the execution of Avatar");
+  validParamList->set<Teuchos::Array<std::string> >("avatar: args",ar_dummy,"Arguments to control the execution of Avatar");
 
   // This should be a MueLu parameter-to-Avatar parameter mapping (e.g. if Avatar doesn't like spaces)
   validParamList->set<Teuchos::ParameterList>("avatar: muelu parameter mapping",pl_dummy,"Mapping of MueLu to Avatar Parameters");
@@ -104,8 +113,8 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
 
 // ***********************************************************************
-Teuchos::ArrayRCP<std::string> AvatarInterface::ReadAvatarStringsFromFiles() const {
-  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >("avatar: decision tree files");
+Teuchos::ArrayRCP<std::string> AvatarInterface::ReadFromFiles(const char * paramName) const {
+  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(param_name);
   Teuchos::ArrayRCP<std::string> treelist;
   // Only Proc 0 will read the files and print the strings
   if (comm_->getRank() == 0) {
@@ -123,20 +132,31 @@ Teuchos::ArrayRCP<std::string> AvatarInterface::ReadAvatarStringsFromFiles() con
 }
 
 
+
 // ***********************************************************************
 void AvatarInterface::Setup() {
   // Sanity check
   if(comm_.is_null()) throw std::runtime_error("MueLu::AvatarInterface::Setup(): Communicator cannot be null");
 
   // Get the avatar strings (NOTE: Only exist on proc 0)
-  avatarStrings_ = ReadAvatarStringsFromFiles();
+  avatarStrings_ = ReadFromFiles("avatar: decision tree files");
+  namesStrings_  = ReadFromFiles("avatar: names files");
 
-  // Now actually set up avatar
-  std::string avatarArgs = params_.get("avatar: args",std::string(""));
+
+  if(comm_->getRank() == 0) {
+    // Process avatar command line args
+    const Teuchos::Array<std::string> & avatarArgs = params_.get<Teuchos::Array<std::string> >("avatar: args");
+    int argc = (int) avatarArgs.size() +1;
+    char * argv0 = "avatardt";    
+    char * argv[argc];
+    argv[0] = argv0;
+    for(int i=1; i<argc; i++) 
+      argv[i] = avatarArgs[i-1];    
 #if 0
-  if(comm_->getRank() == 0)
-    avatarHandle_ = Teuchos::rcp(new Avatar(avatarArgs));
+    // Now actually set up avatar
+    avatarHandle_ = Teuchos::rcp(new Avatar(avatarArgs,avatarStrings_));
 #endif
+  }
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
@@ -297,10 +317,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
   }
 
-# if 0
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
-#endif
-
 
 }
 
