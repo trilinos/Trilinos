@@ -33,8 +33,10 @@
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_Macros.hpp"
+// Only include forward declarations so any overloads appear before they
+// might be used inside Kokkos
+#include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_View.hpp"
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -118,6 +120,53 @@ struct is_view_fad_contiguous< View<T,P...> > {
     std::is_same< typename view_type::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
+
+}
+
+namespace Kokkos {
+namespace Impl {
+
+// Overload view_copy for Fad View's:
+//   1.  Should be faster than using Fad directly
+//   2.  Fixes issues with hierarchical parallelism since the default
+//       implementation uses MDRangePolicy which doesn't work with hierarchical
+//       parallelism.
+// Needs to go before include of Kokkos_Core.hpp so it is in scope when
+// Kokkos_CopyViews.hpp is included by Kokkos_Core.hpp, which internally
+// calls view_copy().
+template<class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
+
+} // namespace Impl
+} // namespace Kokkos
+
+#include "Kokkos_Core.hpp"
+
+namespace Kokkos {
+namespace Impl {
+
+// Define our overload of view_copy above.  Needs to happen after including
+// Kokkos_Core.hpp since it calls the default implementation
+template<class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
+{
+  typedef typename Kokkos::View<DT,DP...>::array_type dst_array_type;
+  typedef typename Kokkos::View<ST,SP...>::array_type src_array_type;
+  view_copy( dst_array_type(dst) , src_array_type(src) );
+}
+
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
 
 template <typename T, typename ... P>
 KOKKOS_INLINE_FUNCTION
@@ -906,6 +955,10 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const { return 0 ; }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const { return 0 ; }
 
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
+    { m_offset.stride(s) ; }
+
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
     { return m_fad_size.value+1; }
@@ -1166,8 +1219,9 @@ namespace Impl {
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has FAD or ordinary
     ( std::is_same< typename DstTraits::specialize
