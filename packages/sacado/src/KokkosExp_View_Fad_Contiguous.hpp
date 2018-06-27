@@ -1116,8 +1116,9 @@ namespace Impl {
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has FAD
     std::is_same< typename DstTraits::specialize
