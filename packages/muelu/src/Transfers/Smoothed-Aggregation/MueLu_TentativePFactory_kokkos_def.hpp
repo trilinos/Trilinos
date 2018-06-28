@@ -384,6 +384,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("tentative: calculate qr");
+  SET_VALID_ENTRY("tentative: build coarse coordinates");
 #undef SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -391,6 +392,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -402,11 +404,22 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+
+    const ParameterList& pL = GetParameterList();
+
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
     Input(fineLevel, "Nullspace");
     Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
+    if( fineLevel.GetLevelID() == 0 &&
+        fineLevel.IsAvailable("Coordinates", NoFactory::get()) &&     // we have coordinates (provided by user app)
+        pL.get<bool>("tentative: build coarse coordinates") ) {       // and we want coordinates on other levels
+      bTransferCoordinates_ = true;                                   // then set the transfer coordinates flag to true
+      Input(fineLevel, "Coordinates");
+    } else if (bTransferCoordinates_) {
+      Input(fineLevel, "Coordinates");
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -423,9 +436,90 @@ namespace MueLu {
     auto amalgInfo     = Get< RCP<AmalgamationInfo> > (fineLevel, "UnAmalgamationInfo");
     auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, "Nullspace");
     auto coarseMap     = Get< RCP<const Map> >        (fineLevel, "CoarseMap");
+    RCP<RealValuedMultiVector> fineCoords;
+    if(bTransferCoordinates_) {
+      fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
+    }
 
     RCP<Matrix>      Ptentative;
     RCP<MultiVector> coarseNullspace;
+    RCP<RealValuedMultiVector> coarseCoords;
+
+    if(bTransferCoordinates_) {
+      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+      GO                  indexBase    = coarseMap->getIndexBase();
+
+      LO blkSize = 1;
+      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+        blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+
+      Array<GO>           elementList;
+      ArrayView<const GO> elementListView;
+      if (blkSize == 1) {
+        // Scalar system
+        // No amalgamation required
+        elementListView = elementAList;
+
+      } else {
+        auto numElements = elementAList.size() / blkSize;
+
+        elementList.resize(numElements);
+
+        // Amalgamate the map
+        for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
+          elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+
+        elementListView = elementList;
+      }
+
+      auto uniqueMap      = fineCoords->getMap();
+      auto coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                              elementListView, indexBase, coarseMap->getComm());
+      coarseCoords = RealValuedMultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
+
+      // Create overlapped fine coordinates to reduce global communication
+      RCP<RealValuedMultiVector> ghostedCoords = fineCoords;
+      if (aggregates->AggregatesCrossProcessors()) {
+        auto nonUniqueMap = aggregates->GetMap();
+        auto importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
+
+        ghostedCoords = RealValuedMultiVectorFactory::Build(nonUniqueMap, fineCoords->getNumVectors());
+        ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
+      }
+
+      // The good new is that his graph has already been constructed for the
+      // TentativePFactory and was cached in Aggregates. So this is a no-op.
+      auto aggGraph = aggregates->GetGraph();
+      auto numAggs  = aggGraph.numRows();
+
+      auto fineCoordsView   = fineCoords  ->template getLocalView<DeviceType>();
+      auto coarseCoordsView = coarseCoords->template getLocalView<DeviceType>();
+
+      // Fill in coarse coordinates
+      {
+        SubFactoryMonitor m2(*this, "AverageCoords", coarseLevel);
+
+        const auto dim = fineCoords->getNumVectors();
+
+        typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
+        for (size_t j = 0; j < dim; j++) {
+          Kokkos::parallel_for("MueLu::TentativeP::BuildCoords", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
+                               KOKKOS_LAMBDA(const LO i) {
+                                 // A row in this graph represents all node ids in the aggregate
+                                 // Therefore, averaging is very easy
+
+                                 auto aggregate = aggGraph.rowConst(i);
+
+                                 double sum = 0.0; // do not use Scalar here (Stokhos)
+                                 for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
+                                   sum += fineCoordsRandomView(aggregate(colID),j);
+
+                                 coarseCoordsView(i,j) = sum / aggregate.length;
+                               });
+        }
+      }
+    }
+
     if (!aggregates->AggregatesCrossProcessors())
       BuildPuncoupled(coarseLevel, A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace, coarseLevel.GetLevelID());
     else
@@ -444,6 +538,9 @@ namespace MueLu {
     else
       Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(),   coarseMap);
 
+    if(bTransferCoordinates_) {
+      Set(coarseLevel, "Coordinates", coarseCoords);
+    }
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 

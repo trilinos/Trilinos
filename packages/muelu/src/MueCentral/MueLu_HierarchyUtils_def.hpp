@@ -113,7 +113,7 @@ namespace MueLu {
           else if(name == "Coordinates") //Scalar of Coordinates MV is always double
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            level->Set(name, Teuchos::getValue<RCP<RealValuedMultiVector> >(it2->second), NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
 #ifdef HAVE_MUELU_INTREPID2

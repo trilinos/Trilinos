@@ -234,6 +234,7 @@ namespace MueLu {
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: enable\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
   "<ParameterList name=\"repartition: params\"/>"
@@ -608,6 +609,8 @@ namespace MueLu {
          ("emin: pattern order","emin: pattern order")
       
          ("tentative: calculate qr","tentative: calculate qr")
+      
+         ("tentative: build coarse coordinates","tentative: build coarse coordinates")
       
          ("repartition: enable","repartition: enable")
       

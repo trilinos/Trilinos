@@ -159,6 +159,8 @@ namespace MueLu {
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
+    mutable bool bTransferCoordinates_ = false;
+
   }; //class TentativePFactory
 
 } //namespace MueLu

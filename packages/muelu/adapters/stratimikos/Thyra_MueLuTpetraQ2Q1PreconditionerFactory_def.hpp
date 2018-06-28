@@ -633,6 +633,8 @@ namespace Thyra {
     // difference is that pressure has to go first, so that velocity can use
     // some of pressure data
     RCP<FactoryManager> M11 = rcp(new FactoryManager()), M22 = rcp(new FactoryManager());
+    M11->SetKokkosRefactor(paramList.get<bool>("use kokkos refactor"));
+    M22->SetKokkosRefactor(paramList.get<bool>("use kokkos refactor"));
     SetBlockDependencyTree(*M11, 0, 0, "velocity", paramList);
     SetBlockDependencyTree(*M22, 1, 1, "pressure", paramList);
 

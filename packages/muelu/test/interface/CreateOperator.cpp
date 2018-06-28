@@ -139,7 +139,7 @@ namespace MueLuExamples {
 
   // This routine generate's the user's original A matrix and nullspace
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace){
+  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace, Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >& coordinates){
 #include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
 
@@ -147,18 +147,17 @@ namespace MueLuExamples {
     Teuchos::FancyOStream& out = *fancy;
 
     RCP<const Map>   map;
-    RCP<MultiVector> coordinates;
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
@@ -171,7 +170,7 @@ namespace MueLuExamples {
         << "========================================================" << std::endl;
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
 
     A = Pr->BuildMatrix();
 
@@ -306,8 +305,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<const Map>   map;
     RCP<Matrix> A, P, R, Ac;
     RCP<MultiVector> nullspace;
+    RCP<RealValuedMultiVector> coordinates0;
+    RCP<RealValuedMultiVector> coordinates1;
     std::string matrixType = galeriParameters.GetMatrixType();
-    MueLuExamples::generate_user_matrix_and_nullspace<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrixType, lib, galeriList, comm, A, nullspace);
+    MueLuExamples::generate_user_matrix_and_nullspace<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrixType, lib, galeriList, comm, A, nullspace, coordinates0);
     map = A->getRowMap();
 
     // =========================================================================
@@ -330,8 +331,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::srand(12345);
 
       ParameterList mueluList;
-      mueluList.set("verbosity",          "test");
-      mueluList.set("coarse: max size",   100);
+      mueluList.set("verbosity",                           "test");
+      mueluList.set("coarse: max size",                    100);
 
       ParameterListInterpreter mueLuFactory(mueluList);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -339,7 +340,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       H->setlib(lib);
       H->AddNewLevel();
       H->GetLevel(1)->Keep("Nullspace", LevelFactory->GetFactory("Nullspace").get());
+      H->GetLevel(1)->Keep("Coordinates", LevelFactory->GetFactory("Coordinates").get());
       H->GetLevel(0)->Set("A", A);
+      H->GetLevel(0)->Set("Coordinates", coordinates0);
       mueLuFactory.SetupHierarchy(*H);
 
       // Extract R, P & Ac for LevelWrap Usage
@@ -347,6 +350,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       H->GetLevel(1)->Get("P", P);
       H->GetLevel(1)->Get("A", Ac);
       nullspace = H->GetLevel(1)->template Get<RCP<MultiVector> >("Nullspace", LevelFactory->GetFactory("Nullspace").get());
+      coordinates1 = H->GetLevel(1)->template Get<RCP<RealValuedMultiVector> >("Coordinates", LevelFactory->GetFactory("Coordinates").get());
 
       if (myRank==0) {
         // Redirect output back
@@ -372,10 +376,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ParameterList mueluList;
       mueluList.set("verbosity",          "test");
       mueluList.set("coarse: max size",   100);
+      ParameterList& level0 = mueluList.sublist("level 0");
+      level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
-      level1.set("R",         R);
-      level1.set("P",         P);
-      level1.set("Nullspace", nullspace);
+      level1.set("R",           R);
+      level1.set("P",           P);
+      level1.set("Nullspace",   nullspace);
+      level1.set("Coordinates", coordinates1);
 
       MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 
@@ -399,9 +406,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("transpose: use implicit",    false);
       mueluList.set("max levels",                 4);
       mueluList.set("coarse: max size",           100);
+      ParameterList& level0 = mueluList.sublist("level 0");
+      level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
       level1.set("P",         P);
       level1.set("Nullspace", nullspace);
+      level1.set("Coordinates", coordinates1);
 
       MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 
@@ -425,9 +435,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("coarse: max size",           100);
       mueluList.set("transpose: use implicit",    true);
       mueluList.set("max levels",                 2);
+      ParameterList& level0 = mueluList.sublist("level 0");
+      level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
       level1.set("P",         P);
       level1.set("Nullspace", nullspace);
+      level1.set("Coordinates", coordinates1);
 
       MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 

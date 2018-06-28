@@ -728,8 +728,7 @@ class AggregateGenerator {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
@@ -781,8 +780,7 @@ class AggregateGenerator {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
@@ -837,8 +835,7 @@ class AggregateGenerator {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 

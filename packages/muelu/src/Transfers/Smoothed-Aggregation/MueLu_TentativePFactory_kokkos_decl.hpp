@@ -164,6 +164,8 @@ namespace MueLu {
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
 
+    mutable bool bTransferCoordinates_ = false;
+
   };
 
 } //namespace MueLu
