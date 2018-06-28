@@ -365,7 +365,7 @@ namespace MueLuTests {
       return;
     }
     int expectedPartitions=2;
-#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
     using execution_space = typename Node::device_type::execution_space;
     if (std::is_same<execution_space, Kokkos::OpenMP>::value)
     {
