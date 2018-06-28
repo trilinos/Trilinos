@@ -54,7 +54,7 @@ The purpose of Isorropia is to ....
 "
 %enddef
 
-%define %isorropia_import_code
+%define %isorropia_importcode
 "
 from . import _Base
 "
@@ -62,7 +62,7 @@ from . import _Base
 
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
-        moduleimport = %isorropia_import_code,
+        moduleimport = %isorropia_importcode,
         docstring    = %isorropia_docstring) Base
 
 %{

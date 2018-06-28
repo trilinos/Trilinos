@@ -77,9 +77,20 @@ LOCA.MultiContinuation supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA",
-        directors = "1",
-        docstring = %loca_multicontinuation_docstring) MultiContinuation
+%define %loca_multicontinuation_importcode
+"
+import _MultiContinuation
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA",
+        directors    = "1",
+        moduleimport = %loca_multicontinuation_importcode,
+        docstring    = %loca_multicontinuation_docstring) MultiContinuation
 
 %{
 // PyTrilinos include files
@@ -143,15 +154,6 @@ LOCA.MultiContinuation supports the following classes:
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
 %teuchos_rcp(LOCA::MultiContinuation::Factory)
-
-// Allow import from this directory
-%pythoncode
-%{
-import sys, os.path as op
-thisDir = op.dirname(op.abspath(__file__))
-if not thisDir in sys.path: sys.path.append(thisDir)
-del sys, op
-%}
 
 // Import base class declarations
 %import "NOX.Abstract.i"

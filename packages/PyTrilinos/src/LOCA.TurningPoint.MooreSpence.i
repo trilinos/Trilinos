@@ -67,9 +67,21 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.TurningPoint",
-        directors = "1",
-        docstring = %loca_turningpoint_moorespence_docstring) MooreSpence
+%define %loca_turningpoint_moorespence_importcode
+"
+from . import _MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+import PyTrilinos.LOCA.Parameter
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.TurningPoint",
+        directors    = "1",
+        moduleimport = %loca_turningpoint_moorespence_importcode,
+        docstring    = %loca_turningpoint_moorespence_docstring) MooreSpence
 
 %{
 // PyTrilinos include files
@@ -113,7 +125,7 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::SolverFactory)
 
-// Base class support
+// Allow importing from parent directory
 %pythoncode
 %{
 import sys, os.path as op
@@ -121,6 +133,8 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
+
+// Base class support
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"

@@ -53,15 +53,19 @@ See the PyTrilinos.LOCA.Hopf module for documentation
 "
 %enddef
 
-%define %loca_hopf_base_import_code
+%define %loca_hopf_base_importcode
 "
 from . import _Base
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
 "
 %enddef
 
-%module(package       = "PyTrilinos.LOCA.Hopf",
-        moduleinclude = %loca_hopf_base_import_code,
-        docstring     = %loca_hopf_base_docstring) Base
+%module(package      = "PyTrilinos.LOCA.Hopf",
+        moduleimport = %loca_hopf_base_importcode,
+        docstring    = %loca_hopf_base_docstring) Base
 
 %{
 // PyTrilinos include files
@@ -119,13 +123,6 @@ from . import _Base
 %import "Teuchos.i"
 
 // Base class imports
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"
 %import(module="Extended") "LOCA_Extended_Vector.H"

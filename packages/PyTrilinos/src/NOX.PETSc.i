@@ -60,11 +60,11 @@ NOX.PETSC provides the following user-level classes:
 "
 %enddef
 
-%define %nox_petsc_import_code
+%define %nox_petsc_importcode
 "
 from .. import Abstract
 from .  import Interface
-from .  import ___init__
+from .  import _Base
 "
 %enddef
 
@@ -83,8 +83,8 @@ from .  import ___init__
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_petsc_import_code,
-	docstring    = %nox_petsc_docstring) __init__
+        moduleimport = %nox_petsc_importcode,
+	docstring    = %nox_petsc_docstring) Base
 
 %{
 // Configuration

@@ -53,7 +53,7 @@ See the documentation for python module PyTrilinos.Teuchos
 "
 %enddef
 
-%define %teuchos_base_import_code
+%define %teuchos_base_importcode
 "
 from . import _Base
 "
@@ -63,7 +63,7 @@ from . import _Base
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %teuchos_base_import_code,
+        moduleimport = %teuchos_base_importcode,
 	docstring    = %teuchos_base_docstring) Base
 
 // Include Files

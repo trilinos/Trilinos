@@ -53,7 +53,7 @@ See the documentation for python module PyTrilinos.LOCA
 "
 %enddef
 
-%define %loca_base_import_code
+%define %loca_base_importcode
 "
 from . import _Base
 "
@@ -63,7 +63,7 @@ from . import _Base
         directors     = "1",
 	autodoc       = "1",
 	implicitconv  = "1",
-        moduleinclude = %loca_base_import_code,
+        moduleinclude = %loca_base_importcode,
 	docstring     = %loca_base_docstring) Base
 
 %{

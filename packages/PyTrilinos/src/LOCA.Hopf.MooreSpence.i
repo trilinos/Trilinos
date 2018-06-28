@@ -76,9 +76,23 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 "
 %enddef
 
-%module(package="PyTrilinos.LOCA.Hopf",
-        directors = "1",
-        docstring = %loca_hopf_moorespence_docstring) MooreSpence
+%define %loca_hopf_moorespence_importcode
+"
+from . import _MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+"
+%enddef
+
+%module(package      ="PyTrilinos.LOCA.Hopf",
+        directors    = "1",
+        moduleimport = %loca_hopf_moorespence_importcode,
+        docstring    = %loca_hopf_moorespence_docstring) MooreSpence
 
 %{
 // PyTrilinos include files
@@ -152,13 +166,6 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 %teuchos_rcp(LOCA::Hopf::MooreSpence::SalingerBordering)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"

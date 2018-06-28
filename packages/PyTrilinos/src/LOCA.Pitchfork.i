@@ -53,12 +53,12 @@ See module PyTrilinos.LOCA.Pitchfork for documentation
 "
 %enddef
 
-%define %loca_pitchfork_base_import_code
+%define %loca_pitchfork_base_importcode
 "
 from . import _Base
 "
 %enddef
 
 %module(package       = "PyTrilinos.LOCA.Pitchfork",
-        moduleinclude = %loca_pitchfork_base_import_code,
+        moduleinclude = %loca_pitchfork_base_importcode,
         docstring     = %loca_pitchfork_base_docstring) Base

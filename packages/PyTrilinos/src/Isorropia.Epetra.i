@@ -53,7 +53,7 @@ The purpose of Isorropia.Epetra is to ....
 "
 %enddef
 
-%define %isorropia_epetra_import_code
+%define %isorropia_epetra_importcode
 "
 from . import _Epetra
 "
@@ -62,7 +62,7 @@ from . import _Epetra
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %isorropia_epetra_import_code,
+        moduleimport = %isorropia_epetra_importcode,
 	docstring    = %isorropia_epetra_docstring) Epetra
 
 %{

@@ -66,9 +66,21 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.TurningPoint",
-        directors = "1",
-        docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_turningpoint_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.TurningPoint",
+        directors    = "1",
+        moduleimport = %loca_turningpoint_minimallyaugmented_importcode,
+        docstring    = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
 // PyTrilinos include files
@@ -112,14 +124,6 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
-
-%pythoncode
-%{
-import sys, os.path as op
-thisDir = op.dirname(op.abspath(__file__))
-if not thisDir in sys.path: sys.path.append(thisDir)
-del sys, op
-%}
 
 // Base class support
 %import "NOX.Abstract.i"

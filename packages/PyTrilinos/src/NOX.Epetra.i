@@ -65,9 +65,14 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
-%define %nox_epetra_base_import_code
+%define %nox_epetra_base_importcode
 "
 from . import _Base
+import PyTrilinos.Teuchos.Base
+from PyTrilinos.NOX import Abstract
+from . import Interface
+import PyTrilinos.Epetra
+import PyTrilinos.EpetraExt
 "
 %enddef
 
@@ -75,7 +80,7 @@ from . import _Base
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_epetra_base_import_code,
+        moduleimport = %nox_epetra_base_importcode,
 	docstring    = %nox_epetra_base_docstring) Base
 
 %{
@@ -136,14 +141,11 @@ using namespace NOX::Epetra;
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the this directory and its parent, and force
-// correct import of ___init__
+// Allow import from the this directory's parent
 %pythoncode
 %{
 import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir)
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
