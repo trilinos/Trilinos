@@ -74,19 +74,20 @@ namespace Galeri {
 
     public:
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename MultiVector>
-    static Teuchos::RCP<MultiVector>
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename RealValuedMultiVector>
+    static Teuchos::RCP<RealValuedMultiVector>
     CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list) {
       using Galeri::Xpetra::VectorTraits;
+      typedef typename RealValuedMultiVector::scalar_type real_type;
 
-      Teuchos::RCP<MultiVector> coordinates;
+      Teuchos::RCP<RealValuedMultiVector> coordinates;
 
       GlobalOrdinal ix, iy, iz;
-      Scalar delta_x, delta_y, delta_z;
+      real_type delta_x, delta_y, delta_z;
 
-      Scalar lx = Teuchos::as<Scalar>(list.get<double>("lx", 1) * list.get<double>("stretchx", 1));
-      Scalar ly = Teuchos::as<Scalar>(list.get<double>("ly", 1) * list.get<double>("stretchy", 1));
-      Scalar lz = Teuchos::as<Scalar>(list.get<double>("lz", 1) * list.get<double>("stretchz", 1));
+      real_type lx = Teuchos::as<real_type>(list.get<double>("lx", 1) * list.get<double>("stretchx", 1));
+      real_type ly = Teuchos::as<real_type>(list.get<double>("ly", 1) * list.get<double>("stretchy", 1));
+      real_type lz = Teuchos::as<real_type>(list.get<double>("lz", 1) * list.get<double>("stretchz", 1));
 
       GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
       GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
@@ -97,44 +98,44 @@ namespace Galeri {
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
       if (coordType == "1D") {
-        coordinates = VectorTraits<Map,MultiVector>::Build(map, 1, false);
-        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(1);
+        coordinates = VectorTraits<Map,RealValuedMultiVector>::Build(map, 1, false);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<real_type> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
-        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
+        delta_x = lx / Teuchos::as<real_type>(nx - 1);
 
         for (size_t i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i];
-          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
+          Coord[0][i] = delta_x * Teuchos::as<real_type>(ix);
         }
 
       } else if (coordType == "2D") {
-        coordinates = VectorTraits<Map,MultiVector>::Build(map, 2, false);
-        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(2);
+        coordinates = VectorTraits<Map,RealValuedMultiVector>::Build(map, 2, false);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<real_type> > Coord(2);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
 
-        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
-        delta_y = ly / Teuchos::as<Scalar>(ny - 1);
+        delta_x = lx / Teuchos::as<real_type>(nx - 1);
+        delta_y = ly / Teuchos::as<real_type>(ny - 1);
 
         for (size_t i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i] % nx;
           iy = (MyGlobalElements[i] - ix) / nx;
 
-          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
-          Coord[1][i] = delta_y * Teuchos::as<Scalar>(iy);
+          Coord[0][i] = delta_x * Teuchos::as<real_type>(ix);
+          Coord[1][i] = delta_y * Teuchos::as<real_type>(iy);
         }
 
       } else if (coordType == "3D") {
-        coordinates = VectorTraits<Map,MultiVector>::Build(map, 3, false);
-        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(3);
+        coordinates = VectorTraits<Map,RealValuedMultiVector>::Build(map, 3, false);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<real_type> > Coord(3);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
         Coord[2] = coordinates->getDataNonConst(2);
 
-        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
-        delta_y = ly / Teuchos::as<Scalar>(ny - 1);
-        delta_z = lz / Teuchos::as<Scalar>(nz - 1);
+        delta_x = lx / Teuchos::as<real_type>(nx - 1);
+        delta_y = ly / Teuchos::as<real_type>(ny - 1);
+        delta_z = lz / Teuchos::as<real_type>(nz - 1);
 
         for (size_t i = 0; i < NumMyElements; i++) {
           GlobalOrdinal ixy = MyGlobalElements[i] % (nx * ny);
@@ -143,9 +144,9 @@ namespace Galeri {
           ix = ixy % nx;
           iy = (ixy - ix) / nx;
 
-          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
-          Coord[1][i] = delta_y * Teuchos::as<Scalar>(iy);
-          Coord[2][i] = delta_z * Teuchos::as<Scalar>(iz);
+          Coord[0][i] = delta_x * Teuchos::as<real_type>(ix);
+          Coord[1][i] = delta_y * Teuchos::as<real_type>(iy);
+          Coord[2][i] = delta_z * Teuchos::as<real_type>(iz);
         }
 
       } else {

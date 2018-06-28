@@ -55,6 +55,7 @@ Level 1
    Domain GID offsets = {0}   [default]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -136,6 +137,7 @@ Level 2
    Domain GID offsets = {0}   [default]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -217,6 +219,7 @@ Level 3
    Domain GID offsets = {0}   [default]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   

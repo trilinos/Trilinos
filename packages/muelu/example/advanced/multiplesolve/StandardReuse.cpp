@@ -138,7 +138,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   }
 
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
   A = Pr->BuildMatrix();
 
   if (matrixType == "Elasticity2D" ||

@@ -30,6 +30,7 @@
     <Parameter name="coarse: max size"                      type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
     <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
+    <Parameter name="tentative: build coarse coordinates"   type="bool"     value="false"/>
 
     <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
