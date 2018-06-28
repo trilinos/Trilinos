@@ -252,12 +252,12 @@ public:
     }
   }
 
-  bool test(std::ostream &outStream = std::cout, const int verbosity = 0) {
+  bool test(const int rank, std::ostream &outStream = std::cout, const int verbosity = 0) {
     const Real one(1), tol(std::sqrt(ROL_EPSILON<Real>()));
     // Initialize low rank factors
-    std::vector<Ptr<Vector<Real>>> U(rank_);
-    LA::Matrix<Real> V(ncol_,rank_);
-    for (int i = 0; i < rank_; ++i) {
+    std::vector<Ptr<Vector<Real>>> U(rank);
+    LA::Matrix<Real> V(ncol_,rank);
+    for (int i = 0; i < rank; ++i) {
       U[i] = Y_[0]->clone();
       RandomizeVector(*U[i]);
       for (int j = 0; j < ncol_; ++j) {
@@ -269,7 +269,7 @@ public:
     std::vector<Ptr<Vector<Real>>> A(ncol_);
     for (int i = 0; i < ncol_; ++i) {
       A[i] = Y_[0]->clone(); A[i]->zero();
-      for (int j = 0; j < rank_; ++j) {
+      for (int j = 0; j < rank; ++j) {
         A[i]->axpy(V(i,j),*U[j]);
       }
       advance(one,*A[i],i,one);

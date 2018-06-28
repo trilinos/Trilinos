@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
   // *** Test body.
   try {
 
-    int nrow = 128, ncol = 100, rank = 4;
+    int nrow = 128, ncol = 100, rank = 4, testrank = 6;
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(nrow, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
 
     ROL::Sketch<RealT> sketch(x,ncol,rank);
-    bool flag = sketch.test(*outStream,2);
+    bool flag = sketch.test(testrank,*outStream,2);
     errorFlag += (flag ? 0 : 1);
   }
   catch (std::logic_error err) {
