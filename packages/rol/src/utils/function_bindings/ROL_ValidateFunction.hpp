@@ -116,6 +116,9 @@ public:
                                       const V& x, 
                                       const string& name="Linear Operator",
                                       const string& symbol="A" ) const;
+
+   ostream& getStream() const; 
+
 private:
 
   int                    order_;         // Finite difference order
@@ -124,7 +127,7 @@ private:
   int                    precision_;     // Number of digits to display
   bool                   printToStream_; // False will suppress output
   vector<Real>           steps_;         // Set of step sizes of FD approximation
-  
+  string                 dashline_;      // For print format
   ostream& os_;                          // pointer to Output stream
  
   mutable Ptr<VectorWorkspace<Real>> workspace_;

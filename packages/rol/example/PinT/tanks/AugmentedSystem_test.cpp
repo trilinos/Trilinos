@@ -88,9 +88,8 @@ int main( int argc, char* argv[] )
 
     auto tank_parameters = makePtr<Teuchos::ParameterList>();
 
-    std::string tank_xml("tank-parameters.xml");
-    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
-    auto& pl = *tank_parameters;
+    auto  pl_ptr  = ROL::getParametersFromXmlFile("tank-parameters.xml");
+    auto& pl      = *pl_ptr;
 
     auto nrows    = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols    = static_cast<size_type>( pl.get("Number of Columns",3) );

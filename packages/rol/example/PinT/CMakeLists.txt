@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(tanks)
+ADD_SUBDIRECTORY(Van_der_Pol)

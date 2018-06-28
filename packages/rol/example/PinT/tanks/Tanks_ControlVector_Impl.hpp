@@ -1,8 +1,7 @@
-// @HEADER
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
+//                 Copyright (1614) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -41,61 +40,54 @@
 // ************************************************************************
 // @HEADER
 
-
 #pragma once
-#ifndef ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
-#define ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
+#ifndef CONTROLVECTORIMPL_HPP
+#define CONTROLVECTORIMPL_HPP
 
-
-namespace ROL {
-
-namespace details {
+namespace Tanks {
 
 using namespace std;
-namespace ph = std::placeholders; // defines ph::_1, ph::_2, ...
 
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                      ROL::ParameterList& pl,
-                                                      ostream& os=cout ) :
-  con_(con), os_(os) {
-  auto& fdlist = pl.sublist("Finite Difference Check"); 
-  order_ = fdlist.get("Order", 1);
-  numSteps_ = fdlist.get("Number of Steps", 
-}
-
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                     const int numSteps = ROL_NUM_CHECKDERIVSTEPS, 
-                                                     const int order = 1,
-                                                     ostream& os=cout ) : 
-  con_(con), numSteps_(numSteps), order_(order), os_(os) {
-  steps_.resize(numSteps_);
-}
-
+using size_type = typename vector<double>::size_type;
 
 
 template<typename Real>
-DynamicConstraintCheck<Real>::value( V& c, const V& uo, const V& un, 
-                                     const V& z, const TS& ts ) const override {
-  con_.value(c,uo,un,z,ts);
+void ControlVector<Real>::set( const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) = xp->at(xbegin+i);
 }
- 
+  
 template<typename Real>
-DynamicConstraintCheck<Real>::applyJacobian_uo( V& jv, const V& vo, const V& uo, 
-                                                const V& un, const V& z, 
-                                                const TS& ts ) const override {
-
-  auto f_val = bind( &DC::value, ph::_2, ph::_1, un, z, ts );
-  auto f_der = bind( &DC::applyJacobian_uo, ph::_3, ph::_2, ph::_1, un, z, ts );
-   
+void ControlVector<Real>::set( const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) = xp->at(i);
 }
 
+template<typename Real>
+void ControlVector<Real>::axpy( Real alpha, const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) += alpha*xp->at(xbegin+i);
+}
 
-} // namespace details
+template<typename Real>
+void ControlVector<Real>::axpy( Real alpha, const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) += alpha*xp->at(i);
+}
 
-} // namespace ROL
+template<typename Real>
+void ControlVector<Real>::hadamard( const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) *= xp->at(xbegin+i);
+}
+  
+template<typename Real>
+void ControlVector<Real>::hadamard( const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) *= xp->at(i);
+}
 
+} // namespace Tanks
 
-#endif // ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
+#endif // CONTROLVECTOR_IMPL_HPP
 

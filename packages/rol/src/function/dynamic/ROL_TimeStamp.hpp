@@ -59,7 +59,10 @@ namespace ROL {
 template<typename Real>
 struct TimeStamp {
 
-  std::vector<Real> t;
+  using size_type = typename std::vector<Real>::size_type;
+
+  std::vector<Real> t;   // Time points for this time step
+  size_type         k;   // Time-step number  
 
 };
 
