@@ -646,7 +646,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
     Galeri::Xpetra::CreateMap<LO, GO, Node> (xpetraParameters.GetLib (),
                                              "Cartesian2D", comm, GaleriList);
   RCP<Galeri::Xpetra::Problem<XMapType,XCrsType,XMVectorType> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,XMapType,XCrsType,XMVectorType> (std::string ("Laplace2D"),
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,XMapType,XCrsType,XMVectorType> (std::string("Laplace2D"),
                                                                            xmap, GaleriList);
 
   RCP<XCrsType> XA = Pr->BuildMatrix ();

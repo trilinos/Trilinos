@@ -61,6 +61,7 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Elasticity2DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       Elasticity2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) {
         E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
         nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
@@ -81,9 +82,9 @@ namespace Galeri {
         mode_ = list.get<std::string>("mode", "plane stress");
       }
 
-      Teuchos::RCP<Matrix>      BuildMatrix();
-      Teuchos::RCP<MultiVector> BuildNullspace();
-      Teuchos::RCP<MultiVector> BuildCoords();
+      Teuchos::RCP<Matrix>                BuildMatrix();
+      Teuchos::RCP<MultiVector>           BuildNullspace();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
 
     private:
       typedef Scalar        SC;
@@ -313,15 +314,18 @@ namespace Galeri {
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    RCP<MultiVector> Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+    RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector>
+    Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       // FIXME: map here is an extended map, with multiple DOF per node
       // as we cannot construct a single DOF map in Problem, we repeat the coords
-      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim_);
+      this->Coords_ = MultiVectorTraits<Map,RealValuedMultiVector>::Build(this->Map_, nDim_);
 
+      typedef typename RealValuedMultiVector::scalar_type real_type;
       typedef Teuchos::ScalarTraits<Scalar> TST;
 
-      Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
-      Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
+      Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
+      Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
 
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
@@ -347,6 +351,7 @@ namespace Galeri {
       this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, numVectors);
 
       typedef Teuchos::ScalarTraits<Scalar> TST;
+      typedef typename RealValuedMultiVector::scalar_type real_type;
 
       if (this->Coords_ == Teuchos::null)
         BuildCoords();
@@ -354,8 +359,8 @@ namespace Galeri {
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
       size_t          numDofs = this->Map_->getNodeNumElements();
-      Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
-      Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
+      Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
+      Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
 
       SC one = TST::one();
 
@@ -370,8 +375,8 @@ namespace Galeri {
       }
 
       // Calculate center
-      SC cx = this->Coords_->getVector(0)->meanValue();
-      SC cy = this->Coords_->getVector(1)->meanValue();
+      real_type cx = this->Coords_->getVector(0)->meanValue();
+      real_type cy = this->Coords_->getVector(1)->meanValue();
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(2);

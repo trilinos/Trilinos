@@ -170,10 +170,10 @@ namespace MueLu {
 
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
+
     } else if (paramList.isParameter("MueLu preconditioner") == true) {
       this->GetOStream(Runtime0) << "Use facade class: " << paramList.get<std::string>("MueLu preconditioner")  << std::endl;
       Teuchos::RCP<ParameterList> pp = facadeFact_->SetParameterList(paramList);
-
       SetFactoryParameterList(*pp);
 
     }  else {
@@ -973,6 +973,7 @@ namespace MueLu {
     if (defaultList.isSublist("matrixmatrix: kernel params"))
       ptentParams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, ptentParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: build coarse coordinates", bool, ptentParams);
     Ptent->SetParameterList(ptentParams);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));

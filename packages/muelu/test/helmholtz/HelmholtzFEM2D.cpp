@@ -139,15 +139,15 @@ int main(int argc, char *argv[]) {
     RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
     Teuchos::ParameterList pl = matrixParameters_helmholtz.GetParameterList();
-    RCP<MultiVector> coordinates;
+    RCP<RealValuedMultiVector> coordinates;
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", pl.get("nx", nx));
     galeriList.set("ny", pl.get("ny", ny));
     galeriList.set("nz", pl.get("nz", nz));
     RCP<const Map> map;
-    
+
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
 
     RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 

@@ -172,7 +172,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         found = baseFile.find("_np");
         jumpOut = true;
       }
-      
+
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
         baseFile = baseFile.substr(0, found);
@@ -182,7 +182,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       }
       std::cout << "Testing: "<< xmlFile << std::endl;
-      
+
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());

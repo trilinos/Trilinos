@@ -92,6 +92,7 @@ namespace MueLuTests {
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename RealValuedMultiVector::scalar_type real;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
@@ -101,14 +102,21 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(/*199*/29);
+    GO nx = 29;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     A->SetFixedBlockSize(1);
-    fineLevel.Set("A",A);
+    fineLevel.Set("A", A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates
+      = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     LocalOrdinal NSdim = 2;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("Nullspace", nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
@@ -183,9 +191,15 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(199);
+    GO nx = 199;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     fineLevel.Request("A");
     fineLevel.Set("A",A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     // only one NS vector -> exercises manual orthogonalization
     LocalOrdinal NSdim = 1;
@@ -268,9 +282,16 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(199);
+    GO nx = 199;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
 
     fineLevel.Set("A", A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
+    fineLevel.Set("Coordinates", coordinates);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -345,6 +366,7 @@ namespace MueLuTests {
       Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
     RCP<Matrix> A = Pr->BuildMatrix();
     A->SetFixedBlockSize(2);
+    RCP<RealValuedMultiVector> coordinates = Pr->BuildCoords();
 
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -353,11 +375,12 @@ namespace MueLuTests {
 
     fineLevel.Request("A");
     fineLevel.Set("A",A);
+    fineLevel.Set("Coordinates", coordinates);
 
     LocalOrdinal NSdim = 3;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("Nullspace", nullSpace);
     fineLevel.Set("DofsPerNode",2);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -513,8 +536,8 @@ namespace MueLuTests {
     CoupledAggFact->SetOrdering("natural");
     CoupledAggFact->SetPhase3AggCreation(0.5);
 
-    RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-    RCP<Factory>          Rfact = rcp( new TransPFactory() );
+    RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
+    RCP<Factory>           Rfact  = rcp( new TransPFactory() );
     RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 
@@ -597,7 +620,7 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, PtentEpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -634,6 +657,7 @@ namespace MueLuTests {
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
           Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
         RCP<Matrix> Op = Pr->BuildMatrix();
+        RCP<RealValuedMultiVector> coordinates = Pr->BuildCoords();
 
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -651,6 +675,7 @@ namespace MueLuTests {
         Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
         Finest->Set("A",Op);                      // set fine level matrix
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+        // Finest->Set("Coordinates", coordinates);  // set coordinates for finest level
 
         // define transfer operators
         RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -659,8 +684,8 @@ namespace MueLuTests {
         CoupledAggFact->SetOrdering("natural");
         CoupledAggFact->SetPhase3AggCreation(0.5);
 
-        RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-        RCP<Factory>          Rfact = rcp( new TransPFactory() );
+        RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
+        RCP<Factory>           Rfact  = rcp( new TransPFactory() );
         RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
         H->SetMaxCoarseSize(1);
 
@@ -684,6 +709,7 @@ namespace MueLuTests {
         M.SetFactory("Aggregates", CoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
+        // M.SetFactory("Coordinates", Pfact);
 
         H->Setup(M, 0, maxLevels);
 
@@ -750,8 +776,8 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NoQROption,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,EpetraVsTpetra,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NonStandardMaps,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,PtentEpetraVsTpetra,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
