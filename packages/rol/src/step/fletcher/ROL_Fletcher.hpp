@@ -65,6 +65,7 @@ private:
   using FletcherBase<Real>::con_;
 
   using FletcherBase<Real>::penaltyParameter_;
+  using FletcherBase<Real>::quadPenaltyParameter_;
 
   // Evaluation counters
   using FletcherBase<Real>::nfval_;
@@ -196,6 +197,7 @@ public:
       ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
       HessianApprox_ = sublist.get("Level of Hessian Approximation",  0);
       penaltyParameter_ = sublist.get("Penalty Parameter", 1.0);
+      quadPenaltyParameter_ = sublist.get("Quadratic Penalty Parameter", 0.0);
 
       delta_ = sublist.get("Regularization Parameter", 0.0);
 
@@ -226,6 +228,8 @@ public:
     if( isValueComputed_ )
       return fPhi_;
 
+    Real zero(0);
+
     // Reset tolerances
     Real origTol = tol;
     Real tol2 = origTol;
@@ -236,6 +240,11 @@ public:
     tol = multSolverError_;
 
     fPhi_ = fval_ - c_->dot(y_->dual());
+
+    if( quadPenaltyParameter_ > zero ) {
+      fPhi_ = fPhi_ + Real(0.5)*quadPenaltyParameter_*(c_->dot(c_->dual()));
+    }
+
     isValueComputed_ = true;
 
     return fPhi_;
@@ -247,6 +256,8 @@ public:
       g.set(*gPhi_);
       return;
     }
+
+    Real zero(0);
 
     // Reset tolerances
     Real origTol = tol;
@@ -271,12 +282,19 @@ public:
 
     gPhi_->plus( *gL_ );
 
+    if( quadPenaltyParameter_ > zero ) {
+      con_->applyAdjointJacobian( *Tv_, *c_, x, tol2 ); tol2 = origTol;
+      gPhi_->axpy( quadPenaltyParameter_, *Tv_ );
+    }
+
     g.set(*gPhi_);
 
     isGradientComputed_ = true;
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    Real zero(0);
+
     // Reset tolerances
     Real origTol = tol;
     Real tol2 = origTol;
@@ -302,7 +320,16 @@ public:
     con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
     hv.axpy( static_cast<Real>(-1), *Tv_ );
 
-    hv.axpy(static_cast<Real>(2)*penaltyParameter_, v);
+    hv.axpy( static_cast<Real>(2)*penaltyParameter_, v );
+
+    if( quadPenaltyParameter_ > zero ) {
+      con_->applyJacobian( *b2_, v, x, tol2 ); tol2 = origTol;
+      con_->applyAdjointJacobian( *Tv_, *b2_, x, tol2 ); tol2 = origTol;
+      hv.axpy( quadPenaltyParameter_, *Tv_ );
+      con_->applyAdjointHessian( *Tv_, *c_, v, x, tol2); tol2 = origTol;
+      hv.axpy( -quadPenaltyParameter_, *Tv_ );
+    }
+
   }
 
   void solveAugmentedSystem(Vector<Real> &v1,

@@ -64,6 +64,7 @@ protected:
   const Ptr<Constraint<Real> > con_;
 
   Real penaltyParameter_;
+  Real quadPenaltyParameter_;
 
   // Evaluation counters
   int nfval_;
