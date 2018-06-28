@@ -69,6 +69,7 @@ SET(BUILD_NAME_DETAILS DEFAULT)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK  Nightly)  # Set the CDash track to Nightly
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
