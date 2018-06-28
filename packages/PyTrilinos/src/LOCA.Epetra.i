@@ -53,9 +53,26 @@ See the documentation for PyTrilinos.LOCA.Epetra
 "
 %enddef
 
-%define %loca_epetra_base_import_code
+%define %loca_epetra_base_importcode
 "
 from . import _Base
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.Epetra
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.NOX.Epetra.Base
+import PyTrilinos.EpetraExt
+import PyTrilinos.NOX.Epetra.Interface
+from .. import Extended
+from .. import MultiContinuation
+from .. import PhaseTransition
+from .. import TimeDependent
+from .. import BorderedSystem
+from .. import Homotopy
+from .. import TurningPoint
+from .. import Hopf
+from .. import Pitchfork
+from .. import Abstract
+from . import Interface
 "
 %enddef
 
@@ -63,7 +80,7 @@ from . import _Base
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %loca_epetra_base_import_code,
+        moduleimport = %loca_epetra_base_importcode,
 	docstring    = %loca_epetra_base_docstring) Base
 
 %{
@@ -143,18 +160,6 @@ using Teuchos::rcp;
 %import "NOX.Abstract.i"
 %import "NOX.Epetra.i"
 %import "NOX.Epetra.Interface.i"
-
-// Allow import from this and parent directory. Force Interface to be
-// LOCA.Interface
-%pythoncode
-%{
-import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 // LOCA base classes
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"

@@ -53,12 +53,12 @@ See the PyTrilinos.LOCA.TurningPoint module for documentation
 "
 %enddef
 
-%define %loca_turningpoint_base_import_code
+%define %loca_turningpoint_base_importcode
 "
 from . import _Base
 "
 %enddef
 
 %module(package       = "PyTrilinos.LOCA.TurningPoint",
-        moduleinclude = %loca_turningpoint_base_import_code,
+        moduleinclude = %loca_turningpoint_base_importcode,
         docstring     = %loca_turningpoint_base_docstring) Base

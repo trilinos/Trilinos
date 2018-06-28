@@ -62,6 +62,14 @@ NOX.Abstract provides the following user-level classes:
 "
 %enddef
 
+%define %nox_abstract_codeimport
+"
+from . import _Abstract
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.Epetra
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX",
 	directors    = "1",
 	autodoc      = "1",
@@ -107,15 +115,6 @@ NOX.Abstract provides the following user-level classes:
 // General ignore directives
 %ignore *::operator=;
 %ignore *::operator[];
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 // Trilinos module imports
 %import "Teuchos.i"

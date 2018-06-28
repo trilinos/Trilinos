@@ -62,6 +62,17 @@ supports the following classes:
 "
 %enddef
 
+%define %loca_pitchfork_moorespence_importcode
+"
+from . import MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TurningPoint
+"
+%enddef
+
 %module(package="PyTrilinos.LOCA.Pitchfork",
         directors = "1",
         docstring = %loca_pitchfork_moorespence_docstring) MooreSpence
@@ -108,13 +119,6 @@ supports the following classes:
 %teuchos_rcp(LOCA::Pitchfork::MooreSpence::SolverFactory)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"

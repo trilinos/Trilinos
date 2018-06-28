@@ -52,7 +52,7 @@ See the documentation for python module PyTrilinos.NOX
 "
 %enddef
 
-%define %nox_base_import_code
+%define %nox_base_importcode
 "
 from . import _Base
 "
@@ -60,7 +60,7 @@ from . import _Base
 
 %module(package      = "PyTrilinos.NOX",
 	autodoc      = "1",
-        moduleimport = %nox_base_import_code,
+        moduleimport = %nox_base_importcode,
         docstring    = %nox_base_docstring) Base
 
 %{
