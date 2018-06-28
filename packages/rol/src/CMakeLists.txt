@@ -90,6 +90,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/objective
                     ${DIR}/operator
                     ${DIR}/simopt
+                    ${DIR}/sketching
                     ${DIR}/std)
 
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
@@ -99,6 +100,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/objective/*.hpp
                     ${DIR}/operator/*.hpp
                     ${DIR}/simopt/*.hpp
+                    ${DIR}/sketching/*.hpp
                     ${DIR}/std/*.hpp)
 
 #
