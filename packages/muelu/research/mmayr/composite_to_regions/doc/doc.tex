@@ -734,7 +734,7 @@ To run the region code, two steps are required:
 The Matlab program creates a series of {\sf my*\_k} files where $ 0 \le k < nProcs$.
 These files contain various input information about the problem, the region layout, etc.
 
-The executable reads these files, creates matrices and a MueLu hierarchy and runs a V-cycle.
+The executable reads these files, creates matrices and a MueLu hierarchy and runs a V-cycle. The MueLu configuration is passed in as command line argument \texttt{--xml=PATH/XML\_FILE\_NAME}.
 
 \end{document}
 
