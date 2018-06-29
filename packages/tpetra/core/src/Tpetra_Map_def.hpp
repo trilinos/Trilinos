@@ -57,6 +57,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
+#include "KokkosCompat_Details_KokkosInit.hpp"
 #include <stdexcept>
 #include <typeinfo>
 
@@ -65,7 +66,6 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
     comm_ (new Teuchos::SerialComm<int> ()),
-    node_ (defaultArgNode<Node> ()),
     indexBase_ (0),
     numGlobalElements_ (0),
     numLocalElements_ (0),
@@ -79,7 +79,9 @@ namespace Tpetra {
     contiguous_ (false),
     distributed_ (false), // no communicator yet
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
-  {}
+  {
+    KokkosCompat::Details::initializeKokkos ();
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -89,7 +91,6 @@ namespace Tpetra {
        LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -104,13 +105,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    KokkosCompat::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
@@ -249,7 +244,6 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -265,13 +259,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    KokkosCompat::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
@@ -717,17 +705,10 @@ namespace Tpetra {
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
-    node_ (defaultArgNode<Node> ()),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    KokkosCompat::Details::initializeKokkos ();
 
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -748,17 +729,10 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<Node>& node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    KokkosCompat::Details::initializeKokkos ();
 
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
 
@@ -781,7 +755,6 @@ namespace Tpetra {
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
-    node_ (defaultArgNode<Node> ()),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -804,13 +777,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    KokkosCompat::Details::initializeKokkos ();
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -1740,7 +1707,6 @@ namespace Tpetra {
       RCP<map_type> newMap (new map_type ());
 
       newMap->comm_ = newComm;
-      newMap->node_ = this->node_;
       // mfh 07 Oct 2016: Preserve original behavior, even though the
       // original index base may no longer be the globally min global
       // index.  See #616 for why this doesn't matter so much anymore.
@@ -1899,7 +1865,6 @@ namespace Tpetra {
       map->lgMap_ = lgMap_;
       map->lgMapHost_ = lgMapHost_;
       map->glMap_ = glMap_;
-      map->node_ = node_;
 
       // Map's default constructor creates an uninitialized Directory.
       // The Directory will be initialized on demand in
@@ -2003,7 +1968,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
-    return node_;
+    // Node instances don't do anything any more, but sometimes it
+    // helps for them to be nonnull.
+    return Teuchos::rcp (new Node);
   }
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>

@@ -38,15 +38,19 @@ public:
   ///
   /// \param [in/out] params List of Node configuration parameters.
   ///   If empty, we use defaults.
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& params);
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) {}
 
   //! Default constructor (sets default parameters).
-  KokkosDeviceWrapperNode ();
+  KokkosDeviceWrapperNode () {}
 
   //! Get a filled-in set of parameters for Node, with their default values.
-  static Teuchos::ParameterList getDefaultParameters ();
+  static Teuchos::ParameterList getDefaultParameters () {
+    return Teuchos::ParameterList ();
+  }
 
-  void sync () const;
+  void sync () const {
+    execution_space::fence ();
+  }
 
   //! Human-readable name of this Node.
   static std::string name ();
