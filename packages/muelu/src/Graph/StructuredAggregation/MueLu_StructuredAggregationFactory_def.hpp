@@ -46,15 +46,11 @@
 #ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_DEF_HPP_
 
-#include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
 #include "MueLu_AggregationStructuredAlgorithm.hpp"
 #include "MueLu_StructuredAggregationFactory_decl.hpp"
-
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -218,7 +214,7 @@ namespace MueLu {
                                " components as the number of spatial dimensions in the problem.");
 
     // Now that we have extracted info from the level, create the IndexManager
-    RCP<MueLu::IndexManager<LO,GO,NO> > geoData;
+    RCP<IndexManager > geoData;
     if(!coupled) {
       geoData = rcp(new MueLu::UncoupledIndexManager<LO,GO,NO>(fineMap->getComm(),
                                                                coupled,
@@ -296,24 +292,34 @@ namespace MueLu {
     std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
 
+    // Create Coarse Data
+    RCP<CrsGraph> myGraph;
+
+
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
     RCP<MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node> >
       myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
-    myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+    if(interpolationOrder == 0){
+      myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+      TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
+                                 "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
-                               "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
+      aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+      Set(currentLevel, "Aggregates",         aggregates);
 
-    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+      GetOStream(Statistics1) << aggregates->description() << std::endl;
+    } else if(interpolationOrder == 1) {
+      myStructuredAlgorithm->BuildAggregates(pL, *graph, geoData, myGraph);
+      // myGraph->describe(*out,Teuchos::VERB_EXTREME);
+      Set(currentLevel, "prolongatorGraph",         myGraph);
+    }
 
-    Set(currentLevel, "Aggregates",         aggregates);
     Set(currentLevel, "gCoarseNodesPerDim", geoData->getGlobalCoarseNodesPerDir());
     Set(currentLevel, "lCoarseNodesPerDim", geoData->getLocalCoarseNodesPerDir());
 
-    GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu
