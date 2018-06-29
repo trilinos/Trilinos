@@ -118,11 +118,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map>fineMap,
-                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
+                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>& ghostedNodeCoarseGIDs) const {
 
     // First we allocated memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
     ghostedNodeCoarsePIDs.resize(this->getNumLocalGhostedNodes());
+    ghostedNodeCoarseGIDs.resize(this->numGhostedNodes);
 
     // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
     // This requires finding what their GID on the fine mesh is. They need to be ordered
@@ -176,6 +177,7 @@ namespace MueLu {
 
           ghostedNodeCoarseLIDs[currentIndex] = myCoarseLID;
           ghostedNodeCoarsePIDs[currentIndex] = myPID;
+          ghostedNodeCoarseGIDs[currentIndex] = myCoarseGID;
 
           if(myPID == myRank) {
             lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
@@ -332,7 +334,8 @@ namespace MueLu {
         }
         coarseMeshData[rank][3 + 2*dim + 1] = meshData[rank][3 + 2*dim + 1] / this->coarseRate[dim];
         if(meshData[rank][3 + 2*dim + 1] == this->gFineNodesPerDir[dim] - 1 &&
-           this->endRate[dim] < this->coarseRate[dim]) {
+           meshData[rank][3 + 2*dim + 1] % this->coarseRate[dim] > 0) {
+           //this->endRate[dim] < this->coarseRate[dim]) {
           ++coarseMeshData[rank][3 + 2*dim + 1];
         }
       }
