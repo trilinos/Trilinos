@@ -1644,7 +1644,6 @@ namespace Tpetra {
 
       // For each row of R
       for (size_t i = 0; i < n; i++) {
-        std::vector<size_t> ac_status(maxAccol + 1, ST_INVALID);
         // mfh 27 Sep 2016: m is the number of rows in the input matrix R
         // on the calling process.
         Acrowptr[i] = nnz;
