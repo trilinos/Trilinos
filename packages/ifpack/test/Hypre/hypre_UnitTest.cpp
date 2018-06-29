@@ -303,7 +303,7 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixInOrder ) {
 
 
 // hypre does not like the distribution of the vectors in this example.
-// Our interface should detect that and return an error code.
+// Our interface should detect that and remap as necessary.
 TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixOutOfOrder ) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int numProcs = comm.NumProc();
@@ -369,9 +369,10 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixOutOfOrder ) {
 
   //
   // Solve the linear system
-  // It should not like that the vectors are not contiguous
   //
-  TEST_EQUALITY(prec.ApplyInverse(B,X),-1);
+  TEST_EQUALITY(prec.ApplyInverse(RHS,X),0);
+
+  TEST_EQUALITY(EquivalentVectors(X, RHS, tol*10*pow(10.0,numProcs)), true);
 }
 
 
