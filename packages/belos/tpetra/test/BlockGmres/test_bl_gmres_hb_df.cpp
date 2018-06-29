@@ -88,14 +88,14 @@ int mptestnumimages = 1;
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar> 
-RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem(const RCP<Map<int> >& vmap)
+RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > > buildProblem(const RCP<Map<> >& vmap)
 {
-  typedef ScalarTraits<Scalar>         SCT;
-  typedef Operator<Scalar,int>         OP;
-  typedef MultiVector<Scalar,int>      MV;
-  typedef OperatorTraits<Scalar,MV,OP> OPT;
-  typedef MultiVecTraits<Scalar,MV>    MVT;
-  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(vmap,rnnzmax));
+  typedef ScalarTraits<Scalar>            SCT;
+  typedef Tpetra::Operator<Scalar>        OP;
+  typedef Tpetra::MultiVector<Scalar>     MV;
+  typedef OperatorTraits<Scalar,MV,OP>    OPT;
+  typedef MultiVecTraits<Scalar,MV>       MVT;
+  RCP<CrsMatrix<Scalar> > A = rcp(new CrsMatrix<Scalar>(vmap,rnnzmax));
   if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
@@ -131,14 +131,14 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar>
-bool runTest(double ltol, double times[], int &numIters, const RCP<Map<int> >& vmap) 
+bool runTest(double ltol, double times[], int &numIters, const RCP<Map<> >& vmap) 
 {
-  typedef ScalarTraits<Scalar>         SCT;
-  typedef typename SCT::magnitudeType   MT;
-  typedef Operator<Scalar,int> 		OP;
-  typedef MultiVector<Scalar,int>       MV;
-  typedef OperatorTraits<Scalar,MV,OP> OPT;
-  typedef MultiVecTraits<Scalar,MV>    MVT;
+  typedef ScalarTraits<Scalar>                  SCT;
+  typedef typename SCT::magnitudeType           MT;
+  typedef Tpetra::Operator<Scalar> 		OP;
+  typedef Tpetra::MultiVector<Scalar>           MV;
+  typedef OperatorTraits<Scalar,MV,OP>          OPT;
+  typedef MultiVecTraits<Scalar,MV>             MVT;
 
   const Scalar ONE  = SCT::one();
   mptestpl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
@@ -158,7 +158,7 @@ bool runTest(double ltol, double times[], int &numIters, const RCP<Map<int> >& v
   if (mptestmypid==0) cout << "Constructing solver..." << endl; 
   {
     TimeMonitor localtimer(ctimer);
-    solver = rcp(new BlockGmresSolMgr<Scalar,MV,OP>( problem, rcp(&mptestpl,false) ));
+    solver = rcp(new BlockGmresSolMgr<Scalar,MV,OP>( problem, rcpFromRef(mptestpl) ));
   }
   if (mptestmypid==0) cout << "Solving problem..." << endl;
   {
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  RCP<Map<int> > vmap = rcp(new Map<int>(mptestdim,0,comm));
+  RCP<Map<> > vmap = rcp(new Map<>(mptestdim,0,comm));
   //
   mptestpl.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   mptestpl.set( "Num Blocks", maxiters );
