@@ -2,8 +2,10 @@
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(Tpetra_INST_FLOAT)
 
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
+  IF (Tpetra_INST_FLOAT)
 
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
      Tpetra_BlockGMRES_hb_DoubleFloat_test
@@ -11,7 +13,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
      ARGS "--verbose"
      COMM serial mpi
      )
-   
+
+  ENDIF()
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
