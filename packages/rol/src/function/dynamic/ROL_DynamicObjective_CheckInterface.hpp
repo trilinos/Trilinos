@@ -49,6 +49,7 @@
 #include <functional>
 
 #include "ROL_DynamicObjective.hpp"
+#include "ROL_FunctionBindings.hpp"
 
 
 namespace ROL {
