@@ -214,7 +214,7 @@ public:
       con_->applyAdjointJacobian_uo( x, *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
       x.scale(-1.0);
       x.plus( *(vp.get(k) ) );
-      con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), x, *(up.get(k)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );             
+      con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), x, *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );             
     } // end for
 
     con_->applyAdjointJacobian_uo( x, *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );

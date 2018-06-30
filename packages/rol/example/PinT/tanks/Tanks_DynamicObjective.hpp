@@ -117,10 +117,10 @@ public:
     cols_( static_cast<size_type>( pl.get( "Number of Columns",    3   ) ) ),
     Nt_  ( static_cast<size_type>( pl.get( "Number of Time Steps", 100 ) ) ),
     T_   ( pl.get("Total Time",20.0) ),
-    tol_ ( T_*std::sqrt( ROL::ROL_EPSILON<Real>() ) ),
-    target_height_( rows_*cols_ ),
-    residual_n_( rows_*cols_ ) {
-    residual_o_( rows_*cols_ ) {
+    tol_ ( T_*std::sqrt( ROL::ROL_EPSILON<Real>() ) ) {
+    //target_height_( rows_*cols_ ),
+    //residual_n_( rows_*cols_ ),
+    //residual_o_( rows_*cols_ ) {
 
     auto& penalty = pl.sublist( "Penalty Parameters" );
     alpha_ = penalty.get( "Final State",          0.0 );
@@ -169,39 +169,39 @@ public:
     }
   }
 
-//  void gradient_un( V& g, const V& uo, const V& un, 
-//                    const V& z, const TS& timeStamp ) const override {
-//    auto& un_state = to_state(un);
-//    auto& g_state  = to_state(g);
-//    Real wo = 0.0;
-//    Real wn = 0.0;
-//    Real wz = 0.0;
-//    step_dependent_weights( wo, wn, wz, timeStamp );
-// 
-//    for( size_type i=0; i<rows_; ++i ) {
-//      for( size_type j=0; j<cols_; ++j ) { 
-//        g_state.h(i,j) = wn*(un_state.h(i,j) - htarg_);     
-//      }
-//    }
-//  }
-//
-//  void gradient_z( V& g, const V& uo, const V& un, 
-//                   const V& z, const TS& timeStamp ) const override {
-//    auto& z_ctrl   = to_control(z);
-//    auto& g_state  = to_state(g);
-//    Real wo = 0.0;
-//    Real wn = 0.0;
-//    Real wz = 0.0;
-//    step_dependent_weights( wo, wn, wz, timeStamp );
-// 
-//    for( size_type i=0; i<rows_; ++i ) {
-//      for( size_type j=0; j<cols_; ++j ) { 
-//        g_state.h(i,j) = wn*(un_state.h(i,j) - htarg_);     
-//      }
-//    }
-//
-//  }
-//  
+  void gradient_un( V& g, const V& uo, const V& un, 
+                    const V& z, const TS& timeStamp ) const override {
+    auto& un_state = to_state(un);
+    auto& g_state  = to_state(g);
+    Real wo = 0.0;
+    Real wn = 0.0;
+    Real wz = 0.0;
+    step_dependent_weights( wo, wn, wz, timeStamp );
+ 
+    for( size_type i=0; i<rows_; ++i ) {
+      for( size_type j=0; j<cols_; ++j ) { 
+        g_state.h(i,j) = wn*(un_state.h(i,j) - htarg_);     
+      }
+    }
+  }
+
+  void gradient_z( V& g, const V& uo, const V& un, 
+                   const V& z, const TS& timeStamp ) const override {
+    auto& z_ctrl  = to_control(z);
+    auto& g_ctrl  = to_control(g);
+    Real wo = 0.0;
+    Real wn = 0.0;
+    Real wz = 0.0;
+    step_dependent_weights( wo, wn, wz, timeStamp );
+ 
+    for( size_type i=0; i<rows_; ++i ) {
+      for( size_type j=0; j<cols_; ++j ) { 
+        g_ctrl(i,j) = wz*z_ctrl(i,j);     
+      }
+    }
+
+  }
+  
 //  void hessVec_uo_uo( V& hv, const V& vo, const V& uo, const V& un, 
 //                      const V& z, const TS& timeStamp ) const {}
 //
