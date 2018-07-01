@@ -47,7 +47,6 @@
 #include <BelosTpetraAdapter.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
