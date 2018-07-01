@@ -46,6 +46,8 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Bounds.hpp"
 #include "Tanks_DynamicConstraint.hpp"
 #include "Tanks_DynamicObjective.hpp"
 
@@ -63,7 +65,7 @@ int main( int argc, char* argv[] ) {
 
   try {     // *** Example body.
     // Parse input parameter list
-    ROL::Ptr<ROL::ParameterList> pl_ptr  = ROL::getParametersFromXmlFile("tank-parameters.xml");
+    ROL::Ptr<ROL::ParameterList> pl_ptr  = ROL::getParametersFromXmlFile("parameters_ex04.xml");
     RealT height    = pl_ptr->get("Height of Tank",       10.0);
     RealT Qin00     = pl_ptr->get("Corner Inflow",       100.0);
     RealT h_init    = pl_ptr->get("Initial Fluid Level",   2.0);
@@ -85,6 +87,12 @@ int main( int argc, char* argv[] ) {
       ROL::RandomizeVector(*z->get(i));
       ROL::RandomizeVector(*dz->get(i));
     }
+
+    // Create control bounds
+    //ROL::Ptr<Tanks::ControlVector<RealT>>   zk_lo = zk->clone( "Control Lower Bound (zk_lo)" );
+    //ROL::Ptr<ROL::PartitionedVector<RealT>> z_lo  = ROL::PartitionedVector<RealT>::create(*zk_lo, Nt);
+    //z_lo->zero();
+    //ROL::Ptr<ROL::Bounds<RealT>>            z_bnd = ROL::makePtr<ROL::Bounds<RealT>>( *z_lo );
 
     // Create initial state vector
     ROL::Ptr<Tanks::StateVector<RealT>> u0 = Tanks::StateVector<RealT>::create(*pl_ptr, "Initial State");
@@ -108,18 +116,27 @@ int main( int argc, char* argv[] ) {
     ROL::Ptr<Tanks::StateVector<RealT>> ck = Tanks::StateVector<RealT>::create(*pl_ptr, "Constraint");
 
     // Construct reduced dynamic objective
-    bool useSketch = false;
-    int  rank      = 10;
+    bool useSketch = pl_ptr->get("Use Sketching",false);
+    int  rank      = pl_ptr->get("Sketch Rank",10);
     std::vector<ROL::TimeStamp<RealT>> timeStamp(Nt);
     for( size_type k=0; k<Nt; ++k ) {
       timeStamp.at(k).t.resize(2);
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
-    ROL::ReducedDynamicObjective<RealT> obj(dyn_obj, dyn_con, u0, zk, ck, timeStamp, useSketch, rank);
+    ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, useSketch, rank);
 
     // Check gradient of reduced dynamic objective
-    obj.checkGradient(*z,*dz,true,*outStream);
+    obj->checkGradient(*z,*dz,true,*outStream);
+
+    // Set up optimization problem
+    ROL::Ptr<ROL::ParameterList> rol_ptr  = ROL::getParametersFromXmlFile("rol-parameters.xml");
+    z->zero();
+    //ROL::OptimizationProblem<RealT> problem(obj,z,z_bnd);
+    ROL::OptimizationProblem<RealT> problem(obj,z);
+    ROL::OptimizationSolver<RealT> solver(problem,*rol_ptr);
+    solver.solve(*outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

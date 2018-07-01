@@ -61,6 +61,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   TanksDataCopy
   SOURCE_FILES
     tank-parameters.xml
+    parameters_ex04.xml
+    rol-parameters.xml
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )

@@ -207,7 +207,7 @@ public:
         val_ += valk;
         // Sketch state
         if (useSketch_) {
-          sketch_->advance(one,*uhist_[k],static_cast<int>(k),one);
+          sketch_->advance(one,*uhist_[index],static_cast<int>(k),one);
           uhist_[index-1]->set(*uhist_[index]);
         }
       }
