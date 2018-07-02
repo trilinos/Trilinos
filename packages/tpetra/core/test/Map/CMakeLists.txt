@@ -226,3 +226,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_initializes_Kokkos_inner_scope
+  SOURCES
+    Map_initializes_Kokkos_inner_scope
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "FAILED:"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_does_not_double_initialize_Kokkos
+  SOURCES
+    Map_does_not_double_initialize_Kokkos
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "FAILED:"
+  )
+
+
