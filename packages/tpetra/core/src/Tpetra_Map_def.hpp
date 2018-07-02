@@ -2198,15 +2198,13 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
       const size_t numLocalEntries =
         (myRank == 0) ? as<size_t> (numGlobalEntries) : static_cast<size_t> (0);
       return rcp (new map_type (numGlobalEntries, numLocalEntries,
-                                M->getIndexBase (), M->getComm (),
-                                M->getNode ()));
+                                M->getIndexBase (), M->getComm ()));
     }
     else {
       ArrayView<const GO> myGids =
         (myRank == 0) ? M->getNodeElementList () : Teuchos::null;
       return rcp (new map_type (GINV, myGids (), M->getIndexBase (),
-                                M->getComm (), M->getNode ()));
-
+                                M->getComm ()));
     }
   }
   else if (M->isContiguous ()) {
@@ -2235,7 +2233,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     myOwned_vec.resize (numMyOwnedElems);
 
     return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                              M->getComm (), M->getNode ()));
+                              M->getComm ()));
   }
 }
 
@@ -2282,7 +2280,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   const global_size_t GINV =
     Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
   return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm (), M->getNode ()));
+                            M->getComm ()));
 }
 
 //

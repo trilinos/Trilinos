@@ -6063,7 +6063,6 @@ namespace Tpetra {
         // Make the "gather" row map, where Proc 0 owns all rows and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
-        RCP<node_type> node = rowMap->getNode();
         if (debug) {
           std::ostringstream os;
           os << "-- " << myRank << ": making gatherRowMap" << endl;
@@ -6101,11 +6100,11 @@ namespace Tpetra {
           RCP<const map_type> gatherDomainMap =
             rcp (new map_type (numCols, localNumCols,
                                domainMap->getIndexBase (),
-                               comm, node));
+                               comm));
           RCP<const map_type> gatherRangeMap =
             rcp (new map_type (numRows, localNumRows,
                                rangeMap->getIndexBase (),
-                               comm, node));
+                               comm));
           newMatrix->fillComplete (gatherDomainMap, gatherRangeMap);
         }
 

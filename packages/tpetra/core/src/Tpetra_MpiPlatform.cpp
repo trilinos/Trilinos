@@ -54,14 +54,7 @@ namespace Tpetra {
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform () :
     comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD)))
-  {
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-    // that (new) Kokkos won't get initialized with the wrong
-    // command-line arguments, at least not until getNode() is called.
-    // Initializing Kokkos with the wrong command-line arguments may
-    // result in poor performance due to the wrong assignment of
-    // software threads to hardware execution units.
-  }
+  {}
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc, char*** argv) :

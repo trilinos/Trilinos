@@ -103,16 +103,6 @@ namespace {
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
-
-    using get_node_result_type = decltype (platform->getNode ());
-    static_assert (std::is_assignable<RCP<const node_type>,
-                     get_node_result_type>::value,
-                   "The result of platform->getNode() must be assignable "
-                   "to Teuchos::RCP<const N>.");
-    // mfh 28 Jun 2018: We're getting rid of Node, so we don't care
-    // about the value; we just want to maintain backwards
-    // compatibility of the interface.
-    (void) platform->getNode ();
   }
 
 
