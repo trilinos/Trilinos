@@ -1305,13 +1305,13 @@ namespace Tpetra {
       /// \brief Read sparse graph from the given Matrix Market input stream.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphHelper (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const Teuchos::RCP<node_type>& pNode,
-                  const Teuchos::RCP<const map_type>& rowMap,
-                  Teuchos::RCP<const map_type>& colMap,
-                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                             const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                             const Teuchos::RCP<node_type>& pNode,
+                             const Teuchos::RCP<const map_type>& rowMap,
+                             Teuchos::RCP<const map_type>& colMap,
+                             const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                             const bool tolerant,
+                             const bool debug)
       {
         using Teuchos::MatrixMarket::Banner;
         using Teuchos::RCP;
@@ -1918,12 +1918,15 @@ namespace Tpetra {
                        const bool tolerant=false,
                        const bool debug=false)
       {
+        Teuchos::RCP<const map_type> fakeRowMap;
+        Teuchos::RCP<const map_type> fakeColMap;
+        Teuchos::RCP<Teuchos::ParameterList> fakeCtorParams;
+
         Teuchos::RCP<sparse_graph_type> graph =
-          readSparseGraphHelper (in, pComm, pNode, Teuchos::null,
-                                 Teuchos::null, Teuchos::null,
-                                 tolerant, debug);
+          readSparseGraphHelper (in, pComm, pNode, fakeRowMap, fakeColMap,
+                                 fakeCtorParams, tolerant, debug);
         if (callFillComplete) {
-          graph->FillComplete ();
+          graph->fillComplete ();
         }
         return graph;
       }
@@ -1980,10 +1983,12 @@ namespace Tpetra {
                        const bool tolerant=false,
                        const bool debug=false)
       {
+        Teuchos::RCP<const map_type> fakeRowMap;
+        Teuchos::RCP<const map_type> fakeColMap;
         Teuchos::RCP<sparse_graph_type> graph =
-          readSparseGraphHelper (in, pComm, pNode, Teuchos::null, Teuchos::null,
+          readSparseGraphHelper (in, pComm, pNode, fakeRowMap, fakeColMap,
                                  constructorParams, tolerant, debug);
-        graph->FillComplete (fillCompleteParams);
+        graph->fillComplete (fillCompleteParams);
         return graph;
       }
 
