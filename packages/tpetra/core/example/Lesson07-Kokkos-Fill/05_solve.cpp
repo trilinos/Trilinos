@@ -376,10 +376,8 @@ int main (int argc, char* argv[]) {
   // in the Map.
   const Tpetra::global_size_t INV =
     Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
-  // Soon, it will be acceptable to pass in a Kokkos::View here,
-  // instead of a Teuchos::ArrayView.
   RCP<const Tpetra::Map<> > colMap =
-    rcp (new Tpetra::Map<> (INV, Kokkos::Compat::getConstArrayView (colInds), indexBase, comm));
+    rcp (new Tpetra::Map<> (INV, colInds.data (), colInds.extent (0), indexBase, comm));
 
   Tpetra::CrsMatrix<> A (rowMap, colMap, rowOffsets, colIndices, matrixValues);
   A.fillComplete ();

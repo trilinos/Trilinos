@@ -1,8 +1,8 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -37,16 +37,37 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
-//@HEADER
+// @HEADER
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_Details_initializeKokkos.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Kokkos_Core.hpp"
+#include <cstdlib> // std::atexit
+#include <string>
+#include <vector>
 
-namespace KokkosClassic {
+namespace Tpetra {
+namespace Details {
 
-Teuchos::RCP<DefaultNode::DefaultNodeType>
-DefaultNode::getDefaultNode()
+void
+initializeKokkos ()
 {
-  return Details::getNode<DefaultNodeType> ();
+  if (! Kokkos::is_initialized ()) {
+    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
+    int narg = static_cast<int> (args.size ()); // must be nonconst
+
+    std::vector<char*> args_c (narg);
+    for (int k = 0; k < narg; ++k) {
+      // mfh 25 Oct 2017: I feel a bit uncomfortable about this
+      // const_cast, but there is no other way to pass
+      // command-line arguments to Kokkos::initialize.
+      args_c[k] = const_cast<char*> (args[k].c_str ());
+    }
+    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
+    std::atexit (Kokkos::finalize_all);
+  }
 }
 
-} // namespace KokkosClassic
+} // namespace Details
+} // namespace Tpetra
+
