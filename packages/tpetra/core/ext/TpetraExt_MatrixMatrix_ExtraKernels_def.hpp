@@ -315,8 +315,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -326,7 +325,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
-  typedef Node              NO;
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NO;
   typedef Map<LO,GO,NO>                     map_type;
 
   // NOTE (mfh 15 Sep 2017) This is specifically only for
