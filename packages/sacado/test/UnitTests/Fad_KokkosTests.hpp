@@ -397,7 +397,8 @@ struct AtomicAddKernel {
   // Multiply entries for row 'i' with a value
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const {
-    Kokkos::atomic_add(&(m_s()), m_v(i));
+    local_scalar_type x = m_v(i);
+    Kokkos::atomic_add(&(m_s()), x);
   }
 
   KOKKOS_INLINE_FUNCTION
