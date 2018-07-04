@@ -137,7 +137,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;

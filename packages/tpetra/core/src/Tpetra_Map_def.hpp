@@ -57,7 +57,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
-#include "KokkosCompat_Details_KokkosInit.hpp"
+#include "Tpetra_Details_initializeKokkos.hpp"
 #include <stdexcept>
 #include <typeinfo>
 
@@ -80,7 +80,7 @@ namespace Tpetra {
     distributed_ (false), // no communicator yet
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -105,7 +105,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
@@ -259,7 +259,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
@@ -708,7 +708,7 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
 
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -732,7 +732,7 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
 
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
 
@@ -777,7 +777,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    KokkosCompat::Details::initializeKokkos ();
+    Tpetra::Details::initializeKokkos ();
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
