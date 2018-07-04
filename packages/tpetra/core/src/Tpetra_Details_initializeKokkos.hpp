@@ -1,8 +1,8 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -37,16 +37,32 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
-//@HEADER
+// @HEADER
 
-#include "Kokkos_DefaultNode.hpp"
+/// \file Tpetra_Details_initializeKokkos.hpp
+/// \brief Declaration of Tpetra::Details::initializeKokkos
+///
+/// \warning This is an implementation detail of Tpetra.  This header
+///   file and/or its contents may change or disappear at any time.
 
-namespace KokkosClassic {
+#ifndef TPETRA_DETAILS_INITIALIZEKOKKOS_HPP
+#define TPETRA_DETAILS_INITIALIZEKOKKOS_HPP
 
-Teuchos::RCP<DefaultNode::DefaultNodeType>
-DefaultNode::getDefaultNode()
-{
-  return Details::getNode<DefaultNodeType> ();
-}
+namespace Tpetra {
+namespace Details {
 
-} // namespace KokkosClassic
+/// \brief Initialize Kokkos, using command-line arguments (if any)
+///   given to Teuchos::GlobalMPISession.
+///
+/// \warning This is an implementation detail of Tpetra.  This header
+///   file and/or its contents may change or disappear at any time.
+///
+/// \warning Prefer Tpetra::initialize.  Give it the actual
+///   command-line arguments.
+void
+initializeKokkos ();
+
+} // namespace Details
+} // namespace Tpetra
+
+#endif // TPETRA_DETAILS_INITIALIZEKOKKOS_HPP
