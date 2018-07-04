@@ -96,12 +96,8 @@ namespace {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    RCP<Node> node = getNode<Node>();
-
-    // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     EXTRACT_LIB(comm,M) // returns mylib
-
 
     const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
@@ -143,9 +139,6 @@ namespace {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    RCP<Node> node = getNode<Node>();
-
-    // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     EXTRACT_LIB(comm,M) // returns mylib
 

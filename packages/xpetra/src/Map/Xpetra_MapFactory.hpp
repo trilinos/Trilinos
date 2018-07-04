@@ -83,13 +83,13 @@ namespace Xpetra {
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalGlobal lg = Xpetra::GloballyDistributed,
-           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
+           const Teuchos::RCP<Node> & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return Teuchos::rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
+        return Teuchos::rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -103,13 +103,13 @@ namespace Xpetra {
            size_t numLocalElements,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
+           const Teuchos::RCP<Node> & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -123,13 +123,13 @@ namespace Xpetra {
            const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
+           const Teuchos::RCP<Node> & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -159,7 +159,7 @@ namespace Xpetra {
         for (LocalOrdinal j = 0; j < numDofPerNode; j++)
           newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
       if (map->lib() == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm()));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
@@ -188,13 +188,13 @@ namespace Xpetra {
     createLocalMapWithNode (UnderlyingLib lib,
                             size_t numElements,
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                            const Teuchos::RCP< Node > &node)
+                            const Teuchos::RCP< Node > & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -206,13 +206,13 @@ namespace Xpetra {
     createUniformContigMapWithNode (UnderlyingLib lib,
                                     global_size_t numElements,
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                    const Teuchos::RCP< Node > &node)
+                                    const Teuchos::RCP< Node > & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -260,13 +260,13 @@ namespace Xpetra {
                              global_size_t numElements,
                              size_t localNumElements,
                              const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                             const Teuchos::RCP< Node > &node)
+                             const Teuchos::RCP< Node > & /* node */ = Teuchos::null)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -400,14 +400,14 @@ namespace Xpetra {
 
     // TODO remove this
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> & /* node */ = Teuchos::null) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createLocalMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=int");
@@ -418,7 +418,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<int, Node> > map;
         map = Teuchos::rcp( new EpetraMapT<int, Node>((Xpetra::global_size_t)numElements, // num elements, global and local
                                           0,                                   // index base is zero
-                                          comm, LocallyReplicated, node));
+                                          comm, LocallyReplicated));
         return map.getConst();
       }
 
@@ -429,7 +429,7 @@ namespace Xpetra {
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createUniformContigMapWithNode (UnderlyingLib lib, global_size_t numElements,
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                    const Teuchos::RCP<Node>& node)
+                                    const Teuchos::RCP<Node>& /* node */ = Teuchos::null)
     {
        XPETRA_MONITOR("MapFactory::Build");
 
@@ -437,7 +437,7 @@ namespace Xpetra {
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createUniformContigMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=int");
@@ -448,7 +448,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<int,Node> > map;
         map = Teuchos::rcp( new EpetraMapT<int,Node>(numElements,        // num elements, global and local
             0,                  //index base is zero
-            comm, GloballyDistributed, node));
+            comm, GloballyDistributed));
         return map.getConst();
       }
 
@@ -498,21 +498,21 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, Teuchos::rcp(new Node) );
+        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm);
 
       XPETRA_FACTORY_END;
     }
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> & /* node */ = Teuchos::null) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createContigMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=int");
@@ -524,7 +524,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<int, Node> > map;
         map = Teuchos::rcp( new EpetraMapT<int, Node>(numElements,localNumElements,
             0,  // index base is zero
-            comm, node) );
+            comm) );
         return map.getConst();
       }
 
@@ -650,20 +650,20 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createLocalMapWithNode (lib, numElements, comm, Teuchos::rcp (new Node));
+        return MapFactory<int, GlobalOrdinal, Node>::createLocalMapWithNode (lib, numElements, comm);
 
       XPETRA_FACTORY_END;
     }
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> & /* node */ = Teuchos::null) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createLocalMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=long long");
@@ -674,7 +674,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<long long, Node> > map;
         map = Teuchos::rcp( new EpetraMapT<long long, Node>((Xpetra::global_size_t)numElements, // num elements, global and local
             0,                                   // index base is zero
-            comm, LocallyReplicated, node));
+            comm, LocallyReplicated));
         return map.getConst();
       }
 
@@ -684,7 +684,7 @@ namespace Xpetra {
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createUniformContigMapWithNode (UnderlyingLib lib, global_size_t numElements,
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                    const Teuchos::RCP<Node>& node)
+                                    const Teuchos::RCP<Node>& /* node */ = Teuchos::null)
     {
        XPETRA_MONITOR("MapFactory::Build");
 
@@ -692,7 +692,7 @@ namespace Xpetra {
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createUniformContigMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=long long");
@@ -703,7 +703,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<long long, Node> > map;
         map = Teuchos::rcp( new EpetraMapT<long long, Node>(numElements,        // num elements, global and local
             0,                  //index base is zero
-            comm, GloballyDistributed, node));
+            comm, GloballyDistributed));
         return map.getConst();
       }
 
@@ -726,7 +726,7 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createUniformContigMapWithNode (lib, numElements, comm, Teuchos::rcp (new Node));
+        return MapFactory<int, GlobalOrdinal, Node>::createUniformContigMapWithNode (lib, numElements, comm);
 
       XPETRA_FACTORY_END;
     }
@@ -747,21 +747,21 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, Teuchos::rcp(new Node) );
+        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm);
 
       XPETRA_FACTORY_END;
     }
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> & /* node */ = Teuchos::null) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "Xpetra::MapFactory::createContigMapWithNode: Cannot create Xpetra::TpetraMap, since Tpetra is not instantiated on EpetraNode (Serial or OpenMP, depending on configuration) and/or GO=long long");
@@ -772,7 +772,7 @@ namespace Xpetra {
         Teuchos::RCP< EpetraMapT<long long, Node> > map;
         map = Teuchos::rcp( new EpetraMapT<long long, Node>(numElements,localNumElements,
             0,  // index base is zero
-            comm, node) );
+            comm) );
         return map.getConst();
       }
 
