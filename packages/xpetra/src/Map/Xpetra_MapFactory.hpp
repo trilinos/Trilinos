@@ -76,17 +76,6 @@ namespace Xpetra {
     MapFactory() {}
 
   public:
-    static Teuchos::RCP<Node> defaultArgNode() {
-      // Workaround function for a deferred visual studio bug
-      //
-      // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-      //
-      // Use this function for default arguments rather than calling
-      // what is the return value below.  Also helps in reducing
-      // duplication in various constructors.
-      return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build (UnderlyingLib lib,
@@ -94,7 +83,7 @@ namespace Xpetra {
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalGlobal lg = Xpetra::GloballyDistributed,
-           const Teuchos::RCP<Node> &node = defaultArgNode ())
+           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
     {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -114,7 +103,7 @@ namespace Xpetra {
            size_t numLocalElements,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = defaultArgNode ())
+           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
     {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -134,7 +123,7 @@ namespace Xpetra {
            const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = defaultArgNode ())
+           const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node))
     {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -300,24 +289,13 @@ namespace Xpetra {
 
   public:
 
-    static Teuchos::RCP<Node> defaultArgNode () {
-      // Workaround function for a deferred visual studio bug
-      //
-      // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-      //
-      // Use this function for default arguments rather than calling
-      // what is the return value below.  Also helps in reducing
-      // duplication in various constructors.
-      return KokkosClassic::Details::getNode<Node>();
-    }
-
     static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build (UnderlyingLib lib,
            global_size_t numGlobalElements,
            int indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalGlobal lg=GloballyDistributed,
-           const Teuchos::RCP<Node>& node = defaultArgNode ()) {
+           const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node)) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -337,7 +315,7 @@ namespace Xpetra {
            size_t numLocalElements,
            int indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node>& node = defaultArgNode())
+           const Teuchos::RCP<Node>& node = Teuchos::rcp(new Node))
     {
       XPETRA_MONITOR("MapFactory::Build");
 #ifdef HAVE_XPETRA_TPETRA
@@ -351,7 +329,7 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node)) {
       XPETRA_MONITOR("MapFactory::Build");
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -520,7 +498,7 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, defaultArgNode() );
+        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, Teuchos::rcp(new Node) );
 
       XPETRA_FACTORY_END;
     }
@@ -571,24 +549,13 @@ namespace Xpetra {
 
   public:
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-      // Workaround function for a deferred visual studio bug
-      //
-      // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-      //
-      // Use this function for default arguments rather than calling
-      // what is the return value below.  Also helps in reducing
-      // duplication in various constructors.
-      return KokkosClassic::Details::getNode<Node>();
-    }
-
     static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build (UnderlyingLib lib,
            global_size_t numGlobalElements,
            int indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalGlobal lg=GloballyDistributed,
-           const Teuchos::RCP<Node>& node = defaultArgNode ()) {
+           const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node)) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -608,7 +575,7 @@ namespace Xpetra {
            size_t numLocalElements,
            int indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node>& node = defaultArgNode())
+           const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node))
     {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -623,7 +590,7 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node)) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -683,8 +650,7 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createLocalMapWithNode (lib, numElements, comm,
-                                                             defaultArgNode());
+        return MapFactory<int, GlobalOrdinal, Node>::createLocalMapWithNode (lib, numElements, comm, Teuchos::rcp (new Node));
 
       XPETRA_FACTORY_END;
     }
@@ -760,8 +726,7 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createUniformContigMapWithNode (lib, numElements, comm,
-                                                                           defaultArgNode());
+        return MapFactory<int, GlobalOrdinal, Node>::createUniformContigMapWithNode (lib, numElements, comm, Teuchos::rcp (new Node));
 
       XPETRA_FACTORY_END;
     }
@@ -782,7 +747,7 @@ namespace Xpetra {
 #endif
 
       if (lib == UseEpetra)
-        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, defaultArgNode() );
+        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, Teuchos::rcp(new Node) );
 
       XPETRA_FACTORY_END;
     }
