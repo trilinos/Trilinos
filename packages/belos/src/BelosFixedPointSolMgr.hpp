@@ -133,22 +133,27 @@ namespace Belos {
 
     //! Destructor.
     virtual ~FixedPointSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new FixedPointSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
-    //@{
-
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    //@{ 
+    
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
     /*! \brief Return the timers for this object.
      *
@@ -164,30 +169,29 @@ namespace Belos {
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
-    bool isLOADetected() const { return false; }
-
+    bool isLOADetected() const override { return false; }
     //@}
 
     //! @name Set methods
     //@{
-
-    //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
-
-    //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
-
+   
+    //! Set the linear problem that needs to be solved. 
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
+   
+    //! Set the parameters the solver manager should use to solve the linear problem. 
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
+    
     //! Set user-defined convergence status test.
     void replaceUserConvStatusTest( const Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > &userConvStatusTest )
     {
@@ -212,7 +216,7 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
 
     //! @name Solver application methods
@@ -235,16 +239,14 @@ namespace Belos {
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
-
+    ReturnType solve() override;
     //@}
 
     /** \name Overridden from Teuchos::Describable */
     //@{
 
     /** \brief Method to return description of the block CG solver manager */
-    std::string description() const;
-
+    std::string description() const override;
     //@}
 
   private:

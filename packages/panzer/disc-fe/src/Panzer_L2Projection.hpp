@@ -27,6 +27,7 @@ namespace panzer {
   class IntegrationDescriptor;
   template<typename LO,typename GO> class ConnManager;
   template<typename LO,typename GO> class DOFManager;
+  template<typename LO,typename GO> class UniqueGlobalIndexer;
   class WorksetContainer;
 
   /** \brief Unified set of tools for building objects for lumped and
@@ -39,7 +40,7 @@ namespace panzer {
 
     panzer::BasisDescriptor targetBasisDescriptor_;
     panzer::IntegrationDescriptor integrationDescriptor_;
-    Teuchos::RCP<Teuchos::MpiComm<int>> comm_;
+    Teuchos::RCP<const Teuchos::MpiComm<int>> comm_;
     Teuchos::RCP<const panzer::ConnManager<LO,GO>> connManager_;
     std::vector<std::string> elementBlockNames_;
     mutable Teuchos::RCP<panzer::WorksetContainer> worksetContainer_;
@@ -63,10 +64,10 @@ namespace panzer {
     */
     void setup(const panzer::BasisDescriptor& targetBasis,
                const panzer::IntegrationDescriptor& integrationDescriptor,
-               const Teuchos::RCP<Teuchos::MpiComm<int>>& comm,
+               const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
                const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                const std::vector<std::string>& elementBlockNames,
-               const Teuchos::RCP<panzer::WorksetContainer>& worksetContainer = nullptr);
+               const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.
@@ -107,8 +108,8 @@ namespace panzer {
         \returns Alocated and filled Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildRHSMatrix(const Teuchos::RCP<panzer::DOFManager<LO,GO>>& sourceDOFManager,
-                     const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
+      buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceDOFManager,
+                     const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,
                      const int vectorOrGradientDirectionIndex = -1);

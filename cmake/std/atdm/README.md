@@ -40,7 +40,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with salloc or some other command, see below
+$ ctest -j16  # Might need to be run with srun or some other command, see below
 ```
 
 The command:
@@ -225,11 +225,11 @@ the `checkin-test-atdm.sh` script is run.
 
 ### ride/white
 
-Once logged on to `white` (on the SON) or `shiller` (on the SRN), one can
+Once logged on to `white` (on the SON) or `ride` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `bsub` command to run if using a CUDA build.  For example, to configure, build
-and run the tests for the `cuda-debug` build for say `MueuLu` on `white`,
+and run the tests for the `cuda-debug` build for say `MueLu` on `white`,
 (after cloning Trilinos on the `develop` branch) one would do:
 
 ```
@@ -271,8 +271,8 @@ $ bsub -x -I -q rhel7F -n 16 \
 Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
-`salloc` command.  For example, to configure, build and run the tests for say
-`MueuLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
+`srun` command.  For example, to configure, build and run the tests for say
+`MueLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
 would do:
 
 
@@ -289,7 +289,7 @@ $ cmake \
 
 $ make NP=16
 
-$ salloc ctest -j16
+$ srun ctest -j16
 ```
 
 Note that one can also run the same build a tests using the <a
@@ -298,18 +298,19 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ salloc ./checkin-test-sems.sh intel-opt-openmp \
+$ srun ./checkin-test-sems.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
 
+
 ### chama/serrano
 
 Once logged on to `chama` or `serrano`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueuLu` on `serrano`
+tests, one must run on the compute nodes using the `srun` command.  For
+example, to configure, build and run the tests for say `MueLu` on `serrano`
 or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 
 
@@ -350,7 +351,7 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 Once logged on to `mutrino`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
 tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueuLu` on `mutrino`, 
+example, to configure, build and run the tests for say `MueLu` on `mutrino`, 
 (after cloning Trilinos on the `develop` branch) one would:
 
 
@@ -373,7 +374,7 @@ $ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
 
 Once logged on to a rhel6 machine with the sems NFS, one can directly
 configure, build, and run tests.  For example, to configure, build and run the
-tests for `MueuLu` one would clone Trilinos on the `develop` branch and then
+tests for `MueLu` one would clone Trilinos on the `develop` branch and then
 do the following:
 
 

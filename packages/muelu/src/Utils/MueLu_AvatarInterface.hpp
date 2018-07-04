@@ -47,7 +47,9 @@
 #define MUELU_AVATARINTERFACE_HPP
 
 #include <string>
+#include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "MueLu_BaseClass.hpp"
 
@@ -56,20 +58,56 @@
 namespace MueLu {
 
   /*! @class 
-    Manages the interface to the Avatar machine learning library
+    Manages the interface to the Avatar machine learning library.
+
+    Note only proc 0 (as defined by comm) will actually have avatar instantiated.  The options determined
+    by avatar will be broadcast to all processors
   */
   class AvatarInterface : public BaseClass {
 
   public:
 
-    AvatarInterface() {}
+    AvatarInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm ):comm_(comm) {}
 
-    AvatarInterface(Teuchos::ParameterList& inParams):params_(inParams){};
+    AvatarInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList& inParams):comm_(comm),params_(inParams){};
 
-    void SetParameterList(Teuchos::ParameterList& inParams);
+    Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const;
+
+    // Sets the input parameters for the AvatarInterface
+    void SetParameterList(Teuchos::ParameterList& inParams) {params_ = inParams;}
+
+    // Sets up Avatar
+    void Setup();
+
+    // Calls Avatar to set MueLu Parameters
+    void SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite=true) const;
+
 
   private:
+    // Utility functions
+    Teuchos::ArrayRCP<std::string> ReadFromFiles(const char * param_name) const;
+    void GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const;
+    std::string ParamsToString(const std::vector<int> & indices) const;
+    void SetIndices(int id,std::vector<int> & indices) const;
+    void GenerateMueLuParametersFromIndex(int id,Teuchos::ParameterList & pl) const;
+    void UnpackMueLuMapping();
+
+    // FIXME: Placeholder for an actual Avatar thing
+    typedef int Avatar;
+
+
+    // Cached data
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::ParameterList params_;
+    Teuchos::ArrayRCP<std::string> avatarStrings_;
+    Teuchos::ArrayRCP<std::string> namesStrings_;
+    Teuchos::RCP<Avatar> avatarHandle_;
+
+    Teuchos::Array<std::string> mueluParameterName_;
+    Teuchos::Array<std::string> avatarParameterName_;
+
+    Teuchos::ArrayRCP<Teuchos::Array<double> > mueluParameterValues_;
+    Teuchos::ArrayRCP<Teuchos::Array<int> > avatarParameterValues_;
 
   };
 

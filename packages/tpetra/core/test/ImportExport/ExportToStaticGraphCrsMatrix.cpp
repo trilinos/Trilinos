@@ -54,7 +54,7 @@
 #include <Teuchos_VerboseObject.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 namespace {
@@ -102,7 +102,6 @@ namespace {
 
     Teuchos::RCP<const map_type>
     makeNonoverlappingRowMap (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                              const Teuchos::RCP<node_type>& node,
                               const size_t localNumElts) const
     {
       using Tpetra::createContigMapWithNode;
@@ -111,7 +110,7 @@ namespace {
 
       Tpetra::global_size_t globalNumElts =
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      return createContigMapWithNode<LO, GO, NT> (globalNumElts, localNumElts, comm, node);
+      return createContigMapWithNode<LO, GO, NT> (globalNumElts, localNumElts, comm);
     }
 
     Teuchos::RCP<const map_type>
@@ -156,7 +155,6 @@ namespace {
 
       RCP<const Teuchos::Comm<int> > comm = nonoverlapRowMap->getComm ();
       const int myRank = comm->getRank();
-      RCP<NT> node = nonoverlapRowMap->getNode ();
 
       GO myMinGID = nonoverlapRowMap->getMinGlobalIndex();
       GO myMaxGID = nonoverlapRowMap->getMaxGlobalIndex();
@@ -175,7 +173,7 @@ namespace {
         myGIDs[k] = myMinGID + as<GO>(k);
       }
       *out << "Proc " << myRank << ": myGIDs=" << myGIDs.toString() << endl;
-      return createNonContigMapWithNode<LO, GO, NT> (myGIDs(), comm, node);
+      return createNonContigMapWithNode<LO, GO, NT> (myGIDs(), comm);
     }
 
     Teuchos::RCP<const graph_type>
@@ -518,7 +516,6 @@ namespace {
   public:
     bool
     testExportToCrsMatrixWithStaticGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                          const Teuchos::RCP<node_type>& node,
                                           const size_t localNumElts) const
     {
       using Teuchos::RCP;
@@ -541,7 +538,7 @@ namespace {
         *out << "Making nonoverlapping and overlapping row Maps" << endl;
       }
       RCP<const map_type> nonoverlapRowMap =
-        makeNonoverlappingRowMap (comm, node, localNumElts);
+        makeNonoverlappingRowMap (comm, localNumElts);
       RCP<const map_type> overlapRowMap =
         makeOverlappingRowMap (nonoverlapRowMap);
       RCP<const map_type> domainMap = makeDomainMap (nonoverlapRowMap);
@@ -633,7 +630,7 @@ main (int argc, char *argv[])
   using std::endl;
 
   typedef double ST;
-  typedef int LO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
 #if defined (HAVE_TPETRA_INST_INT_LONG_LONG)
   typedef long long GO;
 #elif defined (HAVE_TPETRA_INST_INT_LONG)
@@ -647,15 +644,14 @@ main (int argc, char *argv[])
 #else
 #  error "Tpetra: Must enable at least one GlobalOrdinal type in {long long, long, int, unsigned long, unsigned} in order to build this test."
 #endif
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  typedef Tpetra::Map<LO, GO>::node_type NT;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
 
   bool success = true; // May be changed by tests
 
   RCP<Teuchos::oblackholestream> blackHole = rcp (new Teuchos::oblackholestream);
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, blackHole.getRawPtr());
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int numProcs = comm->getSize();
   const int myRank = comm->getRank();
 
@@ -690,7 +686,7 @@ main (int argc, char *argv[])
 
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
   Tester<matrix_type> tester (verbLevel, out);
-  tester.testExportToCrsMatrixWithStaticGraph (comm, node, 10);
+  tester.testExportToCrsMatrixWithStaticGraph (comm, 10);
 
   *procZeroOut << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
   return success ? EXIT_SUCCESS : EXIT_FAILURE;

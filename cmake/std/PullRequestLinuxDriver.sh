@@ -16,6 +16,7 @@ which -a env
 : ${PULLREQUESTNUM:?}
 : ${JOB_BASE_NAME:?}
 : ${BUILD_NUMBER:?}
+: ${WORKSPACE:?}
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
@@ -165,7 +166,13 @@ if [ "icc" == ${CC:?} ]
 then
   CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
 else
-  CONFIG_SCRIPT=PullRequestLinuxGCCTestingSettings.cmake
+  if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
+  then
+    CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
+  elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]
+  then
+    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+  fi
 fi
 
 ctest -S simple_testing.cmake \

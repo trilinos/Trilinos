@@ -65,6 +65,8 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
        name == "Generalized Moreau-Yosida CVaR" ||
        name == "Log Quantile"                   ||
        name == "Smoothed Worst Case"            ||
+       name == "Safety Margin"                  ||
+       name == "Log Exponential"                ||
        name == "Truncated Mean" ) {
     nStatistic = 1;
     lower.resize(nStatistic,ROL_NINF<Real>());
@@ -136,6 +138,8 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
            riskString[i] == "Generalized Moreau-Yosida CVaR" ||
            riskString[i] == "Log Quantile"                   ||
            riskString[i] == "Smoothed Worst Case"            ||
+           riskString[i] == "Safety Margin"                  ||
+           riskString[i] == "Log Exponential"                ||
            riskString[i] == "Truncated Mean" ) {
         nStatistic += 1;
         lower.push_back(ROL_NINF<Real>());

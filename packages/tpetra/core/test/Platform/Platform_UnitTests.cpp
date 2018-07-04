@@ -90,11 +90,10 @@ namespace {
   // UNIT TESTS
   //
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Platform, basic, PlatformType )
   {
     out << "Testing " << Teuchos::TypeNameTraits<PlatformType>::name() << std::endl;
-    typedef typename PlatformType::NodeType            N;
+    using node_type = typename PlatformType::NodeType;
     // create a platform
     RCP<PlatformType> platform = getPlatform<PlatformType>();
     platform->setObjectLabel("not the default label");
@@ -104,8 +103,6 @@ namespace {
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
-    RCP<N> node  = platform->getNode();
-    (void)node;
   }
 
 

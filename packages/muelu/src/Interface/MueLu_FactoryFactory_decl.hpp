@@ -133,6 +133,7 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_UnsmooshFactory.hpp"
 #include "MueLu_UserAggregationFactory.hpp"
 #include "MueLu_UserPFactory.hpp"
@@ -260,6 +261,7 @@ namespace MueLu {
       if (factoryName == "TransPFactory")                      return Build2<TransPFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                   return BuildTrilinosSmoother                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory")        return Build2<UncoupledAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "HybridAggregationFactory")           return Build2<HybridAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UnsmooshFactory")                    return Build2<UnsmooshFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserAggregationFactory")             return Build2<UserAggregationFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                       return Build2<UserPFactory>                       (paramList, factoryMapIn, factoryManagersIn);

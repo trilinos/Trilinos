@@ -112,12 +112,22 @@ namespace MueLu {
     //! @brief Constructor.
     FactoryManager() {
       SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+      useKokkos_ = true;
+#else
+      useKokkos_ = false;
+#endif
     }
 
     //! Constructor used by HierarchyFactory (temporary, will be removed)
     FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
       factoryTable_ = factoryTable;
       SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour) //TODO: use parent class constructor instead
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+      useKokkos_ = true;
+#else
+      useKokkos_ = false;
+#endif
     }
 
     //! Destructor.
@@ -159,6 +169,10 @@ namespace MueLu {
     //!
     const RCP<const FactoryBase> GetDefaultFactory(const std::string& varName) const;
 
+    void SetKokkosRefactor(const bool useKokkos) {
+      useKokkos_ = useKokkos;
+    }
+
     //@}
 
     void Clean() const { defaultFactoryTable_.clear(); }
@@ -199,6 +213,9 @@ namespace MueLu {
     */
     mutable
     std::map<std::string, RCP<const FactoryBase> > defaultFactoryTable_;
+
+    //! Whether or not to use kokkos factories.
+    bool useKokkos_;
 
   }; // class
 

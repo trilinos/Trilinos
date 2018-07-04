@@ -19,6 +19,9 @@
 /* Define if want to build with tpetra enabled */
 #cmakedefine HAVE_BELOS_TPETRA
 
+/* Define if want to build with xpetra enabled */
+#cmakedefine HAVE_BELOS_XPETRA
+
 /* Define whether we want to time Tpetra MultiVector operations */
 #cmakedefine HAVE_BELOS_TPETRA_TIMERS
 

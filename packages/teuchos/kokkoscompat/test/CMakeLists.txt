@@ -19,33 +19,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  nodeKokkosInitialized
-  SOURCES
-    nodeKokkosInitialized.cpp 
-  ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "FAILED:"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  nodeKokkosNotInitializedMainScope
-  SOURCES
-    nodeKokkosNotInitializedMainScope.cpp 
-  ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "FAILED:"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  nodeKokkosNotInitializedInnerScope
-  SOURCES
-    nodeKokkosNotInitializedInnerScope.cpp 
-  ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "FAILED:"
-  )

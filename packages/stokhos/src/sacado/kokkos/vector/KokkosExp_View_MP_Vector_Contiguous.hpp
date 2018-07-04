@@ -1622,12 +1622,12 @@ public:
       static_assert(
         ViewDimensionAssignable
           < typename DstType::offset_type::dimension_type
-          , typename SrcFadType::offset_type::dimension_type >::value ,
+          , typename SrcFadType::array_offset_type::dimension_type >::value ,
         "View assignment must have compatible dimensions" );
 
       typedef typename DstType::offset_type  dst_offset_type ;
 
-      dst.m_offset  = dst_offset_type( src.m_offset );
+      dst.m_offset  = dst_offset_type( src.m_array_offset );
       dst.m_handle.assign(src.m_handle) ;
       dst.m_stride  = 1;
 

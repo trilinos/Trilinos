@@ -168,6 +168,7 @@ namespace MueLuTests {
 
     // build test-specific default factory manager
     RCP<FactoryManager> defManager = rcp(new FactoryManager());
+    defManager->SetKokkosRefactor(false);
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent

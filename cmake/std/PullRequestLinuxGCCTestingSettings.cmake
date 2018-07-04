@@ -52,6 +52,11 @@ set (TPL_ENABLE_HDF5 ON CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_Netcdf ON CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_SuperLU ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_TRACE_ADD_TEST ON CACHE BOOL "Set by default for PR testing")
+
+set (TPL_ENABLE_Scotch ON CACHE BOOL "Set by default for PR testing")
+# Disable test that was enabled when Scotch TPL was enabled (#2051, #2052)
+set (Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ONCACHE BOOL "Set by default for PR testing")
+
 # Disable long-failing Piro test until it can be fixed (#826)
 set (Piro_EpetraSolver_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
@@ -93,3 +98,5 @@ SET(Netcdf_LIBRARY_DIRS "$ENV{SEMS_NETCDF_LIBRARY_PATH}" CACHE PATH "Set by defa
 SET(SuperLU_INCLUDE_DIRS "$ENV{SEMS_SUPERLU_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
 SET(SuperLU_LIBRARY_DIRS "$ENV{SEMS_SUPERLU_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 
+set (TPL_Scotch_INCLUDE_DIRS "$ENV{SEMS_SCOTCH_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
+set (Scotch_LIBRARY_DIRS "$ENV{SEMS_SCOTCH_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")

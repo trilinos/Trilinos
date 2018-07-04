@@ -93,6 +93,8 @@
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 
+#include <Teuchos_MatrixMarket_Raw_Writer.hpp>
+#include <string>
 
 
 namespace Xpetra {
@@ -309,6 +311,35 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+
+    /*! @brief Save local parts of matrix to files in Matrix Market format. */
+    static void WriteLocal(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
+          dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
+      RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
+
+      ArrayRCP<const size_t> rowptr_RCP;
+      ArrayRCP<LocalOrdinal>           rowptr2_RCP;
+      ArrayRCP<const LocalOrdinal>     colind_RCP;
+      ArrayRCP<const Scalar>     vals_RCP;
+      tmp_CrsMtx->getAllValues(rowptr_RCP, colind_RCP, vals_RCP);
+
+      ArrayView<const size_t> rowptr = rowptr_RCP();
+      ArrayView<const LocalOrdinal>     colind = colind_RCP();
+      ArrayView<const Scalar>     vals = vals_RCP();
+
+      rowptr2_RCP.resize(rowptr.size());
+      ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
+      for (size_t j = 0; j<rowptr.size(); j++)
+        rowptr2[j] = rowptr[j];
+
+      Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
+      writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
+                       rowptr2,colind,vals,
+                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+    } //WriteLocal
+
 
     /*! @brief Save matrix to file in Matrix Market format. */
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
@@ -861,6 +892,34 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+
+    /*! @brief Save local parts of matrix to files in Matrix Market format. */
+    static void WriteLocal(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
+          dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
+      RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
+
+      ArrayRCP<const size_t> rowptr_RCP;
+      ArrayRCP<LocalOrdinal>           rowptr2_RCP;
+      ArrayRCP<const LocalOrdinal>     colind_RCP;
+      ArrayRCP<const Scalar>     vals_RCP;
+      tmp_CrsMtx->getAllValues(rowptr_RCP, colind_RCP, vals_RCP);
+
+      ArrayView<const size_t> rowptr = rowptr_RCP();
+      ArrayView<const LocalOrdinal>     colind = colind_RCP();
+      ArrayView<const Scalar>     vals = vals_RCP();
+
+      rowptr2_RCP.resize(rowptr.size());
+      ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
+      for (size_t j = 0; j<rowptr.size(); j++)
+        rowptr2[j] = rowptr[j];
+
+      Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
+      writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
+                       rowptr2,colind,vals,
+                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+    } //WriteLocal
 
     /*! @brief Save matrix to file in Matrix Market format. */
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {

@@ -70,6 +70,8 @@
 #include "ROL_TruncatedMeanQuadrangle.hpp"
 #include "ROL_MoreauYosidaCVaR.hpp"
 #include "ROL_GenMoreauYosidaCVaR.hpp"
+#include "ROL_LogExponentialQuadrangle.hpp"
+#include "ROL_MeanVarianceQuadrangle.hpp"
 
 // F-Divergence Distributionally Robust Risk Measure Implementations
 #include "ROL_Chi2Divergence.hpp"
@@ -96,6 +98,8 @@ namespace ROL {
     RISKMEASURE_TRUNCATEDMEAN,
     RISKMEASURE_LOGQUANTILE,
     RISKMEASURE_SMOOTHEDWORSTCASE,
+    RISKMEASURE_LOGEXPONENTIAL,
+    RISKMEASURE_SAFETYMARGIN,
     RISKMEASURE_CHI2DIVERGENCE,
     RISKMEASURE_KLDIVERGENCE,
     RISKMEASURE_LAST
@@ -140,6 +144,10 @@ namespace ROL {
              retString = "Log Quantile";                            break;
       case RISKMEASURE_SMOOTHEDWORSTCASE:
              retString = "Smoothed Worst Case";                     break;
+      case RISKMEASURE_LOGEXPONENTIAL:
+             retString = "Log Exponential";                         break;
+      case RISKMEASURE_SAFETYMARGIN:
+             retString = "Safety Margin";                           break;
       case RISKMEASURE_CHI2DIVERGENCE:
              retString = "Chi-Squared Divergence";                  break;
       case RISKMEASURE_KLDIVERGENCE:
@@ -171,6 +179,8 @@ namespace ROL {
             (ed == RISKMEASURE_TRUNCATEDMEAN)           ||
             (ed == RISKMEASURE_LOGQUANTILE)             ||
             (ed == RISKMEASURE_SMOOTHEDWORSTCASE)       ||
+            (ed == RISKMEASURE_LOGEXPONENTIAL)          ||
+            (ed == RISKMEASURE_SAFETYMARGIN)            ||
             (ed == RISKMEASURE_CHI2DIVERGENCE)          ||
             (ed == RISKMEASURE_KLDIVERGENCE));
   }
@@ -246,6 +256,10 @@ namespace ROL {
              return makePtr<ExpectationQuadRisk<Real>>(makePtr<LogQuantileQuadrangle<Real>>(parlist));
       case RISKMEASURE_SMOOTHEDWORSTCASE:
              return makePtr<ExpectationQuadRisk<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
+      case RISKMEASURE_LOGEXPONENTIAL:
+             return makePtr<ExpectationQuadRisk<Real>>(makePtr<LogExponentialQuadrangle<Real>>(parlist));
+      case RISKMEASURE_SAFETYMARGIN:
+             return makePtr<ExpectationQuadRisk<Real>>(makePtr<MeanVarianceQuadrangle<Real>>(parlist));
       case RISKMEASURE_CHI2DIVERGENCE:
              return makePtr<Chi2Divergence<Real>>(parlist);
       case RISKMEASURE_KLDIVERGENCE:
