@@ -54,7 +54,6 @@
 #include "Tpetra_Import_Util.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -76,7 +75,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

@@ -78,8 +78,6 @@ namespace KokkosClassic {
 # else
     typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 # endif
-
-    static Teuchos::RCP<DefaultNodeType> getDefaultNode() { return Teuchos::null; }
   };
 
 }

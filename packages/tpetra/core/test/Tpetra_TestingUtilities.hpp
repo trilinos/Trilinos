@@ -51,11 +51,9 @@
 ///   details of Tpetra.  Users must not rely on this file existing,
 ///   or on any contents of this file.
 
-#include <Teuchos_UnitTestHarness.hpp>
-
-#include <Tpetra_ConfigDefs.hpp>
-#include <TpetraCore_ETIHelperMacros.h>
-#include <Tpetra_DefaultPlatform.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
   namespace TestingUtilities {
@@ -88,8 +86,9 @@ namespace Tpetra {
     getDefaultComm ()
     {
       if (testMpi) {
-        return DefaultPlatform::getDefaultPlatform ().getComm ();
-      } else {
+        return Tpetra::getDefaultComm ();
+      }
+      else {
         // Always return the same Comm instance.  Create it if it
         // hasn't already been created.  A function-static RCP has an
         // initial value of Teuchos::null.
@@ -106,14 +105,9 @@ namespace Tpetra {
     ///
     /// \warning This function is an implementation detail of Tpetra.
     ///   Users must not call this function or rely on its behavior.
-    ///
-    /// This function defers to KokkosClassic::Details::getNode.  The
-    /// latter function creates at most one Node instance (per Node
-    /// type); it returns the created instance if it has already been
-    /// created via a previous call to getNode.
     template <class Node>
     Teuchos::RCP<Node> getNode () {
-      return KokkosClassic::Details::getNode<Node> ();
+      return Teuchos::rcp (new Node);
     }
 
   } // namespace TestingUtilities

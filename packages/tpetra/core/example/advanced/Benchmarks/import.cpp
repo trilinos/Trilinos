@@ -90,7 +90,6 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
                        ArrayView<const GO> destGlobalElts,
                        const GO indexBase,
                        RCP<const Comm<int> > comm,
-                       RCP<NT> node,
                        const int numMapCreateTrials,
                        const int numImportCreateTrials,
                        const int numVectorCreateTrials,
@@ -123,8 +122,8 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   {
     TimeMonitor timeMon (*mapCreateTimer);
     for (int k = 0; k < numMapCreateTrials; ++k) {
-      srcMap = rcp (new map_type (INVALID, srcGlobalElts, indexBase, comm, node));
-      destMap = rcp (new map_type (INVALID, destGlobalElts, indexBase, comm, node));
+      srcMap = rcp (new map_type (INVALID, srcGlobalElts, indexBase, comm));
+      destMap = rcp (new map_type (INVALID, destGlobalElts, indexBase, comm));
     }
   }
   RCP<import_type> import;
@@ -296,7 +295,6 @@ int main (int argc, char* argv[]) {
   tpetraComm = rcp (new Teuchos::SerialComm<int>);
 #  endif // EPETRA_MPI
 #endif // HAVE_TPETRACORE_EPETRA
-  RCP<NT> node = KokkosClassic::Details::getNode<NT> ();
 
   const int numProcs = tpetraComm->getSize ();
   const int myRank = tpetraComm->getRank ();
@@ -373,7 +371,7 @@ int main (int argc, char* argv[]) {
 #endif // HAVE_TPETRACORE_EPETRA
   if (runTpetra) {
     benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
-                           node, numMapCreateTrials, numImportCreateTrials,
+                           numMapCreateTrials, numImportCreateTrials,
                            numVectorCreateTrials, numImportExecTrials);
   }
   TimeMonitor::report (tpetraComm.ptr (), std::cout);

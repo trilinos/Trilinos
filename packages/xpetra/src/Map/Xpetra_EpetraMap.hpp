@@ -193,7 +193,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
+      return Teuchos::rcp (new Node);
     }
 
     //@}
@@ -532,7 +532,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this
+      return Teuchos::rcp (new Node);
     }
 
     //@}
@@ -1056,7 +1056,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>();
+      return Teuchos::rcp (new Node);
     }
 
     //@}

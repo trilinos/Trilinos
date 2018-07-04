@@ -282,10 +282,10 @@ namespace Tpetra {
     /// \brief The default Kokkos Node instance.
     ///
     /// Node will be deprecated and removed in favor of
-    /// Kokkos::Device, so the Node can and should always be
-    /// Teuchos::null.
+    /// Kokkos::Device.  Thus, the Node may be Teuchos::null, and
+    /// users should not depend on \c getNode.get().
     Teuchos::RCP<NodeType> getNode () const {
-      return KokkosClassic::Details::getNode<NodeType> ();
+      return Teuchos::rcp (new NodeType);
     }
 
     //@}
