@@ -50,11 +50,11 @@ regionList = sort(regionList);
 % figure things out in a slow clumsy way.
 
 fp = fopen(filename,'r');
-if fp == -1, fprintf('Cannot read %s \n',filename); keyboard; end;
+if (fp == -1)
+  error('Cannot read %s \n',filename);
+end
 
-%
 % read header information 
-%
 fgetl(fp);   % read heading line
 temp = fscanf(fp,'%d');
 nNodes   = temp(1);
