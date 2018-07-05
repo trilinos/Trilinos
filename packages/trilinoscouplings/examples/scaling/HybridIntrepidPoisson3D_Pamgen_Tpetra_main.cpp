@@ -302,11 +302,11 @@ main (int argc, char *argv[])
 
       // Set region type
       std::string regionType;
-      //if(myRank % 2 == 0){
-      //  regionType = "uncoupled";
-      //} else {
+      if(myRank % 2 == 0){
+        regionType = "uncoupled";
+      } else {
         regionType = "structured";
-      //}
+      }
 
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
