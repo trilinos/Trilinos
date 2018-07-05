@@ -105,7 +105,7 @@ public:
 
   Ptr<vector<TimeStamp<Real>>> getTimeStamp() const { return timeStamp_; }
   void setTimeStamp(const Ptr<vector<TimeStamp<Real>>>& timeStamp ) 
-  { Nt_ = timeStamp_->size(); timeStamp_ = timeStamp; } 
+  { timeStamp_ = timeStamp; Nt_ = timeStamp_->size(); }
 
   virtual void solve( Vector<Real>& c, Vector<Real>& u,
                       const Vector<Real>& z, Real& tol ) override {
