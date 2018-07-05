@@ -273,11 +273,13 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       ajv->zero();
     }
 
+    int level = 0;
     pint_constraint.invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
                                            dynamic_cast<const PinTVector<RealT>&>(*jv),
                                            dynamic_cast<const PinTVector<RealT>&>(*state),
                                            dynamic_cast<const PinTVector<RealT>&>(*control),
-                                           tol);
+                                           tol,
+                                           level);
     fv->axpy(-1.0,*v);
 
     RealT fv_norm  = fv->norm();
@@ -304,7 +306,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                   dynamic_cast<const PinTVector<RealT>&>(*ajv),
                                                   dynamic_cast<const PinTVector<RealT>&>(*state),
                                                   dynamic_cast<const PinTVector<RealT>&>(*control),
-                                                  tol);
+                                                  tol,
+                                                  level);
 
     afv->axpy(-1.0,*v);
     RealT afv_norm = afv->norm();

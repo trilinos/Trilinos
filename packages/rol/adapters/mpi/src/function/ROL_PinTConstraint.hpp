@@ -222,7 +222,7 @@ public:
    * \param[in] level Multigrid level (used only in preconditioning), level=0 is the finest
    */
   Ptr<SerialConstraint<Real>> 
-  getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int level=0)
+  getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int level)
   {
     auto timeStamps = getTimeStampsByLevel(level);
 
@@ -281,6 +281,8 @@ public:
     // working so that we can test, but it won't be a performant way to do this. 
     // We could do a parallel in time solve here but thats not really the focus.
     
+    int level = 0;
+    
     PinTVector<Real>       & pint_c = dynamic_cast<PinTVector<Real>&>(c);
     PinTVector<Real>       & pint_u = dynamic_cast<PinTVector<Real>&>(u);
     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
@@ -322,7 +324,7 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->solve(*part_c,*part_u,*part_z,tol);
 
@@ -330,6 +332,8 @@ public:
   }  
 
   void value( V& c, const V& u, const V& z, Real& tol ) override {
+
+    int level = 0;
 
     c.zero();   
 
@@ -366,14 +370,19 @@ public:
     auto part_z = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->value(*part_c,*part_u,*part_z,tol);
   } 
 
   void applyJacobian_1( V& jv, const V& v, const V& u, 
                        const V& z, Real& tol ) override {
+    int level = 0;
+    applyJacobian_1_leveled(jv,v,u,z,tol,level);
+  }
 
+  void applyJacobian_1_leveled( V& jv, const V& v, const V& u, 
+                       const V& z, Real& tol,int level) {
     jv.zero();
 
     PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
@@ -411,13 +420,19 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   }
 
   void applyJacobian_2( V& jv, const V& v, const V& u,
                         const V &z, Real &tol ) override { 
+    int level = 0;
+    applyJacobian_2_leveled(jv,v,u,z,tol,level);
+  }
+
+  void applyJacobian_2_leveled( V& jv, const V& v, const V& u,
+                        const V &z, Real &tol,int level ) { 
 
     jv.zero();
 
@@ -450,7 +465,7 @@ public:
     auto part_z  = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->applyJacobian_2(*part_jv,*part_v,*part_u,*part_z,tol);
    }
@@ -467,6 +482,20 @@ public:
                                 const V& u,
                                 const V& z, 
                                 Real& tol) override {
+     int level = 0;
+     applyAdjointJacobian_1_leveled(ajv,v,u,z,tol,level);
+   }
+
+   /**
+    * This is a convenience function for multi-grid that gives access
+    * to a "leveled" version of the adjoint jacobian.
+    */
+   void applyAdjointJacobian_1_leveled( V& ajv, 
+                                        const V& v, 
+                                        const V& u,
+                                        const V& z, 
+                                        Real& tol,
+                                        int level) {
     PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
     const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
     const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
@@ -490,7 +519,7 @@ public:
     auto part_z   = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
@@ -511,6 +540,16 @@ public:
 
    void applyAdjointJacobian_2( V& ajv,  const V& v, const V& u,
                                 const V& z, Real& tol ) override {
+     int level = 0;
+     applyAdjointJacobian_2_leveled(ajv,v,u,z,tol,level);
+   }
+
+   void applyAdjointJacobian_2_leveled( V& ajv,  
+                                        const V& v, 
+                                        const V& u,
+                                        const V& z, 
+                                        Real& tol,
+                                        int level ) {
 
     PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
     const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
@@ -535,7 +574,7 @@ public:
     auto part_z   = getControlVector(pint_z); 
 
     // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
     constraint->applyAdjointJacobian_2(*part_ajv,*part_v,*part_u,*part_z,tol);
 
@@ -552,7 +591,8 @@ public:
                                const PinTVector<Real> & pint_v,
                                const PinTVector<Real> & pint_u,
                                const PinTVector<Real> & pint_z,
-                               Real &tol) 
+                               Real &tol,
+                               int level) 
    {
      // apply the time continuity constraint, note that this just using the identity matrix
      const std::vector<int> & stencil = pint_pv.stencil();
@@ -569,7 +609,7 @@ public:
      auto part_z   = getControlVector(pint_z); 
 
      // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
      constraint->applyInverseJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
    }
@@ -579,7 +619,8 @@ public:
                                       const PinTVector<Real> & pint_v,
                                       const PinTVector<Real> & pint_u,
                                       const PinTVector<Real> & pint_z,
-                                      Real &tol) 
+                                      Real &tol,
+                                      int level)
    {
      auto part_pv  = getStateVector(pint_pv);   // strip out initial condition/constraint
      auto part_v   = getStateVector(pint_v);   
@@ -587,7 +628,7 @@ public:
      auto part_z   = getControlVector(pint_z); 
 
      // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1));
+     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
 
      constraint->applyInverseAdjointJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
     
@@ -606,7 +647,8 @@ public:
                          const PinTVector<Real> & pint_rhs,
                          const PinTVector<Real> & pint_u,
                          const PinTVector<Real> & pint_z,
-                         Real &tol) 
+                         Real &tol,
+                         int level)
    {
      pint_rhs.boundaryExchange();
  
@@ -614,16 +656,17 @@ public:
      PinTVector<Real> pint_scratch  = dynamic_cast<const PinTVector<Real>&>(*scratch);
  
      // do block Jacobi smoothing
-     invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol);
+     invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
  
-     invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol);
+     invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
    }
  
    void schurComplementAction(Vector<Real>       & sc_v,
                               const Vector<Real> & v,
                               const Vector<Real> & u,
                               const Vector<Real> & z,
-                              Real &tol) 
+                              Real &tol,
+                              int level)
    {
      auto scratch_u = u.clone(); 
      auto scratch_z = z.clone(); 
@@ -635,12 +678,12 @@ public:
      }
  
      // compute J_1 * J_1^T
-     applyAdjointJacobian_1(*scratch_u,v,u,z,tol)  ;
-     applyJacobian_1(sc_v,*scratch_u,u,z,tol);
+     applyAdjointJacobian_1_leveled(*scratch_u,v,u,z,tol,level)  ;
+     applyJacobian_1_leveled(sc_v,*scratch_u,u,z,tol,level);
  
      // compute J_2 * J_2^T
-     applyAdjointJacobian_2(*scratch_z,v,u,z,tol);
-     applyJacobian_2(*scratch_u,*scratch_z,u,z,tol);
+     applyAdjointJacobian_2_leveled(*scratch_z,v,u,z,tol,level);
+     applyJacobian_2_leveled(*scratch_u,*scratch_z,u,z,tol,level);
      
      // compute J_1 * J_1^T + J_2 * J_2^T
      sc_v.axpy(1.0,*scratch_u);
@@ -652,7 +695,8 @@ public:
                                     const PinTVector<Real> & pint_z,
                                     Real omega,
                                     int numSweeps,
-                                    Real &tol) 
+                                    Real &tol,
+                                    int level) 
    {
      auto residual = pint_v.clone();
      auto dx = pint_pv.clone();
@@ -664,22 +708,90 @@ public:
  
      PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
      PinTVector<Real> & pint_dx       = dynamic_cast<PinTVector<Real>&>(*dx);
- 
+
      for(int s=0;s<numSweeps;s++) {
-       blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol);
+       blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol,level);
  
        pint_pv.axpy(omega,pint_dx);
  
        // now update the residual
        if(s!=numSweeps-1) {
-         schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol); // A*x
+         schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol,level); // A*x
  
          pint_residual.scale(-1.0);                            // -A*x
-         pint_residual.axpy(-1.0,pint_v);                      // b - A*x
+         pint_residual.plus(pint_v);                      // b - A*x
        }
      }
  
      pint_pv.boundaryExchange();
+   }
+
+   virtual void multigridInTime(Vector<Real> & pv,
+                                const Vector<Real> & v,
+                                const Vector<Real> & u,
+                                const Vector<Real> & z,
+                                Real omega,
+                                int numSweeps,
+                                Real &tol,
+                                int level=0) 
+   {
+     PinTVector<Real> & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
+     const PinTVector<Real> & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
+     const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+
+     multigridInTime(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
+   }
+
+   virtual void multigridInTime(PinTVector<Real> &pint_x,
+                                const PinTVector<Real> & pint_b,
+                                const PinTVector<Real> & pint_u,
+                                const PinTVector<Real> & pint_z,
+                                Real omega,
+                                int numSweeps,
+                                Real &tol,
+                                int level=0) 
+   {
+     auto residual = pint_b.clone();
+     auto correction = pint_x.clone();
+     PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
+
+     // pre-smooth
+     /////////////////////////////////////////////////////////////////////////////////////
+     weightedJacobiRelax(pint_x,pint_b,pint_u,pint_z,omega,numSweeps,tol,level);
+
+     // compute fine residual
+     schurComplementAction(pint_residual,pint_x,pint_u,pint_z,tol,level); // A*x
+ 
+     pint_residual.scale(-1.0);                       // -A*x 
+     pint_residual.plus(pint_b);                      // b - A*x
+
+     // coarse solve
+     /////////////////////////////////////////////////////////////////////////////////////
+     if(level<=1) {
+       auto crs_u          = allocateSimVector(pint_x,level+1);
+       auto crs_z          = allocateOptVector(pint_z,level+1);
+       auto crs_residual   = allocateSimVector(pint_x,level+1);
+       auto crs_correction = allocateSimVector(pint_x,level+1);
+
+       crs_correction->zero();
+
+       restrictSimVector(pint_u,*crs_u);               // restrict the control to the coarse level
+       restrictOptVector(pint_z,*crs_z);               // restrict the state to the coarse level
+       restrictSimVector(pint_residual,*crs_residual);  
+       
+       multigridInTime(*crs_correction,*crs_residual,*crs_u,*crs_z,omega,numSweeps,tol,level+1);
+
+       prolongSimVector(*crs_correction,*correction);  // prolongate the correction 
+
+       pint_x.plus(*correction);                          // x+c
+     }
+
+     // post-smooth
+     /////////////////////////////////////////////////////////////////////////////////////
+      
+     
+     weightedJacobiRelax(pint_x,pint_b,pint_u,pint_z,omega,numSweeps,tol,level);
    }
  
  
@@ -714,12 +826,19 @@ public:
      // now we are going to do a relaxation sweep: x = xhat+omega * Minv * (b-A*xhat)
      /////////////////////////////////////////////////////////////////////////////////////////
      
-     int numSweeps = 4;
+     int numSweeps = 1;
      Real omega = 2.0/3.0;
      
-     weightedJacobiRelax(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol);
-     
-     // pv.set(v.dual());
+     int level = 0;
+     if(false) {
+       weightedJacobiRelax(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
+     }
+     else if(false) {
+       multigridInTime(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
+     }
+     else {
+       pv.set(v.dual());
+     } 
    }
 
    // restriction and prolongation functions
