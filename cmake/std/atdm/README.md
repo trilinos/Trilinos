@@ -57,9 +57,15 @@ passed through in `<job-name>` (or errors out if the current machine is not
 one of the supported machines).
 
 The `<job-name>` argument is a single string of the form
-`XXX-<keyword0>-<keyword1>-...`.
+`XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
+is:
 
-The following `<job-name>` keywords specify the `<COMPILER>`:
+    <compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
+
+Each of these keywords are described below.
+
+**`<compiler>`:** The following **lower case** `<job-name>` keywords specify
+the `<COMPILER>` variable include:
 
 * `gnu`: Use the GCC compilers (`<COMPILER>=GNU`)
 * `intel`: Use the Intel compilers (`<COMPILER>=INTEL`)
@@ -77,15 +83,16 @@ compilers and which versions are supported.  If you choose a compiler that is
 not supported, an error message will be provided.  If `default` is used, then
 the default compiler for the system will be selected.
 
-The following `<job-name>` keywords specify debug or optimized `<BUILD_TYPE>
-`(used for the CMake cache var `CMAKE_BUILD_TYPE`with default
-`<BUILD_TYPE>=DEBUG`):
+**`<debug_or_opt>`:** The following `<job-name>` keywords specify debug or
+optimized build and the `<BUILD_TYPE> variable `(used for the CMake cache var
+`CMAKE_BUILD_TYPE`with default `<BUILD_TYPE>=DEBUG`):
 
 * `debug`: Use `<BUILD_TYPE>=DEBUG`
 * `opt`: Use `<BUILD_TYPE>=RELEASE`
 
-The following `<job-name>` keywords determine the Kokkos threading model
-`<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
+**`<kokkos_threading>`:** The following `<job-name>` keywords determine the
+Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
+unless `<COMPILER>=CUDA`):
 
 * `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
 * `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
@@ -94,25 +101,46 @@ The following `<job-name>` keywords determine the Kokkos threading model
 If `cuda` (or `cuda-8.0`, `cuda-9.0`, etc.) is given, then `<NODE_TYPE>` is
 automatically set to `CUDA`.
 
+**`<kokkos_arch>`:** The `<job-name>` string can also contain keywords to
+determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
+architecture name that is recognized by the CMake
+[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
+configure option for Trilinos and Kokkos.  Some common supported Kokkos
+architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
+`KNL`.  When a GPU is present, some common Kokkos architecture options include
+`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
+supported by the current system or selected compiler, then the `load-env.sh`
+script will return an error message listing the value choices for
+`KOKKOS_ARCH` for each supported compiler.
+
+Note that currently only a single `KOKKOS_ARCH` value is recognized in the
+`<job-name>` string and it must be proceeded a dash '-' such as with
+`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
+specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
+that would be needed or useful) but such functionality could be supported in
+the future if needed.
+
 All other strings in `<job-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<job-name>` string is defined in
 this form is that this can be used as the Jenkins job name and the Trilinos
 build name that shows up on CDash.  This makes it very easy to define the
 configuration options and maintain the Jenkins build jobs.  The combination
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>` is used to define the CMake variable
-`ATDM_JOB_NAME_KEYS_STR` that is used to uniquely define a build on a
-particular system and to manage a system of tweaks for each of the supported
-builds (see below).
+`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ACRCH>` is used to define the
+CMake variable `ATDM_JOB_NAME_KEYS_STR` that is used to uniquely define a
+build on a particular system and to manage a system of tweaks for each of the
+supported builds (see below).
 
 Some examples of `<job-name>` keyword sets used on various platforms include:
 * `gnu-debug-openmp`
 * `gnu-opt-openmp`
 * `intel-debug-openmp`
 * `intel-opt-openmp`
+* `intel-debug-openmp-KNL`
+* `intel-opt-openmp-HSW`
 * `cuda-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
 * `cuda-opt` (`<NODE_TYPE>` is implicitly `CUDA`)
 * `cuda-8.0-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
-* `cuda-9.0-opt` (`<NODE_TYPE>` is implicitly `CUDA`)
+* `cuda-9.0-opt-Kepler37` (`<NODE_TYPE>` is implicitly `CUDA`)
 
 The script `cmake/std/atdm/load-env.sh` when sourced sets some bash
 environment variables that are prefixed with `ATDM_CONFIG_` and other standard
@@ -487,8 +515,8 @@ The files in the `cmake/std/atdm/<system-name>/tweaks/` directory contain
 special settings for specific builds for a specific system.  Typically, this
 file contains (temporary) disables for tests for that given build.  When a
 configure is performed, the variable `ATDM_JOB_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>` (printed to STDOUT) is used to define a
-default file name:
+`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
+used to define a default file name:
 
 ```
   Trilinos/cmake/std/atdm/<system-name>/tweaks/$ATDM_JOB_NAME_KEYS_STR.cmake
@@ -574,11 +602,11 @@ as the line:
 -- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/<system-name>/tweaks/<ATDM_JOB_NAME_KEYS_STR>.cmake'
 ```
 
-For example, for the `intel-debug-openmp` build on 'mutrino', the printout
+For example, for the `intel-debug-openmp-KNL` build on 'mutrino', the printout
 would be:
 
 ```
--- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP.cmake'
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP-KNL.cmake'
 ```
 
 For example, Trilinos commit
@@ -591,7 +619,8 @@ ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
 in both the files `cmake/std/atdm/shiller/tweaks/GNU-DEBUG-SERIAL.cmake` and
-`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake`
+`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake` (before `-HSW` was
+added to the names).
 
 NOTE: Adding a comment with the Trilinos GitHub Issue ID (`#2925` in this
 example) is critical for tractability to remind why the test was disabled and
@@ -627,7 +656,8 @@ build:
   Trilinos/cmake/std/atdm/ride/tweaks/CUDA-RELEASE-CUDA.cmake
 ```
 
-using the inserted CMake statement:
+(before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
+statement:
 
 ```
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/CUDA_COMMON_TWEAKS.cmake")
@@ -698,5 +728,3 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
-  
-
