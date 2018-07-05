@@ -153,26 +153,30 @@ script.  This can be used to drive a number of builds on system as:
 ```
 $ cd <some_build_dir>/
 
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 
-$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+$ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
   --enable-packages=<Package> --local-do-all
 ```
 
 That will configure, build, and run tests for each specified build
-`<job-name-0>` and send a summary email when complete.  See comments at the
-top of the script `checkin-test-atdm.sh` for more details.  The parallel level
-for building and running tests are determined by the env vars
-`ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
-respectfully, as set by default for the given system.  These can be overridden
-by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+`<job-name-0>` and send a summary email when complete.  All of the supported
+builds on the local system can be run by using `all` instead of `<job-name-0>
+<job-name-1> ...`.  See comments at the top of the script
+`checkin-test-atdm.sh` for more details.
+
+The parallel level for building and running tests are determined by the env
+vars `ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
+respectfully, as set by default for the given system by the `atdm/load-env.sh`
+script.  These values can be overridden by setting the env vars
+`ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
 
 ```
 $ env \
   ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
   ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
-  ./checkin-test-sems.sh ...
+  ./checkin-test-atdm.sh ...
 ```
 
 A value of `ATDM_CONFIG_BUILD_COUNT_OVERRIDE=0` or less than `0` is allowed
@@ -185,16 +189,17 @@ run on a compute node one will need to run these on a compute node on the
 system that has a GPU.  On such a system one would run:
 
 ```
-$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+$ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
   --enable-packages=<Package> --configure --build \
   && \
   <command-to-run-on-compute-node> \
-  ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+  ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
   --enable-packages=<Package> --test
 ```
 
 See <a href="#specific-instructions-for-each-system">Specific instructions for
-each system</a> for details.
+each system</a> for details for how to run on the compute node for that
+system.
 
 Note that one can create a `local-checkin-test-defaults.py` file to set
 defaults like:
@@ -209,12 +214,12 @@ defaults = [
 and then run:
 
 ```
-$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+$ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
   --enable-packages=<Package> --local-do-all
 ```
 
 However, a default `local-checkin-test-defaults.py` is created the first time
-the `checkin-test-atdm.sh` script is run.
+the `checkin-test-atdm.sh` script is run (after which can be modified).
 
 
 ## Specific instructions for each system
@@ -260,9 +265,9 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
 $ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ bsub -x -I -q rhel7F -n 16 \
-  ./checkin-test-sems.sh cuda-debug \
+  ./checkin-test-atdm.sh cuda-debug \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
@@ -300,8 +305,8 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
 $ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ srun ./checkin-test-sems.sh intel-opt-openmp \
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ srun ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
@@ -341,11 +346,11 @@ the configure and build as with:
 
 ```
 $ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ ./checkin-test-sems.sh intel-opt-openmp \
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --allow-no-pull --configure --build
 $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
-  ./checkin-test-sems.sh intel-opt-openmp \
+  ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --test
 ```
 
