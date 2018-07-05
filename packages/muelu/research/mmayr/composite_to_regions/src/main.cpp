@@ -612,7 +612,7 @@ int main(int argc, char *argv[]) {
     clp.setDocString("Driver for region multigrid\n\nUse Matlab script 'createInput.m' to create necessary input data on the hard dist.\n\nProvide filename of MueLu xml configuration via '--xml=...'.");
 
     // define command line arguments
-    clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration");
+    clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration", true);
 
     // force user to specify all options
     clp.recogniseAllOptions(true);
@@ -783,7 +783,7 @@ int main(int argc, char *argv[]) {
     std::stringstream fileNameSS;
     fileNameSS << "myCompositeMap_" << myRank;
     fp = fopen(fileNameSS.str().c_str(), "r");
-    if (fp != NULL)
+    if (fp == NULL)
       std::cout << std::endl << ">>> Check number of MPI ranks!" << std::endl << std::endl;
     TEUCHOS_ASSERT(fp!=NULL);
 
