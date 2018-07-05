@@ -66,18 +66,6 @@ namespace {
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
-  }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return Tpetra::getDefaultComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
   }
 
   //
@@ -100,7 +88,7 @@ namespace {
     Teuchos::OSTab tab0 (out);
     Teuchos::OSTab tab1 (out);
 
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     //    int rank = comm->getRank();
 
