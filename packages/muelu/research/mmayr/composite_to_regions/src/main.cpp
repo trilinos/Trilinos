@@ -223,6 +223,76 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec
   return;
 }
 
+/*! \brief Transform regional matrix to composite layout
+ *
+ *  Starting from a \c Epetra_CrsMatrix in regional layout, we
+ *  1. replace the regional maps with the quasiRegional maps
+ *  2. export it into a Epetra_CrsMatrix with composite layout using the \c CombineMode \c Add.
+ *     Note: on-process values also have to be added to account for region interfaces inside a process.
+ *
+ *  \note The \c Add operation in the \c Export() can be done twofold, depending on the linear algebra package:
+ *  - Epetra provides a \c CombineMode \c Eptra_AddLocalAlso that adds on-process values.
+ *  - Tpetra does not provide such a capability (as it is not unique), so we perform the local summation
+ *    manually.
+ */
+void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& regMat, ///< Matrix in region layout [in]
+    Teuchos::RCP<Epetra_CrsMatrix> compMat, ///< Matrix in composite layout [in/out]
+    const int maxRegPerProc, ///< max number of regions per proc
+    const std::vector<Teuchos::RCP<Epetra_Map> > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
+    const std::vector<Teuchos::RCP<Epetra_Map> > colMapPerGrp, ///< col maps in quasiRegion layout [in]
+    const std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp, ///< row importer in region layout [in]
+    const Epetra_CombineMode combineMode, ///< Combine mode for import/export [in]
+    const bool addLocalManually ///< perform ADD of local values manually (not via Epetra CombineMode)
+    )
+{
+//  if (not addLocalManually) {
+//    /* Use the Eptra_AddLocalAlso combine mode to add processor-local values.
+//     * Note that such a combine mode is not available in Tpetra.
+//     */
+//
+//    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
+//    for (int j = 0; j < maxRegPerProc; j++) {
+//      // copy vector and replace map
+//      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
+//      int err = quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+//      TEUCHOS_ASSERT(err == 0);
+//
+//      err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), combineMode);
+//      TEUCHOS_ASSERT(err == 0);
+//    }
+//  }
+//  else {
+//    /* Let's fake an ADD combine mode that also adds local values by
+//     * 1. exporting quasiRegional vectors to auxiliary composite vectors (1 per group)
+//     * 2. add all auxiliary vectors together
+//     */
+//
+//    Teuchos::RCP<Epetra_MultiVector> partialCompVec = Teuchos::rcp(new Epetra_MultiVector(compVec->Map(), maxRegPerProc, true));
+//    TEUCHOS_ASSERT(!partialCompVec.is_null());
+//
+//    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
+//    for (int j = 0; j < maxRegPerProc; j++) {
+//      // copy vector and replace map
+//      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
+//      TEUCHOS_ASSERT(!quasiRegVec[j].is_null());
+//
+//      int err = quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+//      TEUCHOS_ASSERT(err == 0);
+//
+//      err = (*partialCompVec)(j)->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), Add);
+//      TEUCHOS_ASSERT(err == 0);
+//    }
+//
+//    compVec->PutScalar(0.0);
+//    for (int j = 0; j < maxRegPerProc; j++) {
+//      int err = compVec->Update(1.0, *(*partialCompVec)(j), 1.0);
+//      TEUCHOS_ASSERT(err == 0);
+//    }
+//  }
+//
+//  return;
+}
+
 //! Print an Epetra_Vector in regional layout to screen
 void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
     const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
@@ -1315,6 +1385,18 @@ int main(int argc, char *argv[]) {
       TEUCHOS_ASSERT(err == 0);
     }
   }
+
+  Comm.Barrier();
+
+  /* Form a composite operator (needed for coarse level) */
+  {
+    Teuchos::RCP<Epetra_CrsMatrix> compOp = Teuchos::rcp(new Epetra_CrsMatrix(Copy, AComp->RowMap(), AComp->ColMap(), 3));
+    regionalToComposite(regionGrpMats, compOp, maxRegPerProc, rowMapPerGrp, colMapPerGrp, rowImportPerGrp, Add, false);
+  }
+
+  Comm.Barrier();
+  std::cout << "Calling exit(0) on proc " << myRank << std::endl;
+  exit(0);
 
   Comm.Barrier();
 
