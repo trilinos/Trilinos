@@ -118,6 +118,44 @@ struct widget {
 int myRank;
 };
 
+//! Print an Epetra_Vector in regional layout to screen
+void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+//  sleep(myRank);
+  for (int j = 0; j < (int) regVecs.size(); j++) {
+    printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
+    regVecs[j]->Print(std::cout);
+  }
+}
+
+//! Print an Epetra_Map in regional layout to screen
+void printRegionalMap(const std::string mapName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+//  sleep(myRank);
+  for (int j = 0; j < (int) regMaps.size(); j++) {
+    printf("%d: %s %d\n", myRank, mapName.c_str(), j);
+    regMaps[j]->Print(std::cout);
+  }
+}
+
+//! Print an Epetra_CrsMatrix in regional layout to screen
+void printRegionalMatrix(const std::string matrixName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_CrsMatrix> > regMats, ///< regional matrix to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+  for (int j = 0; j < (int) regMats.size(); j++) {
+    printf("%d: %s %d\n", myRank, matrixName.c_str(), j);
+    regMats[j]->Print(std::cout);
+  }
+}
+
 /*! \brief Transform composite vector to regional layout
  *
  *  Starting from a \c Epetra_Vector in composite layout, we
@@ -226,7 +264,8 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec
 /*! \brief Transform regional matrix to composite layout
  *
  *  Starting from a \c Epetra_CrsMatrix in regional layout, we
- *  1. replace the regional maps with the quasiRegional maps
+ *  1. copy data from regional matrix into quasiRegional matrix and set all maps
+ *     to be quasiRegional maps
  *  2. export it into a Epetra_CrsMatrix with composite layout using the \c CombineMode \c Add.
  *     Note: on-process values also have to be added to account for region interfaces inside a process.
  *
@@ -245,23 +284,57 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& reg
     const bool addLocalManually ///< perform ADD of local values manually (not via Epetra CombineMode)
     )
 {
-//  if (not addLocalManually) {
-//    /* Use the Eptra_AddLocalAlso combine mode to add processor-local values.
-//     * Note that such a combine mode is not available in Tpetra.
-//     */
-//
-//    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
-//    for (int j = 0; j < maxRegPerProc; j++) {
-//      // copy vector and replace map
-//      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
-//      int err = quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
-//      TEUCHOS_ASSERT(err == 0);
-//
-//      err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), combineMode);
-//      TEUCHOS_ASSERT(err == 0);
-//    }
-//  }
-//  else {
+  if (not addLocalManually) {
+    /* Use the Eptra_AddLocalAlso combine mode to add processor-local values.
+     * Note that such a combine mode is not available in Tpetra.
+     */
+
+    // Copy data from quasiRegionGrpMats, but into new map layout
+    std::vector<Teuchos::RCP<Epetra_CrsMatrix> > quasiRegMat(maxRegPerProc);
+    {
+      for (int j = 0; j < maxRegPerProc; j++) {
+        // create empty matrix with correct row and column map
+        quasiRegMat[j] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *(rowMapPerGrp[j]), *(colMapPerGrp[j]), 3));
+
+        // extract pointers to crs arrays from region matrix
+        Epetra_IntSerialDenseVector & rowPtr = regMat[j]->ExpertExtractIndexOffset();
+        Epetra_IntSerialDenseVector & colInd = regMat[j]->ExpertExtractIndices();
+        double *& vals = regMat[j]->ExpertExtractValues();
+
+        // extract pointers to crs arrays from quasiRegion matrix
+        Epetra_IntSerialDenseVector & qRowPtr = quasiRegMat[j]->ExpertExtractIndexOffset();
+        Epetra_IntSerialDenseVector & qColInd = quasiRegMat[j]->ExpertExtractIndices();
+        double *& qVals = quasiRegMat[j]->ExpertExtractValues();
+
+        // assign array values from regional to quasiRegional matrices
+        qRowPtr.Resize(rowPtr.Length());
+        qColInd.Resize(colInd.Length());
+        delete [] qVals;
+        qVals = new double[qColInd.Length()];
+        for (int i = 0; i < qRowPtr.Length(); ++i) qRowPtr[i] = rowPtr[i];
+        for (int i = 0; i < qColInd.Length(); ++i) {
+          qColInd[i] = colInd[i];
+          qVals[i] = vals[i];
+        }
+      }
+
+      /* add domain and range map to quasiRegion matrices (pass in quasiRow map, since
+       * we assume that row map = range map = domain map)
+       */
+      for (int j = 0; j < maxRegPerProc; j++) {
+        quasiRegMat[j]->ExpertStaticFillComplete(*(rowMapPerGrp[j]),*(rowMapPerGrp[j]));
+      }
+
+      for (int j = 0; j < maxRegPerProc; j++) {
+        int err = compMat->Export(*quasiRegMat[j], *(rowImportPerGrp[j]), combineMode);
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+      int err = compMat->FillComplete();
+      TEUCHOS_ASSERT(err == 0);
+    }
+  }
+  else {
 //    /* Let's fake an ADD combine mode that also adds local values by
 //     * 1. exporting quasiRegional vectors to auxiliary composite vectors (1 per group)
 //     * 2. add all auxiliary vectors together
@@ -288,35 +361,9 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& reg
 //      int err = compVec->Update(1.0, *(*partialCompVec)(j), 1.0);
 //      TEUCHOS_ASSERT(err == 0);
 //    }
-//  }
-//
-//  return;
-}
-
-//! Print an Epetra_Vector in regional layout to screen
-void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
-    const int myRank ///< rank of calling proc
-    )
-{
-//  sleep(myRank);
-  for (int j = 0; j < (int) regVecs.size(); j++) {
-    printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
-    regVecs[j]->Print(std::cout);
   }
-}
 
-//! Print an Epetra_Map in regional layout to screen
-void printRegionalMap(const std::string mapName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
-    const int myRank ///< rank of calling proc
-    )
-{
-  sleep(myRank);
-  for (int j = 0; j < (int) regMaps.size(); j++) {
-    printf("%d: %s %d\n", myRank, mapName.c_str(), j);
-    regMaps[j]->Print(std::cout);
-  }
+  return;
 }
 
 /*! \brief Sum region interface values
@@ -1393,10 +1440,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_CrsMatrix> compOp = Teuchos::rcp(new Epetra_CrsMatrix(Copy, AComp->RowMap(), AComp->ColMap(), 3));
     regionalToComposite(regionGrpMats, compOp, maxRegPerProc, rowMapPerGrp, colMapPerGrp, rowImportPerGrp, Add, false);
   }
-
-  Comm.Barrier();
-  std::cout << "Calling exit(0) on proc " << myRank << std::endl;
-  exit(0);
 
   Comm.Barrier();
 
