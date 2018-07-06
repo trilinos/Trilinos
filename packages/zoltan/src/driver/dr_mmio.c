@@ -13,6 +13,7 @@
 #include <ctype.h>
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_mmio.h"
 #include "dr_compress_const.h"
 
