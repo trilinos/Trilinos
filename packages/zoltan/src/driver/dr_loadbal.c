@@ -65,6 +65,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <unistd.h>
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
