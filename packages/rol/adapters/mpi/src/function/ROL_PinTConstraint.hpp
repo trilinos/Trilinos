@@ -896,7 +896,7 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     int Np_input = pint_input.numOwnedSteps();
+//     int Np_input = pint_input.numOwnedSteps();
      int Np = pint_output.numOwnedSteps();
 
      // this is the virtual variable (set it to -1)

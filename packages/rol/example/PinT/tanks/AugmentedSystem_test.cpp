@@ -76,7 +76,7 @@ int main( int argc, char* argv[] )
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
   int myRank = Teuchos::GlobalMPISession::getRank();
 
-  int iprint     = argc - 1;
+//  int iprint     = argc - 1;
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
@@ -110,7 +110,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
   using State             = Tanks::StateVector<RealT>;

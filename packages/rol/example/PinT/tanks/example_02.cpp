@@ -146,7 +146,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
   using State             = Tanks::StateVector<RealT>;

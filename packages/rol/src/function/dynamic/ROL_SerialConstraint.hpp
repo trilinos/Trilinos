@@ -263,13 +263,13 @@ public:
   virtual void applyAdjointHessian_11( Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
                                        const Vector<Real> &u, const Vector<Real> &z, Real &tol) override {
 
-    auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
-    auto& vp    = partition(v);       auto& up = partition(u);
-    auto& zp    = partition(z);
-
-    auto  tmp  = workspace_.clone(ahwvp.get(0)); 
-    auto& x    = *tmp; 
-    
+//    auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
+//    auto& vp    = partition(v);       auto& up = partition(u);
+//    auto& zp    = partition(z);
+//
+//    auto  tmp  = workspace_.clone(ahwvp.get(0)); 
+//    auto& x    = *tmp; 
+//    
 //    con_->applyAdjointHessian_un_un( *(ahwvp.get(0), *(w.get(0)), *(v.get(0)), *u_zero_, 
 //                                     *(u.get(0)), *(z.get(0)), timeStamp_->at(0) );
 

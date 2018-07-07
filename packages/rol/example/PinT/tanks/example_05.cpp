@@ -74,9 +74,9 @@ int main( int argc, char* argv[] )
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
   int myRank = Teuchos::GlobalMPISession::getRank();
-  int numProcs = Teuchos::GlobalMPISession::getNProc();
+//  int numProcs = Teuchos::GlobalMPISession::getNProc();
 
-  int iprint     = argc - 1;
+//  int iprint     = argc - 1;
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
@@ -130,7 +130,7 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
   using State             = Tanks::StateVector<RealT>;
@@ -214,7 +214,7 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   // (*outStream) << "Dt = " << dt << std::endl;
   // (*outStream) << "TIME OFFSET = " << time_offset << std::endl;
 
-  for( size_type k=0; k<local_Nt; ++k ) {
+  for( size_type k=0; k< static_cast<size_type>(local_Nt); ++k ) {
     timeStamp->at(k).t.resize(2);
     timeStamp->at(k).t.at(0) = k*dt+time_offset;
     timeStamp->at(k).t.at(1) = (k+1)*dt+time_offset;
@@ -237,9 +237,9 @@ void run_test_getTimeStampsByLevel(MPI_Comm comm, const ROL::Ptr<std::ostream> &
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   int numRanks = -1;
   int myRank = -1;
@@ -258,7 +258,7 @@ void run_test_getTimeStampsByLevel(MPI_Comm comm, const ROL::Ptr<std::ostream> &
   
     // make sure that the number of time steps is right (note the +1 is a result of initial condition weridness)
     int expected_size = 1+local_Nt/std::pow(2,l);
-    if(level_stamps->size()!=expected_size) {
+    if( level_stamps->size() != static_cast<size_type>(expected_size) ) {
       std::stringstream ss;
       ss << "Number of levels " << l << " stamps are incorrect, expected " << expected_size << " but got " << level_stamps->size() << std::endl;
       throw std::logic_error(ss.str());
@@ -277,7 +277,7 @@ void run_test_getTimeStampsByLevel(MPI_Comm comm, const ROL::Ptr<std::ostream> &
     }
 
     // check that all the time step sizes are correct at this level
-    for(int k=1;k<level_stamps->size();k++) {
+    for( size_type k=1; k<level_stamps->size(); k++ ) {
       double level_dt = level_stamps->at(k).t[1]- level_stamps->at(k).t[0];
       
       if(std::fabs(dt * std::pow(2,l) - level_dt)>1e-14) {
@@ -289,7 +289,7 @@ void run_test_getTimeStampsByLevel(MPI_Comm comm, const ROL::Ptr<std::ostream> &
 
     // print out some stuff for grins
     std::stringstream ss;
-    for(int k=1;k<level_stamps->size();k++) {
+    for( size_type k=1; k<level_stamps->size(); k++ ) {
       ss << "level " << l << " times = " << level_stamps->at(k).t[0] << " " << level_stamps->at(k).t[1] << std::endl;
     }
     (*outStream) << ss.str() << std::endl;
@@ -304,10 +304,10 @@ void run_test_allocateVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using size_type         = std::vector<RealT>::size_type;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   int numRanks = -1;
   int myRank = -1;
@@ -320,7 +320,7 @@ void run_test_allocateVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
   Ptr<ROL::PinTConstraint<RealT>> pint_constraint = cd.constraint;
 
   auto level0_stamps = pint_constraint->getTimeStampsByLevel(0);
-  double dt = level0_stamps->at(0).t[1]- level0_stamps->at(0).t[0];
+//  double dt = level0_stamps->at(0).t[1]- level0_stamps->at(0).t[0];
 
   // check allocation of the control and state vectors...note the need for a reference
   for(int level=0;level<3;level++) {
@@ -361,10 +361,10 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using size_type         = std::vector<RealT>::size_type;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   auto & out = *outStream;
   std::stringstream ss;  // for errors
@@ -401,7 +401,7 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
   
       // fill up the fine level vectors
       pint_state.getVectorPtr(-1)->setScalar(-myRank-1.0); 
-      for(int k=0;k<pint_state.numOwnedSteps();k++) {
+      for( size_type k=0;k < static_cast<size_type>(pint_state.numOwnedSteps()); k++ ) {
         pint_state.getVectorPtr(k)->setScalar(myRank*100.0+k); 
         pint_control.getVectorPtr(k)->setScalar(myRank*100.0+k); 
       }
@@ -417,7 +417,7 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
     out << "Checking restriction methods" << std::endl;
     { 
       ROL::PinTVector<RealT> & pint_state   = dynamic_cast<ROL::PinTVector<RealT>&>(*state); 
-      ROL::PinTVector<RealT> & pint_control = dynamic_cast<ROL::PinTVector<RealT>&>(*control); 
+//      ROL::PinTVector<RealT> & pint_control = dynamic_cast<ROL::PinTVector<RealT>&>(*control); 
 
       ROL::PinTVector<RealT> & pint_state_crs   = dynamic_cast<ROL::PinTVector<RealT>&>(*state_crs); 
       ROL::PinTVector<RealT> & pint_control_crs = dynamic_cast<ROL::PinTVector<RealT>&>(*control_crs); 
@@ -440,7 +440,7 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
       }
 
       // check the interior vectors
-      for(int k=0;k<pint_state_crs.numOwnedSteps()-1;k++) {
+      for( size_type k=0; k<static_cast<size_type>(pint_state_crs.numOwnedSteps()-1); k++ ) {
         RealT exact_value = ((myRank*100.0+(2.0*k)) + (myRank*100.0+(2.0*k+1)) + (myRank*100.0+(2.0*k+2)))/3.0;
         RealT exact_norm  = std::sqrt(std::pow(exact_value,2.0)*dim_state);
 
@@ -503,10 +503,10 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
-  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using size_type         = std::vector<RealT>::size_type;
+//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   auto & out = *outStream;
   std::stringstream ss;  // for errors
