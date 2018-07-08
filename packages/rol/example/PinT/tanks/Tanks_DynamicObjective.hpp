@@ -41,24 +41,22 @@
 // ************************************************************************
 // @HEADER
 
+
 #pragma once
 #ifndef TANKS_DYNAMICOBJECTIVE_HPP
 #define TANKS_DYNAMICOBJECTIVE_HPP
 
-#include "ROL_DynamicObjective.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_VectorWorkspace.hpp"
+#include "ROL_DynamicObjective.hpp"
+
+#include "Tanks_StateVector.hpp"
+#include "Tanks_ControlVector.hpp"
+#include "LowerBandedMatrix.hpp"
+
+#include <utility>
+
 
 /** \class Tanks_DynamicObjective based on the new DynamicObjective interface
-    \brief Compute contribution to the total objective from a given time step
-
-    The objective is assumed to have the form:
-
-    \f[ f(u,z) = \frac{\alpha}{2} | h(T)-\tilde h(T) |^2 +
-                 \frac{\beta}{2 } \int\limits_0^T | h(t)-\tilde h(t) |^2 \,\mathrm{d}t
-                 \frac{\gamma}{2} \int\limits_0^T z^2(t) \,\mathrm{d}t
-
-    Integrals are approximated by the trapezoidal rule
 */
 
 namespace Tanks {
@@ -68,161 +66,127 @@ class DynamicObjective : public ROL::DynamicObjective<Real> {
 
   using State     = StateVector<Real>;
   using Control   = ControlVector<Real>;
+  using Matrix    = LowerBandedMatrix<Real>;
   using V         = ROL::Vector<Real>;
   using TS        = ROL::TimeStamp<Real>;
-  using size_type = typename State::size_type; 
- 
+  using size_type = typename State::size_type;
+
 private:
+  size_type rows_;             // Number of tank rows
+  size_type cols_;             // Number of tank columns
 
-  size_type rows_;  
-  size_type cols_;
-  size_type Nt_;     // Number of time steps
-  Real      T_;      // Final time
-  Real      htarg_;  // Target fluid level
-  Real      tol_; 
+  //---------- Time Discretization ---------------------------------------------
+  Real T_;                     // Total time
+  Real theta_;                 // Implicit/Explicit splitting factor
+  int  Nt_;                    // Number of Time steps
+  Real dt_;                    // Time step size
 
-  Real      alpha_;  // Penalty on final time error
-  Real      beta_;   // Penalty on distributed time error
-  Real      gamma_;  // Penalty on distributed time error
+  size_type    Ntanks_;        // Total number of tanks 
 
-  ROL::VectorWorkspace<Real> workspace_;
+  Real htarg_;
 
-  bool is_first_step( const TS& timeStamp ) const {
-    return std::abs(timeStamp.t.at(0)) < tol_;
-  }
+  //--------- Subvector addressing ---------------------------------------------
+  size_type  h_, Qout_, Qin_,  z_;
 
-  bool is_final_step( const TS& timeStamp ) const {
-    return std::abs(timeStamp.t.at(1) - T_) < tol_;
-  }
-
-  void step_dependent_weights( Real& wo, Real& wn, Real& wz, const TS& timeStamp ) const {
-    Real dt = timeStamp.t[1]-timeStamp.t[0];
-    wz = dt*gamma_;
-    if( std::abs(timeStamp.t.at(0)) < tol_ ) { // first step
-      wo = 0.0;
-      wn = 0.5*dt*beta_;
-    } else if(  std::abs(timeStamp.t.at(1) - T_) < tol_ ) { // last step 
-      wo = 0.5*dt*beta_;
-      wn = 0.5*dt*beta_ + alpha_;
-    } else { // Interior steps 
-      wo = 0.5*dt*beta_;
-      wn = 0.5*dt*beta_;
-    }
-  }
-
-public:
+public: 
 
   DynamicObjective( ROL::ParameterList& pl ) :
-    rows_( static_cast<size_type>( pl.get( "Number of Rows",       3   ) ) ),
-    cols_( static_cast<size_type>( pl.get( "Number of Columns",    3   ) ) ),
-    Nt_  ( static_cast<size_type>( pl.get( "Number of Time Steps", 100 ) ) ),
-    T_   ( pl.get("Total Time",20.0) ),
-    tol_ ( T_*std::sqrt( ROL::ROL_EPSILON<Real>() ) ) {
-    //target_height_( rows_*cols_ ),
-    //residual_n_( rows_*cols_ ),
-    //residual_o_( rows_*cols_ ) {
+  // ----------- Begin Initializer List ----------------//  
+  rows_   ( pl.get( "Number of Rows",        3      ) ),
+  cols_   ( pl.get( "Number of Columns",     3      ) ),
+  T_      ( pl.get( "Total Time",            20.0   ) ),
+  Nt_     ( pl.get( "Number of Time Steps",  100    ) ),
+  //----------------------------------------------------//
+  dt_( T_/Nt_ ),
+  Ntanks_(rows_*cols_),
+  htarg_  ( pl.get( "Target Fluid Level",    3      ) ),
+  h_(0), Qout_(2*Ntanks_), Qin_(Ntanks_), z_(0)
+  // ------------- End Initializer List ----------------//
+  {}
 
-    auto& penalty = pl.sublist( "Penalty Parameters" );
-    alpha_ = penalty.get( "Final State",          0.0 );
-    beta_  = penalty.get( "Distributed State",    1.0 );
-    gamma_ = penalty.get( "Distributed Control" , 0.0 );
-  }
 
-  Real value( const V& uo, const V& un, 
-              const V& z,  const TS& timeStamp ) const override {
+  virtual ~DynamicObjective() {}
+
+  virtual Real value( const V& uo, const V& un, const V& z, const TS& timeStamp ) const {
 
     auto& uo_state = to_state(uo);
     auto& un_state = to_state(un);
-    auto& z_ctrl   = to_control(z);
 
-    Real result = 0.0;
-    Real duo    = 0.0;    Real wo = 0.0;
-    Real dun    = 0.0;    Real wn = 0.0;
-    Real zij    = 0.0;    Real wz = 0.0;
-
-    step_dependent_weights( wo, wn, wz, timeStamp );
+    Real result = 0;
 
     for( size_type i=0; i<rows_; ++i ) {
-      for( size_type j=0; j<cols_; ++j ) { 
-        dun = un_state.h(i,j) - htarg_;
-        duo = uo_state.h(i,j) - htarg_;
-        zij = z_ctrl(i,j);
-        result += wo*duo*duo + wn*dun*dun + wz*zij*zij;
+      for( size_type j=0; j<cols_; ++j ) {
+        Real hdiff = un_state.h(i,j)-htarg_;
+        result += hdiff*hdiff;
       }
     }
-    return 0.5*result;
-  } 
 
-  void gradient_uo( V& g, const V& uo, const V& un, 
-                    const V& z, const TS& timeStamp ) const override {
+    if( timeStamp.k > 0 ) {
+      for( size_type i=0; i<rows_; ++i ) {
+        for( size_type j=0; j<cols_; ++j ) {
+          Real hdiff = uo_state.h(i,j)-htarg_;
+          result += hdiff*hdiff;
+        }
+      }
+    }  
+    return 0.5*dt_*result;
+  }
+
+  //----------------------------------------------------------------------------
+  // Gradient Terms
+  virtual void gradient_uo( V& g, const V& uo, const V& un, 
+                            const V& z, const TS& timeStamp ) const {
+
     auto& uo_state = to_state(uo);
     auto& g_state  = to_state(g);
-    Real wo = 0.0;
-    Real wn = 0.0;
-    Real wz = 0.0;
-    step_dependent_weights( wo, wn, wz, timeStamp );
- 
-    for( size_type i=0; i<rows_; ++i ) {
-      for( size_type j=0; j<cols_; ++j ) { 
-        g_state.h(i,j) = wo*(uo_state.h(i,j) - htarg_);     
-      }
+
+    if( timeStamp.k > 0 ) {
+      for( size_type i=0; i<rows_; ++i ) 
+        for( size_type j=0; j<cols_; ++j ) 
+          g_state.h(i,j) = dt_*(uo_state.h(i,j)-htarg_);
     }
   }
 
-  void gradient_un( V& g, const V& uo, const V& un, 
-                    const V& z, const TS& timeStamp ) const override {
+  virtual void gradient_un( V& g, const V& uo, const V& un, 
+                            const V& z, const TS& timeStamp ) const {
+    auto& g_state = to_state(g);
     auto& un_state = to_state(un);
-    auto& g_state  = to_state(g);
-    Real wo = 0.0;
-    Real wn = 0.0;
-    Real wz = 0.0;
-    step_dependent_weights( wo, wn, wz, timeStamp );
- 
-    for( size_type i=0; i<rows_; ++i ) {
-      for( size_type j=0; j<cols_; ++j ) { 
-        g_state.h(i,j) = wn*(un_state.h(i,j) - htarg_);     
-      }
-    }
+
+    for( size_type i=0; i<rows_; ++i ) 
+      for( size_type j=0; j<cols_; ++j ) 
+        g_state.h(i,j) = dt_*(un_state.h(i,j)-htarg_);
   }
 
-  void gradient_z( V& g, const V& uo, const V& un, 
-                   const V& z, const TS& timeStamp ) const override {
-    auto& z_ctrl  = to_control(z);
-    auto& g_ctrl  = to_control(g);
-    Real wo = 0.0;
-    Real wn = 0.0;
-    Real wz = 0.0;
-    step_dependent_weights( wo, wn, wz, timeStamp );
- 
-    for( size_type i=0; i<rows_; ++i ) {
-      for( size_type j=0; j<cols_; ++j ) { 
-        g_ctrl(i,j) = wz*z_ctrl(i,j);     
-      }
-    }
+//  virtual void gradient_z( V& g, const V& uo, const V& un, 
+//                           const V& z, const TS& timeStamp ) const {}
 
+  //----------------------------------------------------------------------------
+  // Hessian-Vector product terms
+  virtual void hessVec_uo_uo( V& hv, const V& v, const V& uo, const V& un, 
+                              const V& z, const TS& timeStamp ) const {
+
+    auto& hv_state = to_state(hv);
+    auto& v_state  = to_state(v);
+
+    if( timeStamp.k > 0 )
+      for( size_type i=0; i<rows_; ++i ) 
+        for( size_type j=0; j<cols_; ++j ) 
+          hv_state.h(i,j) = dt_*v_state.h(i,j);
   }
-  
-//  void hessVec_uo_uo( V& hv, const V& vo, const V& uo, const V& un, 
-//                      const V& z, const TS& timeStamp ) const {}
-//
-//  void hessVec_un_un( V& hv, const V& vo, const V& uo, const V& un, 
-//                      const V& z, const TS& timeStamp ) const {}
-//
-//  void hessVec_z_z( V& hv, const V& vo, const V& uo, const V& un, 
-//                     const V& z, const TS& timeStamp ) const {}
-//  
-// 
-//
 
+  virtual void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un, 
+                              const V& z, const TS& timeStamp ) const {
+    auto& hv_state = to_state(hv);
+    auto& v_state  = to_state(v);
+    for( size_type i=0; i<rows_; ++i ) 
+      for( size_type j=0; j<cols_; ++j ) 
+        hv_state.h(i,j) = dt_*v_state.h(i,j);
+  }
 
 }; // Tanks::DynamicObjective
-
 
 } // namespace Tanks
 
 
-
-
-
-#endif  // TANKS_DYNAMICOBJECTIVE_HPP
+#endif // TANKS_DYNAMICOBJECTIVE_HPP
 
