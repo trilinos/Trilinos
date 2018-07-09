@@ -50,29 +50,6 @@ createOutArgsImpl() const
   return outArgs;
 }
 
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> 
-WrapperModelEvaluatorSecondOrder<Scalar>::
-getNominalValues() const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = appModel_->getNominalValues();
-  switch (schemeType_) 
-  {
-    case NEWMARK_IMPLICIT_AFORM: {
-      nominalValues.set_x(a_);
-      break; 
-    }
-    case NEWMARK_IMPLICIT_DFORM: {
-      nominalValues.set_x(d_pred_);
-      break; 
-    }
-  } 
-  return nominalValues;
-}
-
 
 template <typename Scalar>
 void
@@ -177,7 +154,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       // v_{n+1} = v_pred + \gamma dt a_{n+1}
       Thyra::V_StVpStV(
           Teuchos::ptrFromRef(*v), 1.0, *v_pred_, delta_t_ * gamma_, *a);
-     
+      
       appInArgs.set_x(d);
       appInArgs.set_x_dot(v);
       appInArgs.set_x_dot_dot(a);

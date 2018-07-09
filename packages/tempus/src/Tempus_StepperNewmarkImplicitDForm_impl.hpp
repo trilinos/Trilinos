@@ -296,7 +296,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #endif
     // inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(
-        a_old, v_pred, d_pred, dt, t, beta_, gamma_);
+        d_pred, v_pred, d_pred, dt, t, beta_, gamma_);
 
     const Thyra::SolveStatus<Scalar> status =
       this->solveImplicitODE(d_old_copy);

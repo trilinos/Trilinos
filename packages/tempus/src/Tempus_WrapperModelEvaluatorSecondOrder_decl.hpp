@@ -54,7 +54,7 @@ public:
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
        "Error: WrapperModelEvaluatorSecondOrder called with unsopported schemeName = " << schemeName
-       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form', 'HHT-Alpha' and 'Newmark Implicit d-Form'.\n");
+       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form' and 'HHT-Alpha'.\n");
     }
   }
 
@@ -78,14 +78,14 @@ public:
   }
 
   /// Set values needed in evalModelImpl
-  void initializeNewmark(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred,
+  void initializeNewmark(Teuchos::RCP<const Vector> ig, Teuchos::RCP<Vector> v_pred,
                          Teuchos::RCP<Vector> d_pred, Scalar delta_t,
                          Scalar t, Scalar beta, Scalar gamma)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-    a_ = a; v_pred_ = v_pred; d_pred_ = d_pred;
+    ig_ = ig; v_pred_ = v_pred; d_pred_ = d_pred;
     delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma;
   }
 
@@ -143,8 +143,15 @@ public:
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
     { return appModel_->get_g_space(i); }
 
-    /// Set nominal values (initial guess for Newton solver) 
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const; 
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
+    {
+#ifdef VERBOSE_DEBUG_OUTPUT
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = appModel_->getNominalValues();
+      nominalValues.set_x(ig_);
+      return nominalValues;
+    }
 
     /// Set InArgs the wrapper ModelEvalutor.
     virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
@@ -194,7 +201,7 @@ private:
   Scalar gamma_;
   Scalar beta_;
   Scalar delta_t_;
-  Teuchos::RCP<const Vector> a_;
+  Teuchos::RCP<const Vector> ig_; //Initial guess for Newton
   Teuchos::RCP<Vector> d_pred_;
   Teuchos::RCP<Vector> v_pred_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
