@@ -192,6 +192,8 @@ template<typename Scalar,
          typename Node>
 void
 reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatrix,
+			 Teuchos::ArrayRCP<const size_t> & rowptr,
+			 Teuchos::ArrayRCP<const LocalOrdinal> & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
                          Teuchos::ArrayView<const GlobalOrdinal> tgtRemoteGIDs,
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
@@ -268,16 +270,10 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     Teuchos::Array<int> ReverseSendSizes(NumRecvs);  
 
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
-    pidgidpair_t ** RSB = new pidgidpair_t *[NumRecvs];
+    Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
     for(uint i=0;i<NumRecvs;++i) {
-	RSB[i] = new pidgidpair_t[NumExportLIDs];
+	RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs);
     }
-
-    Teuchos::ArrayRCP<const size_t> rowptr;
-    Teuchos::ArrayRCP<const LO> colind;
-    Teuchos::ArrayRCP<const Scalar> vals;
-
-    SourceMatrix.getAllValues(rowptr,colind,vals);  // is there a more efficient way to get just rowptr?
 
     // Loop over each exported row and add to the temp list
     // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
@@ -364,12 +360,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #endif
     }
 
-    // Teuchos::Array<RCP<Teuchos::Array<pidgidpair_t > > > ReverseRecvBuffer(NumSends);
-    // for(uint i=0;i<NumSends;++i) {
-    // 	ReverseRecvBuffer[i] = Teuchos::rcp(new Teuchos::Array<pidgidpair_t >); 
-    // 	ReverseRecvBuffer[i]->resize(ReverseRecvSizes[i],pidgidpair_t(-9999,-8888));
-    // }
-    
     pidgidpair_t ** ReverseRecvBuffer  = new pidgidpair_t*[NumSends];
     for(uint i=0;i<NumSends;++i) 
 	ReverseRecvBuffer[i] = new pidgidpair_t [ReverseRecvSizes[i]];
@@ -391,7 +381,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     }
 
     for(int ii=0;ii<ProcsFrom.size();++ii) { 
-	GO * send_bptr = (GO*) (RSB[ii]);
+	GO * send_bptr = (GO*) (RSB[ii].getRawPtr());
 	MPI_Request rawSequest = MPI_REQUEST_NULL;
 	int send_data_size = ReverseSendSizes[ii]*2; // 2 == count of pair
 	int sendData_MPI_Tag = mpi_tag_base_*2+MyPID;
@@ -429,15 +419,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	std::cerr<<errstr.str()<<std::flush;
     }
 #endif
-
-    for(uint i=0;i<ProcsTo.size();++i)
-	delete [] RSB[i];
-    delete [] RSB;
-
-
-    // Sort RecvBuffer first by PID, then by GID.
-//    Teuchos::Array<pidgidpair_t > AllReverseRecv;
-//    AllReverseRecv.reserve(totalexportpairrecsize);
   
     pidgidpair_t * AllReverseRecv= new pidgidpair_t[totalexportpairrecsize];
     
@@ -456,7 +437,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     }
 #ifdef HAVE_TPETRA_DEBUG
     if(pos !=totalexportpairrecsize) {
-	errstr <<MyPID<<"E7 error in unpack RecvBuffPID AllReverseRecv.size!=totalexportpairrecsize "<<AllReverseRecv.size()<<" vs "<<totalexportpairrecsize<<std::endl;
+	errstr <<MyPID<<"E7 error in unpack RecvBuffPID AllReverseRecv.size!=totalexportpairrecsize "<<pos<<" vs "<<totalexportpairrecsize<<std::endl;
 	error=true;
     }
   

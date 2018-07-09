@@ -8914,11 +8914,17 @@ namespace Tpetra {
 	    }
 	}
     
+	Teuchos::ArrayRCP<const size_t> rowptr;
+	Teuchos::ArrayRCP<const LO> colind;
+	Teuchos::ArrayRCP<const Scalar> vals;   
+	getAllValues(rowptr,colind,vals);
 	{
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	    auto aMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMrevNeighDis"))));
 #endif
 	    Import_Util::reverseNeighborDiscovery(*this,
+						  rowptr,
+						  colind,
 						  rowTransfer,
 						  fullRemoteGIDs().getConst(),
 						  MyImporter,
@@ -8926,7 +8932,6 @@ namespace Tpetra {
 						  type3PIDs,
 						  type3LIDs,
 						  type3GIDs,
-//						  fromRemoteGID,
 						  ReducedComm);
 	}
        
@@ -8950,11 +8955,6 @@ namespace Tpetra {
 	    if(!MyImporter.is_null()) 
 		for(auto && rlid : MyImporter->getRemoteLIDs() ) // the remoteLIDs must be from sourcematrix
 		    IsOwned[rlid]=false;
-       
-	    Teuchos::ArrayRCP<const size_t> rowptr;
-	    Teuchos::ArrayRCP<const LO> colind;
-	    Teuchos::ArrayRCP<const Scalar> vals;      
-	    getAllValues(rowptr,colind,vals);  // may be dup
       
 	    std::vector<std::pair<int,GO> > usrtg;
 	    usrtg.reserve(TEPID2.size());
