@@ -340,7 +340,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     const int errss = MPI_Waitall (rawSreq.size(), 
 				   rawSreq.getRawPtr(),
 				   rawSstatus.getRawPtr());
-   
 #ifdef HAVE_TPETRA_DEBUG
     if(errss) {
 	errstr <<MyPID<< "sE1 reverseNeighborDiscovery Mpi_Waitall error on send ";
@@ -348,7 +347,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	std::cerr<<errstr.str()<<std::flush;
     }
 #endif
-
+    
     int totalexportpairrecsize = 0;
     for(int i = 0; i < NumSends; i++) {
 	totalexportpairrecsize += ReverseRecvSizes[i];
@@ -359,11 +358,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	}
 #endif
     }
-
+    pidgidpair_t * AllReverseRecv= new pidgidpair_t[totalexportpairrecsize];
+   
     pidgidpair_t ** ReverseRecvBuffer  = new pidgidpair_t*[NumSends];
-    for(uint i=0;i<NumSends;++i) 
-	ReverseRecvBuffer[i] = new pidgidpair_t [ReverseRecvSizes[i]];
-
+    int offset = 0;
+    for(uint i=0;i<NumSends;++i) {
+	ReverseRecvBuffer[i] = AllReverseRecv+offset;
+	offset+=ReverseRecvSizes[i];
+    }
 
     for(int i=0;i<ProcsTo.size();++i) {
 	int recv_data_size = 	ReverseRecvSizes[i]*2;
@@ -419,31 +421,20 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	std::cerr<<errstr.str()<<std::flush;
     }
 #endif
-  
-    pidgidpair_t * AllReverseRecv= new pidgidpair_t[totalexportpairrecsize];
     
     int totalforeignremotesize =0;
     for(auto &&p : ReverseRecvSizes) {
 	totalforeignremotesize+=p;
+#ifdef HAVE_TPETRA_DEBUG
 	if(p<0) {
 	    errstr<< MyPID << "E5 reverseNeighborDiscovery: got a -1 for foreignremote receive size "<<std::endl;
 	    error=true;
 	}
-    }
-    uint pos=0;
-    for(uint i=0;i<NumSends;++i) {
-	for(int s = 0; s< ReverseRecvSizes[i] ; ++s) 
-	    AllReverseRecv[pos++]=ReverseRecvBuffer[i][s];
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    if(pos !=totalexportpairrecsize) {
-	errstr <<MyPID<<"E7 error in unpack RecvBuffPID AllReverseRecv.size!=totalexportpairrecsize "<<pos<<" vs "<<totalexportpairrecsize<<std::endl;
-	error=true;
+#endif
     }
   
-#endif
     {
-	Teuchos::ArrayView<pidgidpair_t> AV_ARR(AllReverseRecv,pos);
+	Teuchos::ArrayView<pidgidpair_t> AV_ARR(AllReverseRecv,totalexportpairrecsize);
 	std::sort(AV_ARR.begin(), AV_ARR.end(), Tpetra::Import_Util::sort_PID_then_GID<GlobalOrdinal, GlobalOrdinal>);
 
 	auto newEndOfPairs = std::unique(AV_ARR.begin(), AV_ARR.end());
