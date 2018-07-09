@@ -54,7 +54,7 @@ public:
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
        "Error: WrapperModelEvaluatorSecondOrder called with unsopported schemeName = " << schemeName
-       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form' and 'HHT-Alpha'.\n");
+       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form', 'HHT-Alpha' and 'Newmark Implicit d-Form'.\n");
     }
   }
 
@@ -143,15 +143,8 @@ public:
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
     { return appModel_->get_g_space(i); }
 
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
-    {
-#ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = appModel_->getNominalValues();
-      nominalValues.set_x(a_);
-      return nominalValues;
-    }
+    /// Set nominal values (initial guess for Newton solver) 
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const; 
 
     /// Set InArgs the wrapper ModelEvalutor.
     virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
