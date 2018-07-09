@@ -263,21 +263,35 @@ public:
   virtual void applyAdjointHessian_11( Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
                                        const Vector<Real> &u, const Vector<Real> &z, Real &tol) override {
 
-//    auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
-//    auto& vp    = partition(v);       auto& up = partition(u);
-//    auto& zp    = partition(z);
-//
-//    auto  tmp  = workspace_.clone(ahwvp.get(0)); 
-//    auto& x    = *tmp; 
-//    
-//    con_->applyAdjointHessian_un_un( *(ahwvp.get(0), *(w.get(0)), *(v.get(0)), *u_zero_, 
-//                                     *(u.get(0)), *(z.get(0)), timeStamp_->at(0) );
+    auto& ahwvp = partition(ahwv);    auto& wp = partition(w);
+    auto& vp    = partition(v);       auto& up = partition(u);
+    auto& zp    = partition(z);
 
-//    for( size_type k=1; k<Nt_; ++k ) 
-//      con_->applyAdjointHessian_un_uo( , *(w.get(0)), *vo, *u_zero_, *(u
-    
+    auto  tmp  = workspace_.clone(ahwvp.get(0)); 
+    auto& x    = *tmp; 
 
-  }
+   if( !skipInitialCond_ ) {
+     con_->applyAdjointHessian_un_un( *(ahwvp.get(0)), *(wp.get(0)), *(vp.get(0)), *u_zero_,     *(up.get(0)), *(zp.get(0)), timeStamp_->at(0) );
+     con_->applyAdjointHessian_un_uo(               x, *(wp.get(1)), *(vp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
+     ahwvp.get(0)->plus(x);
+     con_->applyAdjointHessian_uo_uo( x, *(wp.get(1)), *(vp.get(0)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), timeStamp_->at(1) );
+     ahwvp.get(0)->plus(x);
+
+   }
+
+    for( size_type k=1; k<Nt_; ++k ) {
+      con_->applyAdjointHessian_un_un( *(ahwvp.get(k)), *(wp.get(k)), *(vp.get(k)),   *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      con_->applyAdjointHessian_uo_un(               x, *(wp.get(k)), *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), timeStamp_->at(k) );
+      ahwvp.get(k)->plus(x);
+
+      if( k < Nt_-1 ) {
+        con_->applyAdjointHessian_un_uo( x, *(wp.get(k+1)), *(vp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
+        ahwvp.get(k)->plus(x);
+        con_->applyAdjointHessian_uo_uo( x, *(wp.get(k+1)), *(vp.get(k)),   *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), timeStamp_->at(k+1) );
+        ahwvp.get(k)->plus(x);
+      }
+    }
+  } // applyAdjointHessian_11
 
   
   virtual void applyAdjointHessian_12(Vector<Real> &ahwv,
