@@ -196,7 +196,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus =
         this->solveImplicitODE(a_init);
 
@@ -221,16 +221,21 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
 
+    //Solve nonlinear system with a_old as initial guess 
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-
+    
+    //solveImplicitODE will return converged solution in a_old.  Copy
+    //it here to a_new, the new acceleration.
     Thyra::copy(*a_old, a_new.ptr());
+
+    //Correct velocity, displacement.
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
