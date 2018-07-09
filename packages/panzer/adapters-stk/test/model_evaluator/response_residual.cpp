@@ -93,6 +93,8 @@ using Teuchos::rcp;
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
+#include <limits>
+
 namespace panzer {
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -293,7 +295,7 @@ namespace panzer {
 
       Thyra::LinearOpTester<double> tester;
       tester.show_all_tests(true);
-      tester.set_all_error_tol(1e-16);      
+      tester.set_all_error_tol(10.0 * std::numeric_limits<double>::epsilon());
       tester.num_random_vectors(20);      
 
       Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
