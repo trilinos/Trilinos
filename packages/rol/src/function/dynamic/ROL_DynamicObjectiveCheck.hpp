@@ -69,89 +69,104 @@ struct DynamicObjectiveCheck {
     auto gz = z.dual().clone();
     auto vu = uo.clone();
     auto vz = z.clone();
-    
+
     RandomizeVector(*vu);
     RandomizeVector(*vz);
 
     auto obj_check = make_check( obj );
 
-    auto update_uo = obj_check.update_uo( un, z );
-    auto update_un = obj_check.update_un( uo, z );
-    auto update_z  = obj_check.update_z( un, uo );
-  
-    auto value_uo = obj_check.value_uo( un, z );
-    auto value_un = obj_check.value_un( uo, z );
-    auto value_z  = obj_check.value_z( uo, un );
-
-    auto grad_uo = obj_check.gradient_uo( uo, z  );
-    auto grad_un = obj_check.gradient_un( un, z  );
-    auto grad_z  = obj_check.gradient_z(  uo, un );
-
     //-------------------------------------------------------------------------
     // Check gradient components
     if( std::find(methods.begin(),methods.end(),"gradient_uo") != methods.end() ) {
-      validator.derivative_check( value_uo, grad_uo, update_uo, *gu, *vu, uo, "grad_uo'*dir" );
-    }             
+      auto value  = obj_check.value_uo( un, z );
+      auto grad   = obj_check.gradient_uo( un, z );
+      auto update = obj_check.update_uo( un, z );
+      validator.derivative_check( value, grad, update, *gu, *vu, uo, "grad_uo'*dir" );
+    }
     if( std::find(methods.begin(),methods.end(),"gradient_un") != methods.end() ) {
-      validator.derivative_check( value_un, grad_un, update_un, *gu, *vu, un, "grad_un'*dir" );
-    }             
+      auto value  = obj_check.value_un( uo, z );
+      auto grad   = obj_check.gradient_un( uo, z );
+      auto update = obj_check.update_un( uo, z );
+      validator.derivative_check( value, grad, update, *gu, *vu, un, "grad_un'*dir" );
+    }
     if( std::find(methods.begin(),methods.end(),"gradient_z") != methods.end() ) {
-      validator.derivative_check( value_z, grad_z, update_z, *gz, *vz, z, "grad_z'*dir" );
-    }             
+      auto value  = obj_check.value_z( uo, un );
+      auto grad   = obj_check.gradient_z( uo, un );
+      auto update = obj_check.update_z( uo, un );
+      validator.derivative_check( value, grad, update, *gz, *vz,  z, "grad_z'*dir" );
+    }
 
     //-------------------------------------------------------------------------
     // Check Hessian components
     if( std::find(methods.begin(),methods.end(),"hessVec_uo_uo") != methods.end() ) {
-      auto H = obj_check.hessVec_uo_uo(un,z);
-      validator.derivative_check( grad_uo, H, update_uo, *gu, *vu, uo, "norm(Hess*vec)" );
+      auto grad    = obj_check.gradient_uo_uo( un, z ); 
+      auto hessVec = obj_check.hessVec_uo_uo( un, z );
+      auto update  = obj_check.update_uo( un, z );
+      validator.derivative_check( grad, hessVec, update, *gu, *vu, uo, "norm(H_uo_uo*vec)" );
     }
 
     if( std::find(methods.begin(),methods.end(),"hessVec_uo_un") != methods.end() ) {
-      auto H = obj_check.hessVec_uo_un(uo,z);
-      validator.derivative_check( grad_uo, H, update_un, *gu, *vu, un, "norm(Hess*vec)" );
+      auto grad    = obj_check.gradient_uo_un( uo, z ); 
+      auto hessVec = obj_check.hessVec_uo_un( uo, z );
+      auto update  = obj_check.update_un( uo, z );
+      validator.derivative_check( grad, hessVec, update, *gu, *vu, un, "norm(H_uo_un*vec)" );
     }
 
     if( std::find(methods.begin(),methods.end(),"hessVec_uo_z") != methods.end() ) {
-      auto H = obj_check.hessVec_uo_z(uo,un);
-      validator.derivative_check( grad_uo, H, update_z, *gz, *vz, z, "norm(Hess*vec)" );
+      auto grad    = obj_check.gradient_uo_z( uo, un ); 
+      auto hessVec = obj_check.hessVec_uo_z( uo, un );
+      auto update  = obj_check.update_z( uo, un );
+      validator.derivative_check( grad, hessVec, update, *gu, *vz,  z, "norm(H_uo_z*vec)" );
     }
 
 
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_uo") != methods.end() ) {
-      auto H = obj_check.hessVec_un_uo(un,z);
-      validator.derivative_check( grad_un, H, update_uo, *gu, *vu, uo, "norm(Hess*vec)" );
+    if( std::find(methods.begin(),methods.end(),"hessVec_un_uo") != methods.end() ) {
+      auto grad    = obj_check.gradient_un_uo( un, z ); 
+      auto hessVec = obj_check.hessVec_un_uo( un, z );
+      auto update  = obj_check.update_uo( un, z );
+      validator.derivative_check( grad, hessVec, update, *gu, *vu, uo, "norm(H_un_uo*vec)" );
     }
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_un") != methods.end() ) {
-      auto H = obj_check.hessVec_un_un(uo,z);
-      validator.derivative_check( grad_un, H, update_un, *gu, *vu, un, "norm(Hess*vec)" );
+    if( std::find(methods.begin(),methods.end(),"hessVec_un_un") != methods.end() ) {
+      auto grad    = obj_check.gradient_un_un( uo, z );
+      auto hessVec = obj_check.hessVec_un_un( uo, z );
+      auto update  = obj_check.update_un( uo, z );
+      validator.derivative_check( grad, hessVec, update, *gu, *vu, un, "norm(H_un_un*vec)" );
     }
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_z") != methods.end() ) {
-      auto H = obj_check.hessVec_un_z(uo,un);
-      validator.derivative_check( grad_un, H, update_z, *gz, *vz, z, "norm(Hess*vec)" );
+    if( std::find(methods.begin(),methods.end(),"hessVec_un_z") != methods.end() ) {
+      auto grad    = obj_check.gradient_un_z( uo, un );
+      auto hessVec = obj_check.hessVec_un_z( uo, un );
+      auto update  = obj_check.update_z( uo, un );
+      validator.derivative_check( grad, hessVec, update, *gu, *vz,  z, "norm(H_un_z*vec)" );
     }
 
 
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_uo") != methods.end() ) {
-      auto H = obj_check.hessVec_z_uo(un,z);
-      validator.derivative_check( grad_z, H, update_uo, *gu, *vu, uo, "norm(Hess*vec)" );
+    if( std::find(methods.begin(),methods.end(),"hessVec_z_uo") != methods.end() ) {
+      auto grad    = obj_check.gradient_z_uo( un, z );
+      auto hessVec = obj_check.hessVec_z_uo( un, z );
+      auto update  = obj_check.update_uo( un, z );
+      validator.derivative_check( grad, hessVec, update, *gz, *vu, uo, "norm(H_z_uo*vec)" );
     }
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_un") != methods.end() ) {
-      auto H = obj_check.hessVec_z_un(uo,z);
-      validator.derivative_check( grad_z, H, update_un, *gu, *vu, un, "norm(Hess*vec)" );
+    if( std::find(methods.begin(),methods.end(),"hessVec_z_un") != methods.end() ) {
+      auto grad    = obj_check.gradient_z_un( uo, z );
+      auto hessVec = obj_check.hessVec_z_un( uo, z );
+      auto update  = obj_check.update_un( uo, z );
+      validator.derivative_check( grad, hessVec, update, *gz, *vu, un, "norm(H_z_un*vec)" );
     }
 
-    if( std::find(methods.begin(),methods.end(),"hessVec_uo_z") != methods.end() ) {
+    if( std::find(methods.begin(),methods.end(),"hessVec_z_z") != methods.end() ) {
+      auto grad    = obj_check.gradient_z_z( uo, un );
+      auto hessVec = obj_check.hessVec_z_z( uo, un );
+      auto update  = obj_check.update_z( uo, un );
       auto H = obj_check.hessVec_z_z(uo,un);
-      validator.derivative_check( grad_z, H, update_z, *gz, *vz, z, "norm(Hess*vec)" );
+      validator.derivative_check( grad, hessVec, update, *gz, *vz,  z, "norm(H_z_z*vec)" );
     }
   }
 }; // DynamicObjectiveCheck
-
 
 } // namespace ROL
 

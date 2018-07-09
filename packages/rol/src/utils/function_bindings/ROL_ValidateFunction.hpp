@@ -72,30 +72,30 @@ public:
                     const int width = 20,
                     const int precision = 11,
                     const bool printToStream = true,
-                    ostream& os = cout );  
+                    ostream& os = cout );
 
   virtual ~ValidateFunction(){}
 
-  virtual vector<vector<Real>> derivative_check( f_scalar_t<Real> f_value, 
-                                                 f_vector_t<Real> f_derivative, 
+  virtual vector<vector<Real>> derivative_check( f_scalar_t<Real> f_value,
+                                                 f_vector_t<Real> f_derivative,
                                                  f_update_t<Real> f_update,
-                                                 const V& g, 
-                                                 const V& x,
-                                                 const V& v,
-                                                 const string& label ) const;
-                                        
-  virtual vector<vector<Real>> derivative_check( f_vector_t<Real> f_value, 
-                                                 f_dderiv_t<Real> f_derivative, 
-                                                 f_update_t<Real> f_update,
-                                                 const V& c, 
+                                                 const V& g,
                                                  const V& x,
                                                  const V& v,
                                                  const string& label ) const;
 
-  virtual vector<Real> symmetry_check( f_dderiv_t<Real> A, 
+  virtual vector<vector<Real>> derivative_check( f_vector_t<Real> f_value,
+                                                 f_dderiv_t<Real> f_derivative,
+                                                 f_update_t<Real> f_update,
+                                                 const V& c,
+                                                 const V& x,
+                                                 const V& v,
+                                                 const string& label ) const;
+
+  virtual vector<Real> symmetry_check( f_dderiv_t<Real> A,
                                        f_update_t<Real> A_update,
-                                       const V& u, 
-                                       const V& v, 
+                                       const V& u,
+                                       const V& v,
                                        const V& x,
                                        const string& name="Linear Operator",
                                        const string& symbol="A" ) const;
@@ -103,9 +103,9 @@ public:
   virtual vector<Real> adjoint_consistency_check( f_dderiv_t<Real> A,
                                                   f_dderiv_t<Real> A_adj,
                                                   f_update_t<Real> A_update,
-                                                  const V& u,  
+                                                  const V& u,
                                                   const V& v,
-                                                  const V& x, 
+                                                  const V& x,
                                                   const string& name="Linear Operator",
                                                   const string& symbol="A" ) const;
 
@@ -113,11 +113,11 @@ public:
                                       f_dderiv_t<Real> A_inv,
                                       f_update_t<Real> A_update,
                                       const V& v,
-                                      const V& x, 
+                                      const V& x,
                                       const string& name="Linear Operator",
                                       const string& symbol="A" ) const;
 
-   ostream& getStream() const; 
+   ostream& getStream() const;
 
 private:
 
@@ -133,11 +133,9 @@ private:
   mutable Ptr<VectorWorkspace<Real>> workspace_;
   FiniteDifference<Real>             fd_;
 
-
 }; // ValidateFunction
 
-
-} // namespace details 
+} // namespace details
 
 using details::ValidateFunction;
 
@@ -146,4 +144,3 @@ using details::ValidateFunction;
 #include "ROL_ValidateFunctionDef.hpp"
 
 #endif // ROL_CHECKFUNCTION_HPP
-

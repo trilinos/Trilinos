@@ -109,7 +109,10 @@ int main( int argc, char* argv[] ) {
     ROL::RandomizeVector(*un);
     ROL::RandomizeVector(*zk);
     ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);;
-    std::vector<std::string> methods = {"gradient_uo","gradient_un","gradient_z"};
+    std::vector<std::string> methods = {"gradient_uo",  "gradient_un",  "gradient_z",
+                                        "hessVec_uo_uo","hessVec_uo_un","hessVec_uo_z",
+                                        "hessVec_un_uo","hessVec_un_un","hessVec_un_z",
+                                        "hessVec_z_uo", "hessVec_z_un", "hessVec_z_z"};
     ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk,methods);
 
     // Create constraint vector

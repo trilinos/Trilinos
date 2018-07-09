@@ -93,8 +93,8 @@ public:
     return ROL::makePtr<StateVector>( rows_, cols_, name ); 
   }
 
-  Real& h( size_type i, size_type j ) { 
-     return vec_->at(cols_*i+j); }
+  Real& h( size_type i, size_type j ) { return vec_->at(cols_*i+j); }
+
   const Real& h( size_type i, size_type j ) const { return vec_->at(cols_*i+j); }
 
   Real& Qin( size_type i, size_type j ) { return vec_->at(cols_*i+j+N_); }

@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-
 #pragma once
 #ifndef TANKS_DYNAMICOBJECTIVE_HPP
 #define TANKS_DYNAMICOBJECTIVE_HPP
@@ -54,7 +53,6 @@
 #include "LowerBandedMatrix.hpp"
 
 #include <utility>
-
 
 /** \class Tanks_DynamicObjective based on the new DynamicObjective interface
 */
@@ -91,36 +89,32 @@ private:
 public: 
 
   DynamicObjective( ROL::ParameterList& pl ) :
-  // ----------- Begin Initializer List ----------------//  
+  // ----------- Begin Initializer List ----------------//
   rows_   ( pl.get( "Number of Rows",        3      ) ),
   cols_   ( pl.get( "Number of Columns",     3      ) ),
   T_      ( pl.get( "Total Time",            20.0   ) ),
   Nt_     ( pl.get( "Number of Time Steps",  100    ) ),
   //----------------------------------------------------//
-  dt_( T_/Nt_ ),
-  Ntanks_(rows_*cols_),
-  htarg_  ( pl.get( "Target Fluid Level",    3      ) ),
-  h_(0), Qout_(2*Ntanks_), Qin_(Ntanks_), z_(0)
+  dt_     ( T_/Nt_                                    ),
+  Ntanks_ (rows_*cols_                                ),
+  htarg_  ( pl.get( "Target Fluid Level",    3.0    ) ),
+  h_      (0                                          ),
+  Qout_   (2*Ntanks_                                  ),
+  Qin_    (Ntanks_                                    ),
+  z_      (0                                          )
   // ------------- End Initializer List ----------------//
   {}
 
-
-  virtual ~DynamicObjective() {}
-
-  virtual Real value( const V& uo, const V& un, const V& z, const TS& timeStamp ) const {
-
+  Real value( const V& uo, const V& un, const V& z, const TS& timeStamp ) const {
     auto& uo_state = to_state(uo);
     auto& un_state = to_state(un);
-
     Real result = 0;
-
     for( size_type i=0; i<rows_; ++i ) {
       for( size_type j=0; j<cols_; ++j ) {
         Real hdiff = un_state.h(i,j)-htarg_;
         result += hdiff*hdiff;
       }
     }
-
     if( timeStamp.k > 0 ) {
       for( size_type i=0; i<rows_; ++i ) {
         for( size_type j=0; j<cols_; ++j ) {
@@ -128,65 +122,118 @@ public:
           result += hdiff*hdiff;
         }
       }
-    }  
-    return 0.5*dt_*result;
+    }
+    return static_cast<Real>(0.5)*dt_*result;
   }
 
   //----------------------------------------------------------------------------
   // Gradient Terms
-  virtual void gradient_uo( V& g, const V& uo, const V& un, 
-                            const V& z, const TS& timeStamp ) const {
-
-    auto& uo_state = to_state(uo);
-    auto& g_state  = to_state(g);
-
+  void gradient_uo( V& g, const V& uo, const V& un,
+                          const V& z, const TS& timeStamp ) const {
     if( timeStamp.k > 0 ) {
-      for( size_type i=0; i<rows_; ++i ) 
-        for( size_type j=0; j<cols_; ++j ) 
-          g_state.h(i,j) = dt_*(uo_state.h(i,j)-htarg_);
+      auto& g_state  = to_state(g);
+      auto& uo_state = to_state(uo);
+      for( size_type i=0; i<rows_; ++i ) {
+        for( size_type j=0; j<cols_; ++j ) {
+          g_state.h(i,j)    = dt_*(uo_state.h(i,j)-htarg_);
+          g_state.Qin(i,j)  = static_cast<Real>(0);
+          g_state.Qout(i,j) = static_cast<Real>(0);
+        }
+      }
+    }
+    else {
+      g.zero();
     }
   }
 
-  virtual void gradient_un( V& g, const V& uo, const V& un, 
-                            const V& z, const TS& timeStamp ) const {
-    auto& g_state = to_state(g);
+  void gradient_un( V& g, const V& uo, const V& un,
+                          const V& z, const TS& timeStamp ) const {
+    auto& g_state  = to_state(g);
     auto& un_state = to_state(un);
-
-    for( size_type i=0; i<rows_; ++i ) 
-      for( size_type j=0; j<cols_; ++j ) 
-        g_state.h(i,j) = dt_*(un_state.h(i,j)-htarg_);
+    for( size_type i=0; i<rows_; ++i ) {
+      for( size_type j=0; j<cols_; ++j ) {
+        g_state.h(i,j)    = dt_*(un_state.h(i,j)-htarg_);
+        g_state.Qin(i,j)  = static_cast<Real>(0);
+        g_state.Qout(i,j) = static_cast<Real>(0);
+      }
+    }
   }
 
-//  virtual void gradient_z( V& g, const V& uo, const V& un, 
-//                           const V& z, const TS& timeStamp ) const {}
+  void gradient_z( V& g, const V& uo, const V& un,
+                         const V& z, const TS& timeStamp ) const {
+    g.zero();
+  }
 
   //----------------------------------------------------------------------------
   // Hessian-Vector product terms
-  virtual void hessVec_uo_uo( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
-
-    auto& hv_state = to_state(hv);
-    auto& v_state  = to_state(v);
-
-    if( timeStamp.k > 0 )
-      for( size_type i=0; i<rows_; ++i ) 
-        for( size_type j=0; j<cols_; ++j ) 
-          hv_state.h(i,j) = dt_*v_state.h(i,j);
+  void hessVec_uo_uo( V& hv, const V& v, const V& uo, const V& un,
+                             const V& z, const TS& timeStamp ) const {
+    if( timeStamp.k > 0 ) {
+      auto& hv_state = to_state(hv);
+      auto& v_state  = to_state(v);
+      for( size_type i=0; i<rows_; ++i ) {
+        for( size_type j=0; j<cols_; ++j ) {
+          hv_state.h(i,j)    = dt_*v_state.h(i,j);
+          hv_state.Qin(i,j)  = static_cast<Real>(0);
+          hv_state.Qout(i,j) = static_cast<Real>(0);
+        }
+      }
+    }
+    else {
+      hv.zero();
+    }
   }
 
-  virtual void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+  void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un,
+                             const V& z, const TS& timeStamp ) const {
     auto& hv_state = to_state(hv);
     auto& v_state  = to_state(v);
-    for( size_type i=0; i<rows_; ++i ) 
-      for( size_type j=0; j<cols_; ++j ) 
-        hv_state.h(i,j) = dt_*v_state.h(i,j);
+    for( size_type i=0; i<rows_; ++i ) {
+      for( size_type j=0; j<cols_; ++j ) {
+        hv_state.h(i,j)    = dt_*v_state.h(i,j);
+        hv_state.Qin(i,j)  = static_cast<Real>(0);
+        hv_state.Qout(i,j) = static_cast<Real>(0);
+      }
+    }
+  }
+
+  void hessVec_z_z( V& hv, const V& v, const V& uo, const V& un,
+                           const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_uo_un( V& hv, const V& v, const V& uo, const V& un,
+                             const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_uo_z( V& hv, const V& v, const V& uo, const V& un,
+                            const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_un_uo( V& hv, const V& v, const V& uo, const V& un,
+                             const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_un_z( V& hv, const V& v, const V& uo, const V& un,
+                            const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_z_uo( V& hv, const V& v, const V& uo, const V& un,
+                            const V& z, const TS& timeStamp ) const {
+    hv.zero();
+  }
+
+  void hessVec_z_un( V& hv, const V& v, const V& uo, const V& un,
+                            const V& z, const TS& timeStamp ) const {
+    hv.zero();
   }
 
 }; // Tanks::DynamicObjective
 
 } // namespace Tanks
 
-
 #endif // TANKS_DYNAMICOBJECTIVE_HPP
-

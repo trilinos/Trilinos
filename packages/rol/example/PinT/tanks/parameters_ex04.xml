@@ -18,6 +18,7 @@
   <Parameter name="Cross-sectional Area"     type="double"   value="10.0"   unit="m^2"        symbol="A"        />
   <Parameter name="Gravity Constant"         type="double"   value="9.8"    unit="m/s^2"      symbol="g"        />
   <Parameter name="Corner Inflow"            type="double"   value="100"    unit="m^3/s"      symbol="Qin00"    />
+  <Parameter name="Target Fluid Level"       type="double"   value="0.5"    unit="m^3/s"      symbol="htarg"    />
   <!--=========================================================================================================--> 
   <!-- Time Discretization                                                                                     --> 
   <Parameter name="Total Time"               type="double"   value="20.0"   unit="s"          symbol="T"        />
