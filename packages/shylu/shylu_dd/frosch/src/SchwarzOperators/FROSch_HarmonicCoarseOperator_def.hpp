@@ -53,9 +53,10 @@ namespace FROSch {
     ExtensionSolver_ (),
     MVPhiGamma_ (0),
     BlockCoarseMaps_ (0),
+    Dimensions_ (0),
     DofsPerNode_ (0),
-    IndicesGammaDofs_ (0),
-    IndicesIDofs_ (0),
+    GammaDofs_ (0),
+    IDofs_ (0),
     DofsMaps_ (0),
     NumberOfBlocks_ (0)
     {
@@ -74,49 +75,44 @@ namespace FROSch {
         this->IsComputed_ = true;
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::computeHarmonicExtensions()
     {
-        // Build repeatedMap for the local saddle point problem // Todo:: Eigentlich gehört das in Initialize
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        MapPtr repeatedMap = assembleRepeatedMap();
-        
+        // Build repeatedMap for the local saddle point problem
+        MapPtr repeatedMap = assembleRepeatedMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         // Build local saddle point problem
         CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap);
-        
+
         // Extract submatrices
         GOVec indicesGammaDofsAll(0);
         GOVec indicesIDofsAll(0);
         LO tmp = 0;
-        
+
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            for (UN j=0; j<IndicesGammaDofs_[i].size(); j++) {
-                indicesGammaDofsAll.push_back(tmp+IndicesGammaDofs_[i][j]);
+            for (UN j=0; j<GammaDofs_[i].size(); j++) {
+                indicesGammaDofsAll.push_back(tmp+GammaDofs_[i][j]);
             }
-            for (UN j=0; j<IndicesIDofs_[i].size(); j++) {
-                indicesIDofsAll.push_back(tmp+IndicesIDofs_[i][j]);
+            for (UN j=0; j<IDofs_[i].size(); j++) {
+                indicesIDofsAll.push_back(tmp+IDofs_[i][j]);
             }
-            tmp += IndicesGammaDofs_[i].size()+IndicesIDofs_[i].size(); // Ist das mit tmp korrekt?
+            tmp += GammaDofs_[i].size()+IDofs_[i].size(); // Ist das mit tmp korrekt?
         }
-        
+
         CrsMatrixPtr kII;
         CrsMatrixPtr kIGamma;
         CrsMatrixPtr kGammaI;
         CrsMatrixPtr kGammaGamma;
-        
+
         FROSch::BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
-        //if (this->Verbose_) std::cout << kII->NumMyRows() << " " << kGammaI->NumMyRows();
-        //if (this->Verbose_) std::cout << *kII << *kIGamma << *kGammaI << *kGammaGamma;
-        //FROSCH_ASSERT(0!=0,"STOP!");
-        
+
         // Assemble coarse map
-        MapPtr coarseMap = assembleCoarseMap(); // Todo:: Eigentlich gehört das in Initialize
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
+        MapPtr coarseMap = assembleCoarseMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         // Build the saddle point harmonic extensions
         computeAndFillPhi(repeatedMatrix,repeatedMap,coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-        
+
         return 0;
     }
     
@@ -159,9 +155,64 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int HarmonicCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                                                           MapPtr &repeatedMap,
-                                                           MapPtr &coarseMap,
+        int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr dofsMap)
+    	{
+        	// Das könnte man noch ändern
+        	this->GammaDofs_->resize(this->GammaDofs_.size()+1);
+        	this->IDofs_->resize(this->IDofs_.size()+1);
+        	this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
+        	this->MVPhiGamma_->resize(this->MVPhiGamma_.size()+1);
+        	this->DofsMaps_->resize(this->DofsMaps_.size()+1);
+        	this->DofsPerNode_->resize(this->DofsPerNode_.size()+1);
+
+        	this->NumberOfBlocks_++;
+
+        	/////
+    		int blockId = this->NumberOfBlocks_-1;
+
+    		// Process the parameter list
+    		std::stringstream blockIdStringstream;
+    		blockIdStringstream << blockId+1;
+    		std::string blockIdString = blockIdStringstream.str();
+    		Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+
+    		bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
+
+    		this->GammaDofs_[blockId] = LOVecPtr(0);
+
+    		if (useForCoarseSpace) {
+    			//Epetra_SerialComm serialComm;
+    			MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
+    			this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
+    		}
+
+    		for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
+    			this->GammaDofs_[blockId]->push_back(i);
+
+    			if (useForCoarseSpace) {
+    				this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
+    			}
+    		}
+
+    		this->IDofs_[blockId] = LOVecPtr(0);
+
+    		if (useForCoarseSpace) {
+    			this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,this->GammaDofs_[blockId](),0,this->MpiComm_);
+    		}
+
+    		this->DofsMaps_[blockId] = MapPtrVecPtr(0);
+    		this->DofsMaps_[blockId].push_back(dofsMap);
+
+    		this->DofsPerNode_[blockId] = 1;
+
+
+    		return 0;
+    	}
+
+    template <class SC,class LO,class GO,class NO>
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr repeatedMatrix,
+                                                           MapPtr repeatedMap,
+                                                           MapPtr coarseMap,
                                                            GOVecView indicesGammaDofsAll,
                                                            GOVecView indicesIDofsAll,
                                                            CrsMatrixPtr kII,
@@ -188,7 +239,7 @@ namespace FROSch {
                 }
             } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
                 //mVPhiGamma->replaceLocalValue(k+kk,j+jj,1.0);
-                k=IndicesGammaDofs_[i].size();
+                k=GammaDofs_[i].size();
             }
             jj += j;
             kk += k;
@@ -220,7 +271,7 @@ namespace FROSch {
             }
             
         }
-        
+//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         
@@ -254,7 +305,7 @@ namespace FROSch {
             }
         }
         this->Phi_->fillComplete(coarseMap,this->Phi_->getRowMap());
-        
+//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         return 0;
     }
     
