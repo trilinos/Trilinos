@@ -10,6 +10,9 @@
 #include <sstream>
 #include <iostream>
 
+// Struct representing a vertex label.
+// We define our own "addition" for these labels.
+// Later, we'll create a Tpetra::FEMultiVector of these labels.
 struct vtxLabel {
   int label;
   // Constructors
@@ -46,6 +49,7 @@ struct vtxLabel {
   }
 };
 
+//  Unit test for the vtxLabel struct
 //  Make sure vtxLabel's overloaded operators compile and work as expected.
 int vtxLabelUnitTest()
 {
@@ -92,9 +96,10 @@ int vtxLabelUnitTest()
   return ierr;
 }
 
-///////////////////
+/////////////////////////////////////////////////////////////////////////
 // ArithTraits -- arithmetic traits needed for struct vtxLabel
 // Needed so that Tpetra compiles.
+// Not all functions were needed; this is a subset of ArithTraits' traits.
 // Modified from kokkos-kernels/src/Kokkos_ArithTraits.hpp's 
 // <int> specialization
 
@@ -102,7 +107,7 @@ namespace Kokkos {
   namespace Details {
 
     template<>
-    class ArithTraits<vtxLabel> {
+    class ArithTraits<vtxLabel> {  // specialized for vtxLabel struct
     public:
       typedef vtxLabel val_type;
       typedef int mag_type;
@@ -126,99 +131,66 @@ namespace Kokkos {
       static KOKKOS_FORCEINLINE_FUNCTION val_type one() { return 1; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type min() { return INT_MIN; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type max() { return INT_MAX; }
-#ifdef NEEDED
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) {
-        return x.label;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &) {
-        return 0;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) {
-        return x;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type
-      pow(const val_type &x, const val_type &y) {
-        return intPowSigned<val_type>(x, y);
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt(const val_type &x) {
-        return static_cast<val_type>( ::sqrt(static_cast<double>(abs(x))));
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt(const val_type &x) {
-        return static_cast<val_type>( ::cbrt(static_cast<double>(abs(x))));
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type exp(const val_type &x) {
-        return static_cast<val_type>( ::exp(static_cast<double>(abs(x))));
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type log(const val_type &x) {
-        return static_cast<val_type>( ::log(static_cast<double>(abs(x))));
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type log10(const val_type &x) {
-        return static_cast<val_type>( ::log10(static_cast<double>(abs(x))));
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return zero(); }
-#endif
       static KOKKOS_FORCEINLINE_FUNCTION val_type nan() { return -1; }
     
       // Backwards compatibility with Teuchos::ScalarTraits.
       typedef mag_type magnitudeType;
-#ifdef NEEDED
-      typedef val_type halfPrecision;
-      typedef val_type doublePrecision;
-#endif
-    
       static const bool isComplex = false;
       static const bool isOrdinal = true;
       static const bool isComparable = true;
       static const bool hasMachineParameters = false;
-      static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(const val_type &x) {
+      static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(
+        const val_type &x) 
+      {
         return abs(x);
       }
-#ifdef NEEDED
-      static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate(const val_type &x) {
-        return conj(x);
-      }
-#endif
       static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf(const val_type &) {
         return false;
       }
       static std::string name() { return "vtxLabel"; }
-#ifdef NEEDED
-      static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot(const val_type &x){
-        return sqrt(x);
-      }
-#endif
     };
   }
 }
 
-///////////////////
-// Serialization traits needed to copy into MPI buffers
-// Because sizeof(vtxLabel) is OK, we'll just use a provided serialization.
+/////////////////////////////////////////////////////////////////////////////
+// Teuchos::SerializationTraits are needed to copy vtxLabels into MPI buffers
+// Because sizeof(vtxLabel) works for struct vtxLabel, we'll use a 
+// provided serialization of vtxLabel into char*.
 template<typename Ordinal>
 struct Teuchos::SerializationTraits<Ordinal, vtxLabel> :
        public Teuchos::DirectSerializationTraits<Ordinal, vtxLabel>
 {};
 
-///////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Class to test 
+// (1) how FEMultiVector works and 
+// (2) whether it works with user-defined scalar type (vtxLabel).
+// Each processor owns ten vertices and copies five from another processor.
+// Each processor contributes values to all fifteen vertices it stores.
+// Tpetra::FEMultiVector pushes the copies to their owning processors, and 
+// ADDs them to the owned values.
+
 class FEMultiVectorTest {
 public:
+
   typedef Tpetra::Map<> map_t;
   typedef map_t::local_ordinal_type lno_t;
   typedef map_t::global_ordinal_type gno_t;
 
+  // Constructor assigns vertices to processors and builds maps with and 
+  // without copies
   FEMultiVectorTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm_) :
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(10), nLocalCopy( np > 1 ? 5 : 0), 
     nVec(2), comm(comm_)
   {
-    // Create a map with duplicated entries (mapWithCopies)
     // Each rank has 15 IDs, the last five of which overlap with the next rank.
-
+    // (IDs and owning processors wrap-around from processor np-1 to 0.)
     const Tpetra::global_size_t nGlobal = np * nLocalOwned;
     lno_t offset = me * nLocalOwned;
 
-    Teuchos::Array<gno_t> gids(nLocalOwned+nLocalCopy);
-    for (lno_t i = 0 ; i < nLocalOwned+nLocalCopy; i++)
+    Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
+    for (lno_t i = 0 ; i < nLocalOwned + nLocalCopy; i++)
       gids[i] = static_cast<gno_t> (offset + i) % nGlobal;
 
     // Create Map of owned + copies (a.k.a. overlap map); analagous to ColumnMap
@@ -245,6 +217,12 @@ public:
     std::cout << std::endl;
   }
 
+  // Create a Tpetra::FEMultiVector of type femv_t with two vectors
+  // FEMultiVector length is number of owned vertices + number of copies of 
+  //               off-processor vertices (as indicated by mapWithCopies)
+  // Fill first vector with GIDs of vertices
+  // Fill second vector with processor rank (me)
+  // Perform communication to add copies' contributions to their owned vertices
   template <typename femv_t>
   Teuchos::RCP<femv_t> getFEMV()
   {
@@ -254,18 +232,18 @@ public:
                                                        mapWithCopies));
     Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, importer,
                                                nVec, true));
-    std::cout << me << " FEMV " << femv->getLocalLength() << " "
-                                << femv->getGlobalLength() << std::endl;
   
+    // Store contributions to owned vertices and copies of off-processor 
+    // vertices
     femv->beginFill();
-    for (lno_t i = 0; i < nLocalOwned+nLocalCopy; i++) {
+    for (lno_t i = 0; i < nLocalOwned + nLocalCopy; i++) {
       gno_t gid = mapWithCopies->getGlobalElement(i);
       femv->replaceGlobalValue(gid, 0, gid);
       femv->replaceGlobalValue(gid, 1, me);
     }
-    femv->endFill();
+    femv->endFill(); // communication and summation of copies is done in endFill
 
-    // Print
+    // Print the resulting FEMultiVector
     // femv->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
     //                Teuchos::VERB_HIGH);
 
@@ -281,22 +259,27 @@ public:
 
   // Test using scalar_t=int to exercise push capability of FEMultiVector
   int intTest();
-  // Test using scalar_t=custom data type 
+
+  // Test using scalar_t=custom data type (vtxLabel)
   int vtxLabelTest();
 
 private:
-  int me;
-  int np;
-  int nLocalOwned;
-  int nLocalCopy;
-  int nVec;
+  int me;           // my processor rank
+  int np;           // number of processors
+  int nLocalOwned;  // number of vertices owned by this processor
+  int nLocalCopy;   // number of copies of off-processor vertices on this proc
+  int nVec;         // number of vectors in multivector
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;  // MPI communicator
 
-  Teuchos::RCP<const map_t> mapWithCopies;
-  Teuchos::RCP<const map_t> mapOwned;
+  Teuchos::RCP<const map_t> mapWithCopies;  // Tpetra::Map including owned
+                                            // vertices and copies
+  Teuchos::RCP<const map_t> mapOwned;       // Tpetra::Map including only owned
 };
 
+
+// Test using scalar_t=int to exercise push capability of FEMultiVector
+// Create FEMultiVector and verify correct results with integer addition
 int FEMultiVectorTest::intTest()
 {
   typedef int scalar_t;
@@ -310,6 +293,8 @@ int FEMultiVectorTest::intTest()
   //    nonoverlapping entries of vec 0 should be gid
   // -  overlapping entries of vec 1 should be me + (np + me-1) % np;
   //    nonoverlapping entries of vec 1 should be me
+
+  // Check vector 0
   {
     auto value = femv->getData(0);
     for (lno_t i = 0; i < nLocalCopy; i++){
@@ -332,6 +317,7 @@ int FEMultiVectorTest::intTest()
     }
   }
 
+  // Check vector 1
   {
     auto value = femv->getData(1);
     int tmp = me + (np + me - 1) % np;
@@ -355,6 +341,8 @@ int FEMultiVectorTest::intTest()
   return ierr;
 }
 
+// Test using scalar_t = custom data type vtxLabel
+// Create FEMultiVector and verify correct results with vtxlabel "addition" 
 int FEMultiVectorTest::vtxLabelTest()
 {
   typedef vtxLabel scalar_t;
@@ -364,11 +352,12 @@ int FEMultiVectorTest::vtxLabelTest()
   Teuchos::RCP<femv_t> femv = getFEMV<femv_t>();
 
   // Check results:  after ADD in endFill, 
-  // -  overlapping entries of vec 0 should be MAX(local gid, received gid)
+  // -  overlapping entries of vec 0 should be -2 * gid
   //    nonoverlapping entries of vec 0 should be gid
-  // -  overlapping entries of vec 1 should be MAX(me, (np + me-1) % np);
+  // -  overlapping entries of vec 1 should be -me - ((np + me-1) % np)
   //    nonoverlapping entries of vec 1 should be me
   
+  // Check vector 0
   {
     auto value = femv->getData(0);
     for (lno_t i = 0; i < nLocalCopy; i++) {
@@ -391,6 +380,7 @@ int FEMultiVectorTest::vtxLabelTest()
     }
   }
 
+  // Check vector 1
   {
     auto value = femv->getData(1);
     int tmp = -me - (np + me - 1) % np;
@@ -425,9 +415,11 @@ int main(int narg, char **arg)
   int me = comm->getRank();
   int ierr = 0;
 
+  // Test that the vtxLabel struct correctly overloads operators
   if (me == 0) 
     ierr += vtxLabelUnitTest();
   
+  // Now test Tpetra::FEMultiVector
   FEMultiVectorTest femvTest(comm);
 
   if (me == 0) std::cout << "Testing with int" << std::endl;
@@ -436,9 +428,11 @@ int main(int narg, char **arg)
   if (me == 0) std::cout << "Testing with vtxLabel" << std::endl;
   ierr = femvTest.vtxLabelTest();
 
+  // Sum up across all processors the number of errors that occurred.
   int gerr = 0;
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
 
+  // Print PASS/FAIL
   if (me == 0) {
     if (gerr == 0) std::cout << "PASS" << std::endl;
     else std::cout << "FAIL:  " << gerr << " failures" << std::endl;
