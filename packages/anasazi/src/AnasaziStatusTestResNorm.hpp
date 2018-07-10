@@ -51,6 +51,7 @@
 #include "AnasaziTypes.hpp"
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 namespace Anasazi {
 
