@@ -27,6 +27,11 @@
 // ***********************************************************************
 // @HEADER
 
+#if defined(HAVE_SACADO_KOKKOSCORE)
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Error.hpp"
+#endif
+
 namespace Sacado {
 
   namespace FAD_NS {
@@ -313,3 +318,45 @@ namespace Sacado {
   };
 
 } // namespace Sacado
+
+#if defined(HAVE_SACADO_KOKKOSCORE)
+
+//-------------------------- Atomic Operators -----------------------
+
+namespace Sacado {
+
+  namespace FAD_NS {
+
+    // Overload of Kokkos::atomic_add for Fad types.
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x) {
+      using Kokkos::atomic_add;
+
+      const int xsz = x.size();
+      const int sz = dst->size();
+
+      // We currently cannot handle resizing since that would need to be
+      // done atomically.
+      if (xsz > sz)
+        Kokkos::abort(
+          "Sacado error: Fad resize within atomic_add() not supported!");
+
+      if (xsz != sz && sz > 0 && xsz > 0)
+        Kokkos::abort(
+          "Sacado error: Fad assignment of incompatiable sizes!");
+
+
+      if (sz > 0 && xsz > 0) {
+        SACADO_FAD_DERIV_LOOP(i,sz)
+          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
+      }
+      SACADO_FAD_THREAD_SINGLE
+        atomic_add(&(dst->val()), x.val());
+    }
+
+  } // namespace Fad
+
+} // namespace Sacado
+
+#endif // HAVE_SACADO_KOKKOSCORE

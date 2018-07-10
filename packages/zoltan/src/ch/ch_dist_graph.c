@@ -51,6 +51,7 @@
 #include "ch_input_const.h"
 #include "dr_err_const.h"
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_util_const.h"
 #include "ch_init_dist_const.h"
 

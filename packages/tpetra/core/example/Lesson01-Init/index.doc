@@ -37,13 +37,15 @@ analogous to Epetra_Comm.)  If MPI is enabled, then this wraps an
 MPI_Comm.  Otherwise, this is a "serial communicator" with one
 process, analogous to MPI_COMM_SELF.
 
-Furthermore, Trilinos provides an MPI initialization interface,
-Teuchos::GlobalMPISession.  This calls MPI_Init and MPI_Finalize for
-you in an MPI build, and does not call them if you did not build
-Trilinos with MPI support.  The following code example shows how to
-initialize MPI (if available) and get a Teuchos::Comm corresponding
-to MPI_COMM_WORLD.  The example works whether or not Trilinos was
-build with MPI support.
+Tpetra also provides an MPI initialization interface,
+Tpetra::ScopeGuard.  If you built Trilinos with MPI enabled, but have
+not yet initialized MPI, ScopeGuard's constructor calls MPI_Init for
+you, and its destructor calls MPI_Finalize for you.  The following
+code example shows how to initialize MPI (if available) and get a
+Teuchos::Comm corresponding to MPI_COMM_WORLD.  The example works
+whether or not Trilinos was build with MPI support.  If you prefer a
+C-style initialization and finalization interface, you may use
+Tpetra::initialize and Tpetra::finalize instead.
 
 \include lesson01_mpi_only_through_Tpetra.cpp
 
@@ -59,15 +61,16 @@ such as MPI_COMM_WORLD, or by creating a new one.
 
 \section Tpetra_Lesson01_ExistingNonMpiCode Initialization for an existing non-MPI code
 
-The first code example in this lesson uses Teuchos::GlobalMPISession
-to initialize MPI.  Despite the name, in a non-MPI build of Trilinos,
-it does nothing.  Thus, if you built Trilinos with MPI disabled, you
-should feel free to invoke Teuchos::GlobalMPISession in your main()
-function.  However, if you are using a build of Trilinos that has MPI
-enabled, but you don't want to use MPI in your application, you should
-not use Teuchos::GlobalMPISession.  Instead, you should create a
-Teuchos::SerialComm directly as the "communicator."  The following
-example shows how to create a Teuchos::SerialComm.
+The first code example in this lesson uses Tpetra::ScopeGuard to
+initialize MPI.  Despite the name, in a non-MPI build of Trilinos, it
+does nothing.  Thus, if you built Trilinos with MPI disabled, you
+should feel free to use Tpetra::ScopeGuard in your main() function.
+However, if you are using a build of Trilinos that has MPI enabled,
+but you don't want to use multiple MPI processes in your application,
+you may use the three-argument version of Tpetra::ScopeGuard's
+constructor, that takes an MPI_Comm argument.  Just pass in
+MPI_COMM_SELF to force Tpetra not to use multiple processes.  The
+following example illustrates this.
 
 \include lesson01_no_mpi.cpp
 
