@@ -60,10 +60,10 @@
 #include <iostream>
 
 
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu);
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order);
 std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier, Teuchos::RCP<const std::vector<std::string> > fieldMultipliers);
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
@@ -319,7 +319,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
 
     // define physics block parameter list and boundary conditions
-    Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
+    Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order);
     std::vector<panzer::BC> bcs = homogeneousBoundaries(mesh);
     std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
 
@@ -353,13 +353,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // build the auxiliary physics blocks objects
     Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
+    Teuchos::RCP<std::vector<std::string> > fieldMultipliers;
     if (use_refmaxwell) {
-      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
+      fieldMultipliers = rcp(new std::vector<std::string>);
+      fieldMultipliers->push_back("PERMITTIVITY");
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0 / dt / cfl / cfl / min_dx / min_dx, fieldMultipliers.getConst());
       // We actually want Q_rho with weight 1/mu but for that we
       // would need to be able to request a Q_E with weight 1
       // instead of eps/dt.
     } else
-      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0, fieldMultipliers.getConst());
     std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
     {
       Teuchos::TimeMonitor tMaux_physics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks")));
@@ -437,11 +440,27 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     cm_factory.buildObjects(cm_builder);
     Teuchos::ParameterList closure_models("Closure Models");
     {
+      // current source
       closure_models.sublist("electromagnetics").sublist("CURRENT").set<std::string>("Type","GAUSSIAN PULSE"); // a gaussian current source
       closure_models.sublist("electromagnetics").sublist("CURRENT").set<double>("dt",dt); // set pulse width such that dt resolves it
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY"); // compute 1/2(eps*||E||^2 + 1/mu*||B||^2)
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("mu",mu);
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("epsilon",epsilon);
+
+      // variable permeability and permittivity
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("DoF Name","E_edge");
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
+
+      // constant permeability and permittivity
+      // closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<double>("Value",epsilon);
+      // closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("Value",1.0/mu);
+      // closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("Value",epsilon);
+
+      // electromagnetic energy: 1/2 * ((E, epsilon * E) + (B, 1/mu * B))
+      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY");
     }
 
     Teuchos::ParameterList user_data("User Data"); // user data can be empty here
@@ -688,7 +707,7 @@ int main(int argc,char * argv[]){
 }
 
 //! Create a parameter list defining the Maxwell equations physics block
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu)
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Physics Block"));
   const int integration_order = 2*basis_order;
@@ -698,8 +717,6 @@ Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order,
   p.set("Model ID","electromagnetics");
   p.set("Basis Order",basis_order);
   p.set("Integration Order",integration_order);
-  p.set("Epsilon",epsilon);
-  p.set("Mu", mu);
 
   return pl;
 }
@@ -771,7 +788,7 @@ std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interfa
 }
 
 //! Create parameter list defining nodal mass matrix and node-edge weak gradient
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier)
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier, Teuchos::RCP<const std::vector<std::string> > fieldMultipliers)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Aux Physics Block"));
   const int integration_order = 2*basis_order;
@@ -779,11 +796,13 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, 
   {
     Teuchos::ParameterList& p = pl->sublist("Auxiliary Mass Physics");
     p.set("Type","Auxiliary Mass Matrix");
+    p.set("Model ID","electromagnetics_aux");
     p.set("DOF Name","AUXILIARY_NODE");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
     p.set("Multiplier",massMultiplier);
+    p.set("Field Multipliers",fieldMultipliers);
   }
 
   {

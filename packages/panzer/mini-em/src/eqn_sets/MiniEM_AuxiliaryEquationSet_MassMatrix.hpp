@@ -35,6 +35,7 @@ namespace mini_em {
   protected:
     std::string dof_name;
     double multiplier;
+    Teuchos::RCP<const std::vector<std::string> > fieldMultipliers;
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> m_gedc;
     Teuchos::RCP<std::vector<std::string> > m_dof_names;
   };
