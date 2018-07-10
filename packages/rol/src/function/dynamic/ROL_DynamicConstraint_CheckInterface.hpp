@@ -153,6 +153,53 @@ public:
  
   //----------------------------------------------------------------------------
 
+  f_dderiv_t<Real> adjointJacobian_uo_uo( const V& un, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_uo, &con_, ph::_1, ph::_2, ph::_3,
+                 cref(un), cref(z), ts_ ); 
+  }
+
+  f_dderiv_t<Real> adjointJacobian_uo_un( const V& uo, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_uo, &con_, ph::_1, ph::_2, cref(uo),
+                 ph::_3, cref(z), ts_ ); 
+  }
+
+  f_dderiv_t<Real> adjointJacobian_uo_z( const V& uo, const V& un ) {
+    return bind( &Con::applyAdjointJacobian_uo, &con_, ph::_1, ph::_2, cref(uo),
+                 cref(un), ph::_3, ts_ ); 
+  }
+
+  f_dderiv_t<Real> adjointJacobian_un_uo( const V& un, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_un, &con_, ph::_1, ph::_2, ph::_3,
+                 cref(un), cref(z), ts_ ); 
+  }
+
+  f_dderiv_t<Real> adjointJacobian_un_un( const V& uo, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_un, &con_, ph::_1, ph::_2, cref(uo), 
+                 ph::_3, cref(z), ts_ ); 
+  }
+
+  f_dderiv_t<Real> adjointJacobian_un_z( const V& uo, const V& un ) {
+    return bind( &Con::applyAdjointJacobian_un, &con_, ph::_1, ph::_2, cref(uo), 
+                 cref(un), ph::_3, ts_ ); 
+  }
+ 
+  f_dderiv_t<Real> adjointJacobian_z_uo( const V& un, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_z, &con_, ph::_1, ph::_2, ph::_3, 
+                 cref(un), cref(z), ts_ ); 
+  }
+ 
+  f_dderiv_t<Real> adjointJacobian_z_un( const V& uo, const V& z ) {
+    return bind( &Con::applyAdjointJacobian_z, &con_, ph::_1, ph::_2, cref(uo), 
+                 ph::_3, cref(z), ts_ ); 
+  }
+ 
+  f_dderiv_t<Real> adjointJacobian_z_z( const V& uo, const V& un ) {
+    return bind( &Con::applyAdjointJacobian_z, &con_, ph::_1, ph::_2, cref(uo), 
+                 cref(un), ph::_3, ts_ ); 
+  }
+ 
+  //----------------------------------------------------------------------------
+
   f_dderiv_t<Real> adjointHessian_un_un( const V& uo, const V& z, const V& l ) {
     return bind( &Con::applyAdjointHessian_un_un, &con_, ph::_1, cref(l), ph::_2, 
                  cref(uo), ph::_3, cref(z), ts_ );
