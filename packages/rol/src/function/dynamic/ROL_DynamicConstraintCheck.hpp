@@ -218,6 +218,31 @@ struct DynamicConstraintCheck {
 
   } // check()
 
+  static void check( DynamicConstraint<Real>& con,
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z ) {
+    std::vector<std::string> methods = {"applyJacobian_uo",
+                                        "applyJacobian_un",
+                                        "applyJacobian_z",
+                                        "applyAdjointJacobian_uo",
+                                        "applyAdjointJacobian_un",
+                                        "applyAdjointJacobian_z",
+                                        "applyInverseJacobian_un",
+                                        "applyInverseAdjointJacobian_un",
+                                        "applyAdjointHessian_uo_uo",
+                                        "applyAdjointHessian_uo_un",
+                                        "applyAdjointHessian_uo_z",
+                                        "applyAdjointHessian_un_uo",
+                                        "applyAdjointHessian_un_un",
+                                        "applyAdjointHessian_un_z",
+                                        "applyAdjointHessian_z_uo",
+                                        "applyAdjointHessian_z_un",
+                                        "applyAdjointHessian_z_z"};
+    check(con, validator, uo, un, z, methods);
+  }
+
   
 };
 
