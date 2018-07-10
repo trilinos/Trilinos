@@ -54,9 +54,6 @@
 #include "MueLu_BaseClass.hpp"
 #include "Teuchos_RawParameterListHelpers.hpp"
 
-extern "C" {
-#include "avatar_api.h"
-}
 
 // ***********************************************************************
 /* Notional Parameterlist Structure
