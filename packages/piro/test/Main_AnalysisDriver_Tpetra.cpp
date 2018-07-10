@@ -43,18 +43,28 @@
 #include <iostream>
 #include <string>
 
-#include "MockModelEval_A.hpp"
-#include "ObserveSolution_Epetra.hpp"
+#include "MockModelEval_A_Tpetra.hpp"
+//#include "ObserveSolution_Epetra.hpp"
 
-#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_SolverFactory.hpp"
 #include "Piro_ProviderHelpers.hpp"
 
-#include "Piro_Epetra_PerformAnalysis.hpp"
+#include "Piro_PerformAnalysis.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Teuchos_AbstractFactoryStd.hpp"
+#include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#include "Stratimikos_MueLuHelpers.hpp"
+#include "Piro_StratimikosUtils.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+
+
+
+
 
 #include "Piro_ConfigDefs.hpp"
 
@@ -80,17 +90,16 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
-  Piro::Epetra::SolverFactory solverFactory;
+  Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<5; iTest++) {
+  for (int iTest=0; iTest<2; iTest++) {
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Analysis_Dakota.xml"; break;
-       case 1: inputFile="input_Analysis_ROL.xml"; break;
-       case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
-       case 3: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 4: inputFile="input_Analysis_MOOCHO.xml"; break;
+       case 0: inputFile="input_Analysis_ROL_Tpetra.xml"; break;
+       case 1: inputFile="input_Analysis_ROL_AdjointSensitivities_Tpetra.xml"; break;
+       case 2: inputFile="input_Analysis_OptiPack.xml"; break;
+       case 3: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -108,44 +117,55 @@ int main(int argc, char *argv[]) {
     try {
 
       // Create (1) a Model Evaluator and (2) a ParameterList
-      RCP<EpetraExt::ModelEvaluator> Model = rcp(new MockModelEval_A(appComm));
+      const RCP<Thyra::ModelEvaluator<double>> Model = rcp(new MockModelEval_A_Tpetra(appComm));
 
       // BEGIN Builder
-      Teuchos::ParameterList appParams("Application Parameters");
-      Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
+      const RCP<Teuchos::ParameterList> appParams = rcp(new Teuchos::ParameterList("Application Parameters"));
+      Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(appParams.get()));
 
-      Teuchos::ParameterList piroParams = appParams.sublist("Piro");
-      Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
+      const RCP<Teuchos::ParameterList>  piroParams = Teuchos::sublist(appParams,"Piro");
+      Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
 
-#ifdef HAVE_PIRO_NOX
-      solverFactory.setSource<NOX::Epetra::Observer>(
-          Piro::providerFromDefaultConstructor<ObserveSolution_Epetra>());
-#endif
+
+      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+      typedef Thyra::PreconditionerFactoryBase<double>              Base;
+      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra_CrsMatrix> Impl;
+      linearSolverBuilder.setPreconditioningStrategyFactory(
+          Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+      Stratimikos::enableMueLu<int, int>(linearSolverBuilder);
+
+      const Teuchos::RCP<Teuchos::ParameterList> stratList = Piro::extractStratimikosParams(piroParams);
+      linearSolverBuilder.setParameterList(stratList);
+
+
+      const RCP<Thyra::LinearOpWithSolveFactoryBase<double>> lowsFactory =
+          createLinearSolveStrategy(linearSolverBuilder);
+
+      RCP<Thyra::ModelEvaluator<double>> ModelWithSolve = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
+          Model, lowsFactory));
 
       // Use these two objects to construct a Piro solved application
-      // EpetraExt::ModelEvaluator is the base class of all Piro::Epetra solvers
-      const RCP<Teuchos::ParameterList> piroParamsRCP = rcp(&piroParams, false);
-      const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParamsRCP, Model);
+      // Thyra::ModelEvaluator is the base class of all Piro::Epetra solvers
+      const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = solverFactory.createSolver(piroParams, ModelWithSolve);
       // END Builder
 
       // Call the analysis routine
-      RCP<Epetra_Vector> p;
-      status = Piro::Epetra::PerformAnalysis(*piro, analysisParams, p);
+      RCP<Thyra::VectorBase<double>> p;
+      status = Piro::PerformAnalysis(*piro, analysisParams, p);
 
-      if (Teuchos::nonnull(p)) {
+      Thyra::DetachedVectorView<double> p_view(p);
       double p_exact[2] = {1,3};
-      double tol = 1e-5;
+      double tol = 1e-6;
 
-      double l2_diff = std::sqrt(std::pow((*p)[0]-p_exact[0],2) + std::pow((*p)[1]-p_exact[1],2));
+      double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
       if(l2_diff > tol) {
         status+=100;
         if (Proc==0) {
           std::cout << "\nPiro_AnalysisDrvier:  Optimum parameter values are: {"
               <<  p_exact[0] << ", " << p_exact[1] << "}, but computed values are: {"
-              <<  (*p)[0] << ", " << (*p)[1] << "}." <<
+              <<  p_view(0) << ", " << p_view(1) << "}." <<
               "\n                      Difference in l2 norm: " << l2_diff << " > tol: " << tol <<   std::endl;
         }
-      }
       }
 
     }
