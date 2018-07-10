@@ -328,10 +328,19 @@ fi
 
 #Run compilation command
 if [ $host_only -eq 1 ]; then
+  if [ "$NVCC_WRAPPER_SHOW_COMMANDS_BEING_RUN" == "1" ] ; then
+    echo "$host_command"
+  fi
   $host_command
 elif [ -n "$nvcc_depfile_command" ]; then
+  if [ "$NVCC_WRAPPER_SHOW_COMMANDS_BEING_RUN" == "1" ] ; then
+    echo "$nvcc_command && $nvcc_depfile_command"
+  fi
   $nvcc_command && $nvcc_depfile_command
 else
+  if [ "$NVCC_WRAPPER_SHOW_COMMANDS_BEING_RUN" == "1" ] ; then
+    echo "$nvcc_command"
+  fi
   $nvcc_command
 fi
 error_code=$?
