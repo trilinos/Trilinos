@@ -187,6 +187,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   ROL::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
 
+  double tol = 1e-12;
+
   // check the pint constraint
   {
     auto c   = state->clone();
@@ -198,6 +200,21 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
     pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
+    RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+    RealT adj_inv_1 = pint_constraint.checkInverseAdjointJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+
+    if(inv_1 > tol) {
+      std::stringstream ss;
+      ss << "Forward Jacobian inverse inversion FAILED: error = " << inv_1  << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    if(adj_inv_1 > tol) {
+      std::stringstream ss;
+      ss << "Adjoint Jacobian inverse inversion FAILED: error = " << inv_1  << std::endl;
+      throw std::logic_error(ss.str());
+    }
+    
   }
 
   auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
@@ -209,7 +226,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*r_2);
 
   int numSolves = 1;
-  double tol = 1e-12;
   std::clock_t timer_total = 0;
   for(int i=0;i<numSolves;i++) {
     v_1->zero();

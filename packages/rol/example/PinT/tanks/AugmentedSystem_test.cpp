@@ -138,7 +138,11 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
   auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
   auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
-  auto  T       = pl.get("Total Time", 20.0);
+  auto  T      = pl.get("Total Time", 20.0);
+
+  auto  maxlvs = pl.get("MGRIT Levels", 5);
+  auto  sweeps = pl.get("MGRIT Sweeps", 1);
+  auto  omega  = pl.get("MGRIT Relax", 2.0/3.0);
 
   RealT dt = T/Nt;
 
@@ -191,6 +195,9 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(con,initial_cond,timeStamp);
+  pint_con->applyMultigrid(maxlvs);
+  pint_con->setSweeps(sweeps);
+  pint_con->setRelaxation(omega);
 
   // check the pint constraint
   {

@@ -108,6 +108,12 @@ private:
   Ptr<const std::vector<TimeStamp<Real>>>  userTimeStamps_;   // these are the untouched ones the user passes in
   Ptr<std::vector<TimeStamp<Real>>>        timeStamps_;       // these are used internally
 
+  // preconditioner settings
+  bool applyMultigrid_;         // default to block jacobi
+  int maxLevels_;               // must turn on multigrid 
+  int numSweeps_;
+  Real omega_;
+
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
   {
@@ -149,6 +155,10 @@ public:
   PinTConstraint()
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
+    , applyMultigrid_(false)
+    , maxLevels_(-1)
+    , numSweeps_(1)
+    , omega_(2.0/3.0)
   { }
 
   /**
@@ -156,6 +166,7 @@ public:
    *
    * Build a parallel-in-time constraint with a specified step constraint. This specifies
    * any communication you might need between processors and steps using "stencils".
+   * Multigrid in time preconditioning is disabled by default.
    * 
    * \param[in] stepConstraint Constraint for a single step.
    * \param[in] initialCond Initial condition
@@ -165,10 +176,51 @@ public:
                  const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
+    , applyMultigrid_(false)
+    , maxLevels_(-1)
+    , numSweeps_(1)
+    , omega_(2.0/3.0)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
   }
 
+  /**
+   * Set sweeps for jacobi and multigrid
+   */
+  void setSweeps(int s)
+  { numSweeps_ = s; }
+
+  /**
+   * Set relaxation parater for jacobi and multigrid
+   */
+  void setRelaxation(Real o)
+  { omega_ = o; }
+
+  /**
+   * Turn on multigrid preconditioning in time with a specified number of levels.
+   *
+   * \param[in] maxLevels Largest number of levels
+   */
+  void applyMultigrid(int maxLevels)
+  {
+    applyMultigrid_ = true;
+    maxLevels_ = maxLevels;
+  }
+
+  /**
+   * \brief Turn off multigrid preconditioning in time (default off).
+   */
+  void disableMultigrid()
+  {
+    applyMultigrid_ = false;
+    maxLevels_ = -1;
+  }
+
+  /**
+   * \brief Check if multigrid is enabled.
+   */
+  bool multigridEnabled() const
+  { return applyMultigrid_; }
   
   /**
    * \brief Get the time stamps for by level
@@ -470,10 +522,66 @@ public:
     constraint->applyJacobian_2(*part_jv,*part_v,*part_u,*part_z,tol);
    }
 
-
    void applyInverseJacobian_1( V& ijv, const V& v, const V& u,
                                 const V& z, Real& tol) override {
+     int level = 0;
+     applyInverseJacobian_1_leveled(ijv,v,u,z,tol,level);
+   }
 
+   void applyInverseJacobian_1_leveled(V& ijv, 
+                                       const V& v, 
+                                       const V& u,
+                                       const V& z, 
+                                       Real& tol,
+                                       int level) {
+    // applyInverseJacobian_1 is weird because it serializes in time. But we want to get it
+    // working so that we can test, but it won't be a performant way to do this. 
+    // We could do a parallel in time solve here but thats not really the focus.
+    
+    PinTVector<Real>       & pint_ijv = dynamic_cast<PinTVector<Real>&>(ijv);
+    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    assert(pint_ijv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_ijv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    pint_z.boundaryExchange();
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_ijv.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
+
+    // satisfy the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_ijv.stencil();
+    int timeRank = pint_u.communicators().getTimeRank();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0 and timeRank>0) {
+
+        // update the old time information
+        pint_ijv.getVectorPtr(offset)->set(*pint_ijv.getRemoteBufferPtr(offset));    
+        pint_ijv.getVectorPtr(offset)->axpy(1.0,*pint_v.getVectorPtr(offset));        
+      }
+      else if(offset<0 and timeRank==0) {  
+        // this is the intial condition
+
+        // update the old time information
+        pint_ijv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));
+      }
+    }
+
+    auto part_ijv = getStateVector(pint_ijv);   
+    auto part_v   = getStateVector(pint_v);   
+    auto part_u   = getStateVector(pint_u);   
+    auto part_z   = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+
+    constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
+
+    pint_ijv.boundaryExchange(PinTVector<Real>::SEND_ONLY);
    }
 
 
@@ -583,6 +691,89 @@ public:
 
    void applyInverseAdjointJacobian_1( V& iajv, const V& v, const V& u,
                                        const V& z, Real& tol) override {
+     int level = 0;
+     applyInverseAdjointJacobian_1_leveled(iajv,v,u,z,tol,level);
+   }
+
+   void applyInverseAdjointJacobian_1_leveled( V& iajv, 
+                                               const V& v, 
+                                               const V& u,
+                                               const V& z, 
+                                               Real& tol,
+                                               int level) {
+
+    // applyInverseAdjointJacobian_1 is weird because it serializes in time. But we want to get it
+    // working so that we can test, but it won't be a performant way to do this. 
+    // We could do a parallel in time solve here but thats not really the focus.
+    
+    // this is an inefficient hack (see line below where pint_v is modified!!!!)
+    ///////////////////////////////////
+    auto v_copy = v.clone();
+    v_copy->set(v);
+    ///////////////////////////////////
+    
+    PinTVector<Real>       & pint_iajv = dynamic_cast<PinTVector<Real>&>(iajv);
+    const PinTVector<Real> & pint_v    = dynamic_cast<const PinTVector<Real>&>(*v_copy);
+    const PinTVector<Real> & pint_u    = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z    = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+       //
+    int timeRank = pint_u.communicators().getTimeRank();
+    int timeSize = pint_u.communicators().getTimeSize();
+ 
+    assert(pint_iajv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_iajv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    pint_iajv.zero();
+
+    pint_z.boundaryExchange();
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::RECV_ONLY); // this is going to block
+
+    auto part_iajv = getStateVector(pint_iajv);   
+    auto part_v    = getStateVector(pint_v);   
+    auto part_u    = getStateVector(pint_u);   
+    auto part_z    = getControlVector(pint_z); 
+
+    const std::vector<int> & stencil = pint_iajv.stencil();
+
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    // we need to modify the RHS vector if this is an interior boundary
+    if(timeRank+1 < timeSize) {
+      int owned_steps = pint_v.numOwnedSteps();
+      for(size_t i=0;i<stencil.size();i++) {
+        if(stencil[i]<0) {
+          // this is why the hack above is necessary
+          pint_v.getVectorPtr(owned_steps+stencil[i])->axpy(1.0,*pint_iajv.getVectorPtr(owned_steps+stencil[i]));
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+
+    constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    // satisfy the time continuity constraint, note that this just using the identity matrix
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        // you would think that was the weird term here. But there isn't as its automatically
+        // included by the applyInverseAdjointJacobian_1 call with the "skipInitialCondition"
+        // flag on.
+
+        // sending this to the left
+        pint_iajv.getRemoteBufferPtr(offset)->set(*pint_iajv.getVectorPtr(offset));        
+      }
+    }
+
+    pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::SEND_ONLY);
 
    }
 
@@ -670,6 +861,10 @@ public:
    {
      auto scratch_u = u.clone(); 
      auto scratch_z = z.clone(); 
+
+     scratch_u->zero();
+     scratch_z->zero();
+     sc_v.zero();
  
      // do boundary exchange
      {
@@ -686,7 +881,8 @@ public:
      applyJacobian_2_leveled(*scratch_u,*scratch_z,u,z,tol,level);
      
      // compute J_1 * J_1^T + J_2 * J_2^T
-     sc_v.axpy(1.0,*scratch_u);
+     // sc_v.axpy(1.0,*scratch_u);
+     sc_v.scale(-1.0);
    }
  
    virtual void weightedJacobiRelax(PinTVector<Real> &pint_pv,
@@ -702,7 +898,6 @@ public:
      auto dx = pint_pv.clone();
  
      // force intial guess to zero
-     pint_pv.scale(0.0);
      dx->scale(0.0);
      residual->set(pint_v);           
  
@@ -710,20 +905,20 @@ public:
      PinTVector<Real> & pint_dx       = dynamic_cast<PinTVector<Real>&>(*dx);
 
      for(int s=0;s<numSweeps;s++) {
+       // update the residual
+       schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol,level); // A*x
+ 
+       pint_residual.scale(-1.0);                            // -A*x
+       pint_residual.plus(pint_v);                      // b - A*x
+
+       // compute and apply the correction
        blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol,level);
  
        pint_pv.axpy(omega,pint_dx);
- 
-       // now update the residual
-       if(s!=numSweeps-1) {
-         schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol,level); // A*x
- 
-         pint_residual.scale(-1.0);                            // -A*x
-         pint_residual.plus(pint_v);                      // b - A*x
-       }
+
+       // get the solution 
+       pint_pv.boundaryExchange();
      }
- 
-     pint_pv.boundaryExchange();
    }
 
    virtual void multigridInTime(Vector<Real> & pv,
@@ -733,7 +928,7 @@ public:
                                 Real omega,
                                 int numSweeps,
                                 Real &tol,
-                                int level=0) 
+                                int level) 
    {
      PinTVector<Real> & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
      const PinTVector<Real> & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
@@ -750,11 +945,35 @@ public:
                                 Real omega,
                                 int numSweeps,
                                 Real &tol,
-                                int level=0) 
+                                int level) 
    {
+     // sanity check the input (preconditions)
+     assert(multigridEnabled());
+     assert(maxLevels_>=0);
+
      auto residual = pint_b.clone();
      auto correction = pint_x.clone();
      PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
+
+     if(level==maxLevels_) {
+       // compute fine residual
+       schurComplementAction(pint_residual,pint_x,pint_u,pint_z,tol,level); // A*x
+ 
+       pint_residual.scale(-1.0);                       // -A*x 
+       pint_residual.plus(pint_b);                      // b - A*x
+
+       // base case !!!
+       auto scratch = pint_x.clone();
+       scratch->zero();
+     
+       // compute -J_1^-T * J_1^-1
+       applyInverseJacobian_1_leveled(*scratch,pint_residual,pint_u,pint_z,tol,level);
+       applyInverseAdjointJacobian_1_leveled(*correction,*scratch,pint_u,pint_z,tol,level);
+
+       pint_x.axpy(-1.0,*correction);
+
+       return;
+     }
 
      // pre-smooth
      /////////////////////////////////////////////////////////////////////////////////////
@@ -768,7 +987,7 @@ public:
 
      // coarse solve
      /////////////////////////////////////////////////////////////////////////////////////
-     if(level<=1) {
+     {
        auto crs_u          = allocateSimVector(pint_x,level+1);
        auto crs_z          = allocateOptVector(pint_z,level+1);
        auto crs_residual   = allocateSimVector(pint_x,level+1);
@@ -779,7 +998,7 @@ public:
        restrictSimVector(pint_u,*crs_u);               // restrict the control to the coarse level
        restrictOptVector(pint_z,*crs_z);               // restrict the state to the coarse level
        restrictSimVector(pint_residual,*crs_residual);  
-       
+
        multigridInTime(*crs_correction,*crs_residual,*crs_u,*crs_z,omega,numSweeps,tol,level+1);
 
        prolongSimVector(*crs_correction,*correction);  // prolongate the correction 
@@ -789,7 +1008,6 @@ public:
 
      // post-smooth
      /////////////////////////////////////////////////////////////////////////////////////
-      
      
      weightedJacobiRelax(pint_x,pint_b,pint_u,pint_z,omega,numSweeps,tol,level);
    }
@@ -826,17 +1044,20 @@ public:
      // now we are going to do a relaxation sweep: x = xhat+omega * Minv * (b-A*xhat)
      /////////////////////////////////////////////////////////////////////////////////////////
      
-     int numSweeps = 1;
-     Real omega = 2.0/3.0;
+     int numSweeps = numSweeps_;
+     Real omega = omega_;
      
      int level = 0;
-     if(false) {
+     if(not multigridEnabled()) {
+       pint_pv.zero();
        weightedJacobiRelax(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
      }
-     else if(false) {
+     else if(multigridEnabled()) {
+       pint_pv.zero();
        multigridInTime(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
      }
      else {
+       // unreachable :(
        pv.set(v.dual());
      } 
    }
@@ -1008,7 +1229,7 @@ public:
 
        out.zero(); 
 
-       if(timeRank!=-1)
+       if(timeRank!=0)
          out.axpy(1.0/2.0,*pint_input.getRemoteBufferPtr(-1)); 
        out.axpy(1.0/2.0,*pint_input.getVectorPtr(0)); 
      } 
