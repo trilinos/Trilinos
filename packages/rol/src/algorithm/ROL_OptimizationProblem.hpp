@@ -981,7 +981,15 @@ public:
 
   std::vector<Real> getObjectiveStatistic(void) const {
     try {
-      return *(dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic());
+      Ptr<std::vector<Real>> stat
+        = dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic();
+      if (stat != nullPtr) {
+        return *stat;
+      }
+      else {
+        std::vector<Real> empty;
+        return empty;
+      }
     }
     catch (std::exception &e) {
       std::vector<Real> empty;
@@ -991,7 +999,15 @@ public:
 
   std::vector<Real> getConstraintStatistic(const int index = 0) const {
     try {
-      return *(dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic(1,index));
+      Ptr<std::vector<Real>> stat
+        = dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic(1,index);
+      if (stat != nullPtr) {
+        return *stat;
+      }
+      else {
+        std::vector<Real> empty;
+        return empty;
+      }
     }
     catch (std::exception &e) {
       std::vector<Real> empty;
