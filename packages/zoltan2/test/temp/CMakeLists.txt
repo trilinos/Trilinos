@@ -111,6 +111,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
 )
 
+
+IF (NOT Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+# This test does not build yet with explicit instantiation
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    femv
+    SOURCES femv.cpp
+    COMM mpi serial
+  )
+ENDIF()
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tpetraMapTest
 #  SOURCES mapMemoryLeak.cpp
