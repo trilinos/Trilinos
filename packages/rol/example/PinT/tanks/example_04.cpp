@@ -43,13 +43,13 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_RandomVector.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
-#include "ROL_DynamicObjectiveCheck.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Bounds.hpp"
 #include "Tanks_DynamicConstraint.hpp"
 #include "Tanks_DynamicObjective.hpp"
+#include "ROL_DynamicConstraintCheck.hpp"
+#include "ROL_DynamicObjectiveCheck.hpp"
 
 #include <iostream>
 
@@ -83,9 +83,11 @@ int main( int argc, char* argv[] ) {
     ROL::Ptr<Tanks::ControlVector<RealT>>  zk  = Tanks::ControlVector<RealT>::create(*pl_ptr, "Control");
     ROL::Ptr<ROL::PartitionedVector<RealT>> z  = ROL::PartitionedVector<RealT>::create(*zk, Nt);
     ROL::Ptr<ROL::PartitionedVector<RealT>> dz = ROL::PartitionedVector<RealT>::create(*zk, Nt);
+    ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, Nt);
     for( size_type i=0; i<Nt; ++i ) {
-      ROL::RandomizeVector(*z->get(i));
-      ROL::RandomizeVector(*dz->get(i));
+      z->get(i)->randomize();
+      dz->get(i)->randomize();
+      hz->get(i)->randomize();
     }
 
     // Create control bounds
@@ -105,15 +107,12 @@ int main( int argc, char* argv[] ) {
     }
 
     // Check dynamic objective derivatives
-    ROL::RandomizeVector(*uo);
-    ROL::RandomizeVector(*un);
-    ROL::RandomizeVector(*zk);
-    ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);;
-    std::vector<std::string> methods = {"gradient_uo",  "gradient_un",  "gradient_z",
-                                        "hessVec_uo_uo","hessVec_uo_un","hessVec_uo_z",
-                                        "hessVec_un_uo","hessVec_un_un","hessVec_un_z",
-                                        "hessVec_z_uo", "hessVec_z_un", "hessVec_z_z"};
-    ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk,methods);
+    uo->randomize();
+    un->randomize();
+    zk->randomize();
+    ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
+    ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
+    ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
 
     // Create constraint vector
     ROL::Ptr<Tanks::StateVector<RealT>> ck = Tanks::StateVector<RealT>::create(*pl_ptr, "Constraint");
@@ -132,6 +131,8 @@ int main( int argc, char* argv[] ) {
 
     // Check gradient of reduced dynamic objective
     obj->checkGradient(*z,*dz,true,*outStream);
+    obj->checkHessVec(*z,*dz,true,*outStream);
+    obj->checkHessSym(*z,*dz,*hz,true,*outStream);
 
     // Set up optimization problem
     ROL::Ptr<ROL::ParameterList> rol_ptr  = ROL::getParametersFromXmlFile("rol-parameters.xml");
