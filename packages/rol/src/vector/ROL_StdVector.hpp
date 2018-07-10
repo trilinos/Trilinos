@@ -200,6 +200,17 @@ public:
     std_vec_->assign(dim,C);
   }
 
+  void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    Real a = (u-l);
+    Real b = l;
+    Real x(0);
+    uint dim = std_vec_->size();
+    for (uint i=0; i<dim; ++i) {
+      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+      (*std_vec_)[i] = a*x + b;
+    }
+  }
+
   virtual void print( std::ostream &outStream ) const {
     uint dim = std_vec_->size();
     for(uint i=0; i<dim; ++i) {
