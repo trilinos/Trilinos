@@ -51,14 +51,13 @@
 #include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
 #include "Kokkos_Random.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 namespace { // (anonymous)
@@ -606,73 +605,72 @@ main (int argc, char* argv[])
   using std::endl;
   typedef Tpetra::Vector<>::scalar_type SC;
 
-  // RAII protection for MPI_Initialize / MPI_Finalize.  This first
-  // calls MPI_Initialize (if building with MPI).  At the end of this
-  // scope / when main() returns or throws an exception, it calls
-  // MPI_Finalize (if building with MPI).
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
-  // Think of this as a wrapped version of MPI_COMM_WORLD.
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
-  // The output stream 'out' will ignore any output not from Process 0.
-  RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
-  Teuchos::FancyOStream& out = *pOut;
-
-  // Read command-line options into the 'opts' struct.
-  CmdLineOpts opts;
-  {
-    Teuchos::CommandLineProcessor clp;
-    setCmdLineOpts (opts, clp);
-    int result = parseCmdLineOpts (clp, argc, argv);
-    if (result == 1) { // help printed
-      return EXIT_SUCCESS;
-    }
-    else if (result == -1) { // parse error
-      return EXIT_FAILURE;
-    }
-    result = checkCmdLineOpts (out, *comm, opts);
-    if (result != 0) {
-      return EXIT_FAILURE;
-    }
-  }
-
-  out << "Command-line options:" << endl;
-  printCmdLineOpts (out, opts);
-
-  auto G = getTpetraGraph (comm, opts);
-  auto A = getTpetraBlockCrsMatrix (out, G, opts);
-  Tpetra::Vector<> X (A->getDomainMap ());
-  Tpetra::Vector<> Y (A->getRangeMap ());
-
-  // Fill X with values that don't increase the max-norm of results.
-  // That way, repeated mat-vecs won't overflow.  This matters because
-  // some processors do a silly thing and handle Inf or NaN (or even
-  // denorms) via traps.  This is very expensive, so if the norms
-  // increase or decrease a lot, that might trigger the slow case.
-  const SC X_val = static_cast<SC> (1.0) /
-    static_cast<SC> (opts.numEntPerRow * opts.blockSize);
-  X.putScalar (X_val);
-  Y.putScalar (0.0);
-
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   bool success = true;
-  if (opts.runTest) {
-    const bool lclSuccess = compareLocalMatVec (out, *A, X, Y);
-    success = success && lclSuccess;
-  }
-  else {
-    auto timer =
-      TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
+  {
+    auto comm = Tpetra::getDefaultComm ();
+
+    // Output stream 'out' will ignore output not from Process 0.
+    RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
+    Teuchos::FancyOStream& out = *pOut;
+
+    // Read command-line options into the 'opts' struct.
+    CmdLineOpts opts;
     {
-      TimeMonitor timeMon (*timer);
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        A->apply (X, Y);
+      Teuchos::CommandLineProcessor clp;
+      setCmdLineOpts (opts, clp);
+      int result = parseCmdLineOpts (clp, argc, argv);
+      if (result == 1) { // help printed
+	return EXIT_SUCCESS;
+      }
+      else if (result == -1) { // parse error
+	return EXIT_FAILURE;
+      }
+      result = checkCmdLineOpts (out, *comm, opts);
+      if (result != 0) {
+	return EXIT_FAILURE;
       }
     }
-  }
 
-  if (! opts.runTest) {
-    TimeMonitor::report (comm.ptr (), out);
+    out << "Command-line options:" << endl;
+    printCmdLineOpts (out, opts);
+
+    auto G = getTpetraGraph (comm, opts);
+    auto A = getTpetraBlockCrsMatrix (out, G, opts);
+    Tpetra::Vector<> X (A->getDomainMap ());
+    Tpetra::Vector<> Y (A->getRangeMap ());
+
+    // Fill X with values that don't increase the max-norm of results.
+    // That way, repeated mat-vecs won't overflow.  This matters
+    // because some processors do a silly thing and handle Inf or NaN
+    // (or even denorms) via traps.  This is very expensive, so if the
+    // norms increase or decrease a lot, that might trigger the slow
+    // case.
+    const SC X_val = static_cast<SC> (1.0) /
+      static_cast<SC> (opts.numEntPerRow * opts.blockSize);
+    X.putScalar (X_val);
+    Y.putScalar (0.0);
+
+    if (opts.runTest) {
+      const bool lclSuccess = compareLocalMatVec (out, *A, X, Y);
+      success = success && lclSuccess;
+    }
+    else {
+      auto timer =
+	TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
+      {
+	TimeMonitor timeMon (*timer);
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  A->apply (X, Y);
+	}
+      }
+    }
+
+    if (! opts.runTest) {
+      TimeMonitor::report (comm.ptr (), out);
+    }
   }
+  
   if (success) {
     return EXIT_SUCCESS;
   }
