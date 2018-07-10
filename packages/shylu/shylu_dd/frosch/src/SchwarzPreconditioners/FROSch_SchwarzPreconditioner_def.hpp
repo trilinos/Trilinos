@@ -68,13 +68,13 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isInitialized() const
     {
-        return IsInitialized_;
+        return IsInitialized_; // TODO: Das hat noch keine Bedeutung
     }
     
     template <class SC,class LO,class GO,class NO>
     bool SchwarzPreconditioner<SC,LO,GO,NO>::isComputed() const
     {
-        return IsComputed_;
+        return IsComputed_; // TODO: Das hat noch keine Bedeutung
     }
     
 }

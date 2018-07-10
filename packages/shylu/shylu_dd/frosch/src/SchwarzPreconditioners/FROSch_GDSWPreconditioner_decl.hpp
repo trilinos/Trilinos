@@ -42,6 +42,8 @@
 #ifndef _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 #define _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 
+#include <string>
+
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 
@@ -60,71 +62,71 @@ namespace FROSch {
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
 
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GDSWCoarseOperatorPtr GDSWCoarseOperatorPtr;
         
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
         
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         
         
         GDSWPreconditioner(CrsMatrixPtr k,
                            ParameterListPtr parameterList);
-        
-        int initialize();
-        
-        int initialize(bool useDefaultParameters);
+                
+        int initialize(bool useDefaultParameters = true);
         
         int initialize(MapPtr repeatedMap,
                        bool useDefaultParameters = true);
         
-        int initialize(GOVecPtr &localDirichletBoundaryDofs,
+        int initialize(GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
         
         int initialize(MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs,
+                       GOVecPtr &dirichletBoundaryDofs,
                        bool useDefaultParameters = true);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs);
+                       GOVecPtr &dirichletBoundaryDofs);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs);
+                       GOVecPtr &dirichletBoundaryDofs);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       SCVecPtr2D &localNodeList);
+                       MultiVectorPtr &nodeList);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
-                       GOVecPtr &localDirichletBoundaryDofs,
-                       SCVecPtr2D &localNodeList);
+                       GOVecPtr &dirichletBoundaryDofs,
+                       MultiVectorPtr &nodeList);
         
         int compute();
         
