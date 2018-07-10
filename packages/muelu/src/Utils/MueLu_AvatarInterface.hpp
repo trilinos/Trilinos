@@ -55,6 +55,12 @@
 
 
 #ifdef HAVE_MUELU_AVATAR
+
+
+// Forward declaration
+struct Avatar_struct;
+typedef struct Avatar_struct Avatar_handle;
+
 namespace MueLu {
 
   /*! @class 
@@ -82,6 +88,8 @@ namespace MueLu {
     // Calls Avatar to set MueLu Parameters
     void SetMueLuParameters(const Teuchos::ParameterList & problemFeatures, Teuchos::ParameterList & mueluParams, bool overwrite=true) const;
 
+    // Clean up the handle
+    void Cleanup();
 
   private:
     // Utility functions
@@ -92,16 +100,14 @@ namespace MueLu {
     void GenerateMueLuParametersFromIndex(int id,Teuchos::ParameterList & pl) const;
     void UnpackMueLuMapping();
 
-    // FIXME: Placeholder for an actual Avatar thing
-    typedef int Avatar;
-
-
     // Cached data
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::ParameterList params_;
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
-    Teuchos::RCP<Avatar> avatarHandle_;
+
+    // RCP's don't handle opaque pointers well
+    Avatar_handle * avatarHandle_;
 
     Teuchos::Array<std::string> mueluParameterName_;
     Teuchos::Array<std::string> avatarParameterName_;
