@@ -45,7 +45,6 @@
 #define ROL_SKETCH_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_RandomVector.hpp"
 #include "ROL_LinearAlgebra.hpp"
 #include "ROL_LAPACK.hpp"
 #include "ROL_Types.hpp"
@@ -169,9 +168,10 @@ private:
   }
 
   void reset(void) {
+    const Real one(1);
     // Randomize Psi and Omega and zero W and Y
     for (int i = 0; i < l_; ++i) {
-      RandomizeVector(*Psi_[i]);
+      Psi_[i]->randomize(-one,one);
       for (int j = 0; j < ncol_; ++j) {
         W_(i,j) = static_cast<Real>(0);
       }
@@ -259,7 +259,7 @@ public:
     LA::Matrix<Real> V(ncol_,rank);
     for (int i = 0; i < rank; ++i) {
       U[i] = Y_[0]->clone();
-      RandomizeVector(*U[i]);
+      U[i]->randomize(-one,one);
       for (int j = 0; j < ncol_; ++j) {
         V(j,i) = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
       }
