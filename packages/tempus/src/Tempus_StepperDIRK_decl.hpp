@@ -135,6 +135,10 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
+    
+  /// Pass initial guess to Newton solver 
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -176,6 +180,9 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 

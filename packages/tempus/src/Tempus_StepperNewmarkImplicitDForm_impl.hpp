@@ -293,9 +293,22 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     // inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(v_pred, d_pred, dt, t, beta_, gamma_);
     
-    // create copies of d_pred, for use as initial guess in NOX solver
+    // create initial guess in NOX solver
     RCP<Thyra::VectorBase<Scalar>> initial_guess = Thyra::createMember(d_pred->space());
-    Thyra::copy(*d_pred, initial_guess.ptr());
+    if ((time == solutionHistory->minTime()) && (initial_guess_ != Teuchos::null)) {
+      //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_ 
+      //Throw an exception if initial_guess is not compatible with solution 
+      bool is_compatible = (d_pred->space())->isCompatible(*initial_guess->space()); 
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          is_compatible != true, std::logic_error,
+            "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"
+            << "for Newton is not compatible with solution vector!\n"); 
+      Thyra::copy(*initial_guess_, initial_guess.ptr());
+    }
+    else {
+      //Otherwise, set initial guess = diplacement predictor 
+      Thyra::copy(*d_pred, initial_guess.ptr());
+    }
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
     const Thyra::SolveStatus<Scalar> status =

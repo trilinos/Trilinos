@@ -70,6 +70,10 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
+
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
     virtual Scalar getOrder()    const
@@ -158,6 +162,8 @@ protected:
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
   Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 } // namespace Tempus
