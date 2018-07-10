@@ -1591,7 +1591,9 @@ int main(int argc, char *argv[]) {
       regProlong[0] = fineLevelProlong;
     }
 
-    // Get coarse level matrices and prolongators from MueLu hierarchy (Note: fine level has been dealt with previously)
+    /* Get coarse level matrices and prolongators from MueLu hierarchy
+     * Note: fine level has been dealt with previously, so we start at level 1 here.
+     */
     for (int l = 1; l < numLevels; ++l) { // Note: we start at level 1 (which is the first coarse level)
       for (int j = 0; j < maxRegPerProc; ++j) {
         RCP<MueLu::Level> level = regGrpHierarchy[j]->GetLevel(l);
@@ -2031,7 +2033,7 @@ int main(int argc, char *argv[]) {
           TEUCHOS_ASSERT(err == 0);
 
 //          sleep(1);
-//          std::cout << myRank << " | Printing the tranpose ..." << std::endl;
+//          std::cout << myRank << " | Printing the transpose ..." << std::endl;
 //          Comm.Barrier();
 //          transDuplicateMapping->Print(std::cout);
         }
