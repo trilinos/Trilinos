@@ -2172,7 +2172,7 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Computing interface scaling factors ..." << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!numLevels>0, "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
 
     for (int l = 0; l < numLevels; l++)
     {
@@ -2202,7 +2202,7 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!numLevels>0, "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
 
     /* We first use the non-level container variables to setup the fine grid problem.
      * This is ok since the initial setup just mimics the application and the outer
