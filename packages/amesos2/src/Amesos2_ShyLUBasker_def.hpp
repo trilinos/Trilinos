@@ -80,9 +80,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   // Override some default options
   // TODO: use data_ here to init
-   
-  
-#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental ShyLUBasker Amesos2");
@@ -113,11 +111,10 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 template <class Matrix, class Vector>
 ShyLUBasker<Matrix,Vector>::~ShyLUBasker( )
 {  
-#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_HAVE_OPENMP)
+  /* ShyLUBasker will cleanup its own internal memory*/
+#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   delete ShyLUbasker;
 #endif
- 
-  /* ShyLUBasker will cleanup its own internal memory*/
 }
 
 template <class Matrix, class Vector>

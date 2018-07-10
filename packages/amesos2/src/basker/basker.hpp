@@ -45,8 +45,8 @@
 #define BASKERFREE(ptr)
 
 #else
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 
 #define BASKERASSERT(a) assert(a)
 #define BASKERREALLOC(ptr, size) realloc(ptr, size)

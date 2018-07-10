@@ -203,7 +203,6 @@ Basker<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-
         ierr = basker.solveMultiple(nrhs, b_vector, x_vector);
       }
 
@@ -342,13 +341,6 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
   #endif
-  // NDE: Can clean up duplicated code with the #ifdef guards
-  if ( single_proc_optimization() ) {
-  // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
-  // In this case, colptr_, rowind_, nzvals_ are invalid
-  }
-  else 
-  {
 
   // Only the root image needs storage allocated
   if( this->root_ ){
@@ -381,7 +373,6 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Amesos2_Basker loadA_impl: Did not get the expected number of non-zero vals");
-  }
   }
   return true;
 }

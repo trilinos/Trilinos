@@ -33,9 +33,9 @@
 #include "basker_scalartraits.hpp"
 //#include "basker.hpp"
 
-//#include <assert.h>
+//#include <cassert>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 
 using namespace std;
 
