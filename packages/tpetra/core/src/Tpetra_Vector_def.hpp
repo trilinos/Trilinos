@@ -59,6 +59,12 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector ()
+    : base_type ()
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const bool zeroOut)
     : base_type (map, 1, zeroOut)
