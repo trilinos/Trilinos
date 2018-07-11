@@ -129,7 +129,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
 
   using Tpetra::createContigMapWithNode;
@@ -3768,7 +3767,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4131,7 +4130,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4216,7 +4215,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4331,7 +4330,7 @@ namespace {
     Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
     Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int numProcs = comm->getSize ();
 
     // Create a Map that puts nothing on Process 0 and something on

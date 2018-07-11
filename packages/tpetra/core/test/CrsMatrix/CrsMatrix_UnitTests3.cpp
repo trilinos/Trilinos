@@ -41,17 +41,9 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-// mfh 08 Mar 2013: This include isn't being used here, so I'm
-// commenting it out to speed up compilation time.
-//#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -100,24 +92,15 @@ namespace {
       testingTol();
   }
 
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
-
   using std::endl;
-  using std::swap;
-
-  using std::string;
 
   using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
-  using Teuchos::arcp;
   using Teuchos::outArg;
-  using Teuchos::arcpClone;
   using Teuchos::arrayView;
-  using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
@@ -127,9 +110,9 @@ namespace {
   using Teuchos::null;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
-  using Teuchos::VERB_MEDIUM;
-  using Teuchos::VERB_HIGH;
-  using Teuchos::VERB_EXTREME;
+  //using Teuchos::VERB_MEDIUM;
+  //using Teuchos::VERB_HIGH;
+  //using Teuchos::VERB_EXTREME;
   using Teuchos::ETransp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
@@ -156,12 +139,8 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-  // mfh 08 Mar 2013: This isn't being used here, so I'm commenting it
-  // out to save compilation time.
-  //using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -173,7 +152,7 @@ namespace {
 
 
   double errorTolSlack = 1e+1;
-  string filedir;
+  std::string filedir;
 
 template <class tuple, class T>
 inline void tupleToArray(Array<T> &arr, const tuple &tup)
@@ -227,15 +206,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyFillComplete, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef CrsGraph<LO,GO,Node>  GRPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create a Map with numLocal entries per node
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    // create a Map with numLocal entries per process
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
@@ -273,19 +251,18 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, CopiesAndViews, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numImages = size(*comm);
     const size_t myImageID = rank(*comm);
     if (numImages < 2) return;
     // create a Map, one row per processor
     const size_t numLocal = 1;
-    RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     GO myrowind = rmap->getGlobalElement(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
@@ -304,7 +281,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       tupleToArray( linds , tuple<LO>(0,1,2) );
     }
     Array<Scalar> vals(ginds.size(),ST::one());
-    RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm,node) );
+    RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
@@ -348,7 +325,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       //
       STD_TESTS(rowmatrix);
     }
-    // All procs fail if any node fails
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -362,8 +339,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     out << "CrsMatrix Transpose test" << endl;
     Teuchos::OSTab tab0 (out);
 
-    RCP<Node> node = getNode<Node>();
-
     // this is the same matrix as in test NonSquare, but we will apply the transpose
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -373,7 +348,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int M = 3;
     const int P = 5;
     const int N = comm->getSize();
@@ -422,8 +397,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     out << "Construct Maps" << endl;
     const int numVecs = 3;
-    RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
-    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
+    RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO,Node>(INVALID,M,comm);
+    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm);
 
     // create the matrix
     out << "Create matrix" << endl;
@@ -438,7 +413,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     out << "Call fillComplete on the matrix" << endl;
     TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete (lclmap, rowmap);
-    A.describe (out, Teuchos::VERB_LOW);
+    A.describe (out, VERB_LOW);
 
     out << "Build input and output multivectors" << endl;
 
