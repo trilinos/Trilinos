@@ -124,7 +124,7 @@ int main( int argc, char* argv[] ) {
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
-    ROL::ParameterList &rpl = pl->sublist("Reduced Dynamic Objective");
+    ROL::ParameterList &rpl = pl_ptr->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
 
