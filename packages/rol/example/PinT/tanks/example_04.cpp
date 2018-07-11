@@ -118,16 +118,15 @@ int main( int argc, char* argv[] ) {
     ROL::Ptr<Tanks::StateVector<RealT>> ck = Tanks::StateVector<RealT>::create(*pl_ptr, "Constraint");
 
     // Construct reduced dynamic objective
-    bool useSketch = pl_ptr->get("Use Sketching",false);
-    int  rank      = pl_ptr->get("Sketch Rank",10);
     std::vector<ROL::TimeStamp<RealT>> timeStamp(Nt);
     for( size_type k=0; k<Nt; ++k ) {
       timeStamp.at(k).t.resize(2);
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
+    ROL::ParameterList &rpl = pl->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, useSketch, rank);
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
 
     // Check gradient of reduced dynamic objective
     obj->checkGradient(*z,*dz,true,*outStream);

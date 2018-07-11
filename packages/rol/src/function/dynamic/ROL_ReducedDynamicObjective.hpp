@@ -59,7 +59,7 @@
     This objective function implements the implicitly defined objective
     function given by
     \f[
-       F(z) := \sum_{n=1}^{N_t} f_n(u_{n-1},u_n(z),z_n)
+       F(z) := \sum_{n=1}^{N_t} f_n(u_{n-1}(z),u_n(z),z_n)
     \f]
     where \f$f_n:\mathcal{U}\times\mathcal{U}\times\mathcal{Z}\to\mathbb{R}\f$,
     and \f$u_n\in\mathcal{U}\f$ solves the system of equations
@@ -76,30 +76,39 @@ template<typename Real>
 class ReducedDynamicObjective : public Objective<Real> {
   using size_type = typename std::vector<Real>::size_type;
 private:
+  // Problem data.
   const Ptr<DynamicObjective<Real>>  obj_;
   const Ptr<DynamicConstraint<Real>> con_;
   const Ptr<Vector<Real>>            u0_;
   const std::vector<TimeStamp<Real>> timeStamp_;
   const size_type                    Nt_;
+  // General sketch information.
   const bool                         useSketch_;
-  const int                          rank_;
+  // State sketch information.
+  const int                          rankState_;
   Ptr<Sketch<Real>>                  stateSketch_;
+  // Adjoint sketch information.
+  const int                          rankAdjoint_;
   Ptr<Sketch<Real>>                  adjointSketch_;
+  // State sensitivity sketch information.
+  const int                          rankStateSens_;
   Ptr<Sketch<Real>>                  stateSensSketch_;
-  std::vector<Ptr<Vector<Real>>>     uhist_;
-  std::vector<Ptr<Vector<Real>>>     lhist_;
-  std::vector<Ptr<Vector<Real>>>     whist_;
-  std::vector<Ptr<Vector<Real>>>     phist_;
-  Ptr<Vector<Real>>                  cprimal_;
-  Ptr<Vector<Real>>                  crhs_;
-  Ptr<Vector<Real>>                  udual_;
-  Ptr<Vector<Real>>                  rhs_;
-  Ptr<Vector<Real>>                  zdual_;
-  Real                               val_;
-  bool                               isValueComputed_;
-  bool                               isStateComputed_;
-  bool                               isAdjointComputed_;
-  bool                               useHessian_;
+  // Vector storage for intermediate computations.
+  std::vector<Ptr<Vector<Real>>>     uhist_;              // State history.
+  std::vector<Ptr<Vector<Real>>>     lhist_;              // Adjoint history.
+  std::vector<Ptr<Vector<Real>>>     whist_;              // State sensitivity history.
+  std::vector<Ptr<Vector<Real>>>     phist_;              // Adjoint sensitivity history.
+  Ptr<Vector<Real>>                  cprimal_;            // Primal constraint vector.
+  Ptr<Vector<Real>>                  crhs_;               // Primal constraint vector.
+  Ptr<Vector<Real>>                  udual_;              // Dual state vector.
+  Ptr<Vector<Real>>                  rhs_;                // Dual state vector.
+  Ptr<Vector<Real>>                  zdual_;              // Dual control vector.
+  Real                               val_;                // Objective function value.
+  // Flags.
+  bool                               isValueComputed_;    // Whether objective has been evaluated.
+  bool                               isStateComputed_;    // Whether state has been solved.
+  bool                               isAdjointComputed_;  // Whether adjoint has been solved.
+  bool                               useHessian_;         // Whether to use Hessian or FD.
 
   PartitionedVector<Real>& partition ( Vector<Real>& x ) const {
     return static_cast<PartitionedVector<Real>&>(x);
@@ -116,24 +125,32 @@ public:
                           const Ptr<Vector<Real>>            &zvec,
                           const Ptr<Vector<Real>>            &cvec,
                           const std::vector<TimeStamp<Real>> &timeStamp,
-                          const bool                          useSketch  = false,
-                          const int                           rank       = 10,
-                          const bool                          useHessian = true)
-    : obj_(obj), con_(con), u0_(u0), timeStamp_(timeStamp),
-      Nt_(timeStamp.size()), useSketch_(useSketch), rank_(rank),
-      stateSketch_(nullPtr), adjointSketch_(nullPtr),
-      isValueComputed_(false),
-      isStateComputed_(false), isAdjointComputed_(false),
-      useHessian_(useHessian) {
+                          ROL::ParameterList                 &pl)
+    : obj_                ( obj ),                                     // Dynamic objective function.
+      con_                ( con ),                                     // Dynamic constraint function.
+      u0_                 ( u0 ),                                      // Initial condition.
+      timeStamp_          ( timeStamp ),                               // Vector of time stamps.
+      Nt_                 ( timeStamp.size() ),                        // Number of time intervals.
+      useSketch_          ( pl.get("Use Sketching",          true) ),  // Use state sketch if true.
+      rankState_          ( pl.get("State Rank",               10) ),  // Rank of state sketch.
+      stateSketch_        ( nullPtr ),                                 // State sketch object.
+      rankAdjoint_        ( pl.get("Adjoint Rank",             10) ),  // Rank of adjoint sketch.
+      adjointSketch_      ( nullPtr ),                                 // Adjoint sketch object.
+      rankStateSens_      ( pl.get("State Sensitivity Rank",   10) ),  // Rank of state sensitivity sketch.
+      stateSensSketch_    ( nullPtr ),                                 // State sensitivity sketch object.
+      isValueComputed_    ( false ),                                   // Flag indicating whether value has been computed.
+      isStateComputed_    ( false ),                                   // Flag indicating whether state has been computed.
+      isAdjointComputed_  ( false ),                                   // Flag indicating whether adjoint has been computed.
+      useHessian_         ( pl.get("Use Hessian",            true) ) { // Flag indicating whether to use the Hessian.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
-      stateSketch_     = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_),rank_);
+      stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_);
       uhist_.push_back(u0_->clone());
       uhist_.push_back(u0_->clone());
       lhist_.push_back(cvec->dual().clone());
+      adjointSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankAdjoint_);
       if (useHessian_) {
-        adjointSketch_   = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_),rank_);
-        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_),rank_);
+        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankStateSens_);
         whist_.push_back(u0_->clone());
         whist_.push_back(u0_->clone());
         phist_.push_back(cvec->dual().clone());
@@ -165,6 +182,9 @@ public:
       stateSketch_->update();
       if (flag == true) {
         adjointSketch_->update();
+        if (useHessian_) {
+          stateSensSketch_->update();
+        }
       }
     }
     for (size_type i = 0; i < uhist_.size(); ++i) {
@@ -185,7 +205,8 @@ public:
       // Set initial condition
       uhist_[0]->set(*u0_);
       if (useSketch_) {
-        stateSketch_->advance(one,*uhist_[0],0,one);
+        stateSketch_->update();
+        //stateSketch_->advance(one,*uhist_[0],0,one);
       }
       // Run time stepper
       Real valk(0);
@@ -200,7 +221,7 @@ public:
         val_ += valk;
         // Sketch state
         if (useSketch_) {
-          stateSketch_->advance(one,*uhist_[1],static_cast<int>(k),one);
+          stateSketch_->advance(one,*uhist_[1],static_cast<int>(k)-1,one);
           uhist_[0]->set(*uhist_[1]);
         }
       }
@@ -222,21 +243,21 @@ public:
     if (!isAdjointComputed_) {
       if (useSketch_) {
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-2);
+        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
       }
       // Solve for terminal condition
       setTerminalCondition(*lhist_[lindex],
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
       if (useSketch_) {
-        adjointSketch_->advance(one,*lhist_[0],static_cast<int>(Nt_)-1,one);
+        adjointSketch_->advance(one,*lhist_[0],static_cast<int>(Nt_)-2,one);
       }
     }
     else {
       if (useSketch_) {
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-2);
-        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-1);
+        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
       }
     }
     // Update gradient on terminal interval
@@ -261,7 +282,7 @@ public:
             uhist_[0]->set(*u0_);
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-1);
+            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
           }
         }
         // Solve for adjoint on interval k
@@ -269,7 +290,7 @@ public:
                        *uhist_[uindex-1], *uhist_[uindex],
                        *xp.get(k),        timeStamp_[k]);
         if (useSketch_) {
-          adjointSketch_->advance(one,*lhist_[0],static_cast<int>(k),one);
+          adjointSketch_->advance(one,*lhist_[0],static_cast<int>(k)-1,one);
         }
       }
       else {
@@ -279,9 +300,9 @@ public:
             uhist_[0]->set(*u0_);
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-1);
+            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
           }
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k));
+          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
         }
       }
       // Update gradient on interval k
@@ -305,7 +326,8 @@ public:
       // Compute state sensitivity
       whist_[0]->zero();
       if (useSketch_) {
-        stateSensSketch_->advance(one,*whist_[0],0,one);
+        stateSensSketch_->update();
+        //stateSensSketch_->advance(one,*whist_[0],0,one);
         uhist_[0]->set(*u0_);
       }
       size_type uindex, lindex;
@@ -314,8 +336,8 @@ public:
         lindex = (useSketch_ ? 0 : k);
         // Reconstruct sketched state
         if (useSketch_) {
-          stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k));
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k));
+          stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k)-1);
+          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
         }
         // Advance state sensitivity on current time interval
         advanceStateSens(*whist_[uindex],
@@ -334,7 +356,7 @@ public:
                         *xp.get(k),        timeStamp_[k]);
         // Sketch state sensitivity
         if (useSketch_) {
-          stateSensSketch_->advance(one,*whist_[1],static_cast<int>(k),one);
+          stateSensSketch_->advance(one,*whist_[1],static_cast<int>(k)-1,one);
           whist_[0]->set(*whist_[1]);
           uhist_[0]->set(*uhist_[1]);
         }
@@ -346,12 +368,12 @@ public:
       if (useSketch_) {
         // Recover terminal state
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-2);
+        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
         // Recover terminal adjoint
-        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-1);
+        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
         // Recover terminal state sensitivity
         whist_[1]->set(*whist_[0]);
-        stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(Nt_)-2);
+        stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(Nt_)-3);
       }
       // Solve for terminal condition
       setTerminalConditionHess(*phist_[lindex],
@@ -389,10 +411,10 @@ public:
             whist_[0]->zero();
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-1);
-            stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(k)-1);
+            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+            stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(k)-2);
           }
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k));
+          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
         }
         uindex = (useSketch_ ? 1 : k);
         lindex = (useSketch_ ? 0 : k);
@@ -433,7 +455,7 @@ private:
       // Set initial condition
       uhist_[0]->set(*u0_);
       if (useSketch_) {
-        stateSketch_->advance(one,*uhist_[0],0,one);
+        //stateSketch_->advance(one,*uhist_[0],0,one);
       }
       // Run time stepper
       Real valk(0);
@@ -444,7 +466,7 @@ private:
         con_->solve(*cprimal_, *uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Sketch state
         if (useSketch_) {
-          stateSketch_->advance(one,*uhist_[index],static_cast<int>(k),one);
+          stateSketch_->advance(one,*uhist_[index],static_cast<int>(k)-1,one);
           uhist_[index-1]->set(*uhist_[index]);
         }
       }
@@ -490,14 +512,14 @@ private:
       // Recover state from sketch
       if (useSketch_) {
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-2);
+        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
       }
       // Solve for terminal condition
       setTerminalCondition(*lhist_[lindex],
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
       if (useSketch_) {
-        adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(Nt_)-1,one);
+        adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(Nt_)-2,one);
       }
       // Run reverse time stepper
       for (size_type k = Nt_-2; k > 0; --k) {
@@ -512,7 +534,7 @@ private:
             uhist_[0]->set(*u0_);
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-1);
+            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
           }
         }
         uindex = (useSketch_ ? 1 : k);
@@ -522,7 +544,7 @@ private:
                        *uhist_[uindex-1], *uhist_[uindex],
                        *xp.get(k),        timeStamp_[k]);
         if (useSketch_) {
-          adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(k),one);
+          adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(k)-1,one);
         }
       }
       isAdjointComputed_ = true;

@@ -411,10 +411,10 @@ public:
 
     // Update approximate gradient and approximate objective function.
     obj.update(x,true,algo_state.iter);    
-    updateGradient(x,obj,bnd,algo_state);
     algo_state.snorm = oe10;
     algo_state.value = obj.value(x,ftol); 
     algo_state.nfval++;
+    updateGradient(x,obj,bnd,algo_state);
 
     // Try to apply inverse Hessian
     if ( !useSecantHessVec_ &&

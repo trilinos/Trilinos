@@ -77,10 +77,12 @@ private:
     Real rii(0), rij(0);
     for (int i = 0; i < k_; ++i) {
       rii = Y[i]->norm();
-      Y[i]->scale(one/rii);
-      for (int j = i+1; j < k_; ++j) {
-        rij = Y[i]->dot(*Y[j]);
-        Y[j]->axpy(-rij,*Y[i]);
+      if (rii > ROL_EPSILON<Real>()) { // Ignore update if Y[i] is zero.
+        Y[i]->scale(one/rii);
+        for (int j = i+1; j < k_; ++j) {
+          rij = Y[i]->dot(*Y[j]);
+          Y[j]->axpy(-rij,*Y[i]);
+        }
       }
     }
   }

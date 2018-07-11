@@ -75,8 +75,10 @@
 #include "ROL_DynamicObjectiveCheck.hpp"
 
 #include <iostream>
+#include <fenv.h>
 
 int main(int argc, char *argv[]) {
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
   using uint  = std::vector<RealT>::size_type;
 
@@ -93,8 +95,6 @@ int main(int argc, char *argv[]) {
     uint nx        = pl->get("Spatial Discretization",     64); // Set spatial discretization.
     uint nt        = pl->get("Temporal Discretization",   100); // Set temporal discretization.
     RealT T        = pl->get("End Time",                  1.0); // Set end time.
-    bool useSketch = pl->get("Use Sketching",           false); // Use randomized sketching.
-    int  rank      = pl->get("Sketch Rank",                10); // Rank of random sketch.
     RealT dt       = T/(static_cast<RealT>(nt)-1.0);
 
     // Initialize objective function.
@@ -137,8 +137,9 @@ int main(int argc, char *argv[]) {
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
+    ROL::ParameterList &rpl = pl->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, useSketch, rank);
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
 
     // Check gradient of reduced dynamic objective
     obj->checkGradient(*z,*dz,true,*outStream);
