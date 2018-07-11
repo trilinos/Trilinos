@@ -57,7 +57,6 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Map.hpp>
 
@@ -82,7 +81,7 @@ namespace Amesos2 {
     typedef int                                            local_ordinal_t;
     typedef int                                           global_ordinal_t;
     typedef size_t                                           global_size_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_t;
+    typedef Tpetra::Map<>::node_type  node_t;
     typedef Epetra_MultiVector                                  multivec_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<>(Teuchos::RCP<multivec_t>);

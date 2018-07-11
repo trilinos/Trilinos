@@ -8,7 +8,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_Array.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -24,7 +24,7 @@ void process_command_line(int argc, char*argv[], std::string& xml_file);
 int main(int argc, char *argv[])
 {
 
-  Teuchos::GlobalMPISession mpisess(&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   bool success = true;
 
   Teuchos::RCP<Teuchos::FancyOStream>
@@ -35,13 +35,10 @@ int main(int argc, char *argv[])
       Teuchos::Time timer("total");
       timer.start();
 
-      Tpetra::DefaultPlatform::DefaultPlatformType& platform = 
-	Tpetra::DefaultPlatform::getDefaultPlatform();
-      
       typedef double Scalar;
       typedef Tpetra::Map<>::local_ordinal_type LO;
       typedef Tpetra::Map<>::global_ordinal_type GO;
-      typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+      typedef Tpetra::Map<>::node_type Node;
       typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
       typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
 
@@ -50,8 +47,7 @@ int main(int argc, char *argv[])
       
 
 
-      Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-      Teuchos::RCP<Node>                      node = platform.getNode();
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
       std::string xml_file("shylubasker_test1_mm.xml");
       process_command_line(argc, argv, xml_file);
@@ -79,8 +75,7 @@ int main(int argc, char *argv[])
      
       Teuchos::RCP<crs_matrix_type> A = 
 	Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile(mm_file,
-								     comm,
-								     node);
+								      comm);
 
       *out << "Done reading matrix market file" << std::endl;
       

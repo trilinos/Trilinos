@@ -48,7 +48,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
@@ -62,14 +62,13 @@
 
 
 int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
   typedef double Scalar;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
   typedef double Scalar;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
@@ -84,8 +83,7 @@ int main(int argc, char *argv[]) {
   //
   // Get the default communicator
   //
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int myRank  = comm->getRank();
 
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
