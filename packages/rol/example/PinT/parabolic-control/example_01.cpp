@@ -92,10 +92,11 @@ int main(int argc, char *argv[]) {
   try {
     // Parse input parameter list
     ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
-    uint nx        = pl->get("Spatial Discretization",     64); // Set spatial discretization.
-    uint nt        = pl->get("Temporal Discretization",   100); // Set temporal discretization.
-    RealT T        = pl->get("End Time",                  1.0); // Set end time.
-    RealT dt       = T/(static_cast<RealT>(nt)-1.0);
+    bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+    uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
+    uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
+    RealT T         = pl->get("End Time",                  1.0); // Set end time.
+    RealT dt        = T/(static_cast<RealT>(nt)-1.0);
 
     // Initialize objective function.
     ROL::Ptr<ROL::DynamicObjective<RealT>> dyn_obj
@@ -106,29 +107,12 @@ int main(int argc, char *argv[]) {
     // Create control vectors.
     ROL::Ptr<ROL::StdVector<RealT>>         zk = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx+2));
     ROL::Ptr<ROL::PartitionedVector<RealT>>  z = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    ROL::Ptr<ROL::PartitionedVector<RealT>> dz = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    for (uint i = 0; i < nt; ++i) {
-      z->get(i)->randomize();
-      dz->get(i)->randomize();
-      hz->get(i)->randomize();
-    }
 
-    // Create state vectors.
+    // Create initial state vector.
     ROL::Ptr<ROL::StdVector<RealT>> u0 = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx,0.0));
-    ROL::Ptr<ROL::StdVector<RealT>> uo = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx));
-    ROL::Ptr<ROL::StdVector<RealT>> un = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx));
 
     // Create constraint vector.
     ROL::Ptr<ROL::StdVector<RealT>> ck = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx,0.0));
-
-    // Dynamic interface derivative checks.
-    uo->randomize();
-    un->randomize();
-    zk->randomize();
-    ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
-    ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
-    ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
 
     // Construct reduced dynamic objective
     std::vector<ROL::TimeStamp<RealT>> timeStamp(nt);
@@ -141,10 +125,25 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
 
-    // Check gradient of reduced dynamic objective
-    obj->checkGradient(*z,*dz,true,*outStream);
-    obj->checkHessVec(*z,*dz,true,*outStream);
-    obj->checkHessSym(*z,*dz,*hz,true,*outStream);
+    // Check derivatives for dynamic interface and reduced dynamic objective
+    if (derivCheck) {
+      ROL::Ptr<ROL::PartitionedVector<RealT>> dz = ROL::PartitionedVector<RealT>::create(*zk, nt);
+      ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
+      ROL::Ptr<ROL::StdVector<RealT>> uo = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx));
+      ROL::Ptr<ROL::StdVector<RealT>> un = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx));
+      zk->randomize();
+      z->randomize();
+      dz->randomize();
+      hz->randomize();
+      uo->randomize();
+      un->randomize();
+      ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
+      ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
+      ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
+      obj->checkGradient(*z,*dz,true,*outStream);
+      obj->checkHessVec(*z,*dz,true,*outStream);
+      obj->checkHessSym(*z,*dz,*hz,true,*outStream);
+    }
 
     // Set up optimization problem
     ROL::Ptr<ROL::ParameterList> pl_rol = ROL::getParametersFromXmlFile("input_rol.xml");

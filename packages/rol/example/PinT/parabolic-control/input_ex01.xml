@@ -1,4 +1,5 @@
 <ParameterList name="Example 01">
+  <Parameter name="Derivative Check"        type="bool"     value="true"  />
   <!--================================================================================--> 
   <!-- Physical Parameters                                                            --> 
   <Parameter name="Diffusion Scale"         type="double"   value="0.5"   />
