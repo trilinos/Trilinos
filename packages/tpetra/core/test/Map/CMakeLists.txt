@@ -72,18 +72,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# Tpetra bug 5401:
-# https://software.sandia.gov/bugzilla/show_bug.cgi?id=5401
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  NegativeBaseIndexTest
-  SOURCES
-    NegativeBaseIndexTest
-  ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
-  )
-
 # mfh 26 Sep 2015: Not sure if this one needs GO = int.
 # It might be OK just to use the default GO type.
 # tjf 20 Oct 2016 modified to use default LO, GO, NT types
@@ -244,5 +232,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "FAILED:"
   )
+
+# Tpetra bug 5401:
+# https://software.sandia.gov/bugzilla/show_bug.cgi?id=5401
+#
+# This test requires signed GlobalOrdinal type.
+# It used to specify GlobalOrdinal=int, but this was unnecessary.
+IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_INT)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    NegativeBaseIndexTest
+    SOURCES
+      NegativeBaseIndexTest
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+ENDIF ()
 
 

@@ -377,10 +377,9 @@ int main (int argc, char* argv[]) {
     }
 #endif // HAVE_TPETRACORE_EPETRA
     if (runTpetra) {
-      benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase,
-			     tpetraComm,
-			     numMapCreateTrials, numImportCreateTrials,
-			     numVectorCreateTrials, numImportExecTrials);
+      benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
+                             numMapCreateTrials, numImportCreateTrials,
+                             numVectorCreateTrials, numImportExecTrials);
     }
     TimeMonitor::report (tpetraComm.ptr (), std::cout);
   }

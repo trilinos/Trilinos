@@ -155,7 +155,7 @@ namespace Tpetra {
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   getNode () const
   {
-    return KokkosClassic::Details::getNode<Tpetra::Details::DefaultTypes::node_type> ();
+    return Teuchos::rcp (new Tpetra::Details::DefaultTypes::node_type);
   }
 
 } // namespace Tpetra
