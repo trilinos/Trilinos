@@ -13,7 +13,8 @@
 // Struct representing a vertex label.
 // We define our own "addition" for these labels.
 // Later, we'll create a Tpetra::FEMultiVector of these labels.
-struct vtxLabel {
+class vtxLabel {
+public:
   int label;
   // Constructors
   vtxLabel(int y) { label = y; }
@@ -127,11 +128,11 @@ namespace Kokkos {
       static KOKKOS_FORCEINLINE_FUNCTION mag_type abs(const val_type &x) {
         return (x.label >= 0 ? x.label : -(x.label));
       }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type zero() { return 0; }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type one() { return 1; }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type min() { return INT_MIN; }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type max() { return INT_MAX; }
-      static KOKKOS_FORCEINLINE_FUNCTION val_type nan() { return -1; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type zero() { return 0; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type one() { return 1; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type min() { return INT_MIN; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type max() { return INT_MAX; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type nan() { return -1; }
     
       // Backwards compatibility with Teuchos::ScalarTraits.
       typedef mag_type magnitudeType;
@@ -240,8 +241,24 @@ public:
       gno_t gid = mapWithCopies->getGlobalElement(i);
       femv->replaceGlobalValue(gid, 0, gid);
       femv->replaceGlobalValue(gid, 1, me);
+      // Other useful calls for filling may be:
+      //   replaceLocalValue -- may be more efficient if storing edges using
+      //                        LIDs rather than GIDs
+      //   sumInto{Global,Local}Value -- may be able to exploit the overloaded
+      //                                 addition to propagate local labels
     }
     femv->endFill(); // communication and summation of copies is done in endFill
+                     // "Sums" contributions from all copies into the owned
+                     // vertex on the owning processor
+
+    // KDD:  need to test how ghost vertices are updated from owners.
+    // KDD:  femv->getMap()->doExport(femv, femv->getImporter(), 
+    // KDD:                           Tpetra::REPLACE);
+    // Would a Tpetra::ADD work here (adding the non-owned vertex to the 
+    // frontier if has significant change)?  Consider changing REPLACE to ADD.
+    // Sends the owner's result for each vertex to all of the copies of the
+    // vertex.  After this, all copies will have the same value as the owned
+    // vertex.
 
     // Print the resulting FEMultiVector
     // femv->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
@@ -418,7 +435,7 @@ int main(int narg, char **arg)
   // Test that the vtxLabel struct correctly overloads operators
   if (me == 0) 
     ierr += vtxLabelUnitTest();
-  
+
   // Now test Tpetra::FEMultiVector
   FEMultiVectorTest femvTest(comm);
 
