@@ -358,20 +358,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	}
 #endif
     }
-    pidgidpair_t * AllReverseRecv= new pidgidpair_t[totalexportpairrecsize];
-   
-    pidgidpair_t ** ReverseRecvBuffer  = new pidgidpair_t*[NumSends];
+    Teuchos::ArrayRCP<pidgidpair_t >AllReverseRecv= Teuchos::arcp(new pidgidpair_t[totalexportpairrecsize],0,totalexportpairrecsize);
     int offset = 0;
-    for(uint i=0;i<NumSends;++i) {
-	ReverseRecvBuffer[i] = AllReverseRecv+offset;
-	offset+=ReverseRecvSizes[i];
-    }
-
     for(int i=0;i<ProcsTo.size();++i) {
 	int recv_data_size = 	ReverseRecvSizes[i]*2;
 	int recvData_MPI_Tag = mpi_tag_base_*2 + ProcsTo[i];
 	MPI_Request rawRequest = MPI_REQUEST_NULL;
-	GO * rec_bptr= (GO*) (ReverseRecvBuffer[i]);
+	GO * rec_bptr = (GO*) (&AllReverseRecv[offset]);
+	offset+=ReverseRecvSizes[i];
 	MPI_Irecv(rec_bptr,
 		  recv_data_size,
 		  MPI_LONG_LONG_INT,
@@ -422,44 +416,28 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     }
 #endif
     
-    int totalforeignremotesize =0;
-    for(auto &&p : ReverseRecvSizes) {
-	totalforeignremotesize+=p;
-#ifdef HAVE_TPETRA_DEBUG
-	if(p<0) {
-	    errstr<< MyPID << "E5 reverseNeighborDiscovery: got a -1 for foreignremote receive size "<<std::endl;
-	    error=true;
-	}
-#endif
-    }
-  
-    {
-	Teuchos::ArrayView<pidgidpair_t> AV_ARR(AllReverseRecv,totalexportpairrecsize);
-	std::sort(AV_ARR.begin(), AV_ARR.end(), Tpetra::Import_Util::sort_PID_then_GID<GlobalOrdinal, GlobalOrdinal>);
-
-	auto newEndOfPairs = std::unique(AV_ARR.begin(), AV_ARR.end());
+    std::sort(AllReverseRecv.begin(), AllReverseRecv.end(), Tpetra::Import_Util::sort_PID_then_GID<GlobalOrdinal, GlobalOrdinal>);
+    
+    auto newEndOfPairs = std::unique(AllReverseRecv.begin(), AllReverseRecv.end());
 // don't resize to remove non-unique, just use the end-of-unique iterator
-	reversePIDs.clear();
-	reverseLIDs.clear();
-	reverseGIDs.clear();
-	if(AV_ARR.size() == 0) {
-	    return;
-	}
-	reversePIDs.reserve(AV_ARR.size());
-	reverseLIDs.reserve(AV_ARR.size());
-	reverseGIDs.reserve(AV_ARR.size());
-
-	for(auto itr = AV_ARR.begin();  itr!=newEndOfPairs; ++itr ) {
-	    if((int)(itr->first) != MyPID) {
-		reversePIDs.push_back((int)itr->first);
-		reverseGIDs.push_back(itr->second);
-		LocalOrdinal lid = MyDomainMap->getLocalElement(itr->second);
-		reverseLIDs.push_back(lid);
-	    }
+    if(AllReverseRecv.begin() == newEndOfPairs)  return;
+    
+    reversePIDs.clear();
+    reverseLIDs.clear();
+    reverseGIDs.clear();
+    
+    reversePIDs.reserve(AllReverseRecv.size());
+    reverseLIDs.reserve(AllReverseRecv.size());
+    reverseGIDs.reserve(AllReverseRecv.size());
+    
+    for(auto itr = AllReverseRecv.begin();  itr!=newEndOfPairs; ++itr ) {
+	if((int)(itr->first) != MyPID) {
+	    reversePIDs.push_back((int)itr->first);
+	    reverseGIDs.push_back(itr->second);
+	    LocalOrdinal lid = MyDomainMap->getLocalElement(itr->second);
+	    reverseLIDs.push_back(lid);
 	}
     }
-    delete [] AllReverseRecv;
-
     if(error){
 	std::cerr<<errstr.str()<<std::flush;
 	comm->barrier();
