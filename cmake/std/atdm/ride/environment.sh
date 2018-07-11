@@ -68,6 +68,10 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NET
 module swap yamlcpp/0.3.0 yaml-cpp/20170104 
 if [ $? ]; then module load  yaml-cpp/20170104; fi
 
+module load binutils/2.27.0
+# NOTE: Above we need to use updated 'ar' from binutils 2.27 to handle big
+# object files with 'ar' that otherwise can cause "File truncated" failures (see #3069)
+
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)
 export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
