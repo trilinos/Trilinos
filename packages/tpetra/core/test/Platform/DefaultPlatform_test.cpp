@@ -87,8 +87,6 @@ namespace {
     out << "numImages: " << numImages << std::endl;
     out << "myImageID: " << myImageID << std::endl;
     TEST_EQUALITY_CONST( myImageID < numImages, true );
-    RCP<Node> node = platform.getNode();
-    (void)node;
   }
 
 }

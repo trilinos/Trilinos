@@ -112,6 +112,7 @@ namespace MueLuTests {
     RCP<TransPFactory>        RFact = rcp(new TransPFactory());
 
     RCP<FactoryManager> M = rcp(new FactoryManager());
+    M->SetKokkosRefactor(false);
     M->SetFactory("P", TentativePFact);
     M->SetFactory("Ptent", TentativePFact);
     M->SetFactory("R", RFact);
@@ -185,6 +186,7 @@ namespace MueLuTests {
     AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("P", PFact);
     M.SetFactory("Ptent", PFact); // for nullspace

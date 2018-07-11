@@ -177,6 +177,7 @@ namespace MueLuTests {
 
     // build test-specific default factory manager
     RCP<FactoryManager> defManager = rcp(new FactoryManager());
+    defManager->SetKokkosRefactor(false);
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
@@ -299,6 +300,7 @@ namespace MueLuTests {
 "   <Parameter name=\"max levels\"                            type=\"int\"      value=\"10\"/>"
 "   <Parameter name=\"coarse: max size\"                      type=\"int\"      value=\"1000\"/>"
 "   <Parameter name=\"verbosity\"                             type=\"string\"   value=\"None\"/>"
+"   <Parameter name=\"use kokkos refactor\"                   type=\"bool\"     value=\"false\"/>"
 "   <ParameterList name=\"All\">"
 "     <Parameter name=\"startLevel\"                          type=\"int\"      value=\"0\"/>"
 "     <Parameter name=\"Smoother\"                            type=\"string\"   value=\"mySmoo\"/>"
@@ -381,6 +383,7 @@ namespace MueLuTests {
     Params->set("rap: shift",1.0);
     Params->set("coarse: max size",1000);
     Params->set("verbosity","none");
+    Params->set("use kokkos refactor",false);
 
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("K",A);

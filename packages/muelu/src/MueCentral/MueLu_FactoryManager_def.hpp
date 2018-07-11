@@ -70,6 +70,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
@@ -89,8 +90,8 @@ namespace MueLu {
   SetAndReturnDefaultFactory(varName, rcp(new oldFactory()));
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
-  (!useKokkos) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
-                 SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
+  (!useKokkos_) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
+                  SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -127,13 +128,6 @@ namespace MueLu {
       return defaultFactoryTable_.find(varName)->second;
 
     } else {
-      bool useKokkos;
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
-      useKokkos = true;
-#else
-      useKokkos = false;
-#endif
-
       // No factory was created for this name, but we may know which one to create
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
@@ -143,7 +137,7 @@ namespace MueLu {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos)
+        if (useKokkos_)
           factory = rcp(new SaPFactory_kokkos());
         else
 #endif
@@ -155,7 +149,7 @@ namespace MueLu {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos)
+        if (useKokkos_)
           factory = rcp(new NullspaceFactory_kokkos());
         else
 #endif
@@ -267,6 +261,9 @@ namespace MueLu {
         it->second->ResetDebugData();
   }
 #endif
+
+
+#undef MUELU_KOKKOS_FACTORY
 
 } // namespace MueLu
 

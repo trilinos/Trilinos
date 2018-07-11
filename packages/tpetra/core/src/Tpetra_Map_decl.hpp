@@ -1148,13 +1148,6 @@ namespace Tpetra {
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    /// \brief LEGACY Node instance.
-    ///
-    /// This object only exists for backwards compatibility.  Please
-    /// do not rely upon it.  In particular, do not assume that this
-    /// pointer is non-null.
-    Teuchos::RCP<Node> node_;
-
     //! The index base for global indices in this Map.
     GlobalOrdinal indexBase_;
 
@@ -1508,14 +1501,6 @@ namespace Tpetra {
       typedef typename OutMapType::device_type out_device_type;
 
       OutMapType mapOut; // Make an empty Map.
-
-      // If out_node_type::execution_space hasn't been initialized
-      // (because nodeOut is null) initialize it now, by letting
-      // defaultArgNode create the out_node_type instance.  Do this
-      // first, since we'll be creating Kokkos::View instances with
-      // out_node_type::device_type below, and this requires that
-      // out_node_type::execution_space be initialized.
-      mapOut.node_ = nodeOut.is_null () ? defaultArgNode<out_node_type> () : nodeOut;
 
       // Fill the new Map with (possibly) shallow copies of all of the
       // original Map's data.  This is safe because Map is immutable,

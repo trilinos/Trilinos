@@ -51,6 +51,7 @@
 #include	<stdio.h>
 #include        <string.h>
 #include        "ch_input_const.h"
+#include        "dr_externs.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

@@ -2285,6 +2285,11 @@ namespace Tpetra {
               const EWhichNorm whichNorm) const;
 
     //@}
+    //! \name Implementation of various useful kernel utilities
+    //@{
+
+ 
+    //@}
     //! @name Misc. implementation details
     //@{
 

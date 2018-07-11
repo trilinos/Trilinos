@@ -162,6 +162,49 @@ public:
   */
   virtual Real Fdual(Real x, int deriv = 0) = 0;
 
+  bool check(std::ostream &outStream = std::cout) const {
+    const Real tol(std::sqrt(ROL_EPSILON<Real>()));
+    bool flag = true;
+
+    Real x  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    Real t  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    Real fp = Fprimal(x);
+    Real fd = Fdual(t);
+    outStream << "Check Fenchel-Young Inequality: F(x) + F*(t) >= xt" << std::endl;
+    outStream << "x       = " << x                << std::endl;
+    outStream << "t       = " << t                << std::endl;
+    outStream << "F(x)    = " << fp               << std::endl;
+    outStream << "F*(t)   = " << fd               << std::endl;
+    outStream << "Is Valid? " << (fp+fd >= x*t)   << std::endl;
+    flag = (fp+fd >= x*t) ? flag : false;
+
+    x  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    t  = Fprimal(x,1);
+    fp = Fprimal(x);
+    fd = Fdual(t);
+    outStream << "Check Fenchel-Young Equality: F(x) + F(t) = xt for t = d/dx F(x)" << std::endl;
+    outStream << "x       = " << x                << std::endl;
+    outStream << "t       = " << t                << std::endl;
+    outStream << "F(x)    = " << fp               << std::endl;
+    outStream << "F*(t)   = " << fd               << std::endl;
+    outStream << "Is Valid? " << (std::abs(fp+fd - x*t)<=tol) << std::endl; 
+    flag = (std::abs(fp+fd - x*t)<=tol) ? flag : false;
+
+    t  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    x  = Fdual(t,1);
+    fp = Fprimal(x);
+    fd = Fdual(t);
+    outStream << "Check Fenchel-Young Equality: F(x) + F(t) = xt for x = d/dt F*(t)" << std::endl;
+    outStream << "x       = " << x                << std::endl;
+    outStream << "t       = " << t                << std::endl;
+    outStream << "F(x)    = " << fp               << std::endl;
+    outStream << "F*(t)   = " << fd               << std::endl;
+    outStream << "Is Valid? " << (std::abs(fp+fd - x*t)<=tol) << std::endl; 
+    flag = (std::abs(fp+fd - x*t)<=tol) ? flag : false;
+
+    return flag;
+  }
+
   void initialize(const Vector<Real> &x) {
     RandVarFunctional<Real>::initialize(x);
     valLam_ = 0; valLam2_ = 0; valMu_ = 0; valMu2_ = 0;

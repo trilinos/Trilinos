@@ -1502,7 +1502,7 @@ namespace Tpetra {
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBaseUnion = std::min(tgtMap1->getIndexBase(), tgtMap2->getIndexBase());
     RCP<const map_type> unionTgtMap =
-      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm, srcMap->getNode()));
+      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm));
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM2 = Teuchos::null;
@@ -1669,7 +1669,7 @@ namespace Tpetra {
 
     // Build the new target map
     GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-    RCP<const map_type> targetMapNew = rcp(new map_type(GO_INVALID,GIDs,tgtMap->getIndexBase(),tgtMap->getComm(),tgtMap->getNode()));
+    RCP<const map_type> targetMapNew = rcp(new map_type(GO_INVALID,GIDs,tgtMap->getIndexBase(),tgtMap->getComm()));
 
     // Exports are trivial (since the sourcemap doesn't change)
     Array<int> exportPIDsnew(getExportPIDs());
