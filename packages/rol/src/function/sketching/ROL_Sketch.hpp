@@ -178,10 +178,12 @@ private:
         W_(i,j) = static_cast<Real>(0);
       }
     }
+    Real a(2), b(-1), x(0);
     for (int i = 0; i < k_; ++i) {
       Y_[i]->zero();
       for (int j = 0; j < ncol_; ++j) {
-        Omega_(j,i) = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+        x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+        Omega_(j,i) = a*x + b;
       }
     }
   }
