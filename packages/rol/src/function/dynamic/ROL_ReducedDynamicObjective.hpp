@@ -130,23 +130,23 @@ public:
                           const Ptr<Vector<Real>>            &cvec,
                           const std::vector<TimeStamp<Real>> &timeStamp,
                           ROL::ParameterList                 &pl)
-    : obj_                ( obj ),                                     // Dynamic objective function.
-      con_                ( con ),                                     // Dynamic constraint function.
-      u0_                 ( u0 ),                                      // Initial condition.
-      timeStamp_          ( timeStamp ),                               // Vector of time stamps.
-      Nt_                 ( timeStamp.size() ),                        // Number of time intervals.
-      useSketch_          ( pl.get("Use Sketching",          true) ),  // Use state sketch if true.
-      rankState_          ( pl.get("State Rank",               10) ),  // Rank of state sketch.
-      stateSketch_        ( nullPtr ),                                 // State sketch object.
-      rankAdjoint_        ( pl.get("Adjoint Rank",             10) ),  // Rank of adjoint sketch.
-      adjointSketch_      ( nullPtr ),                                 // Adjoint sketch object.
-      rankStateSens_      ( pl.get("State Sensitivity Rank",   10) ),  // Rank of state sensitivity sketch.
-      stateSensSketch_    ( nullPtr ),                                 // State sensitivity sketch object.
-      isValueComputed_    ( false ),                                   // Flag indicating whether value has been computed.
-      isStateComputed_    ( false ),                                   // Flag indicating whether state has been computed.
-      isAdjointComputed_  ( false ),                                   // Flag indicating whether adjoint has been computed.
-      useHessian_         ( pl.get("Use Hessian",            true) ),  // Flag indicating whether to use the Hessian.
-      useSymHess_         ( pl.get("Use Symmetric Hessian",  true) ) { // Flag indicating whether to use symmetric sketched Hessian.
+    : obj_               ( obj ),                                            // Dynamic objective function.
+      con_               ( con ),                                            // Dynamic constraint function.
+      u0_                ( u0 ),                                             // Initial condition.
+      timeStamp_         ( timeStamp ),                                      // Vector of time stamps.
+      Nt_                ( timeStamp.size() ),                               // Number of time intervals.
+      useSketch_         ( pl.get("Use Sketching",                 true) ),  // Use state sketch if true.
+      rankState_         ( pl.get("State Rank",                      10) ),  // Rank of state sketch.
+      stateSketch_       ( nullPtr ),                                        // State sketch object.
+      rankAdjoint_       ( pl.get("Adjoint Rank",                    10) ),  // Rank of adjoint sketch.
+      adjointSketch_     ( nullPtr ),                                        // Adjoint sketch object.
+      rankStateSens_     ( pl.get("State Sensitivity Rank",          10) ),  // Rank of state sensitivity sketch.
+      stateSensSketch_   ( nullPtr ),                                        // State sensitivity sketch object.
+      isValueComputed_   ( false ),                                          // Flag indicating whether value has been computed.
+      isStateComputed_   ( false ),                                          // Flag indicating whether state has been computed.
+      isAdjointComputed_ ( false ),                                          // Flag indicating whether adjoint has been computed.
+      useHessian_        ( pl.get("Use Hessian",                   true) ),  // Flag indicating whether to use the Hessian.
+      useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ) { // Flag indicating whether to use symmetric sketched Hessian.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
       stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_);
