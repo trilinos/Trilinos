@@ -845,11 +845,25 @@ public:
  
      Ptr<Vector<Real>> scratch = pint_rhs.clone();
      PinTVector<Real> pint_scratch  = dynamic_cast<const PinTVector<Real>&>(*scratch);
- 
+
      // do block Jacobi smoothing
-     invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
- 
+     // invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
+     applyInverseJacobian_1_leveled(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
+
      invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
+     // applyInverseAdjointJacobian_1_leveled(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
+
+     pint_pv.scale(-1.0);
+
+     int timeRank = pint_u.communicators().getTimeRank();
+     if(false)
+     {
+       std::stringstream ss;
+       ss << timeRank << " AFTER SOLVE = " << std::endl;
+       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
+         ss << "   " << timeRank << " - " << i << ": "<< pint_pv.getVectorPtr(i)->norm()  << std::endl;
+       std::cout << ss.str() << std::endl;; 
+     }
    }
  
    void schurComplementAction(Vector<Real>       & sc_v,
@@ -896,7 +910,26 @@ public:
    {
      auto residual = pint_v.clone();
      auto dx = pint_pv.clone();
- 
+
+     int timeRank = pint_u.communicators().getTimeRank();
+     if(false)
+     {
+       std::stringstream ss;
+       ss << timeRank << " INITIAL = " << std::endl;
+       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
+         ss << "   " << timeRank << " - " << i << ": "<< pint_pv.getVectorPtr(i)->norm()  << std::endl;
+       std::cout << ss.str() << std::endl;; 
+     }
+     if(false)
+     {
+       std::stringstream ss;
+       ss << timeRank << " RHS = " << std::endl;
+       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
+         ss << "   " << timeRank << " - " << i << ": "<< pint_v.getVectorPtr(i)->norm()  << std::endl;
+       std::cout << ss.str() << std::endl;; 
+     }
+     
+
      // force intial guess to zero
      dx->scale(0.0);
      residual->set(pint_v);           
@@ -905,19 +938,17 @@ public:
      PinTVector<Real> & pint_dx       = dynamic_cast<PinTVector<Real>&>(*dx);
 
      for(int s=0;s<numSweeps;s++) {
+
        // update the residual
        schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol,level); // A*x
  
        pint_residual.scale(-1.0);                            // -A*x
-       pint_residual.plus(pint_v);                      // b - A*x
+       pint_residual.plus(pint_v);                           // b - A*x
 
        // compute and apply the correction
        blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol,level);
  
        pint_pv.axpy(omega,pint_dx);
-
-       // get the solution 
-       pint_pv.boundaryExchange();
      }
    }
 
@@ -955,6 +986,10 @@ public:
      auto correction = pint_x.clone();
      PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
 
+     pint_b.boundaryExchange();
+     pint_u.boundaryExchange();
+     pint_z.boundaryExchange();
+
      if(level==maxLevels_) {
        // compute fine residual
        schurComplementAction(pint_residual,pint_x,pint_u,pint_z,tol,level); // A*x
@@ -985,8 +1020,11 @@ public:
      pint_residual.scale(-1.0);                       // -A*x 
      pint_residual.plus(pint_b);                      // b - A*x
 
+     int timeRank = pint_residual.communicators().getTimeRank();
+
      // coarse solve
      /////////////////////////////////////////////////////////////////////////////////////
+     if(true)
      {
        auto crs_u          = allocateSimVector(pint_x,level+1);
        auto crs_z          = allocateOptVector(pint_z,level+1);
