@@ -45,6 +45,9 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
 
+    virtual std::string getStepperType() const
+     { return stepperPL_->get<std::string>("Stepper Type"); }
+
     /// Solve problem using x in-place.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);

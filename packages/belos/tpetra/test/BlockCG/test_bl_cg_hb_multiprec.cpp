@@ -186,7 +186,7 @@ bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,
   if (mptestmypid==0) cout << "Constructing solver..." << endl; 
   {
     TimeMonitor localtimer(ctimer);
-    solver = rcp(new PseudoBlockCGSolMgr<Scalar,MV,OP>( problem, rcp(&mptestpl,false) ));
+    solver = rcp(new PseudoBlockCGSolMgr<Scalar,MV,OP>( problem, rcpFromRef(mptestpl) ));
   }
   if (mptestmypid==0) cout << "Solving problem..." << endl;
   {

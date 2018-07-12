@@ -17,11 +17,11 @@ function [myNodes] = readRegionFile(filename,myRank)
 
 
 fp = fopen(filename,'r');
-if fp == -1, fprintf('Cannot read %s \n',filename); keyboard; end;
+if (fp == -1)
+  error('Cannot read %s \n',filename);
+end
 
-%
 % read header information 
-%
 fgetl(fp);   % read heading line
 temp = fscanf(fp,'%d');
 nNodes   = temp(1);
@@ -30,11 +30,9 @@ nProcs   = temp(3);
 fgetl(fp);   % read rest of 2nd line
 fgetl(fp);   % read heading line
 
-%
 %  read each line of the file and only retain those things that I own
 %  this includes recording all other procs and region ids correspond
 %  to interface nodes that I own
-%
 newLine = 'dummy';
 iOwnIt = 0;
 myNodes = [];

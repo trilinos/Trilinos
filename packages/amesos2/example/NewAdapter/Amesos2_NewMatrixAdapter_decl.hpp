@@ -77,12 +77,12 @@ public:
 
   /* TODO: Redefine the following types as needed */
   // public type definitions
-  typedef double                                                scalar_type;
-  typedef int                                            local_ordinal_type;
-  typedef int                                           global_ordinal_type;
-  typedef size_t                                           global_size_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_type;
-  typedef NewMatrix                                             matrix_type;
+  typedef double                   scalar_type;
+  typedef int                      local_ordinal_type;
+  typedef int                      global_ordinal_type;
+  typedef size_t                   global_size_type;
+  typedef Tpetra::Map<>::node_type node_type;
+  typedef NewMatrix                matrix_type;
 
   /// The name of this adapter class.
   static const char* name;

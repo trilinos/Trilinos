@@ -30,8 +30,7 @@
 #ifndef KOKKOS_LAYOUT_CONTIGUOUS_HPP
 #define KOKKOS_LAYOUT_CONTIGUOUS_HPP
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_Macros.hpp"
+#include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Layout.hpp"
 
 namespace Kokkos {

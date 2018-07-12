@@ -69,14 +69,14 @@ namespace {
   }
 
   template <>
-  RCP<SerialPlatform<node_type> > getPlatform() {
-    return rcp (new SerialPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
+  RCP<SerialPlatform<node_type> > getPlatform () {
+    return rcp (new SerialPlatform<node_type>);
   }
 
 #ifdef HAVE_TPETRA_MPI
   template <>
-  RCP<MpiPlatform<node_type> > getPlatform() {
-    return rcp (new MpiPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
+  RCP<MpiPlatform<node_type> > getPlatform () {
+    return rcp (new MpiPlatform<node_type>);
   }
 #endif
 
@@ -90,11 +90,10 @@ namespace {
   // UNIT TESTS
   //
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Platform, basic, PlatformType )
   {
     out << "Testing " << Teuchos::TypeNameTraits<PlatformType>::name() << std::endl;
-    typedef typename PlatformType::NodeType            N;
+    using node_type = typename PlatformType::NodeType;
     // create a platform
     RCP<PlatformType> platform = getPlatform<PlatformType>();
     platform->setObjectLabel("not the default label");
@@ -104,8 +103,6 @@ namespace {
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
-    RCP<N> node  = platform->getNode();
-    (void)node;
   }
 
 

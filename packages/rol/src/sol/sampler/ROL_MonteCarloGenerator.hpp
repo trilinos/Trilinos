@@ -332,6 +332,10 @@ public:
     }
   }
 
+  int numGlobalSamples(void) const {
+    return nSamp_;
+  }
+
 };
 
 }

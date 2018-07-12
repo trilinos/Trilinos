@@ -48,6 +48,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "ROL_Vector.hpp"
 
 #include <exception>

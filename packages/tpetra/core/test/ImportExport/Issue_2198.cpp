@@ -399,7 +399,7 @@ makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   }
 
   std::vector<int> remoteProcessRanks;
-  std::vector<GO> optimizedRemoteProcessRanks;
+  std::vector<int> optimizedRemoteProcessRanks;
   if (myRank == 0) {
     remoteProcessRanks = {1, 4, 4};
     optimizedRemoteProcessRanks = {1, 4, 4};
@@ -423,7 +423,9 @@ makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   const GST globalNumSourceMapGlobalIndices = 17;
   const GO indexBase = 0;
-  return {comm, contiguous, localNumSourceMapGlobalIndices,
+  return {comm,
+      contiguous,
+      localNumSourceMapGlobalIndices,
       sourceMapGlobalIndices,
       remoteGlobalIndices,
       optimizedRemoteGlobalIndices,

@@ -376,6 +376,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
+  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
   return Automatic_Test_ETI(argc,argv);
 }
 

@@ -41,10 +41,7 @@
 // @HEADER
 */
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -76,8 +73,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
   typedef Tpetra::Export<LO, GO, NT> Tpetra_Export;
   typedef Tpetra::Vector<double,LO,GO,NT> Tpetra_Vector;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   // Unfortunately, Teuchos::FancyOStream does not permit operator=.
@@ -97,7 +93,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
 
   const Tpetra::global_size_t INVALID =
     Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
-  RCP<NT> node = Tpetra::TestingUtilities::getNode<NT>();
 
   // This test requires exactly 2 processors
   const int numProc = comm->getSize();
@@ -123,9 +118,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
   newOut << "Create Maps" << endl;
 
   RCP<const Tpetra_Map> nonoverlap_map =
-    rcp(new Tpetra_Map(INVALID, nonoverlap_gids(), 0, comm, node));
+    rcp(new Tpetra_Map(INVALID, nonoverlap_gids(), 0, comm));
   RCP<const Tpetra_Map> overlap_map =
-    rcp(new Tpetra_Map(INVALID, overlap_gids(), 0, comm, node));
+    rcp(new Tpetra_Map(INVALID, overlap_gids(), 0, comm));
 
   // create import and export objects
 

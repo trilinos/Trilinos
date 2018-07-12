@@ -298,7 +298,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     if ((time == solutionHistory->minTime()) && (initial_guess_ != Teuchos::null)) {
       //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_ 
       //Throw an exception if initial_guess is not compatible with solution 
-      bool is_compatible = (d_pred->space())->isCompatible(*initial_guess->space()); 
+      bool is_compatible = (initial_guess->space())->isCompatible(*initial_guess_->space()); 
       TEUCHOS_TEST_FOR_EXCEPTION(
           is_compatible != true, std::logic_error,
             "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"

@@ -92,6 +92,9 @@ namespace Sacado {                                                      \
       bool updateValue() const { return expr.updateValue(); }           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         USING                                                           \
         return VALUE;                                                   \
@@ -325,6 +328,9 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
         USING                                                           \
         return VALUE;                                                   \
@@ -399,6 +405,9 @@ namespace Sacado {                                                      \
       bool updateValue() const { return expr1.updateValue(); }          \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
         USING                                                           \
         return VAL_CONST_DX_2;                                          \
@@ -471,6 +480,9 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       bool updateValue() const { return expr2.updateValue(); }          \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
@@ -737,6 +749,9 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
       const value_type val() const {
         return expr1.val()*expr2.val();
       }
@@ -814,6 +829,9 @@ namespace Sacado {
       bool updateValue() const { return expr1.updateValue(); }
 
       KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
       const value_type val() const {
         return expr1.val()*c.val();
       }
@@ -882,6 +900,9 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return expr2.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
 
       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
@@ -1037,6 +1058,9 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
       const value_type val() const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), expr2.val() );
@@ -1112,6 +1136,9 @@ namespace Sacado {
       bool updateValue() const { return expr1.updateValue(); }
 
       KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
       const value_type val() const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), c.val() );
@@ -1184,6 +1211,9 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return expr2.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
 
       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
@@ -1483,6 +1513,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
 
 #endif // SACADO_FAD_OPS_HPP

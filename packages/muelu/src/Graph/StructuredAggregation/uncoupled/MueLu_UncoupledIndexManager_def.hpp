@@ -83,10 +83,19 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodesData(const RCP<const Map>fineMap, RCP<const Map> coarseMap,
+  computeGlobalCoarseParameters() {
+    this->gNumCoarseNodes10 = -1;
+    GO input[1] = {as<GO>(this->lNumCoarseNodes)}, output[1] = {0};
+    Teuchos::reduceAll(*(this->comm_), Teuchos::REDUCE_SUM, 1, input, output);
+    this->gNumCoarseNodes = output[0];
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getGhostedNodesData(const RCP<const Map>fineMap,
                       Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
 
-    // First we allocated memory for the outputs
+    // First we allocate memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
     ghostedNodeCoarsePIDs.resize(this->getNumLocalGhostedNodes());
     // In the uncoupled case the data required is trivial to provide!
@@ -94,11 +103,6 @@ namespace MueLu {
       ghostedNodeCoarseLIDs[idx] = idx;
       ghostedNodeCoarsePIDs[idx] = myRank;
     }
-    coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
-                                                     this->getNumGlobalCoarseNodes(),
-                                                     this->getNumLocalCoarseNodes(),
-                                                     fineMap->getIndexBase(),
-                                                     fineMap->getComm());
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

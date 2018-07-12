@@ -52,7 +52,6 @@
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
-#  include <Tpetra_DefaultPlatform.hpp>
 #  include <Epetra_MultiVector.h>
 // and perhaps some others later...
 #endif
@@ -94,7 +93,7 @@ namespace Amesos2 {
     typedef double scalar_t;
     typedef int local_ordinal_t;
     typedef int global_ordinal_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+    typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_MultiVector multivector_type;
     typedef double ptr_scalar_type; // TODO Make this a pointer

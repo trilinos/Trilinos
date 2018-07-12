@@ -11,7 +11,7 @@
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-gcc/4.9.3
-module load sems-openmpi/1.6.5
+module load sems-openmpi/1.10.1
 module load sems-python/2.7.9
 module load sems-git/2.10.1
 module load sems-boost/1.63.0/base

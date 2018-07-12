@@ -129,7 +129,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
 
   using Tpetra::createContigMapWithNode;
@@ -217,8 +216,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   {
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
@@ -231,6 +231,24 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    // Test the default constructors of MultiVector and Vector.
+    {
+      MV defaultConstructedMultiVector;
+      auto dcmv_map = defaultConstructedMultiVector.getMap ();
+      TEST_ASSERT( dcmv_map.get () != nullptr );
+      if (dcmv_map.get () != nullptr) {
+	TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+		       Tpetra::global_size_t (0) );
+      }
+      vec_type defaultConstructedVector;
+      auto dcv_map = defaultConstructedVector.getMap ();
+      TEST_ASSERT( dcv_map.get () != nullptr );
+      if (dcv_map.get () != nullptr) {
+	TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+		       Tpetra::global_size_t (0) );
+      }
+    }
 
     RCP<MV> mvec;
     TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
@@ -3768,7 +3786,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4131,7 +4149,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4216,7 +4234,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4331,7 +4349,7 @@ namespace {
     Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
     Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int numProcs = comm->getSize ();
 
     // Create a Map that puts nothing on Process 0 and something on

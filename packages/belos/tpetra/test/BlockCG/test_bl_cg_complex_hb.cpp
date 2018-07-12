@@ -58,7 +58,6 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -83,7 +82,6 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
   const ST one  = SCT::one();
-  const ST zero = SCT::zero();
 
   int MyPID = 0;
 
@@ -134,15 +132,15 @@ int main(int argc, char *argv[]) {
   //
   // Get the data from the HB file and build the Map,Matrix
   //
-  RCP<CrsMatrix<ST,int> > A;
+  RCP<CrsMatrix<ST> > A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-  RCP<const Tpetra::Map<int> > map = A->getDomainMap();
+  RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
   // Create initial vectors
-  RCP<MultiVector<ST,int> > B, X;
-  X = rcp( new MultiVector<ST,int>(map,numrhs) );
+  RCP<MV> B, X;
+  X = rcp( new MV(map,numrhs) );
   MVT::MvRandom( *X );
-  B = rcp( new MultiVector<ST,int>(map,numrhs) );
+  B = rcp( new MV(map,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
 
@@ -187,7 +185,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration***********************
   // *******************************************************************
   //
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcp(&problem,false), rcp(&belosList,false) );
+  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
   //
   // **********Print out information about problem*******************
@@ -211,7 +209,7 @@ int main(int argc, char *argv[]) {
   bool badRes = false;
   std::vector<MT> actual_resids( numrhs );
   std::vector<MT> rhs_norm( numrhs );
-  MultiVector<ST,int> resid(map, numrhs);
+  MV resid(map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -one, resid, one, *B, resid );
   MVT::MvNorm( resid, actual_resids );

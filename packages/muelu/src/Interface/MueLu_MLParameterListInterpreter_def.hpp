@@ -80,6 +80,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
@@ -182,6 +183,15 @@ namespace MueLu {
     ParameterList paramListWithSubList;
     MueLu::CreateSublists(paramList, paramListWithSubList);
     paramList = paramListWithSubList; // swap
+
+    // pull out "use kokkos refactor"
+    bool setKokkosRefactor = false;
+    bool useKokkosRefactor = false;
+    if (paramList.isType<bool>("use kokkos refactor")) {
+      useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
+      setKokkosRefactor = true;
+      paramList.remove("use kokkos refactor");
+    }
 
     //
     // Validate parameter list
@@ -427,6 +437,8 @@ namespace MueLu {
       //
 
       RCP<FactoryManager> manager = rcp(new FactoryManager());
+      if (setKokkosRefactor)
+        manager->SetKokkosRefactor(useKokkosRefactor);
 
       //
       // Smoothers

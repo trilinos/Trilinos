@@ -82,8 +82,13 @@ namespace MueLu {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::computeMeshParameters() {
 
-    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // out->setShowAllFrontMatter(false).setShowProcRank(true);
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_INDEXMANAGER_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
 
     gNumFineNodes10 = gFineNodesPerDir[1]*gFineNodesPerDir[0];
     gNumFineNodes   = gFineNodesPerDir[2]*gNumFineNodes10;
@@ -138,17 +143,17 @@ namespace MueLu {
       }
     }
 
-    // *out << "gFineNodesPerDir: " << gFineNodesPerDir << std::endl;
-    // *out << "lFineNodesPerDir: " << lFineNodesPerDir << std::endl;
-    // *out << "endRate: " << endRate << std::endl;
-    // *out << "ghostInterface: {" << ghostInterface[0] << ", " << ghostInterface[1] << ", "
-    //           << ghostInterface[2] << ", " << ghostInterface[3] << ", " << ghostInterface[4] << ", "
-    //           << ghostInterface[5] << "}" << std::endl;
-    // *out << "meshEdge: {" << meshEdge[0] << ", " << meshEdge[1] << ", "
-    //           << meshEdge[2] << ", " << meshEdge[3] << ", " << meshEdge[4] << ", "
-    //           << meshEdge[5] << "}" << std::endl;
-    // *out << "startIndices: " << startIndices << std::endl;
-    // *out << "offsets: " << offsets << std::endl;
+    *out << "gFineNodesPerDir: " << gFineNodesPerDir << std::endl;
+    *out << "lFineNodesPerDir: " << lFineNodesPerDir << std::endl;
+    *out << "endRate: " << endRate << std::endl;
+    *out << "ghostInterface: {" << ghostInterface[0] << ", " << ghostInterface[1] << ", "
+              << ghostInterface[2] << ", " << ghostInterface[3] << ", " << ghostInterface[4] << ", "
+              << ghostInterface[5] << "}" << std::endl;
+    *out << "meshEdge: {" << meshEdge[0] << ", " << meshEdge[1] << ", "
+              << meshEdge[2] << ", " << meshEdge[3] << ", " << meshEdge[4] << ", "
+              << meshEdge[5] << "}" << std::endl;
+    *out << "startIndices: " << startIndices << std::endl;
+    *out << "offsets: " << offsets << std::endl;
 
     // Here one element can represent either the degenerate case of one node or the more general
     // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with
@@ -232,21 +237,13 @@ namespace MueLu {
     numGhostedNodes10 = ghostedNodesPerDir[1]*ghostedNodesPerDir[0];
     numGhostedNodes   = numGhostedNodes10*ghostedNodesPerDir[2];
     numGhostNodes     = numGhostedNodes - lNumCoarseNodes;
-    gNumCoarseNodes10 = coupled_ ? gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1] : -1;
-    if(coupled_) {
-      gNumCoarseNodes   = gNumCoarseNodes10*gCoarseNodesPerDir[2];
-    } else {
-      GO input[1] = {as<GO>(lNumCoarseNodes)}, output[1] = {0};
-      Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, input, output);
-      gNumCoarseNodes = output[0];
-    }
 
-    // *out << "lCoarseNodesPerDir: " << lCoarseNodesPerDir << std::endl;
-    // *out << "gCoarseNodesPerDir: " << gCoarseNodesPerDir << std::endl;
-    // *out << "ghostedNodesPerDir: " << ghostedNodesPerDir << std::endl;
-    // *out << "gNumCoarseNodes=" << gNumCoarseNodes << std::endl;
-    // *out << "lNumCoarseNodes=" << lNumCoarseNodes << std::endl;
-    // *out << "numGhostedNodes=" << numGhostedNodes << std::endl;
+    *out << "lCoarseNodesPerDir: " << lCoarseNodesPerDir << std::endl;
+    *out << "gCoarseNodesPerDir: " << gCoarseNodesPerDir << std::endl;
+    *out << "ghostedNodesPerDir: " << ghostedNodesPerDir << std::endl;
+    *out << "gNumCoarseNodes=" << gNumCoarseNodes << std::endl;
+    *out << "lNumCoarseNodes=" << lNumCoarseNodes << std::endl;
+    *out << "numGhostedNodes=" << numGhostedNodes << std::endl;
   }
 
 } //namespace MueLu

@@ -3126,7 +3126,7 @@ void import_and_extract_views(
         remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+                                      rowMap->getIndexBase(), rowMap->getComm()));
       mode = 1;
 
     } else if (prototypeImporter.is_null()) {
@@ -3143,7 +3143,7 @@ void import_and_extract_views(
       }
       remoteRows.resize(numRemote);
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+                                      rowMap->getIndexBase(), rowMap->getComm()));
       mode = 2;
 
     } else {
