@@ -1274,11 +1274,17 @@ of cmake.
 Enabling the usage of resource files to reduce length of build lines
 --------------------------------------------------------------------
 
-CMake supports three very useful (undocumented) options for reducing the
-length of the command-lines used to build object files, create libraries, and
-link executables.  Using these options can avoid troublesome "command-line too
+When using the ``Unix Makefile`` generator and the ``Ninja`` generator, CMake
+supports some very useful (undocumented) options for reducing the length of
+the command-lines used to build object files, create libraries, and link
+executables.  Using these options can avoid troublesome "command-line too
 long" errors, "Error 127" library creation errors, and other similar errors
-related to excessively long command lines to build various targets.
+related to excessively long command-lines to build various targets.
+
+When using the ``Unix Makefile`` generator, CMake responds to the three cache
+variables ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES``,
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS`` and
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES`` described below.
 
 To aggregate the list of all of the include directories (e.g. ``'-I
 <full_path>'``) into a single ``*.rsp`` file for compiling object files, set::
@@ -1292,26 +1298,46 @@ set::
   -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON
 
 To aggregate the list of all of the libraries (e.g. ``'<path>/<libname>.a'``)
-into a single ``*.rsp`` file for creating shared libraries library or linking
+into a single ``*.rsp`` file for creating shared libraries or linking
 executables, set::
 
   -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES=ON
 
-WARNING: Some of these options don't work with some compilers (or some
-versions of CMake don't know how pass these files to these compilers
-correctly).  For example, some versions of ``gfortran`` do not accept
-``*.rsp`` files as produced with some versions of CMake.  Because of problems
-like this, TriBITS cannot robustly automatically turn on these options.
-Therefore, it is up to the user to try these options out to see if they work
-with their specific version of CMake, compilers, and OS.
+When using the ``Ninja`` generator, CMake only responds to the single option::
 
-NOTE: One can decide to set any combination of these three options based on
-need and preference and what actually works with a given OS, version of CMake,
-and provided compilers.  For example, on one system
-``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON`` may work but
-``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON`` may not (which is the case for
-``gfortran`` mentioned above).  Therefore, one should experiment carefully and
-inspect the build lines using ``make VERBOSE=1 <target>`` as described in
+  -D CMAKE_NINJA_FORCE_RESPONSE_FILE=ON
+
+which turns on the usage of ``*.rsp`` response files for include directories,
+object files, and libraries (and therefore is equivalent to setting the above
+three ``Unix Makefiles`` generator options to ``ON``).
+
+This feature works well on most standard systems but there are problems in
+some situations and therefore these options can only be safely enabled on
+case-by-case basis -- experimenting to ensure they are working correctly.
+Some examples of some known problematic cases (as of CMake 3.11.2) are:
+
+* CMake will only use resource files with static libraries created with GNU
+  ``ar`` (e.g. on Linux) but not BSD ``ar`` (e.g. on MacOS).  With BSD ``ar``,
+  CMake may break up long command-lines (i.e. lots of object files) with
+  multiple calls to ``ar`` but that may only work with the ``Unix Makefiles``
+  generator, not the ``Ninja`` generator.
+
+* Some versions of ``gfortran`` do not accept ``*.rsp`` files.
+
+* Some versions of ``nvcc`` (e.g. with CUDA 8.044) do not accept ``*.rsp``
+  files for compilation or linking.
+
+Because of problems like these, TriBITS cannot robustly automatically turn on
+these options.  Therefore, it is up to the user to try these options out to
+see if they work with their specific version of CMake, compilers, and OS.
+
+NOTE: When using the ``Unix Makefiles`` generator, one can decide to set any
+combination of these three options based on need and preference and what
+actually works with a given OS, version of CMake, and provided compilers.  For
+example, on one system ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON`` may work
+but ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON`` may not (which is the case
+for ``gfortran`` mentioned above).  Therefore, one should experiment carefully
+and inspect the build lines using ``make VERBOSE=1 <target>`` as described in
 `Building with verbose output without reconfiguring`_ when deciding which of
 these options to enable.
 
