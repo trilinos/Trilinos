@@ -254,7 +254,7 @@ public:
     printFEMV(femv, "AfterFill");
 
     // Now update copied vertices from their owners
-    // femv->doSourceToTarget(Tpetra::REPLACE);
+    femv->doSourceToTarget(Tpetra::REPLACE);
 
     // For the ice-sheet problem, 
     // would a Tpetra::ADD work here (consistently update the non-owned vertex's
@@ -264,7 +264,7 @@ public:
     // vertex.  After this, all copies will have the same value as the owned
     // vertex.
 
-    // printFEMV(femv, "AfterExport");
+    printFEMV(femv, "AfterReplace");
 
     return femv;
   }
@@ -272,18 +272,23 @@ public:
   template <typename femv_t>
   void printFEMV(femv_t &femv, const char *msg) 
   {
-    // femv->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
-    //                Teuchos::VERB_HIGH);
-
     for (int v = 0; v < nVec; v++) {
-      std::cout << me << " " << msg << " FEMV[" << v << "] Owned: ";
+      std::cout << me << " OWNED " << msg << " FEMV[" << v << "] Owned: ";
+      auto value = femv->getData(v);
+      for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
+      std::cout << std::endl;
+    }
+    femv->switchActiveMultiVector();  // Needed to print copies
+    for (int v = 0; v < nVec; v++) {
+      std::cout << me << " WITHCOPIES " << msg << " FEMV[" << v << "] Owned: ";
       auto value = femv->getData(v);
       for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
       std::cout << " Copies: ";
-//      for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++) 
-//        std::cout << value[i] << " ";
+      for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++) 
+        std::cout << value[i] << " ";
       std::cout << std::endl;
     }
+    femv->switchActiveMultiVector();  // Restore state
   }
 
   // Test using scalar_t=int to exercise push capability of FEMultiVector
@@ -345,15 +350,18 @@ int FEMultiVectorTest::intTest()
       }
     }
 
-//    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-//      gno_t gid = femv->getMap()->getGlobalElement(i);
-//      if (value[i] != 2*gid) {
-//        std::cout << me << " Error in vec 0 copies:  gid=" << gid
-//                        << " value= " << value[i] << " should be " << gid
-//                        << std::endl;
-//        ierr++;
-//      }
-//    }
+    femv->switchActiveMultiVector();  // Needed to view copies
+    value = femv->getData(0);
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = femv->getMap()->getGlobalElement(i);
+      if (value[i] != 2*gid) {
+        std::cout << me << " Error in vec 0 copies:  gid=" << gid
+                        << " value= " << value[i] << " should be " << 2*gid
+                        << std::endl;
+        ierr++;
+      }
+    }
+    femv->switchActiveMultiVector();  // Restore state 
   }
 
   // Check vector 1
@@ -378,15 +386,19 @@ int FEMultiVectorTest::intTest()
         ierr++;
       }
     }
-//    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-//      gno_t gid = mapWithCopies->getGlobalElement(i);
-//      if (value[i] != tmp)  {
-//        std::cout << me << " Error in vec 1:  gid=" << gid
-//                        << " value= " << value[i] << " should be " << me
-//                        << std::endl;
-//        ierr++;
-//      }
-//    }
+    femv->switchActiveMultiVector();  // Needed to view copies
+    value = femv->getData(1);
+    tmp = me + (me + 1) % np;
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = mapWithCopies->getGlobalElement(i);
+      if (value[i] != tmp)  {
+        std::cout << me << " Error in vec 1:  gid=" << gid
+                        << " value= " << value[i] << " should be " << tmp
+                        << std::endl;
+        ierr++;
+      }
+    }
+    femv->switchActiveMultiVector();  // Restore State
   }
   return ierr;
 }
@@ -428,6 +440,18 @@ int FEMultiVectorTest::vtxLabelTest()
         ierr++;
       }
     }
+    femv->switchActiveMultiVector();  // Needed to view copies
+    value = femv->getData(0);
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = femv->getMap()->getGlobalElement(i);
+      if (!(value[i] == -2*gid)) {
+        std::cout << me << " Error in vec 0 copies:  gid=" << gid
+                        << " value= " << value[i] << " should be " << -2*gid
+                        << std::endl;
+        ierr++;
+      }
+    }
+    femv->switchActiveMultiVector();  // Restore state 
   }
 
   // Check vector 1
@@ -452,6 +476,19 @@ int FEMultiVectorTest::vtxLabelTest()
         ierr++;
       }
     }
+    femv->switchActiveMultiVector();  // Needed to view copies
+    value = femv->getData(1);
+    tmp = -me - (me + 1) % np;
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = mapWithCopies->getGlobalElement(i);
+      if (!(value[i] == tmp))  {
+        std::cout << me << " Error in vec 1:  gid=" << gid
+                        << " value= " << value[i] << " should be " << tmp
+                        << std::endl;
+        ierr++;
+      }
+    }
+    femv->switchActiveMultiVector();  // Restore State
   }
   return ierr;
 }
