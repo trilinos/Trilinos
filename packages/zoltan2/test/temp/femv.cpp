@@ -251,27 +251,39 @@ public:
                      // "Sums" contributions from all copies into the owned
                      // vertex on the owning processor
 
-    // KDD:  need to test how ghost vertices are updated from owners.
-    // KDD:  femv->getMap()->doExport(femv, femv->getImporter(), 
-    // KDD:                           Tpetra::REPLACE);
-    // Would a Tpetra::ADD work here (adding the non-owned vertex to the 
-    // frontier if has significant change)?  Consider changing REPLACE to ADD.
+    printFEMV(femv, "AfterFill");
+
+    // Now update copied vertices from their owners
+    femv->doSourceToTarget(Tpetra::REPLACE);
+
+    // For the ice-sheet problem, 
+    // would a Tpetra::ADD work here (consistently update the non-owned vertex's
+    // values and add the non-owned vertex to the frontier if it has 
+    // significant change)?  Consider changing REPLACE to ADD.
     // Sends the owner's result for each vertex to all of the copies of the
     // vertex.  After this, all copies will have the same value as the owned
     // vertex.
 
-    // Print the resulting FEMultiVector
+    printFEMV(femv, "AfterExport");
+
+    return femv;
+  }
+
+  template <typename femv_t>
+  void printFEMV(femv_t &femv, const char *msg) 
+  {
     // femv->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
     //                Teuchos::VERB_HIGH);
 
     for (int v = 0; v < nVec; v++) {
-      std::cout << me << " FEMV[" << v << "] Unique: ";
+      std::cout << me << " " << msg << " FEMV[" << v << "] Owned: ";
       auto value = femv->getData(v);
       for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
+      std::cout << " Copies: ";
+//      for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++) 
+//        std::cout << value[i] << " ";
       std::cout << std::endl;
     }
-
-    return femv;
   }
 
   // Test using scalar_t=int to exercise push capability of FEMultiVector
@@ -332,6 +344,16 @@ int FEMultiVectorTest::intTest()
         ierr++;
       }
     }
+
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = femv->getMap()->getGlobalElement(i);
+      if (value[i] != 2*gid) {
+        std::cout << me << " Error in vec 0 copies:  gid=" << gid
+                        << " value= " << value[i] << " should be " << gid
+                        << std::endl;
+        ierr++;
+      }
+    }
   }
 
   // Check vector 1
@@ -340,19 +362,30 @@ int FEMultiVectorTest::intTest()
     int tmp = me + (np + me - 1) % np;
     for (lno_t i = 0; i < nLocalCopy; i++) {
       gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != tmp) 
+      if (value[i] != tmp) {
         std::cout << me << " Error in vec 1 overlap:  gid=" << gid
                         << " value= " << value[i] << " should be " << tmp
                         << std::endl;
         ierr++;
+      }
     }
     for (lno_t i = nLocalCopy; i < nLocalOwned; i++) {
       gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != me) 
+      if (value[i] != me) {
         std::cout << me << " Error in vec 1:  gid=" << gid
                         << " value= " << value[i] << " should be " << me
                         << std::endl;
         ierr++;
+      }
+    }
+    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+      gno_t gid = mapWithCopies->getGlobalElement(i);
+      if (value[i] != tmp)  {
+        std::cout << me << " Error in vec 1:  gid=" << gid
+                        << " value= " << value[i] << " should be " << me
+                        << std::endl;
+        ierr++;
+      }
     }
   }
   return ierr;
