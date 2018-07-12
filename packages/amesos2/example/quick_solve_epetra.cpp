@@ -58,10 +58,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
