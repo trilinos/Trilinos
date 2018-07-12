@@ -254,7 +254,7 @@ public:
     printFEMV(femv, "AfterFill");
 
     // Now update copied vertices from their owners
-    femv->doSourceToTarget(Tpetra::REPLACE);
+    // femv->doSourceToTarget(Tpetra::REPLACE);
 
     // For the ice-sheet problem, 
     // would a Tpetra::ADD work here (consistently update the non-owned vertex's
@@ -264,7 +264,7 @@ public:
     // vertex.  After this, all copies will have the same value as the owned
     // vertex.
 
-    printFEMV(femv, "AfterExport");
+    // printFEMV(femv, "AfterExport");
 
     return femv;
   }
@@ -345,15 +345,15 @@ int FEMultiVectorTest::intTest()
       }
     }
 
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = femv->getMap()->getGlobalElement(i);
-      if (value[i] != 2*gid) {
-        std::cout << me << " Error in vec 0 copies:  gid=" << gid
-                        << " value= " << value[i] << " should be " << gid
-                        << std::endl;
-        ierr++;
-      }
-    }
+//    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+//      gno_t gid = femv->getMap()->getGlobalElement(i);
+//      if (value[i] != 2*gid) {
+//        std::cout << me << " Error in vec 0 copies:  gid=" << gid
+//                        << " value= " << value[i] << " should be " << gid
+//                        << std::endl;
+//        ierr++;
+//      }
+//    }
   }
 
   // Check vector 1
@@ -378,15 +378,15 @@ int FEMultiVectorTest::intTest()
         ierr++;
       }
     }
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != tmp)  {
-        std::cout << me << " Error in vec 1:  gid=" << gid
-                        << " value= " << value[i] << " should be " << me
-                        << std::endl;
-        ierr++;
-      }
-    }
+//    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
+//      gno_t gid = mapWithCopies->getGlobalElement(i);
+//      if (value[i] != tmp)  {
+//        std::cout << me << " Error in vec 1:  gid=" << gid
+//                        << " value= " << value[i] << " should be " << me
+//                        << std::endl;
+//        ierr++;
+//      }
+//    }
   }
   return ierr;
 }
