@@ -26,6 +26,7 @@
     <Parameter name="Adjoint Rank"          type="int"      value="10"    />
     <Parameter name="State Sensitvity Rank" type="int"      value="10"    />
     <Parameter name="Use Hessian"           type="bool"     value="true"  />
+    <Parameter name="Use Symmetric Hessian" type="bool"     value="true"  />
   </ParameterList>
   <!--================================================================================-->
 </ParameterList>

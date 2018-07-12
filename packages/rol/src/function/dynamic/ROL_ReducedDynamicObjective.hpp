@@ -67,6 +67,9 @@
        c_n(u_{n-1},u_n,z_n) = 0,\quad n=1,\ldots,N_t
     \f]
     with \f$u_0\f$ provided.
+
+    Disclaimer: This is currently only set up for single step time integrators
+    and piecewise-constant-in-time controls.
 */
 
 
@@ -109,6 +112,7 @@ private:
   bool                               isStateComputed_;    // Whether state has been solved.
   bool                               isAdjointComputed_;  // Whether adjoint has been solved.
   bool                               useHessian_;         // Whether to use Hessian or FD.
+  bool                               useSymHess_;         // Whether to use symmetric Hessian approximation.
 
   PartitionedVector<Real>& partition ( Vector<Real>& x ) const {
     return static_cast<PartitionedVector<Real>&>(x);
@@ -141,7 +145,8 @@ public:
       isValueComputed_    ( false ),                                   // Flag indicating whether value has been computed.
       isStateComputed_    ( false ),                                   // Flag indicating whether state has been computed.
       isAdjointComputed_  ( false ),                                   // Flag indicating whether adjoint has been computed.
-      useHessian_         ( pl.get("Use Hessian",            true) ) { // Flag indicating whether to use the Hessian.
+      useHessian_         ( pl.get("Use Hessian",            true) ),  // Flag indicating whether to use the Hessian.
+      useSymHess_         ( pl.get("Use Symmetric Hessian",  true) ) { // Flag indicating whether to use symmetric sketched Hessian.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
       stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_);
@@ -349,11 +354,13 @@ public:
                               *vp.get(k),        *lhist_[lindex],
                               *uhist_[uindex-1], *uhist_[uindex],
                               *xp.get(k),        timeStamp_[k]);
-        // Add mixed derivative Hessian
-        addMixedHessLag(*hvp.get(k),       *lhist_[lindex],
-                        *whist_[uindex-1], *whist_[uindex],
-                        *uhist_[uindex-1], *uhist_[uindex],
-                        *xp.get(k),        timeStamp_[k]);
+        if (!useSymHess_) {
+          // Add mixed derivative Hessian
+          addMixedHessLag(*hvp.get(k),       *lhist_[lindex],
+                          *whist_[uindex-1], *whist_[uindex],
+                          *uhist_[uindex-1], *uhist_[uindex],
+                          *xp.get(k),        timeStamp_[k]);
+        }
         // Sketch state sensitivity
         if (useSketch_) {
           stateSensSketch_->advance(one,*whist_[1],static_cast<int>(k)-1,one);
@@ -381,6 +388,13 @@ public:
                                *whist_[uindex-1], *whist_[uindex],
                                *uhist_[uindex-1], *uhist_[uindex],
                                *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
+      if (useSymHess_) {
+        // Add mixed derivative Hessian
+        addMixedHessLag(*hvp.get(Nt_-1),   *lhist_[lindex],
+                        *whist_[uindex-1], *whist_[uindex],
+                        *uhist_[uindex-1], *uhist_[uindex],
+                        *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
+      }
       // Add adjoint sensitivity to Hessian
       addAdjointSens(*hvp.get(Nt_-1),   *phist_[lindex],
                      *uhist_[uindex-1], *uhist_[uindex],
@@ -433,6 +447,13 @@ public:
         advanceAdjointSens(*phist_[lindex],   *rhs_,
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(k),        timeStamp_[k]);
+        if (useSymHess_) {
+          // Add mixed derivative Hessian
+          addMixedHessLag(*hvp.get(k),       *lhist_[lindex],
+                          *whist_[uindex-1], *whist_[uindex],
+                          *uhist_[uindex-1], *uhist_[uindex],
+                          *xp.get(k),        timeStamp_[k]);
+        }
         // Add adjoint sensitivity to Hessian
         addAdjointSens(*hvp.get(k),       *phist_[lindex],
                        *uhist_[uindex-1], *uhist_[uindex],
