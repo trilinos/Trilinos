@@ -69,14 +69,14 @@ namespace {
   }
 
   template <>
-  RCP<SerialPlatform<node_type> > getPlatform() {
-    return rcp (new SerialPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
+  RCP<SerialPlatform<node_type> > getPlatform () {
+    return rcp (new SerialPlatform<node_type>);
   }
 
 #ifdef HAVE_TPETRA_MPI
   template <>
-  RCP<MpiPlatform<node_type> > getPlatform() {
-    return rcp (new MpiPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
+  RCP<MpiPlatform<node_type> > getPlatform () {
+    return rcp (new MpiPlatform<node_type>);
   }
 #endif
 

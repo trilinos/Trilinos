@@ -52,6 +52,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "MueLu_BaseClass.hpp"
+#include "Teuchos_RawParameterListHelpers.hpp"
 
 
 // ***********************************************************************
@@ -86,6 +87,13 @@ Modify MueLu
 */
 
 #ifdef HAVE_MUELU_AVATAR
+
+extern "C" {
+#include "avatar_api.h"
+}
+
+
+
 namespace MueLu {
 
 
@@ -114,7 +122,7 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
 // ***********************************************************************
 Teuchos::ArrayRCP<std::string> AvatarInterface::ReadFromFiles(const char * paramName) const {
-  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(param_name);
+  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(paramName);
   Teuchos::ArrayRCP<std::string> treelist;
   // Only Proc 0 will read the files and print the strings
   if (comm_->getRank() == 0) {
@@ -147,15 +155,16 @@ void AvatarInterface::Setup() {
     // Process avatar command line args
     const Teuchos::Array<std::string> & avatarArgs = params_.get<Teuchos::Array<std::string> >("avatar: args");
     int argc = (int) avatarArgs.size() +1;
-    char * argv0 = "avatardt";    
-    char * argv[argc];
-    argv[0] = argv0;
+    const char * argv0 = "avatardt";    
+    std::vector<char*> argv(argc);
+    argv[0] = const_cast<char*>(argv0);
     for(int i=1; i<argc; i++) 
-      argv[i] = avatarArgs[i-1];    
-#if 0
-    // Now actually set up avatar
-    avatarHandle_ = Teuchos::rcp(new Avatar(avatarArgs,avatarStrings_));
-#endif
+      argv[i] = const_cast<char*>(avatarArgs[i-1].c_str());
+    
+    // Now actually set up avatar - Avatar's cleanup routine will free the pointer
+    //Avatar_handle* avatar_train(int argc, char** argv, char* names_file, char* tree_file);
+    avatarHandle_ = avatar_train(argc,argv.data(),const_cast<char*>(namesStrings_[0].c_str()),const_cast<char*>(avatarStrings_[0].c_str()));
+
   }
 
   // Unpack the MueLu Mapping into something actionable
@@ -164,6 +173,13 @@ void AvatarInterface::Setup() {
   throw std::runtime_error("Not yet implemented!");
 
 }
+
+// ***********************************************************************
+void AvatarInterface::Cleanup() {
+  avatar_cleanup(avatarHandle_);
+  avatarHandle_=0;
+}
+
 
 // ***********************************************************************
 void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const {
@@ -200,7 +216,7 @@ void AvatarInterface::UnpackMueLuMapping() {
       const Teuchos::ParameterList & sublist = mapping.sublist(ss.str());
 
       // Get the names
-      mueluParameterName_[idx] = sublist.get<std::string>("muelu parameter");
+      mueluParameterName_[idx]  = sublist.get<std::string>("muelu parameter");
       avatarParameterName_[idx] = sublist.get<std::string>("avatar parameter");
 
       // Get the values
@@ -262,7 +278,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
   if (comm_->getRank() == 0) {
     // Only Rank 0 calls Avatar
-    if(avatarHandle_.is_null()) throw std::runtime_error("MueLu::AvatarInterface::SetMueLuParameters(): Setup has not been run");
+    if(!avatarHandle_) throw std::runtime_error("MueLu::AvatarInterface::SetMueLuParameters(): Setup has not been run");
 
     // Turn the problem features into a "trial" string for Avatar
     std::string trialString;
@@ -281,18 +297,19 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    std::vector<int> avatarOutput;
+    Teuchos::ArrayRCP<int> avatarOutput;
     {
-      std::string avatarString;
+      std::string testString;
       for(int i=0; i<num_combos; i++) {
         SetIndices(i,indices);
         // Now we add the MueLu parameters into one, enormous Avatar trial string and run avatar once
-        avatarString += trialString + ParamsToString(indices) + "\n";
+        testString += trialString + ParamsToString(indices) + "\n";
       }
       
-#if 0
-      avatarOutput= avatarHandle_->evaluate(avatarString);
-#endif      
+      // FIXME: Only send in first tree's string
+      //int* avatar_test(Avatar_handle* a, char* tree_file, char* test_data_file);
+      avatarOutput=Teuchos::arcp(avatar_test(&*avatarHandle_,const_cast<char*>(avatarStrings_[0].c_str()),const_cast<char*>(testString.c_str())),0,num_combos,false);
+
     }
 
     // Look at the list of acceptable combinations of options 

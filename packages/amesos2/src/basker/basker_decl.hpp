@@ -31,16 +31,16 @@
 
 #include "basker_types.hpp"
 
-namespace Basker{
+namespace BaskerClassicNS{
 
   template <class Int, class Entry>
-  class Basker
+  class BaskerClassic
   {
 
   public:
-    Basker();
-    Basker(Int nnzL, Int nnzU);
-    ~Basker();
+    BaskerClassic();
+    BaskerClassic(Int nnzL, Int nnzU);
+    ~BaskerClassic();
     int preorder(Int *row_perm, Int *col_perm);
     int factor(Int nrow, Int ncol , Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
     int returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);

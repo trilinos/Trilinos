@@ -148,7 +148,7 @@ namespace Tpetra {
     /// Since Node will be deprecated and removed in favor of
     /// Kokkos::Device, this method may return Teuchos::null.
     Teuchos::RCP<Node> getNode () const {
-      return KokkosClassic::Details::getNode<Node> ();
+      return Teuchos::rcp (new Node);
     }
 
     //@}
@@ -258,7 +258,7 @@ namespace Tpetra {
     Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type>
     getNode () const
     {
-      return KokkosClassic::Details::getNode<NodeType> ();
+      return Teuchos::rcp (new Tpetra::Details::DefaultTypes::node_type);
     }
 
     //@}

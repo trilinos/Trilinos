@@ -41,22 +41,13 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <TpetraExt_MatrixMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
-
   using std::endl;
-  using std::string;
 
   using Teuchos::as;
   using Teuchos::FancyOStream;
@@ -65,9 +56,6 @@ namespace {
   using Teuchos::rcp;
   using Teuchos::arcp;
   using Teuchos::outArg;
-  using Teuchos::arcpClone;
-  using Teuchos::arrayView;
-  using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
@@ -108,7 +96,6 @@ namespace {
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -169,16 +156,15 @@ namespace {
   // result to the known correct matrix.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftRightScale, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef Vector<Scalar,LO,GO,Node> VEC;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     int numProcs = comm->getSize();
     int myRank = comm->getRank();
 
     global_size_t numGlobal = 4*numProcs;
-    RCP<const Map<LO,GO,Node> > map = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createUniformContigMapWithNode<LO,GO,Node>(numGlobal,comm);
     RCP<VEC> vector = createVector<Scalar, LO, GO, Node>(map);
     vector->putScalar(2);
 

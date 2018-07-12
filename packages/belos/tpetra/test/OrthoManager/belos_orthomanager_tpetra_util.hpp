@@ -234,8 +234,7 @@ namespace Belos {
           // Create Tpetra::Map to represent multivectors in the range of
           // the sparse matrix.
           pMap = rcp (new map_type (numRows, 0, pComm,
-                                    Tpetra::GloballyDistributed,
-                                    getNode<node_type>()));
+                                    Tpetra::GloballyDistributed));
           // Second argument: max number of nonzero entries per row.
           pMatrix = rcp (new sparse_matrix_type (pMap, rnnzmax));
 
@@ -294,8 +293,7 @@ namespace Belos {
           // Let M remain null, and allocate map using the number of rows
           // (numRows) specified on the command line.
           pMap = rcp (new map_type (numRows, 0, pComm,
-                                    Tpetra::GloballyDistributed,
-                                    getNode<node_type>()));
+                                    Tpetra::GloballyDistributed));
         }
       return std::make_pair (pMap, pMatrix);
     }

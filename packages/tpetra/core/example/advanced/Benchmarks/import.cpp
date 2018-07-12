@@ -53,6 +53,7 @@
 #  endif // EPETRA_MPI
 #endif // HAVE_TPETRACORE_EPETRA
 
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -69,10 +70,9 @@ using Teuchos::rcp;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
 
-typedef Tpetra::Vector<>::scalar_type ST;
-typedef Tpetra::Vector<>::local_ordinal_type LO;
-typedef int GO; // So that Epetra and Tpetra can use the same GID lists
-typedef Tpetra::Vector<>::node_type NT;
+using ST = Tpetra::Vector<>::scalar_type;
+using LO = Tpetra::Vector<>::local_ordinal_type;
+using GO = int; // So Epetra and Tpetra can use the same GID lists
 
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.
@@ -90,16 +90,16 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
                        ArrayView<const GO> destGlobalElts,
                        const GO indexBase,
                        RCP<const Comm<int> > comm,
-                       RCP<NT> node,
                        const int numMapCreateTrials,
                        const int numImportCreateTrials,
                        const int numVectorCreateTrials,
                        const int numImportExecTrials)
 {
-  typedef Tpetra::Import<LO, GO, NT> import_type;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
-  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+  using import_type = Tpetra::Import<LO, GO>;
+  using map_type = Tpetra::Map<LO, GO>;
+  using vector_type = Tpetra::Vector<ST, LO, GO>;
+  const global_size_t INVALID =
+    Teuchos::OrdinalTraits<global_size_t>::invalid ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
@@ -123,8 +123,8 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   {
     TimeMonitor timeMon (*mapCreateTimer);
     for (int k = 0; k < numMapCreateTrials; ++k) {
-      srcMap = rcp (new map_type (INVALID, srcGlobalElts, indexBase, comm, node));
-      destMap = rcp (new map_type (INVALID, destGlobalElts, indexBase, comm, node));
+      srcMap = rcp (new map_type (INVALID, srcGlobalElts, indexBase, comm));
+      destMap = rcp (new map_type (INVALID, destGlobalElts, indexBase, comm));
     }
   }
   RCP<import_type> import;
@@ -283,99 +283,105 @@ createGidLists (Array<GO>& srcGlobalElts,
 int main (int argc, char* argv[]) {
   using std::cout;
   using std::endl;
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
-  RCP<const Teuchos::Comm<int> > tpetraComm;
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    RCP<const Teuchos::Comm<int> > tpetraComm;
 #ifdef HAVE_TPETRACORE_EPETRA
-  #ifdef EPETRA_MPI
-  Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
-  tpetraComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+#ifdef EPETRA_MPI
+    Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
+    tpetraComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
 #  else
-  Epetra_SerialComm epetraComm;
-  tpetraComm = rcp (new Teuchos::SerialComm<int>);
+    Epetra_SerialComm epetraComm;
+    tpetraComm = rcp (new Teuchos::SerialComm<int>);
 #  endif // EPETRA_MPI
 #endif // HAVE_TPETRACORE_EPETRA
-  RCP<NT> node = KokkosClassic::Details::getNode<NT> ();
 
-  const int numProcs = tpetraComm->getSize ();
-  const int myRank = tpetraComm->getRank ();
-  const int indexBase = 1; // of interest to Sierra
+    const int numProcs = tpetraComm->getSize ();
+    const int myRank = tpetraComm->getRank ();
+    const int indexBase = 1; // of interest to Sierra
 
-  // Benchmark parameters
-  int numEltsPerProc = 100000;
-  int numTrials = 100;
+    // Benchmark parameters
+    int numEltsPerProc = 100000;
+    int numTrials = 100;
 #ifdef HAVE_TPETRACORE_EPETRA
-  bool runEpetra = true;
+    bool runEpetra = true;
 #else
-  bool runEpetra = false;
+    bool runEpetra = false;
 #endif // HAVE_TPETRACORE_EPETRA
-  bool runTpetra = true;
+    bool runTpetra = true;
 
-  CommandLineProcessor cmdp;
-  cmdp.setOption ("numEltsPerProc", &numEltsPerProc, "Number of global indices "
-                  "owned by each process");
-  cmdp.setOption ("numTrials", &numTrials, "Number of times to repeat each "
-                  "operation in a timing loop");
-  cmdp.setOption ("runEpetra", "noEpetra", &runEpetra,
-                  "Whether to run the Epetra benchmark");
-  cmdp.setOption ("runTpetra", "noTpetra", &runTpetra,
-                  "Whether to run the Tpetra benchmark");
-  const CommandLineProcessor::EParseCommandLineReturn parseResult =
-    cmdp.parse (argc, argv);
-  if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-    // The user specified --help at the command line to print help
-    // with command-line arguments.  We printed help already, so quit
-    // with a happy return code.
-    return EXIT_SUCCESS;
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
-      std::invalid_argument, "Failed to parse command-line arguments.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numTrials < 0, std::invalid_argument, "numTrials must be nonnegative.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numEltsPerProc < 0, std::invalid_argument,
-      "numEltsPerProc must be nonnegative.");
+    CommandLineProcessor cmdp;
+    cmdp.setOption ("numEltsPerProc", &numEltsPerProc,
+		    "Number of global indices "
+		    "owned by each process");
+    cmdp.setOption ("numTrials", &numTrials,
+		    "Number of times to repeat each "
+		    "operation in a timing loop");
+    cmdp.setOption ("runEpetra", "noEpetra", &runEpetra,
+		    "Whether to run the Epetra benchmark");
+    cmdp.setOption ("runTpetra", "noTpetra", &runTpetra,
+		    "Whether to run the Tpetra benchmark");
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
+      cmdp.parse (argc, argv);
+    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
+      // The user specified --help at the command line to print help
+      // with command-line arguments.  We printed help already, so
+      // quit with a happy return code.
+      return EXIT_SUCCESS;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+	 std::invalid_argument,
+	 "Failed to parse command-line arguments.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(numTrials < 0, std::invalid_argument,
+	 "numTrials must be nonnegative.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(numEltsPerProc < 0, std::invalid_argument,
+	 "numEltsPerProc must be nonnegative.");
 #ifndef HAVE_TPETRACORE_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      runEpetra, std::invalid_argument, "Tpetra was not built with Epetra "
-      "enabled, so you cannot run the Epetra benchmark." );
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(runEpetra, std::invalid_argument, "Tpetra was not built with "
+	 "Epetra enable, so you cannot run the Epetra benchmark." );
 #endif // HAVE_TPETRACORE_EPETRA
-  }
+    }
 
-  // Derived benchmark parameters
-  const int numMapCreateTrials = numTrials;
-  const int numImportCreateTrials = numTrials;
-  const int numVectorCreateTrials = numTrials;
-  const int numImportExecTrials = numTrials;
+    // Derived benchmark parameters
+    const int numMapCreateTrials = numTrials;
+    const int numImportCreateTrials = numTrials;
+    const int numVectorCreateTrials = numTrials;
+    const int numImportExecTrials = numTrials;
 
-  if (myRank == 0) {
-    cout << endl << "---" << endl
-         << "Command-line options:" << endl
-         << "  numEltsPerProc: " << numEltsPerProc << endl
-         << "  numTrials: " << numTrials << endl
-         << "  runEpetra: " << (runEpetra ? "true" : "false") << endl
-         << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
-         << endl;
-  }
+    if (myRank == 0) {
+      cout << endl << "---" << endl
+	   << "Command-line options:" << endl
+	   << "  numEltsPerProc: " << numEltsPerProc << endl
+	   << "  numTrials: " << numTrials << endl
+	   << "  runEpetra: " << (runEpetra ? "true" : "false") << endl
+	   << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
+	   << endl;
+    }
 
-  // Run the benchmark
-  Array<GO> srcGlobalElts, destGlobalElts;
-  createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank,
-                  numEltsPerProc, indexBase);
+    // Run the benchmark
+    Array<GO> srcGlobalElts, destGlobalElts;
+    createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank,
+		    numEltsPerProc, indexBase);
 #ifdef HAVE_TPETRACORE_EPETRA
-  if (runEpetra) {
-    benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase, epetraComm,
-                           numMapCreateTrials, numImportCreateTrials,
-                           numVectorCreateTrials, numImportExecTrials);
-  }
+    if (runEpetra) {
+      benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase,
+			     epetraComm,
+			     numMapCreateTrials, numImportCreateTrials,
+			     numVectorCreateTrials, numImportExecTrials);
+    }
 #endif // HAVE_TPETRACORE_EPETRA
-  if (runTpetra) {
-    benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
-                           node, numMapCreateTrials, numImportCreateTrials,
-                           numVectorCreateTrials, numImportExecTrials);
+    if (runTpetra) {
+      benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
+                             numMapCreateTrials, numImportCreateTrials,
+                             numVectorCreateTrials, numImportExecTrials);
+    }
+    TimeMonitor::report (tpetraComm.ptr (), std::cout);
   }
-  TimeMonitor::report (tpetraComm.ptr (), std::cout);
   return EXIT_SUCCESS;
 }
