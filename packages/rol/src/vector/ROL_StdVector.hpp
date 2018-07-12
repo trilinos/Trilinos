@@ -63,11 +63,15 @@ class StdVector : public Vector<Real> {
 
 private:
 
-  Ptr<std::vector<Element> >  std_vec_;
+  Ptr<std::vector<Element>>  std_vec_;
 
 public:
 
   StdVector(const Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+
+  StdVector(const int dim, const Element val=0.0) {
+    std_vec_ = makePtr<std::vector<Element>>(dim,val);
+  }
 
   void set( const Vector<Real> &x ) {
 
