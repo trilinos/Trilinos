@@ -149,7 +149,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -197,7 +197,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -232,7 +232,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -439,7 +439,7 @@ namespace {
     RCP<MV> Xhat = rcp(new MV(dmnmap,1));
     Xhat->setObjectLabel("Xhat");
 
-    // Create solver interface to Basker through Amesos2 factory method
+    // Create solver interface to MUMPS through Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("MUMPS",A,Xhat,B);
 
     solver->symbolicFactorization().numericFactorization().solve();

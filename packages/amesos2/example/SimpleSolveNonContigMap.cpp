@@ -77,7 +77,11 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+  std::string solver_name = "ShyLUBasker";
+#else
   std::string solver_name = "Basker";
+#endif
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("solver", &solver_name, "Which TPL solver library to use.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -220,8 +224,8 @@ int main(int argc, char *argv[]) {
 
 //    Teuchos::ParameterList & sublist_params = amesos2_params.sublist(solver_name);
 //     sublist_params.set("IsContiguous", false, "Are GIDs Contiguous");
-#ifdef SHYLU_NODEBASKER
-    if ( solver_name == "Basker" ) {
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+    if ( solver_name == "ShyLUBasker" ) {
       amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
 //      sublist_params.set("num_threads", 1, "Number of threads");
     }

@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 
 
   cout << "Done allocating space" << endl;
-  Basker::Basker<int, double> mybasker;
+  BaskerClassicNS::BaskerClassic<int, double> mybasker;
   mybasker.factor(anrow, ancol,annz, Ap, Ai, Ax);
 
   Int *pp;

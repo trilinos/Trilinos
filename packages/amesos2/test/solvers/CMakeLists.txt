@@ -200,6 +200,21 @@ IF (${PACKAGE_NAME}_ENABLE_Basker AND NOT ${PROJECT_NAME}_ENABLE_DEBUG)
     STANDARD_PASS_OUTPUT
     )
     
+ENDIF()
+
+####   SHYLUBASKER Tests ####
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ShyLUBasker_UnitTests
+    SOURCES
+      ShyLUBasker_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+    
     ##Copy shylubasker_test.xml, but do not test
     ##depends on not included matrices
     TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyShyLUBaskerFiles
