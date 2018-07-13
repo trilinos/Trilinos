@@ -79,10 +79,13 @@ private:
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
 
+  bool isLTI_;
+  Real T_;
+
 public:
   PDE_adv_diff(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Poisson").get("Basis Order",1);
+    int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
       basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
@@ -91,10 +94,13 @@ public:
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
-    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();        // get the cell type from any basis
-    Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
-    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2); // set cubature degree, e.g., 2
-    cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
+    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();    // get the cell type from any basis
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                   // create cubature factory
+    int cubDegree = parlist.sublist("Problem").get("Cubature Degree",2); // set cubature degree, e.g., 2
+    cellCub_ = cubFactory.create(cellType, cubDegree);                   // create default cubature
+    // Time-dependent coefficients
+    isLTI_ = !parlist.sublist("Problem").get("Time Varying Coefficients",false);
+    T_     = parlist.sublist("Time Discretization").get("End Time",1.0);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
@@ -447,6 +453,13 @@ private:
     const Real b = five + (ten-five)*half*(p35+one);
     adv[0] = b - a*x[0];
     adv[1] =     a*x[1];
+    // Get time
+    if (!isLTI_) {
+      const Real time = PDE<Real>::getTime();
+      const Real pd = static_cast<Real>(2.0*M_PI)/T_, shift = half;
+      adv[0] *= std::sin(pd*time)+shift;
+      adv[1] *= std::sin(pd*time)+shift;
+    }
   }
 
   Real evaluateRHS(const std::vector<Real> &x) const {
@@ -456,6 +469,10 @@ private:
     // Upper and lower bounds on source magintudes
     const std::vector<Real> ml = {1.5, 1.2, 1.5, 1.2, 1.1};
     const std::vector<Real> mu = {2.5, 1.8, 1.9, 2.6, 1.5};
+    // Period and phase of sources
+    const Real pd0 = static_cast<Real>(2.0*M_PI)/T_;
+    const std::vector<Real> pd = {pd0, 2.0*pd0, 3.0*pd0, 4.0*pd0, 5.0*pd0};
+    const std::vector<Real> ph = {-2.0, -1.0, 0.0, 1.0, 2.0};
     // Upper and lower bounds on source locations
     const std::vector<Real> xl = {0.45, 0.75, 0.40, 0.05, 0.85};
     const std::vector<Real> xu = {0.55, 0.85, 0.60, 0.35, 0.95};
@@ -466,6 +483,11 @@ private:
     const std::vector<Real> sxu = {0.07, 0.04, 0.05, 0.04, 0.025};
     const std::vector<Real> syl = {0.04, 0.01, 0.02, 0.02, 0.01};
     const std::vector<Real> syu = {0.12, 0.05, 0.04, 0.04, 0.03};
+    // Get time
+    Real time(0);
+    if (!isLTI_) {
+      time = PDE<Real>::getTime();
+    }
     for (int i=0; i<ns; ++i) {
       Real pi  = static_cast<Real>(0);
       Real pi1 = static_cast<Real>(0);
@@ -473,7 +495,12 @@ private:
       Real pi3 = static_cast<Real>(0);
       Real pi4 = static_cast<Real>(0);
 
-      mag  = ml[i] + (mu[i]-ml[i])*half*(pi+one);
+      if (isLTI_) {
+        mag = ml[i] + (mu[i]-ml[i])*half*(pi+one);
+      }
+      else {
+        mag = half*((mu[i]+ml[i]) + (mu[i]-ml[i])*std::sin(pd[i]*time + ph[i]));
+      }
       x0   = xl[i] + (xu[i]-xl[i])*half*(pi1+one);
       y0   = yl[i] + (yu[i]-yl[i])*half*(pi3+one);
       sx   = sxl[i] + (sxu[i]-sxl[i])*half*(pi2+one);

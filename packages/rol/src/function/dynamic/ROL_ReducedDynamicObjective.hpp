@@ -218,6 +218,9 @@ public:
       size_type index;
       for (size_type k = 1; k < Nt_; ++k) {
         index = (useSketch_ ? 1 : k);
+        // Update dynamic constraint and objective
+        con_->update(*uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
+        obj_->update(*uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Solve state on current time interval
         con_->solve(*cprimal_, *uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Compute objective function value on current time interval
@@ -245,24 +248,23 @@ public:
     // Must first compute the value
     solveState(x);
     // Recover state from sketch
-    if (!isAdjointComputed_) {
-      if (useSketch_) {
-        uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+    if (useSketch_) {
+      uhist_[1]->set(*uhist_[0]);
+      stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+      if (isAdjointComputed_) {
+        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
       }
-      // Solve for terminal condition
+    }
+    // Update dynamic constraint and objective
+    con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
+    obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
+    // Solve for terminal condition
+    if (!isAdjointComputed_) {
       setTerminalCondition(*lhist_[lindex],
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
       if (useSketch_) {
         adjointSketch_->advance(one,*lhist_[0],static_cast<int>(Nt_)-2,one);
-      }
-    }
-    else {
-      if (useSketch_) {
-        uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
-        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
       }
     }
     // Update gradient on terminal interval
@@ -279,35 +281,29 @@ public:
       }
       uindex = (useSketch_ ? 1 : k);
       lindex = (useSketch_ ? 0 : k);
-      if (!isAdjointComputed_) {
-        // Recover state from sketch
-        if (useSketch_) {
-          uhist_[1]->set(*uhist_[0]);
-          if (k==1) {
-            uhist_[0]->set(*u0_);
-          }
-          else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
-          }
+      // Recover state from sketch
+      if (useSketch_) {
+        uhist_[1]->set(*uhist_[0]);
+        if (k==1) {
+          uhist_[0]->set(*u0_);
         }
-        // Solve for adjoint on interval k
+        else {
+          stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+        }
+        if (isAdjointComputed_) {
+          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+        }
+      }
+      // Update dynamic constraint and objective
+      con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
+      obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
+      // Solve for adjoint on interval k
+      if (!isAdjointComputed_) {
         advanceAdjoint(*lhist_[lindex],   *rhs_,
                        *uhist_[uindex-1], *uhist_[uindex],
                        *xp.get(k),        timeStamp_[k]);
         if (useSketch_) {
           adjointSketch_->advance(one,*lhist_[0],static_cast<int>(k)-1,one);
-        }
-      }
-      else {
-        if (useSketch_) {
-          uhist_[1]->set(*uhist_[0]);
-          if (k==1) {
-            uhist_[0]->set(*u0_);
-          }
-          else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
-          }
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
         }
       }
       // Update gradient on interval k
@@ -344,6 +340,9 @@ public:
           stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k)-1);
           adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
         }
+        // Update dynamic constraint and objective
+        con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
+        obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
         // Advance state sensitivity on current time interval
         advanceStateSens(*whist_[uindex],
                          *vp.get(k),        *whist_[uindex-1],
@@ -382,6 +381,9 @@ public:
         whist_[1]->set(*whist_[0]);
         stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(Nt_)-3);
       }
+      // Update dynamic constraint and objective
+      con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
+      obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
       // Solve for terminal condition
       setTerminalConditionHess(*phist_[lindex],
                                *vp.get(Nt_-1),    *lhist_[lindex],
@@ -432,6 +434,9 @@ public:
         }
         uindex = (useSketch_ ? 1 : k);
         lindex = (useSketch_ ? 0 : k);
+        // Update dynamic constraint and objective
+        con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
+        obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
         // Compute old components of rhs
         computeOldStateHessLag(*rhs_,             *lhist_[lindex],
                                *whist_[uindex-1], *whist_[uindex],

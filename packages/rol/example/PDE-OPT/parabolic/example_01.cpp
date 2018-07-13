@@ -62,7 +62,7 @@
 #include <iostream>
 
 #include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/lticonstraint.hpp"
+#include "../TOOLS/lindynconstraint.hpp"
 #include "../TOOLS/ltiobjective.hpp"
 #include "../TOOLS/pdevector.hpp"
 #include "../TOOLS/pdeobjective.hpp"
@@ -117,18 +117,22 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
     /*************************************************************************/
-    ROL::Ptr<LTI_Constraint<RealT> > dyn_con
-      = ROL::makePtr<LTI_Constraint<RealT>>(pde,mass,meshMgr,comm,*zk,*parlist,*outStream);
+    ROL::Ptr<LinDynConstraint<RealT> > dyn_con
+      = ROL::makePtr<LinDynConstraint<RealT>>(pde,mass,meshMgr,comm,*zk,*parlist,true,*outStream);
     dyn_con->getAssembler()->printMeshData(*outStream);
 
     /*************************************************************************/
     /***************** BUILD STATE VECTORS ***********************************/
     /*************************************************************************/
-    ROL::Ptr<Tpetra::MultiVector<>> u0_ptr, ck_ptr;
+    ROL::Ptr<Tpetra::MultiVector<>> u0_ptr, uo_ptr, un_ptr, ck_ptr;
     u0_ptr = dyn_con->getAssembler()->createStateVector();
+    uo_ptr = dyn_con->getAssembler()->createStateVector();
+    un_ptr = dyn_con->getAssembler()->createStateVector();
     ck_ptr = dyn_con->getAssembler()->createResidualVector();
-    ROL::Ptr<ROL::Vector<RealT> > u0, ck;
+    ROL::Ptr<ROL::Vector<RealT> > u0, uo, un, ck;
     u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,dyn_con->getAssembler());
+    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,dyn_con->getAssembler());
+    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,dyn_con->getAssembler());
     ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,dyn_con->getAssembler());
 
     /*************************************************************************/
@@ -174,18 +178,8 @@ int main(int argc, char *argv[]) {
     if ( checkDeriv ) {
       ROL::Ptr<ROL::PartitionedVector<RealT>> dz = ROL::PartitionedVector<RealT>::create(*zk, nt);
       ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
-      ROL::Ptr<Tpetra::MultiVector<>> uo_ptr, un_ptr;
-      uo_ptr = dyn_con->getAssembler()->createStateVector();
-      un_ptr = dyn_con->getAssembler()->createStateVector();
-      ROL::Ptr<ROL::Vector<RealT> > uo, un;
-      uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,dyn_con->getAssembler());
-      un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,dyn_con->getAssembler());
-      zk->randomize();
-      z->randomize();
-      dz->randomize();
-      hz->randomize();
-      uo->randomize();
-      un->randomize();
+      zk->randomize(); z->randomize(); dz->randomize(); hz->randomize();
+      uo->randomize(); un->randomize();
       ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
       ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
       ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
@@ -225,6 +219,21 @@ int main(int argc, char *argv[]) {
       }
       zfile.close();
     }
+    // Output state to file
+    uo->set(*u0); un->zero();
+    for (int k = 1; k < nt; ++k) {
+      // Print previous state to file
+      std::stringstream ufile;
+      ufile << "state." << k-1 << ".txt";
+      dyn_con->outputTpetraVector(uo_ptr, ufile.str());
+      // Advance time stepper
+      dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
+      uo->set(*un);
+    }
+    // Print previous state to file
+    std::stringstream ufile;
+    ufile << "state." << nt-1 << ".txt";
+    dyn_con->outputTpetraVector(uo_ptr, ufile.str());
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -58,7 +58,7 @@ template <class Real>
 class LTI_Objective : public ROL::DynamicObjective<Real> {
 private:
   const ROL::Ptr<ROL::Objective_SimOpt<Real>> obj_;
-  Real dt_, theta_;
+  Real theta_;
   mutable ROL::Ptr<ROL::Vector<Real>> zdual_;
 
 public:
@@ -66,10 +66,7 @@ public:
                 const ROL::Vector<Real> &z,
                 ROL::ParameterList &parlist) :obj_(obj) {
     // Get time discretization parameters
-    Real  T = parlist.sublist("Time Discretization").get("End Time",             1.0);
-    int  nt = parlist.sublist("Time Discretization").get("Number of Time Steps", 100);
     theta_  = parlist.sublist("Time Discretization").get("Theta",                1.0);
-    dt_     = T/static_cast<Real>(nt-1);
     zdual_ = z.dual().clone();
   }
 
@@ -78,12 +75,14 @@ public:
               const ROL::Vector<Real> &z,
               const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
     obj_->update(uo,z);
     Real valo = obj_->value(uo,z,tol);
     obj_->update(un,z);
     Real valn = obj_->value(un,z,tol);
-    return dt_*((one-theta_)*valo + theta_*valn);
+    return dt*((one-theta_)*valo + theta_*valn);
   }
 
   void gradient_uo( ROL::Vector<Real> &g,
@@ -92,10 +91,12 @@ public:
               const ROL::Vector<Real> &z,
               const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
     obj_->update(uo,z);
     obj_->gradient_1(g,uo,z,tol);
-    g.scale(dt_*(one-theta_));
+    g.scale(dt*(one-theta_));
   }
 
   void gradient_un( ROL::Vector<Real> &g,
@@ -104,9 +105,11 @@ public:
               const ROL::Vector<Real> &z,
               const ROL::TimeStamp<Real> &ts ) const {
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(un,z);
     obj_->gradient_1(g,un,z,tol);
-    g.scale(dt_*theta_);
+    g.scale(dt*theta_);
   }
 
   void gradient_z( ROL::Vector<Real> &g,
@@ -116,12 +119,14 @@ public:
              const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(uo,z);
     obj_->gradient_2(g,uo,z,tol);
-    g.scale(dt_*(one-theta_));
+    g.scale(dt*(one-theta_));
     obj_->update(un,z);
     obj_->gradient_2(*zdual_,un,z,tol);
-    g.axpy(dt_*theta_,*zdual_);
+    g.axpy(dt*theta_,*zdual_);
   }
 
   void hessVec_uo_uo( ROL::Vector<Real> &hv,
@@ -132,9 +137,11 @@ public:
                 const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(uo,z);
     obj_->hessVec_11(hv,v,uo,z,tol);
-    hv.scale(dt_*(one-theta_));
+    hv.scale(dt*(one-theta_));
   }
 
   void hessVec_uo_un( ROL::Vector<Real> &hv,
@@ -154,9 +161,11 @@ public:
                const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(uo,z);
     obj_->hessVec_12(hv,v,uo,z,tol);
-    hv.scale(dt_*(one-theta_));
+    hv.scale(dt*(one-theta_));
   }
 
   void hessVec_un_uo( ROL::Vector<Real> &hv,
@@ -176,9 +185,11 @@ public:
                 const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(un,z);
     obj_->hessVec_11(hv,v,un,z,tol);
-    hv.scale(dt_*theta_);
+    hv.scale(dt*theta_);
   }
 
   void hessVec_un_z( ROL::Vector<Real> &hv,
@@ -188,9 +199,11 @@ public:
                const ROL::Vector<Real> &z,
                const ROL::TimeStamp<Real> &ts ) const {
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(un,z);
     obj_->hessVec_12(hv,v,un,z,tol);
-    hv.scale(dt_*theta_);
+    hv.scale(dt*theta_);
   }
 
   void hessVec_z_uo( ROL::Vector<Real> &hv,
@@ -201,9 +214,11 @@ public:
                const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(uo,z);
     obj_->hessVec_21(hv,v,uo,z,tol);
-    hv.scale(dt_*(one-theta_));
+    hv.scale(dt*(one-theta_));
   }
 
   void hessVec_z_un( ROL::Vector<Real> &hv,
@@ -213,9 +228,11 @@ public:
                const ROL::Vector<Real> &z,
                const ROL::TimeStamp<Real> &ts ) const {
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(un,z);
     obj_->hessVec_21(hv,v,un,z,tol);
-    hv.scale(dt_*theta_);
+    hv.scale(dt*theta_);
   }
 
   void hessVec_z_z( ROL::Vector<Real> &hv,
@@ -226,12 +243,14 @@ public:
               const ROL::TimeStamp<Real> &ts ) const {
     const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real timeOld = ts.t[0], timeNew = ts.t[1];
+    Real dt = timeNew - timeOld;
     obj_->update(uo,z);
     obj_->hessVec_22(hv,v,uo,z,tol);
-    hv.scale(dt_*(one-theta_));
+    hv.scale(dt*(one-theta_));
     obj_->update(un,z);
     obj_->hessVec_22(*zdual_,v,un,z,tol);
-    hv.axpy(dt_*theta_,*zdual_);
+    hv.axpy(dt*theta_,*zdual_);
   }
 }; // class LTI_Objective
 

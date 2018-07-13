@@ -45,8 +45,8 @@
     \brief Defines the SimOpt constraint for the 'poisson' example.
 */
 
-#ifndef ROL_PDEOPT_LTICONSTRAINT_H
-#define ROL_PDEOPT_LTICONSTRAINT_H
+#ifndef ROL_PDEOPT_LINDYNCONSTRAINT_H
+#define ROL_PDEOPT_LINDYNCONSTRAINT_H
 
 #include "ROL_DynamicConstraint.hpp"
 #include "pde.hpp"
@@ -61,120 +61,113 @@ extern template class Assembler<double>;
 #ifdef ROL_TIMERS
 namespace ROL {
   namespace PDEOPT {
-    ROL::Ptr<Teuchos::Time> LTIConstraintSolverConstruct_Jacobian_un        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Solver Construction Time for Jacobian un");
-    ROL::Ptr<Teuchos::Time> LTIConstraintSolverSolve_Jacobian_un            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Solver Solution Time for Jacobian un");
-    ROL::Ptr<Teuchos::Time> LTIConstraintSolverSolve_AdjointJacobian_un     = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Solver Solution Time for Adjoint Jacobian un");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyJacobian_uo                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Jacobian uo");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyJacobian_un                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Jacobian un");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyJacobian_zf                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Jacobian zf");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyJacobian_zp                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Jacobian zp");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyAdjointJacobian_uo            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Adjoint Jacobian uo");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyAdjointJacobian_un            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Adjoint Jacobian un");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyAdjointJacobian_zf            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Adjoint Jacobian zf");
-    ROL::Ptr<Teuchos::Time> LTIConstraintApplyAdjointJacobian_zp            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LTI Constraint Apply Adjoint Jacobian zp");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintSolverConstruct_Jacobian_un        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Solver Construction Time for Jacobian un");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintSolverSolve_Jacobian_un            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Solver Solution Time for Jacobian un");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintSolverSolve_AdjointJacobian_un     = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Solver Solution Time for Adjoint Jacobian un");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyJacobian_uo                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Jacobian uo");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyJacobian_un                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Jacobian un");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyJacobian_zf                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Jacobian zf");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyJacobian_zp                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Jacobian zp");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyAdjointJacobian_uo            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Adjoint Jacobian uo");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyAdjointJacobian_un            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Adjoint Jacobian un");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyAdjointJacobian_zf            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Adjoint Jacobian zf");
+    ROL::Ptr<Teuchos::Time> LinDynConstraintApplyAdjointJacobian_zp            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: LinDyn Constraint Apply Adjoint Jacobian zp");
   }
 }
 #endif
 
 
 template<class Real>
-class LTI_Constraint : public ROL::DynamicConstraint<Real> {
+class LinDynConstraint : public ROL::DynamicConstraint<Real> {
 private:
   const ROL::Ptr<PDE<Real>>       pde_;
   const ROL::Ptr<PDE<Real>>      mass_;
   ROL::Ptr<Solver<Real>>       solver_;
   ROL::Ptr<Assembler<Real>> assembler_;
 
-  Real theta_, dt_;
+  Real theta_;
 
   ROL::Ptr<Tpetra::MultiVector<>> uvec_;
   ROL::Ptr<Tpetra::MultiVector<>> zvec_;
   ROL::Ptr<std::vector<Real>>     zpar_;
+  ROL::Ptr<Tpetra::CrsMatrix<>>   matM_;
 
-  ROL::Ptr<Tpetra::MultiVector<>>   vecR_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>     matM_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>     matA_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>   matJuo_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>   matJun_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf_;
-  ROL::Ptr<Tpetra::MultiVector<>> vecJzp_;
-
-  bool initZvec_, initZpar_;
-  bool assembleRHS_, assembleM_, assembleA_;
-  bool assembleJuo_, assembleJun_, assembleJzf_;
-  bool assembleJzp_, setSolver_;
-
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matA_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJuo_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJun_;
+  mutable ROL::Ptr<Tpetra::MultiVector<>> vecR_;
+  mutable ROL::Ptr<Tpetra::MultiVector<>> vecRtmp_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf1_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf2_;
+  mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzp_;
+  mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzptmp_;
   mutable ROL::Ptr<Tpetra::MultiVector<>> cvec_;
 
-  void assemble(const ROL::Vector<Real> &z) {
-    ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-    ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
+  const bool isLTI_;
+  mutable bool isAssembled_;
 
-    // Initialize field component of z.
-    if (initZvec_ && zf != ROL::nullPtr) {
-      zvec_ = assembler_->createControlVector();
-      zvec_->putScalar(static_cast<Real>(0));
-    }
-    initZvec_ = false;
-    // Initialize parameter component of z.
-    if (initZpar_ && zp != ROL::nullPtr) {
-      zpar_ = ROL::makePtr<std::vector<Real>>(zp->size(),static_cast<Real>(0));
-    }
-    initZpar_ = false;
-    // Assemble affine term.
-    if (assembleRHS_) {
-      assembler_->assemblePDEResidual(vecR_,pde_,uvec_,zvec_,zpar_);
-    }
-    assembleRHS_ = false;
+  void assembleMass(void) {
     // Assemble mass matrix.
-    if (assembleM_) {
-      assembler_->assemblePDEJacobian1(matM_,mass_,uvec_,zvec_,zpar_);
-    }
-    assembleM_ = false;
-    // Assemble stiffness matrix.
-    if (assembleA_) {
-      assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
-    }
-    assembleA_ = false;
-    // Assemble jacobian_uo.
-    if (assembleJuo_) {
-      const Real one(1);
-      matJuo_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(-dt_*(one-theta_),*matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
-    }
-    assembleJuo_ = false;
-    // Assemble jacobian_un.
-    if (assembleJun_) {
-      const Real one(1);
-      matJun_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt_*theta_,*matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
-    }
-    assembleJun_ = false;
-    // Assemble jacobian_zf.
-    if (assembleJzf_ && zf != ROL::nullPtr) {
-      assembler_->assemblePDEJacobian2(matJzf_,pde_,uvec_,zvec_,zpar_);
-    }
-    assembleJzf_ = false;
-    // Assemble jacobian_3.
-    if (assembleJzp_ && zp != ROL::nullPtr) {
-      assembler_->assemblePDEJacobian3(vecJzp_,pde_,uvec_,zvec_,zpar_);
-    }
-    assembleJzp_ = false;
+    assembler_->assemblePDEJacobian1(matM_,mass_,uvec_,zvec_,zpar_);
   }
 
-  void setSolver(void) {
-    if (setSolver_) {
-      #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintSolverConstruct_Jacobian_un);
-      #endif
-      solver_->setA(matJun_);
+  void assemble(const ROL::TimeStamp<Real> &ts) const {
+    if (!isAssembled_) {
+      const Real one(1);
+      Real timeOld = ts.t[0], timeNew = ts.t[1];
+      Real dt = timeNew - timeOld;
+
+      pde_->setTime(timeOld);
+      // Assemble uold Jacobian.
+      assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
+      matJuo_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(-dt*(one-theta_),
+                  *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
+      // Assemble old affine term.
+      assembler_->assemblePDEResidual(vecR_,pde_,uvec_,zvec_,zpar_);
+      // Assemble old control Jacobian.
+      if (zvec_ != ROL::nullPtr) {
+        assembler_->assemblePDEJacobian2(matJzf1_,pde_,uvec_,zvec_,zpar_);
+      }
+      if (zpar_ != ROL::nullPtr) {
+        assembler_->assemblePDEJacobian3(vecJzp_,pde_,uvec_,zvec_,zpar_);
+      }
+
+      pde_->setTime(timeNew);
+      // Assemble unew Jacobian and initialize linear solver.
+      assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
+      matJun_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt*theta_,
+                  *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
+      setSolver();
+      // Assemble new affine term.
+      assembler_->assemblePDEResidual(vecRtmp_,pde_,uvec_,zvec_,zpar_);
+      vecR_->update(dt * theta_, *vecRtmp_, dt * (one-theta_));
+      // Assemble new control Jacobian.
+      if (zvec_ != ROL::nullPtr) {
+        assembler_->assemblePDEJacobian2(matJzf2_,pde_,uvec_,zvec_,zpar_);
+        matJzf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matJzf1_->add(dt*theta_,
+                    *matJzf2_, dt*(one-theta_), matJzf1_->getDomainMap(),
+                    matJzf1_->getRangeMap(), Teuchos::null));
+      }
+      if (zpar_ != ROL::nullPtr) {
+        assembler_->assemblePDEJacobian3(vecJzptmp_,pde_,uvec_,zvec_,zpar_);
+        vecJzp_->update(dt * theta_, *vecJzptmp_, dt * (one-theta_));
+      }
+      isAssembled_ = true;
     }
-    setSolver_ = false;
+  }
+
+  void setSolver(void) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintSolverConstruct_Jacobian_un);
+    #endif
+    solver_->setA(matJun_);
   }
 
   void solveForward(ROL::Ptr<Tpetra::MultiVector<>> &x,
                     const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
-
     #ifdef ROL_TIMERS
-      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintSolverSolve_Jacobian_un);
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintSolverSolve_Jacobian_un);
     #endif
     solver_->solve(x,b,false);
   }
@@ -182,7 +175,7 @@ private:
   void solveAdjoint(ROL::Ptr<Tpetra::MultiVector<>> &x,
                     const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
     #ifdef ROL_TIMERS
-      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintSolverSolve_AdjointJacobian_un);
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintSolverSolve_AdjointJacobian_un);
     #endif
     solver_->solve(x,b,true);
   }
@@ -192,13 +185,13 @@ private:
                         const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyJacobian_uo);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyJacobian_uo);
       #endif
       matJuo_->apply(*v,*Jv,Teuchos::NO_TRANS);
     }
     else {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyAdjointJacobian_uo);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyAdjointJacobian_uo);
       #endif
       matJuo_->apply(*v,*Jv,Teuchos::TRANS);
     }
@@ -209,13 +202,13 @@ private:
                         const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyJacobian_un);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyJacobian_un);
       #endif
       matJun_->apply(*v,*Jv,Teuchos::NO_TRANS);
     }
     else {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyAdjointJacobian_un);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyAdjointJacobian_un);
       #endif
       matJun_->apply(*v,*Jv,Teuchos::TRANS);
     }
@@ -226,13 +219,13 @@ private:
                         const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyJacobian_zf);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyJacobian_zf);
       #endif
       matJzf_->apply(*v,*Jv,Teuchos::NO_TRANS);
     }
     else {
       #ifdef ROL_TIMERS
-        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyAdjointJacobian_zf);
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyAdjointJacobian_zf);
       #endif
       matJzf_->apply(*v,*Jv,Teuchos::TRANS);
     }
@@ -242,7 +235,7 @@ private:
                         const ROL::Ptr<const std::vector<Real>> &v,
                         const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
-      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyJacobian_zp);
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyJacobian_zp);
     #endif
     if ( zeroOut ) {
       Jv->putScalar(static_cast<Real>(0));
@@ -257,7 +250,7 @@ private:
   void applyAdjointJacobian_zp(const ROL::Ptr<std::vector<Real> > &Jv,
                                const ROL::Ptr<const Tpetra::MultiVector<> > &v) const {
     #ifdef ROL_TIMERS
-      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LTIConstraintApplyAdjointJacobian_zp);
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::LinDynConstraintApplyAdjointJacobian_zp);
     #endif
     Teuchos::Array<Real> val(1,0);
     const size_t size = static_cast<size_t>(Jv->size());
@@ -270,43 +263,42 @@ private:
 
 public:
 
-  LTI_Constraint(const ROL::Ptr<PDE<Real>> &pde,
-                 const ROL::Ptr<PDE<Real>> &mass,
-                 const ROL::Ptr<MeshManager<Real>> &meshMgr,
-                 const ROL::Ptr<const Teuchos::Comm<int>> &comm,
-                 const ROL::Vector<Real> &z,
-                 Teuchos::ParameterList &parlist,
-                 std::ostream &outStream = std::cout)
-    : pde_         (  pde ),
-      mass_        ( mass ),
-      initZvec_    ( true ),
-      initZpar_    ( true ),
-      assembleRHS_ ( true ),
-      assembleM_   ( true ),
-      assembleA_   ( true ), 
-      assembleJuo_ ( true ),
-      assembleJun_ ( true ),
-      assembleJzf_ ( true ),
-      assembleJzp_ ( true ),
-      setSolver_   ( true ) {
+  LinDynConstraint(const ROL::Ptr<PDE<Real>> &pde,
+                   const ROL::Ptr<PDE<Real>> &mass,
+                   const ROL::Ptr<MeshManager<Real>> &meshMgr,
+                   const ROL::Ptr<const Teuchos::Comm<int>> &comm,
+                   const ROL::Vector<Real> &z,
+                   Teuchos::ParameterList &parlist,
+                   const bool isLTI = false,
+                   std::ostream &outStream = std::cout)
+    : pde_         (   pde ),
+      mass_        (  mass ),
+      isLTI_       ( isLTI ),
+      isAssembled_ ( false ) {
     // Get time discretization parameters
-    Real  T = parlist.sublist("Time Discretization").get("End Time",             1.0);
-    int  nt = parlist.sublist("Time Discretization").get("Number of Time Steps", 100);
     theta_  = parlist.sublist("Time Discretization").get("Theta",                1.0);
-    dt_     = T/static_cast<Real>(nt-1);
     // Construct assembler.
     assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
     assembler_->setCellNodes(*mass_);
     // Construct solver.
     solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
-    // Initialize zero vectors.
+    // Initialize state and constraint vectors.
     cvec_ = assembler_->createResidualVector();
     uvec_ = assembler_->createStateVector();
     uvec_->putScalar(static_cast<Real>(0));
+    // Initialize control vectors
+    ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
+    ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
+    if (zf != ROL::nullPtr) {
+      zvec_ = assembler_->createControlVector();
+      zvec_->putScalar(static_cast<Real>(0));
+    }
+    if (zp != ROL::nullPtr) {
+      zpar_ = ROL::makePtr<std::vector<Real>>(zp->size(),static_cast<Real>(0));
+    }
     // Assemble matrices
-    assemble(z);
-    setSolver();
+    assembleMass();
   }
 
   const ROL::Ptr<Assembler<Real>> getAssembler(void) const {
@@ -315,6 +307,16 @@ public:
 
   const ROL::Ptr<PDE<Real>> getPDE(void) const {
     return pde_;
+  }
+
+  void update(const ROL::Vector<Real>    &uo,
+              const ROL::Vector<Real>    &un,
+              const ROL::Vector<Real>    &z,
+              const ROL::TimeStamp<Real> &ts) {
+    if (!isLTI_) {
+      isAssembled_ = false;
+    }
+    assemble(ts);
   }
 
   void value(ROL::Vector<Real>    &c,
@@ -328,23 +330,24 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
     ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
+    const Real one(1);
+    assemble(ts);
     c.zero();
     cvec_->putScalar(static_cast<Real>(0));
 
-    const Real one(1);
-    // Old state contribution
-    applyJacobian_uo(cf,uof,false);
-    // Add load contribution
-    cf->update(dt_,*vecR_,one);
+    // Apply old state contribution
+    applyJacobian_uo(cf, uof, false);
+    // Add affine/control terms
+    cf->update(one, *vecR_, one);
     if (zf != ROL::nullPtr) {
-      applyJacobian_zf(cvec_,zf,false);
-      cf->update(dt_,*cvec_,one);
+      applyJacobian_zf(cvec_, zf, false);
+      cf->update(one, *cvec_, one);
     }
     if (zp != ROL::nullPtr) {
       applyJacobian_zp(cvec_,zp,false);
-      cf->update(dt_,*cvec_,one);
+      cf->update(one, *cvec_, one);
     }
-    // Add new contribution
+    // Add new state contribution
     applyJacobian_un(cvec_,unf,false);
     cf->update(one,*cvec_,-one);
   }
@@ -360,21 +363,22 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
     ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
+    const Real one(1);
+    assemble(ts);
     c.zero();
     cvec_->putScalar(static_cast<Real>(0));
 
-    const Real one(1);
-    // Old state contribution
-    applyJacobian_uo(cf,uof,false);
-    // Load contribution
-    cf->update(dt_,*vecR_,one);
+    // Apply old state contribution
+    applyJacobian_uo(cf, uof, false);
+    // Add affine/control terms
+    cf->update(one, *vecR_, one);
     if (zf != ROL::nullPtr) {
-      applyJacobian_zf(cvec_,zf,false);
-      cf->update(dt_,*cvec_,one);
+      applyJacobian_zf(cvec_, zf, false);
+      cf->update(one, *cvec_, one);
     }
     if (zp != ROL::nullPtr) {
       applyJacobian_zp(cvec_,zp,false);
-      cf->update(dt_,*cvec_,one);
+      cf->update(one, *cvec_, one);
     }
     // Apply inverse of new state jacobian
     solveForward(unf,cf);
@@ -393,6 +397,7 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
     const Real one(1);
+    assemble(ts);
     applyJacobian_uo(jvf,vf,false);
     jvf->scale(-one);
   }
@@ -406,6 +411,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
+    assemble(ts);
     applyJacobian_un(jvf,vf,false);
   }
 
@@ -415,21 +421,22 @@ public:
                  const ROL::Vector<Real>    &uo,
                  const ROL::Vector<Real>    &un,
                  const ROL::Vector<Real>    &z,
-                 const ROL::TimeStamp<Real> &tol) const {
+                 const ROL::TimeStamp<Real> &ts) const {
     jv.zero();
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
 
     const Real one(1);
+    assemble(ts);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     if (vf != ROL::nullPtr) {
       applyJacobian_zf(cvec_,vf,false);
-      jvf->update(-dt_,*cvec_,one);
+      jvf->update(-one,*cvec_,one);
     }
     ROL::Ptr<const std::vector<Real>>     vp = getConstParameter(v);
     bool zeroOut = (vf == ROL::nullPtr);
     if (vp != ROL::nullPtr) {
       applyJacobian_zp(cvec_,vp,zeroOut);
-      jvf->update(-dt_,*cvec_,one);
+      jvf->update(-one,*cvec_,one);
     }
   }
 
@@ -444,6 +451,7 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
     const Real one(1);
+    assemble(ts);
     applyJacobian_uo(ajvf,vf,true);
     ajvf->scale(-one);
   }
@@ -458,6 +466,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>     ajvf = getField(ajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
+    assemble(ts);
     applyJacobian_un(ajvf,vf,true);
   }
 
@@ -474,13 +483,15 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
     ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
 
+    const Real one(1);
+    assemble(ts);
     if (zf != ROL::nullPtr) {
       applyJacobian_zf(ajvf,vf,true);
     }
     if (zp != ROL::nullPtr) {
       applyAdjointJacobian_zp(ajvp,vf);
     }
-    ajv.scale(-dt_);
+    ajv.scale(-one);
   }
 
 
@@ -493,6 +504,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>     ijvf = getField(ijv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
+    assemble(ts);
     solveForward(ijvf,vf);
   }
 
@@ -506,6 +518,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>    iajvf = getField(iajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
+    assemble(ts);
     solveAdjoint(iajvf,vf);
   }
 

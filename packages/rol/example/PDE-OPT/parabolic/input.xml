@@ -5,6 +5,7 @@
     <Parameter name="Control Cost"               type="double"  value="1e0"   />
     <Parameter name="State Cost"                 type="double"  value="1e5"   />
     <Parameter name="Order of FE discretization" type="int"     value="1"     />
+    <Parameter name="Time Varying Coefficients"  type="bool"    value="false" />
   </ParameterList>
 
   <!--================================================================================--> 
