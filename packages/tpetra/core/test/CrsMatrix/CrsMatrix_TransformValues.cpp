@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -64,8 +64,7 @@ namespace { // (anonymous)
     int lclSuccess = 0;
     int gblSuccess = 0;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -237,8 +236,7 @@ namespace { // (anonymous)
     int lclSuccess = 0;
     int gblSuccess = 0;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 

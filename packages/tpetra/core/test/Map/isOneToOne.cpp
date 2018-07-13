@@ -42,9 +42,8 @@
 */
 
 #include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 
 namespace {
@@ -65,10 +64,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous uniform Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -127,7 +125,7 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous uniform Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
 
@@ -188,10 +186,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous uniform replicated Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -252,7 +249,7 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous uniform replicated Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
 
@@ -317,10 +314,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous nonuniform Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -381,7 +377,7 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a contiguous nonuniform Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
 
@@ -444,10 +440,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a noncontiguous, one-to-one Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -517,10 +512,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a noncontiguous, replicated Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -590,10 +584,9 @@ namespace {
   {
     out << "Testing Map::isOneToOne with a noncontiguous, not one-to-one Map" << endl;
     Teuchos::OSTab tab0 (out);
-    typedef Tpetra::Map<LO, GO> map_type;
+    using map_type = Tpetra::Map<LO, GO>;
 
-    RCP<const comm_type> comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const comm_type> comm = Tpetra::getDefaultComm ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();

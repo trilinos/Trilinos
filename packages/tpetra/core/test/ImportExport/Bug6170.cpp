@@ -41,15 +41,12 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 
-typedef Tpetra::Map<>::local_ordinal_type LO; // Local Ordinal
-typedef Tpetra::Map<>::global_ordinal_type GO; // Global Ordinal
+using LO = Tpetra::Map<>::local_ordinal_type;
+using GO = Tpetra::Map<>::global_ordinal_type;
 
 namespace { // anonymous
   const GO sourceMap0[] = {91, 68, 90, 56, 77, 54, 75, 51};
@@ -104,15 +101,14 @@ int main (int argc, char *argv[])
   using std::cerr;
   using std::cout;
   using std::endl;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
-  typedef Tpetra::Map<LO,GO,NT>                             map_type;
-  typedef Tpetra::Import<LO,GO,NT>                       import_type;
-  typedef Tpetra::Vector<LO,LO,GO,NT>                       vec_type;
+  typedef Tpetra::Map<>::node_type    NT;
+  typedef Tpetra::Map<LO,GO,NT>       map_type;
+  typedef Tpetra::Import<LO,GO,NT>    import_type;
+  typedef Tpetra::Vector<LO,LO,GO,NT> vec_type;
   typedef Tpetra::global_size_t GST; // Map's constructor needs this
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > commWorld =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  RCP<const Teuchos::Comm<int> > commWorld = Tpetra::getDefaultComm ();
   TEUCHOS_TEST_FOR_EXCEPTION(
     commWorld->getSize () < 8, std::logic_error,
     "This test must be run with at least 8 (preferably exactly 8) "

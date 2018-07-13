@@ -39,13 +39,11 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Util.hpp> // sort2
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 
 using Tpetra::global_size_t;
 using Teuchos::Array;
@@ -103,10 +101,6 @@ template<class CrsMatrixType>
 bool
 compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
-  //  typedef typename CrsMatrixType::scalar_type ST;
-  //  typedef typename CrsMatrixType::global_ordinal_type GO;
-  //  typedef typename ArrayView<const GO>::size_type size_type;
-
   Teuchos::OSTab tab (out);
 
   bool globalAllSame = true;
@@ -305,15 +299,10 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                       const std::string& mapInFile,
                       const std::string& matrixInFile)
 {
-  typedef double ST;
-  typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Map<>::global_ordinal_type GO;
-  typedef Tpetra::Map<>::node_type NT;
-
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
-  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
+  using map_type = Tpetra::Map<>;
+  using crs_matrix_type = Tpetra::CrsMatrix<double>;
+  using reader_type = Tpetra::MatrixMarket::Reader<crs_matrix_type>;
+  using writer_type = Tpetra::MatrixMarket::Writer<crs_matrix_type>;
   const bool tolerant = false;
 
   bool result = true; // current Boolean result; reused below
@@ -322,14 +311,12 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   out << "Test: Matrix Market, CrsMatrix from row Map" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   out << "Reading the (row) Map" << endl;
   RCP<const map_type> rowMap =
-    reader_type::readMapFile (mapInFile, comm, node, tolerant, debug);
+    reader_type::readMapFile (mapInFile, comm, tolerant, debug);
 
   if (mapOutFile != "") {
     out << "Writing the Map" << endl;
@@ -337,7 +324,7 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
 
     out << "Reading the written Map back in" << endl;
     RCP<const map_type> rowMap_out =
-      reader_type::readMapFile (mapOutFile, comm, node, tolerant, debug);
+      reader_type::readMapFile (mapOutFile, comm, tolerant, debug);
 
     out << "Comparing the two Maps" << endl;
     result = rowMap->isSameAs (*rowMap_out);
