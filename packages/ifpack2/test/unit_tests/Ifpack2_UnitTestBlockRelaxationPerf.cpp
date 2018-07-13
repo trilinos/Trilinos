@@ -17,7 +17,7 @@
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector_def.hpp>
 #include <Tpetra_Vector_def.hpp>
@@ -48,7 +48,7 @@ using std::string;
 using Teuchos::RCP;
 using Teuchos::rcp;
 typedef unsigned long long u64;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NO;
+typedef Tpetra::Map<>::node_type NO;
 typedef Tpetra::CrsMatrix<double,int,int,NO> TMat;
 typedef Tpetra::Map<int,int,NO> TMap;
 
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
 {
   using Teuchos::ArrayRCP;
   //use the same types as epetra for fair comparison
-  auto tcomm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  auto tcomm = Tpetra::getDefaultComm();
   if(tcomm->getSize() == 1)
   {
     //Configure ranges of testing
