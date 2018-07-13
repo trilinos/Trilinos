@@ -74,7 +74,7 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
 #include <iostream>
@@ -273,7 +273,7 @@ const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double
 
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix_tpetra(GO cnt,ST * vec,std::string label)
 {
-   const RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   const RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
    const RCP<const Tpetra::Map<LO,GO,NT> > map = rcp(new const Tpetra::Map<LO,GO,NT>(cnt,0,comm));
    const RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> >ptrF  = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map, 1);
 
