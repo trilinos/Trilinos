@@ -56,9 +56,8 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 int
@@ -83,16 +82,13 @@ main (int argc, char *argv[])
 
   typedef Teuchos::CommandLineProcessor   CLP;
 
-
-
-  Teuchos::GlobalMPISession mpisess (&argc, &argv, &cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   bool success = false;
   bool verbose = false;
   try {
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node;
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<node_type> node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor

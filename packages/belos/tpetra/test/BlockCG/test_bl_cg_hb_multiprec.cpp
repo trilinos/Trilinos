@@ -55,9 +55,8 @@
 #include <Trilinos_Util_iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DiagPrecond.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -71,8 +70,6 @@
 
 using namespace Teuchos;
 using namespace Belos;
-using Tpetra::DefaultPlatform;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::DiagPrecond;
@@ -238,9 +235,8 @@ bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,
 ///////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) 
 {
-  GlobalMPISession mpisess(&argc,&argv,&cout);
-  RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   //
   // Get test parameters from command-line processor
