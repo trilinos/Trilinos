@@ -53,7 +53,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -99,8 +99,7 @@ namespace {
   using Amesos2::MUMPS;
   using Amesos2::Meta::is_same;
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Platform::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;
 
@@ -121,7 +120,7 @@ namespace {
   {
     RCP<const Comm<int> > ret;
     if( testMpi ){
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     } else {
       ret = rcp(new Teuchos::SerialComm<int>());
     }
@@ -149,7 +148,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -197,7 +196,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -232,7 +231,7 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    //typedef Basker<MAT,MV> SOLVER;
+    //typedef MUMPS<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -273,14 +272,12 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
 
     printf("Consider Matrix 1 \n");
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
 
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
@@ -334,12 +331,10 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -391,13 +386,11 @@ namespace {
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     //typedef ScalarTraits<Mag> MT;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     printf("Consider Matrix 4 \n");
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat4.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat4.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -439,7 +432,7 @@ namespace {
     RCP<MV> Xhat = rcp(new MV(dmnmap,1));
     Xhat->setObjectLabel("Xhat");
 
-    // Create solver interface to Basker through Amesos2 factory method
+    // Create solver interface to MUMPS through Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("MUMPS",A,Xhat,B);
 
     solver->symbolicFactorization().numericFactorization().solve();
@@ -464,13 +457,11 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     printf("Consider Matrix 2 \n");
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat2.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat2.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -513,13 +504,11 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     printf("Consider Matrix 3\n");
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat3.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat3.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();

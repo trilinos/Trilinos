@@ -1,23 +1,23 @@
-#ifndef BASKER_DEF_HPP
-#define BASKER_DEF_HPP
+#ifndef SHYLUBASKER_DEF_HPP
+#define SHYLUBASKER_DEF_HPP
 
 //#define BASKER_TIME
 
 /*Basker Includes*/
 #include "shylubasker_decl.hpp"
-#include "basker_matrix_decl.hpp"
-#include "basker_matrix_def.hpp"
-#include "basker_matrix_view_decl.hpp"
-#include "basker_matrix_view_def.hpp"
-#include "basker_tree.hpp"
-#include "basker_sfactor.hpp"
-#include "basker_sfactor_inc.hpp"
-#include "basker_nfactor.hpp"
-#include "basker_nfactor_inc.hpp"
-#include "basker_solve_rhs.hpp"
-#include "basker_util.hpp"
-#include "basker_stats.hpp"
-#include "basker_order.hpp"
+#include "shylubasker_matrix_decl.hpp"
+#include "shylubasker_matrix_def.hpp"
+#include "shylubasker_matrix_view_decl.hpp"
+#include "shylubasker_matrix_view_def.hpp"
+#include "shylubasker_tree.hpp"
+#include "shylubasker_sfactor.hpp"
+#include "shylubasker_sfactor_inc.hpp"
+#include "shylubasker_nfactor.hpp"
+#include "shylubasker_nfactor_inc.hpp"
+#include "shylubasker_solve_rhs.hpp"
+#include "shylubasker_util.hpp"
+#include "shylubasker_stats.hpp"
+#include "shylubasker_order.hpp"
 
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
