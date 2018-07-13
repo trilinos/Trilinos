@@ -1,4 +1,0 @@
-ADD_SUBDIRECTORY(DynRankView)
-
-
-

@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="smoother: pre or post" type="string" value="none"/>
+</ParameterList>

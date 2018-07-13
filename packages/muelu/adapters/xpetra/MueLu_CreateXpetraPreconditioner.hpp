@@ -8,10 +8,12 @@
 #ifndef PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_
 #define PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_
 
+//! @file
+//! @brief Various adapters that will create a MueLu preconditioner that is an Xpetra::Matrix.
+
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 
 #include <MueLu.hpp>
 
@@ -23,27 +25,42 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyUtils.hpp>
 
+#include <stdlib.h>
+
 namespace MueLu {
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace (optional) Near nullspace of the matrix.
+  */
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op, const Teuchos::ParameterList& inParamList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) {
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                             const Teuchos::ParameterList& inParamList,
+                             Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords = Teuchos::null,
+                             Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace = Teuchos::null) {
     typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
     typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
     typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
     typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
     typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
-    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
 
     std::string timerName = "MueLu setup time";
     RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
     tm->start();
 
-    ParameterList paramList = inParamList;
-
-    bool hasParamList = paramList.numParams();
+    bool hasParamList = inParamList.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
+
+    // Rip off non-serializable data before validation
+    Teuchos::ParameterList nonSerialList,paramList;
+    MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -53,54 +70,90 @@ namespace MueLu {
       mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
     }
 
-    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    // Create Hierarchy
+    std::string label;
+    if (hasParamList && paramList.isParameter("hierarchy label")) {
+      label = paramList.get<std::string>("hierarchy label");
+      paramList.remove("hierarchy label");
+    } else
+      label = op->getObjectLabel();
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
     H->setlib(op->getDomainMap()->lib());
 
+    // Stick the non-serializible data on the hierarchy.
+    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
 
     // Set coordinates if available
-    if (coords != Teuchos::null) {
+    if (coords != Teuchos::null)
       H->GetLevel(0)->Set("Coordinates", coords);
+
+    // Set nullspace if available
+    if (nullspace != Teuchos::null)
+      H->GetLevel(0)->Set("Nullspace", nullspace);
+
+    mueLuFactory->SetupHierarchy(*H);
+
+    tm->stop();
+    tm->incrementNumCalls();
+
+    if (H->GetVerbLevel() & Statistics0) {
+      const bool alwaysWriteLocal = true;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = timerName;
+      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                                      writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
     }
 
-    // Wrap nullspace if available, otherwise use constants
-    if (nullspace == Teuchos::null) {
-      int nPDE = MueLu::MasterList::getDefault<int>("number of equations");
-      if (paramList.isSublist("Matrix")) {
-        // Factory style parameter list
-        const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
-        if (operatorList.isParameter("PDE equations"))
-          nPDE = operatorList.get<int>("PDE equations");
+    tm->reset();
 
-      } else if (paramList.isParameter("number of equations")) {
-        // Easy style parameter list
-        nPDE = paramList.get<int>("number of equations");
-      }
+    return H;
+  }
 
-      nullspace = MultiVectorFactory::Build(op->getDomainMap(), nPDE);
-      if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                             const Teuchos::ParameterList& inParamList,
+                             const Teuchos::ParameterList& dummy) {
+    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
+    typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
+    typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
+    typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 
-      } else {
-        for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
-          for (int j = 0; j < nsData.size(); j++) {
-            GlobalOrdinal GID = op->getDomainMap()->getGlobalElement(j) - op->getDomainMap()->getIndexBase();
+    std::string timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
 
-            if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
-          }
-        }
-      }
+    bool hasParamList = inParamList.numParams();
+
+    RCP<HierarchyManager> mueLuFactory;
+
+    // Rip off non-serializable data before validation
+    Teuchos::ParameterList nonSerialList,paramList;
+    MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
+
+    std::string syntaxStr = "parameterlist: syntax";
+    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
+      paramList.remove(syntaxStr);
+      mueLuFactory = rcp(new MLParameterListInterpreter(paramList));
+    } else {
+      mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
     }
-    H->GetLevel(0)->Set("Nullspace", nullspace);
 
+    // Create Hierarchy
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->setlib(op->getDomainMap()->lib());
 
-    Teuchos::ParameterList nonSerialList,dummyList;
-    MueLu::ExtractNonSerializableData(paramList, dummyList, nonSerialList);
+    // Stick the non-serializible data on the hierarchy.
     HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
+
+    // Set fine level operator
+    H->GetLevel(0)->Set("A", op);
 
     mueLuFactory->SetupHierarchy(*H);
 
@@ -180,5 +233,7 @@ namespace MueLu {
   }
 
 } //namespace
+
+#define XPETRA_CREATEXPETRAPRECONDITIONER_SHORT
 
 #endif /* PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_ */

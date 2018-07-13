@@ -44,7 +44,7 @@
 
 #include "BelosTpetraAdapter.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
-#include "Kokkos_MV_GEMM.hpp"
+#include "Tpetra_Details_gemm.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor_MP_Vector.hpp>
@@ -366,12 +366,12 @@ namespace Belos {
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> b_view_type;
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), strideB*numColsB);
-      b_view_type B_view_dev( B_1d_view_dev.ptr_on_device(), strideB, numColsB);
+      b_view_type B_view_dev( B_1d_view_dev.data(), strideB, numColsB);
       Kokkos::deep_copy(B_view_dev, B_view_host);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
-        Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+      ::Tpetra::Details::Blas::gemm (
+        'N', 'N',
         alpha, flat_A_view, B_view_dev, beta, flat_C_view);
 
       // Copy back to C if we made a copy
@@ -474,11 +474,11 @@ namespace Belos {
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> c_view_type;
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> c_1d_view_type;
       c_1d_view_type C_1d_view_dev("C", strideC*numColsC);
-      c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
+      c_view_type C_view_dev( C_1d_view_dev.data(), strideC, numColsC);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
-        Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
+      ::Tpetra::Details::Blas::gemm(
+        'C', 'N',
         alpha, flat_A_view, flat_B_view,
         Kokkos::Details::ArithTraits<dot_type>::zero(),
         C_view_dev);
@@ -490,12 +490,12 @@ namespace Belos {
       else {
         typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
-        c_host_view_type C_view_tmp( C_1d_view_tmp.ptr_on_device(),
+        c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
                                      strideC, numColsC);
         Kokkos::deep_copy(C_view_tmp, C_view_dev);
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
-                        C_view_tmp.ptr_on_device(),
-                        C_view_host.ptr_on_device());
+                        C_view_tmp.data(),
+                        C_view_host.data());
       }
     }
 

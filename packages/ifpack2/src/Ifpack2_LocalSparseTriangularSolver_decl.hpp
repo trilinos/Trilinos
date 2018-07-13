@@ -45,12 +45,13 @@
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // forward declaration of CrsMatrix
-  template<class S, class LO, class GO, class N, const bool classic> class CrsMatrix;
+  template<class S, class LO, class GO, class N> class CrsMatrix;
 } // namespace Tpetra
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -106,6 +107,9 @@ public:
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+  //! Specialization of Tpetra::CrsMatrix used by this class.
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> crs_matrix_type;
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::LocalSparseTriangularSolver: The template parameter "
@@ -143,12 +147,50 @@ public:
   /// those properties.
   LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A);
 
+  /// \brief Constructor that takes an optional debug output stream.
+  ///
+  /// \param A [in] The input sparse matrix.  Though its type is
+  ///   Tpetra::RowMatrix for consistency with other Ifpack2 solvers,
+  ///   this must be a Tpetra::CrsMatrix specialization.
+  ///
+  /// \param out [in/out] Optional debug output stream.  If nonnull,
+  ///   this solver will print copious debug output to the stream.
+  LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
+                               const Teuchos::RCP<Teuchos::FancyOStream>& out);
+
+  /// \brief Constructor that takes no input matrix.
+  ///
+  /// Call setMatrix to initialize the matrix.
+  LocalSparseTriangularSolver ();
+
+  /// \brief Constructor that takes no input matrix.
+  ///
+  /// Call setMatrix to initialize the matrix.
+  ///
+  /// \param unused [in] Disambiguate the constructor so that the ctor taking A
+  ///   can cast A implicitly. This ctor is meant for debugging, so I prefer to
+  ///   make it a bit awkward than require careful explicit casting of A in the
+  ///   other ctor.
+  ///
+  /// \param out [in/out] Optional debug output stream.  If nonnull,
+  ///   this solver will print copious debug output to the stream.
+  LocalSparseTriangularSolver (const bool /* unused */, const Teuchos::RCP<Teuchos::FancyOStream>& out);
+
   //! Destructor (virtual for memory safety).
   virtual ~LocalSparseTriangularSolver ();
 
   /// \brief Set this object's parameters.
   ///
-  /// This object does not currently take any parameters.
+  /// \param plist [in] List of parameters.
+  ///
+  /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
+  ///   to be more cache-efficient
+  ///
+  /// If Trilinos_ENABLE_ShyLU_NodeHTS=TRUE, then these parameters are available:
+  ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
+  ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
+  ///     thought of as being blocked int little blocks of this size. Default
+  ///     is 1.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief "Symbolic" phase of setup
@@ -184,7 +226,7 @@ public:
   ///
   /// \param X [in] MultiVector to which to apply the preconditioner.
   /// \param Y [in/out] On input: Initial guess, if applicable.
-  ///   On output: Result of applying the preconditioner.
+  ///   On output: Result of applying the preconditioner. Y may alias X.
   /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS)
   ///   or conjugate transpose (Teuchos::CONJ_TRANS).  The default
   ///   (Teuchos::NO_TRANS) is not to apply the transpose or conjugate
@@ -296,17 +338,28 @@ public:
 private:
   //! The original input matrix.
   Teuchos::RCP<const row_matrix_type> A_;
+  //! Debug output stream; may be null (not used in that case)
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
   //! The original input matrix, as a Tpetra::CrsMatrix.
-  Teuchos::RCP<const Tpetra::CrsMatrix<scalar_type,
-                                       local_ordinal_type,
-                                       global_ordinal_type,
-                                       node_type, false> > A_crs_;
+  Teuchos::RCP<const crs_matrix_type> A_crs_;
+
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   mutable Teuchos::RCP<MV> X_colMap_;
   mutable Teuchos::RCP<MV> Y_rowMap_;
 
   bool isInitialized_;
   bool isComputed_;
+  /// \brief True if and only if this class' internal storage
+  ///   representation of the matrix is not the same as A_.
+  ///
+  /// If true, then one of two things has happened:
+  ///
+  /// <ol>
+  /// <li> A_crs_ is actually a copy, with permuted / reversed storage. </li>
+  /// <li> htsImpl_->initialize(*A_crs_) has been called. </li>
+  /// </ol>
+  bool isInternallyChanged_;
+  bool reverseStorage_;
 
   mutable int numInitialize_;
   mutable int numCompute_;
@@ -315,6 +368,18 @@ private:
   double initializeTime_;
   double computeTime_;
   double applyTime_;
+
+  //! Optional HTS implementation.
+  class HtsImpl;
+  Teuchos::RCP<HtsImpl> htsImpl_;
+
+  /// \brief "L" if the matrix is locally lower triangular, "U" if the
+  ///   matrix is locally upper triangular, or "N" if unknown or
+  ///   otherwise.
+  std::string uplo_;
+  /// \brief "U" if the matrix is known to have an implicitly stored
+  ///   unit diagonal, else "N".
+  std::string diag_;
 
   /// \brief The purely local part of apply().
   ///
@@ -340,6 +405,14 @@ private:
               const Teuchos::ETransp mode,
               const scalar_type& alpha,
               const scalar_type& beta) const;
+
+  //! Replacement for Tpetra::CrsMatrix::localSolve.
+  void
+  localTriangularSolve (const MV& Y,
+                        MV& X,
+                        const Teuchos::ETransp mode) const;
+
+  void initializeState();
 };
 
 } // namespace Ifpack2

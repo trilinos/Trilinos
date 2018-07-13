@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -66,7 +66,7 @@ template <typename T, typename INT>
 int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename);
 
 template <typename T, typename INT>
-int nem_spread(NemSpread<T, INT> &spreader, const char *cmd_file, int subcycles, int cycle);
+int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subcycles, int cycle);
 
 int main(int argc, char *argv[])
 {
@@ -108,8 +108,9 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (optind >= argc)
+  if (optind >= argc) {
     salsa_cmd_file = "nem_spread.inp";
+  }
   else {
     salsa_cmd_file = argv[optind];
   }
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
 
   int status;
   if (io_ws == 4) {
-    if (int64api) {
+    if (int64api != 0) {
       NemSpread<float, int64_t> spreader;
       spreader.io_ws        = io_ws;
       spreader.int64db      = int64db;
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
     }
   }
   else {
-    if (int64api) {
+    if (int64api != 0) {
       NemSpread<double, int64_t> spreader;
       spreader.io_ws        = io_ws;
       spreader.int64db      = int64db;
@@ -207,7 +208,7 @@ int main(int argc, char *argv[])
     }
   }
   double g_end_t = second() - g_start_t;
-  printf("The average run time was: %.2fs\n", g_end_t);
+  printf("The average run time was: %.4fs\n", g_end_t);
 
   ex_close(exoid);
   add_to_log(argv[0], g_end_t);
@@ -243,10 +244,12 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
   }
 
   /* If debug is on the turn on netCDF/Exodus information as well */
-  if (Debug_Flag > 0)
+  if (Debug_Flag > 0) {
     ex_opts(EX_VERBOSE | EX_DEBUG);
-  else
+  }
+  else {
     ex_opts(EX_VERBOSE);
+  }
 
   /*
    * Read initial information from the mesh file.
@@ -283,13 +286,16 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
   /*
    * Verify parameters in case spreading a subset of mesh...
    */
-  if (spreader.Proc_Info[4] < 0)
+  if (spreader.Proc_Info[4] < 0) {
     spreader.Proc_Info[4] = 0;
-  if (spreader.Proc_Info[5] <= 0)
+  }
+  if (spreader.Proc_Info[5] <= 0) {
     spreader.Proc_Info[5] = spreader.Proc_Info[0];
+  }
 
-  if (spreader.Proc_Info[4] + spreader.Proc_Info[5] > spreader.Proc_Info[0])
+  if (spreader.Proc_Info[4] + spreader.Proc_Info[5] > spreader.Proc_Info[0]) {
     spreader.Proc_Info[5] = spreader.Proc_Info[0] - spreader.Proc_Info[4];
+  }
 
   if (spreader.Proc_Info[4] != 0 || spreader.Proc_Info[5] != spreader.Proc_Info[0]) {
     printf(
@@ -342,10 +348,12 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
 
   for (int i = 0; i < spreader.Proc_Info[0]; i++) {
     safe_free((void **)&spreader.globals.GNodes[i]);
-    if (spreader.globals.Elem_Type != nullptr)
+    if (spreader.globals.Elem_Type != nullptr) {
       safe_free((void **)&spreader.globals.Elem_Type[i]);
-    if (spreader.globals.Proc_Global_Node_Id_Map != nullptr)
+    }
+    if (spreader.globals.Proc_Global_Node_Id_Map != nullptr) {
       safe_free((void **)&spreader.globals.Proc_Global_Node_Id_Map[i]);
+    }
     safe_free((void **)&spreader.globals.Proc_SS_Ids[i]);
     safe_free((void **)&spreader.globals.Proc_SS_GEMap_List[i]);
     safe_free((void **)&spreader.globals.Proc_NS_Ids[i]);

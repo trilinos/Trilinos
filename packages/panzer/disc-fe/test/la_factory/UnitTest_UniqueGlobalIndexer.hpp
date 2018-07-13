@@ -52,7 +52,7 @@
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
-   #include "mpi.h"
+   #include <mpi.h>
 #else
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif
@@ -131,7 +131,7 @@ public:
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
+   virtual void getElementOrientation(LocalOrdinalT /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -156,14 +156,65 @@ public:
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const;
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      owned by this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *                      ghosted for this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the owned and
+    *                      ghosted indices for this processor.
+    *
+    *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinalT> & indices) const;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -256,7 +307,7 @@ public:
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
+   virtual void getElementOrientation(LocalOrdinalT /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -285,10 +336,10 @@ public:
      */
    virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and shared by this processor.
+   /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -332,14 +383,14 @@ public:
      *          field if the field exisits. Otherwise
      *          a -1 is returned.
      */
-   virtual int getFieldNum(const std::string & str) const
+   virtual int getFieldNum(const std::string& /* str */) const
    { TEUCHOS_ASSERT(false); return -1; }
 
    virtual int getNumFields() const { return 2; }
    virtual void getFieldOrder(std::vector<std::string> & order) const 
    { order.push_back("U"); order.push_back("T"); }
 
-   virtual const std::string & getFieldString(int field) const
+   virtual const std::string& getFieldString(int /* field */) const
    { TEUCHOS_ASSERT(false); static std::string empty = "EMPTY"; return empty; }
 
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
@@ -351,7 +402,7 @@ public:
 
    /** Is the specified field in the element block? 
      */
-   virtual bool fieldInBlock(const std::string & field, const std::string & block) const
+   virtual bool fieldInBlock(const std::string& /* field */, const std::string& /* block */) const
    { TEUCHOS_ASSERT(false); return false; }
 
    /** Get the local element IDs for a paricular element
@@ -365,22 +416,22 @@ public:
 
    /** Get field numbers associated with a particular element block.
      */
-   virtual const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const
+   virtual const std::vector<int>& getBlockFieldNumbers(const std::string& /* blockId */) const
    { static std::vector<int> data; TEUCHOS_ASSERT(false); return data; }
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<std::pair<int,GlobalOrdinalT> > & gids,const std::string & blockId="") const
+   virtual void getElementGIDs(LocalOrdinalT /* localElmtId */, std::vector<std::pair<int, GlobalOrdinalT>>& /* gids */, const std::string& /* blockId="" */) const
    { TEUCHOS_ASSERT(false); }
 
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
+   virtual void getElementOrientation(LocalOrdinalT /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
      */
-   virtual const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
+   virtual const std::vector<int>& getGIDFieldOffsets(const std::string& /* blockId */, int /* fieldNum */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -397,27 +448,27 @@ public:
      */
    // virtual const std::vector<int> & 
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
-   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                               int subcellDim,int subcellId) const
+   getGIDFieldOffsets_closure(const std::string& /* blockId */, int /* fieldNum */,
+                                                               int /* subcellDim */, int /* subcellId */) const
    { static std::pair<std::vector<int>,std::vector<int> >  p; TEUCHOS_ASSERT(false); return p; }
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
+   virtual void getOwnedIndices(std::vector<std::pair<int, GlobalOrdinalT>>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
-   /** Get set of indices owned and shared by this processor.
+   /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
+   virtual void getOwnedAndGhostedIndices(std::vector<std::pair<int, GlobalOrdinalT>>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<std::pair<int,GlobalOrdinalT> > & indices,std::vector<bool> & isOwned) const
+   virtual void ownedIndices(const std::vector<std::pair<int, GlobalOrdinalT>>& /* indices */, std::vector<bool>& /* isOwned */) const
    { TEUCHOS_ASSERT(false); }
 
-   void getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & points)
+   void getCoordinates(LocalOrdinalT /* localElementId */, Kokkos::DynRankView<double, PHX::Device>& /* points */)
    { TEUCHOS_ASSERT(false); }
 
    int getElementBlockGIDCount(const std::string &) const { TEUCHOS_ASSERT(false); }

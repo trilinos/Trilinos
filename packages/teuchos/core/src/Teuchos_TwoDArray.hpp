@@ -54,7 +54,7 @@
 namespace Teuchos{
 
 /**
- * \brief A thin wrapper around the Array class which causes it to be interpurted
+ * \brief A thin wrapper around the Array class which causes it to be interpreted
  * as a 2D Array.
  *
  * 2D Array's can also be "symetric". This means that anyone viewing the
@@ -76,7 +76,7 @@ public:
   //@{
 
   /**
-   * \brief Constructs a TwoDArray with the given number of rows and colums with each
+   * \brief Constructs a TwoDArray with the given number of rows and columns with each
    * entry being populated with the specified value.
    *
    * @param numCols The number of columns in the TwoDArray.
@@ -107,7 +107,7 @@ public:
   inline ArrayView<T> operator[](size_type i);
 
   /** \brief Returns a const ArrayView containing the contents of row i */
-  inline const ArrayView<T> operator[](size_type i) const;
+  inline ArrayView<const T> operator[](size_type i) const;
 
   /** \brief returns the number of rows in the TwoDArray. */
   inline size_type getNumRows() const{
@@ -266,7 +266,7 @@ ArrayView<T> TwoDArray<T>::operator[](size_type i){
 }
 
 template<class T> inline
-const ArrayView<T> TwoDArray<T>::operator[](size_type i) const{
+ArrayView<const T> TwoDArray<T>::operator[](size_type i) const{
   return _data.view(_numCols*i, _numCols);
 }
 

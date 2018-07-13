@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,6 +48,7 @@
 #include "EpetraExt_MultiComm.h"
 #include "EpetraExt_BlockVector.h"
 
+#include "Stokhos_SGModelEvaluatorBase.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -68,8 +69,8 @@ namespace Stokhos {
    * SGModelEvaluator is an implementation of EpetraExt::ModelEvaluator that
    * generates a nonlinear problem from a stochastic Galerkin
    * expansion.  It wraps a supplied ModelEvaluator that supports the SG
-   * versions of p, x, and possibly x_dot InArgs, and f and W OutArgs, and 
-   * translates those into a new nonlinear problem.  It does so by 
+   * versions of p, x, and possibly x_dot InArgs, and f and W OutArgs, and
+   * translates those into a new nonlinear problem.  It does so by
    * concatenating all of the SG components of p, x, x_dot, and f into extended
    * block vectors that form the parameters, solution vector, time derivative
    * vector and residual for the new nonlinear problem.  For dealing with the
@@ -86,7 +87,7 @@ namespace Stokhos {
    * available for preconditioning the SG system when using the matrix-free
    * method.
    */
-  class SGModelEvaluator : public EpetraExt::ModelEvaluator {
+  class SGModelEvaluator : public Stokhos::SGModelEvaluatorBase {
   public:
 
     // Constructor
@@ -115,7 +116,7 @@ namespace Stokhos {
     Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
 
     //! Return array of parameter names
-    Teuchos::RCP<const Teuchos::Array<std::string> > 
+    Teuchos::RCP<const Teuchos::Array<std::string> >
     get_p_names(int l) const;
 
     //! Return initial solution
@@ -152,6 +153,9 @@ namespace Stokhos {
     void evalModel(const InArgs& inArgs, const OutArgs& outArgs) const;
 
     //@}
+
+    /** \name Overridden from Stokhos::SGModelEvaluatorBase . */
+    //@{
 
     //! Set initial solution polynomial
     void set_x_sg_init(const Stokhos::EpetraVectorOrthogPoly& x_sg_in);
@@ -190,80 +194,82 @@ namespace Stokhos {
     Teuchos::RCP<const Epetra_Import> get_x_sg_importer() const;
 
     //! Create vector orthog poly using x map and owned sg map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_x_sg(Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_x_sg(Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const;
 
     //! Create vector orthog poly using x map and overlap sg map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_x_sg_overlap(Epetra_DataAccess CV = Copy, 
-			const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_x_sg_overlap(Epetra_DataAccess CV = Copy,
+                        const Epetra_Vector* v = NULL) const;
 
     //! Create vector orthog poly using x map and owned sg map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
     create_x_mv_sg(int num_vecs,
-		Epetra_DataAccess CV = Copy, 
-		const Epetra_MultiVector* v = NULL) const;
+                   Epetra_DataAccess CV = Copy,
+                   const Epetra_MultiVector* v = NULL) const;
 
     //! Create vector orthog poly using x map and overlap sg map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
     create_x_mv_sg_overlap(int num_vecs,
-			   Epetra_DataAccess CV = Copy, 
-			   const Epetra_MultiVector* v = NULL) const;
+                           Epetra_DataAccess CV = Copy,
+                           const Epetra_MultiVector* v = NULL) const;
 
     //! Create vector orthog poly using p map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_p_sg(int l, Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_p_sg(int l, Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const;
 
     //! Create vector orthog poly using f map and owned sg map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_f_sg(Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_f_sg(Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const;
 
     //! Create vector orthog poly using f map and overlap sg map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_f_sg_overlap(Epetra_DataAccess CV = Copy, 
-			const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_f_sg_overlap(Epetra_DataAccess CV = Copy,
+                        const Epetra_Vector* v = NULL) const;
 
     //! Create multi-vector orthog poly using f map and owned sg map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
-    create_f_mv_sg(int num_vecs, Epetra_DataAccess CV = Copy, 
-		   const Epetra_MultiVector* v = NULL) const;
-    
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
+    create_f_mv_sg(int num_vecs, Epetra_DataAccess CV = Copy,
+                   const Epetra_MultiVector* v = NULL) const;
+
     //! Create multi-vector orthog poly using f map and overlap sg map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
-    create_f_mv_sg_overlap(int num_vecs, Epetra_DataAccess CV = Copy, 
-			   const Epetra_MultiVector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
+    create_f_mv_sg_overlap(int num_vecs, Epetra_DataAccess CV = Copy,
+                           const Epetra_MultiVector* v = NULL) const;
 
     //! Create vector orthog poly using g map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_g_sg(int l, Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_g_sg(int l, Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const;
 
     //! Create multi-vector orthog poly using g map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
-    create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
-		const Epetra_MultiVector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
+    create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy,
+                   const Epetra_MultiVector* v = NULL) const;
+
+    //@}
 
     //! Import parallel solution vector
-    Teuchos::RCP<EpetraExt::BlockVector> 
+    Teuchos::RCP<EpetraExt::BlockVector>
     import_solution(const Epetra_Vector& x) const;
 
     //! Import parallel solution vector
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
     import_solution_poly(const Epetra_Vector& x) const;
 
     //! Export parallel solution vector
-    Teuchos::RCP<EpetraExt::BlockVector> 
+    Teuchos::RCP<EpetraExt::BlockVector>
     export_solution(const Epetra_Vector& x_overlapped) const;
 
     //! Import parallel residual vector
-    Teuchos::RCP<EpetraExt::BlockVector> 
+    Teuchos::RCP<EpetraExt::BlockVector>
     import_residual(const Epetra_Vector& f) const;
 
     //! Export parallel residual vector
-    Teuchos::RCP<EpetraExt::BlockVector> 
+    Teuchos::RCP<EpetraExt::BlockVector>
     export_residual(const Epetra_Vector& f_overlapped) const;
 
   protected:

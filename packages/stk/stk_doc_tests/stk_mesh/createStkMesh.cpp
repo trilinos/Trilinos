@@ -46,33 +46,24 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //-BEGIN    
-  TEST(StkMeshHowTo, UsingStkIO)
-  {
+TEST(StkMeshHowTo, UseStkIO)
+{
     MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    const std::string fileName = "generated:8x8x8";
-    //The 'generated:' syntax in fileName causes a hex mesh to be generated in memory.
-    //If an exodus file-name is used instead, then the mesh is read from file. The code
-    //below remains the same in either case.
+    if(stk::parallel_machine_size(communicator) == 1)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, communicator);
 
-    // Use STK IO to populate a STK Mesh
-    stk::io::StkMeshIoBroker meshReader(communicator);
-    meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
-    // Create MetaData in STK IO
-    meshReader.create_input_mesh();
-    // Create BulkData in STK IO
-    meshReader.populate_bulk_data();
+        stk::io::StkMeshIoBroker meshReader;
+        meshReader.set_bulk_data(bulk);
+        meshReader.add_mesh_database("generated:8x8x8", stk::io::READ_MESH);
+        meshReader.create_input_mesh();
+        meshReader.add_all_mesh_fields_as_input_fields();
+        meshReader.populate_bulk_data();
 
-    // Get the STK Mesh (BulkData and MetaData) from STK IO
-    stk::mesh::MetaData &stkMeshMetaData = meshReader.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = meshReader.bulk_data();
-
-    // Test if the STK Mesh has 512 elements. Other examples will discuss details below.
-    stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
-    std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
-    EXPECT_EQ(512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    unlink(fileName.c_str());
-  }
+        unsigned numElems = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::ELEM_RANK));
+        EXPECT_EQ(512u, numElems);
+    }
+}
 //-END
 }

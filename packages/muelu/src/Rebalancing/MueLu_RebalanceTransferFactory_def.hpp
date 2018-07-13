@@ -48,10 +48,10 @@
 
 #include <Teuchos_Tuple.hpp>
 
-#include "Xpetra_Vector.hpp"
-#include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_VectorFactory.hpp"
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
@@ -86,8 +86,8 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("R",                   null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Interpolation)");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
     validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
     validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
@@ -141,9 +141,11 @@ namespace MueLu {
       coarseLevel.Set("Importer", importer, NoFactory::get());
     }
 
-    RCP<ParameterList> params = rcp(new ParameterList());;
-    params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
+    RCP<ParameterList> params = rcp(new ParameterList());
+    if (IsPrint(Statistics2)) {
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+    }
 
     std::string transferType = pL.get<std::string>("type");
     if (transferType == "Interpolation") {
@@ -200,8 +202,8 @@ namespace MueLu {
 
           Set(coarseLevel, "P", rebalancedP);
 
-          if (IsPrint(Statistics1))
-            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+          if (IsPrint(Statistics2))
+            GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
         }
       }
 
@@ -256,7 +258,7 @@ namespace MueLu {
         RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
-        if (pL.get<bool>("repartition: use subcommunicators") == true)
+        if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
           permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
         Set(coarseLevel, "Coordinates", permutedCoords);
@@ -310,8 +312,8 @@ namespace MueLu {
           //   rebalancedR->CreateView("stridedMaps", originalR);
           ///////////////////////// EXPERIMENTAL
 
-          if (IsPrint(Statistics1))
-            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+          if (IsPrint(Statistics2))
+            GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
         }
       }
     }

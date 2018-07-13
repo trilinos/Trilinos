@@ -45,5 +45,6 @@
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
 #include "Belos_SolverManager_MP_Vector.hpp"
 #include "Belos_StatusTest_GenResNorm_MP_Vector.hpp"
+#include "Belos_PseudoBlockCGIter_MP_Vector.hpp"
 
 #endif

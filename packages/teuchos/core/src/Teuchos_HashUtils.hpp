@@ -150,7 +150,7 @@ namespace Teuchos
        * but they are both true hashes anyway, so leaving it !
        * */
       const char* str = x.c_str();
-      int len = x.length();
+      int len = static_cast<int>(x.length());
       int step = len/4 + 1;
       int base = 1;
       int rtn = 0;

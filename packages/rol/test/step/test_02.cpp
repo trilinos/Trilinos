@@ -47,11 +47,11 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_TestObjectives.hpp"
-#include "ROL_Algorithm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_GetTestProblems.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include <iostream>
 
@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -77,42 +77,58 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    parlist->sublist("Step").set("Type","Trust Region");
 
     // Loop Through Test Objectives
-    for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
-      *outStream << std::endl << std::endl << ROL::ETestObjectivesToString(objFunc) << std::endl << std::endl;
-
-      // Set Up Optimization Problem
-      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-      Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
-      ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
-      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();
-
-      // Get Dimension of Problem
-      int dim = x0->dimension();
-      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 5*dim);
-
-      // Error Vector
-      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
-      e->zero();
-
+    for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK; objFunc < ROL::TESTOPTPROBLEM_LAST; objFunc++ ) {
       for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
-        *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
-        parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ETrustRegionToString(tr));
+        if ( tr != ROL::TRUSTREGION_LINMORE ) {
+          // Set Up Optimization Problem
+          ROL::Ptr<ROL::Vector<RealT> > x0;
+          std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
+          ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+          ROL::GetTestProblem<RealT>(problem,x0,z,objFunc);
 
-        // Define Algorithm
-        ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+          if (problem->getProblemType() == ROL::TYPE_U
+              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX1
+              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX2
+              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX3) {
+            *outStream << std::endl << std::endl << ROL::ETestOptProblemToString(objFunc) << std::endl << std::endl;
 
-        // Run Algorithm
-        x->set(*x0);
-        algo.run(*x, *obj, true, *outStream);
+            // Get Dimension of Problem
+            int dim = x0->dimension();
+            parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 5*dim);
 
-        // Compute Error 
-        e->set(*x);
-        e->axpy(-1.0,*z);
-        *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+            // Error Vector
+            ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+            e->zero();
+
+            *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
+            parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ETrustRegionToString(tr));
+
+            // Define Solver
+            ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
+
+            // Run Solver
+            solver.solve(*outStream);
+
+            // Compute Error 
+            RealT err(0);
+            for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+              e->set(*x0);
+              e->axpy(-1.0,*z[i]);
+              if (i == 0) {
+                err = e->norm();
+              }
+              else {
+                err = std::min(err,e->norm());
+              }
+            }
+            *outStream << std::endl << "Norm of Error: " << err << std::endl;
+          }
+        }
       }
     }
   }
@@ -129,4 +145,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

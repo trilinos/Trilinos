@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2014 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -35,7 +35,7 @@
 #ifndef APR_BUILTIN_H
 #define APR_BUILTIN_H
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace SEAMS {
   struct array;
@@ -93,7 +93,7 @@ namespace SEAMS {
   double do_lgamma(double val);
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se);
   double do_julday(double mon, double day, double year);
-  double do_log1p(double mag);
+  double do_log1p(double x);
   double do_rows(const array *arr);
   double do_cols(const array *arr);
 
@@ -127,15 +127,15 @@ namespace SEAMS {
 
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_extract(char *string, char *begin, char *end);
-  const char *do_print_array(const array *arr);
+  const char *do_print_array(const array *my_array_data);
 
   const char *do_execute(char *string);
-  const char *do_getenv(char *string);
+  const char *do_getenv(char *env);
   const char *do_tolower(char *string);
   const char *do_toupper(char *string);
   const char *do_tostring(double x);
-  const char *do_output(char *newfile);
-  const char *do_append(char *newfile);
+  const char *do_output(char *filename);
+  const char *do_append(char *filename);
   const char *do_error(char *error_string);
   const char *do_get_date(void);
   const char *do_get_iso_date(void);
@@ -143,7 +143,7 @@ namespace SEAMS {
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_file_to_string(char *filename);
   const char *do_extract(char *string, char *begin, char *end);
-  const char *do_include_path(char *newpath);
+  const char *do_include_path(char *new_path);
   const char *do_intout(double intval);
   const char *do_print_array(array *my_array_data);
   const char *do_str_if(char *string);
@@ -151,12 +151,12 @@ namespace SEAMS {
   const char *do_str_elseif(char *string);
   const char *do_delete(char *string);
 
-  array *do_csv_array(const char *filename, double rows_to_skip);
+  array *do_csv_array(const char *filename, double skip);
   array *do_csv_array1(const char *filename);
-  array *do_csv_array2(const char *filename, const char *skip);
+  array *do_csv_array2(const char *filename, const char *comment);
   array *do_make_array(double rows, double cols);
   array *do_identity(double size);
-  array *do_transpose(const array *array);
-}
+  array *do_transpose(const array *a);
+} // namespace SEAMS  // namespace SEAMS
 
 #endif

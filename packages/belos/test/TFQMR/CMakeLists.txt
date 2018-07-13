@@ -25,6 +25,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --num-rhs=5 --filename=mhd1280b.cua"
       )
 
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      tfqmr_complex_diag
+      SOURCES test_tfqmr_complex_diag.cpp
+      ARGS
+        "--verbose"
+        "--verbose --pseudo"
+      COMM serial
+      )
+
     ASSERT_DEFINED(Anasazi_SOURCE_DIR)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRComplexFiles
       SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices

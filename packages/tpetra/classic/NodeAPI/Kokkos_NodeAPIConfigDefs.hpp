@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,27 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef KOKKOS_NODEAPICONFIGDEFS_HPP
 #define KOKKOS_NODEAPICONFIGDEFS_HPP
 
-#include <Kokkos_ConfigDefs.hpp>
-#include <sstream>
-#include <Teuchos_TypeTraits.hpp>
-
-//! %Kokkos namespace
-namespace KokkosClassic {
-
-  /*! Read/write options for non-const views. */
-  enum ReadWriteOption {
-    ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
-    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
-  };
-
-}
+// We retain this header file only for backwards compatibility.
 
 #endif // KOKKOS_NODEAPICONFIGDEFS_HPP

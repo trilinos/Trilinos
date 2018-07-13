@@ -37,7 +37,7 @@
 #include "Amesos_Status.h"
 #include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_MpiComm.h"
+#include "Epetra_Comm.h"
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 

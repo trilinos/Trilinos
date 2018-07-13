@@ -86,8 +86,13 @@ void TTrilinos_Util_CountMatrixMarket(
     std::string headerline1 = buffer;
     bool symmetric = (headerline1.find("symmetric") != std::string::npos);
 
-    if (NULL == fgets( buffer, BUFSIZE, in_file ))
-      throw "TTrilinos_Util_CountMatrixMarket: I/O error.";
+    // Ignore optional comment lines before ignoring the matrix size information.
+    bool found_count = false;
+    while ( !found_count && fgets( buffer, BUFSIZE, in_file ) ) {
+      if ( buffer[0] != '%' ) {
+        found_count = true;
+      }
+    }
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;

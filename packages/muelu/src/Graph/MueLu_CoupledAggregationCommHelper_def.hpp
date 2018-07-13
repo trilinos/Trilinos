@@ -47,7 +47,10 @@
 #define MUELU_COUPLEDAGGREGATIONCOMMHELPER_DEF_HPP
 
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
 
@@ -67,7 +70,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const {
+  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOMultiVector *companion, const bool perturb) const {
     const RCP<const Map> weightMap = weight_.getMap();
     const size_t nodeNumElements = weightMap->getNodeNumElements();
     const RCP<const Teuchos::Comm<int> > & comm = weightMap->getComm();
@@ -101,10 +104,10 @@ namespace MueLu {
       ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
       for (size_t i=0; i < nodeNumElements; ++i) in_procWinner[i] = procWinner[i];
     }
-    RCP<LOVector> in_companion;
+    RCP<LOMultiVector> in_companion;
     {
       if (companion != NULL) {
-        in_companion = LOVectorFactory::Build(companion->getMap());
+        in_companion = LOMultiVectorFactory::Build(companion->getMap(), companion->getNumVectors());
         ArrayRCP<LO> in_comp = in_companion->getDataNonConst(0);
         ArrayRCP<LO> comp = companion->getDataNonConst(0);
         for (size_t i=0; i < nodeNumElements; ++i) in_comp[i] = comp[i];
@@ -304,7 +307,7 @@ namespace MueLu {
       // Pull the Winners out of companion
       //     JustWinners <-- companion[Winners];
 
-      RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap_);
+      RCP<LOMultiVector> justWinners = LOMultiVectorFactory::Build(winnerMap_, companion->getNumVectors());
 
 #ifdef JG_DEBUG
       RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -56,11 +56,12 @@
 template< class Scalar, class Arg1Type = void>
 class vector : public DualView<Scalar*,LayoutLeft,Arg1Type> {
 
+public:
   typedef Scalar value_type;
   typedef Scalar* pointer;
   typedef const Scalar* const_pointer;
-  typedef Scalar* reference;
-  typedef const Scalar* const_reference;
+  typedef Scalar& reference;
+  typedef const Scalar& const_reference;
   typedef Scalar* iterator;
   typedef const Scalar* const_iterator;
 
@@ -72,12 +73,12 @@ private:
 
 
 public:
-#ifdef KOKKOS_CUDA_USE_UVM
-  KOKKOS_INLINE_FUNCTION Scalar& operator() (int i) const {return DV::h_view(i);};
-  KOKKOS_INLINE_FUNCTION Scalar& operator[] (int i) const {return DV::h_view(i);};
+#ifdef KOKKOS_ENABLE_CUDA_UVM
+  KOKKOS_INLINE_FUNCTION reference operator() (int i) const {return DV::h_view(i);};
+  KOKKOS_INLINE_FUNCTION reference operator[] (int i) const {return DV::h_view(i);};
 #else
-  inline Scalar& operator() (int i) const {return DV::h_view(i);};
-  inline Scalar& operator[] (int i) const {return DV::h_view(i);};
+  inline reference operator() (int i) const {return DV::h_view(i);};
+  inline reference operator[] (int i) const {return DV::h_view(i);};
 #endif
 
   /* Member functions which behave like std::vector functions */
@@ -86,7 +87,7 @@ public:
     _size = 0;
     _extra_storage = 1.1;
     DV::modified_host() = 1;
-  };
+  }
 
 
   vector(int n, Scalar val=Scalar()):DualView<Scalar*,LayoutLeft,Arg1Type>("Vector",size_t(n*(1.1))) {
@@ -99,7 +100,7 @@ public:
 
 
   void resize(size_t n) {
-    if(n>=capacity())
+    if(n>=span())
       DV::resize(size_t (n*_extra_storage));
     _size = n;
   }
@@ -112,7 +113,7 @@ public:
 
     /* Resize if necessary (behavour of std:vector) */
 
-    if(n>capacity())
+    if(n>span())
       DV::resize(size_t (n*_extra_storage));
     _size = n;
 
@@ -137,7 +138,7 @@ public:
 
   void push_back(Scalar val) {
     DV::modified_host()++;
-    if(_size == capacity()) {
+    if(_size == span()) {
       size_t new_size = _size*_extra_storage;
       if(new_size == _size) new_size++;
       DV::resize(new_size);
@@ -146,25 +147,35 @@ public:
     DV::h_view(_size) = val;
     _size++;
 
-  };
+  }
 
   void pop_back() {
     _size--;
-  };
+  }
 
   void clear() {
     _size = 0;
   }
 
-  size_type size() const {return _size;};
+  size_type size() const {return _size;}
   size_type max_size() const {return 2000000000;}
-  size_type capacity() const {return DV::capacity();};
-  bool empty() const {return _size==0;};
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  size_type capacity() const {return DV::capacity();}
+#endif
+  size_type span() const {return DV::span();}
+  bool empty() const {return _size==0;}
 
-  iterator begin() const {return &DV::h_view(0);};
+  iterator begin() const {return &DV::h_view(0);}
 
-  iterator end() const {return &DV::h_view(_size);};
+  iterator end() const {return &DV::h_view(_size);}
 
+  reference front() {return DV::h_view(0);}
+
+  reference back() {return DV::h_view(_size - 1);}
+
+  const_reference front() const {return DV::h_view(0);}
+
+  const_reference back() const {return DV::h_view(_size - 1);}
 
   /* std::algorithms wich work originally with iterators, here they are implemented as member functions */
 
@@ -281,3 +292,4 @@ public:
 
 }
 #endif
+

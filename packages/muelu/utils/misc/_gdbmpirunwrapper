@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo -e "\033]0;gdb (rank=${OMPI_COMM_WORLD_RANK})\007"
+
+$*

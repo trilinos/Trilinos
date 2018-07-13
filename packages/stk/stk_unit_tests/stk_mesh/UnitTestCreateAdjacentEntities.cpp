@@ -38,8 +38,8 @@
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -61,7 +61,7 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, &stk::mesh::ConnectivityMap::classic_stk_mesh());
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, nullptr);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -102,7 +102,7 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, &stk::mesh::ConnectivityMap::classic_stk_mesh());
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, (stk::mesh::ConnectivityMap*)nullptr);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();

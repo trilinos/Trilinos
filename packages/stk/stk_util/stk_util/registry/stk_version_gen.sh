@@ -66,8 +66,8 @@ if test $(git rev-parse --git-dir 2>/dev/null) &&
     case "$NEW_VERSION" in
         *$LF*) (exit 1) ;;
         [0-9]*)
-            git update-index -q --refresh > /dev/null
-            test -z "$(git diff-index --name-only HEAD --)" ||
+            ROOT=$(git rev-parse --show-toplevel)
+            test -z "$(git ls-files -m $ROOT)" ||
             NEW_VERSION="${NEW_VERSION}-modified" ;;
         esac
 then

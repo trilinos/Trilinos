@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CORE
 APPEND_SET(HEADERS
+  Belos_Details_EBelosSolverType.hpp
   BelosBiCGStabIter.hpp
   BelosBiCGStabSolMgr.hpp
   BelosBlockCGIter.hpp
@@ -32,6 +33,7 @@ APPEND_SET(HEADERS
   BelosBlockGmresSolMgr.hpp
   BelosCGIteration.hpp
   BelosCGIter.hpp
+  BelosCGSingleRedIter.hpp
   BelosConfigDefs.hpp
   BelosDGKSOrthoManager.hpp
   BelosFixedPointIter.hpp
@@ -58,6 +60,7 @@ APPEND_SET(HEADERS
   BelosMultiVecTraits.hpp
   BelosMVOPTester.hpp
   BelosOperator.hpp
+  BelosOperatorT.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManagerFactory.hpp
   BelosOrthoManager.hpp
@@ -76,6 +79,9 @@ APPEND_SET(HEADERS
   BelosSimpleOrthoManager.hpp
   BelosSolverManager.hpp
   BelosSolverFactory.hpp
+  BelosSolverFactory_Belos.hpp
+  BelosSolverFactory_Generic.hpp
+  BelosCustomSolverFactory.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
@@ -83,6 +89,7 @@ APPEND_SET(HEADERS
   BelosStatusTestGenResSubNorm.hpp
   BelosStatusTest.hpp
   BelosStatusTestImpResNorm.hpp
+  BelosStatusTestLogResNorm.hpp
   BelosStatusTestMaxIters.hpp
   BelosStatusTestOutputFactory.hpp
   BelosStatusTestOutput.hpp
@@ -99,14 +106,18 @@ APPEND_SET(HEADERS
   Belos_Details_LinearSolver.hpp
   Belos_Details_LinearSolverFactory.hpp
   Belos_Details_registerLinearSolverFactory.hpp
+  Belos_Details_registerSolverFactory.hpp
   BelosUtils.hpp
   )
 
 # UTIL
 APPEND_SET(SOURCES
+  Belos_Details_EBelosSolverType.cpp
   BelosTypes.cpp
   BelosVersion.cpp
   Belos_Details_registerLinearSolverFactory.cpp
+  BelosSolverFactory.cpp
+  Belos_Details_registerSolverFactory.cpp
   )
 
 # COMP_H
@@ -120,6 +131,7 @@ APPEND_SET(HEADERS
   BelosTFQMRSolMgr.hpp
   BelosPseudoBlockTFQMRSolMgr.hpp
   BelosCGIter.hpp
+  BelosCGSingleRedIter.hpp
   BelosBlockCGIter.hpp
   BelosMinresIter.hpp
   BelosBlockGmresIter.hpp

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -40,6 +40,12 @@
 
 #ifndef EXODUS_II_INT_HDR
 #define EXODUS_II_INT_HDR
+
+#include "exodus_config.h"
+
+#if defined(EXODUS_THREADSAFE)
+#include <pthread.h>
+#endif
 
 #include "netcdf.h"
 #if defined(NC_HAVE_META_H)
@@ -87,11 +93,6 @@ extern "C" {
 
 #define MAX_VAR_NAME_LENGTH 32 /**< Internal use only */
 
-/* this should be defined in ANSI C and C++, but just in case ... */
-#ifndef NULL
-#define NULL 0
-#endif
-
 /* Default "filesize" for newly created files.
  * Set to 0 for normal filesize setting.
  * Set to 1 for EXODUS_LARGE_MODEL setting to be the default
@@ -102,12 +103,114 @@ extern "C" {
 #define EX_FILE_ID_MASK (0xffff0000) /* Must match FILE_ID_MASK in netcdf nc4internal.h */
 #define EX_GRP_ID_MASK (0x0000ffff)  /* Must match GRP_ID_MASK in netcdf nc4internal.h */
 
+void ex_reset_error_status();
+
+#if defined(EXODUS_THREADSAFE)
+#if !defined(exerrval)
+/* In both exodusII.h and exodusII_int.h */
+typedef struct EX_errval
+{
+  int  errval;
+  char last_pname[MAX_ERR_LENGTH];
+  char last_errmsg[MAX_ERR_LENGTH];
+  int  last_err_num;
+} EX_errval_t;
+
+EXODUS_EXPORT EX_errval_t *ex_errval;
+#define exerrval ex_errval->errval
+#endif
+
+extern pthread_once_t EX_first_init_g;
+
+typedef struct EX_mutex_struct
+{
+  pthread_mutex_t     atomic_lock; /* lock for atomicity of new mechanism */
+  pthread_mutexattr_t attribute;
+} EX_mutex_t;
+
+extern EX_mutex_t EX_g;
+extern int ex_mutex_lock(EX_mutex_t *mutex);
+extern int ex_mutex_unlock(EX_mutex_t *mutex);
+extern void         ex_pthread_first_thread_init(void);
+extern EX_errval_t *exerrval_get();
+
+#define EX_FUNC_ENTER()                                                                            \
+  do {                                                                                             \
+    /* Initialize the thread-safe code */                                                          \
+    pthread_once(&EX_first_init_g, ex_pthread_first_thread_init);                                  \
+                                                                                                   \
+    /* Grab the mutex for the library */                                                           \
+    ex_mutex_lock(&EX_g);                                                                          \
+    ex_errval               = exerrval_get();                                                      \
+    exerrval                = 0;                                                                   \
+    ex_errval->last_err_num = 0;                                                                   \
+  } while (0)
+
+#define EX_FUNC_ENTER_INT()                                                                        \
+  do {                                                                                             \
+    /* Initialize the thread-safe code */                                                          \
+    pthread_once(&EX_first_init_g, ex_pthread_first_thread_init);                                  \
+                                                                                                   \
+    /* Grab the mutex for the library */                                                           \
+    ex_mutex_lock(&EX_g);                                                                          \
+    ex_errval = exerrval_get();                                                                    \
+  } while (0)
+
+#define EX_FUNC_LEAVE(error)                                                                       \
+  do {                                                                                             \
+    ex_mutex_unlock(&EX_g);                                                                        \
+    return error;                                                                                  \
+  } while (0)
+
+#define EX_FUNC_VOID()                                                                             \
+  do {                                                                                             \
+    ex_mutex_unlock(&EX_g);                                                                        \
+    return;                                                                                        \
+  } while (0)
+
+#else
+
+#if 0
+EXODUS_EXPORT int indent;
+#define EX_FUNC_ENTER()                                                                            \
+  do {                                                                                             \
+    ex_reset_error_status();                                                                       \
+    fprintf(stderr, "%d Enter: %s\n", indent, __func__);                                           \
+    indent++;                                                                                      \
+  } while (0)
+#define EX_FUNC_ENTER_INT()                                                                        \
+  do {                                                                                             \
+    fprintf(stderr, "%d Enter: %s\n", indent, __func__);                                           \
+    indent++;                                                                                      \
+  } while (0)
+#define EX_FUNC_LEAVE(error)                                                                       \
+  do {                                                                                             \
+    indent--;                                                                                      \
+    fprintf(stderr, "%d Leave: %s\n", indent, __func__);                                           \
+    return error;                                                                                  \
+  } while (0)
+#define EX_FUNC_VOID()                                                                             \
+  do {                                                                                             \
+    indent--;                                                                                      \
+    fprintf(stderr, "%d Leave: %s\n", indent, __func__);                                           \
+    return;                                                                                        \
+  } while (0)
+#else
+#define EX_FUNC_ENTER()                                                                            \
+  {                                                                                                \
+    ex_reset_error_status();                                                                       \
+  }
+#define EX_FUNC_ENTER_INT()
+#define EX_FUNC_LEAVE(error) return error
+#define EX_FUNC_VOID() return
+#endif
+#endif
 /*
  * This file contains defined constants that are used internally in the
- * EXODUS II API.
+ * EXODUS API.
  *
  * The first group of constants refer to netCDF variables, attributes, or
- * dimensions in which the EXODUS II data are stored.  Using the defined
+ * dimensions in which the EXODUS data are stored.  Using the defined
  * constants will allow the names of the netCDF entities to be changed easily
  * in the future if needed.  The first three letters of the constant identify
  * the netCDF entity as a variable (VAR), dimension (DIM), or attribute (ATT).
@@ -120,11 +223,11 @@ extern "C" {
  */
 #define ATT_FILE_TYPE "type"                /* obsolete                  */
 #define ATT_TITLE "title"                   /* the database title        */
-#define ATT_API_VERSION "api_version"       /* the EXODUS II api vers #   */
-#define ATT_API_VERSION_BLANK "api version" /* the EXODUS II api vers #   */
+#define ATT_API_VERSION "api_version"       /* the EXODUS api vers #   */
+#define ATT_API_VERSION_BLANK "api version" /* the EXODUS api vers #   */
                                             /*  used for db version 2.01 */
                                             /*  and earlier              */
-#define ATT_VERSION "version"               /* the EXODUS II file vers # */
+#define ATT_VERSION "version"               /* the EXODUS file vers # */
 #define ATT_FILESIZE "file_size"            /* 1=large, 0=normal */
 #define ATT_FLT_WORDSIZE "floating_point_word_size"
 /* word size of floating     */
@@ -696,9 +799,29 @@ void ex_rm_stat_ptr(int exoid, struct obj_stats **obj_ptr);
 
 void ex_compress_variable(int exoid, int varid, int type);
 int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
+void ex_check_valid_file_id(int exoid); /** Abort if exoid does not refer to valid file */
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count, int *dimid,
                      const char *routine);
+
+int ex_get_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
+                         void *nodal_var_vals);
+
+int ex_put_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
+                         const void *nodal_var_vals);
+
+int ex_get_nodal_var_time_int(int exoid, int nodal_var_index, int64_t node_number,
+                              int beg_time_step, int end_time_step, void *nodal_var_vals);
+
+int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t start_node,
+                                 int64_t num_nodes, void *var_vals);
+
+int ex_put_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t start_node,
+                                 int64_t num_nodes, const void *nodal_var_vals);
+int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob_var_vals);
+
+int ex_get_glob_var_time_int(int exoid, int glob_var_index, int beg_time_step, int end_time_step,
+                             void *glob_var_vals);
 
 int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
                          ex_entity_type obj_type, const char *routine);
@@ -725,8 +848,6 @@ int ex_put_nemesis_version(int exoid); /* NetCDF/Exodus file ID */
 
 int ne_check_file_version(int neid /* NetCDF/Exodus file ID */
                           );
-
-char *ex_catstrn12(char *name, int num1, int num2);
 
 int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                const char * ne_var_name, /* Nemesis variable name */

@@ -46,8 +46,8 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "ROL_Step.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -58,6 +58,7 @@
 #include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BundleStep.hpp"
 #include "ROL_InteriorPointStep.hpp"
+#include "ROL_FletcherStep.hpp"
 
 namespace ROL {
 
@@ -66,19 +67,20 @@ namespace ROL {
     public:
     ~StepFactory(void){}
 
-    Teuchos::RCP<Step<Real> > getStep(const std::string &type,
-                                      Teuchos::ParameterList &parlist) const {
+    ROL::Ptr<Step<Real> > getStep(const std::string &type,
+                                      ROL::ParameterList &parlist) const {
       EStep els = StringToEStep(type);
       switch(els) {
-        case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
-        case STEP_BUNDLE:              return Teuchos::rcp( new BundleStep<Real>(parlist) );
-        case STEP_COMPOSITESTEP:       return Teuchos::rcp( new CompositeStep<Real>(parlist) );
-        case STEP_LINESEARCH:          return Teuchos::rcp( new LineSearchStep<Real>(parlist) );
-        case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new MoreauYosidaPenaltyStep<Real>(parlist) );
-        case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new PrimalDualActiveSetStep<Real>(parlist) );
-        case STEP_TRUSTREGION:         return Teuchos::rcp( new TrustRegionStep<Real>(parlist) );
-        case STEP_INTERIORPOINT:       return Teuchos::rcp( new InteriorPointStep<Real>(parlist) ); 
-        default:                       return Teuchos::null;
+        case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<AugmentedLagrangianStep<Real>>(parlist);
+        case STEP_BUNDLE:              return ROL::makePtr<BundleStep<Real>>(parlist);
+        case STEP_COMPOSITESTEP:       return ROL::makePtr<CompositeStep<Real>>(parlist);
+        case STEP_LINESEARCH:          return ROL::makePtr<LineSearchStep<Real>>(parlist);
+        case STEP_MOREAUYOSIDAPENALTY: return ROL::makePtr<MoreauYosidaPenaltyStep<Real>>(parlist);
+        case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<PrimalDualActiveSetStep<Real>>(parlist);
+        case STEP_TRUSTREGION:         return ROL::makePtr<TrustRegionStep<Real>>(parlist);
+        case STEP_INTERIORPOINT:       return ROL::makePtr<InteriorPointStep<Real>>(parlist); 
+        case STEP_FLETCHER:            return ROL::makePtr<FletcherStep<Real>>(parlist);
+        default:                       return ROL::nullPtr;
       }
     }
   };

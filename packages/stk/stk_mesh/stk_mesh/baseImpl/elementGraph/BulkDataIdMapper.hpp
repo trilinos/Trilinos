@@ -1,9 +1,41 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef BULK_DATA_ID_MAPPER_HPP
 #define BULK_DATA_ID_MAPPER_HPP
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include "../../base/GetEntities.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 
@@ -14,18 +46,106 @@ namespace mesh
 namespace impl
 {
 
+template<typename LocalIDType>
+class LocalIdMapperT
+{
+public:
+    LocalIdMapperT()
+    : entityToLocalId()
+    {
+    }
+
+    LocalIdMapperT(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank)
+    : entityToLocalId()
+    {
+        set_local_ids(bulk, rank);
+    }
+
+    const LocalIDType INVALID_LOCAL_ID = std::numeric_limits<LocalIDType>::max();
+
+    void set_size(const stk::mesh::BulkData &bulk)
+    {
+        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
+    }
+
+    void clear()
+    {
+        entityToLocalId.clear();
+    }
+
+    void set_local_ids(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank)
+    {
+        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
+        if(bulk.mesh_meta_data().entity_rank_count() >= rank)
+        {
+            stk::mesh::EntityVector entities;
+            stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank), entities);
+            for(size_t i=0; i<entities.size(); ++i)
+            {
+                add_new_entity_with_local_id(entities[i], i);
+            }
+        }
+    }
+
+    bool does_entity_have_local_id(stk::mesh::Entity entity) const
+    {
+        return (entity.local_offset() < entityToLocalId.size() && entityToLocalId[entity.local_offset()] != INVALID_LOCAL_ID);
+    }
+
+    LocalIDType entity_to_local(stk::mesh::Entity entity) const
+    {
+        ThrowAssert(entityToLocalId.size() > entity.local_offset());
+
+        return entityToLocalId[entity.local_offset()];
+    }
+
+    void make_space_for_new_elements(const stk::mesh::EntityVector & elements)
+    {
+        stk::mesh::Entity maxEntity;
+        maxEntity.set_local_offset(0);
+        for(stk::mesh::Entity elem : elements)
+            maxEntity.set_local_offset(std::max(maxEntity.local_offset(), elem.local_offset()));
+
+        if(maxEntity.local_offset() >= entityToLocalId.size())
+            entityToLocalId.resize(maxEntity.local_offset() + 1, INVALID_LOCAL_ID);
+    }
+
+    void create_local_ids_for_elements(const stk::mesh::EntityVector & elements)
+    {
+        make_space_for_new_elements(elements);
+        for(size_t localId = 0; localId < elements.size(); localId++)
+            add_new_entity_with_local_id(elements[localId], localId);
+    }
+
+    void add_new_entity_with_local_id(stk::mesh::Entity elem, LocalIDType id)
+    {
+        entityToLocalId[elem.local_offset()] = id;
+    }
+
+    void clear_local_id_for_elem(stk::mesh::Entity elem)
+    {
+        entityToLocalId[elem.local_offset()] = INVALID_LOCAL_ID;
+    }
+
+private:
+    std::vector<LocalIDType> entityToLocalId;
+};
+
+typedef LocalIdMapperT<unsigned> LocalIdMapper;
+
 class ElementLocalIdMapper
 {
 public:
     ElementLocalIdMapper()
-    : localIdToElement(), elementToLocalId()
+    : localIdToElement(), elementToLocalIdMapper()
     {
     }
+
     void initialize(const stk::mesh::BulkData &bulk)
     {
         unsigned numElems = impl::get_num_local_elems(bulk);
         localIdToElement.resize(numElems, Entity());
-        elementToLocalId.resize(bulk.get_size_of_entity_index_space(), impl::INVALID_LOCAL_ID);
+        elementToLocalIdMapper.set_size(bulk);
 
         if(bulk.mesh_meta_data().entity_rank_count() >= stk::topology::ELEM_RANK)
         {
@@ -45,7 +165,7 @@ public:
     void clear()
     {
         localIdToElement.clear();
-        elementToLocalId.clear();
+        elementToLocalIdMapper.clear();
     }
     stk::mesh::Entity local_to_entity(stk::mesh::impl::LocalId local) const
     {
@@ -54,14 +174,12 @@ public:
 
     bool does_entity_have_local_id(stk::mesh::Entity entity) const
     {
-        return (entity.local_offset() < elementToLocalId.size() && elementToLocalId[entity.local_offset()] != stk::mesh::impl::INVALID_LOCAL_ID);
+        return elementToLocalIdMapper.does_entity_have_local_id(entity);
     }
 
     stk::mesh::impl::LocalId entity_to_local(stk::mesh::Entity entity) const
     {
-        ThrowAssert(elementToLocalId.size() > entity.local_offset());
-
-        return elementToLocalId[entity.local_offset()];
+        return elementToLocalIdMapper.entity_to_local(entity);
     }
 
     void make_space_for_local_id(stk::mesh::impl::LocalId localId)
@@ -72,13 +190,7 @@ public:
 
     void make_space_for_new_elements(const stk::mesh::EntityVector & elements)
     {
-        stk::mesh::Entity maxEntity;
-        maxEntity.set_local_offset(0);
-        for(stk::mesh::Entity elem : elements)
-            maxEntity.set_local_offset(std::max(maxEntity.local_offset(), elem.local_offset()));
-
-        if(maxEntity.local_offset() >= elementToLocalId.size())
-            elementToLocalId.resize(maxEntity.local_offset() + 1, impl::INVALID_LOCAL_ID);
+        elementToLocalIdMapper.make_space_for_new_elements(elements);
     }
 
     void create_local_ids_for_elements(const stk::mesh::EntityVector & elements)
@@ -86,23 +198,25 @@ public:
         make_space_for_new_elements(elements);
         localIdToElement.resize(elements.size());
         for(size_t localId = 0; localId < elements.size(); localId++)
+        {
             add_new_entity_with_local_id(elements[localId], localId);
+        }
     }
 
     void add_new_entity_with_local_id(stk::mesh::Entity elem, impl::LocalId id)
     {
         localIdToElement[id] = elem;
-        elementToLocalId[elem.local_offset()] = id;
+        elementToLocalIdMapper.add_new_entity_with_local_id(elem, id);
     }
 
     void clear_local_id_for_elem(stk::mesh::Entity elem)
     {
         localIdToElement[entity_to_local(elem)] = stk::mesh::Entity::InvalidEntity;
-        elementToLocalId[elem.local_offset()] = impl::INVALID_LOCAL_ID;
+        elementToLocalIdMapper.clear_local_id_for_elem(elem);
     }
 private:
     stk::mesh::EntityVector localIdToElement;
-    std::vector<stk::mesh::impl::LocalId> elementToLocalId;
+    LocalIdMapperT<impl::LocalId> elementToLocalIdMapper;
 };
 
 class BulkDataIdMapper : public IdMapper

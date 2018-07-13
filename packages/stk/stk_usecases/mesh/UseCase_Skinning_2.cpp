@@ -35,7 +35,7 @@
 
 #include <mesh/UseCase_Skinning.hpp>
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>

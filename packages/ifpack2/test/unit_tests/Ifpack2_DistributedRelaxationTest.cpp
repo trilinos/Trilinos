@@ -89,6 +89,7 @@ int main( int argc, char* argv[] )
         &nr, &ne, &xadj, &adj, &vals, argv[1]);
   }
 
+  
   tcomm->broadcast (0, sizeof(int), (char *)&nr);
   tcomm->broadcast (0, sizeof(int), (char *)&ne);
   std::cout << "nr:" << nr << " ne:" << ne <<std::endl;
@@ -143,6 +144,8 @@ int main( int argc, char* argv[] )
   }
   TpetraCrsMatrix->fillComplete ();
 
+
+  
   delete []xadj; delete [] adj; delete []vals;
   delete []tmp_indices; delete [] tmp_vals;
 

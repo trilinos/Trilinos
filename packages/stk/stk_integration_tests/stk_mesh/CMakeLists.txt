@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
@@ -14,7 +13,7 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_mesh_integration_tests
+    stk_integration_tests
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi

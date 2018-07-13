@@ -35,6 +35,7 @@
 #define STK_SEARCH_BOX_HPP
 
 #include <stk_search/Point.hpp>
+#include <limits>  
 
 namespace stk { namespace search {
 
@@ -50,6 +51,12 @@ public:
        point_type const& x_max_corner = point_type(std::numeric_limits<T>::lowest(),std::numeric_limits<T>::lowest(),std::numeric_limits<T>::lowest()))
     : m_min_corner(x_min_corner)
     , m_max_corner(x_max_corner)
+  {}
+
+  Box( const T x_min, const T y_min, const T z_min, 
+       const T x_max, const T y_max, const T z_max) :
+    m_min_corner(x_min, y_min, z_min),
+    m_max_corner(x_max, y_max, z_max) 
   {}
 
   point_type const& min_corner() const { return m_min_corner; }
@@ -74,33 +81,17 @@ public:
     set_max_corner(point_type(x2, y2, z2));
   }
 
-
   bool operator==(Box<value_type> const& b) const
   { return m_min_corner == b.m_min_corner && m_max_corner == b.m_max_corner; }
 
   bool operator!=(Box<value_type> const& b) const
   { return !(*this == b); }
 
-  //  NKC, keeping track of things may need to put here to support usage of this box in GTK search
-
   void set_box(const Box& b)
   {
     set_min_corner(b.min_corner());
     set_max_corner(b.max_corner());
   }
-
-
-  /*
-  Box<value_type>& operator = (const Box<value_type>& box1) {
-    m_min_corner[0] = box1.m_min_corner[0];
-    m_min_corner[1] = box1.m_min_corner[1];
-    m_min_corner[2] = box1.m_min_corner[2];
-    m_max_corner[0] = box1.m_max_corner[0];
-    m_max_corner[1] = box1.m_max_corner[1];
-    m_max_corner[2] = box1.m_max_corner[2];
-    return *this;
-  }
-  */
 
   friend std::ostream& operator<<(std::ostream & out, Box<value_type> const& b)
   {
@@ -114,35 +105,6 @@ private:
 };
 
 }} //namespace stk::search
-
-
-namespace boost {
-namespace geometry {
-namespace traits {
-
-// traits for stk::search::Box<T>
-template <typename T> struct tag< stk::search::Box<T> > { typedef box_tag type; };
-template <typename T> struct point_type< stk::search::Box<T> > { typedef stk::search::Point<T> type; };
-
-template <typename T, size_t Index>
-struct indexed_access< stk::search::Box<T>, min_corner, Index >
-{
-  BOOST_STATIC_ASSERT((Index < 3));
-  static inline T const& get( stk::search::Box<T> const& s) { return s.min_corner()[Index]; }
-};
-
-
-
-
-template <typename T, size_t Index>
-struct indexed_access< stk::search::Box<T>, max_corner, Index >
-{
-  BOOST_STATIC_ASSERT((Index < 3));
-  static inline T const& get( stk::search::Box<T> const& s) { return s.max_corner()[Index]; }
-};
-
-
-}}} // namespace boost::geometry::traits
 
 #endif //STK_SEARCH_BOX_HPP
 

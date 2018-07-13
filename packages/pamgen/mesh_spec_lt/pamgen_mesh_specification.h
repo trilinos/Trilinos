@@ -277,9 +277,70 @@ class Mesh_Specification
       // to meaningful data, but all other functions returning a pointer
       // will return a null pointer.
 
+    // Set IJK
+    void Set_Total_Num_IJK(long long nnx,
+                           long long nny,
+                           long long nnz)
+    {
+      total_num_ijk[0] = nnx;
+      total_num_ijk[1] = nny;
+      total_num_ijk[2] = nnz;
+      return;
+    }
+    void Set_Local_Num_IJK(long long nnx,
+                           long long nny,
+                           long long nnz)
+    {
+      local_num_ijk[0] = nnx;
+      local_num_ijk[1] = nny;
+      local_num_ijk[2] = nnz;
+      return;
+    }
+    void Set_Global_IJK(long long ilow, long long ihi,
+                        long long jlow, long long jhi,
+                        long long klow, long long khi)
+    {
+      global_ijk[0] = ilow;
+      global_ijk[1] = ihi;
+      global_ijk[2] = jlow;
+      global_ijk[3] = jhi;
+      global_ijk[4] = klow;
+      global_ijk[5] = khi;
+      return;
+    }
 
+    // Get IJK
+    void Get_Total_Num_IJK(long long * num_ijk)
+    {
+      num_ijk[0] = total_num_ijk[0];
+      num_ijk[1] = total_num_ijk[1];
+      num_ijk[2] = total_num_ijk[2];
+      return;
+    }
+    void Get_Local_Num_IJK(long long * num_ijk)
+    {
+      num_ijk[0] = local_num_ijk[0];
+      num_ijk[1] = local_num_ijk[1];
+      num_ijk[2] = local_num_ijk[2];
+      return;
+    }
+    void Get_Global_IJK(long long* global_ranges)
+    {
+      global_ranges[0] = global_ijk[0];
+      global_ranges[1] = global_ijk[1];
+      global_ranges[2] = global_ijk[2];
+      global_ranges[3] = global_ijk[3];
+      global_ranges[4] = global_ijk[4];
+      global_ranges[5] = global_ijk[5];
+      return;
+    }
 
   protected:
+
+    // Store IJK
+    long long global_ijk[6];
+    long long local_num_ijk[3];
+    long long total_num_ijk[3];
 
     std::string title;
     std::stringstream error_stream;

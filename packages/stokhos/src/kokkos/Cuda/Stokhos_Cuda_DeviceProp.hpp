@@ -112,7 +112,43 @@ namespace Stokhos {
         "Cuda compute capability >= 2 is required!");
 
       // These come from the CUDA occupancy calculator
-      if (compute_capability_major == 3) {
+      if (compute_capability_major == 6) {
+        if (compute_capability_minor == 1)
+          shared_memory_capacity = 96 * 1024;
+        else
+          shared_memory_capacity = 64 * 1024;
+
+        if (compute_capability_minor == 0 || compute_capability_minor == 1)
+          max_regs_per_block = 64 * 1024;
+        else
+          max_regs_per_block = 32 * 1024;
+
+        max_shmem_per_block = 48 * 1024;
+        max_regs_per_sm = 64 * 1024;
+        shared_memory_granularity = 256;
+        max_threads_per_block = 1024;
+
+        if (compute_capability_minor == 2) {
+          max_threads_per_sm = 4096;
+          max_warps_per_sm = 128;
+        }
+        else {
+          max_threads_per_sm = 2048;
+          max_warps_per_sm = 64;
+        }
+        max_blocks_per_sm = 32;
+
+        warp_size = 32;
+        if (compute_capability_minor == 0)
+          warp_granularity = 2;
+        else
+          warp_granularity = 4;
+        reg_bank_size = 256;
+        has_shuffle = true;
+        has_ldg = true;
+      }
+
+      else if (compute_capability_major == 3) {
         if (compute_capability_minor >= 7) {
           shared_memory_capacity = 112 * 1024;
           max_shmem_per_block = 48 * 1024;
@@ -153,6 +189,12 @@ namespace Stokhos {
         has_shuffle = false;
         has_ldg = false;
       }
+
+      else
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "DeviceProp not configured for compute capability " <<
+          compute_capability_major);
     }
 
     // Returns number of registers per thread used by the given kernel

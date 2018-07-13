@@ -117,6 +117,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
   typedef MatrixAdapter<User,UserCoord> base_adapter_t;
@@ -174,8 +175,7 @@ public:
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
    */
-  virtual void getCRSView(const lno_t *&offsets,
-                          const gno_t *&colIds) const
+  virtual void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
   {
     // Default implementation; no CRS view provided.
     offsets = NULL;
@@ -197,7 +197,7 @@ public:
       \param values on return will point to the values stored in the
          non-zeros for each row.
    */
-  virtual void getCRSView(const lno_t *&offsets,
+  virtual void getCRSView(const offset_t *&offsets,
                           const gno_t *& colIds,
                           const scalar_t *&values) const
   {
@@ -263,7 +263,7 @@ public:
       \param rowIds on return will point to the global row Ids for
          the non-zeros for each column.
    */
-  virtual void getCCSView(const lno_t *&offsets,
+  virtual void getCCSView(const offset_t *&offsets,
                           const gno_t *&rowIds) const
   {
     // Default implementation; no CCS view provided.
@@ -286,7 +286,7 @@ public:
       \param values on return will point to the values stored in the
          non-zeros for each column.
    */
-  virtual void getCCSView(const lno_t *&offsets,
+  virtual void getCCSView(const offset_t *&offsets,
                           const gno_t *&rowIds,
                           const scalar_t *&values) const
   {

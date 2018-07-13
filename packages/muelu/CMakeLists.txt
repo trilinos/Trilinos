@@ -9,12 +9,22 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 #
 # B) Set up package-specific options
 #
-IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7"))
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-ENDIF()
 
 IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
+ENDIF()
+
+ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
+ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
+ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_FLOAT)
+  ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 ENDIF()
 
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
@@ -28,8 +38,12 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
 ENDIF ()
 
+IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+ENDIF()
+
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
-# to be true if Trilinos_ENABLE_EXPLICIT_INSTANTIATION is true.
+# to be true if ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION is true.
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION  OFF)
@@ -49,17 +63,6 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
-# Enable timer synchronization via barriers
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION
-  HAVE_${PACKAGE_NAME_UC}_TIMER_SYNCHRONIZATION
-  "Enable timer synchronization in MueLu via barriers."
-  NO)
-
-IF (${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION)
-  MESSAGE(STATUS "Enabling timer synchronization")
-ENDIF ()
-
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -74,6 +77,59 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   MESSAGE(STATUS "Enabling MueLu experimental code")
 ENDIF()
 
+# Enable additive variant
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT
+  HAVE_${PACKAGE_NAME_UC}_ADDITIVE_VARIANT
+  "Enable Additive Variant."
+  NO)
+
+# Enable matrix splitting
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_REGION_SPLITTING
+  HAVE_${PACKAGE_NAME_UC}_REGION_SPLITTING
+  "Enable Region Splitting."
+  NO)
+
+# mfh 12 Sep 2017: See #1726.  If Tpetra is enabled, then MueLu's
+# Tutorial should not build unless GO=int and Node=OpenMP or Serial
+# are all enabled.
+
+SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT YES)
+IF (DEFINED ${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+    IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
+      SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
+    ENDIF ()
+    IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+      IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+        SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
+      ENDIF ()
+    ENDIF ()
+    IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+      IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+        MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
+        SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
+      ENDIF ()
+    ENDIF ()
+  ENDIF ()
+ENDIF ()
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
+  MESSAGE (STATUS "MueLu's tutorial requires for a correct build that if Tpetra is enabled, then GlobalOrdinal=int must be enabled, and either the Serial or OpenMP Nodes in Tpetra be enabled.  Since this is not the case, I am disabling MueLu's tutorial by default.  See Trilinos GitHub Issue #1726 for details: https://github.com/trilinos/Trilinos/issues/1726")
+ENDIF ()
+
+# cmake option to enable building of MueLu Tutorial
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Tutorial
+  ""
+  "Enable MueLu tutorial."
+  ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT AND ${PACKAGE_NAME}_ENABLE_Tutorial)
+  MESSAGE (STATUS "You chose to enable MueLu's tutorial, even though I told you that it may not build correctly.  You are responsible for whatever build or link errors may occur as a result.")
+ENDIF ()
+
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
@@ -83,13 +139,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   MESSAGE(STATUS "Split MueLu ETI files: this may slow down the compilation process.")
 ENDIF()
-
-# Enable broken tests
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_BROKEN_TESTS
-  HAVE_${PACKAGE_NAME_UC}_BROKEN_TESTS
-  "Enable broken code."
-  NO)
 
 # Memory testing
 IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
@@ -128,6 +177,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
   NO)
+
+# Define option to use code that is refactored to use Kokkos by
+# default. This is useful for running all non-unit tests with Kokkos
+# without having to set "use kokkos refactor" in all parameter lists.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR_USE_BY_DEFAULT
+  "Use MueLu code refactored to use Kokkos by default."
+  NO)
+
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
@@ -195,6 +254,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ELSE()
     GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
+  ENDIF()
+
+  # <complex, int, long long int>
+  IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG OFF)
   ENDIF()
 
   # <float, int, int>
@@ -303,10 +371,10 @@ ADD_SUBDIRECTORY(src)
 
 if(TPL_ENABLE_MATLAB)
   if (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
+    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
   ENDIF()
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_Epetra:BOOL=ON\" and \"-DTrilinos_ENABLE_Tpetra:BOOL=ON\".")
+      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
 ENDIF()
 

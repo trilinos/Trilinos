@@ -74,8 +74,8 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap,xmaps);
+    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap->getMap(),xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor

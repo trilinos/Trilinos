@@ -535,7 +535,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DfDp_op_impl(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -543,7 +543,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -551,7 +551,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_op_impl(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -559,15 +559,16 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDp_op_impl( int j, int l ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
 ModelEvaluatorBase::OutArgs<double>
 EpetraModelEvaluator::createOutArgsImpl() const
 {
-  if (!currentInArgsOutArgs_)
+  if (!currentInArgsOutArgs_) {
     updateInArgsOutArgs();
+  }
   return prototypeOutArgs_;
 }
 
@@ -937,6 +938,11 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
   if( inArgs.supports(IN_ARG_beta) )
     epetraInArgs->set_beta(inArgs.get_beta());
 
+  if( inArgs.supports(IN_ARG_step_size) )
+    epetraInArgs->set_step_size(inArgs.get_step_size());
+
+  if( inArgs.supports(IN_ARG_stage_number) )
+    epetraInArgs->set_stage_number(inArgs.get_stage_number());
 }
 
 
@@ -1189,6 +1195,10 @@ void EpetraModelEvaluator::preEvalScalingSetup(
       epetraInArgs.set_beta(1.0);
     if( epetraInArgs.supports(EME::IN_ARG_alpha) )
       epetraInArgs.set_alpha(0.0);
+    if( epetraInArgs.supports(EME::IN_ARG_step_size) )
+      epetraInArgs.set_step_size(0.0);
+    if( epetraInArgs.supports(EME::IN_ARG_stage_number) )
+      epetraInArgs.set_stage_number(1.0);
   }
 
 }
@@ -1393,6 +1403,8 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   inArgs.setSupports(IN_ARG_t, epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, epetraInArgs.supports(EME::IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, epetraInArgs.supports(EME::IN_ARG_beta));
+  inArgs.setSupports(IN_ARG_step_size, epetraInArgs.supports(EME::IN_ARG_step_size));
+  inArgs.setSupports(IN_ARG_stage_number, epetraInArgs.supports(EME::IN_ARG_stage_number));
   for(int l=0; l<l_Np; ++l) {
     inArgs.setSupports(IN_ARG_p_mp, l, epetraInArgs.supports(EME::IN_ARG_p_mp, l));
   }
@@ -1529,7 +1541,7 @@ Thyra::convert(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::DERIV_MV_BY_COL);
 }
 
 
@@ -1546,7 +1558,7 @@ Thyra::convert(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return EpetraExt::ModelEvaluator::DERIV_MV_BY_COL; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(EpetraExt::ModelEvaluator::DERIV_MV_BY_COL);
 }
 
 

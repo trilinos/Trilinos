@@ -58,21 +58,17 @@
 
 namespace Example {
   
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-                                           BCStrategy_Dirichlet_Constant,
-                                           BCStrategy_Dirichlet_Constant)
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Constant",
-                                           BCStrategy_Neumann_Constant,
-                                           BCStrategy_Neumann_Constant)
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Weak Dirichlet Match Interface",
-                                           BCStrategy_Interface_WeakDirichletMatch,
-                                           BCStrategy_Interface_WeakDirichletMatch)
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Match Interface",
-                                           BCStrategy_Interface_NeumannMatch,
-                                           BCStrategy_Interface_NeumannMatch)
-PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Robin Interface",
-                                           BCStrategy_Interface_Robin,
-                                           BCStrategy_Interface_Robin)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_Dirichlet_Constant,
+  BCStrategy_Dirichlet_Constant)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_Neumann_Constant,
+  BCStrategy_Neumann_Constant)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
+  BCStrategy_Interface_WeakDirichletMatch,
+  BCStrategy_Interface_WeakDirichletMatch)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_Interface_NeumannMatch,
+  BCStrategy_Interface_NeumannMatch)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_Interface_Robin,
+  BCStrategy_Interface_Robin)
 
 struct BCStrategyFactory : public panzer::BCStrategyFactory {
 
@@ -85,25 +81,16 @@ struct BCStrategyFactory : public panzer::BCStrategyFactory {
       
       bool found = false;
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      Example::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
-
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant",
+        BCStrategy_Dirichlet_Constant)
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant",
-                                      Example::BCStrategy_Neumann_Constant,
-                                      BCStrategy_Neumann_Constant)
-
+        BCStrategy_Neumann_Constant)
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Weak Dirichlet Match Interface",
-                                      Example::BCStrategy_Interface_WeakDirichletMatch,
-                                      BCStrategy_Interface_WeakDirichletMatch)
-
+        BCStrategy_Interface_WeakDirichletMatch)
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Match Interface",
-                                      Example::BCStrategy_Interface_NeumannMatch,
-                                      BCStrategy_Interface_NeumannMatch)
-
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Robin Interface", 
-                                      Example::BCStrategy_Interface_Robin,
-                                      BCStrategy_Interface_Robin)
+        BCStrategy_Interface_NeumannMatch)
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Robin Interface",
+        BCStrategy_Interface_Robin)
 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<

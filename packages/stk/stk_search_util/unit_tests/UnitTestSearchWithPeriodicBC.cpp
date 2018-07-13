@@ -31,8 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <cmath>
 #include <gtest/gtest.h>
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 #include <stk_search_util/PeriodicBoundarySearch.hpp>
 #include <iostream>
 #include <iomanip>
@@ -44,7 +45,7 @@ typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
 typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
 
 namespace {
-const double PI     = 3.14159265358979;
+const double PI     = M_PI;
 const double TWO_PI = 2 * PI;
 
 void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, stk::mesh::Entity node, const stk::mesh::Field<double> & theField, double expected_value )
@@ -362,7 +363,6 @@ private:
 TEST(CoarseSearch, PeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
-
 
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
@@ -900,7 +900,6 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 
 TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutZ)
 {
-    const double PI = 3.14159265358979323846;
     double angleInRadians = PI/2;
     double axis[3] = { 0, 0, 1 };
 
@@ -973,7 +972,6 @@ TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutZ)
 
 TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutY)
 {
-    const double PI = 3.14159265358979323846;
     double angleInRadians = PI/6;
     double axis[3] = { 0, 1, 0 };
 
@@ -1007,7 +1005,6 @@ TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutY)
 
 TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutX)
 {
-    const double PI = 3.14159265358979323846;
     double angleInRadians = PI/3;
 
     double axis[3] = { 2, 0, 0 };

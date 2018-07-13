@@ -53,6 +53,8 @@
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_Algorithm.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -187,11 +189,13 @@ template <typename IT, typename CT, typename WT>
 class uMultiSortItem
 {
 public:
-    IT index;
-    CT count;
+    //TODO: Why volatile?
+    //no idea, another intel compiler faiulure.
+    volatile IT index;
+    volatile CT count;
     //unsigned int val;
-    WT *val;
-    WT _EPSILON;
+    volatile WT *val;
+    volatile WT _EPSILON;
 
     uMultiSortItem(){
         this->index = 0;
@@ -569,11 +573,13 @@ private:
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
 
-    int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
     int mj_user_recursion_depth; //the recursion depth value provided by user.
-    int mj_keep_part_boxes; //if the boxes need to be kept.
+    bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
+    int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
+    			//1 - will aim for minimized number of messages with possibly bad load-imbalance
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     int num_threads; //num threads
 
@@ -653,6 +659,8 @@ private:
     RCP<mj_partBox_t> global_box;
     int myRank, myActualRank; //processor rank, and initial rank
 
+    bool divide_to_prime_first;
+
     /* \brief Either the mj array (part_no_array) or num_global_parts should be provided in
      * the input. part_no_array takes
      * precedence if both are provided.
@@ -708,7 +716,8 @@ private:
                 mj_part_t current_num_parts,
                 int current_iteration,
                 RCP<mj_partBoxVector_t> input_part_boxes,
-                RCP<mj_partBoxVector_t> output_part_boxes);
+                RCP<mj_partBoxVector_t> output_part_boxes,
+                mj_part_t atomic_part_count);
 
     /*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
      * in the given set of local points.
@@ -1210,7 +1219,31 @@ private:
         mj_lno_t coordinate_end,
         mj_scalar_t *used_local_cut_line_weight_to_left,
         mj_lno_t *out_part_xadj,
-        int coordInd);
+        int coordInd, bool longest_dim_part, uSignedSortItem<int, mj_scalar_t, char> *p_coord_dimension_range_sorted);
+
+    /*!
+     * \brief Function returns the largest prime factor of a given number.
+     * input and output are integer-like.
+     */
+    mj_part_t find_largest_prime_factor(mj_part_t num_parts){
+      mj_part_t largest_factor = 1;
+      mj_part_t n = num_parts;
+      mj_part_t divisor = 2;
+      while (n > 1){
+        while (n % divisor == 0){
+          n = n / divisor;
+          largest_factor = divisor;
+        }
+        ++divisor;
+        if (divisor * divisor > n){
+          if (n > 1){
+            largest_factor = n;
+          }
+          break;
+        }
+      }
+      return largest_factor;
+    }
 public:
     AlgMJ();
 
@@ -1273,12 +1306,13 @@ public:
      *  \param max_concurrent_part_calculation_ : how many parts we can calculate concurrently.
      *  \param check_migrate_avoid_migration_option_ : whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
      *  \param minimum_migration_imbalance_  : when MJ decides whether to migrate, the minimum imbalance for migration.
+     *  \param migration_type_ : when MJ migration whether to migrate for perfect load-imbalance or less messages
      */
     void set_partitioning_parameters(
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_);
+                mj_scalar_t minimum_migration_imbalance_, int migration_type_ = 0);
     /*! \brief Function call, if the part boxes are intended to be kept.
      *
      */
@@ -1328,7 +1362,9 @@ public:
         mj_lno_t *output_xadj,
         int recursion_depth,
         const mj_part_t *part_no_array,
-        bool partition_along_longest_dim);
+        bool partition_along_longest_dim,
+        int num_ranks_per_node,
+        bool divide_to_prime_first_);
 
 };
 
@@ -1369,8 +1405,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     mj_lno_t *output_xadj,
     int rd,
     const mj_part_t *part_no_array_,
-    bool partition_along_longest_dim
+    bool partition_along_longest_dim,
+    int num_ranks_per_node,
+    bool divide_to_prime_first_
 ){
+
 
         this->mj_env = env;
         const RCP<Comm<int> > commN;
@@ -1381,15 +1420,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
         this->myActualRank = this->myRank = 1;
 
 #ifdef HAVE_ZOLTAN2_OMP
-        int actual_num_threads = omp_get_num_threads();
-        omp_set_num_threads(1);
+        //int actual_num_threads = omp_get_num_threads();
+        //omp_set_num_threads(1);
 #endif
 
+    this->divide_to_prime_first = divide_to_prime_first_;
     //weights are uniform for task mapping
 
     //parts are uniform for task mapping
     //as input indices.
-
     this->imbalance_tolerance = 0;
     this->num_global_parts = num_target_part;
     this->part_no_array = (mj_part_t *)part_no_array_;
@@ -1486,7 +1525,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                                         current_num_parts,
                                         i,
                                         t1,
-                                        t2);
+                                        t2, num_ranks_per_node);
 
         //if the number of obtained parts equal to current number of parts,
         //skip this dimension. For example, this happens when 1 is given in the input
@@ -1582,6 +1621,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
                   uqSignsort(this->coord_dim, p_coord_dimension_range_sorted);
                   coordInd = p_coord_dimension_range_sorted[this->coord_dim - 1].id;
+
                   /*
                   for (int coord_traverse_ind = 0; coord_traverse_ind < this->coord_dim; ++coord_traverse_ind){
                     std::cout << "i:" << p_coord_dimension_range_sorted[coord_traverse_ind].id << " range:" << p_coord_dimension_range_sorted[coord_traverse_ind].val << std::endl;
@@ -1590,6 +1630,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
                   }
                   */
+
                   mj_current_dim_coords = this->mj_coordinates[coordInd];
 
                   this->process_local_min_max_coord_total_weight[kk] = coord_dim_mins[coordInd];
@@ -1627,6 +1668,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                 //part0  cut0  part1 cut1 part2 cut2 part3
                 mj_part_t concurrent_part_cut_shift = 0;
                 mj_part_t concurrent_part_part_shift = 0;
+
+
                 for(int kk = 0; kk < current_concurrent_num_parts; ++kk){
                     mj_scalar_t min_coordinate = this->global_min_max_coord_total_weight[kk];
                     mj_scalar_t max_coordinate = this->global_min_max_coord_total_weight[kk +
@@ -1684,6 +1727,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                             mj_current_dim_coords,
                             this->assigned_part_ids,
                             partition_count);
+
                     }
                     else {
                         // e.g., if have fewer coordinates than parts, don't need to do next dim.
@@ -1695,6 +1739,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                 //used imbalance, it is always 0, as it is difficult to estimate a range.
                 mj_scalar_t used_imbalance = 0;
 
+
                 // Determine cut lines for k parts here.
                 this->mj_1D_part(
                     mj_current_dim_coords,
@@ -1704,6 +1749,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                     current_cut_coordinates,
                     total_incomplete_cut_count,
                     num_partitioning_in_current_dim);
+            }
+            else {
+              obtained_part_index += current_concurrent_num_parts;
             }
 
             //create part chunks
@@ -1753,7 +1801,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                             coordinate_end,
                             used_local_cut_line_weight_to_left,
                             this->new_part_xadj + output_part_index + output_array_shift,
-                            coordInd );
+                            coordInd,
+                            partition_along_longest_dim,
+                            p_coord_dimension_range_sorted);
                     }
                     else {
                         //if this part is partitioned into 1 then just copy
@@ -1790,6 +1840,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
                           for (mj_lno_t task_traverse = coordinate_begin; task_traverse < coordinate_end; ++task_traverse){
                             mj_lno_t l = this->new_coordinate_permutations[task_traverse];
+                            //MARKER: FLIPPED ZORDER BELOW
                             mj_current_dim_coords[l] = -mj_current_dim_coords[l];
                           }
                         }
@@ -1841,7 +1892,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     this->free_work_memory();
 
 #ifdef HAVE_ZOLTAN2_OMP
-    omp_set_num_threads(actual_num_threads);
+    //omp_set_num_threads(actual_num_threads);
 #endif
 }
 
@@ -1862,8 +1913,8 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
         coordinate_permutations(NULL), new_coordinate_permutations(NULL),
         assigned_part_ids(NULL), part_xadj(NULL), new_part_xadj(NULL),
         distribute_points_on_cut_lines(true), max_concurrent_part_calculation(1),
-        mj_run_as_rcb(0), mj_user_recursion_depth(0), mj_keep_part_boxes(0),
-        check_migrate_avoid_migration_option(0), minimum_migration_imbalance(0.30),
+        mj_run_as_rcb(false), mj_user_recursion_depth(0), mj_keep_part_boxes(false),
+        check_migrate_avoid_migration_option(0), migration_type(0), minimum_migration_imbalance(0.30),
         num_threads(1), total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
         max_num_cut_along_dim(0), max_num_total_part_along_dim(0), total_dim_num_reduce_all(0),
         last_dim_num_part(0), comm(), fEpsilon(0), sEpsilon(0), maxScalar_t(0), minScalar_t(0),
@@ -1879,7 +1930,7 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
         global_rectilinear_cut_weight(NULL),total_part_weight_left_right_closests(NULL),
         global_total_part_weight_left_right_closests(NULL),
         kept_boxes(),global_box(),
-        myRank(0), myActualRank(0)
+        myRank(0), myActualRank(0), divide_to_prime_first(false)
 {
     this->fEpsilon = std::numeric_limits<float>::epsilon();
     this->sEpsilon = std::numeric_limits<mj_scalar_t>::epsilon() * 100;
@@ -1907,7 +1958,7 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::get_global_box() const
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_to_keep_part_boxes(){
-  this->mj_keep_part_boxes = 1;
+  this->mj_keep_part_boxes = true;
 }
 
 
@@ -1963,15 +2014,31 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_part_specifications(
                         future_num_parts = nfutureNumParts;
                 }
                 this->total_num_part = this->num_global_parts;
-                //estimate reduceAll Count here.
-                //we find the upperbound instead.
-                mj_part_t p = 1;
-                for (int i = 0; i < this->recursion_depth; ++i){
-                        this->total_dim_num_reduce_all += p;
-                        p *= this->max_num_part_along_dim;
-                }
 
-                this->last_dim_num_part  = p / this->max_num_part_along_dim;
+                if (this->divide_to_prime_first){
+                  this->total_dim_num_reduce_all = this->num_global_parts * 2;
+                  this->last_dim_num_part = this->num_global_parts;
+                }
+                else {
+                  //this is the lower bound.
+
+                  //estimate reduceAll Count here.
+                  //we find the upperbound instead.
+                  size_t p = 1;
+
+                  for (int i = 0; i < this->recursion_depth; ++i){
+                    this->total_dim_num_reduce_all += p;
+                    p *= this->max_num_part_along_dim;
+                  }
+
+                  if (p / this->max_num_part_along_dim > this->num_global_parts){
+                    this->last_dim_num_part = this->num_global_parts;
+                  }
+                  else {
+                    this->last_dim_num_part  = p / this->max_num_part_along_dim;
+                  }
+
+                }
         }
 
         this->total_num_cut = this->total_num_part - 1;
@@ -2035,7 +2102,8 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
     mj_part_t current_num_parts,
     int current_iteration,
     RCP<mj_partBoxVector_t> input_part_boxes,
-    RCP<mj_partBoxVector_t> output_part_boxes
+    RCP<mj_partBoxVector_t> output_part_boxes,
+    mj_part_t atomic_part_count
 ){
         //how many parts that will be obtained after this dimension.
     mj_part_t output_num_parts = 0;
@@ -2055,7 +2123,6 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
 
         for (mj_part_t ii = 0; ii < current_num_parts; ++ii){
             num_partitioning_in_current_dim.push_back(p);
-
         }
         //cout << "me:" << this->myRank << " current_iteration" << current_iteration <<
         //" current_num_parts:" << current_num_parts << std::endl;
@@ -2111,35 +2178,104 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
                                         );
 
             if (num_partitions_in_current_dim > this->max_num_part_along_dim){
-                std::cerr << "ERROR: maxPartNo calculation is wrong." << std::endl;
+                std::cerr << "ERROR: maxPartNo calculation is wrong. num_partitions_in_current_dim: "
+                          << num_partitions_in_current_dim <<  "this->max_num_part_along_dim:"
+                          << this->max_num_part_along_dim <<
+                          " this->recursion_depth:" << this->recursion_depth <<
+                          " current_iteration:" << current_iteration <<
+                          " future_num_parts_of_part_ii:" << future_num_parts_of_part_ii <<
+                          " might need to fix max part no calculation for largest_prime_first partitioning" <<
+                          std::endl;
                 exit(1);
             }
             //add this number to num_partitioning_in_current_dim vector.
             num_partitioning_in_current_dim.push_back(num_partitions_in_current_dim);
 
+            mj_part_t largest_prime_factor = num_partitions_in_current_dim;
+            if (this->divide_to_prime_first){
 
-            //increase the output number of parts.
-            output_num_parts += num_partitions_in_current_dim;
+              //increase the output number of parts.
+              output_num_parts += num_partitions_in_current_dim;
+              if (future_num_parts_of_part_ii == atomic_part_count || future_num_parts_of_part_ii % atomic_part_count != 0){
+                atomic_part_count = 1;
+              }
 
-            //ideal number of future partitions for each part.
-            mj_part_t ideal_num_future_parts_in_part = future_num_parts_of_part_ii / num_partitions_in_current_dim;
-            for (mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii){
-                mj_part_t num_future_parts_for_part_iii = ideal_num_future_parts_in_part;
+              largest_prime_factor = this->find_largest_prime_factor(future_num_parts_of_part_ii / atomic_part_count);
+
+              //we divide to  num_partitions_in_current_dim. But we adjust the weights based on largest prime/
+              //if num_partitions_in_current_dim = 2, largest prime = 5 --> we divide to 2 parts with weights 3x and 2x.
+              //if the largest prime is less than part count, we use the part count so that we divide uniformly.
+              if (largest_prime_factor < num_partitions_in_current_dim){
+                largest_prime_factor = num_partitions_in_current_dim;
+              }
+
+              //ideal number of future partitions for each part.
+              mj_part_t ideal_num_future_parts_in_part = (future_num_parts_of_part_ii / atomic_part_count) / largest_prime_factor;
+              //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
+              mj_part_t ideal_prime_scale = largest_prime_factor / num_partitions_in_current_dim;
+
+              //std::cout << "current num part:" << ii << " largest_prime_factor:" << largest_prime_factor << " To Partition:" << future_num_parts_of_part_ii << " ";
+              for (mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii){
+                //if num_partitions_in_current_dim = 2, largest prime = 5 then ideal weight is 2x
+                mj_part_t my_ideal_primescale = ideal_prime_scale;
+                //left over weighs. Left side is adjusted to be 3x, right side stays as 2x
+                if (iii < (largest_prime_factor) % num_partitions_in_current_dim){
+                  ++my_ideal_primescale;
+                }
+                //scale with 'x';
+                mj_part_t num_future_parts_for_part_iii = ideal_num_future_parts_in_part * my_ideal_primescale;
 
                 //if there is a remainder in the part increase the part weight.
-                if (iii < future_num_parts_of_part_ii % num_partitions_in_current_dim){
-                    //if not uniform, add 1 for the extra parts.
-                    ++num_future_parts_for_part_iii;
+                if (iii < (future_num_parts_of_part_ii / atomic_part_count) % largest_prime_factor){
+                  //if not uniform, add 1 for the extra parts.
+                  ++num_future_parts_for_part_iii;
                 }
-                next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii);
+
+                next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii * atomic_part_count);
 
                 //if part boxes are stored, initialize the box of the parts as the ancestor.
                 if (this->mj_keep_part_boxes){
-                    output_part_boxes->push_back((*input_part_boxes)[ii]);
+                  output_part_boxes->push_back((*input_part_boxes)[ii]);
                 }
 
                 //set num future_num_parts to maximum in this part.
                 if (num_future_parts_for_part_iii > future_num_parts) future_num_parts = num_future_parts_for_part_iii;
+
+              }
+
+
+            }
+            else {
+
+              //increase the output number of parts.
+              output_num_parts += num_partitions_in_current_dim;
+
+
+
+              if (future_num_parts_of_part_ii == atomic_part_count || future_num_parts_of_part_ii % atomic_part_count != 0){
+                atomic_part_count = 1;
+              }
+              //ideal number of future partitions for each part.
+              mj_part_t ideal_num_future_parts_in_part = (future_num_parts_of_part_ii / atomic_part_count) / num_partitions_in_current_dim;
+              for (mj_part_t iii = 0; iii < num_partitions_in_current_dim; ++iii){
+                mj_part_t num_future_parts_for_part_iii = ideal_num_future_parts_in_part;
+
+                //if there is a remainder in the part increase the part weight.
+                if (iii < (future_num_parts_of_part_ii / atomic_part_count) % num_partitions_in_current_dim){
+                  //if not uniform, add 1 for the extra parts.
+                  ++num_future_parts_for_part_iii;
+                }
+
+                next_future_num_parts_in_parts->push_back(num_future_parts_for_part_iii * atomic_part_count);
+
+                //if part boxes are stored, initialize the box of the parts as the ancestor.
+                if (this->mj_keep_part_boxes){
+                  output_part_boxes->push_back((*input_part_boxes)[ii]);
+                }
+
+                //set num future_num_parts to maximum in this part.
+                if (num_future_parts_for_part_iii > future_num_parts) future_num_parts = num_future_parts_for_part_iii;
+              }
             }
         }
     }
@@ -2408,7 +2544,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_local_min_max_coo
     else {
         mj_scalar_t my_total_weight = 0;
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel
+#pragma omp parallel num_threads(this->num_threads)
 #endif
         {
             //if uniform weights are used, then weight is equal to count.
@@ -2587,8 +2723,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
                 current_target_part_weights[i] = cumulative * unit_part_weight;
                 //cout <<"i:" << i << " current_target_part_weights:" << current_target_part_weights[i] << endl;
                 //set initial cut coordinate.
-                initial_cut_coords[i] = min_coord + (coord_range *
-                                         cumulative) / total_future_part_count_in_part;
+
+                initial_cut_coords[i] = min_coord + (coord_range * cumulative) / total_future_part_count_in_part;
             }
             current_target_part_weights[num_cuts] = 1;
         }
@@ -2596,6 +2732,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
         //round the target part weights.
         if (this->mj_uniform_weights[0]){
                 for(mj_part_t i = 0; i < num_cuts + 1; ++i){
+
                 current_target_part_weights[i] = long(current_target_part_weights[i] + 0.5);
             }
         }
@@ -2699,7 +2836,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 
     size_t total_reduction_size = 0;
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(total_incomplete_cut_count,  rectilinear_cut_count)
+#pragma omp parallel shared(total_incomplete_cut_count,  rectilinear_cut_count) num_threads(this->num_threads)
 #endif
     {
         int me = 0;
@@ -2744,7 +2881,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
         int iteration = 0;
         while (total_incomplete_cut_count != 0){
             iteration += 1;
-            //cout << "\niteration:" << iteration  << " ";
             mj_part_t concurrent_cut_shifts = 0;
             size_t total_part_shift = 0;
 
@@ -2905,6 +3041,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
             }
         }
 
+        //if (myRank == 0)
+        //std::cout << "iteration:" << iteration << " partition:" << num_partitioning_in_current_dim[current_work_part] << std::endl;
         // Needed only if keep_cuts; otherwise can simply swap array pointers
         // cutCoordinates and cutCoordinatesWork.
         // (at first iteration, cutCoordinates == cutCoorindates_tmp).
@@ -4210,6 +4348,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
     }
 
 
+    //std::cout << "Before migration: mig type:" << this->migration_type << std::endl;
     //Allocate memory for sorting data structure.
     uSignedSortItem<mj_part_t, mj_gno_t, char> * sort_item_num_part_points_in_procs = allocMemory <uSignedSortItem<mj_part_t, mj_gno_t, char> > (num_procs);
     for(mj_part_t i = 0; i < num_parts; ++i){
@@ -4340,8 +4479,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
             }
 #endif
 
-            //now sends the points to the assigned processors.
-            while (num_points_to_sent > 0){
+	    switch (migration_type){
+	      case 0:
+	      {
+              //now sends the points to the assigned processors.
+              while (num_points_to_sent > 0){
                 //if the processor has enough space.
                 if (num_points_to_sent <= space_left_in_sent_proc){
                         //reduce the space left in the processor.
@@ -4393,10 +4535,43 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
                     //set the new space in the processor.
                     space_left_in_sent_proc = ideal_num_points_in_a_proc - sort_item_num_part_points_in_procs[next_proc_to_send_index].val;
                 }
-            }
+            } 
+	    }
+	    break;
+	    default:
+	    {
+		//to minimize messages, we want each processor to send its coordinates to only a single point.
+		//we do not respect imbalances here, we send all points to the next processor.
+		if (this->myRank == nonassigned_proc_id){
+                  //set my sent count to the sent processor.
+                  send_count_to_each_proc[next_proc_to_send_id] = num_points_to_sent;
+                  //save the processor in the list (processor_chains_in_parts and part_assignment_proc_begin_indices)
+                  //that the processor will send its point in part-i.
+                  mj_part_t prev_begin = part_assignment_proc_begin_indices[i];
+                  part_assignment_proc_begin_indices[i] = next_proc_to_send_id;
+                  processor_chains_in_parts[next_proc_to_send_id] = prev_begin;
+                }
+                num_points_to_sent = 0;
+                ++next_proc_to_send_index;
+		
+		//if we made it to the heaviest processor we round robin and go to beginning
+		if (next_proc_to_send_index == num_procs){
+       		  next_proc_to_send_index = num_procs - required_proc_count;
+		}
+                //send the new id.
+                next_proc_to_send_id =  sort_item_num_part_points_in_procs[next_proc_to_send_index].id;
+                //set the new space in the processor.
+                space_left_in_sent_proc = ideal_num_points_in_a_proc - sort_item_num_part_points_in_procs[next_proc_to_send_index].val;
+	    }	
+          }
         }
     }
-
+    
+    /*
+    for (int i = 0; i < num_procs;++i){
+      std::cout << "me:" << this->myRank << " to part:" << i << " sends:" <<  send_count_to_each_proc[i] << std::endl;
+    } 
+    */  
 
 
     this->assign_send_destinations(
@@ -5193,7 +5368,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
     mj_lno_t coordinate_end,
     mj_scalar_t *used_local_cut_line_weight_to_left,
     mj_lno_t *out_part_xadj,
-    int coordInd){
+    int coordInd, bool longest_dim_part, uSignedSortItem<int, mj_scalar_t, char> *p_coord_dimension_range_sorted){
 
         //mj_lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
         mj_part_t no_cuts = num_parts - 1;
@@ -5308,11 +5483,23 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
 
                         //we insert the coordinates to the sort item here.
                         int val_ind = 0;
-                        for(int dim = coordInd + 1; dim < this->coord_dim; ++dim){
-                                vals[val_ind++] = this->mj_coordinates[dim][i];
+
+                        if (longest_dim_part){
+                          //std::cout << std::endl << std::endl;
+                          for(int dim = this->coord_dim - 2; dim >= 0; --dim){
+                            //uSignedSortItem<int, mj_scalar_t, char> *p_coord_dimension_range_sorted
+                            int next_largest_coord_dim = p_coord_dimension_range_sorted[dim].id;
+                            //std::cout << "next_largest_coord_dim: " << next_largest_coord_dim << " ";
+                            vals[val_ind++] = this->mj_coordinates[next_largest_coord_dim][i];
+                          }
                         }
-                        for(int dim = 0; dim < coordInd; ++dim){
-                                vals[val_ind++] = this->mj_coordinates[dim][i];
+                        else {
+                          for(int dim = coordInd + 1; dim < this->coord_dim; ++dim){
+                            vals[val_ind++] = this->mj_coordinates[dim][i];
+                          }
+                          for(int dim = 0; dim < coordInd; ++dim){
+                            vals[val_ind++] = this->mj_coordinates[dim][i];
+                          }
                         }
                         multiSItem tempSortItem(i, this->coord_dim -1, vals);
                         //inser the point to the sort vector pointed by the cut_map[p].
@@ -5358,10 +5545,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
                         }
                         sort_vector_points_on_cut[previous_cut_map].clear();
                 }
-                mj_lno_t sort_vector_end = (mj_lno_t)sort_vector_points_on_cut[mapped_cut].size() - 1;
 
+                //TODO: MD: I dont remember why I have it reverse order here.
+                mj_lno_t sort_vector_end = (mj_lno_t)sort_vector_points_on_cut[mapped_cut].size() - 1;
+                //mj_lno_t sort_vector_begin= 0;
+                //mj_lno_t sort_vector_size = (mj_lno_t)sort_vector_points_on_cut[mapped_cut].size();
+
+                //TODO commented for reverse order
                 for (; sort_vector_end >= 0; --sort_vector_end){
+                //for (; sort_vector_begin < sort_vector_size; ++sort_vector_begin){
+                        //TODO COMMENTED FOR REVERSE ORDER
                         multiSItem t = sort_vector_points_on_cut[mapped_cut][sort_vector_end];
+                        //multiSItem t = sort_vector_points_on_cut[mapped_cut][sort_vector_begin];
                         mj_lno_t i = t.index;
                         mj_scalar_t w = this->mj_uniform_weights[0]? 1:this->mj_weights[0][i];
 
@@ -5417,10 +5612,19 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
                 }
                 previous_cut_map = mapped_cut;
         }
+
+        //TODO commented for reverse order
         //put everything left on the last cut to the last part.
         mj_lno_t sort_vector_end = (mj_lno_t)sort_vector_points_on_cut[previous_cut_map].size() - 1;
+
+        //mj_lno_t sort_vector_begin= 0;
+        //mj_lno_t sort_vector_size = (mj_lno_t)sort_vector_points_on_cut[previous_cut_map].size();
+        //TODO commented for reverse order
         for (; sort_vector_end >= 0; --sort_vector_end){
+        //for (; sort_vector_begin < sort_vector_size; ++sort_vector_begin){
+                //TODO commented for reverse order
                 multiSItem t = sort_vector_points_on_cut[previous_cut_map][sort_vector_end];
+                //multiSItem t = sort_vector_points_on_cut[previous_cut_map][sort_vector_begin];
                 mj_lno_t i = t.index;
                 ++thread_num_points_in_parts[no_cuts];
                 this->assigned_part_ids[i] = no_cuts;
@@ -5702,6 +5906,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
  *  \param max_concurrent_part_calculation_ : how many parts we can calculate concurrently.
  *  \param check_migrate_avoid_migration_option_ : whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
  *  \param minimum_migration_imbalance_  : when MJ decides whether to migrate, the minimum imbalance for migration.
+ *  \param migration_type : whether to migrate for perfect load imbalance (0) or less messages.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -5709,13 +5914,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_partitioning_paramet
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_){
+                mj_scalar_t minimum_migration_imbalance_,
+		int migration_type_ ){
         this->distribute_points_on_cut_lines = distribute_points_on_cut_lines_;
         this->max_concurrent_part_calculation = max_concurrent_part_calculation_;
         this->check_migrate_avoid_migration_option = check_migrate_avoid_migration_option_;
         this->minimum_migration_imbalance = minimum_migration_imbalance_;
+	this->migration_type = migration_type_;
 
 }
+
+
 
 
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -5775,6 +5984,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 )
 {
 
+
+
 #ifdef print_debug
     if(comm->getRank() == 0){
         std::cout << "size of gno:" << sizeof(mj_gno_t) << std::endl;
@@ -5782,10 +5993,29 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         std::cout << "size of mj_scalar_t:" << sizeof(mj_scalar_t) << std::endl;
     }
 #endif
-
     this->mj_env = env;
     this->mj_problemComm = problemComm;
     this->myActualRank = this->myRank = this->mj_problemComm->getRank();
+
+    /*
+    if (0)
+    { 
+      int a = rand();
+      this->mj_problemComm->broadcast(0, sizeof(int), (char *) (&a));
+      std::string istring = "output_" + Teuchos::toString<int>(a) + "_" + Teuchos::toString<int>(myRank) + ".mtx";
+
+      std::ofstream output(istring.c_str());
+      output << num_local_coords_ << " " << coord_dim_ << std::endl;
+      for (int j = 0; j < coord_dim_ ; ++j){
+        for (size_t i = 0; i < num_local_coords_; ++i){
+          output << mj_coordinates_[j][i] << std::endl;
+        }
+    
+      }
+      output.close();
+    }
+    */
+    
 
     this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Total");
     this->mj_env->debug(3, "In MultiJagged Jagged");
@@ -5891,7 +6121,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
                                         current_num_parts,
                                         i,
                                         input_part_boxes,
-                                        output_part_boxes);
+                                        output_part_boxes, 1);
 
         //if the number of obtained parts equal to current number of parts,
         //skip this dimension. For example, this happens when 1 is given in the input
@@ -6310,12 +6540,16 @@ private:
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
+    int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
+ 			//1 for minimized messages
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
-    int mj_keep_part_boxes; //if the boxes need to be kept.
+    bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int num_threads;
 
-    int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    int mj_premigration_option;
+    int min_coord_per_rank_for_premigration;
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
@@ -6334,6 +6568,24 @@ private:
     void free_work_memory();
 
     RCP<mj_partBoxVector_t> getGlobalBoxBoundaries() const;
+    
+    bool mj_premigrate_to_subset(int used_num_ranks, int migration_selection_option,
+        RCP<const Environment> mj_env_,
+        RCP<const Comm<int> > mj_problemComm_,
+        int coord_dim_,
+        mj_lno_t num_local_coords_,
+        mj_gno_t num_global_coords_,  size_t num_global_parts_,
+        const mj_gno_t *initial_mj_gnos_,
+        mj_scalar_t **mj_coordinates_,
+        int num_weights_per_coord_,
+        mj_scalar_t **mj_weights_,
+        //results
+        RCP<const Comm<int> > &result_problemComm_,
+        mj_lno_t & result_num_local_coords_,
+        mj_gno_t * &result_initial_mj_gnos_,
+        mj_scalar_t ** &result_mj_coordinates_,
+        mj_scalar_t ** &result_mj_weights_,
+        int * &result_actual_owner_rank_);
 
 public:
 
@@ -6354,9 +6606,9 @@ public:
                         mj_part_sizes(NULL),
                         distribute_points_on_cut_lines(true),
                         max_concurrent_part_calculation(1),
-                        check_migrate_avoid_migration_option(0),
+                        check_migrate_avoid_migration_option(0), migration_type(0),
                         minimum_migration_imbalance(0.30),
-                        mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0),
+                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0), min_coord_per_rank_for_premigration(32000),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
     ~Zoltan2_AlgMJ(){
@@ -6364,6 +6616,62 @@ public:
         delete [] this->coordinate_ArrayRCP_holder;
         this->coordinate_ArrayRCP_holder = NULL;
       }
+    }
+
+    /*! \brief Set up validators specific to this algorithm
+     */
+    static void getValidParameters(ParameterList & pl)
+    {
+      const bool bUnsorted = true; // this clarifies the flag is for unsrorted
+      RCP<Zoltan2::IntegerRangeListValidator<int>> mj_parts_Validator =
+      Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsorted) );
+      pl.set("mj_parts", "0", "list of parts for multiJagged partitioning "
+        "algorithm. As many as the dimension count.", mj_parts_Validator);
+
+      pl.set("mj_concurrent_part_count", 1, "The number of parts whose cut "
+        "coordinates will be calculated concurently.", Environment::getAnyIntValidator());
+
+      pl.set("mj_minimum_migration_imbalance", 1.1,
+        "mj_minimum_migration_imbalance, the minimum imbalance of the "
+        "processors to avoid migration",
+        Environment::getAnyDoubleValidator());
+
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_migration_option_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 2) );
+      pl.set("mj_migration_option", 1, "Migration option, 0 for decision "
+        "depending on the imbalance, 1 for forcing migration, 2 for "
+        "avoiding migration", mj_migration_option_validator);
+
+            
+
+ 
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_migration_type_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
+      pl.set("mj_migration_type", 0, "Migration type, 0 for migration to minimize the imbalance "
+        "1 for migration to minimize messages exchanged the migration." ,
+	mj_migration_option_validator);
+
+      // bool parameter
+      pl.set("mj_keep_part_boxes", false, "Keep the part boundaries of the "
+        "geometric partitioning.", Environment::getBoolValidator());
+
+      // bool parameter
+      pl.set("mj_enable_rcb", false, "Use MJ as RCB.",
+        Environment::getBoolValidator());
+
+      pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
+        "greater than 0.", Environment::getAnyIntValidator());
+
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_premigration_option_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1024) );
+
+      pl.set("mj_premigration_option", 0, "Whether to do premigration or not. 0 for no migration "
+        "x > 0 for migration to consecutive processors, the subset will be 0,x,2x,3x,...subset ranks."
+        , mj_premigration_option_validator);
+
+      pl.set("mj_premigration_coordinate_count", 32000, "How many coordinate to assign each rank in multijagged after premigration"
+        , Environment::getAnyIntValidator());
+
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -6395,6 +6703,126 @@ public:
 };
 
 
+
+
+template <typename Adapter>
+bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks, 
+				 int migration_selection_option,
+				 RCP<const Environment> mj_env_,
+                                 RCP<const Comm<int> > mj_problemComm_,
+                                 int coord_dim_,
+                                 mj_lno_t num_local_coords_,
+                                 mj_gno_t num_global_coords_, size_t num_global_parts_,
+                                 const mj_gno_t *initial_mj_gnos_,
+                                 mj_scalar_t **mj_coordinates_,
+                                 int num_weights_per_coord_,
+                                 mj_scalar_t **mj_weights_,
+                                 //results
+                                 RCP<const Comm<int> > &result_problemComm_,
+                                 mj_lno_t &result_num_local_coords_,
+                                 mj_gno_t * &result_initial_mj_gnos_,
+                                 mj_scalar_t ** &result_mj_coordinates_,
+                                 mj_scalar_t ** &result_mj_weights_,
+                                 int * &result_actual_owner_rank_){
+  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
+
+  
+  int myRank = mj_problemComm_->getRank();
+  int worldSize = mj_problemComm_->getSize();
+  
+  mj_part_t groupsize = worldSize / used_num_ranks;
+
+  //std::cout << "used_num_ranks:" << used_num_ranks << " groupsize:" << groupsize << std::endl;
+  
+  std::vector<mj_part_t> group_begins(used_num_ranks + 1, 0);
+
+  mj_part_t i_am_sending_to = 0;
+  bool am_i_a_reciever = false;
+
+  for(int i = 0; i < used_num_ranks; ++i){
+    group_begins[i+ 1]  = group_begins[i] + groupsize;
+    if (worldSize % used_num_ranks > i) group_begins[i+ 1] += 1;
+    if (i == used_num_ranks) group_begins[i+ 1] = worldSize;
+    if (myRank >= group_begins[i] && myRank < group_begins[i + 1]) i_am_sending_to = group_begins[i];
+    if (myRank == group_begins[i])  am_i_a_reciever= true;
+  }
+  
+  ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
+  result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
+
+   
+  Tpetra::Distributor distributor(mj_problemComm_);
+
+  std::vector<mj_part_t> coordinate_destinations(num_local_coords_, i_am_sending_to);
+  ArrayView<const mj_part_t> destinations( &(coordinate_destinations[0]), num_local_coords_);
+  mj_lno_t num_incoming_gnos = distributor.createFromSends(destinations);
+  result_num_local_coords_ = num_incoming_gnos;
+  mj_env_->timerStop(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
+
+  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorMigration");
+   
+  //migrate gnos.
+  {
+    ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
+
+    ArrayView<const mj_gno_t> sent_gnos(initial_mj_gnos_, num_local_coords_);
+    distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+
+    result_initial_mj_gnos_ = allocMemory<mj_gno_t>(num_incoming_gnos);
+    memcpy(
+	  result_initial_mj_gnos_,
+	  received_gnos.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_gno_t));
+  }
+      
+  //migrate coordinates
+  result_mj_coordinates_ = allocMemory<mj_scalar_t *>(coord_dim_);
+  for (int i = 0; i < coord_dim_; ++i){
+    ArrayView<const mj_scalar_t> sent_coord(mj_coordinates_[i], num_local_coords_);
+    ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
+    distributor.doPostsAndWaits<mj_scalar_t>(sent_coord, 1, received_coord());
+    result_mj_coordinates_[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
+    memcpy(
+	  result_mj_coordinates_[i],
+	  received_coord.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_scalar_t));
+  }
+        
+  result_mj_weights_ = allocMemory<mj_scalar_t *>(num_weights_per_coord_);
+  //migrate weights.
+  for (int i = 0; i < num_weights_per_coord_; ++i){
+    ArrayView<const mj_scalar_t> sent_weight(mj_weights_[i], num_local_coords_);
+    ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
+    distributor.doPostsAndWaits<mj_scalar_t>(sent_weight, 1, received_weight());
+    result_mj_weights_[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
+    memcpy(
+	  result_mj_weights_[i],
+	  received_weight.getRawPtr(),
+	  num_incoming_gnos * sizeof(mj_scalar_t));
+  }
+                
+  //migrate the owners of the coordinates
+  { 
+    std::vector<int> owner_of_coordinate(num_local_coords_, myRank);
+    ArrayView<int> sent_owners(&(owner_of_coordinate[0]), num_local_coords_);
+    ArrayRCP<int> received_owners(num_incoming_gnos);
+    distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
+    result_actual_owner_rank_ = allocMemory<int>(num_incoming_gnos);
+    memcpy(
+	  result_actual_owner_rank_,
+	  received_owners.getRawPtr(),
+	  num_incoming_gnos * sizeof(int));
+  }
+  mj_env_->timerStop(MACRO_TIMERS, "MultiJagged - PreMigration DistributorMigration");
+  return am_i_a_reciever;
+}
+
+
+
+
+
+
+
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
  *
  *  \param env   library configuration and problem parameters
@@ -6418,60 +6846,131 @@ void Zoltan2_AlgMJ<Adapter>::partition(
                 this->distribute_points_on_cut_lines,
                 this->max_concurrent_part_calculation,
                 this->check_migrate_avoid_migration_option,
-                this->minimum_migration_imbalance);
+                this->minimum_migration_imbalance, this->migration_type);
 
-    mj_part_t *result_assigned_part_ids = NULL;
-    mj_gno_t *result_mj_gnos = NULL;
-    this->mj_partitioner.multi_jagged_part(
-                this->mj_env,
-                this->mj_problemComm,
 
-                this->imbalance_tolerance,
-                this->num_global_parts,
-                this->part_no_array,
-                this->recursion_depth,
+   RCP<const Comm<int> > result_problemComm = this->mj_problemComm;
+   mj_lno_t result_num_local_coords = this->num_local_coords;
+   mj_gno_t * result_initial_mj_gnos = NULL;
+   mj_scalar_t **result_mj_coordinates = this->mj_coordinates;
+   mj_scalar_t **result_mj_weights = this->mj_weights;
+   int *result_actual_owner_rank = NULL;
+   const mj_gno_t * result_initial_mj_gnos_ = this->initial_mj_gnos;
 
-                this->coord_dim,
-                this->num_local_coords,
-                this->num_global_coords,
-                this->initial_mj_gnos,
-                this->mj_coordinates,
+   //TODO: MD 08/2017: Further discussion is required.
+   //MueLu calls MJ when it has very few coordinates per processors, such as 10. 
+   //For example, it begins with 1K processor with 1K coordinate in each. 
+   //Then with coarsening this reduces to 10 coordinate per procesor.
+   //It calls MJ to repartition these to 10 coordinates.
+   //MJ runs with 1K processor, 10 coordinate in each, and partitions to 10 parts. 
+   //As expected strong scaling is problem here, because computation is almost 0, and
+   //communication cost of MJ linearly increases. 
+   //Premigration option gathers the coordinates to 10 parts before MJ starts
+   //therefore MJ will run with a smalller subset of the problem. 
+   //Below, I am migrating the coordinates if mj_premigration_option is set,
+   //and the result parts are less than the current part count, and the average number of 
+   //local coordinates is less than some threshold.
+   //For example, premigration may not help if 1000 processors are partitioning data to 10,
+   //but each of them already have 1M coordinate. In that case, we premigration would not help.
+   int current_world_size = this->mj_problemComm->getSize();
+   mj_lno_t threshold_num_local_coords = this->min_coord_per_rank_for_premigration;
+   bool is_pre_migrated = false;
+   bool am_i_in_subset = true;
+   if ( mj_premigration_option > 0 &&
+       size_t (current_world_size) > this->num_global_parts &&
+       this->num_global_coords < mj_gno_t (current_world_size * threshold_num_local_coords)){
+     if (this->mj_keep_part_boxes){
+       throw std::logic_error("Multijagged: mj_keep_part_boxes and mj_premigration_option are not supported together yet.");
+     }
+     is_pre_migrated =true;
+     int migration_selection_option = mj_premigration_option;
+     if(migration_selection_option * this->num_global_parts > (size_t) (current_world_size)){
+       migration_selection_option = current_world_size / this->num_global_parts;
+     }
+     int used_num_ranks = int (this->num_global_coords / float (threshold_num_local_coords) + 0.5);
+     if (used_num_ranks == 0) used_num_ranks = 1;
 
-                this->num_weights_per_coord,
-                this->mj_uniform_weights,
-                this->mj_weights,
-                this->mj_uniform_parts,
-                this->mj_part_sizes,
+     am_i_in_subset = this->mj_premigrate_to_subset(
+   	 used_num_ranks,
+         migration_selection_option,
+         this->mj_env,
+         this->mj_problemComm,
+         this->coord_dim,
+         this->num_local_coords,
+         this->num_global_coords,
+         this->num_global_parts,
+         this->initial_mj_gnos,
+         this->mj_coordinates,
+         this->num_weights_per_coord,
+         this->mj_weights,
+         //results
+         result_problemComm,
+         result_num_local_coords,
+         result_initial_mj_gnos,
+         result_mj_coordinates,
+         result_mj_weights,
+         result_actual_owner_rank);
+     result_initial_mj_gnos_ = result_initial_mj_gnos;
+   }
+   
 
-                result_assigned_part_ids,
-                result_mj_gnos
-                );
+
+   mj_part_t *result_assigned_part_ids = NULL;
+   mj_gno_t *result_mj_gnos = NULL;
+
+    if (am_i_in_subset){
+      this->mj_partitioner.multi_jagged_part(
+          this->mj_env,
+          result_problemComm, //this->mj_problemComm,
+
+          this->imbalance_tolerance,
+          this->num_global_parts,
+          this->part_no_array,
+          this->recursion_depth,
+
+          this->coord_dim,
+          result_num_local_coords, //this->num_local_coords,
+          this->num_global_coords,
+          result_initial_mj_gnos_, //this->initial_mj_gnos,
+          result_mj_coordinates, //this->mj_coordinates,
+
+          this->num_weights_per_coord,
+          this->mj_uniform_weights,
+          result_mj_weights, //this->mj_weights,
+          this->mj_uniform_parts,
+          this->mj_part_sizes,
+
+          result_assigned_part_ids,
+          result_mj_gnos
+      );
+
+    }
 
     // Reorder results so that they match the order of the input
+
 #if defined(__cplusplus) && __cplusplus >= 201103L
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
-    localGidToLid.reserve(this->num_local_coords);
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
-      localGidToLid[this->initial_mj_gnos[i]] = i;
+    localGidToLid.reserve(result_num_local_coords);
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++)
+      localGidToLid[result_initial_mj_gnos_[i]] = i;
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[result_num_local_coords],
+        0, result_num_local_coords, true);
 
-    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
-                                      0, this->num_local_coords, true);
-
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid[result_mj_gnos[i]];
       partId[origLID] = result_assigned_part_ids[i];
     }
 
 #else
     Teuchos::Hashtable<mj_gno_t, mj_lno_t>
-                       localGidToLid(this->num_local_coords);
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
-      localGidToLid.put(this->initial_mj_gnos[i], i);
+    localGidToLid(result_num_local_coords);
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++)
+      localGidToLid.put(result_initial_mj_gnos_[i], i);
 
-    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
-                                      0, this->num_local_coords, true);
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[result_num_local_coords],
+        0, result_num_local_coords, true);
 
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+    for (mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
       partId[origLID] = result_assigned_part_ids[i];
     }
@@ -6480,6 +6979,79 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 
     delete [] result_mj_gnos;
     delete [] result_assigned_part_ids;
+
+
+    //now the results are reordered. but if premigration occured,
+    //then we need to send these ids to actual owners again. 
+    if (is_pre_migrated){
+      this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - PostMigration DistributorPlanCreating");
+      Tpetra::Distributor distributor(this->mj_problemComm);
+
+      ArrayView<const mj_part_t> actual_owner_destinations( result_actual_owner_rank , result_num_local_coords);
+      mj_lno_t num_incoming_gnos = distributor.createFromSends(actual_owner_destinations);
+      if (num_incoming_gnos != this->num_local_coords){
+        throw std::logic_error("Zoltan2 - Multijagged Post Migration - num incoming is not equal to num local coords");
+      }
+      mj_env->timerStop(MACRO_TIMERS, "MultiJagged - PostMigration DistributorPlanCreating");
+      mj_env->timerStart(MACRO_TIMERS, "MultiJagged - PostMigration DistributorMigration");
+      ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
+      ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
+      {
+        ArrayView<const mj_gno_t> sent_gnos(result_initial_mj_gnos_, result_num_local_coords);
+        distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+      }
+      {
+        ArrayView<mj_part_t> sent_partnos(partId());
+        distributor.doPostsAndWaits<mj_part_t>(sent_partnos, 1, received_partids());
+      }
+      partId = arcp(new mj_part_t[this->num_local_coords],
+                      0, this->num_local_coords, true);
+
+      {
+#if defined(__cplusplus) && __cplusplus >= 201103L
+      std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid2;
+      localGidToLid2.reserve(this->num_local_coords);
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+        localGidToLid2[this->initial_mj_gnos[i]] = i;
+
+
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+        mj_lno_t origLID = localGidToLid2[received_gnos[i]];
+        partId[origLID] = received_partids[i];
+      }
+
+#else
+      Teuchos::Hashtable<mj_gno_t, mj_lno_t>
+	      localGidToLid2(this->num_local_coords);
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+        localGidToLid2.put(this->initial_mj_gnos[i], i);
+
+
+      for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+        mj_lno_t origLID = localGidToLid2.get(received_gnos[i]);
+        partId[origLID] = received_partids[i];
+      }
+
+#endif // C++11 is enabled
+
+      }
+
+      {
+        freeArray<mj_gno_t> (result_initial_mj_gnos);
+        for (int i = 0; i < this->coord_dim; ++i){
+          freeArray<mj_scalar_t> (result_mj_coordinates[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_coordinates);
+
+        for (int i = 0; i < this->num_weights_per_coord; ++i){
+          freeArray<mj_scalar_t> (result_mj_weights[i]);
+        }
+        freeArray<mj_scalar_t *> (result_mj_weights);
+        freeArray<int> (result_actual_owner_rank);
+      }
+      mj_env->timerStop(MACRO_TIMERS, "MultiJagged - PostMigration DistributorMigration");
+
+    }
 
     solution->setParts(partId);
     this->free_work_memory();
@@ -6610,11 +7182,15 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         this->distribute_points_on_cut_lines = true;
         this->max_concurrent_part_calculation = 1;
 
-        this->mj_run_as_rcb = 0;
+        this->mj_run_as_rcb = false;
+        this->mj_premigration_option = 0;
+	this->min_coord_per_rank_for_premigration = 32000;
+
         int mj_user_recursion_depth = -1;
-        this->mj_keep_part_boxes = 0;
+        this->mj_keep_part_boxes = false;
         this->check_migrate_avoid_migration_option = 0;
-        this->minimum_migration_imbalance = 0.35;
+        this->migration_type = 0;
+	this->minimum_migration_imbalance = 0.35;
 
         pe = pl.getEntryPtr("mj_minimum_migration_imbalance");
         if (pe){
@@ -6631,6 +7207,15 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         }
         if (this->check_migrate_avoid_migration_option > 1) this->check_migrate_avoid_migration_option = -1;
 
+	///
+        pe = pl.getEntryPtr("mj_migration_type");
+        if (pe){
+                this->migration_type = pe->getValue(&this->migration_type);
+        }else {
+                this->migration_type = 0;
+        }
+	//std::cout << " this->migration_type:" <<  this->migration_type << std::endl;
+	///
 
         pe = pl.getEntryPtr("mj_concurrent_part_count");
         if (pe){
@@ -6643,24 +7228,25 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         if (pe){
                 this->mj_keep_part_boxes = pe->getValue(&this->mj_keep_part_boxes);
         }else {
-                this->mj_keep_part_boxes = 0; // Set to invalid value
+                this->mj_keep_part_boxes = false; // Set to invalid value
         }
+
 
         // For now, need keep_part_boxes to do pointAssign and boxAssign.
         // pe = pl.getEntryPtr("keep_cuts");
         // if (pe){
         //      int tmp = pe->getValue(&tmp);
-        //      if (tmp) this->mj_keep_part_boxes = 1;
+        //      if (tmp) this->mj_keep_part_boxes = true;
         // }
 
         //need to keep part boxes if mapping type is geometric.
-        if (this->mj_keep_part_boxes == 0){
+        if (this->mj_keep_part_boxes == false){
                 pe = pl.getEntryPtr("mapping_type");
                 if (pe){
                         int mapping_type = -1;
                         mapping_type = pe->getValue(&mapping_type);
                         if (mapping_type == 0){
-                                mj_keep_part_boxes  = 1;
+                                mj_keep_part_boxes  = true;
                         }
                 }
         }
@@ -6670,7 +7256,21 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         if (pe){
                 this->mj_run_as_rcb = pe->getValue(&this->mj_run_as_rcb);
         }else {
-                this->mj_run_as_rcb = 0; // Set to invalid value
+                this->mj_run_as_rcb = false; // Set to invalid value
+        }
+
+        pe = pl.getEntryPtr("mj_premigration_option");
+        if (pe){
+		mj_premigration_option = pe->getValue(&mj_premigration_option);
+        }else {
+		mj_premigration_option = 0;
+        }
+
+        pe = pl.getEntryPtr("mj_premigration_coordinate_count");
+        if (pe){
+        	min_coord_per_rank_for_premigration = pe->getValue(&mj_premigration_option);
+        }else {
+                min_coord_per_rank_for_premigration = 32000;
         }
 
         pe = pl.getEntryPtr("mj_recursion_depth");
@@ -6680,10 +7280,10 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
                 mj_user_recursion_depth = -1; // Set to invalid value
         }
 
-        int val = 0;
+        bool val = false;
         pe = pl.getEntryPtr("rectilinear");
         if (pe) val = pe->getValue(&val);
-        if (val == 1){
+        if (val){
                 this->distribute_points_on_cut_lines = false;
         } else {
                 this->distribute_points_on_cut_lines = true;

@@ -12,16 +12,17 @@ configuration = {
     # developers.
     'defaults': {
         '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
+        '--no-rebase' : '',
         },
 
     # CMake options for various build configurations. All entries in
     # this dictionary should be Python lists of -D arguments to cmake.
     'cmake': {
         
-        # Options that are common to all builds.
+        # Default options that are common to all builds.
         'common': [
-            '-DTPL_ENABLE_Pthread:BOOL=OFF',
-            '-DTPL_ENABLE_BinUtils:BOOL=OFF',
+            # For graceful disables, we want to turn this on.
+            '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
             ],
 
         # Setup for the builds that should be run by default for a
@@ -30,24 +31,8 @@ configuration = {
         # developers prefer one case to fail earlier than another).
         'default-builds': [
 
-            # Options for the MPI_DEBUG build.
-            ('MPI_DEBUG', [
-                '-DTPL_ENABLE_MPI:BOOL=ON',
-                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-                '-DTrilinos_ENABLE_DEBUG:BOOL=ON',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON',
-                '-DTrilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON',
-                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON',
-                '-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF',
-                ]),
-
-            # Options for the SERIAL_RELEASE build.
-            ('SERIAL_RELEASE', [
-                '-DTPL_ENABLE_MPI:BOOL=OFF',
-                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-                '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF',
-                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
+            ('MPI_RELEASE_DEBUG_SHARED_PT_OPENMP', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/GCC-4.8.4-OpenMPI-1.10.1-MpiReleaseDebugSharedPtOpenMP.cmake',
                 ]),
 
             ], # default-builds
@@ -55,4 +40,3 @@ configuration = {
         }, # cmake
 
     } # configuration
-

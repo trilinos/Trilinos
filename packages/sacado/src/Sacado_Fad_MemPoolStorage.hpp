@@ -32,6 +32,23 @@
 #ifndef SACADO_FAD_MEMPOOLSTORAGE_HPP
 #define SACADO_FAD_MEMPOOLSTORAGE_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_MemPoolStorage.hpp"
+
+namespace Sacado {
+  namespace Fad {
+
+    template <typename T>
+    using MemPoolStorage = Exp::MemPoolStorage<T>;
+
+  }
+}
+
+#else
+
 #include <new>
 #include <cstring>
 
@@ -338,5 +355,7 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_MEMPOOLSTORAGE_HPP

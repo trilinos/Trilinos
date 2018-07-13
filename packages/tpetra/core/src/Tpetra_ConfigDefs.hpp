@@ -181,34 +181,6 @@ namespace Tpetra {
     HOST_VIEW_CONSTRUCTOR
   };
 
-  // import Teuchos memory management classes into Tpetra
-//#ifndef __CUDACC__
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::Array;
-  using Teuchos::OrdinalTraits;
-  using Teuchos::ScalarTraits;
-  using Teuchos::RCP;
-  using Teuchos::Tuple;
-  using Teuchos::Comm;
-  using Teuchos::null;
-
-  using Teuchos::outArg;
-  using Teuchos::tuple;
-  using Teuchos::arcp;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::av_reinterpret_cast;
-  using Teuchos::arcp_reinterpret_cast;
-
-  using Teuchos::typeName;
-
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
-  using Teuchos::sublist;
-//#endif
-
   /// \class project1st
   /// \brief Binary function that returns its first argument.
   /// \tparam Arg1 Type of the first argument, and type of the
@@ -293,6 +265,14 @@ namespace Tpetra {
   /// as a Tpetra::CrsMatrix.
   namespace MatrixMatrix {
   }
+
+  /// \brief Distributed sparse triple matrix product.
+  ///
+  /// This namespace includes functions the product of three
+  /// distributed sparse matrices, each of which is represented as a
+  /// Tpetra::CrsMatrix.
+  namespace TripleMatrixMultiply {
+  }
 }
 
 namespace Tpetra {
@@ -302,6 +282,11 @@ namespace Tpetra {
     Backward,
     Symmetric
   };
+}
+
+// For backwards compatibility
+namespace KokkosClassic {
+  using ::Tpetra::ESweepDirection;
 }
 
 #if defined(HAVE_TPETRACORE_KOKKOSCORE) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)

@@ -30,10 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_ELEM_H_
+#define STK_ELEM_H_
 
 #include <limits>
-
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <Intrepid_FieldContainer.hpp>
 #include <Intrepid_Basis.hpp>
@@ -60,8 +61,8 @@ typedef Intrepid::FieldContainer<double>   MDArray;
 typedef Intrepid::FieldContainer<unsigned> MDArrayUInt;
 
 typedef Intrepid::Basis<double, MDArray> BasisType;
-typedef boost::shared_ptr<BasisType>     BasisTypeRCP;
-typedef std::map<unsigned,BasisTypeRCP>  BasisTable;
+typedef std::shared_ptr<BasisType>     shared_ptr;
+typedef std::map<unsigned,shared_ptr>  BasisTable;
 
 unsigned parametric(std::vector<double> &para_coords,
                     const double *to,
@@ -78,7 +79,7 @@ void parametric(std::vector<std::vector<double> > &val,
 BasisTable setupBasisTable();
 
 inline
-const BasisTypeRCP getBasis(const shards::CellTopology& topo)
+const shared_ptr getBasis(const shards::CellTopology& topo)
 {
   static const BasisTable basisTable(setupBasisTable());
 
@@ -86,14 +87,14 @@ const BasisTypeRCP getBasis(const shards::CellTopology& topo)
   BasisTable::const_iterator b = basisTable.find(key);
   ThrowRequireMsg( (b != basisTable.end()), "No basis available for this topology");
 
-  const BasisTypeRCP basis = b->second;
+  const shared_ptr basis = b->second;
   return basis;
 }
 
 inline
 void fill_ref_vals(MDArray &refVals, const MDArray &refPoints, const shards::CellTopology &topo)
 {
-  const BasisTypeRCP basis = getBasis(topo);
+  const shared_ptr basis = getBasis(topo);
   basis->getValues(refVals, refPoints, Intrepid::OPERATOR_VALUE);
 }
 
@@ -121,8 +122,7 @@ public :
 
   void bounding_boxes (std::vector< std::pair<Box,EntityProc> > &v) const;
 
-  void copy_entities(const EntityProcVec    &entities_to_copy,
-                     const std::string         &transfer_name);
+  //void copy_entities(const EntityProcVec    &entities_to_copy, const std::string         &transfer_name);
 
   void update_values();
 
@@ -170,3 +170,6 @@ private :
 
 } // namespace transfer
 } // namespace stk
+
+#endif
+

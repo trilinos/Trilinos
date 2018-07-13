@@ -235,10 +235,10 @@ extra builds specified with --st-extra-builds and --extra-builds):
   packages forward/downstream. You can manually select which packages get
   enabled (see the enable options above).  (done if --configure, --do-all, or
   --local-do-all is set.)
-  
+
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
-  
+
   4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
   or --local-do-all is set.)
 
@@ -251,10 +251,10 @@ push (done if --push or --do-all is set)
   5.a) Do a final 'git pull' (done if --pull or --do-all is set)
 
   5.b) Do 'git rebase <remoterepo>/<remotebranch>' (done if --rebase is set)
-  
+
   5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
-  
+
   5.d) Push the local commits to the global repo (done if --push is set)
 
 6) Send out final on actions (i.e. 'DID PUSH' email if a push occurred).
@@ -297,9 +297,9 @@ other enables/disables will make the builds non-standard and can break these
 PT builds.  The goal of these configuration files is to allow you to specify
 the minimum environment to find MPI, your compilers, and the required TPLs
 (e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are enabled,
-please use the script arguments --enable-packages, --disable-packages,
---no-enable-fwd-packages, and/or --enable-all-packages to control this, not
-the *.config files!
+please use the script arguments --enable-packages, --enable-extra-pacakges,
+--disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages to
+control this, not the *.config files!
 
 WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages or TPLs are enabled or what tests are run.
@@ -407,7 +407,7 @@ COMMON USE CASES (EXAMPLES):
   ../checkin-test.py \
     --enable-packages=<P0>,<P1>,<P2> --no-enable-fwd-packages \
     --do-all
-  
+
   NOTE: This will override all logic in the script about which packages will
   be enabled based on file changes and only the given packages will be
   enabled.  When there are tens of thousands of changed files and hundreds of
@@ -458,20 +458,20 @@ COMMON USE CASES (EXAMPLES):
   Code and want to include the testing of this in your pre-push testing
   process along with the standard --default-builds build/test cases which can
   only include Primary Tested (PT) Code.  In this case you can run with:
-  
+
     ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
-  
+
   For example, if you have a build that enables the TPL CUDA you would do:
-  
+
     echo "
     -DTPL_ENABLE_MPI:BOOL=ON
     -DTPL_ENABLE_CUDA:BOOL=ON
     " > MPI_DEBUG_CUDA.config
-  
+
   and then run with:
-  
+
     ../checkin-test.py --extra-builds=MPI_DEBUG_CUDA --do-all
-  
+
   This will do the standard --default-builds (e.g. MPI_DEBUG and
   SERIAL_RELEASE) build/test cases along with your non-standard MPI_DEBUG_CUDA
   build/test case.
@@ -485,7 +485,7 @@ COMMON USE CASES (EXAMPLES):
 
   You can also use the checkin-test.py script to continuously integrate
   multiple git repos containing add-on packages. To do so, just run:
-    
+
     ../checkin-test.py --extra-repos=<REPO1>,<REPO2>,... [options]
 
   NOTE: You have to create local commits in all of the extra repos where there
@@ -522,24 +522,24 @@ COMMON USE CASES (EXAMPLES):
   with:
 
     ../checkin-test.py --do-all --no-enable-fwd-packages
-  
+
   On your fast remote test machine, do a full test and push with:
-  
+
     ../checkin-test.py \
       --extra-pull-from=<remote-repo>:master \
       --do-all --push
 
   where <remote-name> is a git remote repo name pointing to
   mymachine:/some/dir/to/your/src (see 'git help remote').
-  
+
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
-  
+
   NOTE: Once you invoke the checkin-test.py script on the remote test machine
   and it has pulled the commits from mymachine, then you can start changing
   files again on your local development machine and just check your email to
   see what happens on the remote test machine.
-  
+
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
   development machine and then do the process over again.
@@ -557,7 +557,7 @@ COMMON USE CASES (EXAMPLES):
 
   NOTE: This would also work for multiple repos if the remote name
   '<remote-repo>' pointed to the right remote repo in all the local repos.
-  
+
 (*) Check push readiness status:
 
   ../checkin-test.py
@@ -711,7 +711,7 @@ returned but that does *not* mean that it is okay to do a push.  Therefore, a
 return value of is a necessary but not sufficient condition for readiness to
 push, it depends on the requested actions.
 
-"""        
+"""
 
 # ToDo: Break up the above huge documentation block into different "topics"
 # and then display those topics with --help-topic=<topic>.  Also provide a
@@ -719,21 +719,21 @@ push, it depends on the requested actions.
 # standard documentation to produce where is there now.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
-  
+
   clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
   clp.add_option(
     "--project-configuration", dest="projectConfiguration", type="string", default="",
     help="Custom file to provide configuration defaults for the project." \
       + "  By default, the file project-checkin-test-config.py is looked for" \
-      + " in <checkin-test-path>/../.. (assuming default <projectDir>/cmake/tribits/" \
-      + " directory structure and second is looked for in <checkin-test-path>/ (which" \
-      + " is common practice to symlink the checkin-test.py script into the project's" \
-      + " base directory).  If this file is set to a location that is not in the" \
+      + " in <checkin-test-path> (in case it is symlinked into <projectDir>/checkin-test.py)" \
+      + " if not found there, then it is looked for in <checkin-test-path>/../../.." \
+      +"  (assuming default TriBITS snapshot <projectDir>/cmake/tribits/ci_support/)" \
+      + " If this file is set to a location that is not in the" \
       + " project's base directory, then --src-dir must be set to point to the" \
       + " project's base directory."
     )
-  
+
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
     help="Show the default option values and do nothing at all.",
@@ -805,6 +805,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" the set of modified files from the version control update log.  Note that"\
     +" this will skip the auto-detection of changed packages based on changed"\
     +" files." )
+
+  clp.add_option(
+    "--enable-extra-packages", dest="enableExtraPackages", type="string", default="",
+    help="List of comma separated packages to test in addition to the packages" \
+    +" that are enabled determined automatically by examining" \
+    +" the set of modified files from the version control update log.  This option"\
+    +" is mostly just used in ACI sync servers." )
 
   clp.add_option(
     "--disable-packages", dest="disablePackages", type="string", default="",
@@ -884,8 +891,20 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="The options to pass to make and ctest (e.g. -j4)." )
 
   clp.add_option(
+    "--use-makefiles", dest="useNinja", action="store_false",
+    help="If set, then -G'Unix Makfiles' used for backend build tool." \
+    +" Note: The command 'make' must be in the default path. [default]",
+    default=False )
+  clp.add_option(
+    "--use-ninja", dest="useNinja", action="store_true",
+    help="If set, then -GNinja used for backend build tool." \
+    +" Note: The comamnd 'ninja' must be in the default path." ,
+    default=False )
+
+  clp.add_option(
     "--make-options", dest="makeOptions", type="string", default="",
-    help="The options to pass to make (e.g. -j4)." )
+    help="The options to pass to 'make' (e.g. -j4) or ninja" \
+    +" (if --use-ninja given)." )
 
   clp.add_option(
     "--ctest-options", dest="ctestOptions", type="string", default="",
@@ -894,7 +913,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     "--ctest-timeout", dest="ctestTimeOut", type="float", default=300,
     help="timeout (in seconds) for each single 'ctest' test (e.g. 180" \
-    +" for three minutes)." )
+    +" for three minutes).  This sets the CMake cache var DART_TESTING_TIMEOUT"
+    +" which becomes the default timeout for tests, even when running raw"
+    +" ctest.  This value can be overridden using the ctest argument --timeout."
+    +"  Individual tests may have their own timeouts set which will not be"
+    +" impacted by this default global timeout.  See the configure variable"
+    +" <Project>_SCALE_TEST_TIMEOUT to scale up timeouts for"
+    +" all tests, even those that have individuals timeouts set." )
 
   clp.add_option(
     "--show-all-tests", dest="showAllTests", action="store_true",
@@ -921,7 +946,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
-    help="DEPRECATED!  Use --st-extra-builds instead!." )
+    help="DEPRECATED!  Use --st-extra-builds instead!. (Default empty "")" )
 
   clp.add_option(
     "--extra-builds", dest="extraBuilds", type="string", default="",
@@ -929,6 +954,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
     +" the local directory along side the COMMON.config file that defines the special" \
     +" build options for the extra build." )
+
+  clp.add_option(
+    "--log-file", dest="logFile", type="string", default="checkin-test.out",
+    help="File used for detailed log info." )
 
   clp.add_option(
     "--send-email-to", dest="sendEmailTo", type="string",
@@ -1107,7 +1136,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   (options, args) = clp.parse_args(args=commandLineArgs)
 
-  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
+  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...)
   # takes effect!  That is why the commands are ordered the way they are!
 
 
@@ -1131,6 +1160,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
   print "  --enable-packages='"+options.enablePackages+"' \\"
+  print "  --enable-extra-packages='"+options.enableExtraPackages+"' \\"
   print "  --disable-packages='"+options.disablePackages+"' \\"
   print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
   if options.enableFwdPackages:
@@ -1153,6 +1183,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   print "  --test-categories='"+options.testCategories+"' \\"
   if options.overallNumProcs:
     print "  -j"+options.overallNumProcs+" \\"
+  if options.useNinja:
+    print "  --use-ninja \\"
+  else:
+    print "  --use-makefiles \\"
   print "  --make-options='"+options.makeOptions+"' \\"
   print "  --ctest-options='"+options.ctestOptions+"' \\"
   print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"
@@ -1161,9 +1195,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-show-all-tests \\"
   if options.withoutDefaultBuilds:
-    print "  --without-default-builds \\" 
+    print "  --without-default-builds \\"
   print "  --st-extra-builds='"+options.stExtraBuilds+"' \\"
   print "  --extra-builds='"+options.extraBuilds+"' \\"
+  print "  --log-file='"+options.logFile+"' \\"
   print "  --send-email-to='"+options.sendEmailTo+"' \\"
   if options.skipCaseSendEmail:
     print "  --skip-case-send-email \\"
@@ -1223,8 +1258,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
 
   #
-  # Check the input arguments
+  # Check and adjust the input arguments
   #
+
+  if not os.path.isabs(options.srcDir):
+    options.srcDir = os.path.abspath(options.srcDir)
 
   if options.doAll and options.localDoAll:
     print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
@@ -1283,16 +1321,16 @@ def getConfigurationSearchPaths():
   """
   result = []
 
-  # Always look for the configuration file assuming the checkin-test.py script
-  # is run out of the standard snapshotted tribits directory
-  # <project-root>/cmake/tribits/.
-  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
-
-  # Lastly, look for the checkin-test.py file's base directory path. It is
+  # First, look for the checkin-test.py file's base directory path. It is
   # common practice to symbolically link the checkin-test.py script into the
   # project's base source directory.  NOTE: Don't use realpath here!  We don't
   # want to follow symbolic links!
   result.append(os.path.dirname(os.path.abspath(__file__)))
+
+  # Second, look for the configuration file assuming the checkin-test.py
+  # script is run out of the standard snapshotted tribits directory
+  # <project-root>/cmake/tribits/ci_support
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..', '..'))
 
   return result
 
@@ -1359,7 +1397,7 @@ def locateAndLoadConfiguration(path_hints = []):
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
-    
+
 
 #
 # Main
@@ -1373,8 +1411,18 @@ def main(cmndLineArgs):
   # See if --show-defaults was set or not
   showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
 
+
   if (not helpOpt) and (not showDefaultsOpt):
-    logFile = file("checkin-test.out", "w")
+    # Get the name of the log file from the input arguments
+    logFileName = "checkin-test.out"
+    for cmndLineArg in cmndLineArgs:
+      cmndLineSplit = cmndLineArg.split("=")
+      if cmndLineSplit[0].strip() == "--log-file":
+        logFileName = cmndLineSplit[1].strip()
+    logFile = open(logFileName, "w", buffering=0) # 0 == no buffering
+    # NOTE: Above, we need to set biffering=0 to make sure that each line that
+    # gets written is written out the file.  The is critical so that the user
+    # can to a `tail -f <log-file>` to see what is going one.
   else:
     logFile = None
 
@@ -1418,6 +1466,8 @@ def main(cmndLineArgs):
       success = False
       traceback.print_exc(file=teeOutput)
   finally:
+    # Close the log file
+    if logFile: logFile.close()
     # Reset stdout and stderr
     sys.stdout = originalStdout
     sys.stderr = originalStderr

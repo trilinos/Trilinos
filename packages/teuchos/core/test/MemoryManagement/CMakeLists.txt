@@ -14,7 +14,6 @@ ELSE()
 ENDIF()
 
 
-
 IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     GetBaseObjVoidPtr_UnitTests
@@ -131,6 +130,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ArrayView_UnitTests.cpp
     ArrayRCP_UnitTests.cpp
     ArrayConversions_UnitTests.cpp
+    Any_UnitTests.cpp
     TestClasses.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
@@ -140,7 +140,64 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagement_MT_UnitTests
+  EXCLUDE_IF_NOT_TRUE
+    ${PARENT_PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  SOURCES
+    Ptr_MT_UnitTests.cpp
+    ArrayView_MT_UnitTests.cpp
+    Array_MT_UnitTests.cpp
+    Tuple_MT_UnitTests.cpp
+    ArrayRCP_MT_UnitTests.cpp
+    RCP_MT_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  NUM_TOTAL_CORES_USED 4
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagement_MT_Nightly_UnitTests
+  EXCLUDE_IF_NOT_TRUE
+    ${PARENT_PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  SOURCES
+    Ptr_MT_Nightly_UnitTests.cpp
+    ArrayView_MT_Nightly_UnitTests.cpp
+    Array_MT_Nightly_UnitTests.cpp
+    Tuple_MT_Nightly_UnitTests.cpp
+    ArrayRCP_MT_Nightly_UnitTests.cpp
+    RCP_MT_Nightly_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  CATEGORIES NIGHTLY
+  NUM_MPI_PROCS 1
+  NUM_TOTAL_CORES_USED 4
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
 ASSERT_DEFINED(${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+
+IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+  TRIBITS_ADD_EXECUTABLE(
+    MemoryManagement_RCP_Abort
+    SOURCES
+      RCP_Abort.cpp
+    )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    MemoryManagement_RCP_Abort_Verify
+    TEST_0 EXEC MemoryManagement_RCP_Abort
+      ARGS  --enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL
+        "PROGRAM ABORTING"
+    OVERALL_NUM_MPI_PROCS 1
+    )
+ENDIF()
+
 
 IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR  AND  ${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
 
@@ -311,6 +368,80 @@ ENDFUNCTION()
 
 IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
   TEUCHOS_TEST_setPrintActiveRcpNodesOnExit()
+ENDIF()
+
+
+#
+# Test TEUCHOS_TEST_FOR_TERMINATION()
+#x1
+# This macro aborts the program so the only way to test it is to run a program.
+#
+
+TRIBITS_ADD_EXECUTABLE( testTeuchosTestForTermination
+  SOURCES testTeuchosTestForTermination.cpp
+  )
+TRIBITS_ADD_ADVANCED_TEST( testTeuchosTestForTermination
+  TEST_0
+    EXEC testTeuchosTestForTermination
+    ARGS --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION
+      "Bingo, we are terminating on procid == terminate_on_procid = 0"
+    ALWAYS_FAIL_ON_ZERO_RETURN
+  )
+# NOTE: Above, we have to use TRIBITS_ADD_ADVANCED_TEST() and not
+# TRIBITS_ADD_TEST() to to grep for the expected output which is made to
+# std::cerr and not std::cout.  This test fails with a serial build if you use
+# TRIBITS_ADD_TEST() which just uses raw ADD_TEST() and the CTest property
+# PASS_REGULAR_EXPRESSION.  It appears that at least some versions of CTest
+# will only grep grep STDOUT and not STDERR when applying
+# PASS_REGULAR_EXPRESSION.  But with an MPI build, `mpirun` appears to combine
+# STDOUT and STDERR into a sinlge STDOUT somehow that allows CTest to find the
+# grep.  Using TRIBITS_ADD_ADVANCED_TEST() solves the problem because it uses
+# EXECUTE_PROCESS() to tie STDOUT and STDERR together and then its own
+# implementation of PASS_REGULAR_EXPRESSION finds the text send to STDERR.
+
+SET(testTeuchosTestForTermination_NP 4)
+MATH(EXPR testTeuchosTestForTermination_NP_m_1
+  "${testTeuchosTestForTermination_NP}-1")
+FOREACH(PID RANGE ${testTeuchosTestForTermination_NP_m_1})
+  TRIBITS_ADD_ADVANCED_TEST(
+    testTeuchosTestForTermination_${PID}_MPI_${testTeuchosTestForTermination_NP}
+    COMM mpi
+    TEST_0
+      MESSAGE "Call TEUCHOS_TEST_FOR_TERMINATION(true) only on PID=${PID} which should terminate all processes"
+      EXEC testTeuchosTestForTermination
+      ARGS --terminate-on-procid=${PID}
+        --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
+      NUM_MPI_PROCS ${testTeuchosTestForTermination_NP}
+      PASS_REGULAR_EXPRESSION_ALL
+        "p=${PID}: .*/testTeuchosTestForTermination.cpp"
+        "Bingo, we are terminating on procid == terminate_on_procid = ${PID}"
+      ALWAYS_FAIL_ON_ZERO_RETURN
+    )
+  # NOTE: If each of these tests does not terminate right away, then that is a
+  # sign that std::terminate() on a single MPI process does not cause all other
+  # processes to also terminate.
+ENDFOREACH()
+
+
+# Test call to terminate on bad destructor call
+IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+  TRIBITS_ADD_EXECUTABLE( testTeuchosRCPNodeImplDestructTerminate
+    SOURCES testTeuchosRCPNodeImplDestructTerminate.cpp
+    )
+  TRIBITS_ADD_ADVANCED_TEST( testTeuchosRCPNodeImplDestructTerminate
+    TEST_0
+      EXEC testTeuchosRCPNodeImplDestructTerminate
+      ARGS --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
+      NUM_MPI_PROCS 1
+      PASS_REGULAR_EXPRESSION
+        "Error, the underlying object must be explicitly deleted before deleting the node object"
+      ALWAYS_FAIL_ON_ZERO_RETURN
+    )
+  # NOTE: Above, we have to use TRIBITS_ADD_ADVANCED_TEST() and not
+  # TRIBITS_ADD_TEST() to grep the output with PASS_REGULAR_EXPRESSION for the
+  # same reason as for the test testTeuchosTestForTermination above.
 ENDIF()
 
 

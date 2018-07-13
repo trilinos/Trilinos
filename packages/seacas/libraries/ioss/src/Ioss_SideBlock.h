@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,28 +33,26 @@
 #ifndef IOSS_Ioss_SideBlock_h
 #define IOSS_Ioss_SideBlock_h
 
-#include "Ioss_EntityType.h"  // for EntityType, etc
+#include <Ioss_ElementBlock.h>
 #include <Ioss_EntityBlock.h> // for EntityBlock
+#include <Ioss_EntityType.h>  // for EntityType, etc
 #include <Ioss_Property.h>    // for Property
-#include <stddef.h>           // for size_t
-#include <stdint.h>           // for int64_t
+#include <cstddef>            // for size_t
+#include <cstdint>            // for int64_t
 #include <string>             // for string
 #include <vector>             // for vector
 namespace Ioss {
   class DatabaseIO;
-}
-namespace Ioss {
-  class ElementBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementTopology;
-}
+} // namespace Ioss
 namespace Ioss {
   class Field;
-}
+} // namespace Ioss
 namespace Ioss {
   class SideSet;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
@@ -85,11 +83,18 @@ namespace Ioss {
     // will be non-nullptr and is a pointer to the parent element block for this
     // faceblock or edgeblock. Has no meaning for other EntityBlock types or split
     // types.
-    const ElementBlock *parent_element_block() const { return parentElementBlock_; }
-    void set_parent_element_block(ElementBlock *element_block)
+    const ElementBlock *parent_element_block() const
     {
-      parentElementBlock_ = element_block;
+      return dynamic_cast<const ElementBlock *>(parentBlock_);
     }
+
+    void set_parent_element_block(const ElementBlock *element_block)
+    {
+      parentBlock_ = element_block;
+    }
+
+    const EntityBlock *parent_block() const { return parentBlock_; }
+    void set_parent_block(const EntityBlock *block) { parentBlock_ = block; }
 
     // Describes the contained entities element block topology
     const ElementTopology *parent_element_topology() const { return parentTopology_; }
@@ -108,14 +113,14 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    const SideSet *  owner_;
-    ElementTopology *parentTopology_; // Topology of parent element (if any)
-    ElementBlock *   parentElementBlock_;
+    const SideSet *    owner_;
+    ElementTopology *  parentTopology_; // Topology of parent element (if any)
+    const EntityBlock *parentBlock_;
 
     // Pointer to the SideSet (if any) that contains this side block.
     std::vector<std::string> blockMembership; // What element blocks do the
                                               // elements in this sideset belong to.
     mutable int consistentSideNumber;
   };
-}
+} // namespace Ioss
 #endif

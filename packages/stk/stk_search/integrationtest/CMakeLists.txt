@@ -35,7 +35,6 @@
 
 FILE(GLOB SOURCES *.cpp)
 #removing due to dependence on geometry toolkit which is not available to Trilinos
-LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestVerification.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestPerformance.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestNaluPerformance.cpp)
 

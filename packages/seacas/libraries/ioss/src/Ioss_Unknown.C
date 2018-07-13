@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -44,7 +44,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Unknown() : ElementVariableType("unknown", 0) {}
+    St_Unknown() : ElementVariableType(Ioss::Unknown::name, 0) {}
   };
 } // namespace Ioss
 void Ioss::St_Unknown::factory() { static Ioss::St_Unknown registerThis; }
@@ -67,9 +67,9 @@ void Ioss::Unknown::factory()
   Ioss::St_Unknown::factory();
 }
 
-Ioss::Unknown::Unknown() : Ioss::ElementTopology("unknown", "unknown")
+Ioss::Unknown::Unknown() : Ioss::ElementTopology(Ioss::Unknown::name, Ioss::Unknown::name)
 {
-  Ioss::ElementTopology::alias("unknown", "invalid_topology");
+  Ioss::ElementTopology::alias(Ioss::Unknown::name, "invalid_topology");
 }
 
 Ioss::Unknown::~Unknown() = default;
@@ -126,7 +126,7 @@ Ioss::ElementTopology *Ioss::Unknown::face_type(int face_number) const
   // face_number is 1-based.
 
   assert(face_number >= 0 && face_number <= number_faces());
-  return Ioss::ElementTopology::factory("unknown");
+  return Ioss::ElementTopology::factory(Ioss::Unknown::name);
 }
 
 Ioss::ElementTopology *Ioss::Unknown::edge_type(int edge_number) const
@@ -136,5 +136,5 @@ Ioss::ElementTopology *Ioss::Unknown::edge_type(int edge_number) const
   // edge_number is 1-based.
 
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("unknown");
+  return Ioss::ElementTopology::factory(Ioss::Unknown::name);
 }

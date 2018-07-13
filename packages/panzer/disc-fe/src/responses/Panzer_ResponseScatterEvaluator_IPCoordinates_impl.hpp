@@ -55,6 +55,7 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
 
@@ -87,14 +88,14 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract response object
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<EvalT> >(
-                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+                      PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0], this->wda);
 }
@@ -106,8 +107,8 @@ evaluateFields(typename Traits::EvalData workset)
   // Kokkos::DynRankView<double,PHX::Device>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
   IntegrationValues2<double> & iv = *this->wda(workset).int_rules[ir_index_];
 
-  if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.dimension(2))) {
-    tmpCoords_.resize(iv.ip_coordinates.dimension(2));
+  if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.extent(2))) {
+    tmpCoords_.resize(iv.ip_coordinates.extent(2));
     for(std::size_t dim=0;dim<tmpCoords_.size();dim++)
       tmpCoords_[dim].clear();
   }
@@ -124,7 +125,7 @@ evaluateFields(typename Traits::EvalData workset)
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
-postEvaluate(typename Traits::PostEvalData data)
+postEvaluate(typename Traits::PostEvalData /* data */)
 {
   std::vector<panzer::Traits::Residual::ScalarT> & coords = *responseObj_->getNonconstCoords();
   coords.clear();

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -200,8 +200,9 @@ void check_bpgraph(int n_left, int n_right, int *pointers, int *indices)
       }
       /* Check for counter-edge */
       for (k = pointers[neighbor]; k < pointers[neighbor + 1]; k++) {
-        if (indices[k] == i)
+        if (indices[k] == i) {
           break;
+        }
       }
       if (k == pointers[neighbor + 1]) {
         printf("Flip edge (%d, %d) not found\n", k, i);
@@ -217,8 +218,9 @@ void check_bpgraph(int n_left, int n_right, int *pointers, int *indices)
       }
       /* Check for counter-edge */
       for (k = pointers[neighbor]; k < pointers[neighbor + 1]; k++) {
-        if (indices[k] == i)
+        if (indices[k] == i) {
           break;
+        }
       }
       if (k == pointers[neighbor + 1]) {
         printf("Flip edge (%d, %d) not found\n", k, i);
@@ -240,8 +242,9 @@ void print_bpgraph(int nleft, int nright, int *pointers, int *indices, int *vwgt
   fprintf(file, "%d %d\n", nvtxs, nedges);
 
   for (i = 0; i < nvtxs; i++) {
-    if (vwgts != NULL)
+    if (vwgts != NULL) {
       fprintf(file, "%d     ", vwgts[i]);
+    }
     for (j = pointers[i]; j < pointers[i + 1]; j++) {
       fprintf(file, "%d ", indices[j]);
     }

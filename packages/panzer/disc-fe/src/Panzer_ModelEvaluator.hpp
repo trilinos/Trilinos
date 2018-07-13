@@ -68,7 +68,6 @@ namespace panzer {
 class FieldManagerBuilder;
 template<typename> class LinearObjFactory;
 struct GlobalData;
-class ReadOnlyVectorGlobalEvaluationData;
 
 template<typename Scalar>
 class ModelEvaluator
@@ -353,6 +352,15 @@ public:
     */
   void setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                            panzer::AssemblyEngineInArgs & ae_inargs) const;
+
+
+  /**
+   * \brief return a copy of the model evaluators template manager, this is shallow class so pass by value
+   * @return The AssemblyEngine template manager
+   */
+  panzer::AssemblyEngine_TemplateManager<panzer::Traits> getAssemblyEngineTemplateManager() const {
+    return ae_tm_;
+  }
 
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
   { return responseLibrary_; }

@@ -28,7 +28,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
-#include "../FaceCreationTestUtils.hpp"
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
 namespace
 {
@@ -36,7 +36,7 @@ namespace
 class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
-    SkinWithModification() : elemGraph(nullptr), elemGraphUpdater(nullptr), boundaryPart(nullptr)
+    SkinWithModification() : boundaryPart(nullptr)
     {
     }
     void setup_for_skinning()
@@ -44,15 +44,9 @@ protected:
         boundaryPart = &get_meta().declare_part("boundary", get_meta().side_rank());
 
         thingsToSkin = get_meta().universal_part();
-
-        elemGraph = new stk::mesh::ElemElemGraph(get_bulk());
-        elemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemGraph);
-        get_bulk().register_observer(elemGraphUpdater);
     }
     ~SkinWithModification()
     {
-        delete elemGraph;
-        delete elemGraphUpdater;
     }
     void test_skinning(const SideTestUtil::TestCase& exteriorTestCase,
                        const SideTestUtil::TestCase& interiorTestCase)
@@ -113,9 +107,7 @@ private:
     }
     void make_exterior_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
-        std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-        stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_things_to_skin(), {boundaryPart});
     }
 
     void destroy_sides_in_boundary_part()
@@ -146,9 +138,7 @@ private:
     }
     void make_interior_block_boundary_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
-        std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
-        stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
+        stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), {boundaryPart});
     }
 
     const stk::mesh::Selector &get_things_to_skin()
@@ -164,9 +154,6 @@ private:
     }
 
 protected:
-    stk::mesh::ElemElemGraph *elemGraph;
-    stk::mesh::ElemElemGraphUpdater *elemGraphUpdater;
-
     const stk::mesh::EntityId shellId1 = 13;
     const stk::mesh::EntityId shellId2 = 14;
 
@@ -311,7 +298,7 @@ protected:
         stk::mesh::Entity entity = bulkData.get_entity(stk::topology::ELEM_RANK, id);
         if(bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
         {
-            bulkData.change_entity_parts(entity, stk::mesh::PartVector{&part});
+            bulkData.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
         }
     }
     stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaData, int id, stk::topology topology)
@@ -367,7 +354,7 @@ TEST_F(SkinAAWithModification, TestPartialCoincident2d)
 {
     if(stk::parallel_machine_size(get_comm()) <= 2)
     {
-        initialize_mesh();
+        reset_mesh();
         allocate_meta(2);
         stk::mesh::Part& block1 = create_part_with_id(get_meta(), 1, stk::topology::QUAD_4_2D);
         stk::mesh::Part& block2 = create_part_with_id(get_meta(), 2, stk::topology::QUAD_4_2D);

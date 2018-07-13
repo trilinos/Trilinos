@@ -71,7 +71,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i, Real &min) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     Real gap = U_(i,j)-L_(i,j);
                     if(gap<min) {
@@ -108,7 +108,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i, int &feasible) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)<L_(i,j)) || (X_(i,j)>U_(i,j)) ) {
                         feasible = 0;
@@ -143,7 +143,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( X_(i,j)<L_(i,j) ) {
                         X_(i,j) = L_(i,j); 
@@ -171,7 +171,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
                         Y_(i,j) = 0.0;
@@ -196,7 +196,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = U_.dimension_1();
+                const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)>=U_(i,j)-eps_) {
                         Y_(i,j) = 0.0;
@@ -222,7 +222,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
                         Y_(i,j) = 0.0;
@@ -252,7 +252,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)<=L_(i,j)+eps_) && G_(i,j) > 0.0 ) {
                         Y_(i,j) = 0.0;
@@ -279,7 +279,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = U_.dimension_1();
+                const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
                     if( (X_(i,j)>=U_(i,j)-eps_) && G_(i,j) < 0.0 ) {
                         Y_(i,j) = 0.0;
@@ -306,7 +306,7 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const int M = L_.dimension_1();
+                const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(( X_(i,j)<=L_(i,j)+eps_) && (G_(i,j)>0.0))  {
                         Y_(i,j) = 0.0;
@@ -329,10 +329,10 @@ namespace ROL {
 
          
         typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
-        typedef Teuchos::RCP<MV> MVP;
-        typedef Teuchos::RCP<const MV> CMVP;
+        typedef ROL::Ptr<MV> MVP;
+        typedef ROL::Ptr<const MV> CMVP;
         typedef TpetraMultiVector<Real,LO,GO,Node> TMV;
-        typedef Teuchos::RCP<TMV> TMVP; 
+        typedef ROL::Ptr<TMV> TMVP; 
         typedef typename MV::dual_view_type::t_dev ViewType;
 
         private:
@@ -345,7 +345,15 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            Teuchos::RCP<const Tpetra::Comm<int> > comm_; 
+            ROL::Ptr<const Teuchos::Comm<int> > comm_; 
+
+        ROL::Ptr<const MV> getVector( const ROL::Vector<Real>& x ) {
+          return dynamic_cast<const TMV&>(x).getVector();
+        }
+
+        ROL::Ptr<MV> getVector( ROL::Vector<Real>& x ) {
+          return dynamic_cast<TMV&>(x).getVector();
+        }
 
         public:
 
@@ -375,9 +383,7 @@ namespace ROL {
      
 
             bool isFeasible( const Vector<Real> &x ) {
-
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
+                auto xp = getVector(x);
 
                 int lclFeasible = 1;
                  
@@ -396,9 +402,8 @@ namespace ROL {
 
             void project( Vector<Real> &x ) {
 
-                Teuchos::RCP<MV> xp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(x)).getVector());
-
+                auto xp = getVector(x);
+                
                 ViewType x_lcl = xp->getDualView().d_view;
 
                 KokkosStructs::Project<Real,ViewType> proj(x_lcl,l_,u_);
@@ -408,10 +413,8 @@ namespace ROL {
  
 
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -424,10 +427,8 @@ namespace ROL {
             }
               
             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -440,10 +441,8 @@ namespace ROL {
             }
          
             void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -456,13 +455,9 @@ namespace ROL {
             }
          
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;
@@ -475,13 +470,9 @@ namespace ROL {
             }
        
              void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;
@@ -494,13 +485,9 @@ namespace ROL {
             }
 
             void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;
@@ -510,20 +497,6 @@ namespace ROL {
                 KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn);
 
                 Kokkos::parallel_for(lclDim_,prune);                
-            }
-
-            void setVectorToUpperBound(Vector<Real> &u) {
-                Teuchos::RCP<MV> up =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(u)).getVector());
-
-                up->assign(*up_);
-            }
-
-            void setVectorToLowerBound(Vector<Real> &l) {
-                Teuchos::RCP<MV> lp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(l)).getVector());
-
-                lp->assign(*lp_);
             }
       }; // End class TpetraBoundConstraint 
 

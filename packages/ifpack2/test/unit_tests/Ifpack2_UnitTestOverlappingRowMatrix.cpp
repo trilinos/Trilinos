@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -235,6 +235,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   TEST_EQUALITY( NumGlobalRowsB, NumGlobalRowsC );
   TEST_EQUALITY( NumGlobalNonzerosB, NumGlobalNonzerosC );
 
+  // Test fix to github issue #558. Check that all four maps report the same
+  // number of local elements. This means that LocalFilter can filter based on
+  // getDomainMap () and getRangeMap (), as desired, and see the overlap
+  // pattern.
+  {
+    const auto n = B->getRowMap ()->getNodeNumElements ();
+    TEST_EQUALITY( B->getColMap ()->getNodeNumElements (), n );
+    TEST_EQUALITY( B->getRangeMap ()->getNodeNumElements (), n );
+    TEST_EQUALITY( B->getDomainMap ()->getNodeNumElements (), n );
+  }
+
   try {
     C->apply (X, Z);
   } catch (std::exception& e) {
@@ -247,8 +258,160 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
 #endif // HAVE_IFPACK2_XPETRA
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Scalar, LO, GO)
+{
+  typedef Scalar scalar_type;
+  typedef LO local_ordinal_type;
+  typedef GO global_ordinal_type;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+  typedef Tpetra::Vector<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> vec_type;
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  using Teuchos::Array;
+  using Teuchos::as;
+
+  int OverlapLevel=2;
+  out << "Testing that OverlappingRowMatrix's getLocalDiag method works properly." << std::endl;
+
+  // This test assumes indexBase == 0.
+
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Short circuit --- this test should only be run in parallel.
+  if (comm->getSize() == 1) {
+    out << "This test is only meaningful if run with multiple MPI processes."
+        << endl;
+    return;
+  }
+
+  const size_t numLocalRows = 4;
+  int myRank = comm->getRank();
+  const Tpetra::global_size_t globalNumRows = comm->getSize() * numLocalRows;
+
+  RCP<const map_type> rowMap(new map_type(globalNumRows, numLocalRows, 0, comm));
+  RCP<const map_type> domMap = rowMap;
+  RCP<const map_type> ranMap = rowMap;
+
+  out << "Creating and filling matrix A" << endl;
+
+  RCP<crs_matrix_type> A(new crs_matrix_type(rowMap, 3));
+
+  Array<scalar_type> val(3);
+  Array<global_ordinal_type> ind(3);
+  scalar_type zero=0;
+  scalar_type one=1;
+  val[0] = as<scalar_type>(-1);
+  val[1] = as<scalar_type>(2);
+  val[2] = as<scalar_type>(-1);
+
+  GO gidOffset;
+  int nlr = Teuchos::as<int>(numLocalRows);
+  Teuchos::scan(*comm,Teuchos::REDUCE_SUM,1,&nlr,&gidOffset);
+  gidOffset -= numLocalRows;
+
+  if (myRank == 0) {
+    // Row GID 0: Insert [2 -1] into column GIDs [0 1]
+    ind[1] = 0;
+    ind[2] = 1;
+    val[1] = zero;
+    val[2] = -one;
+    A->insertGlobalValues(0, ind.view(1, 2), val.view(1, 2));
+
+    val[0] = val[2] = -one;
+    for (LO i=1; i<Teuchos::as<int>(numLocalRows); ++i) {
+      ind[0]=gidOffset+i-1;
+      ind[1]=gidOffset+i;
+      ind[2]=gidOffset+i+1;
+      val[1]=one*(gidOffset+i); //put gid on the diagonal
+      A->insertGlobalValues(gidOffset+i, ind.view(0, 3), val.view(0, 3));
+    }
+
+
+  } else if (myRank == comm->getSize()-1) {
+
+    val[0] = val[2] = -one;
+    for (LO i=0; i<Teuchos::as<int>(numLocalRows)-1; ++i) {
+      ind[0]=gidOffset+i-1;
+      ind[1]=gidOffset+i;
+      ind[2]=gidOffset+i+1;
+      val[1]=one*(gidOffset+i); //diagonal value is the row GID
+      A->insertGlobalValues(gidOffset+i, ind.view(0, 3), val.view(0, 3));
+    }
+    //last global row
+    ind[0] = gidOffset+numLocalRows-2;
+    ind[1] = gidOffset+numLocalRows-1;
+    val[0] = zero;
+    val[1] = gidOffset+numLocalRows-1;
+    A->insertGlobalValues(gidOffset+numLocalRows-1, ind.view(0, 2), val.view(0, 2));
+
+  }
+  else {
+
+    val[0] = val[2] = -one;
+    for (LO i=0; i<Teuchos::as<int>(numLocalRows); ++i) {
+      ind[0]=gidOffset+i-1;
+      ind[1]=gidOffset+i;
+      ind[2]=gidOffset+i+1;
+      val[1]=one*(gidOffset+i); //diagonal value is the row GID
+      A->insertGlobalValues(gidOffset+i, ind.view(0, 3), val.view(0, 3));
+    }
+
+  }
+
+  A->fillComplete(domMap, ranMap);
+  //out << "---- A matrix -----" << std::endl;
+  //out.setOutputToRootOnly(-1);
+  //A->describe(out,Teuchos::VERB_EXTREME);
+  //out.setOutputToRootOnly(0);
+  //out << "-------------------" << std::endl;
+
+  RCP<Ifpack2::OverlappingRowMatrix<row_matrix_type> > ovA;
+
+  out << "Building overlapping matrix" << std::endl;
+  try {
+    ovA = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (A, OverlapLevel));
+  } catch (std::exception& e) {
+    out << "Ifpack2::OverlappingRowMatrix constructor threw exception: " << e.what () << endl;
+  }
+  RCP<const map_type> ovRowMap = ovA->getRowMap();
+  //out << "-- row map --" << std::endl;
+  //out.setOutputToRootOnly(-1);
+  //ovRowMap->describe(out,Teuchos::VERB_EXTREME);
+  //out.setOutputToRootOnly(0);
+  //out << "-------------" << std::endl;
+  RCP<vec_type> localDiag = rcp(new vec_type(ovRowMap));
+  ovA->getLocalDiagCopy(*localDiag);
+  //out << "-- diagonal --" << std::endl;
+  //out.setOutputToRootOnly(-1);
+  //localDiag->describe(out,Teuchos::VERB_EXTREME);
+  //out.setOutputToRootOnly(0);
+  //out << "--------------" << std::endl;
+
+  Teuchos::Array<Scalar> ldGids(localDiag->getLocalLength());
+  localDiag->get1dCopy(ldGids());
+  auto ovrmGids = ovRowMap->getMyGlobalIndices();
+
+  TEST_EQUALITY(Teuchos::as<GO>(ldGids.size()),Teuchos::as<GO>(ovrmGids.size()));
+  for (size_t i=0; i<ovrmGids.size(); ++i)
+    TEST_EQUALITY(ldGids[i],ovrmGids[i]);
+}
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL( Scalar, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, Test0, Scalar, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, Test0, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, getLocalDiag, Scalar, LO, GO )
 
 // mfh 26 Aug 2015: Ifpack2::OverlappingRowMatrix was only getting
 // tested for Scalar = double, LocalOrdinal = int, GlobalOrdinal =

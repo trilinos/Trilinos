@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -154,21 +154,26 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
 
   /* First check all the input for consistency. */
 
-  if (architecture == 1)
+  if (architecture == 1) {
     mesh_dims[1] = mesh_dims[2] = 1;
-  else if (architecture == 2)
+  }
+  else if (architecture == 2) {
     mesh_dims[2] = 1;
+  }
 
   /* Check for simple special case of 1 processor. */
   k = 0;
-  if (architecture == 0)
+  if (architecture == 0) {
     k = 1 << ndims_tot;
-  else if (architecture > 0)
+  }
+  else if (architecture > 0) {
     k = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
+  }
 
   if (k == 1) {
-    for (i          = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       assignment[i] = 0;
+    }
 
     if (OUTPUT_ASSIGN > 0 && outassignname != NULL) {
       time1 = seconds();
@@ -194,9 +199,10 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
       append = TRUE;
       fclose(outfile);
     }
-    else
+    else {
       append = FALSE;
-    outfile  = fopen(outfilename, "a");
+    }
+    outfile = fopen(outfilename, "a");
     if (append) {
       fprintf(outfile, "\n------------------------------------------------\n\n");
     }
@@ -264,8 +270,9 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
     strout("ERROR: No space to allocate sqrts\n");
     return (1);
   }
-  for (i     = 1; i <= NSQRTS; i++)
+  for (i = 1; i <= NSQRTS; i++) {
     SQRTS[i] = sqrt((double)i);
+  }
 
   if (using_vwgts && (global_method == 1 || global_method == 2)) {
     vwsqrt = smalloc_ret((nvtxs + 1) * sizeof(double));
@@ -277,8 +284,9 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
     }
     makevwsqrt(vwsqrt, graph, nvtxs);
   }
-  else
+  else {
     vwsqrt = NULL;
+  }
 
   if (TIME_KERNELS) {
     time1 = seconds();
@@ -328,10 +336,12 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   partition_time += seconds() - time - kernel_time;
 
   nsets_tot = 0;
-  if (architecture == 0)
+  if (architecture == 0) {
     nsets_tot = 1 << ndims_tot;
-  else if (architecture > 0)
+  }
+  else if (architecture > 0) {
     nsets_tot = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
+  }
 
   if (graph != NULL) {
     j = TRUE;
@@ -425,10 +435,12 @@ if (graph != NULL) {
 
 End_Label:
 
-  if (vwsqrt != NULL)
+  if (vwsqrt != NULL) {
     sfree(vwsqrt);
-  if (SQRTS != NULL)
+  }
+  if (SQRTS != NULL) {
     sfree(SQRTS);
+  }
 
   /* Turn perturbation back on for next invocation. */
   if (ndims == 1) {

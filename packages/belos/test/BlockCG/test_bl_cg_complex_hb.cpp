@@ -48,6 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -98,8 +99,10 @@ int main(int argc, char *argv[]) {
   try {
     int info = 0;
     int MyPID = 0;
+    bool pseudo = false;   // use pseudo block CG to solve this linear system.
     bool norm_failure = false;
     bool proc_verbose = false;
+    bool use_single_red = false;
     int frequency = -1;  // how often residuals are printed by solver
     int blocksize = 1;
     int numrhs = 1;
@@ -108,11 +111,13 @@ int main(int argc, char *argv[]) {
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block CG to solve the linear systems.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("blocksize",&blocksize,"Block size used by CG .");
+    cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single-reduction variant of CG iteration.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -163,9 +168,11 @@ int main(int argc, char *argv[]) {
     int maxits = dim/blocksize; // maximum number of iterations to run
     //
     ParameterList belosList;
-    belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-    belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
-    belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    belosList.set( "Block Size", blocksize );                // Blocksize to be used by iterative solver
+    belosList.set( "Maximum Iterations", maxits );           // Maximum number of iterations allowed
+    belosList.set( "Convergence Tolerance", tol );           // Relative convergence tolerance requested
+    if ((blocksize == 1) && use_single_red)
+      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -195,15 +202,17 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return -1;
     }
+
     //
     // *******************************************************************
     // *************Start the block CG iteration***********************
     // *******************************************************************
     //
-    if (proc_verbose) {
-      std::cout << "Attempt to create Belos::BlockCGSolMgr" << std::endl;
-    }
-    Belos::BlockCGSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
+    Teuchos::RCP< Belos::SolverManager<ST,MV,OP> > solver;
+    if (pseudo)
+      solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
+    else
+      solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
 
     //
     // **********Print out information about problem*******************
@@ -220,7 +229,7 @@ int main(int argc, char *argv[]) {
     //
     // Perform solve
     //
-    Belos::ReturnType ret = solver.solve();
+    Belos::ReturnType ret = solver->solve();
     //
     // Compute actual residuals.
     //
@@ -239,7 +248,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Test achievedTol output
-    MT ach_tol = solver.achievedTol();
+    MT ach_tol = solver->achievedTol();
     if (proc_verbose)
       std::cout << "Achieved tol : "<<ach_tol<<std::endl;
 

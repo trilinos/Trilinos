@@ -57,11 +57,12 @@
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
+// #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -69,10 +70,29 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#endif
 
 
 namespace MueLu {
+
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
+  SetAndReturnDefaultFactory(varName, rcp(new oldFactory()));
+#else
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
+  (!useKokkos_) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
+                  SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
@@ -91,6 +111,17 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFactoryNonConst(const std::string& varName) {
+    return Teuchos::rcp_const_cast<FactoryBase>(GetFactory(varName));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasFactory(const std::string& varName) const {
+    if (factoryTable_.count(varName)) return true;
+    return false;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultFactory(const std::string& varName) const {
     if (defaultFactoryTable_.count(varName)) {
       // The factory for this name was already created (possibly, for previous level, if we reuse factory manager)
@@ -101,16 +132,28 @@ namespace MueLu {
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
       if (varName == "AP Pattern")                      return GetFactory("A");
-      if (varName == "Ptent")                           return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+      if (varName == "Ptent")                           return MUELU_KOKKOS_FACTORY(varName, TentativePFactory, TentativePFactory_kokkos);
       if (varName == "P") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
-        RCP<Factory> factory = rcp(new SaPFactory());
+        RCP<Factory> factory;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        if (useKokkos_)
+          factory = rcp(new SaPFactory_kokkos());
+        else
+#endif
+          factory = rcp(new SaPFactory());
         factory->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
       if (varName == "Nullspace") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
-        RCP<Factory> factory = rcp(new NullspaceFactory());
+        RCP<Factory> factory;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        if (useKokkos_)
+          factory = rcp(new NullspaceFactory_kokkos());
+        else
+#endif
+          factory = rcp(new NullspaceFactory());
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
@@ -127,16 +170,27 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
+      if (varName == "number of partitions") {
+#ifdef HAVE_MPI
+                                                        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionHeuristicFactory()));
+#else
+                                                        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+#endif
+      }
 
-      if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+      if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
-      if (varName == "Aggregates")                      return SetAndReturnDefaultFactory(varName, rcp(new UncoupledAggregationFactory()));
-      if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
+      if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
       if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
       if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
       if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
+
+      // Non-Galerkin
+      if (varName == "K")                               return GetFactory("A");
+      if (varName == "M")                               return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
@@ -157,6 +211,11 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
+
+#ifdef HAVE_MUELU_INTREPID2
+      // If we're asking for it, find who made P
+      if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
+#endif
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");
     }
@@ -202,6 +261,9 @@ namespace MueLu {
         it->second->ResetDebugData();
   }
 #endif
+
+
+#undef MUELU_KOKKOS_FACTORY
 
 } // namespace MueLu
 

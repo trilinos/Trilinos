@@ -44,15 +44,11 @@
 #define __Panzer_FieldSpy_hpp__
 
 #include "PanzerDiscFE_config.hpp"
-
-#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_FieldManager.hpp"
-
 #include "Panzer_Dimension.hpp"
 #include "Panzer_FieldLibrary.hpp"
-
 #include <string>
 
 namespace panzer {

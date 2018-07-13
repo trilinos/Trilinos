@@ -47,7 +47,7 @@
 #include <cmath>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
@@ -65,6 +65,18 @@ Scalar all_reduce( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int> >&
 {
   Scalar global = 0 ;
   Teuchos::reduceAll( *comm , Teuchos::REDUCE_SUM , 1 , & local , & global );
+  return global ;
+}
+
+template <typename Scalar>
+inline
+Teuchos::Array<Scalar>
+all_reduce( Teuchos::Array<Scalar> local ,
+            const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+  const int sz = local.size();
+  Teuchos::Array<Scalar> global(sz);
+  Teuchos::reduceAll( *comm , Teuchos::REDUCE_SUM , sz , local.getRawPtr() , global.getRawPtr() );
   return global ;
 }
 

@@ -1,22 +1,22 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2015 National Technology & Engineering Solutions of
+// Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
 //
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
+// * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
 //
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
+// * Redistributions in binary form must reproduce the above
+//   copyright notice, this list of conditions and the following
+//   disclaimer in the documentation and/or other materials provided
+//   with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+// * Neither the name of NTESS nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
       std::string val = ai + 1 < argc ? argv[ai + 1] : "";
       ai += aprepro.set_option(arg, val);
     }
-    else if (arg.find("=") != std::string::npos) { // Parse var=value option.
+    else if (arg.find('=') != std::string::npos) { // Parse var=value option.
       size_t      index = arg.find_first_of('=');
       std::string var   = arg.substr(0, index);
       std::string value = arg.substr(index + 1);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
       }
     }
     else {
-      input_files.push_back(argv[ai]);
+      input_files.emplace_back(argv[ai]);
     }
   }
 
@@ -119,5 +119,8 @@ int main(int argc, char *argv[])
         std::cout << aprepro.parsing_results().str();
       }
     }
+  }
+  if (aprepro.ap_options.debugging) {
+    aprepro.dumpsym("variable", false);
   }
 }

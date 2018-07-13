@@ -32,9 +32,9 @@
 #include "basker_def.hpp"
 
 
-namespace Basker{
+namespace BaskerClassicNS{
 
   //template class one<int, double>;
-  //template class Basker<int, double>;
+  //template class BaskerClassic<int, double>;
 
 }

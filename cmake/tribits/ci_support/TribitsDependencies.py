@@ -207,6 +207,7 @@ class TribitsDependencies:
 
   def __init__(self):
     self.__projectName = None
+    self.__projectBaseDirName = None
     self.__packagesList = []
     self.__packagesNameToID = {}
     self.__packagesDirToID = {}
@@ -218,6 +219,14 @@ class TribitsDependencies:
 
   def getProjectName(self):
     return self.__projectName
+
+
+  def setProjectBaseDirName(self, projectBaseDirName):
+    self.__projectBaseDirName = projectBaseDirName
+
+
+  def getProjectBaseDirName(self):
+    return self.__projectBaseDirName
 
 
   def addPackageDependencies(self, packageDeps):
@@ -264,6 +273,21 @@ class TribitsDependencies:
     return u""
     # NOTE: The above loop with match subpackages before it matches
     # packages because subpackages are listed before packages!
+
+
+  def getPackageNameFromTestName(self, testName):
+    for packageDep in self.__packagesList:
+      startTestName = packageDep.packageName+"_"
+      #print("\nstartTestName="+startTestName)
+      testNameStartIdx = testName.find(startTestName, 0)
+      if testNameStartIdx == 0:
+        #print("MATCH!")
+        if packageDep.parentPackage:
+          #print("Subpackage match!")
+          return self.getPackageByName(packageDep.parentPackage).packageName
+        # Else, is not a subpackage
+        return packageDep.packageName
+    return u""
 
 
   def filterPackageNameList(self, inputPackagesList, keepTypesList, verbose=False):
@@ -543,6 +567,8 @@ class TribitsDependencies:
 
     xmlText += "<Project name=\""+self.getProjectName()+"\">\n"
 
+    projectBaseDirName = self.getProjectBaseDirName()
+
     numPackages = self.numPackages()
 
     for package_i in range(numPackages):
@@ -550,10 +576,13 @@ class TribitsDependencies:
       packageDeps = self.__packagesList[package_i]
 
       packageName = packageDeps.packageName
+      packagePath = packageDeps.packageDir
 
       if packageDeps.parentPackage == "":
         
         xmlText += ("  <SubProject name=\""+packageName+"\">\n")
+        
+        xmlText += ("    <Path>"+packagePath+"</Path>\n")
   
         xmlText += \
           "    <EmailAddresses>\n"+\
@@ -619,7 +648,10 @@ def getProjectDependenciesFromXmlFile(xmlFile):
   #print("\npackageDepXmlDom =", dir(packageDepXmlDom))
   #print("\npackageDepXmlDom.documentElement =", dir(packageDepXmlDom.documentElement))
   projectDependencies = TribitsDependencies()
-  projectDependencies.setProjectName(packageDepXmlDom.documentElement.getAttribute('project'))
+  projectDependencies.setProjectName(
+    packageDepXmlDom.documentElement.getAttribute('project'))
+  projectDependencies.setProjectBaseDirName(
+    packageDepXmlDom.documentElement.getAttribute('baseDirName'))
   for ele in packageDepXmlDom.childNodes[0].childNodes:
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')

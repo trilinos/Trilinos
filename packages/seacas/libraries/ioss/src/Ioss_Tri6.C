@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tri6 registerThis; }
 
   protected:
-    St_Tri6() : ElementVariableType("tri6", 6) {}
+    St_Tri6() : ElementVariableType(Ioss::Tri6::name, 6) {}
   };
 } // namespace Ioss
 //------------------------------------------------------------------------
@@ -73,13 +73,13 @@ void Ioss::Tri6::factory()
   Ioss::St_Tri6::factory();
 }
 
-Ioss::Tri6::Tri6() : Ioss::ElementTopology("tri6", "Triangle_6")
+Ioss::Tri6::Tri6() : Ioss::ElementTopology(Ioss::Tri6::name, "Triangle_6")
 {
-  Ioss::ElementTopology::alias("tri6", "triangle6");
-  Ioss::ElementTopology::alias("tri6", "Solid_Tri_6_2D");
-  Ioss::ElementTopology::alias("tri6", "Face_Tri_6_3D");
-  Ioss::ElementTopology::alias("tri6", "TRIANGLE_6_2D");
-  Ioss::ElementTopology::alias("tri6", "triface6");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "triangle6");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "Solid_Tri_6_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "Face_Tri_6_3D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "TRIANGLE_6_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "triface6");
 }
 
 Ioss::Tri6::~Tri6() = default;

@@ -98,6 +98,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   /* Smoothing Options (Section 6.4.4) */
   setStringToIntegralParameter<int>("smoother: type", std::string("Chebyshev"),
 				    "Smoothing algorithm",smoothers,PL);
+  setIntParameter("smoother: min size for coarse", -1, "Use fine smoother when coarsest is large", PL, intParam);
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
   setDoubleParameter("smoother: line detection threshold",-1.0,"Smoother line detection threshold",PL,dblParam);
   PL->set("smoother: line detection mode",std::string("coordinates"));
@@ -241,6 +242,8 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   /* Aggregation and Prolongator Options (Section 6.4.3) */
   setStringToIntegralParameter<int>("aggregation: type", "Uncoupled", "Aggregation algorithm", tuple<std::string>("Uncoupled","Coupled","MIS","Uncoupled-MIS","METIS","ParMETIS","Zoltan","user"),PL);
   setDoubleParameter("aggregation: threshold",0.0,"Dropping for aggregation",PL,dblParam);
+  setDoubleParameter("ML advanced Dirichlet: threshold",1.0e-5,"Dropping for Dirichlet determination. Only used for variable dof and shared node constructors",PL,dblParam);
+  setDoubleParameter("variable DOF  amalgamation: threshold",1.8e-9,"Dropping for amalgamation. Only used for variable dof constructor",PL,dblParam);
   setDoubleParameter("aggregation: damping factor",1.3333,"Damping factor for smoothed aggregation",PL,dblParam);
   setIntParameter("aggregation: smoothing sweeps",1,"Number of sweeps for prolongator smoother",PL,intParam);
   setIntParameter("aggregation: global aggregates",0,"Number of global aggregates (METIS/ParMETIS)",PL,intParam);
@@ -361,13 +364,15 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   }
   SetValidSmooParams(&(PL->sublist("coarse: list")),smoothers);
 
+  setIntParameter("RAP: sort columns",0,"matrix columns sorted after RAP",PL,intParam);
+
   /* Load-balancing Options (Section 6.4.6) */
   setIntParameter("repartition: enable",0,"Enable repartitioning",PL,intParam);
   setStringToIntegralParameter<int>("repartition: partitioner","Zoltan","Repartitioning method",tuple<std::string>("Zoltan","ParMETIS"),PL);
   setDoubleParameter("repartition: max min ratio",1.3,"Specifies desired maximum imbalance ratio",PL,dblParam);
   setIntParameter("repartition: min per proc",512,"Specifies minimum # rows / processor",PL,intParam);
   setIntParameter("repartition: put on single proc",5000,"Specifies max global problem to be put on one processor",PL,intParam);
-  setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal heirarchy (Maxwell)",PL,dblParam);
+  setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal hierarchy (Maxwell)",PL,dblParam);
   setIntParameter("repartition: node min per proc",170,"Specifies minimum number of nodes per proc (Maxwell)",PL,intParam);
   setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL,intParam);
   setIntParameter("repartition: start level",1,"Suppress repartitioning until this level",PL,intParam);
@@ -400,7 +405,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Aggregation Strategies (Section 6.4.10) */
   PL->set("aggregation: aux: enable",false);
-  setDoubleParameter("aggregation: aux: threshold",0.0,"Dropping threshold for auxillary matrix",PL,dblParam);
+  setDoubleParameter("aggregation: aux: threshold",0.0,"Dropping threshold for auxiliary matrix",PL,dblParam);
 
   /* Unlisted Options */
   PL->set("ML debug mode",false);
@@ -415,6 +420,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL,intParam);
   PL->set("low memory usage",false);
   setDoubleParameter("aggregation: edge prolongator drop threshold",0.0,"Unlisted option",PL,dblParam);
+  PL->set("ML variable DOF",false);
   PL->set("zero starting solution",true);
   PL->set("aggregation: block scaling",false);
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
@@ -516,7 +522,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   /* RefMaxwell Options */
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
-  setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121"),PL);
+  setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121","none"),PL);
   PL->set("edge matrix free: coarse",dummy);
   List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);
   PL->set("refmaxwell: 11list",List11);

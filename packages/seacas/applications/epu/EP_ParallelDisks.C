@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,25 +33,22 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
-#include <iostream>
 #include <string>
 
 #include <EP_Internals.h>
 #include <EP_ParallelDisks.h>
-#include <to_string.h>
 
 #ifdef _WIN32
 #include <Shlwapi.h>
 #endif
 
 /*****************************************************************************/
-Excn::ParallelDisks::ParallelDisks() : disk_names(nullptr), number_of_raids(0), raid_offset(0) {}
+Excn::ParallelDisks::ParallelDisks() : number_of_raids(0), raid_offset(0) {}
 
 /*****************************************************************************/
-Excn::ParallelDisks::~ParallelDisks() { delete[] disk_names; }
+Excn::ParallelDisks::~ParallelDisks() = default;
 
 /*****************************************************************************/
 void Excn::ParallelDisks::Number_of_Raids(int i)
@@ -82,7 +79,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   // Possible to have node layout without parallel disks
 
   std::string prepend;
-  if (rootdir.length()) {
+  if (rootdir.length() != 0u) {
     prepend = rootdir + "/";
   }
   else if (Excn::is_path_absolute(name)) {
@@ -93,155 +90,71 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   }
 
   int lnn = node;
-  if (number_of_raids) {
+  if (number_of_raids != 0) {
     int diskn = lnn % number_of_raids;
     Create_IO_Filename(name, lnn, numproc);
     name = disk_names[diskn] + "/" + subdir + "/" + name;
   }
   else {
     Create_IO_Filename(name, lnn, numproc);
-    if (subdir.length()) {
+    if (subdir.length() != 0u) {
       name = subdir + "/" + name;
     }
   }
   name = prepend + name;
-  return;
 }
 
 /*****************************************************************************/
 void Excn::ParallelDisks::create_disk_names()
 {
 
-  if (!number_of_raids)
+  if (number_of_raids == 0) {
     return;
+  }
 
-  delete[] disk_names;
-  disk_names = new std::string[number_of_raids];
-
-  char str[3];
-
+  disk_names.resize(number_of_raids);
   for (int i = 0; i < number_of_raids; i++) {
     int num = i + raid_offset;
     if (num < 10) {
 #ifdef COUGAR
-      sprintf(str, "%d", num);
+      disk_names[i] = std::to_string(num);
 #else
-      sprintf(str, "0%d", num);
+      disk_names[i] = "0" + std::to_string(num);
 #endif
-      disk_names[i] = std::string(str);
     }
     else {
-      sprintf(str, "%d", num);
-      disk_names[i] = std::string(str);
+      disk_names[i] = std::to_string(num);
     }
   }
 }
 
 /*****************************************************************************/
-void Excn::ParallelDisks::Create_IO_Filename(std::string &name, int lnn, int num_proc)
+void Excn::ParallelDisks::Create_IO_Filename(std::string &name, int processor, int num_processors)
 {
-  if (num_proc >= 10000000) {
-    std::cerr << "ERROR: EPU is currently limited to less than 10,000,000 processors.\n"
-              << "       Please contact gdsjaar@sandia.gov to increase the limit.\n";
-    exit(EXIT_FAILURE);
+  // Current format for per-processor file names is:
+  // PREFIX/basename.num_proc.cur_proc
+  // the 'cur_proc' field is padded to be the same width as
+  // the 'num_proc' field
+  // Examples: basename.8.1, basename.64.03, basename.128.001
+
+  // Create a std::string containing the total number of processors
+  std::string num_proc   = std::to_string(num_processors);
+  size_t      proc_width = num_proc.length();
+
+  // Create a std::string containing the current processor number
+  std::string cur_proc  = std::to_string(processor);
+  size_t      cur_width = cur_proc.length();
+
+  // Build the filename
+  name += ".";
+  name += num_proc;
+  name += ".";
+
+  // Now, pad with zeros so that 'cur_proc' portion is same
+  // width as 'num_proc' portion.
+  while (cur_width++ < proc_width) {
+    name += "0";
   }
 
-  name = name + "." + to_string(num_proc);
-  if (num_proc >= 1000000) {
-    if (lnn < 10) {
-      name = name + ".000000" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + ".00000" + to_string(lnn);
-    }
-    else if (lnn < 1000) {
-      name = name + ".0000" + to_string(lnn);
-    }
-    else if (lnn < 10000) {
-      name = name + ".000" + to_string(lnn);
-    }
-    else if (lnn < 100000) {
-      name = name + ".00" + to_string(lnn);
-    }
-    else if (lnn < 1000000) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 10000000) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  if (num_proc >= 100000) {
-    if (lnn < 10) {
-      name = name + ".00000" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + ".0000" + to_string(lnn);
-    }
-    else if (lnn < 1000) {
-      name = name + ".000" + to_string(lnn);
-    }
-    else if (lnn < 10000) {
-      name = name + ".00" + to_string(lnn);
-    }
-    else if (lnn < 100000) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 1000000) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  if (num_proc >= 10000) {
-    if (lnn < 10) {
-      name = name + ".0000" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + ".000" + to_string(lnn);
-    }
-    else if (lnn < 1000) {
-      name = name + ".00" + to_string(lnn);
-    }
-    else if (lnn < 10000) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 100000) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  else if (num_proc >= 1000) {
-    if (lnn < 10) {
-      name = name + ".000" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + ".00" + to_string(lnn);
-    }
-    else if (lnn < 1000) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 10000) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  else if (num_proc >= 100) {
-    if (lnn < 10) {
-      name = name + ".00" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 1000) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  else if (num_proc >= 10) {
-    if (lnn < 10) {
-      name = name + ".0" + to_string(lnn);
-    }
-    else if (lnn < 100) {
-      name = name + "." + to_string(lnn);
-    }
-  }
-  else if (num_proc >= 1) {
-    name = name + "." + to_string(lnn);
-  }
-  return;
+  name += cur_proc;
 }

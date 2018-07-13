@@ -45,7 +45,6 @@
 
 #include "Panzer_STK_Interface.hpp"
 
-#include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_Workset.hpp"
 #include "Panzer_WorksetNeeds.hpp"
@@ -61,17 +60,6 @@ namespace panzer_stk {
 /** Build volumetric worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] pb Physics block associated with a particular element block
-  *
-  * \returns vector of worksets for the corresponding element block.
-  */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb);
-
-/** Build volumetric worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] needs Physics block associated with a particular element block
   * \param[in] eBlock Element block to build worksets over (the descriptor information)
   *
@@ -81,25 +69,6 @@ Teuchos::RCP<std::vector<panzer::Workset> >
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & eBlock,
               const panzer::WorksetNeeds & needs);
-
-/** Build volumetric worksets for a STK mesh with elements that touch a particular sideset.
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] pb Physics block associated with the element block
-  * \param[in] workset_size The size of each workset measured in the number of elements
-  * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
-  * \param[in] useCascade If true, worksets will be built for every local node, edge and face
-  *                       that touches the side set. Note that this implies that the workset
-  *                       will have repeated elements. This is useful for higher-order surface
-  *                       flux calculations.
-  *
-  * \returns vector of worksets for the corresponding element block.
-  */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb,
-              const std::string & sideset,
-              bool useCascade=false);
 
 /** Build volumetric worksets for a STK mesh with elements that touch a particular sideset.
   *
@@ -125,8 +94,10 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 /** Build side worksets with elements on both sides (this is for DG)
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] pb_a Physics block associated with the element block
-  * \param[in] pb_b Physics block associated with the element block
+  * \param[in] needs_a   Needs of these worksets
+  * \param[in] blockid_a Element block id
+  * \param[in] needs_b   Needs of these worksets
+  * \param[in] blockid_b Element block id
   * \param[in] workset_size The size of each workset measured in the number of elements
   * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
   *
@@ -134,25 +105,17 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   */
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::PhysicsBlock & pb_a,
-                const panzer::PhysicsBlock & pb_b,
+                const panzer::WorksetNeeds & needs_a,
+                const std::string & blockid_a,
+                const panzer::WorksetNeeds & needs_b,
+                const std::string & blockid_b,
                 const std::string & sideset);
 
-/** Build boundary condition worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] pb Physics block associated with the element block
-  * \param[in] sidesetID Name of sideset
-  *
-  * \returns Map relating local element side IDs to a workset.
-  *
-  * \note All elements for a bc that are associated with a particular
-  *       side ID are grouped into a single workset
-  */
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::PhysicsBlock & pb,
-                const std::string & sidesetID);
+                const panzer::WorksetNeeds & needs_a,const std::string & eblock_a,
+                const panzer::WorksetNeeds & needs_b,const std::string & eblock_b,
+                const std::string & sideset);
 
 /** Build boundary condition worksets for a STK mesh
   *

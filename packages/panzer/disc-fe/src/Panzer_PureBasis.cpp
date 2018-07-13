@@ -43,6 +43,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -65,6 +66,16 @@ PureBasis(const std::string & basis_type,const int basis_order,const CellData & 
   num_cells_(cell_data.numCells())
 {
   initialize(basis_type,basis_order);
+}
+
+panzer::PureBasis::
+PureBasis(const panzer::BasisDescriptor & description,
+          const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+          const int num_cells):
+  topology_(cell_topology),
+  num_cells_(num_cells)
+{
+  initialize(description.getType(), description.getOrder());
 }
 
 void panzer::PureBasis::initialize(const std::string & in_basis_type,const int in_basis_order)
@@ -91,7 +102,7 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
   }
   // End deprecated basis support
 
-  intrepid_basis_ = panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >(basis_type, basis_order, topology_);
+  intrepid_basis_ = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>(basis_type, basis_order, *topology_);
 
   basis_type_ = basis_type;
 
@@ -152,6 +163,10 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
 							cardinality(),
 							dimension(),
 							dimension()));
+  
+  local_mat_layout = Teuchos::rcp(new PHX::MDALayout<panzer::Cell, panzer::BASIS, panzer::BASIS>(
+                     this->numCells(), this->cardinality(), this->cardinality()));  
+  
 }
 
 int panzer::PureBasis::cardinality() const
@@ -199,7 +214,7 @@ std::string panzer::PureBasis::fieldNameD2() const
   return field_basis_name_D2_;
 }    
 
-Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
 panzer::PureBasis::getIntrepid2Basis() const
 {
    return intrepid_basis_;
@@ -208,9 +223,11 @@ panzer::PureBasis::getIntrepid2Basis() const
 bool 
 panzer::PureBasis::supportsBasisCoordinates() const
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> Array;
-  Teuchos::RCP<const Intrepid2::DofCoordsInterface<Array> > coord_interface 
-      = Teuchos::rcp_dynamic_cast<const Intrepid2::DofCoordsInterface<Array> >(getIntrepid2Basis());
+  // typedef Kokkos::DynRankView<double,PHX::Device> Array;
+  // Teuchos::RCP<const Intrepid2::DofCoordsInterface<Array> > coord_interface 
+  //     = Teuchos::rcp_dynamic_cast<const Intrepid2::DofCoordsInterface<Array> >(getIntrepid2Basis());
 
-  return !Teuchos::is_null(coord_interface);
+  // return !Teuchos::is_null(coord_interface);
+
+  return true;
 }

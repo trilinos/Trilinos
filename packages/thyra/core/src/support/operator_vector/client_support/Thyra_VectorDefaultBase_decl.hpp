@@ -146,6 +146,52 @@ protected:
   /** @name Overridden protected functions from MultiVectorBase */
   //@{
 
+  /** \brief Default implementation of assign(vector) using RTOps. */
+  virtual void assignVecImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of randomize using RTOps. */
+  virtual void randomizeImpl(Scalar l, Scalar u);
+
+  /** \brief Default implementation of abs using RTOps. */
+  virtual void absImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of reciprocal using RTOps. */
+  virtual void reciprocalImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of ele_wise_scale using RTOps. */
+  virtual void eleWiseScaleImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of update using RTOps. */
+  virtual void updateVecImpl(
+    Scalar alpha,
+    const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of linear_combination using RTOps. */
+  virtual void linearCombinationVecImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    );
+
+  /** \brief Default implementation of dot using RTOps. */
+  virtual Scalar dotImpl(const VectorBase<Scalar>& x) const;
+
+  /** \brief Default implementation of norm_1 using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm1Impl() const;
+
+  /** \brief Default implementation of norm_2 using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2Impl() const;
+
+  /** \brief Default implementation of norm_2 (weighted) using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2WeightedImpl(const VectorBase<Scalar>& x) const;
+
+  /** \brief Default implementation of norm_inf using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  normInfImpl() const;
+
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */

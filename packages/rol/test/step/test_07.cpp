@@ -46,6 +46,8 @@
     \brief Interior Point test using Hock & Schittkowski problem 32.
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS32.hpp"
 #include "ROL_Algorithm.hpp"
 
@@ -54,12 +56,12 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp; 
+  
+   
 
   typedef std::vector<RealT>            vec;
   typedef ROL::StdVector<RealT>         SV;
-  typedef RCP<ROL::Vector<RealT> >      RCPV;
+  typedef ROL::Ptr<ROL::Vector<RealT> >      ROL::PtrV;
 
 //  typedef ROL::PartitionedVector<RealT> PV;
 
@@ -67,12 +69,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -83,32 +85,32 @@ int main(int argc, char *argv[]) {
     int ci_dim = 4;    // Dimension of inequality constraint
 
     // Exact solution
-    RCP<vec> x_exact_rcp = rcp( new vec(xopt_dim,0.0) );
-    (*x_exact_rcp)[xopt_dim-1] = 1.0;
+    ROL::Ptr<vec> x_exact_ptr = ROL::makePtr<vec>(xopt_dim,0.0);
+    (*x_exact_ptr)[xopt_dim-1] = 1.0;
 
-    RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,0.0) ); // Optimization variables
+    ROL::Ptr<vec> xopt_ptr = ROL::makePtr<vec>(xopt_dim,0.0); // Optimization variables
 
-    RCP<vec> le_rcp  = rcp( new vec(ce_dim,0.0) );    // Equality multiplier
-    RCP<vec> li_rcp  = rcp( new vec(ci_dim,0.0) );    // Inequality multiplier
+    ROL::Ptr<vec> le_ptr  = ROL::makePtr<vec>(ce_dim,0.0);    // Equality multiplier
+    ROL::Ptr<vec> li_ptr  = ROL::makePtr<vec>(ci_dim,0.0);    // Inequality multiplier
      
     // Feasible initial guess
-    (*xopt_rcp)[0] = 0.1;
-    (*xopt_rcp)[1] = 0.7;
-    (*xopt_rcp)[2] = 0.2;
+    (*xopt_ptr)[0] = 0.1;
+    (*xopt_ptr)[1] = 0.7;
+    (*xopt_ptr)[2] = 0.2;
 
-    RCPV xopt = rcp( new SV(xopt_rcp) );
-    RCPV le  = rcp( new SV(le_rcp) );
-    RCPV li  = rcp( new SV(li_rcp) );
+    ROL::PtrV xopt = ROL::makePtr<SV>(xopt_ptr);
+    ROL::PtrV le  = ROL::makePtr<SV>(le_ptr);
+    ROL::PtrV li  = ROL::makePtr<SV>(li_ptr);
 
     using ROL::ZOO::Objective_HS32;
     using ROL::ZOO::EqualityConstraint_HS32;
     using ROL::ZOO::InequalityConstraint_HS32;    
 
-    RCP<ROL::Objective<RealT> > obj_hs32 = rcp( new Objective_HS32<RealT> ); 
-    RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = rcp( new EqualityConstraint_HS32<RealT> );
-    RCP<ROL::InequalityConstraint<RealT> > incon_hs32 = rcp( new  InequalityConstraint_HS32<RealT> );
+    ROL::Ptr<ROL::Objective<RealT> > obj_hs32 = ROL::makePtr<Objective_HS32<RealT>>(); 
+    ROL::Ptr<ROL::EqualityConstraint<RealT> > eqcon_hs32 = ROL::makePtr<EqualityConstraint_HS32<RealT>>();
+    ROL::Ptr<ROL::InequalityConstraint<RealT> > incon_hs32 = ROL::makePtr<InequalityConstraint_HS32<RealT>>();
     
-    RCP<Teuchos::ParameterList> parlist = rcp(new Teuchos::ParameterList);
+    
     std::string stepname = "Interior Point";
 
     RealT mu = 0.1;            // Initial penalty parameter
@@ -134,14 +136,14 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationProblem<RealT> problem( obj_hs32, xopt, eqcon_hs32, le, incon_hs32, li, parlist);  
 
     // Define algorithm.
-    RCP<ROL::Algorithm<RealT> > algo;    
-    algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;    
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname,*parlist);
 
     algo->run(problem,true,*outStream);   
   
     *outStream << std::endl << std::setw(20) << "Computed Minimizer" << std::setw(20) << "Exact Minimizer" << std::endl;
     for( int i=0;i<xopt_dim;++i ) {   
-      *outStream << std::setw(20) << (*xopt_rcp)[i] << std::setw(20) << (*x_exact_rcp)[i] << std::endl;
+      *outStream << std::setw(20) << (*xopt_ptr)[i] << std::setw(20) << (*x_exact_ptr)[i] << std::endl;
     }
   }
   catch (std::logic_error err) {

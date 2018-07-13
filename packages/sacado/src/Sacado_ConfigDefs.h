@@ -94,4 +94,11 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #define KOKKOS_FORCEINLINE_FUNCTION  inline
 #endif
 
+/* Determine if the new fad design is supported.  Requies C++11,
+   and gcc version 4.8 or greater.
+*/
+#if defined(HAVE_SACADO_CXX11) && !( defined(__GNUC__) &&  (__GNUC__ == 4) && (__GNUC_MINOR__ < 8) )
+#define SACADO_ENABLE_NEW_DESIGN 1
+#endif
+
 #endif /* SACADO_CONFIGDEFS_H */

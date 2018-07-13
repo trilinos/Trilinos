@@ -97,7 +97,8 @@ Teuchos::RCP<DVector> GetRandomVector(int n);
 // Returns 1 if the comparison failed, the relative difference is greater than the tolerance.
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
                    const SerialDenseVector<OTYPE,STYPE>& Vector2,
-                   ScalarTraits<STYPE>::magnitudeType Tolerance );
+                   ScalarTraits<STYPE>::magnitudeType Tolerance,
+                   bool verbose);
 
 int main(int argc, char* argv[])
 {
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver1.solve();
   testName = "Simple solve: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   // Tranpose solve (can be done after factorization, since factorization doesn't depend on this)
@@ -173,7 +174,7 @@ int main(int argc, char* argv[])
   solver1.solveWithTransposeFlag( Teuchos::TRANS );
   returnCode = solver1.solve();
   testName = "Simple solve: solve() random A (TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -183,7 +184,7 @@ int main(int argc, char* argv[])
   solver1.solveWithTransposeFlag( Teuchos::CONJ_TRANS );
   returnCode = solver1.solve();
   testName = "Simple solve: solve() random A (CONJ_TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
 
@@ -195,18 +196,18 @@ int main(int argc, char* argv[])
   // Compute the solution vector using multiplication and the inverse.
   returnCode = xhat.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A1, b, ScalarTraits<STYPE>::zero());
   testName = "Computing solution using inverted random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   returnCode = xhat.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A1, bt, ScalarTraits<STYPE>::zero());
   testName = "Computing solution using inverted random A (TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
   returnCode = xhat.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A1, bct, ScalarTraits<STYPE>::zero());
   testName = "Computing solution using inverted random A (CONJ_TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  numberFailedTests += CompareVectors( *x1, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
 
@@ -242,7 +243,7 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver2.solve();
   testName = "Solve with iterative refinement: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x2, xhat, tol );
+  numberFailedTests += CompareVectors( *x2, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   // Tranpose solve (can be done after factorization, since factorization doesn't depend on this)
@@ -251,7 +252,7 @@ int main(int argc, char* argv[])
   solver2.solveWithTransposeFlag( Teuchos::TRANS );
   returnCode = solver2.solve();
   testName = "Solve with iterative refinement: solve() random A (TRANS):";
-  numberFailedTests += CompareVectors( *x2, xhat, tol );
+  numberFailedTests += CompareVectors( *x2, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -261,7 +262,7 @@ int main(int argc, char* argv[])
   solver2.solveWithTransposeFlag( Teuchos::CONJ_TRANS );
   returnCode = solver2.solve();
   testName = "Solve with iterative refinement: solve() random A (CONJ_TRANS):";
-  numberFailedTests += CompareVectors( *x2, xhat, tol );
+  numberFailedTests += CompareVectors( *x2, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
 #endif
@@ -280,6 +281,10 @@ int main(int argc, char* argv[])
   bct.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A3, *x3, ScalarTraits<STYPE>::zero());
 #endif
 
+  // Save backups for multiple solves.
+  Teuchos::RCP<DMatrix> A3bak = Teuchos::rcp( new DMatrix( Teuchos::Copy, *A3 ) );
+  Teuchos::RCP<DVector> b3bak = Teuchos::rcp( new DVector( Teuchos::Copy, b ) );
+
   // Create a serial dense solver.
   Teuchos::SerialDenseSolver<OTYPE, STYPE> solver3;
   solver3.factorWithEquilibration( true );
@@ -296,7 +301,7 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver3.solve();
   testName = "Solve with matrix equilibration: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x3, xhat, tol );
+  numberFailedTests += CompareVectors( *x3, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   // Tranpose solve (can be done after factorization, since factorization doesn't depend on this)
@@ -305,7 +310,7 @@ int main(int argc, char* argv[])
   solver3.solveWithTransposeFlag( Teuchos::TRANS );
   returnCode = solver3.solve();
   testName = "Solve with matrix equilibration: solve() random A (TRANS):";
-  numberFailedTests += CompareVectors( *x3, xhat, tol );
+  numberFailedTests += CompareVectors( *x3, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -315,9 +320,20 @@ int main(int argc, char* argv[])
   solver3.solveWithTransposeFlag( Teuchos::CONJ_TRANS );
   returnCode = solver3.solve();
   testName = "Solve with matrix equilibration: solve() random A (CONJ_TRANS):";
-  numberFailedTests += CompareVectors( *x3, xhat, tol );
+  numberFailedTests += CompareVectors( *x3, xhat, tol, verbose );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
+
+  // Factor and solve with matrix equilibration, only call solve not factor.
+  // Use copy of A3 and b, they were overwritten in last factor() call.
+  xhat.putScalar( ScalarTraits<STYPE>::zero() );
+  solver3.setMatrix( A3bak );
+  solver3.setVectors( Teuchos::rcp( &xhat, false ), b3bak );
+  solver3.solveWithTransposeFlag( Teuchos::NO_TRANS );
+  returnCode = solver3.solve();
+  testName = "Solve with matrix equilibration: solve() without factor() random A (NO_TRANS):";
+  numberFailedTests += CompareVectors( *x3, xhat, tol, verbose );
+  numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   //
   // If a test failed output the number of failed tests.
@@ -441,7 +457,8 @@ Teuchos::RCP<DVector> GetRandomVector(int n)
 */
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
                    const SerialDenseVector<OTYPE,STYPE>& Vector2,
-                   ScalarTraits<STYPE>::magnitudeType Tolerance )
+                   ScalarTraits<STYPE>::magnitudeType Tolerance,
+                   bool verbose)
 {
   typedef ScalarTraits<STYPE>::magnitudeType MagnitudeType;
 
@@ -455,7 +472,11 @@ int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
     temp /= norm_v2;
 
   if (temp > Tolerance)
+  {
+    if (verbose)
+     std::cout << "COMPARISON FAILED : ";
     return 1;
+  }
   else
     return 0;
 }

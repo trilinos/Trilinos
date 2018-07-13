@@ -290,3 +290,48 @@ int im_ne_get_ss_param_global_l(int neid,	    /* NetCDF/Exodus file ID */
   }
   return 0;
 }
+
+
+
+/*****************************************************************************/
+int im_ne_get_global_ijk_l(int neid,
+                long long *global_ijk)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+  
+  ms->Get_Global_IJK(global_ijk);
+
+  //IJK
+  return 0;
+}
+
+/*****************************************************************************/
+int im_ne_get_num_ijk_l(int neid,
+                long long *num_ijk)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+  
+  ms->Get_Total_Num_IJK(num_ijk);
+
+  //IJK
+  return 0;
+}
+
+/*****************************************************************************/
+int im_ne_get_local_num_ijk_l(int neid,
+                long long *local_num_ijk)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+  
+  ms->Get_Local_Num_IJK(local_num_ijk);
+
+  //IJK
+  return 0;
+}
+

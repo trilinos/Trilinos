@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 #include <Ioss_Decomposition.h>
@@ -39,7 +38,7 @@
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <numeric>
 
 #if !defined(NO_CGNS_SUPPORT)
@@ -73,15 +72,15 @@ namespace {
     for (size_t i = 0; i < proc_count; i++) {
       dist[i] = sum;
       sum += per_proc;
-      if (i < extra)
+      if (i < extra) {
         sum++;
+      }
     }
     dist[proc_count] = sum;
     return dist;
   }
 
-  std::string get_decomposition_method(const Ioss::PropertyManager &properties, int my_processor,
-                                       int processor_count)
+  std::string get_decomposition_method(const Ioss::PropertyManager &properties, int my_processor)
   {
     std::string method = "LINEAR";
 
@@ -158,13 +157,13 @@ namespace {
     Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
 
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << "Setting common_nodes to " << common_nodes << "\n";
 #endif
     return common_nodes;
   }
 #endif
-}
+} // namespace
 
 namespace Ioss {
 
@@ -173,13 +172,18 @@ namespace Ioss {
 
   template <typename INT>
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
-      : m_comm(comm), m_globalElementCount(0), elementCount(0), elementOffset(0),
-        importPreLocalElemIndex(0), m_globalNodeCount(0), nodeCount(0), nodeOffset(0),
-        importPreLocalNodeIndex(0)
+      : m_comm(comm), m_spatialDimension(3), m_globalElementCount(0), m_elementCount(0),
+        m_elementOffset(0), m_importPreLocalElemIndex(0), m_globalNodeCount(0), m_nodeCount(0),
+        m_nodeOffset(0), m_importPreLocalNodeIndex(0), m_retainFreeNodes(true),
+        m_showProgress(false), m_showHWM(false)
   {
     MPI_Comm_rank(m_comm, &m_processor);
     MPI_Comm_size(m_comm, &m_processorCount);
-    m_method = get_decomposition_method(props, m_processor, m_processorCount);
+    m_method = get_decomposition_method(props, m_processor);
+
+    Utils::check_set_bool_property(props, "RETAIN_FREE_NODES", m_retainFreeNodes);
+    Utils::check_set_bool_property(props, "DECOMP_SHOW_PROGRESS", m_showProgress);
+    Utils::check_set_bool_property(props, "DECOMP_SHOW_HWM", m_showHWM);
   }
 
   template bool                Decomposition<int64_t>::needs_centroids() const;
@@ -199,19 +203,21 @@ namespace Ioss {
   void Decomposition<INT>::generate_entity_distributions(size_t globalNodeCount,
                                                          size_t globalElementCount)
   {
+    show_progress(__func__);
     m_globalNodeCount    = globalNodeCount;
     m_globalElementCount = globalElementCount;
 
     m_elementDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalElementCount,
-                                         &elementOffset, &elementCount);
-    m_nodeDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalNodeCount, &nodeOffset,
-                                      &nodeCount);
+                                         &m_elementOffset, &m_elementCount);
+    m_nodeDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalNodeCount,
+                                      &m_nodeOffset, &m_nodeCount);
   }
 
   template <typename INT>
   void Decomposition<INT>::get_element_block_communication(
       std::vector<BlockDecompositionData> &el_blocks)
   {
+    show_progress(__func__);
     for (auto &block : el_blocks) {
       block.exportCount.resize(m_processorCount);
       block.exportIndex.resize(m_processorCount);
@@ -223,11 +229,11 @@ namespace Ioss {
     // each block.
     size_t b = 0;
     for (auto loc_elem : localElementMap) {
-      size_t elem = loc_elem + elementOffset;
-      b           = Ioss::Utils::find_index_location(elem, fileBlockIndex);
+      size_t elem = loc_elem + m_elementOffset;
+      b           = Ioss::Utils::find_index_location(elem, m_fileBlockIndex);
 
-      assert(elem >= fileBlockIndex[b] && elem < fileBlockIndex[b + 1]);
-      size_t off = std::max(fileBlockIndex[b], elementOffset);
+      assert(elem >= m_fileBlockIndex[b] && elem < m_fileBlockIndex[b + 1]);
+      size_t off = std::max(m_fileBlockIndex[b], m_elementOffset);
       el_blocks[b].localMap.push_back(elem - off);
     }
 
@@ -239,11 +245,12 @@ namespace Ioss {
     std::vector<size_t> imp_index(el_blocks.size());
     for (size_t i = 0; i < importElementMap.size(); i++) {
       size_t elem = importElementMap[i];
-      while (i >= (size_t)importElementIndex[proc + 1])
+      while (i >= (size_t)importElementIndex[proc + 1]) {
         proc++;
+      }
 
-      b          = Ioss::Utils::find_index_location(elem, fileBlockIndex);
-      size_t off = std::max(fileBlockIndex[b], elementOffset);
+      b          = Ioss::Utils::find_index_location(elem, m_fileBlockIndex);
+      size_t off = std::max(m_fileBlockIndex[b], m_elementOffset);
 
       if (!el_blocks[b].localMap.empty() && elem < el_blocks[b].localMap[0] + off) {
         el_blocks[b].localIossOffset++;
@@ -260,12 +267,13 @@ namespace Ioss {
     b    = 0;
     for (size_t i = 0; i < exportElementMap.size(); i++) {
       size_t elem = exportElementMap[i];
-      while (i >= (size_t)exportElementIndex[proc + 1])
+      while (i >= (size_t)exportElementIndex[proc + 1]) {
         proc++;
+      }
 
-      b = Ioss::Utils::find_index_location(elem, fileBlockIndex);
+      b = Ioss::Utils::find_index_location(elem, m_fileBlockIndex);
 
-      size_t off = std::max(fileBlockIndex[b], elementOffset);
+      size_t off = std::max(m_fileBlockIndex[b], m_elementOffset);
       el_blocks[b].exportMap.push_back(elem - off);
       el_blocks[b].exportCount[proc]++;
     }
@@ -296,6 +304,7 @@ namespace Ioss {
 #endif
       std::vector<BlockDecompositionData> &element_blocks)
   {
+    show_progress(__func__);
     if (m_processor == 0) {
       std::cout << "\nUsing decomposition method '" << m_method << "' on " << m_processorCount
                 << " processors.\n\n";
@@ -313,24 +322,29 @@ namespace Ioss {
     }
 #endif
     if (m_method == "LINEAR") {
-      if (m_globalElementCount > 0)
+      if (m_globalElementCount > 0) {
         simple_decompose();
-      else
+      }
+      else {
         simple_node_decompose();
+      }
     }
 
+    show_progress("\tfinished with decomposition method");
     Ioss::qsort(importElementMap);
+    show_progress("\tfinished with sort");
 
     std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
     Ioss::Utils::generate_index(importElementIndex);
 
     // Find the number of imported elements that precede the elements
     // that remain locally owned...
-    importPreLocalElemIndex = 0;
+    m_importPreLocalElemIndex = 0;
     for (size_t i = 0; i < importElementMap.size(); i++) {
-      if ((size_t)importElementMap[i] >= elementOffset)
+      if ((size_t)importElementMap[i] >= m_elementOffset) {
         break;
-      importPreLocalElemIndex++;
+      }
+      m_importPreLocalElemIndex++;
     }
 
     // Determine size of this processors element blocks...
@@ -343,6 +357,8 @@ namespace Ioss {
       get_shared_node_list();
     }
 
+    show_progress("\tprior to releasing some temporary decomposition memory");
+
     // Release some memory...
     m_adjacency.resize(0);
     m_adjacency.shrink_to_fit();
@@ -352,6 +368,7 @@ namespace Ioss {
     m_elementDist.shrink_to_fit();
     m_nodeDist.resize(0);
     m_nodeDist.shrink_to_fit();
+    show_progress("\tIoss::decompose model finished");
   }
 
   template void Decomposition<int>::calculate_element_centroids(const std::vector<double> &x,
@@ -370,6 +387,7 @@ namespace Ioss {
     // processors
     // send_count is the number of nodes that I need to send to the other
     // processors
+    show_progress(__func__);
     std::vector<INT> recv_count(m_processorCount);
     std::vector<INT> send_count(m_processorCount);
 
@@ -406,7 +424,7 @@ namespace Ioss {
       sums += send_count[p];
     }
 
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << "Processor " << m_processor << " communicates " << sumr << " nodes from and "
               << sums << " nodes to other processors\n";
 #endif
@@ -426,32 +444,38 @@ namespace Ioss {
       }
     }
 
+    assert(node_comm_recv.size() == sumr);
+
     Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, node_comm_send, send_count, send_disp,
                        m_comm);
 
-// At this point, 'node_comm_send' contains the list of nodes that I need to
-// provide
-// coordinate data for.
+    node_comm_recv.resize(0);
+    node_comm_recv.shrink_to_fit();
+
+// At this point, 'node_comm_send' contains the list of nodes that I
+// need to provide coordinate data for.
 
 // DEBUG: == Check that all nodes in node_comm_send are in the range
-//           nodeOffset..nodeOffset+nodeCount
+//           m_nodeOffset..m_nodeOffset+m_nodeCount
 #ifndef NDEBUG
     for (auto node : node_comm_send) {
-      assert((size_t)node >= nodeOffset && (size_t)node < nodeOffset + nodeCount);
+      assert((size_t)node >= m_nodeOffset && (size_t)node < m_nodeOffset + m_nodeCount);
     }
 #endif
 
     // The total vector size I need to send data in is node_comm_send.size()*3
     std::vector<double> coord_send;
     coord_send.reserve(node_comm_send.size() * m_spatialDimension);
-    std::vector<double> coord_recv(node_comm_recv.size() * m_spatialDimension);
+    std::vector<double> coord_recv(sumr * m_spatialDimension);
     for (auto node : node_comm_send) {
-      node -= nodeOffset;
+      node -= m_nodeOffset;
       coord_send.push_back(x[node]);
-      if (m_spatialDimension > 1)
+      if (m_spatialDimension > 1) {
         coord_send.push_back(y[node]);
-      if (m_spatialDimension > 2)
+      }
+      if (m_spatialDimension > 2) {
         coord_send.push_back(z[node]);
+      }
     }
     assert(coord_send.size() == node_comm_send.size() * m_spatialDimension);
 
@@ -481,10 +505,10 @@ namespace Ioss {
     // per element...
 
     // Calculate the centroid into the DecompositionData structure 'centroids'
-    m_centroids.reserve(elementCount * m_spatialDimension);
+    m_centroids.reserve(m_elementCount * m_spatialDimension);
     std::vector<INT> recv_tmp(m_processorCount);
 
-    for (size_t i = 0; i < elementCount; i++) {
+    for (size_t i = 0; i < m_elementCount; i++) {
       size_t nnpe = m_pointer[i + 1] - m_pointer[i];
       double cx   = 0.0;
       double cy   = 0.0;
@@ -493,38 +517,45 @@ namespace Ioss {
         INT node = m_adjacency[jj];
         INT proc = owner[jj];
         if (proc == m_processor) {
-          cx += x[node - nodeOffset];
-          if (m_spatialDimension > 1)
-            cy += y[node - nodeOffset];
-          if (m_spatialDimension > 2)
-            cz += z[node - nodeOffset];
+          cx += x[node - m_nodeOffset];
+          if (m_spatialDimension > 1) {
+            cy += y[node - m_nodeOffset];
+          }
+          if (m_spatialDimension > 2) {
+            cz += z[node - m_nodeOffset];
+          }
         }
         else {
           INT coffset = recv_disp[proc] + recv_tmp[proc];
           recv_tmp[proc] += m_spatialDimension;
           cx += coord_recv[coffset + 0];
-          if (m_spatialDimension > 1)
+          if (m_spatialDimension > 1) {
             cy += coord_recv[coffset + 1];
-          if (m_spatialDimension > 2)
+          }
+          if (m_spatialDimension > 2) {
             cz += coord_recv[coffset + 2];
+          }
         }
       }
       m_centroids.push_back(cx / nnpe);
-      if (m_spatialDimension > 1)
+      if (m_spatialDimension > 1) {
         m_centroids.push_back(cy / nnpe);
-      if (m_spatialDimension > 2)
+      }
+      if (m_spatialDimension > 2) {
         m_centroids.push_back(cz / nnpe);
+      }
     }
   }
 
   template <typename INT> void Decomposition<INT>::simple_decompose()
   {
+    show_progress(__func__);
     if (m_method == "LINEAR") {
       // The "ioss_decomposition" is the same as the "file_decomposition"
       // Nothing is imported or exported, everything stays "local"
 
       size_t local = m_elementDist[m_processor + 1] - m_elementDist[m_processor];
-      assert(local == elementCount);
+      assert(local == m_elementCount);
       localElementMap.resize(local);
       std::iota(localElementMap.begin(), localElementMap.end(), 0);
 
@@ -539,6 +570,7 @@ namespace Ioss {
   template <typename INT> void Decomposition<INT>::simple_node_decompose()
   {
     // Used if there are no elements on the model...
+    show_progress(__func__);
     if (m_method == "LINEAR") {
       // The "ioss_decomposition" is the same as the "file_decomposition"
       // Nothing is imported or exported, everything stays "local"
@@ -553,12 +585,12 @@ namespace Ioss {
       importElementIndex.resize(m_processorCount + 1);
 
       size_t local = m_nodeDist[m_processor + 1] - m_nodeDist[m_processor];
-      assert(local == nodeCount);
+      assert(local == m_nodeCount);
 
       localNodeMap.resize(local);
       nodeGTL.resize(local);
-      std::iota(localNodeMap.begin(), localNodeMap.end(), nodeOffset);
-      std::iota(nodeGTL.begin(), nodeGTL.end(), nodeOffset + 1);
+      std::iota(localNodeMap.begin(), localNodeMap.end(), m_nodeOffset);
+      std::iota(nodeGTL.begin(), nodeGTL.end(), m_nodeOffset + 1);
 
       // All values are 0
       exportNodeCount.resize(m_processorCount + 1);
@@ -573,7 +605,8 @@ namespace Ioss {
   void Decomposition<INT>::metis_decompose(idx_t *pointer, idx_t *adjacency,
                                            std::vector<BlockDecompositionData> &el_blocks)
   {
-    std::vector<idx_t> elem_partition(elementCount);
+    show_progress(__func__);
+    std::vector<idx_t> elem_partition(m_elementCount);
 
     // Determine whether sizeof(INT) matches sizeof(idx_t).
     // If not, decide how to proceed...
@@ -599,7 +632,7 @@ namespace Ioss {
       // Can determine this by checking the pointer[
       assert(sizeof(idx_t) == 4);
       if (m_globalElementCount >= INT_MAX || m_globalNodeCount >= INT_MAX ||
-          m_pointer[elementCount] >= INT_MAX) {
+          m_pointer[m_elementCount] >= INT_MAX) {
         // Can't narrow...
         std::ostringstream errmsg;
         errmsg << "ERROR: The metis/parmetis libraries being used with this "
@@ -625,6 +658,7 @@ namespace Ioss {
     }
     // ------------------------------------------------------------------------
     // Done with metis functions...
+    show_progress("\tDone with metis functions");
 
     // Determine how many elements I send to the other processors...
     // and how many remain local (on this processor)
@@ -647,6 +681,7 @@ namespace Ioss {
     importElementCount.resize(m_processorCount + 1);
     MPI_Alltoall(TOPTR(exportElementCount), 1, Ioss::mpi_type((INT)0), TOPTR(importElementCount), 1,
                  Ioss::mpi_type((INT)0), m_comm);
+    show_progress("\tmetis_decompose Communication 1 finished");
 
     // Now fill the vectors with the elements ...
     size_t exp_size = std::accumulate(exportElementCount.begin(), exportElementCount.end(), 0);
@@ -660,7 +695,7 @@ namespace Ioss {
       std::vector<INT> tmp_disp(exportElementIndex);
       for (size_t i = 0; i < elem_partition.size(); i++) {
         if (elem_partition[i] != m_processor) {
-          exportElementMap[tmp_disp[elem_partition[i]]++] = elementOffset + i;
+          exportElementMap[tmp_disp[elem_partition[i]]++] = m_elementOffset + i;
         }
       }
     }
@@ -674,9 +709,10 @@ namespace Ioss {
 
     Ioss::MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, importElementMap,
                        importElementCount, importElementIndex, m_comm);
+    show_progress("\tmetis_decompose Communication 2 finished");
 
-#if DEBUG_OUTPUT
-    std::cerr << "Processor " << m_processor << ":\t" << elementCount - exp_size << " local, "
+#if IOSS_DEBUG_OUTPUT
+    std::cerr << "Processor " << m_processor << ":\t" << m_elementCount - exp_size << " local, "
               << imp_size << " imported and " << exp_size << " exported elements\n";
 #endif
   }
@@ -705,12 +741,13 @@ namespace Ioss {
     options[1] = 0;       // PARMETIS_DBGLVL_TIME;
     options[2] = 1234567; // Random number seed
 
+    show_progress(__func__);
     if (m_method == "KWAY") {
       int rc =
           ParMETIS_V3_PartMeshKway(element_dist, pointer, adjacency, elm_wgt, &wgt_flag, &num_flag,
                                    &ncon, &common_nodes, &nparts, TOPTR(tp_wgts), TOPTR(ub_vec),
                                    TOPTR(options), &edge_cuts, elem_partition, &m_comm);
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
       std::cerr << "Edge Cuts = " << edge_cuts << "\n";
 #endif
       if (rc != METIS_OK) {
@@ -744,7 +781,7 @@ namespace Ioss {
                                     &ncon, &nparts, TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options),
                                     &edge_cuts, elem_partition, &m_comm);
 
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
       std::cerr << "Edge Cuts = " << edge_cuts << "\n";
 #endif
       METIS_Free(dual_xadj);
@@ -779,13 +816,14 @@ namespace Ioss {
 #if !defined(NO_ZOLTAN_SUPPORT)
   template <typename INT> void Decomposition<INT>::zoltan_decompose(Zoltan &zz)
   {
+    show_progress(__func__);
     // Set Zoltan parameters
-    std::string num_proc = Ioss::Utils::to_string(m_processorCount);
+    std::string num_proc = std::to_string(m_processorCount);
     zz.Set_Param("DEBUG_LEVEL", "0");
     zz.Set_Param("NUM_GLOBAL_PARTS", num_proc);
 
     int num_global = sizeof(INT) / sizeof(int);
-    zz.Set_Param("NUM_GID_ENTRIES", Ioss::Utils::to_string(num_global));
+    zz.Set_Param("NUM_GID_ENTRIES", std::to_string(num_global));
     zz.Set_Param("NUM_LID_ENTRIES", "0");
     zz.Set_Param("LB_METHOD", m_method);
     zz.Set_Param("REMAP", "0");
@@ -806,13 +844,20 @@ namespace Ioss {
 
     num_local = 1;
 
-    // TODO: Check return value for error.
-    zz.LB_Partition(changes, num_global, num_local, num_import, import_global_ids, import_local_ids,
-                    import_procs, import_to_part, num_export, export_global_ids, export_local_ids,
-                    export_procs, export_to_part);
+    int rc = zz.LB_Partition(changes, num_global, num_local, num_import, import_global_ids,
+                             import_local_ids, import_procs, import_to_part, num_export,
+                             export_global_ids, export_local_ids, export_procs, export_to_part);
 
-#if DEBUG_OUTPUT
-    std::cerr << "Processor " << m_processor << ":\t" << elementCount - num_export << " local, "
+    if (rc != ZOLTAN_OK) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Problem during call to Zoltan LB_Partition.\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
+    show_progress("\tZoltan lb_partition finished");
+
+#if IOSS_DEBUG_OUTPUT
+    std::cerr << "Processor " << m_processor << ":\t" << m_elementCount - num_export << " local, "
               << num_import << " imported and " << num_export << " exported elements\n";
 #endif
 
@@ -828,10 +873,17 @@ namespace Ioss {
     importElementCount.resize(m_processorCount + 1);
 
     if (num_global == 1) {
+      if (num_export > 0 && export_procs == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n";
+        std::cerr << errmsg.str();
+        exit(EXIT_FAILURE);
+      }
+
       std::vector<std::pair<int, int>> export_map;
       export_map.reserve(num_export);
       for (int i = 0; i < num_export; i++) {
-        export_map.push_back(std::make_pair(export_procs[i], export_global_ids[i]));
+        export_map.emplace_back(std::make_pair(export_procs[i], export_global_ids[i]));
       }
 
       std::sort(export_map.begin(), export_map.end());
@@ -849,9 +901,15 @@ namespace Ioss {
       }
     }
     else {
+      if (num_export > 0 && export_procs == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n";
+        std::cerr << errmsg.str();
+        exit(EXIT_FAILURE);
+      }
       std::vector<std::pair<int, int64_t>> export_map;
       export_map.reserve(num_export);
-      int64_t *export_glob = (int64_t *)export_global_ids;
+      int64_t *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
       for (int i = 0; i < num_export; i++) {
         export_map.push_back(std::make_pair(export_procs[i], export_glob[i]));
       }
@@ -865,7 +923,7 @@ namespace Ioss {
         exportElementCount[elem_count.first]++;
       }
 
-      int64_t *import_glob = (int64_t *)import_global_ids;
+      int64_t *import_glob = reinterpret_cast<int64_t *>(import_global_ids);
       for (int i = 0; i < num_import; i++) {
         importElementMap.push_back(import_glob[i]);
         importElementCount[import_procs[i]]++;
@@ -885,30 +943,31 @@ namespace Ioss {
   void Decomposition<INT>::get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids,
                                                   size_t               export_count)
   {
-    std::vector<size_t> elements(elementCount);
+    show_progress(__func__);
+    std::vector<size_t> elements(m_elementCount);
 
     size_t global_id_size = sizeof(INT) / sizeof(int);
 
     if (global_id_size == 1) {
       for (size_t i = 0; i < export_count; i++) {
         // flag all elements to be exported...
-        size_t elem                    = export_global_ids[i];
-        elements[elem - elementOffset] = 1;
+        size_t elem                      = export_global_ids[i];
+        elements[elem - m_elementOffset] = 1;
       }
     }
     else {
       assert(global_id_size == 2);
-      int64_t *export_glob = (int64_t *)export_global_ids;
+      int64_t *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
 
       for (size_t i = 0; i < export_count; i++) {
         // flag all elements to be exported...
-        size_t elem                    = export_glob[i];
-        elements[elem - elementOffset] = 1;
+        size_t elem                      = export_glob[i];
+        elements[elem - m_elementOffset] = 1;
       }
     }
 
-    localElementMap.reserve(elementCount - export_count);
-    for (size_t i = 0; i < elementCount; i++) {
+    localElementMap.reserve(m_elementCount - export_count);
+    for (size_t i = 0; i < m_elementCount; i++) {
       if (elements[i] == 0) {
         localElementMap.push_back(i);
       }
@@ -921,21 +980,22 @@ namespace Ioss {
 
   template <typename INT> void Decomposition<INT>::build_global_to_local_elem_map()
   {
+    show_progress(__func__);
     // global_index is 1-based index into global list of elems
     // [1..global_elem_count]
     for (size_t i = 0; i < localElementMap.size(); i++) {
-      size_t global_index   = localElementMap[i] + elementOffset + 1;
-      size_t local_index    = i + importPreLocalElemIndex + 1;
+      size_t global_index   = localElementMap[i] + m_elementOffset + 1;
+      size_t local_index    = i + m_importPreLocalElemIndex + 1;
       elemGTL[global_index] = local_index;
     }
 
-    for (size_t i = 0; i < importPreLocalElemIndex; i++) {
+    for (size_t i = 0; i < m_importPreLocalElemIndex; i++) {
       size_t global_index   = importElementMap[i] + 1;
       size_t local_index    = i + 1;
       elemGTL[global_index] = local_index;
     }
 
-    for (size_t i = importPreLocalElemIndex; i < importElementMap.size(); i++) {
+    for (size_t i = m_importPreLocalElemIndex; i < importElementMap.size(); i++) {
       size_t global_index   = importElementMap[i] + 1;
       size_t local_index    = localElementMap.size() + i + 1;
       elemGTL[global_index] = local_index;
@@ -948,6 +1008,7 @@ namespace Ioss {
     // First, determine how many nodes the exporting processors are
     // going to send me and how many nodes my exported elements
     // have...
+    show_progress(__func__);
 
     std::vector<INT> export_conn_size(m_processorCount);
     std::vector<INT> import_conn_size(m_processorCount);
@@ -955,7 +1016,7 @@ namespace Ioss {
       size_t el_begin = exportElementIndex[p];
       size_t el_end   = exportElementIndex[p + 1];
       for (size_t i = el_begin; i < el_end; i++) {
-        INT    elem = exportElementMap[i] - elementOffset;
+        INT    elem = exportElementMap[i] - m_elementOffset;
         size_t nnpe = m_pointer[elem + 1] - m_pointer[elem];
         export_conn_size[p] += nnpe;
       }
@@ -963,6 +1024,7 @@ namespace Ioss {
 
     MPI_Alltoall(TOPTR(export_conn_size), 1, Ioss::mpi_type((INT)0), TOPTR(import_conn_size), 1,
                  Ioss::mpi_type((INT)0), m_comm);
+    show_progress("\tCommunication 1 finished");
 
     // Now fill the vectors with the nodes ...
     size_t exp_size = std::accumulate(export_conn_size.begin(), export_conn_size.end(), 0);
@@ -981,7 +1043,7 @@ namespace Ioss {
       size_t el_begin = exportElementIndex[p];
       size_t el_end   = exportElementIndex[p + 1];
       for (size_t i = el_begin; i < el_end; i++) {
-        INT elem = exportElementMap[i] - elementOffset;
+        INT elem = exportElementMap[i] - m_elementOffset;
         for (INT n = m_pointer[elem]; n < m_pointer[elem + 1]; n++) {
           export_conn.push_back(m_adjacency[n]);
         }
@@ -1003,6 +1065,7 @@ namespace Ioss {
 
       Ioss::MY_Alltoallv(export_conn, export_conn_size, export_disp, import_conn, import_conn_size,
                          import_disp, m_comm);
+      show_progress("\tCommunication 2 finished");
 
       // Done with export_conn...
       std::vector<INT>().swap(export_conn);
@@ -1028,6 +1091,7 @@ namespace Ioss {
 
     // Now need to sort and Ioss::Utils::uniquify 'nodes'
     Ioss::Utils::uniquify(nodes);
+    show_progress("\tUniquify finished");
 
     // Determine owning 'file' processor for each node...
     nodeIndex.resize(m_processorCount + 1);
@@ -1046,6 +1110,7 @@ namespace Ioss {
     importNodeCount[m_processor] = 0;
     MPI_Alltoall(TOPTR(importNodeCount), 1, Ioss::mpi_type((INT)0), TOPTR(exportNodeCount), 1,
                  Ioss::mpi_type((INT)0), m_comm);
+    show_progress("\tCommunication 3 finished");
 
     size_t import_sum = std::accumulate(importNodeCount.begin(), importNodeCount.end(), 0);
     size_t export_sum = std::accumulate(exportNodeCount.begin(), exportNodeCount.end(), 0);
@@ -1058,7 +1123,7 @@ namespace Ioss {
       size_t end = nodeIndex[p + 1];
 
       if (p == m_processor) {
-        importPreLocalNodeIndex = beg;
+        m_importPreLocalNodeIndex = beg;
         localNodeMap.reserve(end - beg);
         for (size_t n = beg; n < end; n++) {
           localNodeMap.push_back(nodes[n]);
@@ -1085,16 +1150,64 @@ namespace Ioss {
 
     Ioss::MY_Alltoallv(import_nodes, importNodeCount, importNodeIndex, exportNodeMap,
                        exportNodeCount, exportNodeIndex, m_comm);
+    import_nodes.resize(0);
+    import_nodes.shrink_to_fit();
+    show_progress("\tCommunication 4 finished");
+
+    if (m_retainFreeNodes) {
+      // See if all nodes have been accounted for (i.e., process non-connected nodes)
+      std::vector<bool> file_nodes(m_nodeCount);
+      for (const auto &node : exportNodeMap) {
+        file_nodes[node - m_nodeOffset] = true;
+      }
+      for (const auto &node : localNodeMap) {
+        file_nodes[node - m_nodeOffset] = true;
+      }
+
+      size_t found_count = 0;
+      for (size_t i = 0; i < file_nodes.size(); i++) {
+        if (!file_nodes[i]) {
+          localNodeMap.push_back(i + m_nodeOffset);
+          nodes.push_back(i + m_nodeOffset);
+          found_count++;
+#if IOSS_DEBUG_OUTPUT
+          std::cerr << m_processor << ":Node " << i + m_nodeOffset + 1
+                    << " not connected to any elements\n";
+#endif
+        }
+      }
+
+      if (found_count > 0) {
+        nodes.shrink_to_fit();
+        localNodeMap.shrink_to_fit();
+        std::sort(nodes.begin(), nodes.end());
+        std::sort(localNodeMap.begin(), localNodeMap.end());
+        for (int proc = m_processor + 1; proc < m_processorCount + 1; proc++) {
+          nodeIndex[proc] += found_count;
+        }
+
+        assert((size_t)nodeIndex[m_processorCount] == nodes.size());
+
+        // Also need to update importNodeMap for all nodes being
+        // imported from processors higher than m_processor...
+        size_t beg = importNodeIndex[m_processor + 1];
+        size_t end = importNodeIndex[m_processorCount];
+        for (size_t i = beg; i < end; i++) {
+          importNodeMap[i] += found_count;
+        }
+      }
+    }
 
 // Map that converts nodes from the global index (1-based) to a
 // local-per-processor index (1-based)
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << m_processor << ":\tNode Count = " << nodes.size() << "\n";
 #endif
     nodeGTL.swap(nodes);
     for (size_t i = 0; i < nodeGTL.size(); i++) {
       nodeGTL[i]++; // convert from 0-based index to 1-based index
     }
+    show_progress(__func__);
   }
 
   template <typename INT> void Decomposition<INT>::get_shared_node_list()
@@ -1109,6 +1222,7 @@ namespace Ioss {
     // * put in a vector and sort on (id,proc).
     // * iterate and create a vector of all shared nodes and the
     //   processor they are on..
+    show_progress(__func__);
     size_t local_node_count = nodeIndex[m_processor + 1] - nodeIndex[m_processor];
     std::vector<std::pair<INT, int>> node_proc_list;
     node_proc_list.reserve(local_node_count + exportNodeMap.size());
@@ -1118,8 +1232,9 @@ namespace Ioss {
     }
 
     for (int p = 0; p < m_processorCount; p++) {
-      if (p == m_processor)
+      if (p == m_processor) {
         continue;
+      }
       size_t beg = exportNodeIndex[p];
       size_t end = exportNodeIndex[p + 1];
       for (size_t i = beg; i < end; i++) {
@@ -1154,8 +1269,9 @@ namespace Ioss {
       for (size_t p = beg; p <= end; p++) {
         int proc = shared_nodes[p].second;
         for (size_t j = beg; j <= end; j++) {
-          if (j == p)
+          if (j == p) {
             continue;
+          }
           assert(shared_nodes[p].first == shared_nodes[j].first);
           send_comm_map_count[proc] += 2;
         }
@@ -1180,8 +1296,9 @@ namespace Ioss {
       for (size_t p = beg; p <= end; p++) {
         int proc = shared_nodes[p].second;
         for (size_t j = beg; j <= end; j++) {
-          if (j == p)
+          if (j == p) {
             continue;
+          }
           assert(shared_nodes[p].first == shared_nodes[j].first);
           size_t location             = send_comm_map_disp[proc] + nc_offset[proc];
           send_comm_map[location + 0] = shared_nodes[j].first;
@@ -1195,21 +1312,27 @@ namespace Ioss {
     std::vector<INT> recv_comm_map_count(m_processorCount);
     MPI_Alltoall(TOPTR(send_comm_map_count), 1, Ioss::mpi_type((INT)0), TOPTR(recv_comm_map_count),
                  1, Ioss::mpi_type((INT)0), m_comm);
+    show_progress("\tCommuniation 1 finished");
 
     std::vector<INT> recv_comm_map_disp(recv_comm_map_count);
     Ioss::Utils::generate_index(recv_comm_map_disp);
-    nodeCommMap.resize(recv_comm_map_disp[m_processorCount - 1] +
-                       recv_comm_map_count[m_processorCount - 1]);
-    Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, nodeCommMap,
+    m_nodeCommMap.resize(recv_comm_map_disp[m_processorCount - 1] +
+                         recv_comm_map_count[m_processorCount - 1]);
+    Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, m_nodeCommMap,
                        recv_comm_map_count, recv_comm_map_disp, m_comm);
+    send_comm_map.resize(0);
+    send_comm_map.shrink_to_fit();
+    show_progress("\tCommuniation 2 finished");
 
     // Map global 0-based index to local 1-based index.
-    for (size_t i = 0; i < nodeCommMap.size(); i += 2) {
-      nodeCommMap[i] = node_global_to_local(nodeCommMap[i] + 1);
+    for (size_t i = 0; i < m_nodeCommMap.size(); i += 2) {
+      m_nodeCommMap[i] = node_global_to_local(m_nodeCommMap[i] + 1);
     }
-#if DEBUG_OUTPUT
-    std::cerr << "Processor " << m_processor << " has " << nodeCommMap.size() << " shared nodes\n";
+#if IOSS_DEBUG_OUTPUT
+    std::cerr << "Processor " << m_processor << " has " << m_nodeCommMap.size() / 2
+              << " shared nodes\n";
 #endif
+    show_progress(__func__);
   }
 
   // The following function is used if reading all element data on a
@@ -1234,6 +1357,7 @@ namespace Ioss {
   void Decomposition<INT>::communicate_element_data(T *file_data, T *ioss_data,
                                                     size_t comp_count) const
   {
+    show_progress(__func__);
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
     std::vector<T> export_data(exportElementMap.size() * comp_count);
@@ -1241,35 +1365,36 @@ namespace Ioss {
 
     if (comp_count == 1) {
       for (size_t i = 0; i < exportElementMap.size(); i++) {
-        size_t index   = exportElementMap[i] - elementOffset;
+        size_t index   = exportElementMap[i] - m_elementOffset;
         export_data[i] = file_data[index];
       }
 
       // Transfer all local data from file_data to ioss_data...
       for (size_t i = 0; i < localElementMap.size(); i++) {
-        size_t index                           = localElementMap[i];
-        ioss_data[importPreLocalElemIndex + i] = file_data[index];
+        size_t index                             = localElementMap[i];
+        ioss_data[m_importPreLocalElemIndex + i] = file_data[index];
       }
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, import_data,
                          importElementCount, importElementIndex, m_comm);
+      show_progress("\tCommunication 1a finished");
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
-      for (size_t i = 0; i < importPreLocalElemIndex; i++) {
+      for (size_t i = 0; i < m_importPreLocalElemIndex; i++) {
         ioss_data[i] = import_data[i];
       }
 
       // Some comes after the local data...
-      size_t offset = importPreLocalElemIndex + localElementMap.size();
-      for (size_t i = 0; i < importElementMap.size() - importPreLocalElemIndex; i++) {
-        ioss_data[offset + i] = import_data[importPreLocalElemIndex + i];
+      size_t offset = m_importPreLocalElemIndex + localElementMap.size();
+      for (size_t i = 0; i < importElementMap.size() - m_importPreLocalElemIndex; i++) {
+        ioss_data[offset + i] = import_data[m_importPreLocalElemIndex + i];
       }
     }
     else {
       for (size_t i = 0; i < exportElementMap.size(); i++) {
-        size_t index = exportElementMap[i] - elementOffset;
+        size_t index = exportElementMap[i] - m_elementOffset;
         for (size_t j = 0; j < comp_count; j++) {
           export_data[comp_count * i + j] = file_data[comp_count * index + j];
         }
@@ -1279,7 +1404,7 @@ namespace Ioss {
       for (size_t i = 0; i < localElementMap.size(); i++) {
         size_t index = localElementMap[i];
         for (size_t j = 0; j < comp_count; j++) {
-          ioss_data[comp_count * (importPreLocalElemIndex + i) + j] =
+          ioss_data[comp_count * (m_importPreLocalElemIndex + i) + j] =
               file_data[comp_count * index + j];
         }
       }
@@ -1299,21 +1424,22 @@ namespace Ioss {
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
                          import_disp, m_comm);
+      show_progress("\tCommunication 1b finished");
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
-      for (size_t i = 0; i < importPreLocalElemIndex; i++) {
+      for (size_t i = 0; i < m_importPreLocalElemIndex; i++) {
         for (size_t j = 0; j < comp_count; j++) {
           ioss_data[comp_count * i + j] = import_data[comp_count * i + j];
         }
       }
 
       // Some comes after the local data...
-      size_t offset = importPreLocalElemIndex + localElementMap.size();
-      for (size_t i = 0; i < importElementMap.size() - importPreLocalElemIndex; i++) {
+      size_t offset = m_importPreLocalElemIndex + localElementMap.size();
+      for (size_t i = 0; i < importElementMap.size() - m_importPreLocalElemIndex; i++) {
         for (size_t j = 0; j < comp_count; j++) {
           ioss_data[comp_count * (offset + i) + j] =
-              import_data[comp_count * (importPreLocalElemIndex + i) + j];
+              import_data[comp_count * (m_importPreLocalElemIndex + i) + j];
         }
       }
     }
@@ -1338,6 +1464,7 @@ namespace Ioss {
                                                 const SetDecompositionData &set,
                                                 size_t                      comp_count) const
   {
+    show_progress(__func__);
     MPI_Status status;
 
     std::vector<T> recv_data;
@@ -1430,13 +1557,14 @@ namespace Ioss {
                                                   const BlockDecompositionData &block,
                                                   size_t                        comp_count) const
   {
+    show_progress(__func__);
     std::vector<U> exports;
     exports.reserve(comp_count * block.exportMap.size());
     std::vector<U> imports(comp_count * block.importMap.size());
 
     if (comp_count == 1) {
-      for (size_t i = 0; i < block.exportMap.size(); i++) {
-        exports.push_back(file_data[block.exportMap[i]]);
+      for (int i : block.exportMap) {
+        exports.push_back(file_data[i]);
       }
 
       // Get my imported data and send my exported data...
@@ -1453,9 +1581,9 @@ namespace Ioss {
       }
     }
     else {
-      for (size_t i = 0; i < block.exportMap.size(); i++) {
+      for (int i : block.exportMap) {
         for (size_t j = 0; j < comp_count; j++) {
-          exports.push_back(file_data[block.exportMap[i] * comp_count + j]);
+          exports.push_back(file_data[i * comp_count + j]);
         }
       }
 
@@ -1474,6 +1602,7 @@ namespace Ioss {
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(exports, export_count, export_disp, imports, import_count, import_disp,
                          m_comm);
+      show_progress("\tCommunication 1 finished");
 
       // Map local and imported data to ioss_data.
       for (size_t i = 0; i < block.localMap.size(); i++) {
@@ -1502,18 +1631,19 @@ namespace Ioss {
                                                      const Ioss::MapContainer &node_map,
                                                      bool                      do_map) const
   {
+    show_progress(__func__);
     size_t j = 0;
     if (do_map) {
-      for (size_t i = 0; i < nodeCommMap.size(); i += 2) {
-        INT local_id     = nodeCommMap[i];
+      for (size_t i = 0; i < m_nodeCommMap.size(); i += 2) {
+        INT local_id     = m_nodeCommMap[i];
         entity_proc[j++] = node_map[local_id];
-        entity_proc[j++] = nodeCommMap[i + 1];
+        entity_proc[j++] = m_nodeCommMap[i + 1];
       }
     }
     else {
-      for (size_t i = 0; i < nodeCommMap.size(); i += 2) {
-        entity_proc[j++] = nodeCommMap[i + 0];
-        entity_proc[j++] = nodeCommMap[i + 1];
+      for (size_t i = 0; i < m_nodeCommMap.size(); i += 2) {
+        entity_proc[j++] = m_nodeCommMap[i + 0];
+        entity_proc[j++] = m_nodeCommMap[i + 1];
       }
     }
   }
@@ -1537,6 +1667,7 @@ namespace Ioss {
   void Decomposition<INT>::communicate_node_data(T *file_data, T *ioss_data,
                                                  size_t comp_count) const
   {
+    show_progress(__func__);
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
     std::vector<T> export_data(exportNodeMap.size() * comp_count);
@@ -1544,21 +1675,22 @@ namespace Ioss {
 
     if (comp_count == 1) {
       for (size_t i = 0; i < exportNodeMap.size(); i++) {
-        size_t index = exportNodeMap[i] - nodeOffset;
-        assert(index < nodeCount);
+        size_t index = exportNodeMap[i] - m_nodeOffset;
+        assert(index < m_nodeCount);
         export_data[i] = file_data[index];
       }
 
       // Transfer all local data from file_data to ioss_data...
       for (size_t i = 0; i < localNodeMap.size(); i++) {
-        size_t index = localNodeMap[i] - nodeOffset;
-        assert(index < nodeCount);
-        ioss_data[importPreLocalNodeIndex + i] = file_data[index];
+        size_t index = localNodeMap[i] - m_nodeOffset;
+        assert(index < m_nodeCount);
+        ioss_data[m_importPreLocalNodeIndex + i] = file_data[index];
       }
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex, import_data,
                          importNodeCount, importNodeIndex, m_comm);
+      show_progress("\tCommunication 1a finished");
 
       // Copy the imported data into ioss_data...
       for (size_t i = 0; i < importNodeMap.size(); i++) {
@@ -1569,8 +1701,8 @@ namespace Ioss {
     }
     else { // Comp_count > 1
       for (size_t i = 0; i < exportNodeMap.size(); i++) {
-        size_t index = exportNodeMap[i] - nodeOffset;
-        assert(index < nodeCount);
+        size_t index = exportNodeMap[i] - m_nodeOffset;
+        assert(index < m_nodeCount);
         for (size_t j = 0; j < comp_count; j++) {
           export_data[comp_count * i + j] = file_data[comp_count * index + j];
         }
@@ -1578,10 +1710,10 @@ namespace Ioss {
 
       // Transfer all local data from file_data to ioss_data...
       for (size_t i = 0; i < localNodeMap.size(); i++) {
-        size_t index = localNodeMap[i] - nodeOffset;
-        assert(index < nodeCount);
+        size_t index = localNodeMap[i] - m_nodeOffset;
+        assert(index < m_nodeCount);
         for (size_t j = 0; j < comp_count; j++) {
-          ioss_data[comp_count * (importPreLocalNodeIndex + i) + j] =
+          ioss_data[comp_count * (m_importPreLocalNodeIndex + i) + j] =
               file_data[comp_count * index + j];
         }
       }
@@ -1601,6 +1733,7 @@ namespace Ioss {
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
                          import_disp, m_comm);
+      show_progress("\tCommunication 1b finished");
 
       // Copy the imported data into ioss_data...
       for (size_t i = 0; i < importNodeMap.size(); i++) {
@@ -1612,4 +1745,4 @@ namespace Ioss {
       }
     }
   }
-}
+} // namespace Ioss

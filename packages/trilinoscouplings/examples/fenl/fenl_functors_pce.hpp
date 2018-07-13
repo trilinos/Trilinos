@@ -46,7 +46,7 @@
 
 #include <fenl_functors.hpp>
 #include "Kokkos_Parallel_MP_Vector.hpp"
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include "Stokhos_Cuda_WarpShuffle.hpp"
 #endif
 
@@ -59,28 +59,18 @@ namespace FENL {
 
 // Specialization of ResponseComputation for PCE scalar types.  We currently
 // have to do this because parallel_reduce doesn't support non-POD types
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 template< typename FixtureType ,
-          typename S , typename ... P >
+          typename S , typename ... P , typename ... Q >
 class ResponseComputation< FixtureType,
-                           Kokkos::View<Sacado::UQ::PCE<S>*,P...>
+                           Kokkos::View<Sacado::UQ::PCE<S>*,P...>,
+                           Kokkos::View<Sacado::UQ::PCE<S>**,Q...>
                          >
-#else
-template< typename FixtureType ,
-          typename S , typename L , typename D , typename M >
-class ResponseComputation< FixtureType,
-                           Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous>
-                         >
-#endif
 {
 public:
 
   typedef FixtureType fixture_type ;
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
   typedef Kokkos::View<Sacado::UQ::PCE<S>*,P...> vector_type ;
-#else
-  typedef Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous> vector_type ;
-#endif
+  typedef Kokkos::View<Sacado::UQ::PCE<S>**,Q...> multi_vector_type ;
   typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type scalar_type ;
 
@@ -100,6 +90,9 @@ public:
   const element_data_type    elem_data ;
   const fixture_type         fixture ;
   const vector_type          solution ;
+  const multi_vector_type    solution_dp ;
+  const unsigned             pce_size ;
+  const unsigned             num_param ;
   const unsigned             value_count ;
   const cijk_type            cijk ;
 
@@ -107,18 +100,29 @@ public:
     : elem_data()
     , fixture( rhs.fixture )
     , solution( rhs.solution )
+    , solution_dp( rhs.solution_dp )
+    , pce_size( rhs.pce_size )
+    , num_param( rhs.num_param )
     , value_count( rhs.value_count )
     , cijk( rhs.cijk )
     {}
 
   ResponseComputation( const fixture_type& arg_fixture ,
-                       const vector_type & arg_solution )
+                       const vector_type & arg_solution ,
+                       const multi_vector_type& arg_solution_dp =
+                         multi_vector_type() )
     : elem_data()
     , fixture( arg_fixture )
     , solution( arg_solution )
-    , value_count( Kokkos::dimension_scalar(solution) )
+    , solution_dp( arg_solution_dp )
+    , pce_size( Kokkos::dimension_scalar(solution) )
+    , num_param( solution_dp.extent(1) )
+    , value_count( pce_size*(num_param+1) )
     , cijk( Kokkos::cijk(solution) )
-    {}
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        num_param > 0, std::logic_error, "PCE gradients not implemented!");
+    }
 
   //------------------------------------
 
@@ -126,13 +130,20 @@ public:
   {
     scalar_type response(cijk, value_count);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response.coeff() );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , response.coeff() );
+    Kokkos::parallel_reduce( solution.extent(0) , *this , response.coeff() );
     return response;
+  }
+
+  Teuchos::Array<scalar_type> apply_gradient() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "PCE gradients not implemented!");
   }
 
   //------------------------------------
 
-   KOKKOS_INLINE_FUNCTION
+  /*
+  KOKKOS_INLINE_FUNCTION
   double compute_detJ(
     const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
@@ -211,7 +222,6 @@ public:
     return elem_response;
   }
 
-  /*
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned ielem , value_type response ) const
   {
@@ -298,7 +308,7 @@ struct EvaluatePCE {
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    Kokkos::parallel_for( pce_view.extent(1), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -341,7 +351,7 @@ struct AssemblePCE {
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    Kokkos::parallel_for( pce_view.extent(1), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -384,7 +394,7 @@ struct AssembleRightPCE {
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
-    Kokkos::parallel_for( pce_view.dimension_0(), *this );
+    Kokkos::parallel_for( pce_view.extent(0), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -397,7 +407,7 @@ struct AssembleRightPCE {
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA ) && defined( __CUDACC__ )
+#if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
 template < typename pce_view_type,
            typename scalar_view_type,
            typename quad_values_type,
@@ -429,7 +439,7 @@ struct EvaluatePCE< pce_view_type,
     quad_values( arg_quad_values ),
     qp( 0 ),
     num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
-    row_count( pce_view.dimension_1() ) {}
+    row_count( pce_view.extent(1) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -524,7 +534,7 @@ struct AssemblePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.dimension_1(),
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.extent(1),
                                                       EnsembleSize ),
                           *this );
   }
@@ -583,7 +593,7 @@ struct AssembleRightPCE< pce_view_type,
     quad_weights( arg_quad_weights ),
     qp( 0 ),
     num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
-    row_count( pce_view.dimension_0() ) {}
+    row_count( pce_view.extent(0) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -660,7 +670,7 @@ template< typename ExecutionSpace ,
           class CoeffFunctionType>
 class ElementComputation<
   Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+  KokkosSparse::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
   CoeffFunctionType >
 {
 public:
@@ -674,7 +684,7 @@ public:
   typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
@@ -689,7 +699,7 @@ public:
   typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
     Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+    KokkosSparse::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
     scalar_coeff_function_type > scalar_element_computation_type;
   typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
   typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
@@ -739,13 +749,13 @@ public:
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
-                      const Kokkos::DeviceConfig arg_dev_config ,
+                      const KokkosSparse::DeviceConfig arg_dev_config ,
                       const QD& qd )
     : solution( arg_solution )
     , residual( arg_residual )
     , jacobian( arg_jacobian )
-    , scalar_solution( "scalar_solution", solution.dimension_0() )
-    , scalar_residual( "scalar_residual", residual.dimension_0() )
+    , scalar_solution( "scalar_solution", solution.extent(0) )
+    , scalar_residual( "scalar_residual", residual.extent(0) )
     , scalar_jacobian( "scalar_jacobian", jacobian.graph )
     , scalar_diffusion_coefficient( arg_coeff_function.m_mean,
                                     arg_coeff_function.m_variance,
@@ -753,7 +763,8 @@ public:
                                     arg_coeff_function.m_num_rv,
                                     arg_coeff_function.m_use_exp,
                                     arg_coeff_function.m_exp_shift,
-                                    arg_coeff_function.m_exp_scale)
+                                    arg_coeff_function.m_exp_scale,
+                                    arg_coeff_function.m_use_disc_exp_scale )
     , scalar_element_computation( arg_mesh,
                                   scalar_diffusion_coefficient,
                                   arg_isotropic,
@@ -788,8 +799,8 @@ public:
 
     // Note:  num_quad_points is aligned to the ensemble size to make
     // things easier
-    const unsigned num_quad_points = quad_points.dimension_0();
-    const unsigned dim = quad_points.dimension_1();
+    const unsigned num_quad_points = quad_points.extent(0);
+    const unsigned dim = quad_points.extent(1);
 
     evaluate_solution_type evaluate_pce(solution, scalar_solution, quad_values);
     assemble_residual_type assemble_res(residual, scalar_residual,

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -110,8 +110,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   set_list  = smalloc_ret(nsets_tot * sizeof(struct bilist));
   vtx_elems = smalloc_ret((nvtxs + 1) * sizeof(struct bilist));
   sizes     = smalloc_ret(nsets_tot * sizeof(int));
-  if (set_list == NULL || vtx_elems == NULL || sizes == NULL)
+  if (set_list == NULL || vtx_elems == NULL || sizes == NULL) {
     goto skip;
+  }
 
   for (i = 0; i < nsets_tot; i++) {
     set_list[i].next = NULL;
@@ -131,31 +132,35 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
 
   /* For each set, find connections to all set neighbors. */
   edges_list = smalloc_ret(nsets_tot * sizeof(int *));
-  if (edges_list == NULL)
+  if (edges_list == NULL) {
     goto skip;
+  }
   for (set = 0; set < nsets_tot - 1; set++) {
     edges_list[set] = NULL;
   }
 
   ewgts_list = smalloc_ret(nsets_tot * sizeof(int *));
-  if (ewgts_list == NULL)
+  if (ewgts_list == NULL) {
     goto skip;
+  }
   for (set = 0; set < nsets_tot - 1; set++) {
     ewgts_list[set] = NULL;
   }
 
   nedges   = smalloc_ret(nsets_tot * sizeof(int));
   adj_sets = smalloc_ret(nsets_tot * sizeof(int));
-  if (nedges == NULL || adj_sets == NULL)
+  if (nedges == NULL || adj_sets == NULL) {
     goto skip;
+  }
 
   size  = (int)(&(vtx_elems[1]) - &(vtx_elems[0]));
   ncomm = 0;
   ewgt  = 1;
   nmax  = 0;
   for (set = 0; set < nsets_tot - 1; set++) {
-    if (sizes[set] > nmax)
+    if (sizes[set] > nmax) {
       nmax = sizes[set];
+    }
     for (i = 0; i < nsets_tot; i++) {
       adj_sets[i] = 0;
     }
@@ -163,8 +168,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
       vertex = ((int)(ptr - vtx_elems)) / size;
       for (j = 1; j < graph[vertex]->nedges; j++) {
         set2 = assign[graph[vertex]->edges[j]];
-        if (using_ewgts)
+        if (using_ewgts) {
           ewgt = graph[vertex]->ewgts[j];
+        }
         adj_sets[set2] += ewgt;
       }
     }
@@ -172,15 +178,17 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
     /* Now save adj_sets data to later construct graph. */
     j = 0;
     for (i = set + 1; i < nsets_tot; i++) {
-      if (adj_sets[i] != 0)
+      if (adj_sets[i] != 0) {
         j++;
+      }
     }
     nedges[set] = j;
     if (j) {
       edges_list[set] = edges = smalloc_ret(j * sizeof(int));
       ewgts_list[set] = ewgts = smalloc_ret(j * sizeof(int));
-      if (edges == NULL || ewgts == NULL)
+      if (edges == NULL || ewgts == NULL) {
         goto skip;
+      }
     }
     j = 0;
     for (i = set + 1; i < nsets_tot; i++) {
@@ -201,8 +209,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
 
   pairs     = smalloc_ret((ncomm + 1) * sizeof(struct ipairs));
   comm_vals = smalloc_ret((ncomm + 1) * sizeof(double));
-  if (pairs == NULL || comm_vals == NULL)
+  if (pairs == NULL || comm_vals == NULL) {
     goto skip;
+  }
 
   j = 0;
   for (set = 0; set < nsets_tot - 1; set++) {
@@ -222,8 +231,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
 
   indices = smalloc_ret((ncomm + 1) * sizeof(int));
   space   = smalloc_ret((ncomm + 1) * sizeof(int));
-  if (indices == NULL || space == NULL)
+  if (indices == NULL || space == NULL) {
     goto skip;
+  }
 
   mergesort(comm_vals, ncomm, indices, space);
   sfree(space);
@@ -232,10 +242,12 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   comm_vals = NULL;
 
   for (set = 0; set < nsets_tot - 1; set++) {
-    if (edges_list[set] != NULL)
+    if (edges_list[set] != NULL) {
       sfree(edges_list[set]);
-    if (ewgts_list[set] != NULL)
+    }
+    if (ewgts_list[set] != NULL) {
       sfree(ewgts_list[set]);
+    }
   }
   sfree(ewgts_list);
   sfree(edges_list);
@@ -259,8 +271,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
 
   if (TERM_PROP) {
     term_wgts[1] = smalloc_ret((nmax + 1) * sizeof(float));
-    if (term_wgts[1] == NULL)
+    if (term_wgts[1] == NULL) {
       goto skip;
+    }
   }
   else {
     term_wgts[1] = NULL;
@@ -333,8 +346,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
         j    = set1 ^ set2;
         dist = 0;
         while (j) {
-          if (j & 1)
+          if (j & 1) {
             dist++;
+          }
           j >>= 1;
         }
       }
@@ -345,7 +359,7 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
         dist +=
             abs((set1 / (mesh_dims[0] * mesh_dims[1])) - (set2 / (mesh_dims[0] * mesh_dims[1])));
       }
-      hops[0][1] = hops[1][0] = (int)dist;
+      hops[0][1] = hops[1][0] = dist;
     }
 
     change = kl_refine(graph, subgraph, set_list, vtx_elems, assign, set1, set2, glob2loc, loc2glob,
@@ -364,16 +378,18 @@ skip:
 
   if (edges_list != NULL) {
     for (set = 0; set < nsets_tot - 1; set++) {
-      if (edges_list[set] != NULL)
+      if (edges_list[set] != NULL) {
         sfree(edges_list[set]);
+      }
     }
     sfree(edges_list);
   }
 
   if (ewgts_list != NULL) {
     for (set = 0; set < nsets_tot - 1; set++) {
-      if (ewgts_list[set] != NULL)
+      if (ewgts_list[set] != NULL) {
         sfree(ewgts_list[set]);
+      }
     }
     sfree(ewgts_list);
   }

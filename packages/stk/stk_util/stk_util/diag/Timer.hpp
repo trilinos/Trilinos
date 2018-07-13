@@ -114,22 +114,6 @@ Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
 void deleteRootTimer(Timer timer);
 
 /**
- * @brief Member function <code>findTimer</code> return a vector of timers whose tail of the dot
- * separated name from root_time to leaf matches the specified path_tail.
- *
- * @param root_timer    a <code>Timer</code> value of the root to begin search.
- *
- * @param path_tail    a <code>std::string</code> const reference to the dot separated tail
- *                              to match.
- *
- * @param found_timers    a <code>std::vector<Timer></code> reference to the vector to store
- *                              matching timers.
- *
- * @return      a <code>std::vector<Timer></code> reference to found_timer.
- */
-std::vector<Timer> &findTimers(Timer root_timer, const std::string &path_tail, std::vector<Timer> &found_timers);
-
-/**
  * @brief Class <b>TimerSet</b> implements a set of timer classifications.  A time classification
  * consists of a bit mask set TimerMask
  *
@@ -210,7 +194,6 @@ class Timer
   friend void updateRootTimer(Timer);
   friend Timer createRootTimer(const std::string &, const TimerSet &);
   friend void deleteRootTimer(Timer);
-  friend std::vector<Timer> &findTimers(Timer, const std::string &, std::vector<Timer> &);
 
 public:
   /**

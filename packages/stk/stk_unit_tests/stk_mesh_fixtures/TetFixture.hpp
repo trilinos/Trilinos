@@ -41,7 +41,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
-#include <stk_mesh/fixtures/CoordinateMapping.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -72,6 +72,15 @@ class TetFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
+  TetFixture(   MetaData& meta
+              , BulkData& bulk
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , size_t nid_start
+              , size_t eid_start
+            );
+
   TetFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -80,15 +89,44 @@ class TetFixture
               , ConnectivityMap const* connectivity_map = NULL
             );
 
+  TetFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , const std::string& coordsName
+              , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
+              , ConnectivityMap const* connectivity_map = NULL
+            );
+
+  ~TetFixture();
+
   const int         m_spatial_dimension;
   const size_t      m_nx;
   const size_t      m_ny;
   const size_t      m_nz;
-  MetaData          m_meta;
-  BulkData          m_bulk_data;
+  const size_t      node_id_start = 1;
+  const size_t      elem_id_start = 1;
+
+  size_t num_nodes() const {
+    return (m_nx+1)*(m_ny+1)*(m_nz+1);
+  }
+
+  size_t num_elements() const {
+    return 6*(m_nx)*(m_ny)*(m_nz);
+  }
+
+ private:
+  MetaData*         m_meta_p;
+  BulkData*         m_bulk_p;
+ public:
+  MetaData&         m_meta;
+  BulkData&         m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
   CoordFieldType &  m_coord_field ;
+  bool owns_mesh = true;
+  stk::topology     m_elem_topology = stk::topology::TET_4;
+  stk::topology     m_face_topology = stk::topology::TRI_3;
 
 
   /**
@@ -96,7 +134,7 @@ class TetFixture
    * the (x, y, z) position.
    */
   EntityId node_id( size_t x , size_t y , size_t z ) const  {
-    return 1 + x + ( m_nx + 1 ) * ( y + ( m_ny + 1 ) * z );
+    return node_id_start + x + ( m_nx + 1 ) * ( y + ( m_ny + 1 ) * z );
   }
 
   /**

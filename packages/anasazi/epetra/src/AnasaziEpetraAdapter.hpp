@@ -2,25 +2,38 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -38,14 +51,18 @@
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
+
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_Comm.h"
 
 #if defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
 #  include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_EPETRA 
@@ -1403,6 +1420,32 @@ namespace Anasazi {
     
   };
 
+  template<>
+  struct OutputStreamTraits<Epetra_Operator> 
+  {
+    static Teuchos::RCP<Teuchos::FancyOStream>
+    getOutputStream (const Epetra_Operator& op, int rootRank = 0)
+    {
+      Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+      const Epetra_Comm & comm = op.Comm();
+
+      // Select minimum MPI rank as the root rank for printing if provided rank is less than 0.
+      int myRank = comm.MyPID();
+      int numProcs = comm.NumProc();
+      if (rootRank < 0)
+      {
+        comm.MinAll( &myRank, &rootRank, 1 );
+      }
+
+      // This is irreversible, but that's only a problem if the input std::ostream
+      // is actually a Teuchos::FancyOStream on which this method has been
+      // called before, with a different root rank.
+      fos->setProcRankAndSize (myRank, numProcs);
+      fos->setOutputToRootOnly (rootRank);
+      return fos;
+    }
+  };
+    
 } // end of Anasazi namespace 
 
 #endif 

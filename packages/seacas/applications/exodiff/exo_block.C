@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -65,8 +65,9 @@ Exo_Block<INT>::Exo_Block(int file_id, size_t id, const char *type, size_t num_e
 
 template <typename INT> Exo_Block<INT>::~Exo_Block()
 {
-  if (conn)
+  if (conn) {
     delete[] conn;
+  }
 }
 
 template <typename INT> EXOTYPE Exo_Block<INT>::exodus_type() const { return EX_ELEM_BLOCK; }
@@ -74,14 +75,14 @@ template <typename INT> EXOTYPE Exo_Block<INT>::exodus_type() const { return EX_
 template <typename INT> void Exo_Block<INT>::entity_load_params()
 {
   int      num_attr;
-  ex_block block;
+  ex_block block{};
   block.id   = id_;
   block.type = EX_ELEM_BLOCK;
   int err    = ex_get_block_param(fileId, &block);
 
   if (err < 0) {
     ERROR("Exo_Block<INT>::Load_Block_Params(): Failed to get element"
-	  << " block parameters!  Aborting...\n");
+          << " block parameters!  Aborting...\n");
     exit(1);
   }
 
@@ -92,11 +93,11 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
 
   if (num_nodes_per_elmt < 0 || num_attr < 0) {
     ERROR("Exo_Block<INT>::Load_Block_Params(): Data appears corrupt for"
-              << " block " << id_ << "(id=" << id_ << ")!\n"
-              << "\tnum elmts = " << numEntity << '\n'
-              << "\tnum nodes per elmt = " << num_nodes_per_elmt << '\n'
-              << "\tnum attributes = " << num_attr << '\n'
-	  << " ... Aborting...\n");
+          << " block " << id_ << "(id=" << id_ << ")!\n"
+          << "\tnum elmts = " << numEntity << '\n'
+          << "\tnum nodes per elmt = " << num_nodes_per_elmt << '\n'
+          << "\tnum attributes = " << num_attr << '\n'
+          << " ... Aborting...\n");
     exit(1);
   }
 }
@@ -105,24 +106,26 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 {
   SMART_ASSERT(Check_State());
 
-  if (fileId < 0)
+  if (fileId < 0) {
     return "ERROR:  Invalid file id!";
-  if (id_ == EX_INVALID_ID)
+  }
+  if (id_ == EX_INVALID_ID) {
     return "ERROR:  Must initialize block parameters first!";
-
-  if (conn)
+  }
+  if (conn) {
     delete[] conn;
+  }
   conn = nullptr;
 
   if (numEntity && num_nodes_per_elmt) {
-    conn = new INT[(size_t)numEntity * num_nodes_per_elmt];
+    conn = new INT[numEntity * num_nodes_per_elmt];
     SMART_ASSERT(conn != nullptr);
 
     int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
     if (err < 0) {
       ERROR("Exo_Block<INT>::Load_Connectivity(): Call to ex_get_conn"
-	    << " returned error value!  Block id = " << id_ << '\n'
-	    << "Aborting...\n");
+            << " returned error value!  Block id = " << id_ << '\n'
+            << "Aborting...\n");
       exit(1);
     }
     else if (err > 0) {
@@ -138,8 +141,9 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 template <typename INT> std::string Exo_Block<INT>::Free_Connectivity()
 {
   SMART_ASSERT(Check_State());
-  if (conn)
+  if (conn) {
     delete[] conn;
+  }
   conn = nullptr;
   return "";
 }
@@ -148,18 +152,19 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
 {
   SMART_ASSERT(Check_State());
 
-  if (!conn || elmt_index >= numEntity)
+  if (!conn || elmt_index >= numEntity) {
     return nullptr;
+  }
 
-  return &conn[(size_t)elmt_index * num_nodes_per_elmt];
+  return &conn[elmt_index * num_nodes_per_elmt];
 }
 
 template <typename INT>
 std::string Exo_Block<INT>::Give_Connectivity(size_t &num_e, size_t &npe, INT *&recv_conn)
 {
-  if (num_nodes_per_elmt < 0)
+  if (num_nodes_per_elmt < 0) {
     return "ERROR:  Connectivity parameters have not been determined!";
-
+  }
   num_e     = numEntity;
   npe       = num_nodes_per_elmt;
   recv_conn = conn;
@@ -206,11 +211,13 @@ template <typename INT> void Exo_Block<INT>::Display(std::ostream &s) const
     size_t index = 0;
     s << "       connectivity = ";
     for (size_t e = 0; e < numEntity; ++e) {
-      if (e != 0)
+      if (e != 0) {
         s << "                      ";
+      }
       s << "(" << (e + 1) << ") ";
-      for (int n = 0; n < num_nodes_per_elmt; ++n)
+      for (int n = 0; n < num_nodes_per_elmt; ++n) {
         s << conn[index++] << " ";
+      }
       s << '\n';
     }
   }

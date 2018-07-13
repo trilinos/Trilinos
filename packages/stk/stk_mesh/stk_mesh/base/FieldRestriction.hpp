@@ -34,7 +34,6 @@
 #ifndef stk_mesh_baseImpl_FieldRestriction_hpp
 #define stk_mesh_baseImpl_FieldRestriction_hpp
 
-#include <Shards_Array.hpp>             // for int_t
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for FieldArrayRank
@@ -55,7 +54,7 @@ namespace mesh {
 class FieldRestriction {
   public:
 
-  typedef shards::array_traits::int_t size_type ;
+  typedef int size_type ;
 
   FieldRestriction()
     : m_selector(),

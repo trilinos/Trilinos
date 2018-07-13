@@ -95,27 +95,47 @@
 #ifdef HAVE_AMESOS2_BASKER
 #include "Amesos2_Basker.hpp"
 #endif
+
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+#include "Amesos2_ShyLUBasker.hpp"
+#endif
+
 #if defined(HAVE_AMESOS2_KLU2)
 #include "Amesos2_KLU2.hpp"
 #endif
+
 #ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
 #endif
+
 #ifdef HAVE_AMESOS2_SUPERLUMT   // Multi-threaded SuperLU
 #include "Amesos2_Superlumt.hpp"
 #endif
+
+#ifdef HAVE_AMESOS2_UMFPACK     // Umfpack
+#include "Amesos2_Umfpack.hpp"
+#endif
+
+#ifdef HAVE_AMESOS2_TACHO       // Tacho
+#include "Amesos2_Tacho.hpp"
+#endif
+
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
 #endif
+
 #ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
 #endif
+
 #ifdef HAVE_AMESOS2_LAPACK
 #include "Amesos2_Lapack.hpp"
 #endif
+
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 #include "Amesos2_Cholmod.hpp"
 #endif
+
 #ifdef HAVE_AMESOS2_MUMPS
 #include "Amesos2_MUMPS.hpp"
 #endif
@@ -391,8 +411,8 @@ struct throw_no_scalar_support_exception {
       solver_supports_scalar<ConcreteSolver, typename MatrixTraits<Matrix>::scalar_t>::value,
         create_solver_with_supported_type<ConcreteSolver,Matrix,Vector>,
         throw_no_scalar_support_exception<ConcreteSolver,Matrix,Vector> >::type::apply(A, X, B);
-  }
-    };
+    }
+  };
 
 
   /////////////////////
@@ -511,20 +531,24 @@ struct throw_no_scalar_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+    if((solverName == "ShyLUBasker") || (solverName == "shylubasker") || (solverName == "amesos2_shylubasker"))
+    {
+      return handle_solver_type_support<ShyLUBasker, Matrix,Vector>::apply(A,X,B);
+    }
+#endif
+
 #ifdef HAVE_AMESOS2_BASKER
-    if((solverName == "Basker") || (solverName == "basker"))
-      {
-	
-	return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
-      }
+    if((solverName == "Basker") || (solverName == "basker") || (solverName == "amesos2_basker"))
+    {
+      return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+    }
 #endif
 
 
-
-#ifdef HAVE_AMESOS2_KLU2 
-
-if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
-   (solverName == "amesos2_klu")  || (solverName == "klu")){
+#ifdef HAVE_AMESOS2_KLU2
+    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+        (solverName == "amesos2_klu")  || (solverName == "klu")){
       return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
 #endif
@@ -544,6 +568,20 @@ if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
        (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
       return handle_solver_type_support<Superlumt,Matrix,Vector>::apply(A, X, B);
+    }
+#endif
+
+#ifdef HAVE_AMESOS2_UMFPACK
+    if((solverName == "amesos2_umfpack") ||
+       (solverName == "umfpack")){
+      return handle_solver_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
+    }
+#endif
+
+#ifdef HAVE_AMESOS2_TACHO
+    if((solverName == "amesos2_tacho") ||
+       (solverName == "tacho")){
+      return handle_solver_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -590,7 +628,7 @@ if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
      */
     std::string err_msg = solver_name + " is not enabled or is not supported";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
-    return( Teuchos::null );
+    //return( Teuchos::null ); // unreachable
   }
 
 } // end namespace Amesos2

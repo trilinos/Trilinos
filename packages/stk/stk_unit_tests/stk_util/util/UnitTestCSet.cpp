@@ -52,60 +52,42 @@ public:
 
 class U : public A {
 public:
-  int id() const 
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~U() {}
   enum {ID = 0};
 };
 
 class V : public B {
 public:
-  int id() const 
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~V() {}
   enum {ID = 1};
 };
 
 class W : public B {
 public:
-  int id() const 
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~W() {}
   enum {ID = 2};
 };
 
 class X : public A , public B {
 public:
-  int id() const
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~X() {}
   enum {ID = 3};
 };
 
 class Y : public A , public B {
 public:
-  int id() const
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~Y() {}
   enum {ID = 4};
 };
 
 class Z {
 public:
-  int id() const
-  {
-    return static_cast<int>(ID);
-  }
+  int id() const { return static_cast<int>(ID); }
   ~Z() {}
   enum {ID = 5};
 };
@@ -120,8 +102,8 @@ TEST( UnitTestCSet, UnitTest)
 {
 //This unit-test imported from its previous home in the bottom of
 //the CSet implementation file.
-  const A * sa = 0 ;
-  const B * sb = 0 ;
+  const A * sa = nullptr ;
+  const B * sb = nullptr ;
   bool flag = false ;
 
   U  u;
@@ -129,6 +111,12 @@ TEST( UnitTestCSet, UnitTest)
   W  w;
   X  x;
   Y  y;
+
+  ASSERT_TRUE(u.id() == U::ID);
+  ASSERT_TRUE(v.id() == V::ID);
+  ASSERT_TRUE(w.id() == W::ID);
+  ASSERT_TRUE(x.id() == X::ID);
+  ASSERT_TRUE(y.id() == Y::ID);
 
   {
     CSet cs ;

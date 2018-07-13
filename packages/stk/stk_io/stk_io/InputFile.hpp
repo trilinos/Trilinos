@@ -37,7 +37,9 @@
 #include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
-#include <stk_io/MeshField.hpp>   
+#include <stk_io/MeshField.hpp>
+#include <stk_io/IossBridge.hpp>
+#include "Ioss_EntityType.h"
 
 namespace Ioss {
   class PropertyManager;
@@ -45,35 +47,35 @@ namespace Ioss {
   class Region;
   class DatabaseIO;
 }
-  
+
 namespace stk {
   namespace mesh {
     class MetaData;
     class BulkData;
     class Part;
   }
-  
+
   namespace io {
     class InputFile
     {
     public:
       enum PeriodType {
-	CYCLIC,   /*< Cycles 0 1 2 0 1 2 0 1 2 ... */
-	REVERSING /*< Cycles 0 1 2 1 0 1 2 1 0 ... */
+            CYCLIC,   /*< Cycles 0 1 2 0 1 2 0 1 2 ... */
+            REVERSING /*< Cycles 0 1 2 1 0 1 2 1 0 ... */
       };
 
       InputFile(std::string filename,
-		MPI_Comm communicator,
-		const std::string &type,
-		DatabasePurpose purpose,
-		Ioss::PropertyManager& property_manager);
+                MPI_Comm communicator,
+                const std::string &type,
+                DatabasePurpose purpose,
+                Ioss::PropertyManager& property_manager);
       InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       ~InputFile()
       {}
 
       void create_ioss_region();
-      //      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
+      FieldNameToPartVector get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta);
       void add_input_field(const stk::io::MeshField &mesh_field);
       void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
       bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
@@ -81,6 +83,8 @@ namespace stk {
 				       stk::mesh::BulkData &bulk);
       double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missingFields,
 				       stk::mesh::BulkData &bulk);
+      double read_defined_input_fields_at_step(int step, std::vector<stk::io::MeshField> *missingFields,
+                                       stk::mesh::BulkData &bulk);
       void get_global_variable_names(std::vector<std::string> &names);
 
       void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);

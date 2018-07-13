@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -38,14 +38,14 @@
 /*--------------------------------------------------------------------------*/
 
 #include "nem_spread.h"
-#include "pe_str_util_const.h" // for strip_string, token_compare, etc
-#include "ps_pario_const.h"    // for PIO_Info, Parallel_IO, etc
-#include "rf_allo.h"           // for array_alloc
-#include "rf_io_const.h"       // for MAX_INPUT_STR_LN, ExoFile, etc
+#include "ps_pario_const.h" // for PIO_Info, Parallel_IO, etc
+#include "rf_allo.h"        // for array_alloc
+#include "rf_io_const.h"    // for MAX_INPUT_STR_LN, ExoFile, etc
 #include "scopeguard.h"
 #include <cstdio>  // for fprintf, nullptr, stderr, etc
 #include <cstdlib> // for exit, realloc
 #include <cstring> // for strtok, strchr, strstr, etc
+#include <rf_allo.h>
 
 #define TLIST_CNT 5
 
@@ -58,12 +58,13 @@ int read_mesh_file_name(const char *filename)
   char  inp_copy[MAX_INPUT_STR_LN + 1];
 
   /* Open the file */
-  if ((file_cmd = fopen(filename, "r")) == nullptr)
+  if ((file_cmd = fopen(filename, "r")) == nullptr) {
     return -1;
+  }
   ON_BLOCK_EXIT(fclose, file_cmd);
 
   /* Begin parsing the input file */
-  while (fgets(inp_line, MAX_INPUT_STR_LN, file_cmd)) {
+  while (fgets(inp_line, MAX_INPUT_STR_LN, file_cmd) != nullptr) {
     /* skip any line that is a comment */
     if ((inp_line[0] != '#') && (inp_line[0] != '\n')) {
 
@@ -71,7 +72,7 @@ int read_mesh_file_name(const char *filename)
       clean_string(inp_line, " \t");
       char *cptr = strtok(inp_line, "\t=");
       /****** The input ExodusII file name ******/
-      if (token_compare(cptr, "input fem file")) {
+      if (token_compare(cptr, "input fem file") != 0) {
         if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
@@ -110,8 +111,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
   /***************************** BEGIN EXECUTION ******************************/
 
   /* Open the file */
-  if ((file_cmd = fopen(filename, "r")) == nullptr)
+  if ((file_cmd = fopen(filename, "r")) == nullptr) {
     return -1;
+  }
   ON_BLOCK_EXIT(fclose, file_cmd);
 
   /* Begin parsing the input file */
@@ -185,10 +187,12 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if (Gen_Flag < 0) {
-            if (token_compare(cptr, "yes"))
+            if (token_compare(cptr, "yes")) {
               Gen_Flag = 1;
-            else
+            }
+            else {
               Gen_Flag = 0;
+            }
           }
         }
       }
@@ -220,10 +224,12 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (cptr2 != nullptr) {
           icnt = strlen(cptr2);
           for (i = 0; i < icnt; i++) {
-            if (*cptr2 == '}')
+            if (*cptr2 == '}') {
               break;
-            if (*cptr2 == ',')
+            }
+            if (*cptr2 == ',') {
               *cptr2 = ' ';
+            }
             cptr2++;
           }
         }
@@ -291,8 +297,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               &(spreader.Restart_Info.Time_Idx[spreader.Restart_Info.Num_Times]));
               }
 
-              if (icnt >= 0)
+              if (icnt >= 0) {
                 (spreader.Restart_Info.Num_Times)++;
+              }
 
               if (spreader.Restart_Info.Num_Times >= tlist_alloc) {
                 tlist_alloc += TLIST_CNT;
@@ -302,8 +309,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
               cptr3 = strchr(cptr2, ' ');
               if (cptr3) {
                 /* find the next non-blank space */
-                while (*cptr3 == ' ')
+                while (*cptr3 == ' ') {
                   cptr3++;
+                }
               }
               cptr2 = cptr3;
             }
@@ -417,19 +425,18 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                           "\"number\"\n");
           return 0;
         }
-        else {
-          cptr2 = strchr(cptr, '=');
-          if (cptr2 == nullptr) {
-            fprintf(stderr, "Error: integer value must be specified for"
-                            " reserve space.\n");
-            return 0;
-          }
-          cptr2++;
-          icnt = sscanf(cptr2, "%d", &(PIO_Info.Num_Dsk_Ctrlrs));
-          if ((icnt <= 0) || (PIO_Info.Num_Dsk_Ctrlrs <= 0)) {
-            fprintf(stderr, "Error: Invalid value for # of raid controllers\n");
-            return 0;
-          }
+
+        cptr2 = strchr(cptr, '=');
+        if (cptr2 == nullptr) {
+          fprintf(stderr, "Error: integer value must be specified for"
+                          " reserve space.\n");
+          return 0;
+        }
+        cptr2++;
+        icnt = sscanf(cptr2, "%d", &(PIO_Info.Num_Dsk_Ctrlrs));
+        if ((icnt <= 0) || (PIO_Info.Num_Dsk_Ctrlrs <= 0)) {
+          fprintf(stderr, "Error: Invalid value for # of raid controllers\n");
+          return 0;
         }
 
         cptr = strtok(nullptr, ",");
@@ -454,8 +461,8 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             cptr++;
 
             /* allocate memory for to hold the values */
-            PIO_Info.Dsk_List =
-                (int *)array_alloc(__FILE__, __LINE__, 1, PIO_Info.Dsk_List_Cnt, sizeof(int));
+            PIO_Info.Dsk_List = reinterpret_cast<int *>(
+                array_alloc(__FILE__, __LINE__, 1, PIO_Info.Dsk_List_Cnt, sizeof(int)));
             for (i = 0; i < (PIO_Info.Dsk_List_Cnt - 1); i++) {
               sscanf(cptr, "%d", &(PIO_Info.Dsk_List[i]));
               cptr = strtok(nullptr, ", \t;");
@@ -531,8 +538,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             }
             strncpy(PIO_Info.Par_Dsk_SubDirec, cptr2, MAX_FNL);
             PIO_Info.Par_Dsk_SubDirec[MAX_FNL - 1] = '\0';
-            if (PIO_Info.Par_Dsk_SubDirec[strlen(PIO_Info.Par_Dsk_SubDirec) - 1] != '/')
+            if (PIO_Info.Par_Dsk_SubDirec[strlen(PIO_Info.Par_Dsk_SubDirec) - 1] != '/') {
               strcat(PIO_Info.Par_Dsk_SubDirec, "/");
+            }
           }
 
           cptr = strtok(nullptr, ",");

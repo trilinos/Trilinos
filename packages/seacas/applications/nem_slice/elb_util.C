@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -23,6 +23,14 @@
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
 * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
@@ -53,9 +61,8 @@
 #include "elb_util.h"
 #include <cassert> // for assert
 #include <cctype>  // for isupper, tolower
-#include <cmath>
+#include <cmath>   // for ceil, floor
 #include <cstddef> // for size_t
-#include <cstdlib>
 #include <cstring> // for strlen
 
 /*****************************************************************************/
@@ -69,27 +76,30 @@ int token_compare(char *token, const char *key)
   size_t key_len = strlen(key);
 
   for (size_t i1 = 0; i1 < strlen(token); i1++) {
-    if (isupper(token[i1]))
+    if (isupper(token[i1]) != 0) {
       token[i1] = tolower(token[i1]);
+    }
 
     if (token[i1] != ' ') {
       if (token[i1] == key[kcnt]) {
         kcnt++;
-        if (kcnt > key_len)
+        if (kcnt > key_len) {
           return 0;
+        }
       }
-      else
+      else {
         return 0;
+      }
     }
-    if (key[kcnt] == ' ')
+    if (key[kcnt] == ' ') {
       kcnt++;
+    }
   }
 
-  if (kcnt == strlen(key))
+  if (kcnt == strlen(key)) {
     return 1;
-  else
-    return 0;
-
+  }
+  return 0;
 } /*--------------End token_compare()-----------*/
 
 /*****************************************************************************/
@@ -111,8 +121,9 @@ void strip_string(char inp_str[], const char *tokens)
         break; /* out of for loop */
       }
     }
-    if (bval == 0)
+    if (bval == 0) {
       break; /* out of while loop */
+    }
   }
 
   /* Move real part of string to the front */
@@ -134,29 +145,30 @@ void strip_string(char inp_str[], const char *tokens)
         break; /* out of for loop */
       }
     }
-    if (bval == 0)
+    if (bval == 0) {
       break; /* out of while loop */
+    }
   }
 
   inp_str[j + 1] = '\0';
-
-  return;
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void string_to_lower(char in_string[], const char cval)
+void string_to_lower(char in_string[], char cval)
 {
   int len, cnt;
 
   len = strlen(in_string);
   for (cnt = 0; cnt < len; cnt++) {
-    if (in_string[cnt] == cval)
+    if (in_string[cnt] == cval) {
       return;
+    }
 
-    if (isupper(in_string[cnt]))
+    if (isupper(in_string[cnt]) != 0) {
       in_string[cnt] = tolower(in_string[cnt]);
+    }
   }
 
   return;
@@ -176,8 +188,9 @@ void clean_string(char inp_str[], const char *tokens)
   bval = 0;
   while (inp_str[i] != '\0') {
     for (itok = 0; itok < ntokes; itok++) {
-      if (i < 0)
+      if (i < 0) {
         i = 0;
+      }
       if (inp_str[i] == tokens[itok]) {
         /* Find out if the next character is also a token */
         for (j = 0; j < ntokes; j++) {
@@ -188,8 +201,9 @@ void clean_string(char inp_str[], const char *tokens)
         }
 
         if (bval == 1) {
-          for (j       = i + 1; j < inplen; j++)
+          for (j = i + 1; j < inplen; j++) {
             inp_str[j] = inp_str[j + 1];
+          }
 
           inplen--;
           bval = 0;
@@ -233,12 +247,15 @@ namespace {
     size_t center;
     center = (left + right) / 2;
 
-    if (v[left] > v[center])
+    if (v[left] > v[center]) {
       ISWAP(v, left, center);
-    if (v[left] > v[right])
+    }
+    if (v[left] > v[right]) {
       ISWAP(v, left, right);
-    if (v[center] > v[right])
+    }
+    if (v[center] > v[right]) {
       ISWAP(v, center, right);
+    }
 
     ISWAP(v, center, right - 1);
     return right - 1;
@@ -255,10 +272,12 @@ namespace {
       j     = right - 1;
 
       for (;;) {
-        while (v[++i] < v[pivot])
+        while (v[++i] < v[pivot]) {
           ;
-        while (v[--j] > v[pivot])
+        }
+        while (v[--j] > v[pivot]) {
           ;
+        }
         if (i < j) {
           ISWAP(v, i, j);
         }
@@ -280,8 +299,9 @@ namespace {
     INT    small;
     INT    tmp;
 
-    if (N <= 1)
+    if (N <= 1) {
       return;
+    }
     small = v[0];
     for (i = 1; i < N; i++) {
       if (v[i] < small) {
@@ -322,8 +342,9 @@ namespace {
         SWAP(b[child], b[root]);
         root = child;
       }
-      else
+      else {
         return;
+      }
     }
   }
 
@@ -343,17 +364,19 @@ namespace {
         SWAP(c[child], c[root]);
         root = child;
       }
-      else
+      else {
         return;
+      }
     }
   }
 
   template <typename INT> void assert_sorted(INT *vector, size_t vecsize)
   {
-    for (size_t i = 1; i < vecsize; i++)
+    for (size_t i = 1; i < vecsize; i++) {
       assert(vector[i - 1] <= vector[i]);
+    }
   }
-}
+} // namespace
 
 /*****************************************************************************
  * Function to find the first and last entries of a given value that are
@@ -394,8 +417,9 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
       }
     }
 
-    if (ii == vecsize)
+    if (ii == vecsize) {
       *last = vecsize - 1;
+    }
   }
   return;
 }
@@ -409,8 +433,9 @@ template <typename INT>
 ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1, INT *vector2)
 {
   for (size_t i = start; i <= stop; i++) {
-    if ((vector1[i] == value1) && (vector2[i] == value2))
+    if ((vector1[i] == value1) && (vector2[i] == value2)) {
       return i;
+    }
   }
   return -1;
 }
@@ -424,27 +449,29 @@ ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1
  * found in the vector then it's index in that vector is returned, otherwise
  * the function returns -1;
  *****************************************************************************/
-template ssize_t in_list(const int value, size_t count, int *vector);
-template ssize_t in_list(const int64_t value, size_t count, int64_t *vector);
+template ssize_t in_list(int value, size_t count, int *vector);
+template ssize_t in_list(int64_t value, size_t count, int64_t *vector);
 
-template <typename INT> ssize_t in_list(const INT value, size_t count, INT *vector)
+template <typename INT> ssize_t in_list(INT value, size_t count, INT *vector)
 {
   for (size_t i = 0; i < count; i++) {
-    if (vector[i] == value)
+    if (vector[i] == value) {
       return i;
+    }
   }
   return -1;
 }
 
-template ssize_t in_list(const int value, std::vector<int> vector);
-template ssize_t in_list(const int64_t value, std::vector<int64_t> vector);
+template ssize_t in_list(int value, std::vector<int> vector);
+template ssize_t in_list(int64_t value, std::vector<int64_t> vector);
 
-template <typename INT> ssize_t in_list(const INT value, std::vector<INT> vector)
+template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector)
 {
   size_t count = vector.size();
   for (size_t i = 0; i < count; i++) {
-    if (vector[i] == value)
+    if (vector[i] == value) {
       return i;
+    }
   }
   return -1;
 }
@@ -457,18 +484,20 @@ template <typename INT> ssize_t in_list(const INT value, std::vector<INT> vector
  * This function rounds off the float "value" to the nearest integer,
  * and returns that interger.
  *****************************************************************************/
-int roundfloat(const float value)
+int roundfloat(float value)
 {
   float high, low;
   int   ans;
 
-  high = (float)std::ceil(value);
-  low  = (float)std::floor(value);
+  high = std::ceil(value);
+  low  = std::floor(value);
 
-  if ((value - low) < (high - value))
-    ans = (int)low;
-  else
-    ans = (int)high;
+  if ((value - low) < (high - value)) {
+    ans = static_cast<int>(low);
+  }
+  else {
+    ans = static_cast<int>(high);
+  }
 
   return ans;
 }
@@ -482,11 +511,11 @@ int roundfloat(const float value)
  * and returns the number of values in the intersection.
  *****************************************************************************/
 template <typename INT>
-size_t find_inter(const INT    set1[],      /* the first set of integers */
-                  const INT    set2[],      /* the second set of integers */
-                  const size_t length1,     /* the length of the first set */
-                  const size_t length2,     /* the length of the second set */
-                  INT          inter_ptr[]) /* the values in the intersection */
+size_t find_inter(const INT set1[],      /* the first set of integers */
+                  const INT set2[],      /* the second set of integers */
+                  size_t    length1,     /* the length of the first set */
+                  size_t    length2,     /* the length of the second set */
+                  INT       inter_ptr[]) /* the values in the intersection */
 /*
  *
  *      Function which finds the intersection of two integer lists.
@@ -509,10 +538,12 @@ size_t find_inter(const INT    set1[],      /* the first set of integers */
   size_t j       = 0;
 
   while (i < length1 && j < length2) {
-    if (set1[i] < set2[j])
+    if (set1[i] < set2[j]) {
       ++i;
-    else if (set2[j] < set1[i])
+    }
+    else if (set2[j] < set1[i]) {
       ++j;
+    }
     else {
       inter_ptr[counter++] = i;
       ++i;
@@ -523,10 +554,10 @@ size_t find_inter(const INT    set1[],      /* the first set of integers */
   return counter;
 }
 
-template size_t find_inter(const int set1[], const int set2[], const size_t length1,
-                           const size_t length2, int inter_ptr[]);
-template size_t find_inter(const int64_t set1[], const int64_t set2[], const size_t length1,
-                           const size_t length2, int64_t inter_ptr[]);
+template size_t find_inter(const int set1[], const int set2[], size_t length1, size_t length2,
+                           int inter_ptr[]);
+template size_t find_inter(const int64_t set1[], const int64_t set2[], size_t length1,
+                           size_t length2, int64_t inter_ptr[]);
 
 #define QSORT_CUTOFF 12
 
@@ -534,42 +565,70 @@ namespace {
   template <typename INT>
   int is_less_than4(INT ra1, INT rb1, INT rc1, INT rd1, INT ra2, INT rb2, INT rc2, INT rd2)
   {
-    if (ra1 < ra2)
+    if (ra1 < ra2) {
       return 1;
-    else if (ra1 > ra2)
+    }
+    else if (ra1 > ra2) {
       return 0;
+    }
     assert(ra1 == ra2);
 
-    if (rb1 < rb2)
+    if (rb1 < rb2) {
       return 1;
-    else if (rb1 > rb2)
+    }
+    else if (rb1 > rb2) {
       return 0;
+    }
     assert(rb1 == rb2);
 
-    if (rc1 < rc2)
+    if (rc1 < rc2) {
       return 1;
-    else
+    }
+    else if (rc1 > rc2) {
       return 0;
+    }
+    assert(rc1 == rc2);
+
+    if (rd1 < rd2) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
   }
 
   template <typename INT> int is_less_than4v(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
   {
-    if (v1[i] < v1[j])
+    if (v1[i] < v1[j]) {
       return 1;
-    else if (v1[i] > v1[j])
+    }
+    else if (v1[i] > v1[j]) {
       return 0;
+    }
     assert(v1[i] == v1[j]);
 
-    if (v2[i] < v2[j])
+    if (v2[i] < v2[j]) {
       return 1;
-    else if (v2[i] > v2[j])
+    }
+    else if (v2[i] > v2[j]) {
       return 0;
+    }
     assert(v2[i] == v2[j]);
 
-    if (v3[i] < v3[j])
+    if (v3[i] < v3[j]) {
       return 1;
-    else
+    }
+    else if (v3[i] > v3[j]) {
       return 0;
+    }
+    assert(v3[i] == v3[j]);
+
+    if (v4[i] < v4[j]) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
   }
 
   template <typename INT> void swap4(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
@@ -586,12 +645,15 @@ namespace {
     size_t center;
     center = (left + right) / 2;
 
-    if (is_less_than4v(v1, v2, v3, v4, center, left))
+    if (is_less_than4v(v1, v2, v3, v4, center, left)) {
       swap4(v1, v2, v3, v4, left, center);
-    if (is_less_than4v(v1, v2, v3, v4, right, left))
+    }
+    if (is_less_than4v(v1, v2, v3, v4, right, left)) {
       swap4(v1, v2, v3, v4, left, right);
-    if (is_less_than4v(v1, v2, v3, v4, right, center))
+    }
+    if (is_less_than4v(v1, v2, v3, v4, right, center)) {
       swap4(v1, v2, v3, v4, center, right);
+    }
 
     swap4(v1, v2, v3, v4, center, right - 1);
     return right - 1;
@@ -606,10 +668,12 @@ namespace {
       size_t j     = right - 1;
 
       for (;;) {
-        while (is_less_than4v(v1, v2, v3, v4, ++i, pivot))
+        while (is_less_than4v(v1, v2, v3, v4, ++i, pivot)) {
           ;
-        while (is_less_than4v(v1, v2, v3, v4, pivot, --j))
+        }
+        while (is_less_than4v(v1, v2, v3, v4, pivot, --j)) {
           ;
+        }
         if (i < j) {
           swap4(v1, v2, v3, v4, i, j);
         }
@@ -658,30 +722,38 @@ namespace {
 
   template <typename INT> int is_less_than2(INT ra1, INT rb1, INT ra2, INT rb2)
   {
-    if (ra1 < ra2)
+    if (ra1 < ra2) {
       return 1;
-    else if (ra1 > ra2)
+    }
+    else if (ra1 > ra2) {
       return 0;
+    }
     assert(ra1 == ra2);
 
-    if (rb1 < rb2)
+    if (rb1 < rb2) {
       return 1;
-    else
+    }
+    else {
       return 0;
+    }
   }
 
   template <typename INT> int is_less_than2v(INT *v1, INT *v2, size_t i, size_t j)
   {
-    if (v1[i] < v1[j])
+    if (v1[i] < v1[j]) {
       return 1;
-    else if (v1[i] > v1[j])
+    }
+    else if (v1[i] > v1[j]) {
       return 0;
+    }
     assert(v1[i] == v1[j]);
 
-    if (v2[i] < v2[j])
+    if (v2[i] < v2[j]) {
       return 1;
-    else
+    }
+    else {
       return 0;
+    }
   }
 
   template <typename INT> void swap2(INT *v1, INT *v2, size_t i, size_t j)
@@ -694,12 +766,15 @@ namespace {
   {
     size_t center = (left + right) / 2;
 
-    if (is_less_than2v(v1, v2, center, left))
+    if (is_less_than2v(v1, v2, center, left)) {
       swap2(v1, v2, left, center);
-    if (is_less_than2v(v1, v2, right, left))
+    }
+    if (is_less_than2v(v1, v2, right, left)) {
       swap2(v1, v2, left, right);
-    if (is_less_than2v(v1, v2, right, center))
+    }
+    if (is_less_than2v(v1, v2, right, center)) {
       swap2(v1, v2, center, right);
+    }
 
     swap2(v1, v2, center, right - 1);
     return right - 1;
@@ -713,10 +788,12 @@ namespace {
       size_t j     = right - 1;
 
       for (;;) {
-        while (is_less_than2v(v1, v2, ++i, pivot))
+        while (is_less_than2v(v1, v2, ++i, pivot)) {
           ;
-        while (is_less_than2v(v1, v2, pivot, --j))
+        }
+        while (is_less_than2v(v1, v2, pivot, --j)) {
           ;
+        }
         if (i < j) {
           swap2(v1, v2, i, j);
         }
@@ -755,7 +832,7 @@ namespace {
       v2[j] = small2;
     }
   }
-}
+} // namespace
 
 /*
  * Sort the values in 'v'
@@ -766,8 +843,9 @@ template void qsort4(int64_t *v1, int64_t *v2, int64_t *v3, int64_t *v4, size_t 
 
 template <typename INT> void qsort4(INT *v1, INT *v2, INT *v3, INT *v4, size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   internal_qsort_4(v1, v2, v3, v4, 0, N - 1);
   internal_isort_4(v1, v2, v3, v4, N);
 
@@ -783,8 +861,9 @@ template void qsort2(int *v1, int *v2, size_t N);
 template void qsort2(int64_t *v1, int64_t *v2, size_t N);
 template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   internal_qsort_2(v1, v2, 0, N - 1);
   internal_isort_2(v1, v2, N);
 
@@ -800,8 +879,9 @@ template void sort2(ssize_t N, int *v1, int *v2);
 template void sort2(ssize_t N, int64_t *v1, int64_t *v2);
 template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
 {
-  if (count <= 1)
+  if (count <= 1) {
     return;
+  }
   /* heapify */
   for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
     siftDown(ra, rb, start, count);
@@ -818,8 +898,9 @@ template void sort3(ssize_t count, int ra[], int rb[], int rc[]);
 template void sort3(ssize_t count, int64_t ra[], int64_t rb[], int64_t rc[]);
 template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[])
 {
-  if (count <= 1)
+  if (count <= 1) {
     return;
+  }
   /* heapify */
   for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
     siftDowniii(ra, rb, rc, start, count);
@@ -851,12 +932,15 @@ template <typename INT> ssize_t bin_search2(INT value, size_t num, INT List[])
   while (bottom <= top) {
     size_t middle = (bottom + top) >> 1;
     INT    g_mid  = List[middle];
-    if (value < g_mid)
+    if (value < g_mid) {
       top = middle - 1;
-    else if (value > g_mid)
+    }
+    else if (value > g_mid) {
       bottom = middle + 1;
-    else
+    }
+    else {
       return middle; /* found */
+    }
   }
   return -1;
 }
@@ -866,8 +950,9 @@ template void gds_qsort(int64_t v[], size_t N);
 
 template <typename INT> void gds_qsort(INT v[], size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   gds_qsort(v, 0, N - 1);
   gds_isort(v, N);
 }

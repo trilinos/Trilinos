@@ -405,7 +405,6 @@ struct ScalarTraits<long unsigned int>
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct ScalarTraits<long long int>
 {
@@ -479,7 +478,6 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int log(unsigned long long int x) { return static_cast<unsigned long long int> (std::log (static_cast<double> (x))); }
   static inline unsigned long long int log10(unsigned long long int x) { return static_cast<unsigned long long int> (std::log10 (static_cast<double> (x))); }
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOS___INT64
@@ -650,6 +648,7 @@ struct ScalarTraits<float>
       return rtn;
     }
   static inline float pow(float x, float y) { return std::pow(x,y); }
+  static inline float pi() { return 3.14159265358979323846f; }
   static inline float log(float x) { return std::log(x); }
   static inline float log10(float x) { return std::log10(x); }
 };
@@ -761,6 +760,7 @@ struct ScalarTraits<double>
       return rtn;
     }
   static inline double pow(double x, double y) { return std::pow(x,y); }
+  static inline double pi() { return 3.14159265358979323846; }
   static inline double log(double x) { return std::log(x); }
   static inline double log10(double x) { return std::log10(x); }
 };
@@ -866,6 +866,7 @@ struct ScalarTraits<__float128> {
   static __float128 pow (const __float128& x, const __float128& y) {
     return powq (x, y);
   }
+  static __float128 pi() { return 3.14159265358979323846; }
   static __float128 log (const __float128& x) {
     return logq (x);
   }
@@ -937,6 +938,7 @@ struct ScalarTraits<dd_real>
       return ::sqrt(x);
   }
   static inline dd_real pow(dd_real x, dd_real y) { return ::pow(x,y); }
+  static inline dd_real pi() { return 3.14159265358979323846; }
   // dd_real puts its transcendental functions in the global namespace.
   static inline dd_real log(dd_real x) { return ::log(x); }
   static inline dd_real log10(dd_real x) { return ::log10(x); }
@@ -998,6 +1000,7 @@ struct ScalarTraits<qd_real>
       return ::sqrt(x);
   }
   static inline qd_real pow(qd_real x, qd_real y) { return ::pow(x,y); }
+  static inline qd_real pi() { return 3.14159265358979323846; }
   // qd_real puts its transcendental functions in the global namespace.
   static inline qd_real log(qd_real x) { return ::log(x); }
   static inline qd_real log10(qd_real x) { return ::log10(x); }
@@ -1090,6 +1093,7 @@ struct ScalarTraits<mp_real>
   static inline std::string name() { return "mp_real"; }
   static inline mp_real squareroot(mp_real x) { return sqrt(x); }
   static inline mp_real pow(mp_real x, mp_real y) { return pow(x,y); }
+  static inline mp_real pi() { return 3.14159265358979323846; }
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
 
@@ -1174,6 +1178,7 @@ struct ScalarTraits<
     // a possbile NaN return.  THe above if test is the right thing to do
     // I think and is very cheap.
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
+  static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
 
 #endif //  HAVE_TEUCHOS_COMPLEX

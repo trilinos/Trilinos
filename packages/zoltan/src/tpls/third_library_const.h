@@ -54,6 +54,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <sys/types.h>
 #include <float.h>
 #include "zoltan_util.h"
 
@@ -145,7 +146,15 @@ extern "C" {
 
 #if TPL_USE_DATATYPE == TPL_METIS_DATATYPES
 
-  #if PARMETIS_MAJOR_VERSION == 3
+  #if (PARMETIS_MAJOR_VERSION == 4 || METIS_VER_MAJOR == 5)
+    #define indextype idx_t
+    #define weighttype idx_t
+    #define realtype real_t
+    #define TPL_INTEGRAL_WEIGHT
+    #define MAX_WGT_SUM (IDX_MAX/8)
+    #define TPL_IDX_SPEC "%"PRIDX
+    #define TPL_WGT_SPEC "%"PRIDX
+  #else
     /* Assume IDXTYPE_INT in ParMETIS v3.x */
     #ifndef IDXTYPE_INT
       /* typedef short idxtype; IDXTYPE_INT is not defined in parmetis.h */
@@ -159,23 +168,6 @@ extern "C" {
     #define TPL_IDX_SPEC "%d"
     #define TPL_WGT_SPEC "%d"
     #define IDXTYPEWIDTH 32
-
-  #elif PARMETIS_MAJOR_VERSION == 4
-    #define indextype idx_t
-    #define weighttype idx_t
-    #define realtype real_t
-    #define TPL_INTEGRAL_WEIGHT
-    #if IDXTYPEWIDTH == 32  /* defined in parmetis.h */
-      #define MAX_WGT_SUM (INT32_MAX/8)
-      #define TPL_IDX_SPEC "%d"
-      #define TPL_WGT_SPEC "%d"
-    #elif IDXTYPEWIDTH == 64 /* defined in parmetis.h */
-      #define MAX_WGT_SUM (INT64_MAX/8)
-      #define TPL_IDX_SPEC "%lld"
-      #define TPL_WGT_SPEC "%lld"
-    #endif
-  #else
-    #error "Unsupported version of ParMETIS; use ParMETIS 3.1 or 4."
   #endif
 
 #elif TPL_USE_DATATYPE == TPL_SCOTCH_DATATYPES

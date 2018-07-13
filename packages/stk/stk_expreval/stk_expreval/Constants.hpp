@@ -52,13 +52,21 @@ namespace expreval {
  * @brief Typedef <b>ConstantMap</b> maps a constant name to a double constant.
  * The mapping is case insensitive.
  */
-typedef std::map<std::string, double, LessCase> ConstantMap;
+using ConstantMap = std::map<std::string, double, LessCase>;
 
-const double s_false  = 0.0;
-const double s_true   = 1.0;
-const double s_e      = 2.7182818284590452354;
-const double s_pi     = 3.14159265358979323846;
-const double s_two_pi = 2.0 * s_pi;
+constexpr const double s_false  = 0.0;
+constexpr const double s_true   = 1.0;
+
+constexpr const double s_pi = 3.14159265358979323846;
+constexpr double pi() { return s_pi; }
+
+constexpr const double s_two_pi = 2.0 * s_pi;
+constexpr double two_pi() { return s_two_pi; }
+
+constexpr const double s_deg_to_rad = s_pi / 180.0;
+constexpr const double s_rad_to_deg = 1.0 / s_deg_to_rad;
+constexpr double degree_to_radian() { return s_deg_to_rad; }
+constexpr double radian_to_degree() { return s_rad_to_deg; }
 
 /**
  * @brief Member function <b>getConstantMap</b> returns a reference to the defined

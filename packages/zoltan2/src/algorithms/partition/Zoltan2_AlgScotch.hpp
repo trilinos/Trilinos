@@ -57,9 +57,39 @@
 //! \brief interface to the Scotch third-party library
 
 ////////////////////////////////////////////////////////////////////////
+
+namespace Zoltan2 {
+
+// this function called by the two scotch types below
+static inline void getScotchParameters(Teuchos::ParameterList & pl)
+{
+  // bool parameter
+  pl.set("scotch_verbose", false, "verbose output",
+    Environment::getBoolValidator());
+
+  RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator =
+    Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+  pl.set("scotch_level", 0, "scotch ordering - Level of the subgraph in the "
+    "separators tree for the initial graph at the root of the tree",
+    scotch_level_Validator);
+
+  pl.set("scotch_imbalance_ratio", 0.2, "scotch ordering - Dissection "
+    "imbalance ratio", Environment::getAnyDoubleValidator());
+
+  // bool parameter
+  pl.set("scotch_ordering_default", true, "use default scotch ordering "
+    "strategy", Environment::getBoolValidator());
+
+  pl.set("scotch_ordering_strategy", "", "scotch ordering - Dissection "
+    "imbalance ratio");
+}
+
+} // Zoltan2 namespace
+
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
 namespace Zoltan2 {
+
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
@@ -80,6 +110,13 @@ public:
     throw std::runtime_error(
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
   }
 };
 }
@@ -133,6 +170,7 @@ public:
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
@@ -263,14 +301,17 @@ public:
       this->model_flags.set(VERTICES_ARE_MESH_ELEMENTS);
   }
 
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
+  }
+
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
-  /* BDD: Beginning work on ordering method.
-          Will use scotch for ordering, and then set fields in ording
-          solution. Ordering Solution is also being extended to
-          include fields needed by Basker for seperator information.
-  */
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution);
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution);
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution);
 
 private:
 
@@ -306,11 +347,11 @@ void AlgPTScotch<Adapter>::buildModel(bool isLocal) {
     else if (symParameter == std::string("bipartite"))
       this->model_flags.set(SYMMETRIZE_INPUT_BIPARTITE);  } 
 
-  int sgParameter = 0;
+  bool sgParameter = false;
   pe = pl.getEntryPtr("subset_graph");
   if (pe)
-    sgParameter = pe->getValue<int>(&sgParameter);
-  if (sgParameter == 1)
+    sgParameter = pe->getValue(&sgParameter);
+  if (sgParameter)
       this->model_flags.set(BUILD_SUBSET_GRAPH);
 
   this->model_flags.set(REMOVE_SELF_EDGES);
@@ -369,7 +410,7 @@ void AlgPTScotch<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
@@ -379,7 +420,7 @@ void AlgPTScotch<Adapter>::partition(
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&vertloctab, offsets);
+  TPL_Traits<SCOTCH_Num, const offset_t>::ASSIGN_ARRAY(&vertloctab, offsets);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
   TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgeloctab, edgeIds);
@@ -589,64 +630,94 @@ void AlgPTScotch<Adapter>::scale_weights(
 
 template <typename Adapter>
 int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank) {
-// get ordering parameters from parameter list
-  
+  // get ordering parameters from parameter list
+  bool bPrintOutput = false; // will be true if rank 0 and verbose is true
   const Teuchos::ParameterEntry *pe;
-  int isVerbose = 0;
-  pe = pList.getEntryPtr("scotch_verbose");
-  if (pe)
-    isVerbose = pe->getValue<int>(&isVerbose);
 
-  int use_default = 1;
-  std::string strat_string("");
+  if (procRank == 0) {
+    pe = pList.getEntryPtr("scotch_verbose");
+    if (pe) {
+      bPrintOutput = pe->getValue(&bPrintOutput);
+    }
+  }
 
+  // get parameter setting for ordering default true/false
+  bool scotch_ordering_default = true;
   pe = pList.getEntryPtr("scotch_ordering_default");
-  if (pe)
-    use_default = pe->getValue<int>(&use_default);
-  
-  pe = pList.getEntryPtr("scotch_ordering_strategy");
-  if (pe)
-    strat_string = pe->getValue<std::string>(&strat_string);
+  if (pe) {
+    scotch_ordering_default = pe->getValue(&scotch_ordering_default);
+  }
+  if (bPrintOutput) {
+    std::cout <<
+      "Scotch: Ordering default setting (parameter: scotch_ordering_default): "
+      << (scotch_ordering_default ? "True" : "False" ) << std::endl;
+  }
 
-  int ierr = 1;
-  if (!use_default && strat_string.size() > 0) {
+  // set up error code for return
+  int ierr = 1; // will be set 0 if successful
 
-    if (isVerbose && procRank == 0) {
-      std::cout << "Ordering strategy string: " << strat_string << std::endl;
-    }
-    SCOTCH_stratInit(c_strat_ptr);
-    ierr = SCOTCH_stratGraphOrder( c_strat_ptr, strat_string.c_str());
-
-  } else {
-
-    int levels = 0;
-    double balrat = 0.2;
-
+  if (scotch_ordering_default) {
+    // get parameter scotch_level
+    int scotch_level = 0;
     pe = pList.getEntryPtr("scotch_level");
-    if (pe)
-      levels = pe->getValue<int>(&levels);
-    
-    pe = pList.getEntryPtr("scotch_imbalance_ratio");
-    if (pe)
-      balrat = pe->getValue<double>(&balrat);
-    
-    if (isVerbose && procRank == 0) {
-      std::cout << "Ordering level: " << levels << std::endl;
-      std::cout << "Ordering dissection imbalance ratio: " << balrat << std::endl;
+    if (pe) {
+      scotch_level = pe->getValue(&scotch_level);
     }
-  
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering level (parameter: scotch_level): " <<
+        scotch_level << std::endl;
+    }
+
+    // get parameter scotch_imbalance_ratio
+    double scotch_imbalance_ratio = 0.2;
+    pe = pList.getEntryPtr("scotch_imbalance_ratio");
+    if (pe) {
+      scotch_imbalance_ratio = pe->getValue(&scotch_imbalance_ratio);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering dissection imbalance ratio "
+        "(parameter: scotch_imbalance_ratio): "
+        << scotch_imbalance_ratio << std::endl;
+    }
+
     SCOTCH_stratInit(c_strat_ptr);
+
     ierr = SCOTCH_stratGraphOrderBuild( c_strat_ptr,
-        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
-        levels, balrat); // based on Siva's example
+        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN |
+        SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
+        scotch_level, scotch_imbalance_ratio); // based on Siva's example
+  }
+  else {
+    // get parameter scotch_ordering_strategy
+    std::string scotch_ordering_strategy_string("");
+    pe = pList.getEntryPtr("scotch_ordering_strategy");
+    if (pe) {
+      scotch_ordering_strategy_string =
+        pe->getValue(&scotch_ordering_strategy_string);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch ordering strategy"
+        " (parameter: scotch_ordering_strategy): " <<
+        scotch_ordering_strategy_string << std::endl;
+    }
+
+    SCOTCH_stratInit(c_strat_ptr);
+    ierr = SCOTCH_stratGraphOrder( c_strat_ptr,
+      scotch_ordering_strategy_string.c_str());
   }
   
   return ierr;
 } 
 
 template <typename Adapter>
-int AlgPTScotch<Adapter>::order(
-    const RCP<OrderingSolution<lno_t, gno_t> > &solution) {
+int AlgPTScotch<Adapter>::globalOrder(
+    const RCP<GlobalOrderingSolution<gno_t> > &solution) {
+  throw std::logic_error("AlgPTScotch does not yet support global ordering.");
+}
+
+template <typename Adapter>
+int AlgPTScotch<Adapter>::localOrder(
+    const RCP<LocalOrderingSolution<lno_t> > &solution) {
   // TODO: translate teuchos sublist parameters to scotch strategy string
   // TODO: construct local graph model
   // TODO: solve with scotch
@@ -657,14 +728,14 @@ int AlgPTScotch<Adapter>::order(
   const ParameterList &pl = env->getParameters();
   const Teuchos::ParameterEntry *pe;
 
-  int isVerbose = 0;
+  bool isVerbose = false;
   pe = pl.getEntryPtr("scotch_verbose");
   if (pe)
-    isVerbose = pe->getValue<int>(&isVerbose);
+    isVerbose = pe->getValue(&isVerbose);
   
   // build a local graph model
   this->buildModel(true);
-  if (isVerbose && me== 0) {
+  if (isVerbose && me==0) {
     std::cout << "Built local graph model." << std::endl;
   }
 
@@ -689,7 +760,7 @@ int AlgPTScotch<Adapter>::order(
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
@@ -697,7 +768,7 @@ int AlgPTScotch<Adapter>::order(
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgenbr, nEdge);
   
   SCOTCH_Num *verttab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&verttab, offsets);
+  TPL_Traits<SCOTCH_Num, const offset_t>::ASSIGN_ARRAY(&verttab, offsets);
 
   SCOTCH_Num *edgetab;  // adjacencies
   TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgetab, edgeIds);
@@ -762,7 +833,7 @@ int AlgPTScotch<Adapter>::order(
   if (ierr != 0) {
     throw std::runtime_error("Can't build strategy!");
   }else if (isVerbose && me == 0) {
-    std::cout << "Graphing strategy built.." << std::endl;
+    std::cout << "Graphing strategy built." << std::endl;
   }
 
   // Allocate results
@@ -810,12 +881,12 @@ int AlgPTScotch<Adapter>::order(
     delete [] peritab;
 
     const ArrayRCP<lno_t> arv_range = solution->getSeparatorRangeRCP();
-    for (size_t i = 0; i <= nVtx; i++)
+    for (lno_t i = 0; i <= nSepBlocks; i++)
       TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_range[i], rangetab[i]);
     delete [] rangetab;
 
     const ArrayRCP<lno_t> arv_tree = solution->getSeparatorTreeRCP();
-    for (size_t i = 0; i < nVtx; i++)
+    for (lno_t i = 0; i < nSepBlocks; i++)
       TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_tree[i], treetab[i]);
     delete [] treetab;
   }

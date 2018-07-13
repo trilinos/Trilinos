@@ -66,6 +66,7 @@
 #include <Xpetra_Exceptions.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_MapExtractor.hpp>
 #endif // HAVE_GALERI_XPETRA
 
 namespace Galeri {

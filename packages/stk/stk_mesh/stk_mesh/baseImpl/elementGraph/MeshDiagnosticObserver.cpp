@@ -1,8 +1,8 @@
 #include "MeshDiagnosticObserver.hpp"
 #include <map>
 #include <utility>
-#include "../../base/BulkData.hpp"
-#include "../../base/MeshDiagnostics.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MeshDiagnostics.hpp"
 #include <cstdio>
 
 namespace stk { namespace mesh {

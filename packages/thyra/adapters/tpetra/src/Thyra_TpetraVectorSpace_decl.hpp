@@ -99,11 +99,6 @@ protected:
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const;
-  //* \brief . */
-  void scalarProdsImpl(
-      const MultiVectorBase<Scalar> &X,
-      const MultiVectorBase<Scalar> &Y,
-      const ArrayView<Scalar> &scalarProds_out) const;
 
   //@}
 

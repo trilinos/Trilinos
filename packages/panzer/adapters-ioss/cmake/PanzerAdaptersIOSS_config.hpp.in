@@ -1,0 +1,16 @@
+#ifndef PANZER_ADAPATERS_IOSS_CONFIG_HPP
+#define PANZER_ADAPATERS_IOSS_CONFIG_HPP
+
+#ifndef __cplusplus
+#define __cplusplus
+#endif
+
+#include "PanzerDiscFE_config.hpp"
+
+#cmakedefine PANZER_IOSS_DEBUG
+#cmakedefine PANZER_HAVE_IOSS
+#cmakedefine PANZER_HAVE_TEKO
+#cmakedefine PANZER_HAVE_MUELU
+#cmakedefine PANZER_HAVE_IFPACK2
+
+#endif

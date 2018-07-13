@@ -147,7 +147,7 @@ namespace MueLuTests {
     RCP<double_multivector_type> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,double_multivector_type>("2D",rowMap,list);
     level.Set("Coordinates",XYZ);
 
-    GO numPartitions = comm->getSize();
+    int numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     //zoltan->SetNumberOfPartitions(numPartitions);
@@ -428,7 +428,7 @@ namespace MueLuTests {
     //sleep(1); comm->barrier();
     //XYZ->describe(*fos,Teuchos::VERB_EXTREME);
 
-    LO numPartitions = comm->getSize();
+    int numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints

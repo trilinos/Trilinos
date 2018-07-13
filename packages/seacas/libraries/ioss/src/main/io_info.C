@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -31,6 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "io_info.h"
+#if !defined(NO_CGNS_SUPPORT)
+#include <cgnslib.h>
+#endif
 
 // ========================================================================
 
@@ -43,6 +46,7 @@ namespace {
   void info_edgeblock(Ioss::Region &region, bool summary);
   void info_faceblock(Ioss::Region &region, bool summary);
   void info_elementblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
 
   void info_nodesets(Ioss::Region &region, bool summary);
   void info_edgesets(Ioss::Region &region, bool summary);
@@ -200,6 +204,84 @@ namespace {
     }
   }
 
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
+  {
+    bool parallel      = region.get_database()->is_parallel();
+    int  parallel_size = region.get_database()->parallel_size();
+
+    int64_t total_cells = 0;
+    int64_t total_nodes = 0;
+
+    Ioss::StructuredBlockContainer sbs = region.get_structured_blocks();
+    for (int proc = 0; proc < parallel_size; proc++) {
+      if (proc == region.get_database()->parallel_rank()) {
+        if (parallel) {
+          OUTPUT << "\nProcessor " << proc;
+        }
+        for (auto sb : sbs) {
+          int64_t num_cell = sb->get_property("cell_count").get_int();
+          int64_t num_node = sb->get_property("node_count").get_int();
+          int64_t num_dim  = sb->get_property("component_degree").get_int();
+
+          total_cells += num_cell;
+          total_nodes += num_node;
+
+          if (!summary) {
+            OUTPUT << '\n' << name(sb) << " " << sb->get_property("ni_global").get_int();
+            if (num_dim > 1) {
+              OUTPUT << "x" << sb->get_property("nj_global").get_int();
+            }
+            if (num_dim > 2) {
+              OUTPUT << "x" << sb->get_property("nk_global").get_int();
+            }
+
+            if (parallel) {
+              OUTPUT << " [" << sb->get_property("ni").get_int() << "x"
+                     << sb->get_property("nj").get_int() << "x" << sb->get_property("nk").get_int()
+                     << ", Offset = " << sb->get_property("offset_i").get_int() << ","
+                     << sb->get_property("offset_j").get_int() << ","
+                     << sb->get_property("offset_k").get_int() << "] ";
+            }
+
+            OUTPUT << std::setw(12) << num_cell << " cells, " << std::setw(12) << num_node
+                   << " nodes ";
+
+            info_aliases(region, sb, true, false);
+
+            info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+            OUTPUT << "\n";
+
+            if (!sb->m_zoneConnectivity.empty()) {
+              OUTPUT << "\tConnectivity with other blocks:\n";
+              for (const auto &zgc : sb->m_zoneConnectivity) {
+                OUTPUT << zgc << "\n";
+              }
+            }
+            if (!sb->m_boundaryConditions.empty()) {
+              OUTPUT << "\tBoundary Conditions:\n";
+              for (const auto &bc : sb->m_boundaryConditions) {
+                OUTPUT << bc << "\n";
+              }
+            }
+            if (interface.compute_bbox()) {
+              Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
+              OUTPUT << "\tBounding Box: Minimum X,Y,Z = " << std::setprecision(4)
+                     << std::scientific << std::setw(12) << bbox.xmin << "\t" << std::setw(12)
+                     << bbox.ymin << "\t" << std::setw(12) << bbox.zmin << "\n"
+                     << "\t              Maximum X,Y,Z = " << std::setprecision(4)
+                     << std::scientific << std::setw(12) << bbox.xmax << "\t" << std::setw(12)
+                     << bbox.ymax << "\t" << std::setw(12) << bbox.zmax << "\n";
+            }
+          }
+        }
+      }
+    }
+    if (summary) {
+      OUTPUT << " Number of structured blocks  =" << std::setw(12) << sbs.size() << "\t";
+      OUTPUT << " Number of cells            =" << std::setw(12) << total_cells << "\n";
+    }
+  }
+
   void info_elementblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
     Ioss::ElementBlockContainer ebs            = region.get_element_blocks();
@@ -232,10 +314,12 @@ namespace {
 
         if (interface.compute_bbox()) {
           Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
-          OUTPUT << "\tBounding Box: Minimum X,Y,Z = " << std::setw(12) << std::setprecision(4)
-                 << std::scientific << bbox.xmin << "\t" << bbox.ymin << "\t" << bbox.zmin << "\n"
-                 << "\t              Maximum X,Y,Z = " << std::setw(12) << std::setprecision(4)
-                 << std::scientific << bbox.xmax << "\t" << bbox.ymax << "\t" << bbox.zmax << "\n";
+          OUTPUT << "\tBounding Box: Minimum X,Y,Z = " << std::setprecision(4) << std::scientific
+                 << std::setw(12) << bbox.xmin << "\t" << std::setw(12) << bbox.ymin << "\t"
+                 << std::setw(12) << bbox.zmin << "\n"
+                 << "\t              Maximum X,Y,Z = " << std::setprecision(4) << std::scientific
+                 << std::setw(12) << bbox.xmax << "\t" << std::setw(12) << bbox.ymax << "\t"
+                 << std::setw(12) << bbox.zmax << "\n";
         }
       }
     }
@@ -265,12 +349,12 @@ namespace {
         info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
-        OUTPUT << "\tAdjacent to  " << blocks.size() << " edge block(s):\t";
+	std::vector<std::string> blocks;
+	eb->get_block_adjacencies(blocks);
+	OUTPUT << "\tAdjacent to  " << blocks.size() << " edge block(s):\t";
 	for (auto block : blocks) {
-          OUTPUT << block << "  ";
-        }
+	  OUTPUT << block << "  ";
+	}
 #endif
         info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
         OUTPUT << "\n";
@@ -302,12 +386,12 @@ namespace {
         info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
-        OUTPUT << "\tAdjacent to  " << blocks.size() << " face block(s):\t";
+	std::vector<std::string> blocks;
+	eb->get_block_adjacencies(blocks);
+	OUTPUT << "\tAdjacent to  " << blocks.size() << " face block(s):\t";
 	for (auto block : blocks) {
-          OUTPUT << block << "  ";
-        }
+	  OUTPUT << block << "  ";
+	}
 #endif
         info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
         OUTPUT << "\n";
@@ -325,7 +409,15 @@ namespace {
     int64_t                total_sides = 0;
     for (auto fs : fss) {
       if (!summary) {
-        OUTPUT << '\n' << name(fs) << " id: " << std::setw(6) << id(fs) << ":";
+        OUTPUT << '\n' << name(fs) << " id: " << std::setw(6) << id(fs);
+        if (fs->property_exists("bc_type")) {
+#if !defined(NO_CGNS_SUPPORT)
+          auto bc_type = fs->get_property("bc_type").get_int();
+          OUTPUT << ", boundary condition type: " << BCTypeName[bc_type] << " (" << bc_type << ")";
+#else
+          OUTPUT << ", boundary condition type: " << fs->get_property("bc_type").get_int();
+#endif
+        }
         info_aliases(region, fs, true, false);
         if (interface.adjacencies()) {
           std::vector<std::string> blocks;
@@ -348,7 +440,13 @@ namespace {
           std::string fbtype  = fb->get_property("topology_type").get_string();
           std::string partype = fb->get_property("parent_topology_type").get_string();
           OUTPUT << "\t\t" << name(fb) << ", " << num_side << " " << fbtype << " sides"
-                 << ", parent topology: " << partype << "\n";
+                 << ", parent topology: " << partype;
+          if (fb->parent_block() != nullptr) {
+            const auto *parent = fb->parent_block();
+            OUTPUT << ",\tparent block: '" << parent->name() << "' (" << parent->type_string()
+                   << ")";
+          }
+          OUTPUT << "\n";
           if (interface.adjacencies()) {
             std::vector<std::string> blocks;
             fb->block_membership(blocks);
@@ -508,10 +606,12 @@ namespace {
       }
       OUTPUT << "\tAliases: ";
       for (size_t i = 0; i < aliases.size(); i++) {
-        if (i > 0) {
-          OUTPUT << ", ";
+        if (aliases[i] != ige->name()) {
+          if (i > 0) {
+            OUTPUT << ", ";
+          }
+          OUTPUT << aliases[i];
         }
-        OUTPUT << aliases[i];
       }
       if (nl_post) {
         OUTPUT << "\n";
@@ -605,6 +705,7 @@ namespace Ioss {
     info_edgeblock(region, summary);
     info_faceblock(region, summary);
     info_elementblock(region, interface, summary);
+    info_structuredblock(region, interface, summary);
 
     info_nodesets(region, summary);
     info_edgesets(region, summary);
@@ -632,6 +733,7 @@ namespace Ioss {
       info_edgeblock(region, summary);
       info_faceblock(region, summary);
       info_elementblock(region, interface, summary);
+      info_structuredblock(region, interface, summary);
 
       info_nodesets(region, summary);
       info_edgesets(region, summary);
@@ -647,4 +749,4 @@ namespace Ioss {
       element_volume(region);
     }
   }
-}
+} // namespace Ioss

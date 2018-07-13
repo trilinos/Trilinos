@@ -204,7 +204,6 @@ namespace Intrepid {
 	  int dofdim;
 	  int dofent;
 	  ProductTopology::lineProduct3d( xdim , xent , ydim , yent , zdim , zent , dofdim , dofent );
-	  std::cout << i << " " << j << " " << k << "\t" << dofdim << " " << dofent << std::endl;
 	  total_dof_per_entity[dofdim][dofent] += 1;
 
 	}
@@ -419,9 +418,9 @@ void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
 	  {
 	    for (int i=0;i<ptsx_.dimension(0);i++)
 	      {
-		dofCoords(cur,0) = ptsx_(i);
-		dofCoords(cur,1) = ptsy_(j);
-		dofCoords(cur,2) = ptsz_(k);
+		dofCoords(cur,0) = ptsx_(i,0);
+		dofCoords(cur,1) = ptsy_(j,0);
+		dofCoords(cur,2) = ptsz_(k,0);
 		cur++;
 	      }
 	  }

@@ -266,7 +266,7 @@ RCP<DefaultSpmdVectorSpace<Scalar> >
 defaultSpmdVectorSpace(
   const RCP<const Teuchos::Comm<Ordinal> > &comm,
   const Ordinal localSubDim, const Ordinal globalDim,
-  const int isLocallyReplicated = false
+  const bool isLocallyReplicated = false
   )
 {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =

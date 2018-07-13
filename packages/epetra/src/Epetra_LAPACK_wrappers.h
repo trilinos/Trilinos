@@ -172,7 +172,13 @@
 #define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
 #define DGGLSE_F77  F77_BLAS_MANGLE(dgglse,DGGLSE)
+
+#ifdef HAVE_EPETRA_LAPACK_GSSVD3
+#define DGGSVD_F77  F77_BLAS_MANGLE(dggsvd3,DGGSVD)
+#else
 #define DGGSVD_F77  F77_BLAS_MANGLE(dggsvd,DGGSVD)
+#endif
+
 #define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
 #define DLAIC1_F77  F77_BLAS_MANGLE(dlaic1,DLAIC1)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
@@ -227,7 +233,13 @@
 #define SGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
 #define SGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
 #define SGGLSE_F77  F77_BLAS_MANGLE(sgglse,SGGLSE)
+
+#ifdef HAVE_EPETRA_LAPACK_GSSVD3
+#define SGGSVD_F77  F77_BLAS_MANGLE(sggsvd3,SGGSVD)
+#else
 #define SGGSVD_F77  F77_BLAS_MANGLE(sggsvd,SGGSVD)
+#endif
+
 #define SHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
 #define SLAMCH_F77  F77_BLAS_MANGLE(slamch,SLAMCH)
 #define SLARFT_F77  F77_BLAS_MANGLE(slarft,SLARFT)
@@ -305,6 +317,9 @@ extern "C" {
   void PREFIX DGGSVD_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * p, int * k, int * l,
 			 double * a, const int * lda, double * b, const int * ldb, double * alpha, double * beta,
 			 double * u, const int * ldu, double * v, const int * ldv, double * q, const int * ldq, double * work,
+    #ifdef HAVE_EPETRA_LAPACK_GSSVD3
+			 const int * lwork,
+    #endif
 			 int * iwork, int * info);
   void PREFIX DHSEQR_F77(Epetra_fcd job, Epetra_fcd, const int * n, const int * ilo, const int * ihi, double * h, const int * ldh,
 			 double * wr, double * wi, double * z, const int * ldz, double * work, const int * lwork, int * info);
@@ -410,6 +425,9 @@ extern "C" {
   void PREFIX SGGSVD_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * p, int * k, int * l,
 			 float * a, const int * lda, float * b, const int * ldb, float * alpha, float * beta,
 			 float * u, const int * ldu, float * v, const int * ldv, float * q, const int * ldq, float * work,
+    #ifdef HAVE_EPETRA_LAPACK_GSSVD3
+			 const int * lwork,
+    #endif
 			 int * iwork, int * info);
   void PREFIX SHSEQR_F77(Epetra_fcd job, Epetra_fcd, const int * n, const int * ilo, const int * ihi, float * h, const int * ldh,
 			 float * wr, float * wi, float * z, const int * ldz, float * work, const int * lwork, int * info);

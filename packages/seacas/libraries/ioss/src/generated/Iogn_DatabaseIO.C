@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -60,19 +60,19 @@
 #include <utility>                        // for pair
 namespace Ioss {
   class EdgeBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class EdgeSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class FaceBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class FaceSet;
-}
+} // namespace Ioss
 
 namespace {
   template <typename INT>
@@ -86,19 +86,16 @@ namespace {
 
   template <typename INT>
   void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data,
-                           INT /*dummy*/)
+                           INT *ids, size_t count)
   {
-    std::vector<INT> ids;
-    entity->get_field_data("ids", ids);
-
     double *rdata = static_cast<double *>(data);
     if (component_count == 1) {
-      for (size_t i = 0; i < ids.size(); i++) {
+      for (size_t i = 0; i < count; i++) {
         rdata[i] = std::sqrt((double)ids[i]);
       }
     }
     else {
-      for (size_t i = 0; i < ids.size(); i++) {
+      for (size_t i = 0; i < count; i++) {
         for (size_t j = 0; j < component_count; j++) {
           rdata[i * component_count + j] = j + std::sqrt((double)ids[i]);
         }
@@ -106,16 +103,19 @@ namespace {
     }
   }
 
-  void fill_transient_data(const Ioss::GroupingEntity *entity, const Ioss::Field &field, void *data)
+  void fill_transient_data(const Ioss::GroupingEntity *entity, const Ioss::Field &field, void *data,
+                           void *id_data, size_t count)
   {
     const Ioss::Field &ids = entity->get_fieldref("ids");
     if (ids.is_type(Ioss::Field::INTEGER)) {
       fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), 0);
+                          reinterpret_cast<double *>(data), reinterpret_cast<int *>(id_data),
+                          count);
     }
     else {
       fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), static_cast<int64_t>(0));
+                          reinterpret_cast<double *>(data), reinterpret_cast<int64_t *>(id_data),
+                          count);
     }
   }
 
@@ -171,13 +171,13 @@ namespace Iogn {
 
   DatabaseIO::~DatabaseIO() { delete m_generatedMesh; }
 
-  void DatabaseIO::release_memory()
+  void DatabaseIO::release_memory__()
   {
     nodeMap.release_memory();
     elemMap.release_memory();
   }
 
-  void DatabaseIO::read_meta_data()
+  void DatabaseIO::read_meta_data__()
   {
     if (m_generatedMesh == nullptr) {
       if (get_filename() == "external") {
@@ -206,7 +206,7 @@ namespace Iogn {
     nodesetCount      = m_generatedMesh->nodeset_count();
     sidesetCount      = m_generatedMesh->sideset_count();
 
-    get_step_times();
+    get_step_times__();
 
     add_transient_fields(this_region);
     get_nodeblocks();
@@ -219,16 +219,16 @@ namespace Iogn {
         Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
   }
 
-  bool DatabaseIO::begin(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::end(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state(Ioss::Region * /*region*/, int /* state */, double /*time*/)
+  bool DatabaseIO::begin_state__(Ioss::Region * /*region*/, int /* state */, double /*time*/)
   {
     return true;
   }
 
-  bool DatabaseIO::end_state(Ioss::Region * /* region */, int /* state */, double /* time */)
+  bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
   {
     return true;
   }
@@ -269,7 +269,11 @@ namespace Iogn {
       }
       return num_to_get;
     }
-    fill_transient_data(nb, field, data);
+
+    const Ioss::Field &id_fld = nb->get_fieldref("ids");
+    std::vector<char>  ids(id_fld.get_size());
+    get_field_internal(nb, id_fld, ids.data(), id_fld.get_size());
+    fill_transient_data(nb, field, data, ids.data(), num_to_get);
 
     return num_to_get;
   }
@@ -343,7 +347,10 @@ namespace Iogn {
 
     else if (role == Ioss::Field::TRANSIENT) {
       // Fill the field with arbitrary data...
-      fill_transient_data(eb, field, data);
+      const Ioss::Field &id_fld = eb->get_fieldref("ids");
+      std::vector<char>  ids(id_fld.get_size());
+      get_field_internal(eb, id_fld, ids.data(), id_fld.get_size());
+      fill_transient_data(eb, field, data, ids.data(), num_to_get);
     }
     else if (role == Ioss::Field::REDUCTION) {
       num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -419,7 +426,10 @@ namespace Iogn {
 
       else if (field.get_name() == "distribution_factors") {
         if (m_useVariableDf) {
-          fill_transient_data(ef_blk, field, data);
+          const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
+          std::vector<char>  ids(id_fld.get_size());
+          get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
+          fill_transient_data(ef_blk, field, data, ids.data(), num_to_get);
         }
         else {
           fill_constant_data(field, data, 1.0);
@@ -431,7 +441,10 @@ namespace Iogn {
       }
     }
     else if (role == Ioss::Field::TRANSIENT) {
-      fill_transient_data(ef_blk, field, data);
+      const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
+      std::vector<char>  ids(id_fld.get_size());
+      get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
+      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get);
     }
     return num_to_get;
   }
@@ -463,7 +476,10 @@ namespace Iogn {
       }
       else if (field.get_name() == "distribution_factors") {
         if (m_useVariableDf) {
-          fill_transient_data(ns, field, data);
+          const Ioss::Field &id_fld = ns->get_fieldref("ids");
+          std::vector<char>  ids(id_fld.get_size());
+          get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
+          fill_transient_data(ns, field, data, ids.data(), num_to_get);
         }
         else {
           fill_constant_data(field, data, 1.0);
@@ -474,7 +490,10 @@ namespace Iogn {
       }
     }
     else if (role == Ioss::Field::TRANSIENT) {
-      fill_transient_data(ns, field, data);
+      const Ioss::Field &id_fld = ns->get_fieldref("ids");
+      std::vector<char>  ids(id_fld.get_size());
+      get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
+      fill_transient_data(ns, field, data, ids.data(), num_to_get);
     }
     return num_to_get;
   }
@@ -656,21 +675,21 @@ namespace Iogn {
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (nodeMap.map.empty()) {
-      nodeMap.map.resize(nodeCount + 1);
+    if (nodeMap.map().empty()) {
+      nodeMap.map().resize(nodeCount + 1);
       std::vector<int64_t> map;
       m_generatedMesh->node_map(map);
 
       // Map needed for Ioss starts at position 1 since the
       // sequential/non-sequential flag is at position 0...
-      std::copy(map.begin(), map.end(), &nodeMap.map[1]);
+      std::copy(map.begin(), map.end(), &nodeMap.map()[1]);
 
       // Check for sequential node map.
       // If not, build the reverse G2L node map...
-      nodeMap.map[0] = -1;
+      nodeMap.map()[0] = -1;
       for (int64_t i = 1; i < nodeCount + 1; i++) {
-        if (i != nodeMap.map[i]) {
-          nodeMap.map[0] = 1;
+        if (i != nodeMap.map()[i]) {
+          nodeMap.map()[0] = 1;
           break;
         }
       }
@@ -683,26 +702,26 @@ namespace Iogn {
   {
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elemMap.map.empty()) {
-      elemMap.map.resize(elementCount + 1);
+    if (elemMap.map().empty()) {
+      elemMap.map().resize(elementCount + 1);
       std::vector<int64_t> map;
       m_generatedMesh->element_map(map);
 
       // Map needed for Ioss starts at position 1 since the
       // sequential/non-sequential flag is at position 0...
-      std::copy(map.begin(), map.end(), &elemMap.map[1]);
+      std::copy(map.begin(), map.end(), &elemMap.map()[1]);
 
       // Check for sequential element map.
       // If not, build the reverse G2L element map...
-      elemMap.map[0] = -1;
+      elemMap.map()[0] = -1;
       for (int64_t i = 1; i < elementCount + 1; i++) {
-        if (i != elemMap.map[i]) {
-          elemMap.map[0] = 1;
+        if (i != elemMap.map()[i]) {
+          elemMap.map()[0] = 1;
           break;
         }
       }
 
-      if (elemMap.map[0] == 1) {
+      if (elemMap.map()[0] == 1) {
         elemMap.build_reverse_map();
       }
     }
@@ -718,7 +737,7 @@ namespace Iogn {
     add_transient_fields(block);
   }
 
-  void DatabaseIO::get_step_times()
+  void DatabaseIO::get_step_times__()
   {
     int time_step_count = m_generatedMesh->timestep_count();
     for (int i = 0; i < time_step_count; i++) {
@@ -812,7 +831,7 @@ namespace Iogn {
         ef_block->property_add(Ioss::Property("id", ifs + 1));
 
         std::string storage = "Real[";
-        storage += Ioss::Utils::to_string(4);
+        storage += std::to_string(4);
         storage += "]";
         ef_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
                                         Ioss::Field::MESH, number_faces));
@@ -824,7 +843,7 @@ namespace Iogn {
       else {
         for (auto &touching_block : touching_blocks) {
           std::string ef_block_name =
-              "surface_" + touching_block + "_edge2_" + Ioss::Utils::to_string(ifs + 1);
+              "surface_" + touching_block + "_edge2_" + std::to_string(ifs + 1);
           std::string side_topo_name = "quad4";
           std::string elem_topo_name = "unknown";
           int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
@@ -835,7 +854,7 @@ namespace Iogn {
           ef_block->property_add(Ioss::Property("id", ifs + 1));
 
           std::string storage = "Real[";
-          storage += Ioss::Utils::to_string(4);
+          storage += std::to_string(4);
           storage += "]";
           ef_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
                                           Ioss::Field::MESH, number_faces));
@@ -872,7 +891,7 @@ namespace Iogn {
     size_t           entity_count = entity->get_property("entity_count").get_int();
     size_t           var_count    = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
-      std::string var_name = entity->type_string() + "_" + Ioss::Utils::to_string(i + 1);
+      std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);
       entity->field_add(
           Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT, entity_count));
     }

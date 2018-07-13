@@ -67,15 +67,41 @@ namespace ROL {
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
 
-    Teuchos::RCP<Vector<Real> > e = x.clone();
-    Teuchos::RCP<Vector<Real> > h = x.clone();
+    ROL::Ptr<Vector<Real> > e = x.clone();
+    ROL::Ptr<Vector<Real> > h = x.dual().clone();
 
     for (int i=0; i<dim; i++) {
       e = x.basis(i);
       obj.hessVec(*h, *e, x, tol);
       for (int j=0; j<dim; j++) {
         e = x.basis(j);
-        H(j,i) = e->dot(*h);
+        H(j,i) = e->dot(h->dual());
+      }
+    }
+
+    return H;
+
+  }
+
+
+  template<class Real>
+  Teuchos::SerialDenseMatrix<int, Real> computeScaledDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
+
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+
+    int dim = x.dimension();
+    Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
+
+    ROL::Ptr<Vector<Real> > ei = x.clone();
+    ROL::Ptr<Vector<Real> > ej = x.dual().clone();
+    ROL::Ptr<Vector<Real> > h  = x.dual().clone();
+
+    for (int i=0; i<dim; i++) {
+      ei = ei->basis(i);
+      obj.hessVec(*h, *ei, x, tol);
+      for (int j=0; j<dim; j++) {
+        ej = ej->basis(j);
+        H(j,i) = ej->dot(*h);
       }
     }
 
@@ -90,8 +116,8 @@ namespace ROL {
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> M(dim, dim);
 
-    Teuchos::RCP<Vector<Real> > ei = x.clone();
-    Teuchos::RCP<Vector<Real> > ej = x.clone();
+    ROL::Ptr<Vector<Real> > ei = x.clone();
+    ROL::Ptr<Vector<Real> > ej = x.clone();
 
     for (int i=0; i<dim; i++) {
       ei = x.basis(i);
@@ -219,12 +245,12 @@ namespace ROL {
   template<class Real>
   class ProjectedObjective : public Objective<Real> {
   private:
-    Teuchos::RCP<Objective<Real> >       obj_;
-    Teuchos::RCP<BoundConstraint<Real> > con_;
-    Teuchos::RCP<Secant<Real> >          secant_;
+    ROL::Ptr<Objective<Real> >       obj_;
+    ROL::Ptr<BoundConstraint<Real> > con_;
+    ROL::Ptr<Secant<Real> >          secant_;
 
-    Teuchos::RCP<ROL::Vector<Real> > primalV_;
-    Teuchos::RCP<ROL::Vector<Real> > dualV_;
+    ROL::Ptr<ROL::Vector<Real> > primalV_;
+    ROL::Ptr<ROL::Vector<Real> > dualV_;
     bool isInitialized_;
 
     bool useSecantPrecond_;
@@ -233,14 +259,14 @@ namespace ROL {
 
   public:
     ProjectedObjective( Objective<Real> &obj, BoundConstraint<Real> &con,
-                        Teuchos::RCP<Secant<Real> > &secant,
+                        ROL::Ptr<Secant<Real> > &secant,
                         bool useSecantPrecond = false,
                         bool useSecantHessVec = false,
                         Real eps = 0.0 )
       : isInitialized_(false), useSecantPrecond_(useSecantPrecond),
         useSecantHessVec_(useSecantHessVec), eps_(eps) {
-      obj_    = Teuchos::rcpFromRef(obj);
-      con_    = Teuchos::rcpFromRef(con);
+      obj_    = ROL::makePtrFromRef(obj);
+      con_    = ROL::makePtrFromRef(con);
       secant_ = secant;
     }
 

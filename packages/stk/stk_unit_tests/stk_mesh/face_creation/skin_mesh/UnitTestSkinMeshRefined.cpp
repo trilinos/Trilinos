@@ -67,7 +67,7 @@ TEST(ElementGraph, RefinedQuad)
             stk::mesh::Entity element = stk::mesh::declare_element(mesh, quad_part, elems_this_proc[i], connectivity[index]);
             if(ids[index]!=1)
             {
-                mesh.change_entity_parts(element, {&active}, {});
+                mesh.change_entity_parts(element, stk::mesh::ConstPartVector{&active}, stk::mesh::ConstPartVector{});
             }
         }
 
@@ -120,7 +120,7 @@ TEST(ElementGraph, RefinedQuad)
         EXPECT_EQ(7u, mesh_counts[stk::topology::ELEM_RANK]);
         EXPECT_EQ(6u, mesh_counts[meta.side_rank()]);
 
-        stk::unit_test_util::write_mesh_using_stk_io("refined.g", mesh);
+        stk::io::write_mesh("refined.g", mesh);
 
         std::vector<std::pair<stk::mesh::EntityId, int>> id_and_num_faces = {
                 {1, 3},

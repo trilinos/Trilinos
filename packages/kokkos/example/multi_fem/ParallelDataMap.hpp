@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -282,7 +282,7 @@ class AsyncExchange ;
 //
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOS_HAVE_MPI
+#ifdef KOKKOS_ENABLE_MPI
 
 namespace Kokkos {
 
@@ -476,7 +476,7 @@ public:
 
 } // namespace Kokkos
 
-#else /* ! #ifdef KOKKOS_HAVE_MPI */
+#else /* ! #ifdef KOKKOS_ENABLE_MPI */
 
 namespace Kokkos {
 
@@ -508,7 +508,7 @@ public:
 
 } // namespace Kokkos
 
-#endif /* ! #ifdef KOKKOS_HAVE_MPI */
+#endif /* ! #ifdef KOKKOS_ENABLE_MPI */
 
 //----------------------------------------------------------------------------
 

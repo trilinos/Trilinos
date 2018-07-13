@@ -41,14 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-
-#ifdef HAVE_TPETRA_INST_INT_INT
-
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Map.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_Tuple.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Map.hpp"
 
 using Teuchos::RCP;
 using Teuchos::Array;
@@ -78,14 +74,19 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   comm->barrier ();
   comm->barrier (); // Just to make sure output finishes.
 
-  RCP<const Tpetra::Map<int,int> > map;
+  typedef Tpetra::Map<> map_type;
+  typedef map_type::local_ordinal_type LO;
+  typedef map_type::global_ordinal_type GO;
+  typedef int rank_type;
+
+  RCP<const map_type> map;
   if (myRank == 0) {
-    Array<int> gids( tuple<int>(1) );
-    map = Tpetra::createNonContigMap<int>( gids().getConst() , comm );
+    Array<GO> gids (tuple<GO> (1));
+    map = Tpetra::createNonContigMap<LO, GO> (gids ().getConst () , comm);
   }
   else {
-    Array<int> gids( tuple<int>(3) );
-    map = Tpetra::createNonContigMap<int>( gids().getConst() , comm );
+    Array<GO> gids (tuple<GO> (3));
+    map = Tpetra::createNonContigMap<LO, GO> (gids ().getConst (), comm);
   }
 
   {
@@ -100,8 +101,8 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
     cerr << os.str ();
   }
 
-  Array<int> nodeIDs( 1 );
-  Tpetra::LookupStatus lookup = map->getRemoteIndexList( tuple<int>(2), nodeIDs() );
+  Array<rank_type> processRanks (1);
+  Tpetra::LookupStatus lookup = map->getRemoteIndexList (tuple<GO> (2), processRanks ());
 
   {
     std::ostringstream os;
@@ -117,7 +118,6 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   TEST_EQUALITY_CONST( map->isDistributed(), true )
   TEST_EQUALITY_CONST( map->isContiguous(), false )
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
-  TEST_COMPARE_ARRAYS( nodeIDs(), tuple<int>(-1) );
+  TEST_COMPARE_ARRAYS( processRanks(), tuple<rank_type>(-1) );
 }
 
-#endif // HAVE_TPETRA_INST_INT_INT

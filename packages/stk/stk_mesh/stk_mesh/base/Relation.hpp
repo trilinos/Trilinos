@@ -300,22 +300,9 @@ void get_entities_through_relations(
  */
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
-                             const OrdinalVector & omit ,
                              OrdinalVector & induced_parts);
 
-
 //----------------------------------------------------------------------
-
-#if 0
-/** \brief  Decode and print the relation raw_relation_id */
-std::ostream &
-print_relation( std::ostream & , Relation::raw__attr_type );
-
-/** \brief  Decode and print the relation raw_relation_id and referenced entity key */
-std::ostream &
-print_relation( std::ostream & , const MetaData & ,
-                Relation::raw__attr_type , EntityKey );
-#endif
 
 /** \brief  Print the relation raw_relation_ids and referenced entity's key */
 std::ostream & operator << ( std::ostream & , const Relation & );
@@ -373,7 +360,6 @@ inline
 RelationType
 back_relation_type(const RelationType relType)
 {
-  /* %TRACE[NONE]% */  /* %TRACE% */
   switch(relType) {
   case RelationType::USES:
     return RelationType::USED_BY;
@@ -452,6 +438,9 @@ void Relation::setMeshObj(Entity object, EntityRank object_rank )
   m_raw_relation = Relation::raw_relation_id( object_rank, relation_ordinal() );
   m_target_entity = object;
 }
+
+// Find relation from mesh_obj to an Entity of certain rank by relation ordinal
+stk::mesh::Entity find_by_ordinal(stk::mesh::Entity mesh_obj, stk::mesh::EntityRank rank, size_t ordinal, const stk::mesh::BulkData& mesh);
 
 #endif
 

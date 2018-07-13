@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,11 +36,13 @@
 #define NEM_SPREAD_H
 
 #include "globals.h"
+#include "nem_spread.h"        // for NemSpread, etc
+#include "pe_str_util_const.h" // for strip_string, token_compare, etc
+#include "rf_allo.h"
 #include "rf_io_const.h"
-#include <rf_allo.h>
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR "6.15 (2016/05/18)"
+#define VER_STR "6.16 (2016/08/25)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second(void);
@@ -50,21 +52,23 @@ template <typename T, typename INT> class NemSpread
 public:
   void load_mesh();
   int  check_inp();
-  void read_coord(int mesh_exoid, int max_name_length);
+  void read_coord(int exoid, int max_name_length);
   void read_elem_blk_ids(int mesh_exoid, int max_name_length);
-  void read_elem_blk(int mesh_exoid);
+  void read_elem_blk(int exoid);
   void extract_elem_blk();
   void extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc);
   void extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc);
   size_t extract_elem_connect(INT elem_blk[], int icurrent_elem_blk, size_t istart_elem,
-                              size_t iend_elem, int *local_ielem_blk, int indx);
+                              size_t iend_elem, int *local_ielem_blk, int iproc);
   void extract_elem_attr(T *elem_attr, int icurrent_elem_blk, size_t istart_elem, size_t iend_elem,
-                         int natt_p_elem, int indx);
-  void find_elem_block(INT *proc_elem_blk, int indx, int proc_for);
-  void read_node_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
-  void read_side_set_ids(int mesh_exoid, INT[], INT[], int max_name_length);
-  void read_node_sets(int mesh_exoid, INT *, INT *);
-  void read_side_sets(int mesh_exoid, INT *, INT *);
+                         int natt_p_elem, int iproc);
+  void find_elem_block(INT *proc_elem_blk, int iproc, int proc_for);
+  void read_node_set_ids(int mesh_exoid, INT /*num_nodes_in_node_set*/[], INT /*num_df_in_nsets*/[],
+                         int max_name_length);
+  void read_side_set_ids(int mesh_exoid, INT /*num_elem_in_ssets*/[], INT /*num_df_in_ssets*/[],
+                         int max_name_length);
+  void read_node_sets(int exoid, INT * /*num_nodes_in_node_set*/, INT * /*num_df_in_nsets*/);
+  void read_side_sets(int exoid, INT * /*num_elem_in_ssets*/, INT * /*num_df_in_ssets*/);
 
   void read_nodal_vars(int mesh_exoid);
 
@@ -81,13 +85,13 @@ public:
   void write_var_timestep(int exoid, int proc, int time_step, INT *eb_ids_global,
                           INT *ss_ids_global, INT *ns_ids_global);
 
-  void process_lb_data(INT *Integer_Vector, int index);
+  void process_lb_data(INT *Integer_Vector, int indx);
   void read_proc_init(int lb_exoid, int proc_info[], int **proc_ids_ptr);
-  void read_lb_init(int exoid, INT *Int_Space, INT *Int_Node_Num, INT *Bor_Node_Num,
+  void read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node_Num, INT *Bor_Node_Num,
                     INT *Ext_Node_Num, INT *Int_Elem_Num, INT *Bor_Elem_Num, INT *Node_Comm_Num,
                     INT *Elem_Comm_Num, char *Title);
 
-  void read_cmap_params(int exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num, INT *Num_N_Comm_Maps,
+  void read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num, INT *Num_N_Comm_Maps,
                         INT *Num_E_Comm_Maps, ELEM_COMM_MAP<INT> **E_Comm_Map,
                         NODE_COMM_MAP<INT> **N_Comm_Map, INT *cmap_max_size, INT **comm_vec);
 
@@ -105,9 +109,9 @@ public:
   int read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *eb_cnts, INT ***eb_map_ptr,
                        INT **eb_cnts_local, int iblk, int eb_offset, INT *local_offset);
   int read_sset_vars(int exoid, int index, INT *ss_ids, INT *ss_cnts);
-  int read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *ss_cnts, int iblk);
+  int read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *ss_cnts, int iset);
   int read_nset_vars(int exoid, int index, INT *ns_ids, INT *ns_cnts);
-  int read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *ns_cnts, int iblk);
+  int read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *ns_cnts, int iset);
   int read_nodal_vars(int exoid, int index);
   int compare_mesh_param(int exoid);
 
@@ -173,9 +177,9 @@ public:
                        * facilitate the reading of the side *
                        * set distribution factors.          */
 
-  char *Coord_Name[3]; /* The name(s) of the coordinate axes.   */
+  char *Coord_Name[3]{}; /* The name(s) of the coordinate axes.   */
 
-  int  Proc_Info[6];
+  int  Proc_Info[6]{};
   int *Proc_Ids;
 
   NemSpread()

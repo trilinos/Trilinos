@@ -41,20 +41,17 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include "Teuchos_UnitTestHarness.hpp"
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Tuple.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include <iterator>
+#include <sstream>
 
 #include <Tpetra_Distributor.hpp>
 #include "Teuchos_FancyOStream.hpp"
@@ -65,14 +62,13 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Tpetra_Import_Util.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::outArg;
-  using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using std::vector;
   using std::sort;
@@ -103,20 +99,8 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
-    clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
-  }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
   }
 
   //
@@ -126,13 +110,12 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, basic, LO, GO, NT ) {
     const Tpetra::global_size_t INVALID =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
-    RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<NT> node = getNode<NT>();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create Maps
     RCP<const Map<LO, GO, NT> > source =
-      createContigMapWithNode<LO, GO, NT> (INVALID,10,comm,node);
+      createContigMapWithNode<LO, GO, NT> (INVALID, 10, comm);
     RCP<const Map<LO, GO, NT> > target =
-      createContigMapWithNode<LO, GO, NT> (INVALID, 5,comm,node);
+      createContigMapWithNode<LO, GO, NT> (INVALID,  5, comm);
     // create Import object
     RCP<const Import<LO, GO, NT> > importer =
       Tpetra::createImport<LO, GO, NT> (source, target);
@@ -143,6 +126,9 @@ namespace {
     auto sum = same + permute + remote;
     auto expectedSum = target->getNodeNumElements();
     TEST_EQUALITY( sum, expectedSum );
+
+    bool isvalid=Tpetra::Import_Util::checkImportValidity(*importer);
+    TEST_EQUALITY(isvalid,true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ImportExport, GetNeighborsForward, Scalar, LO, GO, Node )
@@ -152,24 +138,22 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
-    const int numImages = comm->getSize(),
-              myImageID = comm->getRank();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    const size_t numLocal  = 1,
-                 numVectors = 5;
+    const size_t numLocal  = 1;
+    const size_t numVectors = 5;
     // my neighbors: myImageID-1, me, myImageID+1
     Array<GO> neighbors;
     if (myImageID != 0) neighbors.push_back(myImageID-1);
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
-    // two maps: one has one entries per node, the other is the 1-D neighbors
+    // two maps: one has one entries per process, the other is the 1-D neighbors
     RCP<const Map<LO,GO,Node> >
-      smap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node),
-      tmap = rcp(new Map<LO,GO,Node>(INVALID,neighbors(),0,comm,node) );
+      smap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm),
+      tmap = rcp(new Map<LO,GO,Node>(INVALID,neighbors(),0,comm) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors
@@ -179,8 +163,8 @@ namespace {
         mvWithNeighbors = rcp(new MV(tmap,numVectors));
       }
       else {
-        MV mineParent(smap,2+numVectors),
-           neigParent(tmap,2+numVectors);
+        MV mineParent(smap,2+numVectors);
+	MV neigParent(tmap,2+numVectors);
         TEUCHOS_TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
         mvMine = mineParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
         mvWithNeighbors = neigParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
@@ -262,22 +246,21 @@ namespace {
     typedef ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
-    const int numImages = comm->getSize(),
-              myImageID = comm->getRank();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    const size_t numLocal = 1,
-               numVectors = 5;
+    const size_t numLocal = 1;
+    const size_t numVectors = 5;
     // my neighbors: myImageID-1, me, myImageID+1
     Array<GO> neighbors;
     if (myImageID != 0) neighbors.push_back(myImageID-1);
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    auto smap = createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
-    auto tmap = rcp (new Map<LO, GO, Node> (INVALID, neighbors (), 0, comm, node));
+    auto smap = createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
+    auto tmap = rcp (new Map<LO, GO, Node> (INVALID, neighbors (), 0, comm));
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors
@@ -370,14 +353,13 @@ namespace {
     // test with local and remote entries, as copyAndPermute() and unpackAndCombine() both need to be tested
     typedef Tpetra::Vector<double,LO,GO,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
-    RCP<Node> node = getNode<Node>();
     if (numImages < 2) return;
-    // create a Map
-    auto smap = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm, node);
+
+    auto smap = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
     const GO myOnlyGID = smap->getGlobalElement (0);
-    auto dmap = createNonContigMapWithNode<LO, GO, Node> (tuple<GO> (myOnlyGID, (myOnlyGID+1) % numImages), comm, node);
+    auto dmap = createNonContigMapWithNode<LO, GO, Node> (tuple<GO> (myOnlyGID, (myOnlyGID+1) % numImages), comm);
     RCP<Vec> srcVec = rcp (new Vec (smap));
     srcVec->putScalar (-1.0);
     RCP<Vec> dstVec = rcp (new Vec (dmap));
@@ -401,7 +383,7 @@ namespace {
     // This test reproduces an issue seen in Github Issue #114.
     // As of time of checkin, this test will fail on CUDA but pass on other platforms.
     // This is intentional
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     typedef Tpetra::Map<LO,GO,Node> Tpetra_Map;
     typedef Tpetra::Import<LO,GO,Node> Tpetra_Import;
@@ -482,6 +464,17 @@ namespace {
     }
     TEST_EQUALITY(all_is_well,true);
 
+    
+    bool isvalid=Tpetra::Import_Util::checkImportValidity(Importer);
+    if(!isvalid) {
+      std::ostringstream oss;
+      Importer.print(oss);
+
+      std::cout<<oss.str()<<std::endl;
+    }
+
+    TEST_EQUALITY(isvalid,true);
+    
   }
 
   //

@@ -86,14 +86,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Zoltan2 AND HAVE_MU
 
   TRIBITS_ADD_TEST(
     HelmholtzFEM3D
-    Name "HelmholtzFEM3DSerial"
+    NAME "HelmholtzFEM3DSerial"
     CATEGORIES NIGHTLY
     COMM serial
     )
 
   TRIBITS_ADD_TEST(
     Helmholtz1D
-    Name "Helmholtz1DParallel"
+    NAME "Helmholtz1DParallel"
     NUM_MPI_PROCS 4
     COMM mpi
     )

@@ -33,7 +33,7 @@
 
 #include <stk_util/util/CSet.hpp>
 #include <assert.h>                     // for assert
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t
 #include <algorithm>                    // for lower_bound
 #include <iterator>                     // for advance
 
@@ -95,7 +95,7 @@ const void * CSet::p_get( const std::type_info & t ) const
     if (*it->first == t) return m_value[it-m_manager.begin()];
   }
 
-  return NULL ;
+  return nullptr ;
 }
 
 const void *

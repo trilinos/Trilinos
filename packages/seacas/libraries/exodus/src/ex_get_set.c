@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -32,34 +32,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*****************************************************************************
-*
-* exgset - ex_get_set
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid              exodus file id
-*       int     set_type           the type of set
-*       int     set_id             set id
-*
-* exit conditions -
-*       int*    set_entry_list     array of entries in set
-*       int*    set_extra_list     array of extras in set
-*
-* revision history -
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>
-#include <stdlib.h> // for NULL
+#include <stdio.h>        // for snprintf, NULL
 
 /*!
  * reads the set entry list and set extra list for a single set
+ * \param   exoid                   exodus file id
+ * \param   set_type                set type
+ * \param   set_id                  set id
+ * \param  *set_entry_list          array of entries in set. Set to NULL to not
+ * read.
+ * \param  *set_extra_list          array of extras in set. Set to NULL to not
+ * read.
  */
 
 int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int *set_entry_list,
@@ -72,32 +60,36 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
   char *entryptr = NULL;
   char *extraptr = NULL;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_set", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_set", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* Lookup index of set id in VAR_*S_IDS array */
   set_id_ndx = ex_id_lkup(exoid, set_type, set_id);
-  if (exerrval != 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s %" PRId64 " is NULL in file id %d",
-               ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set", errmsg, EX_NULLENTITY);
-      return (EX_WARN);
-    }
+  if (set_id_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
 
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate %s id %" PRId64 " in VAR_*S_IDS array in file id %d",
-             ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_set", errmsg, exerrval);
-    return (EX_FATAL);
+    if (status != 0) {
+      if (status == EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s %" PRId64 " is NULL in file id %d",
+                 ex_name_of_object(set_type), set_id, exoid);
+        ex_err("ex_get_set", errmsg, EX_NULLENTITY);
+        EX_FUNC_LEAVE(EX_WARN);
+      }
+
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to locate %s id %" PRId64 " in VAR_*S_IDS array in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
+      ex_err("ex_get_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
   }
 
   /* setup more pointers based on set_type */
@@ -124,12 +116,11 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
 
   /* inquire id's of previously defined dimensions and variables */
   if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entry list for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_set", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_set", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* If client doet not pass in an array to store the
@@ -138,12 +129,11 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
   /* only do extra list for edge, face and side sets */
   if (set_extra_list) {
     if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -157,12 +147,11 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get entry list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -176,13 +165,12 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

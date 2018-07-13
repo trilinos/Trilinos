@@ -290,6 +290,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< char >::emax ;
 %ignore Teuchos::ScalarTraits< char >::rmax ;
 %ignore Teuchos::ScalarTraits< char >::nan  ;
+%ignore Teuchos::ScalarTraits< char >::pi   ;
 %template(ScalarTraitsByte) Teuchos::ScalarTraits< char >;
 
 %template(ScalarTraitsUbyte) Teuchos::ScalarTraits< unsigned char >;
@@ -306,6 +307,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< short >::rmax    ;
 %ignore Teuchos::ScalarTraits< short >::nan     ;
 %ignore Teuchos::ScalarTraits< short >::isnaninf;
+%ignore Teuchos::ScalarTraits< short >::pi      ;
 %template(ScalarTraitsShort) Teuchos::ScalarTraits< short >;
 
 %ignore Teuchos::ScalarTraits< unsigned short >::eps     ;
@@ -320,6 +322,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< unsigned short >::rmax    ;
 %ignore Teuchos::ScalarTraits< unsigned short >::nan     ;
 %ignore Teuchos::ScalarTraits< unsigned short >::isnaninf;
+%ignore Teuchos::ScalarTraits< unsigned short >::pi      ;
 %template(ScalarTraitsUshort) Teuchos::ScalarTraits< unsigned short >;
 
 %ignore Teuchos::ScalarTraits< int >::eps  ;
@@ -333,6 +336,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< int >::emax ;
 %ignore Teuchos::ScalarTraits< int >::rmax ;
 %ignore Teuchos::ScalarTraits< int >::nan  ;
+%ignore Teuchos::ScalarTraits< int >::pi   ;
 %template(ScalarTraitsInt) Teuchos::ScalarTraits< int >;
 
 %ignore Teuchos::ScalarTraits< unsigned int >::eps     ;
@@ -347,6 +351,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< unsigned int >::rmax    ;
 %ignore Teuchos::ScalarTraits< unsigned int >::nan     ;
 %ignore Teuchos::ScalarTraits< unsigned int >::isnaninf;
+%ignore Teuchos::ScalarTraits< unsigned int >::pi      ;
 %template(ScalarTraitsUint) Teuchos::ScalarTraits< unsigned int >;
 
 %ignore Teuchos::ScalarTraits< long >::eps     ;
@@ -361,6 +366,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< long >::rmax    ;
 %ignore Teuchos::ScalarTraits< long >::nan     ;
 %ignore Teuchos::ScalarTraits< long >::isnaninf;
+%ignore Teuchos::ScalarTraits< long >::pi      ;
 %template(ScalarTraitsLong) Teuchos::ScalarTraits< long >;
 
 %ignore Teuchos::ScalarTraits< unsigned long >::eps     ;
@@ -375,6 +381,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< unsigned long >::rmax    ;
 %ignore Teuchos::ScalarTraits< unsigned long >::nan     ;
 %ignore Teuchos::ScalarTraits< unsigned long >::isnaninf;
+%ignore Teuchos::ScalarTraits< unsigned long >::pi      ;
 %template(ScalarTraitsUlong) Teuchos::ScalarTraits< unsigned long >;
 
 %ignore Teuchos::ScalarTraits< long long >::eps     ;
@@ -389,6 +396,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< long long >::rmax    ;
 %ignore Teuchos::ScalarTraits< long long >::nan     ;
 %ignore Teuchos::ScalarTraits< long long >::isnaninf;
+%ignore Teuchos::ScalarTraits< long long >::pi      ;
 
 %template(ScalarTraitsLongLong) Teuchos::ScalarTraits< long long >;
 
@@ -404,6 +412,7 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< unsigned long long >::rmax    ;
 %ignore Teuchos::ScalarTraits< unsigned long long >::nan     ;
 %ignore Teuchos::ScalarTraits< unsigned long long >::isnaninf;
+%ignore Teuchos::ScalarTraits< unsigned long long >::pi      ;
 
 %template(ScalarTraitsUlongLong) Teuchos::ScalarTraits< unsigned long long >;
 
@@ -446,7 +455,8 @@ def ScalarTraits(scalarType):
     elif scalarType == 'Q': return ScalarTraitsUlongLong()
     elif scalarType == 'f': return ScalarTraitsFloat()
     elif scalarType == 'd': return ScalarTraitsDouble()
-    raise NotImplementedError, "ScalarTraits for " + repr(scalarType) + " not supported"
+    raise NotImplementedError("ScalarTraits for " + repr(scalarType) +
+                              " not supported")
 %}
 
 //////////////////////////////////////////
@@ -512,8 +522,8 @@ def DirectSerializationTraits(scalarType):
     elif scalarType == 'Q': return DirectSerializationTraitsUlongLong()
     elif scalarType == 'f': return DirectSerializationTraitsFloat()
     elif scalarType == 'd': return DirectSerializationTraitsDouble()
-    raise NotImplementedError, "DirectSerializationTraits for " + repr(scalarType) + \
-	  " not supported"
+    raise NotImplementedError("DirectSerializationTraits for " +
+                              repr(scalarType) + " not supported")
 
 def SerializationTraits(scalarType):
     """
@@ -548,6 +558,6 @@ def SerializationTraits(scalarType):
     elif scalarType == 'Q': return SerializationTraitsUlongLong()
     elif scalarType == 'f': return SerializationTraitsFloat()
     elif scalarType == 'd': return SerializationTraitsDouble()
-    raise NotImplementedError, "SerializationTraits for " + repr(scalarType) + \
-	  " not supported"
+    raise NotImplementedError("SerializationTraits for " + repr(scalarType) +
+                              " not supported")
 %}

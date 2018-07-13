@@ -34,7 +34,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Stokhos_ENABLE_CXX11
   HAVE_STOKHOS_CXX11
   "Enable C++11 support in Stokhos."
-  "${Trilinos_ENABLE_CXX11}"
+  "${${PROJECT_NAME}_ENABLE_CXX11}"
   )
 
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)

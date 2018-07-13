@@ -59,7 +59,7 @@ INCLUDE(GlobalSet)
 # function.  However, when the variable ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is
 # set to ``TRUE``, then this function will not call ``MESSAGE(...)`` but
 # instead will prepend set to the global variable ``MESSAGE_WRAPPER_INPUT``
-# the input argument that would have gon to ``MESSAGE()``.  To capture just
+# the input argument that would have gone to ``MESSAGE()``.  To capture just
 # this call's input, first call::
 #
 #   GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT)

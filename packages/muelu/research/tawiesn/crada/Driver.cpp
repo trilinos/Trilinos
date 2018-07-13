@@ -67,15 +67,14 @@
 //
 
 #include <MueLu.hpp>
+#include <MueLu_Exceptions.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_VisualizationHelpers.hpp>
-#include <MueLu_FacadeClassFactory.hpp>
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #ifdef HAVE_MUELU_BELOS
@@ -142,7 +141,7 @@
       for(int i = 0; i < int(uniqueFine.size()); i++)
       {
         size_t numVec = coordinates->getNumVectors();
-        for(int d=0; d<numVec; d++)
+        for(int d=0; d<(int)numVec; d++)
           fout << solData[i*numVec+d] << " ";
         if(i % 3 == 0)
           fout << std::endl << indent;
@@ -160,17 +159,17 @@
 
   };
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   bool verbose = true;
@@ -187,12 +186,9 @@ int main(int argc, char *argv[]) {
     Teuchos::FancyOStream& fancyout = *fancy;
     fancyout.setOutputToRootOnly(0);
 
-    MueLu::FacadeClassFactory<SC,LO,GO,NO> test();
-
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
 
     //GO nx = 100, ny = 100, nz = 100;
     //Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
@@ -203,7 +199,7 @@ int main(int argc, char *argv[]) {
     int    amgAsPrecond     = 1;                 clp.setOption("precond",               &amgAsPrecond,     "apply multigrid as preconditioner");
     int    amgAsSolver      = 0;                 clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
     bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
-    int    blockedSystem    = 0;                 clp.setOption("split",                 &blockedSystem,    "split system matrix into 2x2 system (default=0)");
+    int    blockedSystem    = 1;                 clp.setOption("split",                 &blockedSystem,    "split system matrix into 2x2 system (default=0)");
     int    useThyraGIDs     = 0;                 clp.setOption("thyra",                 &useThyraGIDs,     "use Thyra style numbering of GIDs.");
     int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
     double tol              = 1e-6;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
@@ -216,7 +212,7 @@ int main(int argc, char *argv[]) {
     std::string cooFileName = "crada1/crada_coordinates.mm"; clp.setOption("coordinatesfile",&cooFileName,      "matrix market file containing fine level coordinates");
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
     int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
-    int nNspVectors = 3; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
+    int nNspVectors = 6; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
     std::string convType = "r0"; clp.setOption("convtype",       &convType,         "convergence type (r0 or none)");
     std::string strOutputFilename = ""; clp.setOption("output",  &strOutputFilename,"filename prefix for output file name. If empty, no output is written.");
 
@@ -270,7 +266,10 @@ int main(int argc, char *argv[]) {
 
     if (nspFileName != "") {
       fancyout << "Read null space from file " << nspFileName << std::endl;
+
+
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(nspFileName), A->getRowMap());
+            //nullspace = MultiVectorFactory::Build(A->getRowMap(),6);//haq
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
       if (nNspVectors > Teuchos::as<int>(nullspace->getNumVectors())) {
         fancyout << "Set number of null space vectors from " << nNspVectors << " to " << nullspace->getNumVectors() << " as only " << nullspace->getNumVectors() << " are provided by " << nspFileName << std::endl;
@@ -309,23 +308,36 @@ int main(int argc, char *argv[]) {
 
     RCP<MultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
     if (cooFileName != "") {
-      std::vector<GO> myGIDs (map->getNodeNumElements() / A->GetFixedBlockSize());
-      // reconstruct map for coordinates
-      for(LO r = 0; r < Teuchos::as<LO>(map->getNodeNumElements() / A->GetFixedBlockSize()); ++r) {
-        GO gid = map->getGlobalElement(r * A->GetFixedBlockSize());
-        myGIDs[r] = gid;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements() % A->GetFixedBlockSize() != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getNodeNumElements() << " and not divisible by 3.");
+
+      Teuchos::ArrayView<const GO> dofGidList   = map->getNodeElementList();
+      GlobalOrdinal                indexBase    = map->getIndexBase();
+      LocalOrdinal                 blkSize      = A->GetFixedBlockSize();
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofGidList.size()) != Teuchos::as<size_t>(map->getNodeNumElements()), MueLu::Exceptions::RuntimeError, "Driver: Number of local DOFs inconsistent.");
+
+      size_t              numNodes  = dofGidList.size() / blkSize;
+      Teuchos::Array<GO>  nodeList(numNodes);
+
+      // Amalgamate the map
+      for (LO i = 0; i < Teuchos::as<LO>(numNodes); i++)
+        nodeList[i] = (dofGidList[i*blkSize]-indexBase)/blkSize + indexBase;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(dofGidList.size() / blkSize != nodeList.size(), MueLu::Exceptions::RuntimeError, "Driver: Number of local DOFs and local Nodes inconsistent.");
 
       GO gCntGIDs  = 0;
-      GO glCntGIDs = Teuchos::as<GlobalOrdinal>(myGIDs.size());
+      GO glCntGIDs = Teuchos::as<GlobalOrdinal>(nodeList.size());
       MueLu_sumAll(comm,glCntGIDs,gCntGIDs);
 
-      Teuchos::Array<GlobalOrdinal> eltList(myGIDs);
-      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,eltList(),0,comm);
+      //Teuchos::Array<GlobalOrdinal> eltList(myGIDs);
+      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,nodeList(),indexBase,comm);
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
-      fancyout << "Found " << nullspace->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+      fancyout << "Found " << coordinates->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+      /*TEUCHOS_TEST_FOR_EXCEPTION(myCoordMap->getMinGlobalIndex() != map->getMinGlobalIndex() / blkSize, MueLu::Exceptions::RuntimeError,
+          "Driver: Inconsistent minGlobalIndex on proc " << comm->getRank());
+      TEUCHOS_TEST_FOR_EXCEPTION(myCoordMap->getMaxGlobalIndex() != map->getMaxGlobalIndex() / blkSize, MueLu::Exceptions::RuntimeError,
+          "Driver: Inconsistent maxGlobalIndex on proc " << comm->getRank());*/
     }
 
     // shouldn't these be const?
@@ -337,7 +349,7 @@ int main(int argc, char *argv[]) {
       Teuchos::Array<GlobalOrdinal> mySpecialGids;
       Teuchos::Array<GlobalOrdinal> nonSpecialGids;
       GlobalOrdinal cnt = 0;   // count overall number of gids
-      GlobalOrdinal mycnt = 0; // count only local gids
+      //GlobalOrdinal mycnt = 0; // count only local gids
       while ( std::getline(infile, line)) {
         if(0 == line.find("%")) continue;
         if(0 == line.find(" ")) {
@@ -348,13 +360,32 @@ int main(int argc, char *argv[]) {
           gid--; // note, that the matlab vector starts counting at 1 and not 0!
           if(map->isNodeGlobalElement(gid)) {
             mySpecialGids.push_back(gid);
-            mycnt++;
+            //mycnt++;
           }
         }
       }
 
+      std::vector<GlobalOrdinal> mySpecialNodeGids;
+      for(size_t k = 0; k < Teuchos::as<size_t>(mySpecialGids.size()); k++) {
+        mySpecialNodeGids.push_back(mySpecialGids[k]/3);
+      }
+
+      std::sort(mySpecialNodeGids.begin(),mySpecialNodeGids.end());
+      mySpecialNodeGids.erase(std::unique(mySpecialNodeGids.begin(), mySpecialNodeGids.end()), mySpecialNodeGids.end());
+
+      cnt = 0;
+      Teuchos::Array<GlobalOrdinal> myFinalSpecialGids;
+      for(size_t k = 0; k < mySpecialNodeGids.size(); k++) {
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3);
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3+1);
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3+2);
+        cnt += 3;
+      }
+
+      std::cout << "Number of special gids read: " << mySpecialGids.size() << " Final number of special gids: " << myFinalSpecialGids.size() << std::endl;
+
       //Teuchos::Array<GlobalOrdinal> eltList(mySpecialGids);
-      mySpecialMap    = MapFactory::Build (xpetraParameters.GetLib(),cnt,mySpecialGids(),0,comm);
+      mySpecialMap    = MapFactory::Build (xpetraParameters.GetLib(),cnt,myFinalSpecialGids(),0,comm);
 
       // empty processors
       std::vector<size_t> lelePerProc(comm->getSize(),0);
@@ -389,7 +420,7 @@ int main(int argc, char *argv[]) {
       X->randomize(useSameRandomGen);
       A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<MT> norms(1);
       B->norm2(norms);
       //B->scale(1.0/norms[0]);
     }
@@ -419,30 +450,43 @@ int main(int argc, char *argv[]) {
     // We have the following different formulations:
     // - split the linear system in a 2x2 multiphysics problem using Xpetra style gids
     // - split the linear system in a 2x2 multiphysics problem using Thyra style gids
-    // - solve the problem as a monolithik linear system
+    // - solve the problem as a monolithic linear system
     if(blockedSystem == 1) {
       // split matrix and vectors
 
       // create map extractor
       Teuchos::Array<GlobalOrdinal> nonSpecialGids;
+      Teuchos::Array<GlobalOrdinal> specialGids;
       for (size_t i = 0; i < map->getNodeNumElements(); i++) {
         GlobalOrdinal gid = map->getGlobalElement(i);
         if (mySpecialMap->isNodeGlobalElement(gid) == false) {
           nonSpecialGids.push_back(gid);
+        } else {
+          specialGids.push_back(gid);
         }
       }
+
+      std::cout << "non special gids: " << nonSpecialGids.size() << std::endl;
+
       //MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,comm);
       std::vector<size_t> strInfo(1,nPDE);
       RCP<const Map> myStridedNonSpecialMap = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,strInfo,comm);
-      RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(mySpecialMap, strInfo);
-      //std::cout << "map " << map->getMaxAllGlobalIndex() << "nonspecial " << myNonSpecialMap->getMaxAllGlobalIndex() << " " << mySpecialMap->getMaxAllGlobalIndex() << std::endl;
+      RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),specialGids()   ,0,strInfo,comm);
+      // RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(mySpecialMap, strInfo);
+
+      //std::cout << "map " << map->getMaxAllGlobalIndex() << " nonspecial " << myStridedNonSpecialMap->getMinAllGlobalIndex() << " " << myStridedNonSpecialMap->getMaxAllGlobalIndex() << " (" << myStridedNonSpecialMap->getGlobalNumElements() << ") special " << mySpecialMap->getMinAllGlobalIndex() << " " << mySpecialMap->getMaxAllGlobalIndex() << "(" << myStridedSpecialMap->getGlobalNumElements() << ")" << std::endl;
       //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialMap)->getEpetra_Map() << std::endl;
-      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialMap)->getEpetra_Map() << std::endl;
+      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myStridedSpecialMap)->getEpetra_Map() << std::endl;
+
+
+      // We always build an Xpetra style map extractor with unique global ids
+      TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements() != myStridedNonSpecialMap->getNodeNumElements() + myStridedSpecialMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getNodeNumElements() << " and does not match the sum of the partial maps of size " << myStridedNonSpecialMap->getNodeNumElements() << " and " << myStridedSpecialMap->getNodeNumElements());
 
       std::vector<Teuchos::RCP<const Map> > xmaps;
       xmaps.push_back(myStridedNonSpecialMap);
       xmaps.push_back(myStridedSpecialMap);
 
+      // Xpetra mode
       Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map,xmaps);
 
       // split null space vectors
@@ -459,12 +503,59 @@ int main(int argc, char *argv[]) {
       // use bOp as A
       A = bOp;
 
+      // split coordinate vector
+      RCP<MultiVector> coordinates1 = Teuchos::null;
+      RCP<MultiVector> coordinates2 = Teuchos::null;
+      if (coordinates != Teuchos::null) {
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of non-special map on proc " << comm->getRank() << " is " << myStridedNonSpecialMap->getNodeNumElements() << " and cannot divided by 3");
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of special map on proc " << comm->getRank() << " is " << myStridedSpecialMap->getNodeNumElements() << " and cannot divided by 3");
+
+        Teuchos::Array<GlobalOrdinal> nonSpecialCoordGids;
+        Teuchos::Array<GlobalOrdinal> SpecialCoordGids;
+        for (size_t i = 0; i < coordinates->getMap()->getNodeNumElements(); i++) {
+          GlobalOrdinal gid = coordinates->getMap()->getGlobalElement(i);
+
+          for (size_t j = 0; j < Teuchos::as<size_t>(3); j++) {
+            GlobalOrdinal dofgid = gid * 3 + j;
+            if (myStridedSpecialMap->isNodeGlobalElement(dofgid)) {
+              SpecialCoordGids.append(gid);
+              break;
+            } else if (myStridedNonSpecialMap->isNodeGlobalElement(dofgid)) {
+              nonSpecialCoordGids.append(gid);
+              break;
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION( true, MueLu::Exceptions::RuntimeError, "Driver: DofGid " << dofgid << " is neither contained in special nor in non-special map.");
+          }
+        }
+
+        RCP<const Map> myNonSpecialCoordsMap = MapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialCoordGids(),0,comm);
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getNodeNumElements() / 3 != myNonSpecialCoordsMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
+
+        RCP<const Map> mySpecialCoordsMap = MapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),SpecialCoordGids(),0,comm);
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getNodeNumElements() / 3 != mySpecialCoordsMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
+
+        std::vector<Teuchos::RCP<const Map> > nodexmaps;
+        nodexmaps.push_back(myNonSpecialCoordsMap);
+        nodexmaps.push_back(mySpecialCoordsMap);
+
+        Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodemap_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(coordinates->getMap(),nodexmaps);
+
+        // split coordinate vectors
+        coordinates1 = nodemap_extractor->ExtractVector(coordinates,0);
+        coordinates2 = nodemap_extractor->ExtractVector(coordinates,1);
+        //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialCoordsMap)->getEpetra_Map() << std::endl;
+        //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialCoordsMap)->getEpetra_Map() << std::endl;
+      }
+
+
       if(bThyraMode == false) {
         // use Xpetra style GIDs
         H->GetLevel(0)->Set("A",            Teuchos::rcp_dynamic_cast<Matrix>(bOp));
         H->GetLevel(0)->Set("Nullspace1",   nullspace1);
         H->GetLevel(0)->Set("Nullspace2",   nullspace2);
         H->GetLevel(0)->Set("Coordinates", coordinates); // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
+        H->GetLevel(0)->Set("Coordinates1", coordinates1);
+        H->GetLevel(0)->Set("Coordinates2", coordinates2);
         if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
       } else {
         // use Thyra style GIDs
@@ -538,7 +629,7 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Fixed Point Solve")));
 
       H->IsPreconditioner(false);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<MT> norms(1);
       norms = Utilities::ResidualNorm(*A,*X,*B);
       std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
       for (int i=0; i< maxIts; ++i) {
@@ -657,6 +748,10 @@ int main(int argc, char *argv[]) {
       ExportVTK<Scalar,LocalOrdinal,GlobalOrdinal,Node> expVTK;
       expVTK.writeFile(fout,coordinates,X);
       fout.close();
+
+      size_t start_pos = strOutputFilename.find(".vtu");
+      strOutputFilename.replace(start_pos, 4, ".m");
+      Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write(strOutputFilename,*X);
     }
 
     // print timings
@@ -676,3 +771,15 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main
+
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
+
+
+

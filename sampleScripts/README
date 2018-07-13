@@ -1,0 +1,16 @@
+This directory contains sample scripts for configuring Trilinos.
+"Configuring" Trilinos prepares it for building (running "make" to
+compile and link it).  Trilinos uses CMake for its configuration
+process.
+
+This directory has three different kinds of scripts:
+
+  1. Scripts that run CMake to set up a single Trilinos build.
+     If you are a Trilinos user, this is probably what you want.
+
+  2. Scripts for running Trilinos' check-in tests, with multiple
+     builds.  These all have "checkin-test-" in their name.  If you
+     are a Trilinos developer, this is what you want.
+
+  3. *.cmake files, that help set up specific Dashboard tests.
+     These are for expert Trilinos developers and framework staff.

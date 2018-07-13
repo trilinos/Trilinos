@@ -99,7 +99,7 @@ is to small.
 */
 
 // Amesos_Klu_Pimpl contains a pointer to two structures defined in
-// klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h
+// klu.h:  trilinos_klu_symbolic and trilinos_klu_numeric.  This prevents Amesos_Klu.h
 // from having to include klu.h.
 //
 //  Doxygen does not handle forward class references well.

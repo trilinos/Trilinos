@@ -1,6 +1,0 @@
-/*! 
-\mainpage Trilinos/KokkosClassic: "Classic" (DEPRECATED) Kernels Package
-
-The contents of this subpackage have been DEPRECATED.  Do not use them
-directly.  Use the Kokkos package (Trilinos/packages/kokkos) instead.
-*/

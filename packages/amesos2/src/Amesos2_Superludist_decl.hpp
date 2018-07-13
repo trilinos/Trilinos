@@ -326,6 +326,8 @@ private:
                                  global_ordinal_type,
                                  node_type> > superlu_rowmap_;
 
+  bool is_contiguous_;
+
 };                              // End class Superludist
 
 

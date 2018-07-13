@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -57,11 +57,11 @@ namespace Epetra {
 
     //! Constructor
     StokhosSolver(const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
-		  const Teuchos::RCP<const Epetra_Comm>& globalComm);
+                  const Teuchos::RCP<const Epetra_Comm>& globalComm);
 
     //! Get spatial comm
     Teuchos::RCP<const Epetra_Comm> getSpatialComm() const;
-    
+
     //! Get stochastic comm
     Teuchos::RCP<const Epetra_Comm> getStochasticComm() const;
 
@@ -70,7 +70,7 @@ namespace Epetra {
 
     //! Setup rest of model evaluator
     void setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-	       const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver = Teuchos::null);
+               const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver = Teuchos::null);
 
     //! Reset Stokhos solver parameters
     void resetSolverParameters(const Teuchos::ParameterList& new_solver_params);
@@ -83,13 +83,13 @@ namespace Epetra {
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
-    
+
     /** \brief . */
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 
     /** \brief . */
     Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
-    
+
     /** \brief . */
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
 
@@ -113,7 +113,7 @@ namespace Epetra {
     Teuchos::RCP<const Stokhos::Quadrature<int,double> >
     getQuad() const { return sg_solver_factory.getQuad(); }
 
-    Teuchos::RCP<Stokhos::SGModelEvaluator>
+    Teuchos::RCP<Stokhos::SGModelEvaluatorBase>
     get_sg_model() const { return sg_nonlin_model; }
 
     //! Set initial solution polynomial
@@ -122,7 +122,7 @@ namespace Epetra {
     }
 
     //! Return initial SG x
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> 
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
     get_x_sg_init() const {
       return sg_nonlin_model->get_x_sg_init();
     }
@@ -133,37 +133,37 @@ namespace Epetra {
     }
 
     //! Get initial parameter polynomial
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> 
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
     get_p_sg_init(int l) const {
       return sg_nonlin_model->get_p_sg_init(l);
     }
 
     //! Create vector orthog poly using x map and owned sg map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_x_sg(Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const {
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_x_sg(Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const {
       return sg_nonlin_model->create_x_sg(CV, v);
     }
 
     //! Create vector orthog poly using p map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_p_sg(int l, Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const {
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_p_sg(int l, Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const {
       return sg_nonlin_model->create_p_sg(l, CV, v);
     }
 
     //! Create vector orthog poly using g map
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
-    create_g_sg(int l, Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
+    create_g_sg(int l, Epetra_DataAccess CV = Copy,
+                const Epetra_Vector* v = NULL) const;
 
     //! Create multi-vector orthog poly using g map
-    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
-    create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
-		   const Epetra_MultiVector* v = NULL) const;
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
+    create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy,
+                   const Epetra_MultiVector* v = NULL) const;
 
     //@}
-    
+
   private:
 
     /** \brief . */
@@ -172,16 +172,16 @@ namespace Epetra {
     Teuchos::RCP<const Epetra_Map> get_f_map() const;
     /** \brief . */
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-    
+
   private:
-    
+
     Teuchos::RCP<Teuchos::ParameterList> piroParams;
     Piro::Epetra::StokhosSolverFactory sg_solver_factory;
-    Teuchos::RCP<Stokhos::SGModelEvaluator> sg_nonlin_model;
+    Teuchos::RCP<Stokhos::SGModelEvaluatorBase> sg_nonlin_model;
     Teuchos::RCP<Stokhos::SGInverseModelEvaluator> sg_solver;
-    
+
   };
-  
+
 }
 }
 #endif

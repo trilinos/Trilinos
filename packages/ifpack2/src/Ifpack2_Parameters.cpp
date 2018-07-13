@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -92,6 +92,11 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: relative threshold", (double)1.0);
   params.set("fact: relax value", (double)0.0);
 
+  // Ifpack2_LocalSparseTriangularSolver.cpp
+  params.set("trisolver: type", "Internal");
+  params.set("trisolver: block size", (int)1);
+  params.set("trisolver: reverse U", false);
+
   // Overlapping partitioner
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
@@ -138,11 +143,11 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: overlap", (int)0);
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   params.set("partitioner: parts", tmp0);
+  params.set("partitioner: maintain sparsity", false);
 
   // Ifpack2_METISPartitioner.hpp
   // ap 25 May 2016: all METIS for backwards compatibility ONLY
   params.set("partitioner: use symmetric graph", true);
-
 
   // Ifpack2_Details_Amesos2Wrapper
   Teuchos::ParameterList dummyList;

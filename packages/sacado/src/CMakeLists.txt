@@ -19,6 +19,30 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/new_design)
+SET(HEADERS ${HEADERS}
+  new_design/Sacado_Fad_Exp_MathFunctions.hpp
+  new_design/Sacado_Fad_Exp_Expression.hpp
+  new_design/Sacado_Fad_Exp_ExpressionTraits.hpp
+  new_design/Sacado_Fad_Exp_ExprAssign.hpp
+  new_design/Sacado_Fad_Exp_Extender.hpp
+  new_design/Sacado_Fad_Exp_GeneralFad.hpp
+  new_design/Sacado_Fad_Exp_GeneralFadTraits.hpp
+  new_design/Sacado_Fad_Exp_Ops.hpp
+  new_design/Sacado_Fad_Exp_DynamicStorage.hpp
+  new_design/Sacado_Fad_Exp_StaticStorage.hpp
+  new_design/Sacado_Fad_Exp_StaticFixedStorage.hpp
+  new_design/Sacado_Fad_Exp_MemPoolStorage.hpp
+  new_design/Sacado_Fad_Exp_VectorDynamicStorage.hpp
+  new_design/Sacado_Fad_Exp_ViewStorage.hpp
+  new_design/Sacado_Fad_Exp_DFad.hpp
+  new_design/Sacado_Fad_Exp_SLFad.hpp
+  new_design/Sacado_Fad_Exp_SFad.hpp
+  new_design/Sacado_Fad_Exp_ViewFad.hpp
+  new_design/Sacado_Fad_Exp_DMFad.hpp
+  new_design/Sacado_Fad_Exp_DVFad.hpp
+  )
+
 # FAD
 SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp
@@ -161,6 +185,9 @@ SET(HEADERS ${HEADERS}
   Sacado_StaticArrayTraits.hpp
   Sacado_Handle.hpp
   )
+SET(SOURCES ${SOURCES}
+  Sacado_DynamicArrayTraits.cpp
+  )
 
 # TEMPLATE
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/template)
@@ -263,9 +290,11 @@ SET(HEADERS ${HEADERS}
   Sacado_No_Kokkos.hpp
   Kokkos_View_Fad.hpp
   Kokkos_DynRankView_Fad.hpp
-  Kokkos_AnalyzeSacadoShape.hpp
+  Kokkos_DynRankView_Fad_Contiguous.hpp
   Kokkos_LayoutContiguous.hpp
+  Kokkos_LayoutNatural.hpp
   KokkosExp_View_Fad.hpp
+  KokkosExp_View_Fad_Contiguous.hpp
   Kokkos_ViewFactory.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp

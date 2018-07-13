@@ -112,7 +112,7 @@ class MultiLevel(ML.BaseOperator):
     }
 
     # Builds the multilevel hierarchy
-    for level in xrange(MaxLevels):
+    for level in range(MaxLevels):
       A = A_array[level]
       NextNullSpace = ML.MultiVector()
       # Constructs the non-smoothed prolongator...
@@ -247,7 +247,7 @@ def main():
   Solver.SetPrecOperator(PrecWrap)
   Solver.Iterate(10, 1e-5)
 
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 ################################################################################
 

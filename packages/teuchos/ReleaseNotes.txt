@@ -2,6 +2,21 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
+Trilinos 12.14
+--------------
+
+* MINOR: Thread-safe implementation of Teuchos Memory Management classes
+  Teuchos::RCP, Teuchos::Ptr, Teuchos::Array, Teuchos::ArrayView, and
+  Teuchos::ArrayRCP: This new thread-safe implementation is disabled by
+  default but can be enabled by setting -DTeuchos_ENABLE_THREAD_SAFE=ON (which
+  is also set when -DTrilinos_ENABLE_THREAD_SAFE=ON is set).  The new
+  implementation (thread-safe or non-thread-safe) should be completely
+  backward compatible except for not allowing exceptions to be thrown from
+  destructors.  The old non-thread-safe implementation would gracefully allow
+  exceptions to be thrown from a destructor and maintain the strong guarantee.
+  The new implementation will abort when an exception is thrown from a
+  destructor while freeing a managed object.
+
 Trilinos 12.0
 -------------
 

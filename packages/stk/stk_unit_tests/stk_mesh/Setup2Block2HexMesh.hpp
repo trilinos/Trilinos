@@ -1,3 +1,6 @@
+#ifndef STK_SETUP_2BLOCK_2HEX_MESH_H
+#define STK_SETUP_2BLOCK_2HEX_MESH_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -115,3 +118,4 @@ void setup2Block2HexMesh(stk::mesh::BulkData& bulk)
   bulk.modification_end();
 }
 
+#endif

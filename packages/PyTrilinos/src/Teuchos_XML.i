@@ -43,17 +43,8 @@
 // @HEADER
 
 %{
-// Teuchos includes
-#include "Teuchos_XMLObjectImplem.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
-#include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_XMLInputSource.hpp"
-#include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_StringInputSource.hpp"
-
-// PyTrilinos includes
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 %}
 
 // Teuchos imports
@@ -95,7 +86,14 @@ the empty string."
   {
     PyObject * strObj = PyObject_Str(value);
     if (!strObj) throw PyTrilinos::PythonException();
+%#if PY_VERSION_HEX >= 0x03000000
+    PyObject * byteObj = PyUnicode_AsASCIIString(strObj);
+    if (!byteObj) throw PyTrilinos::PythonException();
+    self->addAttribute(name, std::string(PyBytes_AsString(byteObj)));
+    Py_DECREF(byteObj);
+%#else
     self->addAttribute(name, std::string(PyString_AsString(strObj)));
+%#endif
     Py_DECREF(strObj);
   }
   PyObject * getWithDefault(const std::string & name, PyObject * defaultValue)

@@ -21,19 +21,25 @@ tracking.
 \section avail License and Availability
 The EXODUS library is licensed under the BSD open source license.
 
-Copyright (c) 2005 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
-with Sandia Corporation, the U.S. Government retains certain rights in this software.
+Copyright (c) 2005 National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
 
-Redistribution and use in source and binary forms, with or without modification, are permitted
-provided that the following conditions are met:
-  - Redistributions of source code must retain the above copyright notice, this list of conditions
-and the following disclaimer.
-  - Redistributions in binary form must reproduce the above copyright notice, this list
-of conditions and the following disclaimer in the documentation and/or other
-materials provided with the distribution.
-  -Neither the name of Sandia Corporation nor the names of its contributors may be
-used to endorse or promote products derived from this software without specific
-prior written permission.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of NTESS nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -255,7 +261,8 @@ database.  Valid values for 'option' are:
 | EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression
 | EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled
 | EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in api functions.
-| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on the database.
+| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on
+the database.
 
 The compression-related options are only available on netcdf-4 files
 since the underlying hdf5 compression functionality is used for the
@@ -266,16 +273,51 @@ sufficient.
 
 \defgroup ResultsData Results Data
 @{
- This section describes data file utility functions for creating /
- opening a file, initializing a file with global parameters, reading /
- writing information text, inquiring on parameters stored in the data
- file, and error reporting.
+This section describes data file utility functions for creating
+opening a file, initializing a file with global parameters, reading
+writing information text, inquiring on parameters stored in the data
+file, and error reporting.
+
+The results are optional and include an optional variable type for
+each block and set type (node, edge, face, and element) in addition
+there are global variables and sideset variables -- each of which is
+stored through time. Nodal results are output (at each time step) for
+all the nodes in the model. An example of a nodal variable is
+displacement in the X direction. Global results are output (at each
+time step) for a single element or node, or for a single
+property. Linear momentum of a structure and the acceleration at a
+particular point are both examples of global variables.  The other
+results are output (at each time step) for all entities (elements,
+faces, edges, nodes, or sides) in one or more entity blocks. For
+example, stress may be an element variable. Another use of element
+variables is to record element status (a binary flag indicating
+whether each element is "alive" or "dead") through time. Although
+these examples correspond to typical FE applications, the data format
+is flexible enough to accommodate a spectrum of uses.
+
+A few conventions and limitations must be cited:
+
++ There are no restrictions on the frequency of results output except
+that the time value associated with each successive time step should
+increase monotonically.
+
++ All variables are output at the same time frequency. To output
+results at different frequencies (i.e., variable A at every simulation
+time step, variable B at every other time step) multiple files must be
+used.
+
++ There are no limits to the number of each type of results, but once
+declared, the number cannot change.
+
++ If the mesh geometry changes in time (i.e., number of nodes
+increases, connectivity changes), the new geometry must be output to a
+new file.
 @}
 
 \defgroup Utilities Data File Utilities
   @{
-This section describes data file utility functions for creating /
-opening a file, initializing a file with global parameters, reading /
+This section describes data file utility functions for creating
+opening a file, initializing a file with global parameters, reading
 writing information text, inquiring on parameters stored in the data
 file, and error reporting.
   @}

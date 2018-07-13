@@ -204,7 +204,6 @@ product_registry_add(
   stk_classic::ProductRegistry::instance().addProduct(name ? name : "<unknown>");
 }
 
-
 void
 product_registry_add_tpl(
   const char *		name,
@@ -212,13 +211,6 @@ product_registry_add_tpl(
   const char *		qualifier )
 {
   stk_classic::ProductRegistry::instance().addTPL(name ? name : "<unknown>", version ? version : "", qualifier ? qualifier : "");
-}
-
-
-size_t
-product_registry_size()
-{
-  return stk_classic::ProductRegistry::instance().getProductMap().size();
 }
 
 } // extern "C"

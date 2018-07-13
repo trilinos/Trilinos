@@ -232,6 +232,11 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
          // copy coordinates into multi vector
          for(std::size_t d=0;d<physicalDim;d++)
             coord[d] = array[physicalDim*n + d];
+
+         // need to ensure that higher dimensions are properly zeroed
+         // required for 1D periodic boundary conditions
+         for(std::size_t d=physicalDim;d<3;d++)
+           coord[d] = 0;
       }
    }
 
@@ -305,6 +310,10 @@ getSideIdsAndCoords(const STK_Interface & mesh,
       Teuchos::Tuple<double,3> & coords = (*dist_side_coords)[n];
       for(unsigned d=0;d<physicalDim;d++)
          coords[d] = (*(*distCoordVec)(d))[n];
+
+      // ensure that higher dimensions are zero
+      for(unsigned d=physicalDim;d<3;d++)
+         coords[d] = 0;
    }
 
    return std::make_pair(dist_side_ids,dist_side_coords);

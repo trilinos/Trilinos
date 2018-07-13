@@ -234,6 +234,8 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
     MEB::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
     inArgs.setSupports(MEB::IN_ARG_x);
+    inArgs.setSupports(MEB::IN_ARG_step_size);
+    inArgs.setSupports(MEB::IN_ARG_stage_number);
     inArgs_ = inArgs;
   }
   // Set up prototypical OutArgs
@@ -359,6 +361,7 @@ DiagonalImplicitRKModelEvaluator<Scalar>::createInArgs() const
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
+
   return inArgs_;
 }
 
@@ -384,8 +387,10 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   ) const
 {
 
+
   typedef ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
 
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error!  initializeDIRKModel must be called before evalModel\n"
@@ -428,6 +433,22 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   daeInArgs.set_t( t_old_ + dirkButcherTableau_->c()(currentStage_) * delta_t_ );
   daeInArgs.set_alpha(ST::one());
   daeInArgs.set_beta( delta_t_ * dirkButcherTableau_->A()(currentStage_,currentStage_) );
+
+  if (daeInArgs.supports(MEB::IN_ARG_step_size)) {
+    TScalarMag scaled_dt;
+
+    if (currentStage_ == 0 && dirkButcherTableau_->A()(currentStage_,currentStage_) == 0) {
+       scaled_dt = Scalar( delta_t_ /dirkButcherTableau_->numStages() );
+    } else {
+       scaled_dt = dirkButcherTableau_->c()(currentStage_) * delta_t_;
+    }
+
+    daeInArgs.set_step_size( scaled_dt );
+  } 
+
+  if (daeInArgs.supports(MEB::IN_ARG_stage_number)) {
+      daeInArgs.set_stage_number( dirkButcherTableau_->c()(currentStage_) );
+  } 
 
   // B.2) Setup the DAE's outArgs for stage f(i) ...
   if (!is_null(f_out))

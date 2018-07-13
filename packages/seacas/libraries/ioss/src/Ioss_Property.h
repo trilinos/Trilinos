@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,11 +33,11 @@
 #ifndef IOSS_Ioss_Property_h
 #define IOSS_Ioss_Property_h
 
-#include <stdint.h> // for int64_t
-#include <string>   // for string
+#include <cstdint> // for int64_t
+#include <string>  // for string
 namespace Ioss {
   class GroupingEntity;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
@@ -51,7 +51,7 @@ namespace Ioss {
     enum VariableType { UNKNOWN_VAR_TYPE = -1, SCALAR };
 
     Property();
-    Property(std::string name, const BasicType type, const VariableType storage, void *data,
+    Property(std::string name, BasicType type, VariableType storage, void *data,
              bool is_it_implicit = false);
     Property(std::string name, int64_t value, bool is_it_implicit = false);
     Property(std::string name, int value, bool is_it_implicit = false);
@@ -60,11 +60,10 @@ namespace Ioss {
     Property(std::string name, void *value, bool is_it_implicit);
 
     // To set implicit property
-    Property(const GroupingEntity *ge, std::string name, const BasicType type);
+    Property(const GroupingEntity *ge, std::string name, BasicType type);
 
-    Property(const Property & /*from*/);
-
-    bool operator<(const Property &other) const;
+    Property(const Property &from);
+    Property &operator=(Property rhs);
 
     ~Property();
 
@@ -111,7 +110,6 @@ namespace Ioss {
     BasicType get_type() const { return type_; }
 
   private:
-    Property &   operator=(const Property &); // Do not implement
     std::string  name_;
     BasicType    type_;
     VariableType storage_;
@@ -134,7 +132,7 @@ namespace Ioss {
       double                rval;
       int64_t               ival;
     };
-    Data data_;
+    Data data_{};
   };
-}
+} // namespace Ioss
 #endif

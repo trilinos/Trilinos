@@ -91,9 +91,6 @@ class PrePostOperator {
 
 private:
 
-  //! Disallow default ctor.
-  PrePostOperator();
-
   //! Disallow copy ctor.
   PrePostOperator(const PrePostOperator& p);
 
@@ -102,9 +99,12 @@ private:
 
 public:
 
+  //! Ctor. Requires call to reset() to initialize object.
+  PrePostOperator();
+
   //! Ctor.
   PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils,
-          Teuchos::ParameterList& solverOptionsSubList);
+                  Teuchos::ParameterList& solverOptionsSubList);
 
   //! Destructor.
   virtual ~PrePostOperator();
@@ -112,7 +112,7 @@ public:
   //! Resets the pre/post operator.
   virtual void
   reset(const Teuchos::RCP<NOX::Utils>& utils,
-    Teuchos::ParameterList& solverOptionsSublist);
+        Teuchos::ParameterList& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);
@@ -125,6 +125,12 @@ public:
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
+
+  //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPreLineSearch(const NOX::Solver::Generic& solver);
+
+  //! User defined method that will be executed after a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPostLineSearch(const NOX::Solver::Generic& solver);
 
 protected:
 
@@ -164,6 +170,20 @@ runPostSolve(const NOX::Solver::Generic& solver)
 {
   if (havePrePostOperator)
     prePostOperatorPtr->runPostSolve(solver);
+}
+
+inline void NOX::Solver::PrePostOperator::
+runPreLineSearch(const NOX::Solver::Generic& solver)
+{
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreLineSearch(solver);
+}
+
+inline void NOX::Solver::PrePostOperator::
+runPostLineSearch(const NOX::Solver::Generic& solver)
+{
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostLineSearch(solver);
 }
 
 #endif

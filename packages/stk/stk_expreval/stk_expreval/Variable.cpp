@@ -40,7 +40,6 @@ VariableMap::Resolver &
 VariableMap::getDefaultResolver()
 {
   static DefaultResolver default_resolver;
-
   return default_resolver;
 }
 

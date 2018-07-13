@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <map>                          // for map, map<>::mapped_type
 #include <ostream>                      // for basic_ostream::operator<<
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData

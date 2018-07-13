@@ -36,122 +36,72 @@
  */
 
 #ifndef YY_SEAMS_STACK_HH_INCLUDED
-# define YY_SEAMS_STACK_HH_INCLUDED
+#define YY_SEAMS_STACK_HH_INCLUDED
 
-# include <vector>
-
+#include <vector>
 
 namespace SEAMS {
 #line 46 "stack.hh" // stack.hh:132
-  template <class T, class S = std::vector<T> >
-  class stack
+  template <class T, class S = std::vector<T>> class stack
   {
   public:
     // Hide our reversed order.
-    typedef typename S::reverse_iterator iterator;
+    typedef typename S::reverse_iterator       iterator;
     typedef typename S::const_reverse_iterator const_iterator;
 
-    stack ()
-      : seq_ ()
-    {
-      seq_.reserve (200);
-    }
+    stack() : seq_() { seq_.reserve(200); }
 
-    stack (unsigned int n)
-      : seq_ (n)
-    {}
+    explicit stack(unsigned int n) : seq_(n) {}
 
-    inline
-    T&
-    operator[] (unsigned int i)
-    {
-      return seq_[seq_.size () - 1 - i];
-    }
+    inline T &operator[](unsigned int i) { return seq_[seq_.size() - 1 - i]; }
 
-    inline
-    const T&
-    operator[] (unsigned int i) const
-    {
-      return seq_[seq_.size () - 1 - i];
-    }
+    inline const T &operator[](unsigned int i) const { return seq_[seq_.size() - 1 - i]; }
 
     /// Steal the contents of \a t.
     ///
     /// Close to move-semantics.
-    inline
-    void
-    push (T& t)
+    inline void push(T &t)
     {
-      seq_.push_back (T());
-      operator[](0).move (t);
+      seq_.push_back(T());
+      operator[](0).move(t);
     }
 
-    inline
-    void
-    pop (unsigned int n = 1)
+    inline void pop(unsigned int n = 1)
     {
-      for (; n; --n)
-        seq_.pop_back ();
+      for (; n != 0u; --n) {
+        seq_.pop_back();
+      }
     }
 
-    void
-    clear ()
-    {
-      seq_.clear ();
-    }
+    void clear() { seq_.clear(); }
 
-    inline
-    typename S::size_type
-    size () const
-    {
-      return seq_.size ();
-    }
+    inline typename S::size_type size() const { return seq_.size(); }
 
-    inline
-    const_iterator
-    begin () const
-    {
-      return seq_.rbegin ();
-    }
+    inline const_iterator begin() const { return seq_.rbegin(); }
 
-    inline
-    const_iterator
-    end () const
-    {
-      return seq_.rend ();
-    }
+    inline const_iterator end() const { return seq_.rend(); }
 
   private:
-    stack (const stack&);
-    stack& operator= (const stack&);
+    stack(const stack &);
+    stack &operator=(const stack &);
     /// The wrapped container.
     S seq_;
   };
 
   /// Present a slice of the top of a stack.
-  template <class T, class S = stack<T> >
-  class slice
+  template <class T, class S = stack<T>> class slice
   {
   public:
-    slice (const S& stack, unsigned int range)
-      : stack_ (stack)
-      , range_ (range)
-    {}
+    slice(const S &stack, unsigned int range) : stack_(stack), range_(range) {}
 
-    inline
-    const T&
-    operator [] (unsigned int i) const
-    {
-      return stack_[range_ - i];
-    }
+    inline const T &operator[](unsigned int i) const { return stack_[range_ - i]; }
 
   private:
-    const S& stack_;
+    const S &    stack_;
     unsigned int range_;
   };
 
-
-} // SEAMS
+} // namespace SEAMS
 #line 156 "stack.hh" // stack.hh:132
 
 #endif // !YY_SEAMS_STACK_HH_INCLUDED

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -55,10 +55,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for ex_init_params, void_int, etc
-#include "exodusII_int.h" // for EX_NOERR
-#include <string.h>       // for strcpy
-#include <sys/types.h>    // for int64_t
+#include "exodusII.h" // for ex_init_params, void_int, etc
+#include "exodusII_int.h"
+#include <stdint.h> // for int64_t
+#include <string.h> // for strcpy
 
 /*!
 
@@ -87,7 +87,7 @@ number of coordinates per node.
 The following code segment will read the initialization parameters
 from the open exodus file:
 
-\code
+~~~{.c}
 int num_dim, num_nodes, num_elem, num_elem_blk,
     num_node_sets, num_side_sets, error, exoid;
 
@@ -96,7 +96,7 @@ char title[MAX_LINE_LENGTH+1];
 \comment{read database parameters}
 error = ex_get_init (exoid, title, &num_dim, &num_nodes,
                      &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
-\endcode
+~~~
 
 */
 
@@ -106,10 +106,13 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   ex_init_params info;
   int            errval;
 
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
+
   info.title[0] = '\0';
   errval        = ex_get_init_ext(exoid, &info);
   if (errval < 0) {
-    return errval;
+    EX_FUNC_LEAVE(errval);
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -144,5 +147,5 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   }
   strcpy(title, info.title);
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -15,6 +15,8 @@ std::string deps();
  */
 class HelloWorld {
 public:
+  /** \brief. */
+  HelloWorld();
   /** \brief . */
   void printHelloWorld(std::ostream &out) const;
   /** \brief Deprecated. */

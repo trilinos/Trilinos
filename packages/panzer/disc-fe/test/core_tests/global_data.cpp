@@ -44,8 +44,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_GlobalDataAcceptor_DefaultImpl.hpp"
 #include "Panzer_GlobalData.hpp"
 

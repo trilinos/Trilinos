@@ -1,5 +1,5 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/)
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/BlockedTransfers)
@@ -17,11 +17,15 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
+  BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
+  FineLevelInputDataFactory.cpp
+  GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
+  IntrepidPCoarsenFactory.cpp
   Level.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
@@ -32,13 +36,25 @@ APPEND_SET(SOURCES
   PermutedTransferFactory.cpp
   PgPFactory.cpp
   RAPFactory.cpp
+  RAPShiftFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
+  StructuredAggregationFactory.cpp
+  StructuredLineDetection.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UnsmooshFactory.cpp
+  UserData/CreateXpetraPreconditioner.cpp
   Utilities
   VariableContainer.cpp
+  VariableDofLaplacianFactory.cpp
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp
+  SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/UserData
+  SOURCE_FILES test.xml
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/UserData
 )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -48,12 +64,15 @@ APPEND_SET(SOURCES
 )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
+APPEND_SET(SOURCES
+  BlockedCoarseMapFactory.cpp
+  BlockedPFactory.cpp
+  SchurComplementFactory.cpp
+  SubBlockAFactory.cpp
+)
+IF (TPL_ENABLE_MPI)
   APPEND_SET(SOURCES
-    BlockedCoarseMapFactory.cpp
-    BlockedPFactory.cpp
-    SchurComplementFactory.cpp
-    SubBlockAFactory.cpp
+  BlockedRepartition.cpp
   )
 ENDIF()
 
@@ -78,9 +97,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
-  IF (${PACKAGE_NAME}_ENABLE_Experimental)
-    APPEND_SET(SOURCES Smoothers/BlockedSmoother.cpp)
-  ENDIF()
+  APPEND_SET(SOURCES Smoothers/BlockedSmoother.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -90,17 +107,13 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
   IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra OR NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
-    IF (${PACKAGE_NAME}_ENABLE_Experimental)
-      APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
-    ENDIF()
+    APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
   ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
-  IF (${PACKAGE_NAME}_ENABLE_Experimental)
-    APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
-  ENDIF()
+  APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
@@ -111,22 +124,28 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
     )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-  IF (${PACKAGE_NAME}_ENABLE_Belos)
-    APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
-  ENDIF()
-
-  IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
-      (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
-    APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsCreatePreconditioner_cp
-      SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
-      SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
-      )
-  ENDIF()
-
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+  APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
+
+IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
+    (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsCreatePreconditioner_cp
+    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
+    SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
+    )
+ENDIF()
+
+
+
+IF (${PACKAGE_NAME}_ENABLE_Intrepid)
+APPEND_SET(SOURCES
+  IntrepidPCoarsenFactory.cpp
+)
+ENDIF()
+
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   APPEND_SET(SOURCES Zoltan.cpp
@@ -140,18 +159,9 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
-IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
-  INCLUDE_DIRECTORIES(${yaml-cpp_INCLUDE_DIRS})
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Interface/YamlParameterList)
-  APPEND_SET(SOURCES yaml/YamlParameterList.cpp)
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(MueLu_Yaml_cp
-    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/yaml/
-    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/yaml/
-    SOURCE_FILES Match1.yaml Match1.xml Match2.yaml Match2.xml Match3.yaml Match3.xml Match4.yaml Match4.xml Arrays.yaml IllegalKeyString.yaml IntVsDouble.xml IntVsDouble.yaml MueLuConfig.yaml MueLuConfig.xml InconsistentArray.yaml input_restingHydrostatic_RK4.xml plasma_oscillation_rtc.xml
-  )
-ENDIF()
-
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
+  APPEND_SET(SOURCES Galeri.cpp)
+
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
     SOURCES ${SOURCES}

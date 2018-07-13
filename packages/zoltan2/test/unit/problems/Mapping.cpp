@@ -370,8 +370,9 @@ bool runTest(
       std::cout << hi << " FAILED: invalid mapping solution" << std::endl;
   }
 
+
   // Test mapping explicitly using default machine
-  typedef Zoltan2::MachineRepresentation<int, part_t> machine_t;
+  typedef Zoltan2::MachineRepresentation<scalar_t, part_t> machine_t;
   machine_t defMachine(*comm);
 
 #ifdef KDD
@@ -396,7 +397,7 @@ bool runTest(
   if (me == 0)
     std::cout << "Testing Mapping using a partitioning solution" << std::endl;
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
   Zoltan2::PartitioningSolution<Adapter> psoln(env, comm, 0);
 
   ArrayRCP<part_t> partList(ia.getLocalNumIDs());
@@ -405,8 +406,19 @@ bool runTest(
 
   psoln.setParts(partList);
 
+#ifdef HAVE_ZOLTAN2_MPI
+  // Use an MPI_Comm, just to exercise that bit of code
+  // In real life, no one should extract the MPI_Comm from the Teuchos::Comm;
+  // he should use the Teuchos::Comm.  But for testing,
+  // we need to exercise the MPI_Comm interface.
+  MPI_Comm mpicomm =  Teuchos::getRawMpiComm(*comm);
+  Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, mpicomm,
+                                                     NULL, &defMachine);
+#else
   Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, comm,
                                                      NULL, &defMachine);
+#endif
+
   mprob3.solve();
 
   Zoltan2::MappingSolution<Adapter> *msoln3 = mprob3.getSolution();
@@ -430,8 +442,8 @@ int main(int argc, char *argv[])
   bool allgood = true;
 
   typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
-  typedef vecAdapter_t::part_t part_t;
-  typedef vecAdapter_t::scalar_t scalar_t;
+  //typedef vecAdapter_t::part_t part_t;
+  //typedef vecAdapter_t::scalar_t scalar_t;
 
   // TEST 1
   {

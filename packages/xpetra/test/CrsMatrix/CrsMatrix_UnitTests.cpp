@@ -49,13 +49,15 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapExtractor.hpp>
+#include <Xpetra_MultiVectorFactory.hpp> // taw: include MultiVectorFactory before VectorFactory for BlockedMultiVector
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -252,7 +254,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
@@ -342,7 +344,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
@@ -986,7 +988,6 @@ namespace {
     TEST_EQUALITY(A->getGlobalNumRows (), Acopy->getGlobalNumRows ());
     TEST_EQUALITY(A->getGlobalNumCols (), Acopy->getGlobalNumCols ());
     TEST_EQUALITY(A->getGlobalNumEntries (), Acopy->getGlobalNumEntries ());
-    TEST_EQUALITY(A->getGlobalNumDiags (), Acopy->getGlobalNumDiags ());
     TEST_EQUALITY(A->getGlobalMaxNumRowEntries (), Acopy->getGlobalMaxNumRowEntries ());
 
     // FIXME (mfh 24 Apr 2014) Need to test separately on each MPI
@@ -994,7 +995,6 @@ namespace {
     TEST_EQUALITY(A->getNodeNumRows (), Acopy->getNodeNumRows ());
     TEST_EQUALITY(A->getNodeNumCols (), Acopy->getNodeNumCols ());
     TEST_EQUALITY(A->getNodeNumEntries (), Acopy->getNodeNumEntries ());
-    TEST_EQUALITY(A->getNodeNumDiags (), Acopy->getNodeNumDiags ());
     TEST_EQUALITY(A->getNodeMaxNumRowEntries (), Acopy->getNodeMaxNumRowEntries ());
 
     // Acopy and A should be identically the same.  We can verify this
@@ -1152,7 +1152,7 @@ namespace {
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
@@ -1178,11 +1178,6 @@ namespace {
                                 Teuchos::tuple<Scalar>(1.0) );
     }
 
-    // access data before fill complete!
-    bool bSuccess = true;
-    TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
-    TEST_EQUALITY(bSuccess, true);
-
     A->fillComplete();
 
     // access data after fill complete!
@@ -1193,7 +1188,7 @@ namespace {
 
     // check that the local_matrix_type taken the second time is the same
     local_matrix_type view3 = A->getLocalMatrix();
-    TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
+    TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
 
     for (LO r = 0; r < view2.numRows(); ++r) {
       // extract data from current row r
@@ -1251,8 +1246,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     std::cout << "Run ConstructMatrixKokkos test" << std::endl;
-    Kokkos::initialize();
+    //Kokkos::initialize();
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
@@ -1430,7 +1426,8 @@ namespace {
         }
       }
     }
-    Kokkos::finalize();
+    //Kokkos::finalize();
+#endif
 #endif
   }
 

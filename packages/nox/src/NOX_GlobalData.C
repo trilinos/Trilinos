@@ -54,57 +54,42 @@
 
 NOX::GlobalData::
 GlobalData(const Teuchos::RCP<Teuchos::ParameterList>& noxParams)
-{
-  paramListPtr = noxParams;
-
-  utilsPtr = Teuchos::rcp(new NOX::Utils(noxParams->sublist("Printing")));
-
-  Teuchos::ParameterList& solverOptionsList =
-    noxParams->sublist("Solver Options");
-
-  if (solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP<NOX::MeritFunction::Generic> >
-      ("User Defined Merit Function")) {
-
-    meritFunctionPtr = solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RCP<NOX::MeritFunction::Generic> >
-      ("User Defined Merit Function");
-  }
-  else {
-    meritFunctionPtr =
-      Teuchos::rcp(new NOX::MeritFunction::SumOfSquares(utilsPtr));
-  }
-
-}
+{ this->initialize(noxParams); }
 
 NOX::GlobalData::
 GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
-       const Teuchos::RCP<NOX::MeritFunction::Generic>& mf) :
+           const Teuchos::RCP<NOX::MeritFunction::Generic>& mf) :
   utilsPtr(utils),
   meritFunctionPtr(mf)
+{}
+
+NOX::GlobalData::~GlobalData() {}
+
+void NOX::GlobalData::
+initialize(const Teuchos::RCP<Teuchos::ParameterList>& noxParams)
 {
+  paramListPtr = noxParams;
+  utilsPtr = Teuchos::rcp(new NOX::Utils(noxParams->sublist("Printing")));
 
+  Teuchos::ParameterList& so = noxParams->sublist("Solver Options");
+
+  if (so.isType< Teuchos::RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")) {
+    meritFunctionPtr = so.get< Teuchos::RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function");
+  }
+
+  // PL validator sets a default null RCP. If it is null, allocate
+  // a concrete default.
+  if (is_null(meritFunctionPtr))
+    meritFunctionPtr = Teuchos::rcp(new NOX::MeritFunction::SumOfSquares(utilsPtr)); 
 }
-
-NOX::GlobalData::~GlobalData()
-{
-
-}
-
 
 Teuchos::RCP<NOX::Utils> NOX::GlobalData::getUtils() const
-{
-  return utilsPtr;
-}
+{ return utilsPtr; }
 
 Teuchos::RCP<NOX::MeritFunction::Generic>
 NOX::GlobalData::getMeritFunction() const
-{
-  return meritFunctionPtr;
-}
+{ return meritFunctionPtr; }
 
 Teuchos::RCP<Teuchos::ParameterList>
 NOX::GlobalData::getNoxParameterList() const
-{
-  return paramListPtr;
-}
+{ return paramListPtr; }

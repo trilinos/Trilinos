@@ -1,4 +1,4 @@
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 
 TRIBITS_ADD_EXECUTABLE(
@@ -30,13 +30,15 @@ ADVANCED_SET(Pamgen_run_test_script_l_01_DISABLE ON CACHE BOOL
 
 FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "HOST;XHOST;HOSTTYPE;XHOSTTYPE;ARGS;CATEGORIES"
      #options
      "LONG_LONG"
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "HOST;XHOST;HOSTTYPE;XHOSTTYPE;ARGS;CATEGORIES"
      ${ARGN}
      )
 

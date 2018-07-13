@@ -26,13 +26,90 @@
 #include <MueLu_HierarchyUtils.hpp>
 
 
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
 #include <MueLu_AMGXOperator.hpp>
 #include <amgx_c.h>
 #include "cuda_runtime.h"
 #endif
 
 namespace MueLu {
+
+
+  /*!
+    @brief Helper function to create a MueLu or AMGX preconditioner that can be used by Tpetra.
+    @ingroup MueLuAdapters
+    Given a Tpetra::Operator, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] dummyList used to avoid duplicate function signature
+  */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA,
+                         Teuchos::ParameterList& inParamList,
+                         Teuchos::ParameterList& dummyList)
+  {
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    using   Teuchos::ParameterList;
+
+    typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
+    typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
+    typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
+    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
+
+#if defined(HAVE_MUELU_AMGX)
+    std::string externalMG = "use external multigrid package";
+    if (inParamList.isParameter(externalMG) && inParamList.get<std::string>(externalMG) == "amgx"){      
+      const RCP<crs_matrix_type> constCrsA = rcp_dynamic_cast<crs_matrix_type>(inA);
+      TEUCHOS_TEST_FOR_EXCEPTION(constCrsA == Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: failed to dynamic cast to Tpetra::CrsMatrix, which is required to be able to use AmgX.");
+      return rcp(new AMGXOperator<SC,LO,GO,NO>(constCrsA,inParamList));
+    }
+#endif
+
+    // Wrap A
+    RCP<Matrix> A;
+    RCP<block_crs_matrix_type> bcrsA = rcp_dynamic_cast<block_crs_matrix_type>(inA);
+    RCP<crs_matrix_type> crsA = rcp_dynamic_cast<crs_matrix_type>(inA);
+    if (crsA != Teuchos::null)
+      A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(crsA);
+    else if (bcrsA != Teuchos::null) {
+      RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsA));
+      TEUCHOS_TEST_FOR_EXCEPTION(temp==Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: cast from Tpetra::Experimental::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
+      A = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CreateTpetraPreconditioner: only Tpetra CrsMatrix and BlockCrsMatrix types are supported.");
+    }
+
+    Teuchos::ParameterList& userList = inParamList.sublist("user data");
+    if (userList.isParameter("Coordinates")) {
+      RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+      try {
+        coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        coordinates = userList.get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
+      }
+      userList.set<RCP<Xpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", coordinates);
+    }
+
+    if (userList.isParameter("Nullspace")) {
+      RCP<MultiVector> nullspace = Teuchos::null;
+      try {
+        nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
+      } catch(Teuchos::Exceptions::InvalidParameterType) {
+        nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace");
+      }
+      userList.set<RCP<MultiVector> >("Nullspace", nullspace);
+    }
+
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,inParamList);
+    return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
+  }
 
 
   /*!
@@ -58,48 +135,19 @@ namespace MueLu {
 
     using   Teuchos::ParameterList;
 
-    typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
-    typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
-    typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
-    //typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;  // not used
-    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
-
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
-    std::string externalMG = "use external multigrid package";
-    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
-      constCrsA = rcp_dynamic_cast<const crs_matrix_type>(inA);
-      TEUCHOS_TEST_FOR_EXCEPTION(constCrsA == Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: failed to dynamic cast to Tpetra::CrsMatrix, which is required to be able to use AmgX.");
-      return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,inParamList));
-    }
-#endif
-
-    // Wrap A
-    RCP<Matrix> A;
-    RCP<block_crs_matrix_type> bcrsA = rcp_dynamic_cast<block_crs_matrix_type>(inA);
-    RCP<crs_matrix_type> crsA = rcp_dynamic_cast<crs_matrix_type>(inA);
-    if (crsA != Teuchos::null)
-      A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(crsA);
-    else if (bcrsA != Teuchos::null) {
-      RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsA));
-      TEUCHOS_TEST_FOR_EXCEPTION(temp==Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: cast from Tpetra::Experimental::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
-      A = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CreateTpetraPreconditioner: only Tpetra CrsMatrix and BlockCrsMatrix types are supported.");
-    }
-
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+    // Here the assumption is that the nullspace and coordinates passed
+    // as multivectors will overwrite data on the parameter list.
+    // If you want the data on the parameter list to prevail, then call the
+    // specialization that only accept an operator and a parameterList
+    Teuchos::ParameterList& userList = inParamList.sublist("user data");
     if (inCoords != Teuchos::null) {
-      coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(inCoords);
+      userList.set<RCP<Tpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", inCoords);
     }
-    RCP<MultiVector> nullspace = Teuchos::null;
     if (inNullspace != Teuchos::null) {
-      nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inNullspace);
+      userList.set<RCP<Tpetra::MultiVector<SC,LO,GO,NO> > >("Nullspace", inNullspace);
     }
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,coordinates,nullspace);
-    return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
+    return CreateTpetraPreconditioner<SC,LO,GO,NO>(inA,inParamList,inParamList);
   }
 
 

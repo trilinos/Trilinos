@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -50,7 +50,7 @@
 
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
-#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"
@@ -85,7 +85,7 @@ namespace Ifpack2 {
     /// In order to override the default, just specialize this
     /// function for your particular ScalarType.
     template<class ScalarType>
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
+    inline typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     ilutDefaultDropTolerance () {
       using Teuchos::as;
       typedef Teuchos::ScalarTraits<ScalarType> STS;
@@ -104,7 +104,7 @@ namespace Ifpack2 {
     // Full specialization for ScalarType = double.
     // This specialization preserves ILUT's previous default behavior.
     template<>
-    Teuchos::ScalarTraits<double>::magnitudeType
+    inline Teuchos::ScalarTraits<double>::magnitudeType
     ilutDefaultDropTolerance<double> () {
       return 1e-12;
     }
@@ -128,11 +128,21 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
-{}
+{
+  allocateSolvers();
+}
 
 template <class MatrixType>
 ILUT<MatrixType>::~ILUT()
 {}
+
+template<class MatrixType>
+void ILUT<MatrixType>::allocateSolvers ()
+{
+  L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+}
+
 
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
@@ -236,6 +246,10 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterName&) {
     // Accept the default value.
   }
+
+  // Forward to trisolvers.
+  L_solver_->setParameters(params);
+  U_solver_->setParameters(params);
 
   // "Commit" the values only after validating all of them.  This
   // ensures that there are no side effects if this routine throws an
@@ -343,6 +357,17 @@ double ILUT<MatrixType>::getComputeTime () const {
 template<class MatrixType>
 double ILUT<MatrixType>::getApplyTime () const {
   return ApplyTime_;
+}
+
+
+template<class MatrixType>
+size_t ILUT<MatrixType>::getNodeSmootherComplexity() const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::ILUT::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // ILUT methods cost roughly one apply + the nnz in the upper+lower triangles
+  return A_->getNodeNumEntries() + getNodeNumEntries();
 }
 
 
@@ -766,11 +791,11 @@ void ILUT<MatrixType>::compute ()
     L_->fillComplete();
     U_->fillComplete();
 
-    L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (L_));
+    L_solver_->setMatrix(L_);
     L_solver_->initialize ();
     L_solver_->compute ();
 
-    U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (U_));
+    U_solver_->setMatrix(U_);
     U_solver_->initialize ();
     U_solver_->compute ();
   }
@@ -791,88 +816,61 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  using STS = Teuchos::ScalarTraits<scalar_type>;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isComputed (), std::runtime_error,
+    "Ifpack2::ILUT::apply: You must call compute() to compute the incomplete "
+    "factorization, before calling apply().");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+    "Ifpack2::ILUT::apply: X and Y must have the same number of columns.  "
+    "X has " << X.getNumVectors () << " columns, but Y has "
+    << Y.getNumVectors () << " columns.");
+
+  const scalar_type one = STS::one ();
+  const scalar_type zero = STS::zero ();
 
   Teuchos::Time timer ("ILUT::apply");
-  { // Timer scope for timing apply()
+  { // Start timing
     Teuchos::TimeMonitor timeMon (timer, true);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! isComputed (), std::runtime_error,
-      "Ifpack2::ILUT::apply: You must call compute() to compute the incomplete "
-      "factorization, before calling apply().");
+    if (alpha == one && beta == zero) {
+      if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
+        // Start by solving L Y = X for Y.
+        L_solver_->apply (X, Y, mode);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-      "Ifpack2::ILUT::apply: X and Y must have the same number of columns.  "
-      "X has " << X.getNumVectors () << " columns, but Y has "
-      << Y.getNumVectors () << " columns.");
-
-    if (alpha == Teuchos::ScalarTraits<scalar_type>::zero ()) {
-      // alpha == 0, so we don't need to apply the operator.
-      //
-      // The special case for beta == 0 ensures that if Y contains Inf
-      // or NaN values, we replace them with 0 (following BLAS
-      // convention), rather than multiplying them by 0 to get NaN.
-      if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
-        Y.putScalar (beta);
-      } else {
-        Y.scale (beta);
+        // Solve U Y = Y.
+        U_solver_->apply (Y, Y, mode);
       }
-      return;
-    }
+      else { // Solve U^P (L^P Y)) = X for Y (where P is * or T).
 
-    // If beta != 0, create a temporary multivector Y_temp to hold the
-    // contents of alpha*M^{-1}*X.  Otherwise, alias Y_temp to Y.
-    RCP<MV> Y_temp;
-    if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
-      Y_temp = rcpFromRef (Y);
-    } else {
-      Y_temp = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
-    }
+        // Start by solving U^P Y = X for Y.
+        U_solver_->apply (X, Y, mode);
 
-    // If X and Y are pointing to the same memory location, create an
-    // auxiliary vector, X_temp, so that we don't clobber the input
-    // when computing the output.  Otherwise, alias X_temp to X.
-    RCP<const MV> X_temp;
-    {
-      auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-      auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-      if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
-        X_temp = rcp (new MV (X, Teuchos::Copy));
-      } else {
-        X_temp = rcpFromRef (X);
+        // Solve L^P Y = Y.
+        L_solver_->apply (Y, Y, mode);
       }
     }
-
-    // Create a temporary multivector Y_mid to hold the intermediate
-    // between the L and U (or U and L, for the transpose or conjugate
-    // transpose case) solves.
-    RCP<MV> Y_mid = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
-
-    if (mode == Teuchos::NO_TRANS) { // Solve L U Y = X
-      L_solver_->apply (*X_temp, *Y_mid, mode);
-
-      // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
-      // input and the output?
-
-      U_solver_->apply (*Y_mid, *Y_temp, mode);
+    else { // alpha != 1 or beta != 0
+      if (alpha == zero) {
+        // The special case for beta == 0 ensures that if Y contains Inf
+        // or NaN values, we replace them with 0 (following BLAS
+        // convention), rather than multiplying them by 0 to get NaN.
+        if (beta == zero) {
+          Y.putScalar (zero);
+        } else {
+          Y.scale (beta);
+        }
+      } else { // alpha != zero
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        apply (X, Y_tmp, mode);
+        Y.update (alpha, Y_tmp, beta);
+      }
     }
-    else { // Solve U^* L^* Y = X
-      U_solver_->apply (*X_temp, *Y_mid, mode);
+  }//end timing
 
-      // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
-      // input and the output?
-
-      L_solver_->apply (*Y_mid, *Y_temp, mode);
-    }
-
-    if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
-      Y.scale (alpha);
-    } else { // beta != 0
-      Y.update (alpha, *Y_temp, beta);
-    }
-  }
   ++NumApply_;
   ApplyTime_ += timer.totalElapsedTime ();
 }

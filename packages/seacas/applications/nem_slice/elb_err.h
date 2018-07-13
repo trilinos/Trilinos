@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,7 +36,8 @@
 #ifndef _EXOIILB_ERR_CONST_H_
 #define _EXOIILB_ERR_CONST_H_
 
-#include <string>
+#include <algorithm> // for move
+#include <string>    // for string
 
 /* Structure to store an error message */
 struct error_message
@@ -61,8 +62,8 @@ extern int error_lev;
 extern void error_add(int                level,
                       const std::string &message,  /* The message to add to the error list */
                       const std::string &filename, /* The filename in which the error occured */
-                      int                line      /* The line number in filename where the error
-                                                    * was reported */
+                      int                line_no   /* The line number in filename where the error
+                                                 * was reported */
                       );
 
 extern void error_report(void);

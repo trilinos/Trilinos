@@ -102,6 +102,8 @@ public:
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
     
 protected:
+   using BlockPreconditionerFactory::buildPreconditionerOperator;
+
    // class members
    Teuchos::RCP<InverseFactory> customHFactory_;
    Teuchos::RCP<InverseFactory> invVelFactory_;

@@ -65,6 +65,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
 
     return validParamList;
@@ -74,6 +75,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "Coordinates");
   }
 
@@ -82,17 +84,30 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
-    RCP<const Map>   rowMap   = A->getRowMap();
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
+    RCP<const Map>   rowMap;
+    if(bA != Teuchos::null) {
+      // Extracting the full the row map here...
+      RCP<const Map> bArowMap = bA->getRowMap();
+      RCP<const BlockedMap> bRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(bArowMap);
+      rowMap = bRowMap->getFullMap();
+    } else {
+      rowMap = A->getRowMap();
+    }
 
     typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     RCP<double_multivector_type> Coords   = Get< RCP<double_multivector_type> >(level, "Coordinates");
     size_t           dim      = Coords->getNumVectors();
+    int numParts = Get<int>(level, "number of partitions");
 
-    GO               numParts = level.Get<GO>("number of partitions");
-
-    if (numParts == 1) {
+    if (numParts == 1 || numParts == -1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      Set(level, "Partition", decomposition);
+      return;
+    } else if (numParts == -1) {
+      // No repartitioning
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null;
       Set(level, "Partition", decomposition);
       return;
     }
@@ -123,8 +138,8 @@ namespace MueLu {
 
     zoltanObj_->Set_Param("num_global_partitions", toString(numParts));
 
-    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
-    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
+    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) A.getRawPtr());
+    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) A.getRawPtr());
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &dim);
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
 

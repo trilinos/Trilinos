@@ -76,13 +76,13 @@ struct UndefinedOrdinalTraits
   //! This function should not compile if there is an attempt to instantiate!
   static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
 };
-	
+
 template<class T>
 struct OrdinalTraits {
 
   //! Allows testing to see if ordinal traits machine parameters are defined.
   static const bool hasMachineParameters = false;
-		
+
   //! Returns representation of zero for this ordinal type.
   static inline T zero()                     { return UndefinedOrdinalTraits<T>::notDefined(); }
 
@@ -101,7 +101,7 @@ struct OrdinalTraits {
   //! Returns name of this ordinal type.
   static inline std::string name()           { return UndefinedOrdinalTraits<T>::notDefined(); }
 };
-	
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 template<>
@@ -164,14 +164,13 @@ struct OrdinalTraits<long unsigned int> {
   static inline std::string name()           {return("long unsigned int");}
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct OrdinalTraits<long long int> {
   static const bool hasMachineParameters = false;
   static inline long long int zero()          {return(static_cast<long long int>(0));}
   static inline long long int one()           {return(static_cast<long long int>(1));}
   static inline long long int invalid()       {return(static_cast<long long int>(-1));}
-  static inline long long int max()           {return(LLONG_MAX);}
+  static inline long long int max()           {return(std::numeric_limits<long long int>::max());}
   static inline std::string name()            {return("long long int");}
 };
 
@@ -184,7 +183,6 @@ struct OrdinalTraits<unsigned long long int> {
   static inline unsigned long long int max()           {return(std::numeric_limits<unsigned long long int>::max()-1);}
   static inline std::string name()                     {return("unsigned long long int");}
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifdef HAVE_TEUCHOS___INT64
 

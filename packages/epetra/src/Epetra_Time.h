@@ -60,7 +60,7 @@
 #include "Epetra_Comm.h"
 
 #ifdef EPETRA_MPI
-#include "mpi.h"
+#include <mpi.h>
 #else
 #if ICL || defined(_WIN32)
 #include <time.h>

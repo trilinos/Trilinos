@@ -49,7 +49,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator!, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/SetupKeyholeMesh.hpp"
+#include "stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp"
 namespace stk { namespace mesh { class Ghosting; } }
 
 //TEST(CommunicateFieldData, pack_ghost)

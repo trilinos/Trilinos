@@ -41,7 +41,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
-#include "../../stk_unit_test_utils/BulkDataTester.hpp"
+#include "stk_unit_test_utils/BulkDataTester.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 

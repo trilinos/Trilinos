@@ -114,7 +114,7 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const int sz, const int i, const T & x) :
-        Storage(sz, x) {
+        Storage(sz, x, InitDerivArray) {
         this->fastAccessDx(i)=1.;
       }
 
@@ -131,7 +131,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
-        Storage(x.size(), T(0.)) {
+        Storage(x.size(), T(0.), NoInitDerivArray) {
         const int sz = x.size();
         if (sz) {
 
@@ -214,6 +214,10 @@ namespace Sacado {
       //! Return whether this Fad object has an updated value
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return true; }
+
+      //! Cache values
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>

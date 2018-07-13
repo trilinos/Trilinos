@@ -36,6 +36,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 
+#include "Teuchos_RCP.hpp"
+
 using namespace ML_Epetra;
 
 #ifdef HAVE_MPI
@@ -107,6 +109,59 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   Ms->FillComplete();
 
   RefMaxwellPreconditioner PrecRF(SM,D0,*Ms,M0inv,M1,List);
+  Epetra_Vector x0_(x0);
+
+
+  Epetra_LinearProblem Problem(&SM, &x0_, (Epetra_MultiVector*)&b);
+  AztecOO solver(Problem);
+  solver.SetPrecOperator(&PrecRF);
+
+  if(run_gmres) solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_conv,AZ_r0);
+  solver.SetAztecOption(AZ_output,1);
+  solver.Iterate(100,1e-9);
+
+  /* Check out the solution */
+  double nxe,nd;
+  x_exact.Norm2(&nxe);
+  Epetra_Vector diff(x_exact);
+  diff.Update(1.0,x0_,-1.0);
+  diff.Norm2(&nd);
+  if(Comm.MyPID()==0) printf("||sol-exact||/||exact||=%6.4e\n",nd/nxe);
+  if(nd/nxe > 1e-8) exit(1);
+
+
+  delete Ms;
+}
+
+
+/*******************************************************/
+void rpc_test_additive_newconstructor(Epetra_ActiveComm &Comm,
+                       Teuchos::ParameterList & List,
+                       Epetra_CrsMatrix &SM,
+                       const Epetra_CrsMatrix &M1,
+                       const Epetra_CrsMatrix &M0inv,
+                       const Epetra_CrsMatrix &D0,
+                       const Epetra_Vector &x_exact,
+                       const Epetra_Vector &x0,
+                       const Epetra_Vector &b,
+		       bool run_gmres){
+
+  using Teuchos::rcp;
+  // Generate Fake Ms
+  Epetra_CrsMatrix *Ms=0;
+  EpetraExt::MatrixMatrix::Add(M1,false,1.0,M1,false,1.0,Ms);
+  Ms->FillComplete();
+
+  // New List
+  Teuchos::ParameterList NewList = List;
+  NewList.set("M0inv",rcp(&M0inv,false));
+  NewList.set("M1",rcp(&M1,false));
+  NewList.set("D0",rcp(&D0,false));
+  NewList.set("Ms",rcp((const Epetra_CrsMatrix*)Ms,false));
+
+  RefMaxwellPreconditioner PrecRF(SM,NewList);
   Epetra_Vector x0_(x0);
 
 
@@ -311,6 +366,16 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   status2 = rpc_test_additive_repeat(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
 
+  /* Test w/ ParameterList-based constructor */
+  rpc_test_additive_newconstructor(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  lhs.PutScalar(0.0);
+  rpc_test_additive_newconstructor(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  lhs.PutScalar(0.0);
+  rpc_test_additive_newconstructor(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  lhs.PutScalar(0.0);
+  rpc_test_additive_newconstructor(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
+  lhs.PutScalar(0.0);
+  rpc_test_additive_newconstructor(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   delete M0; delete M1e;
   delete D0e;delete Se;

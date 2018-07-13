@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+Muelu:
+  'coarse: max size': 1000
+  'multigrid algorithm': unsmoothed
+  'smoother: type': RELAXATION
+  'smoother: params':
+    'relaxation: type': Jacobi
+    'relaxation: sweeps': 5
+    'relaxation: damping factor': 0.9
+  'aggregation: type': uncoupled
+  'aggregation: drop tol': 1e-7
+  'aggregation: export visualization data': true
+...

@@ -49,7 +49,7 @@
 #include "ROL_ArrayFireVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -87,26 +87,26 @@ int main(int argc, char *argv[]) {
     afinfo = af::infoString(true);
     *outStream << std::endl << afinfo << std::endl;
 
-    /***** Define RCPs to random arrays. *****/
-    Teuchos::RCP<af::array> A_rcp = Teuchos::rcp( new af::array(5,1,afType));
-    Teuchos::RCP<af::array> B_rcp = Teuchos::rcp( new af::array(5,1,afType));
-    Teuchos::RCP<af::array> C_rcp = Teuchos::rcp( new af::array(5,1,afType));
-    *A_rcp = af::randu(A_rcp->dims(),afType);
-    *B_rcp = af::randu(B_rcp->dims(),afType);
-    *C_rcp = af::randu(C_rcp->dims(),afType);
-    //af_print(*A_rcp);
-    //af_print(*B_rcp);
-    //af_print(*C_rcp);
+    /***** Define ROL::Ptrs to random arrays. *****/
+    ROL::Ptr<af::array> A_ptr = ROL::makePtr<af::array>(5,1,afType);
+    ROL::Ptr<af::array> B_ptr = ROL::makePtr<af::array>(5,1,afType);
+    ROL::Ptr<af::array> C_ptr = ROL::makePtr<af::array>(5,1,afType);
+    *A_ptr = af::randu(A_ptr->dims(),afType);
+    *B_ptr = af::randu(B_ptr->dims(),afType);
+    *C_ptr = af::randu(C_ptr->dims(),afType);
+    //af_print(*A_ptr);
+    //af_print(*B_ptr);
+    //af_print(*C_ptr);
 
-    /***** Wrap ArrayFire RCPs as ROL::ArrayFireVectors. *****/
-    ROL::ArrayFireVector<RealT, ElementT> A(A_rcp);
-    ROL::ArrayFireVector<RealT, ElementT> B(B_rcp);
-    ROL::ArrayFireVector<RealT, ElementT> C(C_rcp);
+    /***** Wrap ArrayFire ROL::Ptrs as ROL::ArrayFireVectors. *****/
+    ROL::ArrayFireVector<RealT, ElementT> A(A_ptr);
+    ROL::ArrayFireVector<RealT, ElementT> B(B_ptr);
+    ROL::ArrayFireVector<RealT, ElementT> C(C_ptr);
 
     /***** Run checkVector tests. *****/
     // with random vector
     std::vector<RealT> consistency = A.checkVector(B, C, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcpFromRef(consistency));
+    ROL::StdVector<RealT, ElementT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }

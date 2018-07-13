@@ -20,7 +20,6 @@ protected:
     void setup_mesh_and_create_graph(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         setup_mesh("generated:1x1x2", auraOption);
-        get_bulk().initialize_face_adjacent_element_graph();
     }
 };
 

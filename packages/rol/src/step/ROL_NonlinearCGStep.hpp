@@ -60,10 +60,12 @@ template <class Real>
 class NonlinearCGStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<NonlinearCG<Real> > nlcg_; ///< NonlinearCG object (used for quasi-Newton)
+  ROL::Ptr<NonlinearCG<Real> > nlcg_; ///< NonlinearCG object (used for quasi-Newton)
   ENonlinearCG enlcg_;
   int verbosity_;                         ///< Verbosity setting
   const bool computeObj_;
+
+  std::string ncgName_;
 
 public:
 
@@ -75,31 +77,36 @@ public:
 
       Constructor to build a NonlinearCGStep object with a user-defined 
       nonlinear CG object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     nlcg       is a user-defined NonlinearCG object
   */
-  NonlinearCGStep( Teuchos::ParameterList &parlist,
-             const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null,
+  NonlinearCGStep( ROL::ParameterList &parlist,
+             const ROL::Ptr<NonlinearCG<Real> > &nlcg = ROL::nullPtr,
              const bool computeObj = true )
     : Step<Real>(), nlcg_(nlcg), enlcg_(NONLINEARCG_USERDEFINED),
       verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    if ( nlcg == Teuchos::null ) {
+    ROL::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    if ( nlcg == ROL::nullPtr ) {
+      ncgName_ = Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger");
       enlcg_
-        = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-      nlcg_ = Teuchos::rcp(new NonlinearCG<Real>(enlcg_));
+        = StringToENonlinearCG(ncgName_);
+      nlcg_ = ROL::makePtr<NonlinearCG<Real>>(enlcg_);
+    }
+    else {
+      ncgName_ = Llist.sublist("Descent Method").get("User Defined Nonlinear CG Name",
+                                                     "Unspecified User Define Nonlinear CG Method");
     }
   }
 
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     Real one(1);
 
     // Compute search direction
@@ -110,7 +117,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate
     algo_state.iter++;
@@ -160,7 +167,7 @@ public:
   }
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << ENonlinearCGToString(enlcg_) << " "
+    hist << "\n" << ncgName_ << " "
          << EDescentToString(DESCENT_NONLINEARCG) << "\n";
     return hist.str();
   }

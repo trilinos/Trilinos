@@ -309,8 +309,12 @@ namespace { // (anonymous)
                      "call this specialization, the output View's space must "
                      "be able to access the input View's memory space.");
       typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
+      typedef typename OutputViewType::execution_space execution_space;
+      typedef typename OutputViewType::size_type size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
       int noOverflow = 0; // output argument of the reduction
-      Kokkos::parallel_reduce (dst.dimension_0 (),
+      Kokkos::parallel_reduce (range_type (0, dst.extent (0)),
                                functor_type (dst, src),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -364,15 +368,19 @@ namespace { // (anonymous)
       using Kokkos::ViewAllocateWithoutInitializing;
       output_space_copy_type
         outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
-                         src.dimension_0 ());
+                         src.extent (0));
       Kokkos::deep_copy (outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
       typedef CopyOffsetsFunctor<OutputViewType,
                                  output_space_copy_type> functor_type;
+      typedef typename OutputViewType::execution_space execution_space;
+      typedef typename OutputViewType::size_type size_type;
+      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+
       int noOverflow = 0;
-      Kokkos::parallel_reduce (dst.dimension_0 (),
+      Kokkos::parallel_reduce (range_type (0, dst.extent (0)),
                                functor_type (dst, outputSpaceCopy),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -415,9 +423,9 @@ copyOffsets (const OutputViewType& dst, const InputViewType& src)
                  "The entries of src must be built-in integers.");
 
   TEUCHOS_TEST_FOR_EXCEPTION
-    (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
-     "copyOffsets: dst.dimension_0() = " << dst.dimension_0 ()
-     << " != src.dimension_0() = " << src.dimension_0 () << ".");
+    (dst.extent (0) != src.extent (0), std::invalid_argument,
+     "copyOffsets: dst.extent(0) = " << dst.extent (0)
+     << " != src.extent(0) = " << src.extent (0) << ".");
 
   CopyOffsetsImpl<OutputViewType, InputViewType>::run (dst, src);
 }

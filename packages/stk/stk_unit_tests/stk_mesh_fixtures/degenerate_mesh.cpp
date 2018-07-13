@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData

@@ -5,9 +5,14 @@
 #include <Zoltan2_MachineForTesting.hpp>
 #include <Zoltan2_MachineTopoMgr.hpp>
 #include <Zoltan2_MachineTopoMgrForTest.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+
+#include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_MachineRCA.hpp>
+#include <Zoltan2_MachineRCAForTest.hpp>
+#include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
-
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
@@ -17,10 +22,11 @@ template <typename pcoord_t, typename part_t>
 class MachineRepresentation{
 
 public:
-
+    typedef pcoord_t machine_pcoord_t;
+    typedef part_t machine_part_t;
 #if defined(HAVE_ZOLTAN2_LDMS)
     typedef MachineLDMS<pcoord_t,part_t> machine_t;
-#elif defined(HAVE_ZOLTAN2_RCA)
+#elif defined(HAVE_ZOLTAN2_RCALIB)
     typedef MachineRCA<pcoord_t,part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
     typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
@@ -28,6 +34,8 @@ public:
     typedef MachineBGQTest<pcoord_t,part_t> machine_t;
 #else
     typedef MachineForTesting<pcoord_t,part_t> machine_t;
+    //typedef MachineBGQTest<pcoord_t,part_t> machine_t;
+    //typedef MachineRCATest<pcoord_t,part_t> machine_t;
 #endif
 
     /*! \brief Constructor MachineRepresentation Class
@@ -35,9 +43,12 @@ public:
      */
 
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
-      machine(new machine_t(comm)) { }
+      machine(new machine_t(comm)) {
+   }
 
-    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
+
+
+    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl) :
           machine(new machine_t(comm, pl)) { }
 
     ~MachineRepresentation() {delete machine;}
@@ -113,6 +124,24 @@ public:
 
     inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
       return machine->getHopCount(rank1, rank2, hops);
+    }
+
+    /*! \brief Set up validators specific to this Problem
+    */
+    static void getValidParameters(Teuchos::ParameterList & pl)
+    {
+      //TODO: This should be positive integer validator.
+      pl.set("Machine_Optimization_Level", 10,
+          "Machine Coordinate Transformation Method",
+          Environment::getAnyIntValidator());
+
+      // validator for file does not have to exist
+      RCP<Teuchos::FileNameValidator> file_not_required_validator =
+        Teuchos::rcp( new Teuchos::FileNameValidator(false) );
+
+      // bool parameter
+      pl.set("Input_RCA_Machine_Coords", "", "Input File for input machine coordinates",
+          file_not_required_validator);
     }
 
 

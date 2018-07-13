@@ -170,7 +170,7 @@ void FieldBaseImpl::insert_restriction(
 
     if ( new_restriction ) {
       // New field restriction, verify we are not committed:
-      ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
+      ThrowRequireMsg(!m_meta_data->is_commit(), "STK-Mesh error: attempting to specify field allocation after MetaData has been committed. Field allocations must be specified (e.g. stk::mesh::put_field(...) before MetaData is committed.");
       unsigned num_subsets = 0;
       for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
 

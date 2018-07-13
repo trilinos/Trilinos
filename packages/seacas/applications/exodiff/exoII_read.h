@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -60,18 +60,19 @@ template <typename INT> class ExoII_Read
 {
 public:
   ExoII_Read();
-  explicit ExoII_Read(const char *file_name_x);
+  explicit ExoII_Read(const char *fname);
   virtual ~ExoII_Read();
   const ExoII_Read &operator=(const ExoII_Read &); // Not written.
 
   // File operations:
 
-  std::string         File_Name(const char *);
-  virtual std::string Open_File(const char * = nullptr); // Default opens current file name.
-  std::string         Close_File();
-  std::string         File_Name() const { return file_name; }
-  int                 Open() const { return (file_id >= 0); }
-  int                 IO_Word_Size() const { return io_word_size; }
+  std::string File_Name(const char * /*fname*/);
+  virtual std::string
+              Open_File(const char * /*fname*/ = nullptr); // Default opens current file name.
+  std::string Close_File();
+  std::string File_Name() const { return file_name; }
+  int         Open() const { return (file_id >= 0); }
+  int         IO_Word_Size() const { return io_word_size; }
 
   // Global data:
 
@@ -117,7 +118,7 @@ public:
   std::string Free_Elmt_Blocks() const;                  // Frees all blocks.
 
   // Moves array of connectivities from the block to the conn array.
-  std::string Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe, INT *&conn);
+  std::string Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe, INT *&new_conn);
 
   // Number maps:
   std::string Load_Node_Map();
@@ -136,14 +137,16 @@ public:
   const double *X_Coords() const { return nodes; }
   const double *Y_Coords() const
   {
-    if (dimension < 2)
+    if (dimension < 2) {
       return nullptr;
+    }
     return nodes == nullptr ? nullptr : nodes + num_nodes;
   }
   const double *Z_Coords() const
   {
-    if (dimension < 3)
+    if (dimension < 3) {
       return nullptr;
+    }
     return nodes == nullptr ? nullptr : nodes + 2 * num_nodes;
   }
   void Free_Nodal_Coordinates();
@@ -154,6 +157,7 @@ public:
   const double *Get_Nodal_Results(int t1, int t2, double proportion,
                                   int var_index) const; // Interpolated results
   void Free_Nodal_Results();
+  void Free_Nodal_Results(int var_index);
 
   // Global data:  (NOTE:  Global and Nodal data are always stored at the same
   //                       time step.  Therefore, if current time step number
@@ -165,12 +169,12 @@ public:
 
   // Node/Side sets:
 
-  Exo_Entity *Get_Entity_by_Index(EXOTYPE type, size_t index) const;
+  Exo_Entity *Get_Entity_by_Index(EXOTYPE type, size_t block_index) const;
   Exo_Entity *Get_Entity_by_Id(EXOTYPE type, size_t id) const;
   Exo_Entity *Get_Entity_by_Name(EXOTYPE type, const std::string &name) const;
 
   size_t Block_Id(size_t block_index) const; // Returns associated block id.
-  Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t block_id) const;
+  Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t id) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Index(size_t block_index) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Name(const std::string &name) const;
 
@@ -179,13 +183,13 @@ public:
   Side_Set<INT> *Get_Side_Set_by_Name(const std::string &name) const;
 
   Node_Set<INT> *Get_Node_Set_by_Id(size_t set_id) const;
-  Node_Set<INT> *Get_Node_Set_by_Index(size_t side_set_index) const;
+  Node_Set<INT> *Get_Node_Set_by_Index(size_t set_index) const;
   Node_Set<INT> *Get_Node_Set_by_Name(const std::string &name) const;
 
   // Misc functions:
 
-  virtual void Display(std::ostream & = std::cout) const;
-  virtual void Display_Maps(std::ostream & = std::cout) const;
+  virtual void Display(std::ostream & /*s*/ = std::cout) const;
+  virtual void Display_Maps(std::ostream & /*s*/ = std::cout) const;
   virtual int  Check_State() const;                          // Checks state of obj (not the file).
   int          File_ID() const { return file_id; }           // This is temporary.
   std::string Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
@@ -252,8 +256,9 @@ template <typename INT> inline INT ExoII_Read<INT>::Node_Map(size_t node_num) co
   SMART_ASSERT(Check_State());
   SMART_ASSERT(node_num <= num_nodes);
 
-  if (node_map)
+  if (node_map) {
     return node_map[node_num - 1];
+  }
   return 0;
 }
 
@@ -262,8 +267,9 @@ template <typename INT> inline INT ExoII_Read<INT>::Elmt_Map(size_t elmt_num) co
   SMART_ASSERT(Check_State());
   SMART_ASSERT(elmt_num <= num_elmts);
 
-  if (elmt_map)
+  if (elmt_map) {
     return elmt_map[elmt_num - 1];
+  }
   return 0;
 }
 
@@ -272,8 +278,9 @@ template <typename INT> inline INT ExoII_Read<INT>::Elmt_Order(size_t elmt_num) 
   SMART_ASSERT(Check_State());
   SMART_ASSERT(elmt_num <= num_elmts);
 
-  if (elmt_order)
+  if (elmt_order) {
     return elmt_order[elmt_num - 1];
+  }
   return 0;
 }
 

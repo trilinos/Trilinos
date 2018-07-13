@@ -41,6 +41,8 @@
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
+#include <fstream>
+
 namespace Rythmos {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ForwardEuler ) {

@@ -57,32 +57,32 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 template <class Real>
 class PDE_Poisson_Boltzmann : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
-  Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  ROL::Ptr<Intrepid::Cubature<Real> > cellCub_;
   // Cell node information
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > volCellNodes_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_vol_;
+  ROL::Ptr<FE<Real> > fe_vol_;
 
 public:
   PDE_Poisson_Boltzmann(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Poisson Boltzmann").get("Basis Order",1);
+    int basisOrder = parlist.sublist("Problem").get("Order of FE discretization",1);
     if (basisOrder == 1) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     else if (basisOrder == 2) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
@@ -92,25 +92,28 @@ public:
     cellCub_ = cubFactory.create(cellType, cubDegree);                                 // create default cubature
   }
 
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+  void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
     int d = cellCub_->getDimension();
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Integrate Laplacian term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    // INITIALIZE RESIDUAL
+    res = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    // COMPUTE STIFFNESS TERM
+    ROL::Ptr<Intrepid::FieldContainer<Real> > gradU_eval =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   *gradU_eval,
                                                   *(fe_vol_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Integrate nonlinear term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    // ADD NONLINEAR TERM
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valU_eval =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_vol_->evaluateValue(valU_eval, u_coeff);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
@@ -121,32 +124,37 @@ public:
                                                   *valU_eval,
                                                   *(fe_vol_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
-    // Integrate control term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    fe_vol_->evaluateValue(valZ_eval, z_coeff);
-    Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                  *valZ_eval,
-                                                  *(fe_vol_->NdetJ()),
-                                                  Intrepid::COMP_CPP, true);
+    // ADD CONTROL TERM
+    if ( z_coeff != ROL::nullPtr ) {
+      ROL::Ptr<Intrepid::FieldContainer<Real> > valZ_eval =
+        ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      fe_vol_->evaluateValue(valZ_eval, z_coeff);
+      Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
+      Intrepid::FunctionSpaceTools::integrate<Real>(*res,
+                                                    *valZ_eval,
+                                                    *(fe_vol_->NdetJ()),
+                                                    Intrepid::COMP_CPP, true);
+    }
   }
 
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // Integrate Laplacian term
+    // INITIALIZE JACOBIAN
+    jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    // COMPUTE STIFFNESS TERM
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
                                                   *(fe_vol_->gradN()),
                                                   *(fe_vol_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Integrate nonlinear term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    // ADD NONLINEAR TERM
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valU_eval =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_vol_->evaluateValue(valU_eval, u_coeff);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
@@ -163,33 +171,42 @@ public:
                                                   Intrepid::COMP_CPP, true);
   }
 
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
-    int c = fe_vol_->N()->dimension(0);
-    int f = fe_vol_->N()->dimension(1);
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  *(fe_vol_->N()),
-                                                  *(fe_vol_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
-    Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
+  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    if ( z_coeff != ROL::nullPtr ) {
+      // GET DIMENSIONS
+      int c = fe_vol_->N()->dimension(0);
+      int f = fe_vol_->N()->dimension(1);
+      // INITIALIZE JACOBIAN
+      jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+      // ADD CONTROL TERM
+      Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                    *(fe_vol_->N()),
+                                                    *(fe_vol_->NdetJ()),
+                                                    Intrepid::COMP_CPP, false);
+      Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
+    }
   }
 
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // Integrate nonlinear term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    // INITIALIZE HESSIAN
+    hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    // COMPUTE NONLINEAR TERM
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valU_eval =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_vol_->evaluateValue(valU_eval, u_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valL_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valL_eval =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_vol_->evaluateValue(valL_eval, l_coeff);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
@@ -206,45 +223,67 @@ public:
                                                   Intrepid::COMP_CPP, false);
   }
 
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_12: Hessian is zero.");
   }
 
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_21: Hessian is zero.");
   }
 
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_22: Hessian is zero.");
   }
 
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+    // GET DIMENSIONS
+    int c = fe_vol_->N()->dimension(0);
+    int f = fe_vol_->N()->dimension(1);
+    // INITIALIZE RIESZ
+    riesz = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    *riesz = *fe_vol_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+  }
+
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+    // GET DIMENSIONS
+    int c = fe_vol_->N()->dimension(0);
+    int f = fe_vol_->N()->dimension(1);
+    // INITIALIZE RIESZ
+    riesz = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    *riesz = *fe_vol_->massMat();
+  }
+
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real> > &volCellNodes,
+                    const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
+  const ROL::Ptr<FE<Real> > getFE(void) const {
     return fe_vol_;
   }
 
-}; // PDE_Poisson
+}; // PDE_Poisson_Boltzmann
 
 #endif

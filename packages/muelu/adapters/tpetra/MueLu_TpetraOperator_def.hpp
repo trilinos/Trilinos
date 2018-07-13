@@ -51,6 +51,7 @@
 
 #ifdef HAVE_MUELU_TPETRA
 
+#include <Xpetra_BlockedMap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -67,16 +68,30 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
 
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+  RCP<const Map> domainMap = A->getDomainMap();
+  RCP<const BlockedMap> bDomainMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(domainMap);
+  if(bDomainMap.is_null() == false) {
+    return Xpetra::toTpetraNonZero(bDomainMap->getFullMap());
+  }
   return Xpetra::toTpetraNonZero(A->getDomainMap());
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
 
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+  RCP<const Map> rangeMap = A->getRangeMap();
+  RCP<const BlockedMap> bRangeMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rangeMap);
+  if(bRangeMap.is_null() == false) {
+    return Xpetra::toTpetraNonZero(bRangeMap->getFullMap());
+  }
   return Xpetra::toTpetraNonZero(A->getRangeMap());
 }
 

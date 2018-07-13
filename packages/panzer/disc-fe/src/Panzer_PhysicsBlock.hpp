@@ -56,6 +56,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_FieldLibrary.hpp"
 #include "Panzer_EvaluatorsRegistrar.hpp"
+#include "Panzer_WorksetNeeds.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -66,8 +67,6 @@ namespace shards {
 }
 
 namespace panzer {
-  class RegionFillData;
-  class MaterialModel;
   class PureBasis;
   class IntegrationRule;
   struct EquationSetFactory;
@@ -238,6 +237,10 @@ namespace panzer {
 
     //! Returns list of tangent fields from DOFs and tangent param names
     const std::vector<StrPureBasisPair>& getTangentFields() const;
+
+    /** Build a workset needs object for this physics block. 
+      */
+    WorksetNeeds getWorksetNeeds() const;
 
     //! Returns the unique set of bases, key is the unique panzer::PureBasis::name() of the basis
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;

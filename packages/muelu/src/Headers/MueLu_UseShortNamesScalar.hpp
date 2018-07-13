@@ -17,14 +17,23 @@ typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
 #endif
+#ifdef MUELU_BLACKBOXPFACTORY_SHORT
+typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBoxPFactory;
+#endif
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoarseMapFactory;
+#endif
+#ifdef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::BlockedCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoordinatesTransferFactory;
 #endif
 #ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
 typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
 #endif
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
 typedef MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedGaussSeidelSmoother;
+#endif
+#ifdef MUELU_BLOCKEDJACOBISMOOTHER_SHORT
+typedef MueLu::BlockedJacobiSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedJacobiSmoother;
 #endif
 #ifdef MUELU_BLOCKEDPFACTORY_SHORT
 typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedPFactory;
@@ -40,6 +49,9 @@ typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Bra
 #endif
 #ifdef MUELU_CGSOLVER_SHORT
 typedef MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> CGSolver;
+#endif
+#ifdef MUELU_CLONEREPARTITIONINTERFACE_SHORT
+typedef MueLu::CloneRepartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> CloneRepartitionInterface;
 #endif
 #ifdef MUELU_COALESCEDROPFACTORY_SHORT
 typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoalesceDropFactory;
@@ -83,6 +95,9 @@ typedef MueLu::DropNegativeEntriesFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> EminPFactory;
 #endif
+#ifdef MUELU_FACADECLASSFACTORY_SHORT
+typedef MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FacadeClassFactory;
+#endif
 #ifdef MUELU_FACTORYMANAGER_SHORT
 typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> FactoryManager;
 #endif
@@ -92,8 +107,11 @@ typedef MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> Fak
 #ifdef MUELU_FILTEREDAFACTORY_SHORT
 typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory;
 #endif
-#ifdef MUELU_FILTEREDAFACTORY_KOKKOS_SHORT
-typedef MueLu::FilteredAFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory_kokkos;
+#ifdef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
+typedef MueLu::FineLevelInputDataFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FineLevelInputDataFactory;
+#endif
+#ifdef MUELU_GENERALGEOMETRICPFACTORY_SHORT
+typedef MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeneralGeometricPFactory;
 #endif
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
@@ -118,6 +136,9 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Sm
 #endif
 #ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
+#endif
+#ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
+typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
@@ -200,6 +221,12 @@ typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Reor
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
 #endif
+#ifdef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_SHORT
+typedef MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionBlockDiagonalFactory;
+#endif
+#ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
+typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
+#endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
 typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RigidBodyModeFactory;
 #endif
@@ -242,6 +269,12 @@ typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
 typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
 #endif
+#ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
+typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;
+#endif
+#ifdef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
+typedef MueLu::StructuredLineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredLineDetectionFactory;
+#endif
 #ifdef MUELU_SUBBLOCKAFACTORY_SHORT
 typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SubBlockAFactory;
 #endif
@@ -278,6 +311,9 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TransPFacto
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TrilinosSmoother;
 #endif
+#ifdef MUELU_UNSMOOSHFACTORY_SHORT
+typedef MueLu::UnsmooshFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UnsmooshFactory;
+#endif
 #ifdef MUELU_USERPFACTORY_SHORT
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UserPFactory;
 #endif
@@ -289,6 +325,9 @@ typedef MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilitiesBa
 #endif
 #ifdef MUELU_UTILITIES_KOKKOS_SHORT
 typedef MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utilities_kokkos;
+#endif
+#ifdef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
+typedef MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> VariableDofLaplacianFactory;
 #endif
 #ifdef MUELU_SEMICOARSENPFACTORY_SHORT
 typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory;

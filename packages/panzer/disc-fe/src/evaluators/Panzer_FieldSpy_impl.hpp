@@ -51,11 +51,6 @@
 
 namespace panzer {
 
-using panzer::Cell;
-using panzer::Point;
-using panzer::IP;
-using panzer::Dim;
-
 //**********************************************************************
 template <typename EvalT,typename Traits>
 FieldSpy<EvalT,Traits>::FieldSpy(const std::string & name,
@@ -76,7 +71,7 @@ FieldSpy<EvalT,Traits>::FieldSpy(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData /* sd */,
                                                        PHX::FieldManager<Traits>& fm)
 {
 

@@ -40,84 +40,252 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_GatherSolution_Epetra_Hessian_hpp__
-#define __Panzer_GatherSolution_Epetra_Hessian_hpp__
+#ifndef   __Panzer_GatherSolution_Epetra_Hessian_hpp__
+#define   __Panzer_GatherSolution_Epetra_Hessian_hpp__
 
-// only do this if required by the user
-#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+// Only do this if required by the user.
+#ifdef    Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Epetra gather solution file
 
-namespace panzer {
-
-// **************************************************************
-// Hessian Specialization
-// **************************************************************
-template<typename TRAITS,typename LO,typename GO>
-class GatherSolution_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>
-  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+namespace panzer
+{
+  /**
+   *  \brief GatherSolution_Epetra (Hessian Specialization)
+   *
+   *  Gathers solution values from the Newton solution vector into the nodal
+   *  fields of the field manager.
+   *
+   *  Currently makes an assumption that the stride is constant for degrees of
+   *  freedom (DOFs) and that the number of DOFs is equal to the size of the
+   *  solution names vector.
+   */
+  template<typename TRAITS, typename LO, typename GO>
+  class GatherSolution_Epetra<panzer::Traits::Hessian, TRAITS, LO, GO>
+    :
+    public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
-    public panzer::CloneableEvaluator  {
+    public panzer::CloneableEvaluator
+  {
+    public:
 
+      /**
+       *  \brief Constructor.
+       *
+       *  Simply saves the input `indexer` as this object's `globalIndexer_`.
+       *
+       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *                     unknown numbering.
+       */
+      GatherSolution_Epetra(
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer)
+        :
+        globalIndexer_(indexer)
+      {
+      } // end of Constructor
 
-public:
+      /**
+       *  \brief Initializing Constructor.
+       *
+       *  Saves the input `indexer` as this object's `globalIndexer_`,
+       *  allocates fields, and determines the first active name.
+       *
+       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *                     unknown numbering.
+       *  \param[in] p       A `ParameterList` used as input for
+       *                     `GatherSolution_Input`.
+       */
+      GatherSolution_Epetra(
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+        const Teuchos::ParameterList& p);
 
-  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
-     globalIndexer_(indexer) {}
+      /**
+       *  \brief Post-Registration Setup.
+       *
+       *  Loops over the `gatherFields_` and sets the `fieldIds_`.
+       *
+       *  \param[in] d  Unused.
+       *  \param[in] fm Unused.
+       */
+      void
+      postRegistrationSetup(
+        typename TRAITS::SetupData d,
+        PHX::FieldManager<TRAITS>& vm);
 
-  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                        const Teuchos::ParameterList& p);
+      /**
+       *  \brief Pre-Evaluate:  Sets the solution vector.
+       *
+       *  If using an `EpetraVector_ReadOnly_GlobalEvaluationData`, this sets
+       *  the `GlobalEvaluationData`(s) containing both the owned and ghosted
+       *  solution (and, if applicaple, derivative) vectors.  If using the
+       *  older `EpeteraLinearObjContainer`, this sets the solution vector. 
+       *  Also determines whether or not to apply sensitivities.
+       *
+       *  \param[in] d The `PreEvalData` containing the
+       *               `GlobalEvaluationDataContainer` and the `first_` and
+       *               `second_sensitivities_name`s.
+       *
+       *  \throws std::logic_error If it's unable to find the solution or (if
+       *                           applicable) derivative vectors.
+       */
+      void
+      preEvaluate(
+        typename TRAITS::PreEvalData d);
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm);
+      /**
+       *  \brief Evaluate Fields:  Gather operation.
+       *
+       *  Loops over the cells in the workset, the fields to be gathered, and
+       *  the basis functions, and fills in the fields.  If sensitivities are
+       *  to be applied, this also seeds the derivatives.
+       *
+       *  \param[in] d The `Workset` on which we're going to do all the work.
+       */
+      void
+      evaluateFields(
+        typename TRAITS::EvalData d);
 
-  void preEvaluate(typename TRAITS::PreEvalData d);
+      /**
+       *  \brief Create a copy.
+       *
+       *  Creates a `GatherSolution_Epetra` using the Initializing Constructor
+       *  and the current object's `globalIndexer_`.
+       *
+       *  \param[in] pl A `ParameterList` used as input for
+       *                `GatherSolution_Input`.
+       *
+       *  \returns A `GatherSolution_Epetra` constructed with this object's
+       *           `globalIndexer_` and the input `ParameterList`.
+       */
+      virtual Teuchos::RCP<CloneableEvaluator>
+      clone(
+        const Teuchos::ParameterList& pl) const
+      {
+        using panzer::Traits;
+        using Teuchos::rcp;
+        return rcp(new GatherSolution_Epetra<Traits::Hessian, TRAITS, LO, GO>
+          (globalIndexer_, pl));
+      } // end of clone()
 
-  void evaluateFields(typename TRAITS::EvalData d);
+    private:
 
-  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,pl)); }
+      /**
+       *  \brief The evaluation type.
+       */
+      typedef typename panzer::Traits::Hessian EvalT;
 
-private:
-  typedef typename panzer::Traits::Hessian EvalT;
-  typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
+      /**
+       *  \brief The scalar type.
+       */
+      typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
-  std::vector<std::string> indexerNames_;
-  std::vector<int> fieldIds_; // field IDs needing mapping
+      /**
+       *  \brief Maps the local (field, element, basis) triplet to a global ID
+       *         for scattering.
+       */
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>> globalIndexer_;
 
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > sensFields_;
+      /**
+       *  \brief A list of the names of the fields to be gathered.
+       */
+      std::vector<std::string> indexerNames_;
 
-  bool useTimeDerivativeSolutionVector_;
-  std::string globalDataKey_; // what global data does this fill?
+      /**
+       *  \brief Field IDs, which need to be mapped.
+       */
+      std::vector<int> fieldIds_;
 
-  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+      /**
+       *  \brief The fields to be gathered.
+       */
+      std::vector< PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
 
-  // first derivative fields
-  int gatherSeedIndex_;              // what gather seed in the workset to use
-                                     // if less than zero then use alpha or beta
-                                     // as appropriate
-  bool firstSensitivitiesAvailable_; // Turn on the first derivative sensitivities 
-                                     // to turn on/off a certain set of sensitivities
-  bool firstApplySensitivities_;     // This is a local variable that is used by evaluateFields
-                        
-  // handle second derivatives                         
-  std::string sensitivities2ndPrefix_; // Prefix for field containing the sensitivities
-  bool secondSensitivitiesAvailable_;  // Turn on the second derivative sensitivities 
-  bool secondApplySensitivities_;      // This is a local variable that is used by evaluateFields
+      /**
+       *  \brief The sensitivity fields.
+       */
+      std::vector< PHX::MDField<ScalarT, Cell, NODE>> sensFields_;
 
-  Teuchos::RCP<Epetra_Vector> x_;
-  Teuchos::RCP<Epetra_Vector> dx_;
+      /**
+       *  \brief A flag indicating whether we're to be working with \f$ x \f$
+       *         or \f$ \dot{x} \f$.
+       */
+      bool useTimeDerivativeSolutionVector_;
 
-  GatherSolution_Epetra();
-};
+      /**
+       *  \brief The key identifying the `GlobalEvaluationData`.
+       */
+      std::string globalDataKey_;
 
-}
+      /**
+       *  \brief Sets which gather operations have sensitivities.
+       */
+      std::string sensitivitiesName_;
 
-#endif // end hessian support
+      /**
+       *  \brief Which gather seed in the workset to use.
+       *
+       *  If it's less than zero, then use alpha or beta as appropriate.
+       */
+      int gatherSeedIndex_;
 
-#endif
+      /**
+       *  \brief A flag indicating whether or not we're to be working with the
+       *         first derivative sensitivities.
+       */
+      bool firstSensitivitiesAvailable_;
+
+      /**
+       *  \brief Used by `evaluateFields()` to turn on/off the first derivative
+       *         sensitivities.
+       */
+      bool firstApplySensitivities_;
+
+      /**
+       *  \brief The prefix for the field containing the second sensitivities.
+       */
+      std::string sensitivities2ndPrefix_;
+
+      /**
+       *  \brief A flag indicating whether or not we're to be working with the
+       *         second derivative sensitivities.
+       */
+      bool secondSensitivitiesAvailable_;
+
+      /**
+       *  \brief Used by `evaluateFields()` to turn on/off the second
+       *         derivative sensitivities.
+       */
+      bool secondApplySensitivities_;
+
+      /**
+       *  \brief The solution vector.
+       */
+      Teuchos::RCP<Epetra_Vector> x_;
+
+      /**
+       *  \brief The `GlobalEvaluationData` containing both the owned and
+       *         ghosted solution vectors.
+       */
+      Teuchos::RCP<panzer::EpetraVector_ReadOnly_GlobalEvaluationData>
+      xEvRoGed_;
+
+      /**
+       *  \brief The `GlobalEvaluationData` containing both the owned and
+       *         ghosted derivative vectors.
+       */
+      Teuchos::RCP<panzer::EpetraVector_ReadOnly_GlobalEvaluationData>
+      dxEvRoGed_;
+
+      /**
+       *  \brief Default Constructor (disabled).
+       */
+      GatherSolution_Epetra();
+
+  }; // end of class GatherSolution_Epetra (Hessian Specialization)
+
+} // end of namespace panzer
+
+#endif // Panzer_BUILD_HESSIAN_SUPPORT
+
+#endif // __Panzer_GatherSolution_Epetra_Hessian_hpp__

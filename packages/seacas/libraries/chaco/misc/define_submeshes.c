@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -72,8 +72,9 @@ int define_submeshes(int              nsets,        /* number of subsets in this
   dims[2] = set->span[2];
 
   ndims = 1;
-  while ((2 << ndims) <= nsets)
+  while ((2 << ndims) <= nsets) {
     ndims++;
+  }
 
   /* Find the intest and longest directions in mesh. */
   maxdim = -1;
@@ -84,15 +85,18 @@ int define_submeshes(int              nsets,        /* number of subsets in this
       maxdim = dims[i];
       dir[0] = i;
     }
-    if (dims[i] < mindim)
+    if (dims[i] < mindim) {
       mindim = dims[i];
+    }
   }
 
   /* Decide whether or not to force striping. */
   i = 0;
-  for (j = 0; j < cube_or_mesh; j++)
-    if (set->span[j] > 1)
+  for (j = 0; j < cube_or_mesh; j++) {
+    if (set->span[j] > 1) {
       i++;
+    }
+  }
 
   *striping = (i <= 1 || nsets == 3 ||
                (maxdim > nsets && (maxdim > .6 * nsets * mindim || (inert && nsets > 2))));
@@ -122,8 +126,9 @@ int define_submeshes(int              nsets,        /* number of subsets in this
       }
     }
     nbits[0] = nbits[1] = nbits[2] = 0;
-    for (i = 0; i < ndims; i++)
+    for (i = 0; i < ndims; i++) {
       ++nbits[dir[i]];
+    }
     for (i = 0; i < 3; i++) {
       mask[i] = (1 << nbits[i]) - 1;
     }
@@ -149,11 +154,13 @@ int define_submeshes(int              nsets,        /* number of subsets in this
       coords[2] = (k & mask[2]) >> (nbits[0] + nbits[1]);
       if (snaking) {
         reverse = coords[1] & 1;
-        if (reverse)
+        if (reverse) {
           coords[0] = mask[0] - coords[0];
-        reverse     = coords[2] & 1;
-        if (reverse)
+        }
+        reverse = coords[2] & 1;
+        if (reverse) {
           coords[1] = (mask[1] >> nbits[0]) - coords[1];
+        }
       }
 
       for (j = 0; j < ndims; j++) {
@@ -170,12 +177,14 @@ int define_submeshes(int              nsets,        /* number of subsets in this
 
       /* Now restore nbits values. */
       nbits[0] = nbits[1] = nbits[2] = 0;
-      for (i = 0; i < ndims; i++)
+      for (i = 0; i < ndims; i++) {
         ++nbits[dir[i]];
+      }
     }
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++) {
       start[i] += set->low[i];
+    }
 
     setnum = (start[2] * mesh_dims[1] + start[1]) * mesh_dims[0] + start[0];
 
@@ -183,7 +192,7 @@ int define_submeshes(int              nsets,        /* number of subsets in this
       set_info[setnum].low[i]  = start[i];
       set_info[setnum].span[i] = width[i];
     }
-    subsets[k] = (int)setnum;
+    subsets[k] = setnum;
   }
 
   /* Check to see if hop_mtx is nonstandard. */
@@ -206,16 +215,18 @@ int define_submeshes(int              nsets,        /* number of subsets in this
           start[1] = (i & mask[1]) >> nbits[0];
           if (snaking) {
             reverse = start[1] & 1;
-            if (reverse)
+            if (reverse) {
               start[0] = mask[0] - start[0];
+            }
           }
           for (j = i; j < nsets; j++) {
             coords[0] = j & mask[0];
             coords[1] = (j & mask[1]) >> nbits[0];
             if (snaking) {
               reverse = coords[1] & 1;
-              if (reverse)
+              if (reverse) {
                 coords[0] = mask[0] - coords[0];
+              }
             }
 
             hop_mtx_special[i][j] = hop_mtx_special[j][i] =
@@ -233,11 +244,13 @@ int define_submeshes(int              nsets,        /* number of subsets in this
           start[2] = (i & mask[2]) >> (nbits[0] + nbits[1]);
           if (snaking) {
             reverse = start[1] & 1;
-            if (reverse)
+            if (reverse) {
               start[0] = mask[0] - start[0];
-            reverse    = start[2] & 1;
-            if (reverse)
+            }
+            reverse = start[2] & 1;
+            if (reverse) {
               start[1] = (mask[1] >> nbits[0]) - start[1];
+            }
           }
           for (j = i; j < nsets; j++) {
             coords[0] = j & mask[0];
@@ -245,11 +258,13 @@ int define_submeshes(int              nsets,        /* number of subsets in this
             coords[2] = (j & mask[2]) >> (nbits[0] + nbits[1]);
             if (snaking) {
               reverse = coords[1] & 1;
-              if (reverse)
+              if (reverse) {
                 coords[0] = mask[0] - coords[0];
-              reverse     = coords[2] & 1;
-              if (reverse)
+              }
+              reverse = coords[2] & 1;
+              if (reverse) {
                 coords[1] = (mask[1] >> nbits[0]) - coords[1];
+              }
             }
 
             hop_mtx_special[i][j] = hop_mtx_special[j][i] =

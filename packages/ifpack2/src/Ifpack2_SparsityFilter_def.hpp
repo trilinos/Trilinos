@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -238,20 +238,6 @@ size_t SparsityFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow
 
 //==========================================================================
 template<class MatrixType>
-global_size_t SparsityFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
 size_t SparsityFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
@@ -269,20 +255,6 @@ template<class MatrixType>
 bool SparsityFilter<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-//==========================================================================
-template<class MatrixType>
-bool SparsityFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
-bool SparsityFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 //==========================================================================

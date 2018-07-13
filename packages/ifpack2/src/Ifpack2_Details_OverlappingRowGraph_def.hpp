@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -226,20 +226,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
   
 
 template<class GraphType>
-global_size_t OverlappingRowGraph<GraphType>::getGlobalNumDiags () const
-{
-  throw std::runtime_error("Ifpack2::OverlappingRowGraph::getGlobalNumDiags() not supported.");
-}
-  
-
-template<class GraphType>
-size_t OverlappingRowGraph<GraphType>::getNodeNumDiags() const
-{
-  return nonoverlappingGraph_->getNodeNumDiags();
-}
-  
-
-template<class GraphType>
 size_t OverlappingRowGraph<GraphType>::getGlobalMaxNumRowEntries () const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowGraph::getGlobalMaxNumRowEntries() not supported.");
@@ -259,20 +245,6 @@ bool OverlappingRowGraph<GraphType>::hasColMap () const
   return true;
 }
   
-
-template<class GraphType>
-bool OverlappingRowGraph<GraphType>::isLowerTriangular () const
-{
-  return nonoverlappingGraph_->isLowerTriangular ();
-}
-  
-
-template<class GraphType>
-bool OverlappingRowGraph<GraphType>::isUpperTriangular() const
-{
-  return nonoverlappingGraph_->isUpperTriangular ();
-} 
-
 
 template<class GraphType>
 bool OverlappingRowGraph<GraphType>::isLocallyIndexed () const

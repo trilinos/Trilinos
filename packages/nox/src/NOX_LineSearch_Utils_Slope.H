@@ -78,8 +78,10 @@ namespace Utils {
 class Slope {
 
 public:
+  //! Constructor (requires call to reset() to initialize object).
+  Slope();
 
-  //! Default constructor
+  //! Constructor
   Slope(const Teuchos::RCP<NOX::GlobalData>& gd);
 
   //! Destructor
@@ -130,10 +132,6 @@ where \f$\eta\f$ is a scalar perturbation calculated by:
   */
   double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir,
                 const NOX::Abstract::Group& grp);
-
-private:
-  //! Disallow default constructor.
-  Slope() {};
 
 private:
 

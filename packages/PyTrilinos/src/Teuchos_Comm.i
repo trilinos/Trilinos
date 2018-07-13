@@ -43,21 +43,12 @@
 // @HEADER
 
 %{
-// Teuchos includes
-#include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_LabeledObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ReductionOp.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
-using Teuchos::OpaqueWrapper;
+// System include files
+#include <string>
 
-// PyTrilinos includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+using Teuchos::OpaqueWrapper;
 %}
 
 // Convey the PyTrilinos configuration to SWIG
@@ -146,7 +137,7 @@ Argument buffer can be a numpy array or any sequence that can be
 converted to a numpy array.  Its scalar data type can be any numerical
 type supported by numpy.  The return argument is a numpy array of the
 same type.")
-Teuchos::Comm::reduceAll;
+Teuchos::Comm::scan;
 %extend Teuchos::Comm
 {
   PyObject * broadcast(int rootRank, PyObject * bcastObj) const
@@ -337,16 +328,34 @@ Teuchos::Comm::reduceAll;
     return self->description();
   }
 }
-%ignore Teuchos::Comm::broadcast;
-%ignore Teuchos::Comm::gatherAll;
-%ignore Teuchos::Comm::reduceAll;
-%ignore Teuchos::Comm::scan;
-%ignore Teuchos::Comm::isend;
-%ignore Teuchos::Comm::ireceive;
-%ignore Teuchos::Comm::wait;
-%ignore Teuchos::Comm::waitAll;
-%ignore Teuchos::Comm::readySend;
-%ignore Teuchos::broadcast(const Comm&, const int, const ArrayView&);
+%ignore Teuchos::Comm::broadcast(const int rootRank,
+                                 const Ordinal bytes,
+                                 char buffer[]) const;
+%ignore Teuchos::Comm::gatherAll(const Ordinal sendBytes,
+                                 const char sendBuffer[],
+                                 const Ordinal recvBytes,
+                                 char recvBuffer[]) const;
+%ignore Teuchos::Comm::reduceAll(const ValueTypeReductionOp<Ordinal,char> &reductOp,
+                                 const Ordinal bytes,
+                                 const char sendBuffer[],
+                                 char globalReducts[]) const;
+%ignore Teuchos::Comm::scan(const ValueTypeReductionOp<Ordinal,char> &reductOp,
+                            const Ordinal bytes,
+                            const char sendBuffer[],
+                            char scanReducts[]) const;
+%ignore Teuchos::Comm::isend(const ArrayView<const char> &sendBuffer,
+                             const int destRank) const;
+%ignore Teuchos::Comm::ireceive(const ArrayView<char> &recvBuffer,
+                                const int sourceRank) const;
+%ignore Teuchos::Comm::wait(const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
+%ignore Teuchos::Comm::waitAll(const ArrayView<RCP<CommRequest<Ordinal> > > &requests) const;
+%ignore Teuchos::Comm::waitAll(const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
+                               const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+%ignore Teuchos::Comm::readySend(const ArrayView<const char> &sendBuffer,
+                                 const int destRank) const;
+%ignore Teuchos::broadcast(const Comm&,
+                           const int,
+                           const ArrayView&);
 %ignore Teuchos::wait;
 %ignore Teuchos::waitAll;
 %include "Teuchos_Comm.hpp"
@@ -371,10 +380,15 @@ Comm = Comm_int
 SerialComm = SerialComm_int
 %}
 
+/////////////////////////////////////
+// Teuchos::EReductionType support //
+/////////////////////////////////////
+%rename(reductionTypeToString) Teuchos::toString;
+%include "Teuchos_EReductionType.hpp"
+
 //////////////////////////////////
 // Teuchos::Comm Helper support //
 //////////////////////////////////
-%rename(reductionTypeToString) Teuchos::toString;
 %include "Teuchos_CommHelpers.hpp"
 %template(rank_int   ) Teuchos::rank<int>;
 %template(size_int   ) Teuchos::size<int>;
@@ -449,7 +463,7 @@ def scan(comm, reductOp, buffer):
 %}
 
 %inline
-{
+%{
   PyObject* Teuchos_MPI_Init_Argv(PyObject *args)
   {
     // Check if MPI is already initialized
@@ -475,7 +489,17 @@ def scan(comm, reductOp, buffer):
 	PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
 	goto fail;
       }
+#if PY_VERSION_HEX >= 0x03000000
+      PyObject * pyBytes = PyUnicode_AsASCIIString(item);
+      if (!pyBytes) goto fail;
+      char * bytes = PyBytes_AsString(pyBytes);
+      argv[i] = new char[strlen(bytes)+1];
+      strcpy(bytes,argv[i]);
+      Py_DECREF(pyBytes);
+#else
       argv[i] = PyString_AsString(item);
+#endif
+      if (PyErr_Occurred()) goto fail;
     }
     argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
 
@@ -486,10 +510,21 @@ def scan(comm, reductOp, buffer):
       PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
       goto fail;
     }
+#if PY_VERSION_HEX >= 0x03000000
+    for (int i=0; i<argc; ++i) delete [] argv[i];
+#endif
     delete [] argv;
     Py_RETURN_TRUE;
+
   fail:
-    if (argv) delete [] argv;
+    if (argv)
+    {
+#if PY_VERSION_HEX >= 0x03000000
+      for (int i=0; i<argc; ++i)
+        if (argv[i]) delete [] argv[i];
+#endif
+      delete [] argv;
+    }
     return NULL;
   }
 
@@ -509,7 +544,7 @@ def scan(comm, reductOp, buffer):
     }
     return Py_BuildValue("");
   }
-}
+%}
 
 // Add python code to call MPI_Init() if appropriate.  If
 // Teuchos_MPI_Init_Argv() returns True, then MPI_Init() was not
@@ -559,7 +594,11 @@ else:
   }
 #endif
 }
-%ignore Teuchos::MpiComm::MpiComm;
+%ignore Teuchos::MpiComm::MpiComm(MPI_Comm rawMpiComm);
+%ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
+%ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
+                                  const int defaultTag);
+%ignore Teuchos::MpiComm::MpiComm(const MpiComm<Ordinal>& other);
 %ignore Teuchos::MpiComm::getRawMpiComm;
 %ignore Teuchos::MpiComm::broadcast;
 %ignore Teuchos::MpiComm::gatherAll;

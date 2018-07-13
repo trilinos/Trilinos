@@ -82,7 +82,7 @@ namespace
     // ==================================================
     // VERIFICATION
     stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<unsigned> entityCounts;
+    std::vector<size_t> entityCounts;
     stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
     EXPECT_EQ( 896u, entityCounts[stk::topology::ELEMENT_RANK]);
     EXPECT_EQ( 768u, entityCounts[stk::topology::FACE_RANK]);

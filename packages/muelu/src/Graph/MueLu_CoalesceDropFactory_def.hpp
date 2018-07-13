@@ -175,15 +175,12 @@ namespace MueLu {
             threshold = newt;
           }
         }
-
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-
-        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
+        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
           boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
@@ -204,9 +201,11 @@ namespace MueLu {
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
-        } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
+        } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) || 
+                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
+          // OR a matrix without a CrsGraph
 
           // allocate space for the local graph
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
@@ -256,7 +255,6 @@ namespace MueLu {
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
-
           numTotal = A->getNodeNumEntries();
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
@@ -276,7 +274,6 @@ namespace MueLu {
 
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
-
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
 
@@ -397,7 +394,6 @@ namespace MueLu {
 
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
           // Case 4:  Multiple DOF/node problem with dropping
-
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
 
@@ -602,18 +598,37 @@ namespace MueLu {
             RCP<const Import> importer;
             {
               SubFactoryMonitor m1(*this, "Import construction", currentLevel);
-              importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-            }
+              if (blkSize == 1 && A->getCrsGraph()->getImporter() != Teuchos::null) {
+                GetOStream(Warnings1) << "Using existing importer from matrix graph" << std::endl;
+                importer = A->getCrsGraph()->getImporter();
+              } else {
+                GetOStream(Warnings0) << "Constructing new importer instance" << std::endl;
+                importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+              }
+            } //subtimer
             ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
+            {
+            SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
             ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+            } //subtimer
 
             // Construct Distance Laplacian diagonal
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
             ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
+            Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+            if (threshold != STS::zero()) {
+              const size_t numVectors = ghostedCoords->getNumVectors();
+              coordData.reserve(numVectors);
+              for (size_t j = 0; j < numVectors; j++) {
+                Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+                coordData.push_back(tmpData);
+              }
+            }
+            {
+            SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
             for (LO row = 0; row < numRows; row++) {
               ArrayView<const LO> indices;
-              indicesExtra.resize(0);
 
               if (blkSize == 1) {
                 ArrayView<const SC> vals;
@@ -621,21 +636,27 @@ namespace MueLu {
 
               } else {
                 // Merge rows of A
+                indicesExtra.resize(0);
                 MergeRows(*A, row, indicesExtra, colTranslation);
                 indices = indicesExtra;
               }
 
               LO nnz = indices.size();
               for (LO colID = 0; colID < nnz; colID++) {
-                LO col = indices[colID];
+                const LO col = indices[colID];
 
-                if (row != col)
-                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                if (row != col) {
+                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
+                }
               }
             }
+            } //subtimer
+            {
+            SubFactoryMonitor m1(*this, "Laplacian distributed diagonal", currentLevel);
             ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
             ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
             ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+            } //subtimer
 
           } else {
             GetOStream(Runtime0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
@@ -652,6 +673,17 @@ namespace MueLu {
           LO realnnz = 0;
           rows[0] = 0;
           Array<LO> indicesExtra;
+          {
+          SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
+          Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+          if (threshold != STS::zero()) {
+            const size_t numVectors = ghostedCoords->getNumVectors();
+            coordData.reserve(numVectors);
+            for (size_t j = 0; j < numVectors; j++) {
+              Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+              coordData.push_back(tmpData);
+            }
+          }
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
@@ -691,7 +723,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
@@ -723,10 +755,15 @@ namespace MueLu {
             }
             rows[row+1] = realnnz;
           } //for (LO row = 0; row < numRows; row++)
+          } //subtimer
           columns.resize(realnnz);
 
-          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          RCP<GraphBase> graph;
+          {
+          SubFactoryMonitor m1(*this, "Build amalgamated graph", currentLevel);
+          graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          } //subtimer
 
           if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
@@ -759,7 +796,6 @@ namespace MueLu {
       }
 
     } else {
-
       //what Tobias has implemented
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));

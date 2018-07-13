@@ -126,7 +126,7 @@ const std::vector<LocalOrdinalT> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId) const
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT /* localElmtId */, std::vector<GlobalOrdinalT>& gids, const std::string& /* blockId */) const
 {
    gids.resize(8);
 
@@ -174,19 +174,28 @@ const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getG
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                int subcellDim,int subcellId) const
+UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string& /* blockId */, int /* fieldNum */,
+                                                int /* subcellDim */, int /* subcellId */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getOwnedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
 {
-   indices.resize(6);
-   switch(procRank_) {
-   case 0:
+  indices.resize(6);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -194,7 +203,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
       indices[4] = 6;
       indices[5] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 8;
       indices[1] = 9;
       indices[2] = 10;
@@ -202,17 +211,53 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
       indices[4] = 4;
       indices[5] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedIndices()
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getGhostedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
 {
-   indices.resize(8);
-   switch(procRank_) {
-   case 0:
+  indices.resize(2);
+  switch (procRank_)
+  {
+    case 0:
+      indices[0] = 4;
+      indices[1] = 5;
+      break;
+    case 1:
+      indices[0] = 2;
+      indices[1] = 3;
+      break;
+    default:
+      TEUCHOS_ASSERT(false);
+  } // end switch (procRank_)
+} // end of getGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+void
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getOwnedAndGhostedIndices(
+  std::vector<GlobalOrdinalT>& indices) const
+{
+  indices.resize(8);
+  switch (procRank_)
+  {
+    case 0:
       indices[0] = 0;
       indices[1] = 1;
       indices[2] = 2;
@@ -222,7 +267,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices
       indices[6] = 6;
       indices[7] = 7;
       break;
-   case 1:
+    case 1:
       indices[0] = 2;
       indices[1] = 3;
       indices[2] = 8;
@@ -232,10 +277,49 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices
       indices[6] = 4;
       indices[7] = 5;
       break;
-   default:
+    default:
       TEUCHOS_ASSERT(false);
-   }
-}
+  } // end switch (procRank_)
+} // end of getOwnedAndGhostedIndices()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumOwned() const
+{
+  return 6;
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumGhosted() const
+{
+  return 2;
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename LocalOrdinalT, typename GlobalOrdinalT>
+int
+UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
+getNumOwnedAndGhosted() const
+{
+  return 8;
+} // end of getNumOwnedAndGhosted()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
@@ -251,7 +335,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::
 /** Get field numbers associated with a particular element block.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getBlockFieldNumbers(const std::string & blockId) const
+const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getBlockFieldNumbers(const std::string & /* blockId */) const
 {
    static std::vector<int> fieldNums;
    if(fieldNums.size()==0) {
@@ -267,7 +351,7 @@ const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getB
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT /* localElementId */, Kokkos::DynRankView<double,PHX::Device>& vertices)
 {
   vertices = Kokkos::DynRankView<double,PHX::Device>("vertices",1,4,2);
    switch(procRank_) {
@@ -380,7 +464,7 @@ const std::vector<LocalOrdinalT> & UniqueGlobalIndexer_Element<LocalOrdinalT,Glo
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId) const
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT /* localElmtId */, std::vector<GlobalOrdinalT>& gids, const std::string& /* blockId */) const
 {
    gids.resize(2);
 
@@ -418,8 +502,8 @@ const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinal
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                int subcellDim,int subcellId) const
+UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string& /* blockId */, int /* fieldNum */,
+                                                int /* subcellDim */, int /* subcellId */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer_Element::getGIDFieldOffsets_closure is not implemented yet.");
@@ -444,7 +528,7 @@ void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    indices.resize(2);
    switch(procRank_) {
@@ -475,7 +559,7 @@ void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(con
 /** Get field numbers associated with a particular element block.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getBlockFieldNumbers(const std::string & blockId) const
+const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getBlockFieldNumbers(const std::string & /* blockId */) const
 {
    static std::vector<int> fieldNums;
    if(fieldNums.size()==0) {
@@ -488,7 +572,7 @@ const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT /* localElementId */, Kokkos::DynRankView<double,PHX::Device>& vertices)
 {
    vertices = Kokkos::DynRankView<double,PHX::Device>("vertices",1,1,2);
    switch(procRank_) {
@@ -521,7 +605,7 @@ getElementBlockGIDCount(const std::size_t &) const
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-BlockUniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::BlockUniqueGlobalIndexer(int blocks,int rank,int procCount)
+BlockUniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::BlockUniqueGlobalIndexer(int /* blocks */, int rank, int procCount)
    : procRank_(rank)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::BlockUniqueGlobalIndexer runs on only two processors!");

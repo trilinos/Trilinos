@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -41,10 +41,15 @@
 #include <Ioss_Property.h>        // for Property
 #include <Ioss_PropertyManager.h> // for PropertyManager
 #include <Ioss_State.h>           // for State
-#include <stddef.h>               // for size_t, nullptr
-#include <stdint.h>               // for int64_t
+#include <Ioss_VariableType.h>    // for component_count()
+#include <cstddef>                // for size_t, nullptr
+#include <cstdint>                // for int64_t
 #include <string>                 // for string
 #include <vector>                 // for vector
+
+#ifdef SEACAS_HAVE_KOKKOS
+#include <Kokkos_Core.hpp> // for Kokkos::View
+#endif
 
 namespace Ioss {
 
@@ -90,7 +95,7 @@ namespace Ioss {
   public:
     friend class Property;
 
-    GroupingEntity();
+    GroupingEntity() = default;
     GroupingEntity(DatabaseIO *io_database, const std::string &my_name, int64_t entity_count);
     GroupingEntity(const GroupingEntity &) = delete;
     GroupingEntity &operator=(const GroupingEntity &) = delete;
@@ -112,7 +117,7 @@ namespace Ioss {
 
     /** \brief Set the name of the entity.
      *
-     *  \param[in] name The new name of the entity.
+     *  \param[in] new_name The new name of the entity.
      */
     void set_name(const std::string &new_name) { entityName = new_name; }
 
@@ -141,7 +146,7 @@ namespace Ioss {
      * Entries are pushed onto the "block_members" vector, so it will be
      * appended to if it is not empty at entry to the function.
      */
-    virtual void block_membership(std::vector<std::string> &block_members) {}
+    virtual void block_membership(std::vector<std::string> & /*block_members*/) {}
 
     std::string get_filename() const;
 
@@ -174,6 +179,9 @@ namespace Ioss {
     Property get_property(const std::string &property_name) const;
     int property_describe(NameList *names) const;
     size_t property_count() const;
+    /** Add a property, or change its value if it already exists with
+        a different value */
+    void property_update(const std::string &property, int64_t value) const;
 
     // ========================================================================
     //                                FIELDS
@@ -199,17 +207,32 @@ namespace Ioss {
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
     // Resizes 'data' to size needed to hold all values.
-    int get_field_data(const std::string &field_name, std::vector<char> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<double> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<int> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<int64_t> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<Complex> &data) const;
+    template <typename T>
+    int get_field_data(const std::string &field_name, std::vector<T> &data) const;
 
-    int put_field_data(const std::string &field_name, std::vector<char> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<double> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<int> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<int64_t> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<Complex> &data) const;
+    template <typename T>
+    int put_field_data(const std::string &field_name, const std::vector<T> &data) const;
+    template <typename T>
+    int put_field_data(const std::string &field_name, std::vector<T> &data) const;
+
+#ifdef SEACAS_HAVE_KOKKOS
+    // Get and put this field's data into the specified Kokkos::View.
+    // Returns the number of entities for which the field was read.
+    // Resizes 'data' to size needed to hold all values;
+    // however, any Views that were previously created referencing the same
+    // underlying memory allocation as 'data' will remain the original size.
+    template <typename T, typename... Args>
+    int get_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
+
+    template <typename T, typename... Args>
+    int get_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
+
+    template <typename T, typename... Args>
+    int put_field_data(const std::string &field_name, Kokkos::View<T *, Args...> &data) const;
+
+    template <typename T, typename... Args>
+    int put_field_data(const std::string &field_name, Kokkos::View<T **, Args...> &data) const;
+#endif
 
     /** Get the number of bytes used to store the INT data type
      *
@@ -217,12 +240,11 @@ namespace Ioss {
      */
     Ioss::Field::BasicType field_int_type() const
     {
-      if (get_database() == nullptr || get_database()->int_byte_size_api() == 4) {
+      if (database_ == nullptr || get_database()->int_byte_size_api() == 4) {
         return Ioss::Field::INT32;
       }
-      else {
-        return Ioss::Field::INT64;
-      }
+
+      return Ioss::Field::INT64;
     }
 
     unsigned int hash() const { return hash_; }
@@ -257,20 +279,24 @@ namespace Ioss {
     virtual int64_t internal_put_field_data(const Field &field, void *data,
                                             size_t data_size = 0) const = 0;
 
-    int64_t entityCount;
+    int64_t entityCount = 0;
+
+#if defined(IOSS_THREADSAFE)
+    mutable std::mutex m_;
+#endif
 
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
 
     std::string entityName;
 
-    DatabaseIO *database_;
+    DatabaseIO *database_ = nullptr;
 
-    State           entityState;
-    mutable int64_t attributeCount;
-    unsigned int    hash_;
+    State           entityState    = STATE_CLOSED;
+    mutable int64_t attributeCount = 0;
+    unsigned int    hash_          = 0;
   };
-}
+} // namespace Ioss
 
 /** \brief Add a property to the entity's property manager.
  *
@@ -404,5 +430,283 @@ inline int Ioss::GroupingEntity::field_describe(Ioss::Field::RoleType role, Name
  *  \returns The number of fields in the entity's field manager.
  */
 inline size_t Ioss::GroupingEntity::field_count() const { return fields.count(); }
+
+/** \brief Read type 'T' field data from the database file into memory using a std::vector.
+ *
+ *  \param[in] field_name The name of the field to read.
+ *  \param[out] data The data.
+ *  \returns The number of values read.
+ *
+ */
+template <typename T>
+int Ioss::GroupingEntity::get_field_data(const std::string &field_name, std::vector<T> &data) const
+{
+  verify_field_exists(field_name, "input");
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::get_field_type(T(0)));
+
+  data.resize(field.raw_count() * field.raw_storage()->component_count());
+  size_t data_size = data.size() * sizeof(T);
+  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
+
+  // At this point, transform the field if specified...
+  if (retval >= 0) {
+    field.transform(TOPTR(data));
+  }
+
+  return retval;
+}
+
+/** \brief Write type 'T' field data from memory into the database file using a std::vector.
+ *
+ *  \param[in] field_name The name of the field to write.
+ *  \param[in] data The data.
+ *  \returns The number of values written.
+ *
+ */
+template <typename T>
+int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
+                                         const std::vector<T> &data) const
+{
+  verify_field_exists(field_name, "output");
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::get_field_type(T(0)));
+  size_t data_size = data.size() * sizeof(T);
+  if (field.has_transform()) {
+    // Need non-const data since the transform will change the users data.
+    std::vector<T> nc_data(data);
+    field.transform(nc_data.data());
+    return internal_put_field_data(field, nc_data.data(), data_size);
+  }
+
+  T *my_data = const_cast<T *>(data.data());
+  return internal_put_field_data(field, my_data, data_size);
+}
+
+template <typename T>
+int Ioss::GroupingEntity::put_field_data(const std::string &field_name, std::vector<T> &data) const
+{
+  verify_field_exists(field_name, "output");
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::get_field_type(T(0)));
+  size_t data_size = data.size() * sizeof(T);
+  T *    my_data   = const_cast<T *>(data.data());
+  field.transform(my_data);
+  return internal_put_field_data(field, my_data, data_size);
+}
+
+#ifdef SEACAS_HAVE_KOKKOS
+
+/** \brief Read field data from the database file into memory using a 1-D Kokkos:::View.
+ *
+ *  \tparam T The data type.
+ *  \tparam Args The other template arguments for data.
+ *  \param[in] field_name The name of the field to read.
+ *  \param[out] data The data.
+ *  \returns The number of values read.
+ *
+ */
+template <typename T, typename... Args>
+int Ioss::GroupingEntity::get_field_data(const std::string &field_name,
+                                         Kokkos::View<T *, Args...> &data) const
+{
+  typedef Kokkos::View<T *, Args...> ViewType;
+
+  verify_field_exists(field_name, "input");
+
+  Ioss::Field field = get_field(field_name);
+
+  // Resize the view
+  int new_view_size = field.raw_count() * field.raw_storage()->component_count();
+  Kokkos::resize(data, new_view_size);
+  size_t data_size = new_view_size * sizeof(T);
+
+  // Create a host mirror view. (No memory allocation if data is in HostSpace.)
+  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+
+  // Extract a pointer to the underlying allocated memory of the host view.
+  T *host_data_ptr = TOPTR(host_data);
+
+  // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
+  int retval = internal_get_field_data(field, host_data_ptr, data_size);
+
+  // At this point, transform the field if specified...
+  if (retval >= 0)
+    field.transform(host_data_ptr);
+
+  // Copy the data to the device. (No op if data is in HostSpace.)
+  Kokkos::deep_copy(data, host_data);
+
+  return retval;
+}
+
+/** \brief Read field data from the database file into memory using a 2-D Kokkos:::View.
+ *
+ *  \tparam T The data type
+ *  \tparam Args The other template arguments for data.
+ *  \param[in] field_name The name of the field to read.
+ *  \param[out] data The data.
+ *  \returns The number of values read.
+ *
+ */
+template <typename T, typename... Args>
+int Ioss::GroupingEntity::get_field_data(const std::string &field_name,
+                                         Kokkos::View<T **, Args...> &data) const
+{
+  typedef Kokkos::View<T **, Args...> ViewType;
+
+  verify_field_exists(field_name, "input");
+
+  Ioss::Field field = get_field(field_name);
+
+  // Resize the view
+  int new_view_size_left  = field.raw_count();
+  int new_view_size_right = field.raw_storage()->component_count();
+  Kokkos::resize(data, new_view_size_left, new_view_size_right);
+  size_t data_size = new_view_size_left * new_view_size_right * sizeof(T);
+
+  // Create and allocate an array to hold the data temporarily.
+  // This is necessary to ensure the data is placed in the correct
+  // location in the 2-D array, avoiding incorrect placement due
+  // to Views with padded dimensions.
+  T *data_array = new T[data_size];
+
+  // Create a host mirror view. (No memory allocation if data is in HostSpace.)
+  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+
+  // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
+  int retval = internal_get_field_data(field, data_array, data_size);
+
+  // At this point, transform the field if specified...
+  if (retval >= 0)
+    field.transform(data_array);
+
+  // Copy the data to the host Mirror view.
+  // The host mirror view has the same layout as the device view.
+  // For CUDA, this will be LayoutLeft. In this case, the loop order
+  // chosen here will be slower than the reversed loop order.
+  // However, The time for this extra in-memory copy is small
+  // compared with the time to copy from disk into memory.
+  for (int i = 0; i < new_view_size_left; ++i) {
+    for (int j = 0; j < new_view_size_right; ++j) {
+      host_data(i, j) = data_array[new_view_size_right * i + j];
+    }
+  }
+
+  // Delete the temporary array
+  delete[] data_array;
+
+  // Copy the data to the device. (No op if data is in HostSpace.)
+  Kokkos::deep_copy(data, host_data);
+
+  return retval;
+}
+
+/** \brief Write field data from memory into the database file using a 1-D Kokkos::View.
+ *
+ *  \tparam T The data type
+ *  \tparam Args The other template arguments for data.
+ *  \param[in] field_name The name of the field to write.
+ *  \param[in] data The data.
+ *  \returns The number of values written.
+ *
+ */
+template <typename T, typename... Args>
+int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
+                                         Kokkos::View<T *, Args...> &data) const
+{
+  typedef Kokkos::View<T *, Args...> ViewType;
+
+  verify_field_exists(field_name, "output");
+
+  Ioss::Field field     = get_field(field_name);
+  size_t      data_size = field.raw_count() * field.raw_storage()->component_count() * sizeof(T);
+
+  // Create a host mirror view. (No memory allocation if data is in HostSpace.)
+  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+
+  // Copy the data to the host. (No op if data is in HostSpace.)
+  Kokkos::deep_copy(host_data, data);
+
+  // Extract a pointer to the underlying allocated memory of the host view.
+  T *host_data_ptr = TOPTR(host_data);
+
+  // Transform the field
+  field.transform(host_data_ptr);
+
+  // Copy the data to disk from the underlying memory pointed to by host_data_ptr.
+  return internal_put_field_data(field, host_data_ptr, data_size);
+}
+
+/** \brief Write field data from memory into the database file using a 2-D Kokkos::View.
+ *
+ *  \tparam T The data type
+ *  \tparam Args The other template arguments for data.
+ *  \param[in] field_name The name of the field to write.
+ *  \param[in] data The data.
+ *  \returns The number of values written.
+ *
+ */
+template <typename T, typename... Args>
+int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
+                                         Kokkos::View<T **, Args...> &data) const
+{
+  typedef Kokkos::View<T **, Args...> ViewType;
+
+  verify_field_exists(field_name, "output");
+
+  Ioss::Field field = get_field(field_name);
+
+  int    view_size_left  = data.extent(0);
+  int    view_size_right = data.extent(1);
+  size_t data_size       = field.raw_count() * field.raw_storage()->component_count() * sizeof(T);
+
+  if (view_size_left * view_size_right * sizeof(T) != data_size) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: View dimensions are inconsistent with field raw count or raw storage "
+              "component count"
+           << "for field" << field_name << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
+  // Create a host mirror view. (No memory allocation if data is in HostSpace.)
+  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+
+  // Copy the data to the host. (No op if data is in HostSpace.)
+  Kokkos::deep_copy(host_data, data);
+
+  // Create and allocate an array to hold the data temporarily.
+  // This is necessary to ensure the data is taken from the correct
+  // location in the 2-D array, avoiding incorrect location due
+  // to Views with padded dimensions.
+  T *data_array = new T[data_size];
+
+  // Copy the data from the host Mirror view.
+  // The host mirror view has the same layout as the device view.
+  // For CUDA, this will be LayoutLeft. In this case, the loop order
+  // chosen here will be slower than the reversed loop order.
+  // However, The time for this extra in-memory copy is small
+  // compared with the time to copy to disk from memory.
+  for (int i = 0; i < view_size_left; ++i) {
+    for (int j = 0; j < view_size_right; ++j) {
+      data_array[view_size_right * i + j] = host_data(i, j);
+    }
+  }
+
+  // Transform the field
+  field.transform(data_array);
+
+  // Copy the data to disk from the underlying memory pointed to by data_array.
+  int retval = internal_put_field_data(field, data_array, data_size);
+
+  // Delete the temporary array
+  delete[] data_array;
+
+  return retval;
+}
+#endif
 
 #endif

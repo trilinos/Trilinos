@@ -6,6 +6,7 @@
 
 #include "PanzerCore_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
@@ -58,14 +59,14 @@ int main(int argc,char * argv[])
   } 
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<double,FieldContainer> >();
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::execution_space,double,double>>();
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::execution_space,double,double>>();
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::execution_space,double,double>>();
+  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::Device::execution_space,double,double>>();
+  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device::execution_space,double,double>>();
 
   // repeatedly construct DOFManager timing the buildGlobalUnknowns
-  for(int repeats=0;repeats<10;repeats++) {
+  for(int repeats=0;repeats<100;repeats++) {
   
     // build the topology
     RCP<CCM> connManager = rcp(new CCM);
@@ -92,8 +93,11 @@ int main(int argc,char * argv[])
     dofManager->addField("eblock-0_1_0","UY",pattern_U);
     dofManager->addField("eblock-0_1_0","UZ",pattern_U);
   
+    // try to get them all synced up
+    comm.barrier();
+
     {
-      PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns)");
+      PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns");
   
       dofManager->buildGlobalUnknowns();
     }
@@ -122,7 +126,7 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
   using Teuchos::rcp;
 
   // build a field pattern from a single basis
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new IntrepidBasisType);
+  RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > basis = rcp(new IntrepidBasisType);
   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
   return pattern;
 }

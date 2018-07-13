@@ -51,7 +51,7 @@ using Teuchos::rcp;
 
 namespace panzer_stk {
 
-SquareQuadMeshFactory::SquareQuadMeshFactory(bool enableRebalance)
+SquareQuadMeshFactory::SquareQuadMeshFactory(bool /* enableRebalance */)
 {
    initializeWithDefaults();
 }
@@ -92,9 +92,10 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
       xProcs_ = machSize_; 
       yProcs_ = 1;
    }
-   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
-                      "Cannot build SquareQuadMeshFactory, the product of \"X Procs\" and \"Y Procs\""
-                      " must equal the number of processors.");
+  TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_) != xProcs_ * yProcs_, std::logic_error,
+      "Cannot build SquareQuadMeshFactory. The product of 'X Procs * Y Procs = " << xProcs_ << "*" << yProcs_ << " = " << xProcs_*yProcs_
+      << "' must equal the number of processors = " << machSize_
+      << "\n\n\t==> Run the simulation with an appropriate number of processors, i.e. #procs = " << xProcs_*yProcs_ << ".\n");
    procTuple_ = procRankToProcTuple(machRank_);
 
    // build meta information: blocks and side set setups
@@ -199,7 +200,7 @@ void SquareQuadMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
@@ -258,7 +259,7 @@ void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_
    mesh.endModification();
 }
 
-void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int xBlock,int yBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -306,7 +307,7 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBl
    }
 }
 
-std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
@@ -329,7 +330,7 @@ std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t yProcLoc = procTuple_[1];
    unsigned int minElements = nYElems_/size;

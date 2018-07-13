@@ -51,30 +51,6 @@ namespace mesh
 namespace
 {
 
-void verify_declare_element_side(
-        const BulkData & mesh,
-        const Entity elem,
-        const unsigned local_side_id
-        )
-{
-    stk::topology elem_top = mesh.bucket(elem).topology();
-
-    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
-            "Element[" << mesh.identifier(elem) << "] has no defined topology");
-
-    stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
-    stk::topology side_top =
-            ((elem_top != stk::topology::INVALID_TOPOLOGY) && (local_side_id < elem_top.num_sides()) )
-            ? elem_top.side_topology(local_side_id) : invalid;
-
-    ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_side_id >= elem_top.num_sides(),
-            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
-            "local_side_id exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
-
-    ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
-            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
-            "No element topology found");
-}
 
 void verify_declare_element_edge(
         const BulkData & mesh,
@@ -119,11 +95,7 @@ Entity declare_element(BulkData & mesh,
 
     PartVector empty;
 
-    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-
-    Entity elem = mesh.declare_entity(entity_rank, elem_id, parts);
-
-    const EntityRank node_rank = stk::topology::NODE_RANK;
+    Entity elem = mesh.declare_element(elem_id, parts);
 
     Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     OrdinalVector ordinal_scratch;
@@ -134,10 +106,10 @@ Entity declare_element(BulkData & mesh,
     for(unsigned i = 0; i < top.num_nodes(); ++i)
     {
         //declare node if it doesn't already exist
-        Entity node = mesh.get_entity(node_rank, node_ids[i]);
+        Entity node = mesh.get_entity(stk::topology::NODE_RANK, node_ids[i]);
         if(!mesh.is_valid(node))
         {
-            node = mesh.declare_entity(node_rank, node_ids[i], empty);
+            node = mesh.declare_node(node_ids[i], empty);
         }
 
         mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);
@@ -145,125 +117,7 @@ Entity declare_element(BulkData & mesh,
     return elem;
 }
 
-Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
-        const unsigned relationOrdinal, const PartVector& parts, stk::topology entity_top)
-{
-    stk::topology elem_top = mesh.bucket(elem).topology();
-
-    std::vector<unsigned> entity_node_ordinals(entity_top.num_nodes());
-    elem_top.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entity_node_ordinals.begin());
-
-    const stk::mesh::Entity *elem_nodes = mesh.begin_nodes(elem);
-    EntityVector entity_top_nodes(entity_top.num_nodes());
-    elem_top.sub_topology_nodes(elem_nodes, mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.begin());
-
-    Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, &entity_top_nodes[0], relationOrdinal);
-
-    OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    PartVector part_scratch;
-    part_scratch.reserve(64);
-
-    stk::mesh::PartVector initialParts;
-    initialParts.reserve(parts.size() + 1);
-    initialParts = parts;
-    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entity_top));
-    mesh.change_entity_parts(entity, initialParts);
-
-    const stk::mesh::ConnectivityOrdinal *side_ordinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
-    unsigned num_sides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));
-
-    bool elem_to_side_exists = false;
-    for(unsigned i = 0; i < num_sides; ++i)
-    {
-        if(side_ordinals[i] == relationOrdinal)
-        {
-            elem_to_side_exists = true;
-            break;
-        }
-    }
-
-    if(!elem_to_side_exists)
-    {
-        mesh.declare_relation(elem, entity, relationOrdinal, perm, ordinal_scratch, part_scratch);
-    }
-
-    const unsigned num_side_nodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
-    if(0 == num_side_nodes)
-    {
-        Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
-        for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
-        {
-            Entity node = elem_nodes_local[entity_node_ordinals[i]];
-            mesh.declare_relation(entity, node, i, node_perm, ordinal_scratch, part_scratch);
-        }
-    }
-    else
-    {
-        ThrowAssertMsg(num_side_nodes == entity_top.num_nodes(),
-                "declare_element_to_entity: " << mesh.entity_key(entity) << " already exists with different number of nodes.");
-    }
-
-    return entity;
-}
-
-
-Entity declare_element_side(
-        BulkData & mesh,
-        Entity elem,
-        Entity side,
-        const unsigned local_side_id,
-        const stk::mesh::PartVector& parts)
-{
-    verify_declare_element_side(mesh, elem, local_side_id);
-
-    stk::topology elem_top = mesh.bucket(elem).topology();
-    stk::topology side_top = elem_top.side_topology(local_side_id);
-    return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
-}
-
-stk::mesh::EntityId side_id_formula(const stk::mesh::BulkData& bulkData, stk::mesh::Entity elem, unsigned sideOrdinal)
-{
-    //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
-    return 10*bulkData.identifier(elem) + sideOrdinal+1;
-}
-
-Entity declare_element_side(BulkData& bulkData, Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
-{
-    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(bulkData, elem, side_ordinal);
-    if(bulkData.is_valid(sideEntity))
-    {
-        bulkData.change_entity_parts(sideEntity, add_parts, {});
-    }
-    else
-    {
-        stk::mesh::EntityId global_side_id = side_id_formula(bulkData, elem, side_ordinal);
-        sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);
-        if (bulkData.has_face_adjacent_element_graph()) {
-            stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
-            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
-            sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
-        }
-    }
-    return sideEntity;
-}
-
-Entity declare_element_side( BulkData & mesh ,
-                             const stk::mesh::EntityId global_side_id ,
-                             Entity elem ,
-                             const unsigned local_side_id ,
-                             stk::mesh::Part* part)
-{
-    stk::mesh::PartVector parts;
-    if(part!=NULL)
-    {
-        parts.push_back(part);
-    }
-    return declare_element_side(mesh, global_side_id, elem, local_side_id, parts);
-}
-
-Entity declare_element_side( BulkData & mesh ,
+Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
@@ -274,43 +128,9 @@ Entity declare_element_side( BulkData & mesh ,
     {
         parts.push_back(part);
     }
-    return declare_element_side(mesh, elem, side, local_side_id, parts);
-}
-
-Entity declare_element_edge(
-        BulkData & mesh,
-        Entity elem,
-        Entity edge,
-        const unsigned local_edge_id,
-        const stk::mesh::PartVector& parts)
-{
-    verify_declare_element_edge(mesh, elem, local_edge_id);
-    stk::topology elem_top = mesh.bucket(elem).topology();
-    stk::topology edge_top = elem_top.edge_topology();
-    return declare_element_to_entity(mesh, elem, edge, local_edge_id, parts, edge_top);
-}
-
-Entity declare_element_side(
-        BulkData & mesh,
-        const stk::mesh::EntityId global_side_id,
-        Entity elem,
-        const unsigned local_side_id,
-        const stk::mesh::PartVector& parts)
-{
-    verify_declare_element_side(mesh, elem, local_side_id);
-
     stk::topology elem_top = mesh.bucket(elem).topology();
     stk::topology side_top = elem_top.side_topology(local_side_id);
-
-    PartVector empty_parts;
-    Entity side = mesh.get_entity(side_top.rank(), global_side_id);
-    if(!mesh.is_valid(side))
-    {
-        side = mesh.declare_entity(side_top.rank(), global_side_id, empty_parts);
-// It seem like declare_element_side should be called even if the side is valid to make sure it is attached to the element.
-        declare_element_side(mesh, elem, side, local_side_id, parts);
-    }
-    return side;
+    return impl::connect_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
 }
 
 Entity declare_element_edge(
@@ -326,12 +146,16 @@ Entity declare_element_edge(
     stk::topology edge_top = elem_top.edge_topology();
 
     PartVector empty_parts;
+    if(mesh.mesh_meta_data().spatial_dimension() == 2)
+    {
+        return mesh.declare_element_side(elem, local_edge_id, parts);
+    }
+
     Entity edge = mesh.get_entity(edge_top.rank(), global_edge_id);
     if(!mesh.is_valid(edge))
     {
-        edge = mesh.declare_entity(edge_top.rank(), global_edge_id, empty_parts);
-// It seem like declare_element_edge should be called even if the edge is valid to make sure it is attached to the element.
-        declare_element_edge(mesh, elem, edge, local_edge_id, parts);
+        edge = mesh.declare_edge(global_edge_id, empty_parts);
+        impl::connect_element_to_entity(mesh, elem, edge, local_edge_id, parts, edge_top);
     }
     return edge;
 }
@@ -560,6 +384,31 @@ int get_entity_subcell_id(const BulkData& mesh,
     }
 
     return INVALID_SIDE;
+}
+
+stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank)
+{
+    if(bulk.is_valid(elem))
+    {
+        unsigned numSides = bulk.num_connectivity(elem, sideRank);
+        const stk::mesh::Entity* elemSides = bulk.begin(elem, sideRank);
+        const stk::mesh::ConnectivityOrdinal* sideOrds = bulk.begin_ordinals(elem, sideRank);
+        for(unsigned i = 0; i < numSides; i++)
+            if(sideOrds[i] == (sideOrdinal))
+                return elemSides[i];
+    }
+    return stk::mesh::Entity();
+}
+
+stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal)
+{
+    return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, bulk.mesh_meta_data().side_rank());
+}
+
+stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank)
+{
+    stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+    return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, sideRank);
 }
 
 }

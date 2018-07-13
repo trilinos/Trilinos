@@ -38,9 +38,9 @@
 
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
 
 #include "UnitTestSkinMeshUseCaseUtils.hpp"
 
@@ -69,7 +69,7 @@ TEST(ElementGraph, degenerate_mesh)
             stk::mesh::fixtures::degenerate_mesh_bulk_data(bulk_data, node_coord);
             if(stk::parallel_machine_rank(comm) == 0)
             {
-                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data);
+                stk::io::write_mesh(fileName, bulk_data);
             }
         }
         stk::mesh::MetaData meta_data(3);

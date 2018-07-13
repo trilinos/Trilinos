@@ -43,9 +43,10 @@
 
 namespace KokkosClassic {
 
-  Teuchos::RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
-  {
-    return Details::getNode<DefaultNodeType> ();
-  }
+Teuchos::RCP<DefaultNode::DefaultNodeType>
+DefaultNode::getDefaultNode()
+{
+  return Teuchos::rcp (new DefaultNode::DefaultNodeType);
+}
 
 } // namespace KokkosClassic

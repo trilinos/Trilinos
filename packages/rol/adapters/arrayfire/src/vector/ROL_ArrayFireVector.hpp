@@ -60,20 +60,20 @@ class ArrayFireVector : public ROL::Vector<Real> {
 
 private:
     
-    const Teuchos::RCP<af::array> afVector;
+    const ROL::Ptr<af::array> afVector;
 
 public:
     
-    ArrayFireVector(const Teuchos::RCP<af::array> &initVector) : afVector(initVector) {}
+    ArrayFireVector(const ROL::Ptr<af::array> &initVector) : afVector(initVector) {}
 
     void set (const ROL::Vector<Real> &newValue)  {
-        const ArrayFireVector<Real, Element> &newVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(newValue);
+        const ArrayFireVector<Real, Element> &newVector = dynamic_cast<const ArrayFireVector<Real, Element>&>(newValue);
         const af::array &newArray = *(newVector.getVector());
         *afVector = newArray;
     }
 
     void plus (const ROL::Vector<Real> &operand)  {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
+        const ArrayFireVector<Real, Element> &operandVector = dynamic_cast<const ArrayFireVector<Real, Element>&>(operand);
         const af::array &operandArray = *(operandVector.getVector());
         
         dim_t currentDim = afVector->dims(0);
@@ -85,7 +85,7 @@ public:
     }
 
     void axpy (const Real alpha, const ROL::Vector<Real> &operand)   {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
+        const ArrayFireVector<Real, Element> &operandVector = dynamic_cast<const ArrayFireVector<Real, Element>&>(operand);
         const af::array &operandArray = *(operandVector.getVector());
 
         dim_t currentDim = afVector->dims(0);
@@ -101,7 +101,7 @@ public:
     }
 
     Real dot (const ROL::Vector<Real> &operand) const   {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
+        const ArrayFireVector<Real, Element> &operandVector = dynamic_cast<const ArrayFireVector<Real, Element>&>(operand);
         const af::array &operandArray = *(operandVector.getVector());
         
         dim_t currentDim = afVector->dims(0);
@@ -121,26 +121,26 @@ public:
         return static_cast<Real>(af::norm(*afVector));
     }
 
-    Teuchos::RCP<ROL::Vector<Real> > clone () const   {
-        return(Teuchos::rcp(new ArrayFireVector<Real, Element>(Teuchos::rcp(new af::array(afVector->dims(0), afVector->type())))));
+    ROL::Ptr<ROL::Vector<Real> > clone () const   {
+        return(ROL::makePtr<ArrayFireVector<Real, Element>(ROL::makePtr<af::array(afVector->dims(0), afVector->type>>())));
     }
 
-    Teuchos::RCP<const af::array> getVector () const {
+    ROL::Ptr<const af::array> getVector () const {
         return afVector;
     }
 
-    Teuchos::RCP< af::array> getVector()  {
+    ROL::Ptr< af::array> getVector()  {
         return afVector;
     }
 
 /*  to be implemented later
-    Teuchos::RCP<ROL::Vector<Real> > basis (const int index) const   {
-		Teuchos::RCP<af::array> basisArrary = af::constant(0, afVector.dims(0), afVector.type());
+    ROL::Ptr<ROL::Vector<Real> > basis (const int index) const   {
+		ROL::Ptr<af::array> basisArrary = af::constant(0, afVector.dims(0), afVector.type());
         basisArrary(index) = 1;
         
         ArrayFireVector<Real, Element> *basisVector = new ArrayFireVector<Real, Element>(basisArrary);
         
-        return Teuchos::rcp(basisVector);
+        return basisVector;
     }
    
     
@@ -165,7 +165,7 @@ public:
     
     void applyBinary (const ROL::Elementwise::BinaryFunction<Real> &function,
                       const ROL::Vector<Real> &operand)   {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector&>(operand);
+        const ArrayFireVector<Real, Element> &operandVector = dynamic_cast<const ArrayFireVector&&>(operand);
         const af::array &operandArray = operandVector.getVector();
         
         Element * vectorData = afVector.host<Element>();

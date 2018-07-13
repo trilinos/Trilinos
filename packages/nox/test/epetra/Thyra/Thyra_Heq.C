@@ -70,6 +70,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -84,6 +86,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -94,7 +98,7 @@ int main(int argc, char *argv[])
 
   bool success = false;
   bool verbose = false;
-  int StorageDepth = 10;
+  int StorageDepth = 2;
   double ParamC = 0.999;
   std::string LineSearch = "Full Step";
   int Reorthogonalize = 0;
@@ -117,18 +121,15 @@ int main(int argc, char *argv[])
       return parse_return;
 
     if (verbose)
-      std::cout << "Verbosity Activated" << std::endl;
+      *out << "Verbosity Activated" << std::endl;
     else
-      std::cout << "Verbosity Disabled" << std::endl;
-
-    int status = 0;
+      *out << "Verbosity Disabled" << std::endl;
 
     const int num_elements = 400;
 
-    // Check we have only one processor since this problem doesn't work
-    // for more than one proc
+    // Check we have at least one unknown per processor
     if (Comm.NumProc() > num_elements)
-      throw "Error! Number of elements must be greate than number of processors!";
+      throw "Error! Number of elements must be greater than number of processors!";
 
     // Create the model evaluator object
     Teuchos::RCP<ModelEvaluatorHeq<double> > model =
@@ -156,7 +157,6 @@ int main(int argc, char *argv[])
 
     Teuchos::RCP<NOX::Thyra::Group> nox_group =
       Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model));
-    //Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
 
     nox_group->computeF();
 
@@ -192,7 +192,6 @@ int main(int argc, char *argv[])
     nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
     nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
     nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration",true);
-    //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
     if (verbose){
       nl_params->sublist("Printing").sublist("Output Information").set("Error",true);
@@ -212,6 +211,14 @@ int main(int argc, char *argv[])
     Teuchos::RCP<NOX::Solver::Generic> solver =
       NOX::Solver::buildSolver(nox_group, combo, nl_params);
     NOX::StatusTest::StatusType solvStatus = solver->solve();
+    Teuchos::RCP<NOX::Abstract::Vector> diff = solver->getSolutionGroup().getX().clone();
+
+    // Test the reset function by resolving the same problem
+    Teuchos::RCP<NOX::Abstract::Vector> newGuess = diff->clone(NOX::ShapeCopy);
+    newGuess->init(1.0);
+    solver->reset(*newGuess);
+    solver->solve();
+    diff->update(1.0, solver->getSolutionGroup().getX(), -1.0);
 
     // Create a print class for controlling output below
     nl_params->sublist("Printing").set("MyPID", Comm.MyPID());
@@ -229,19 +236,30 @@ int main(int argc, char *argv[])
       }
     }
 
-    // 1. Convergence
-    if (solvStatus != NOX::StatusTest::Converged)
-      status = 1;
-    // 2. Number of iterations
-    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 19)
-      status = 2;
+    *out << "\nCheck for test pass/fail:\n";
 
-    success = status==0;
+    bool loc_success = true;
+ 
+    // 1. Convergence
+    TEUCHOS_TEST_EQUALITY_CONST(solvStatus, NOX::StatusTest::Converged, *out, loc_success);
+    // 2. Number of iterations
+    int numIterations = 0;
+    const int *numItersPtr = nullptr;
+    if ( nullptr != (numItersPtr = Teuchos::getParameterPtr<int>(
+                        solver->getList().sublist("Output"), "Nonlinear Iterations")) ) 
+    {
+      numIterations = *numItersPtr;
+    } 
+    TEUCHOS_TEST_EQUALITY_CONST(numIterations, 11, *out, loc_success);
+    // 3. Same reset solution
+    TEUCHOS_TEST_COMPARE_CONST(diff->norm(), <=, 1.0e-14, *out, loc_success);
+
+    success = loc_success;
 
     if (success)
-      std::cout << "Test passed!" << std::endl;
+      *out << "\nTest passed!" << std::endl;
     else
-      std::cout << "Test failed!" << std::endl;
+      *out << "\nTest failed!" << std::endl;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

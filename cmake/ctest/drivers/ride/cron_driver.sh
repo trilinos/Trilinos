@@ -21,9 +21,9 @@ export TDD_CTEST_TEST_TYPE=${JENKINS_JOB_TYPE}
 
 # Machine specific environment
 #
-module load python/2.7.10
-module load cmake/3.4.1
-module load git/2.2.2
+module load python/2.7.12
+module load cmake/3.6.2
+module load git/2.10.1
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 export CUDA_LAUNCH_BLOCKING=1
@@ -49,8 +49,8 @@ module load ${HDF5_SUFFIX}/${MPI_SUFFIX}/${COMPILER_SUFFIX}/${CUDA_SUFFIX}
 module load ${NETCDF_SUFFIX}/${MPI_SUFFIX}/${COMPILER_SUFFIX}/${CUDA_SUFFIX}
 module load ${ZLIB_SUFFIX}
 module load ${SUPERLU_SUFFIX}/${COMPILER_SUFFIX}
-module load ${BLAS_SUFFIX}/${COMPILER_SUFFIX}
-module load ${LAPACK_SUFFIX}/${COMPILER_SUFFIX}
+#module load ${BLAS_SUFFIX}/${COMPILER_SUFFIX}
+#module load ${LAPACK_SUFFIX}/${COMPILER_SUFFIX}
 
 module list
 

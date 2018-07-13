@@ -1,10 +1,10 @@
 
 #include <Kokkos_Core.hpp>
 
-#if defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 #define KOKKOS_DEVICE Kokkos::Cuda
 #define CALL_KOKKOS_SAXPY_FUNCTION call_kokkos_saxpy_cuda
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif defined(KOKKOS_ENABLE_OPENMP)
 #define KOKKOS_DEVICE Kokkos::OpenMP
 #define CALL_KOKKOS_SAXPY_FUNCTION call_kokkos_saxpy_openmp
 #else

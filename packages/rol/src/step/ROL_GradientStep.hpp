@@ -72,11 +72,11 @@ public:
   /** \brief Constructor.
 
       Constructor to build a GradientStep object.  Algorithmic specifications
-      are passed in through a Teuchos::ParameterList.
+      are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  GradientStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  GradientStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
@@ -86,7 +86,7 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Real one(1);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Compute search direction
     s.set((step_state->gradientVec)->dual());
@@ -96,7 +96,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store step
     algo_state.iter++;

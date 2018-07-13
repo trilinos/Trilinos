@@ -1,6 +1,6 @@
-C Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
 C                         
-C * Neither the name of Sandia Corporation nor the names of its
+C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
 C                                                 
@@ -29,7 +29,6 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
 
 C=======================================================================
       PROGRAM GREPOS
@@ -153,7 +152,7 @@ C ... Parse options...
             CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
             CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
           end if
-          if (i .gt. narg-2) exit
+          if (iarg .gt. narg-2) exit
         end do
       end if
 
@@ -224,6 +223,7 @@ C     --Reserve memory for the input information
       CALL MDRSRV ('LINK',   KLINK,  0)
 
       CALL MDRSRV ('IDELB',  KIDELB, NELBLK)
+      CALL MDRSRV ('IDELB2', KIDELB2,NELBLK)
       CALL MDRSRV ('NUMELB', KNELB,  NELBLK)
       CALL MDRSRV ('NUMLNK', KNLNK,  NELBLK)
       CALL MDRSRV ('NUMATR', KNATR,  NELBLK)
@@ -271,6 +271,12 @@ C     --Read information from the database and close file
       
       call CHKTOP(NELBLK, C(KBKTYP), COMTOP)
       call getnam(NDBIN, 1, nelblk, C(KNAMEB))
+
+C ... Save original element block ids in case the user changes them
+C     Needed when reading/writing element variables.
+      do i=1,nelblk
+        ia(kidelb2-1+i) = ia(kidelb-1+i)
+      end do
 
 C ... Attribute names...
       call mcrsrv('NAMATT', KNAMATT, maxnam*NUMATT)
@@ -413,7 +419,7 @@ C     .. Set up status arrays for element to nodal variable conversion
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     A(KXN), A(KYN), A(KZN),
      &     A(KXEXPL), A(KYEXPL), A(KZEXPL), MODBLK,
-     &     ISATRB, A(KATRSC), IA(KIXNP), IA(KMAPNN),
+     &     ISATRB, A(KATRSC), IA(KIXNP), IA(KMAPNN), IA(KMAPEL),
      &     IA(KIELBS), IA(KINPSS), IA(KIESSS),
      &     NQAREC, C(KQAREC), NINFO, c(kinfo), c(kbktyp),
      *     c(knameb), c(knamnp), c(knamss), c(knamatt),
@@ -647,7 +653,7 @@ C     ... Save old counts that are needed for writing timesteps
       numnp0  = numnp
       
 C     --location of original numelb, isevok arrays
-      kidelb0 = kidelb
+      kidelb0 = kidelb2
       knelb0  = knelb
       kievok0 = kievok
       
@@ -658,6 +664,15 @@ C     --location of original numelb, isevok arrays
       
       if (renel .or. delnp) then
         CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
+        if (exodus) then
+C     ... Map from new var to old for mapping variables.
+          CALL MDRSRV ('MAPL', KMAPL, NUMEL0)
+          CALL MDRSRV ('MAPN', KMAPN, NUMNP0)
+          CALL MDSTAT (NERR, MEM)
+          IF (NERR .GT. 0) GOTO 40
+          CALL INIMAP(NUMEL0, IA(KMAPL))
+          CALL INIMAP(NUMNP0, IA(KMAPN))
+        end if
       end if
 
       IF (RENEL) THEN
@@ -671,16 +686,8 @@ C     old array contents into new (Only needed if EXODUS)
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 40
             CALL CPYINT (NELBLK0, IA(KNELB),  IA(KNELB0))
-            CALL CPYINT (NELBLK0, IA(KIDELB), IA(KIDELB0))
+            CALL CPYINT (NELBLK0, IA(KIDELB2), IA(KIDELB0))
             CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
-
-C     ... Map from new var to old for mapping variables.
-            CALL MDRSRV ('MAPL', KMAPL, NUMEL0)
-            CALL MDRSRV ('MAPN', KMAPN, NUMNP0)
-            CALL MDSTAT (NERR, MEM)
-            IF (NERR .GT. 0) GOTO 40
-            CALL INIMAP(NUMEL0, IA(KMAPL))
-            CALL INIMAP(NUMNP0, IA(KMAPN))
          END IF
          
          CALL MDRSRV ('IXEL', KIXEL, NUMEL)
@@ -757,6 +764,9 @@ C     ... NUMNP modified in this call
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
          CALL REMAP(NUMNP0, IA(KIXNP), IA(KMAPNN), IA(KMSCR))
+         IF (EXODUS) THEN
+            CALL REMAP (NUMNP0, IA(KIXNP), IA(KMAPN),  IA(KMSCR))
+         END IF
       END IF
 
 C     --Renumber the element map
@@ -772,12 +782,10 @@ C     --Squeeze the element map
 
       IF (DELEL) THEN
 C     ... Changes first argument
-         NSAVE = NUMEL0
-         CALL ZMMAP (NSAVE, IA(KMAPEL))
+         CALL ZMMAP (NUMEL0, IA(KMAPEL))
          CALL MDLONG ('MAPEL', KMAPEL, NUMEL)
-         NSAVE = NUMEL0
          IF (EXODUS) THEN
-            CALL ZMMAP (NSAVE, IA(KMAPL))
+            CALL ZMMAP (NUMEL0, IA(KMAPL))
             CALL MDLONG ('MAPL',  KMAPL,  NUMEL)
          END IF
       END IF
@@ -785,8 +793,7 @@ C     ... Changes first argument
 C     --Renumber the element block nodes
 
       IF (DELNP) THEN
-        NSAVE = NUMNP0
-        CALL ZMMAP(NSAVE, IA(KMAPNN))
+        CALL ZMMAP(NUMNP0, IA(KMAPNN))
         CALL MDLONG ('MAPNN', KMAPNN, NUMNP)
         CALL RENELB (NELBLK, -999, IA(KIXNP),
      &    IA(KNELB), IA(KNLNK), IA(KLINK))
@@ -796,15 +803,6 @@ C     --Renumber the nodal point set nodes
 
       IF (DELNP) THEN
          CALL RENIX (LNPSNL, -999, IA(KIXNP), IA(KLTNNS), .TRUE.)
-         NSAVE = NUMNP0
-         IF (EXODUS) THEN
-            IF (.not. DELEL) THEN
-              CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
-            ENDIF
-            CALL REMAP (NSAVE, IA(KIXNP), IA(KMAPN),  IA(KMSCR))
-            NSAVE = NUMNP0
-            CALL ZMMAP (NSAVE, IA(KMAPN))
-         END IF
       END IF
 
 C     --Renumber the element side set elements
@@ -858,7 +856,8 @@ C     --Squeeze the nodal point sets
 
          IF (DELNP) THEN
             CALL ZMNPS (NUMNPS, IA(KINPSS), LNPSNL, LNPSDF,
-     *       IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS))
+     *       IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS),
+     *       C(KNAMNP))
          END IF
 
 C     ... Fix up the truth table if the nodeset count changes... 
@@ -872,9 +871,9 @@ C     ... Fix up the truth table if the nodeset count changes...
            call muntt(numnps0, numnps, nvarns, 
      $       ia(knsvok0), ia(knsvok), ia(kinpss))
 
-C ... check that the sidesets that are retained contain the same number
-C     of faces that the original sidesets contain.  At the current time,
-C     can only map sideset variables if the sidesets are the same...
+C ... check that the nodesets that are retained contain the same number
+C     of nodes that the original nodesets contain.  At the current time,
+C     can only map nodeset variables if the nodesets are the same...
             i1 = 0
             do i=0,numnps0-1
                if (ia(kinpss+i) .eq.0) then
@@ -1162,7 +1161,7 @@ C     ... Truth Table.
         time = 0.0
         CALL DBOSTE (NDBOUT, ISTEP,
      &    NVARGL, NVARNP, NUMNP, NVAREL, 0, NELBLK,
-     &    IA(KNELB), LA(KIEVOK), IA(KIDELB),
+     &    IA(KNELB), LA(KIEVOK), IA(KIDELB), 
      *    NVARNS, NUMNPS, IA(KNNNS), IA(KNSVOK), IA(KIDNS),
      *    NVARSS, NUMESS, IA(KNESS), IA(KSSVOK), IA(KIDSS),
      *    TIME, A(KVARGL), A(KVARNP), A(KCENT), A(KVARNS), A(KVARSS),
@@ -1195,8 +1194,10 @@ C     --Read the database time steps
       
 C ... NOTE: VARNP and VAREL are treated as doubly-dimensioned arrays
 C           dimensioned as (NUMEL, NVAREL)
+      iostep = 0
       do 110 istep = 1, nsteps
         if (ia(kitims+istep-1) .eq. 0) then
+          iostep = iostep + 1
            CALL DBISTE (NDBIN, '*', istep,
      &      NVARGL,
      *      NVARNP, NUMNP0,
@@ -1248,7 +1249,7 @@ C     number element blocks, and truth table.
 
            END IF
 
-           CALL DBOSTE (NDBOUT, ISTEP,
+           CALL DBOSTE (NDBOUT, IOSTEP,
      &          NVARGL, NVARNP, NUMNP, NVAREL, INOD2EL, NELBLK,
      $          IA(KNELB), LA(KIEVOK), IA(KIDELB),
      $          NVARNS, NUMNPS0, IA(KNNNS0), IA(KNSVOK0), IA(KIDNS0),
@@ -1257,13 +1258,13 @@ C     number element blocks, and truth table.
      $          A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS),
      $          A(KELMTZ))
            
-           WRITE (*, 10000) ISTEP, TIME
+           WRITE (*, 10000) IOSTEP, TIME
 10000      FORMAT (' ', I8, ' time steps processed.  Time = ',1PE10.3)
         end if
  110  continue
       
  120  CONTINUE
-      WRITE (SCRSTR, '(I9)', IOSTAT=K) NSTEPS
+      WRITE (SCRSTR, '(I9)', IOSTAT=K) IOSTEP
       CALL SQZSTR (SCRSTR, LSTR)
       WRITE (*, 10010) SCRSTR(:LSTR)
 10010 FORMAT (/, 4X, A,

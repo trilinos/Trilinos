@@ -189,7 +189,7 @@ namespace Teuchos {
     void solveWithTranspose(bool flag) {transpose_ = flag; if (flag) TRANS_ = Teuchos::CONJ_TRANS; else TRANS_ = Teuchos::NO_TRANS; return;}
 
     //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS or Teuchos::CONJ_TRANS).
-    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
+    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; transpose_ = (trans != Teuchos::NO_TRANS) ? true : false; }
 
     //@}
 
@@ -584,12 +584,9 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
   int ierr = 0;
   if (equilibrate_) {
     ierr = equilibrateRHS();
-    equilibratedB_ = true;
   }
   if (ierr != 0) return(ierr);
 
-  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-                     std::logic_error, "SerialQRDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
                      "SerialQRDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
@@ -607,6 +604,9 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
 
   // Matrix must be factored
   if (!factored()) factor();
+
+  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                     std::logic_error, "SerialQRDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
 
   TMP_ = rcp( new SerialDenseMatrix<OrdinalType,ScalarType>(M_, RHS_->numCols()) );
   for (OrdinalType j=0; j<RHS_->numCols(); j++) {

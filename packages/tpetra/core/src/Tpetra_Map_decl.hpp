@@ -43,29 +43,14 @@
 #define TPETRA_MAP_DECL_HPP
 
 /// \file Tpetra_Map_decl.hpp
-/// \brief Declarations for the Tpetra::Map class and related
+/// \brief Declaration of the Tpetra::Map class and related
 ///   nonmember constructors.
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_LocalMap.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Tpetra_Details_FixedHashTable_decl.hpp"
-#include "Tpetra_Details_OrdinalTraits.hpp"
-
-// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
-// it is by default), then Map will used the fixed-structure hash
-// table variant for global-to-local index lookups.  Otherwise, it
-// will use the dynamic-structure hash table variant.
-//
-// mfh 23 Mar 2014: I've removed all code in Map that uses the
-// dynamic-structure hash table variant, since it has not been used
-// for at least a year.  However, I am retaining the #define, in case
-// downstream code depends on it.
-
-#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
-#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
 namespace Tpetra {
 
@@ -93,172 +78,14 @@ namespace Tpetra {
              const Teuchos::RCP<out_node_type>& node2);
     };
 
-    /// \class LocalMap
-    /// \brief "Local" part of Map suitable for Kokkos kernels.
-    ///
-    /// \warning This object's interface is not yet fixed.  We provide
-    ///   this object currently only as a service to advanced users.
-    ///
-    /// The "local" Map is suitable for use in Kokkos parallel
-    /// operations in the Map's native execution space, which is
-    /// <tt>Map::device_type::execution_space</tt>.
-    ///
-    /// By "local," we mean that the object performs no MPI
-    /// communication, and can only access information that would
-    /// never need MPI communication, no matter what kind of Map this
-    /// is.
-    template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-    class LocalMap {
-    public:
-      typedef LocalOrdinal local_ordinal_type;
-      typedef GlobalOrdinal global_ordinal_type;
-      typedef DeviceType device_type;
-
-      LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
-                const Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType>& lgMap,
-                const GlobalOrdinal indexBase,
-                const GlobalOrdinal myMinGid,
-                const GlobalOrdinal myMaxGid,
-                const GlobalOrdinal firstContiguousGid,
-                const GlobalOrdinal lastContiguousGid,
-                const LocalOrdinal numLocalElements,
-                const bool contiguous) :
-        glMap_ (glMap),
-        lgMap_ (lgMap),
-        indexBase_ (indexBase),
-        myMinGid_ (myMinGid),
-        myMaxGid_ (myMaxGid),
-        firstContiguousGid_ (firstContiguousGid),
-        lastContiguousGid_ (lastContiguousGid),
-        numLocalElements_ (numLocalElements),
-        contiguous_ (contiguous)
-      {}
-
-      //! The number of indices that live on the calling process.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
-        return numLocalElements_;
-      }
-
-      //! The (global) index base.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getIndexBase () const {
-        return indexBase_;
-      }
-
-      /// \brief Whether the Map is (locally) contiguous.
-      ///
-      /// This is conservative; a Map is "contiguous" if and only if
-      /// it is stored that way.
-      KOKKOS_INLINE_FUNCTION bool isContiguous () const {
-        return contiguous_;
-      }
-
-      //! The minimum local index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal getMinLocalIndex () const {
-        return 0;
-      }
-
-      //! The maximum local index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal
-      getMaxLocalIndex () const
-      {
-        if (numLocalElements_ == 0) {
-          return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
-        } else { // Local indices are always zero-based.
-          return static_cast<LocalOrdinal> (numLocalElements_ - 1);
-        }
-      }
-
-      //! The minimum global index on the calling process.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMinGlobalIndex () const {
-        return myMinGid_;
-      }
-
-      //! The maximum global index on the calling process.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMaxGlobalIndex () const {
-        return myMaxGid_;
-      }
-
-      //! Get the local index corresponding to the given global index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal
-      getLocalElement (const GlobalOrdinal globalIndex) const
-      {
-        if (contiguous_) {
-          if (globalIndex < myMinGid_ || globalIndex > myMaxGid_) {
-            return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
-          }
-          return static_cast<LocalOrdinal> (globalIndex - myMinGid_);
-        }
-        else if (globalIndex >= firstContiguousGid_ &&
-                 globalIndex <= lastContiguousGid_) {
-          return static_cast<LocalOrdinal> (globalIndex - firstContiguousGid_);
-        }
-        else {
-          // If the given global index is not in the table, this returns
-          // the same value as OrdinalTraits<LocalOrdinal>::invalid().
-          return glMap_.get (globalIndex);
-        }
-      }
-
-      //! Get the global index corresponding to the given local index.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal
-      getGlobalElement (const LocalOrdinal localIndex) const
-      {
-        if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
-          return Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ();
-        }
-        if (isContiguous ()) {
-          return getMinGlobalIndex () + localIndex;
-        }
-        else {
-          return lgMap_(localIndex);
-        }
-      }
-
-    private:
-      Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
-      /// \brief Mapping from local indices to global indices.
-      ///
-      /// If this is empty, then it could be either that the Map is
-      /// contiguous (meaning that we don't need to store all the
-      /// global indices explicitly), or that the Map really does
-      /// contain zero indices on the calling process.
-      ///
-      /// This has LayoutLeft so that we can call Kokkos::deep_copy to
-      /// copy this between any two Kokkos Devices.  Otherwise, the
-      /// Devices might have different default layouts, thus
-      /// forbidding a deep_copy.  We use LayoutLeft instead of
-      /// LayoutRight because LayoutRight is the default on non-CUDA
-      /// Devices, and we want to make sure we catch assignment or
-      /// copying from the default to the nondefault layout.
-      Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType> lgMap_;
-      GlobalOrdinal indexBase_;
-      GlobalOrdinal myMinGid_;
-      GlobalOrdinal myMaxGid_;
-      GlobalOrdinal firstContiguousGid_;
-      GlobalOrdinal lastContiguousGid_;
-      LocalOrdinal numLocalElements_;
-      bool contiguous_;
-    };
   } // namespace Details
 
-  template<class Node>
-  Teuchos::RCP<Node> defaultArgNode() {
-    // Workaround function for a deferred visual studio bug
-    // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-    // Use this function for default arguments rather than calling
-    // what is the return value below.  Also helps in reducing
-    // duplication in various constructors.
-    return KokkosClassic::Details::getNode<Node> ();
-  }
-
   /// \class Map
-  /// \brief Describes a parallel distribution of objects over processes.
+  /// \brief A parallel distribution of indices over processes.
   ///
-  /// \tparam LocalOrdinal The type of local indices.  This
-  ///   <i>must</i> be a built-in integer type, and <i>must</i> be
-  ///   signed.  A good model of <tt>LocalOrdinal</tt> is
-  ///   <tt>int</tt>, which is also the default.  (In Epetra, this is
-  ///   always just <tt>int</tt>.)
+  /// \tparam LocalOrdinal The type of local indices.  Currently, this
+  ///   <i>must</i> be <tt>int</tt>.  (In Epetra, this is always just
+  ///   <tt>int</tt>.)
   ///
   /// \tparam GlobalOrdinal The type of global indices.  This
   ///   <i>must</i> be a built-in integer type.  We allow either
@@ -271,12 +98,12 @@ namespace Tpetra {
   ///   If <tt>LocalOrdinal</tt> is <tt>int</tt>, good models of
   ///   <tt>GlobalOrdinal</tt> are
   ///   <ul>
-  ///   <li> \c int </li>
-  ///   <li> \c long </li>
+  ///   <li> \c int </li> (if the configure-time option
+  ///        <tt>Tpetra_INST_INT_INT</tt> is set) </li>
+  ///   <li> \c long </li> (if the configure-time option
+  ///        <tt>Tpetra_INST_INT_LONG</tt> is set) </li>
   ///   <li> <tt>long long</tt> (if the configure-time option
-  ///        <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set) </li>
-  ///   <li> \c ptrdiff_t (a signed integer type which is 64 bits on
-  ///        64-bit machines) </li>
+  ///        <tt>Tpetra_INST_INT_LONG_LONG</tt> is set) </li>
   ///   </ul>
   ///   If the default <tt>GlobalOrdinal</tt> is <tt>int</tt>, then
   ///   the <i>global</i> number of rows or columns in the matrix may
@@ -285,10 +112,22 @@ namespace Tpetra {
   ///   larger problems, you must use a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
-  ///   operations.  It must implement the
-  ///   \ref kokkos_node_api "Kokkos Node API."
+  ///   operations.
   ///   The default \c Node type should suffice for most users.
   ///   The actual default type depends on your Trilinos build options.
+  ///   This must be one of the following:
+  ///   <ul>
+  ///   <li> Kokkos::Compat::KokkosCudaWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosOpenMPWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosThreadsWrapperNode </li>
+  ///   <li> Kokkos::Compat::KokkosSerialWrapperNode </li>
+  ///   </ul>
+  ///   All of the above are just typedefs for
+  ///   Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpaceType,
+  ///   MemorySpaceType>, where ExecutionSpaceType is a Kokkos
+  ///   execution space type, and MemorySpaceType is a Kokkos memory
+  ///   space type.  If you omit MemorySpaceType, Tpetra will use the
+  ///   execution space's default memory space.
   ///
   /// This class describes a distribution of data elements over one or
   /// more processes in a communicator.  Each element has a global
@@ -302,13 +141,18 @@ namespace Tpetra {
   /// \section Tpetra_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
-  /// something about the Teuchos memory management classes, in
-  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
-  /// Teuchos::ArrayView.  You should also know a little bit about MPI
-  /// (the Message Passing Interface for distributed-memory
-  /// programming).  You won't have to use MPI directly to use Map,
-  /// but it helps to be familiar with the general idea of distributed
-  /// storage of data over a communicator.
+  /// something about the following:
+  /// <ul>
+  /// <li> The Kokkos shared-memory parallel programming model </li>
+  /// <li> The Teuchos memory management classes, especially
+  ///      Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView
+  ///      </li>
+  /// <li> MPI (the Message Passing Interface for distributed-memory
+  ///      parallel programming) </li>
+  /// </ul>
+  /// You will not need to use MPI directly to use Map, but it helps
+  /// to be familiar with the general idea of distributed storage of
+  /// data over a communicator.
   ///
   /// \section Tpetra_Map_concepts Map concepts
   ///
@@ -504,7 +348,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
 
     /** \brief Constructor with contiguous, possibly nonuniform
      *    distribution.
@@ -548,7 +392,7 @@ namespace Tpetra {
          size_t numLocalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
 
     /** \brief Constructor with arbitrary (possibly noncontiguous
      *   and/or nonuniform and/or overlapping) distribution, taking
@@ -690,7 +534,7 @@ namespace Tpetra {
          const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-         const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
+         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
 
     /// \brief Default constructor (that does nothing).
     ///
@@ -1072,11 +916,28 @@ namespace Tpetra {
     /// over this Map's communicator.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
-    /// \brief Is the given Map locally the same as the input Map?
+    /// \brief Is this Map locally the same as the input Map?
     ///
     /// "Locally the same" means that on the calling process, the two
     /// Maps' global indices are the same and occur in the same order.
     bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
+
+    /// \brief True if and only if \c map is locally fitted to this Map.
+    ///
+    /// For two maps, map1 and map2, we say that map1 is <i>locally
+    /// fitted</i> to map2 (on the calling process), when the indices of map1
+    /// (on the calling process) are the same and in the same order as the
+    /// initial indices of map2.  "Fittedness" is entirely a local (per MPI
+    /// process) property.
+    ///
+    /// The predicate "is map1 fitted to map2 ?" is <i>not</i>
+    /// symmetric.  For example, map2 may have more entries than map1.
+    ///
+    /// Fittedness on a process can let Tpetra avoid deep copies in
+    /// some Export or Import (communication) operations. Tpetra
+    /// could use this, for example, in optimizing its sparse
+    /// matrix-vector multiply.
+    bool isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const;
 
     //@}
     //! Accessors for the Teuchos::Comm and Kokkos Node objects.
@@ -1127,7 +988,7 @@ namespace Tpetra {
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
-    clone (const RCP<NodeOut>& nodeOut) const;
+    clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1176,7 +1037,7 @@ namespace Tpetra {
     /// intentionally leave some processes with zero rows.  Removing
     /// processes with zero rows makes the all-reduces and other
     /// communication operations cheaper.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     removeEmptyProcesses () const;
 
     /// \brief Replace this Map's communicator with a subset communicator.
@@ -1206,7 +1067,7 @@ namespace Tpetra {
     ///   same graph.  For the latter three Maps, one would in general
     ///   use this method instead of removeEmptyProcesses(), giving
     ///   the new row Map's communicator to this method.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
@@ -1276,13 +1137,6 @@ namespace Tpetra {
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-    /// \brief LEGACY Node instance.
-    ///
-    /// This object only exists for backwards compatibility.  Please
-    /// do not rely upon it.  In particular, do not assume that this
-    /// pointer is non-null.
-    Teuchos::RCP<Node> node_;
 
     //! The index base for global indices in this Map.
     GlobalOrdinal indexBase_;
@@ -1394,7 +1248,9 @@ namespace Tpetra {
     /// getGlobalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
+#ifndef SWIG
     mutable typename decltype (lgMap_)::HostMirror lgMapHost_;
+#endif
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
@@ -1514,99 +1370,94 @@ namespace Tpetra {
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createUniformContigMapWithNode (global_size_t numElements,
+  createUniformContigMapWithNode (const global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                   const Teuchos::RCP<Node>& node = Teuchos::null);
 
-  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
-
-      This method returns a Map instantiated on the Kokkos default node type.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Non-member constructor for a (potentially) non-uniformly
+  ///   distributed, contiguous Map using the default Kokkos::Device.
+  ///
+  /// The Map is configured to use zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createContigMap (const global_size_t numElements,
                    const size_t localNumElements,
                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with a user-specified Kokkos Node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Nonmember constructor for a (potentially) nonuniformly
+  ///   distributed, contiguous Map for a user-specified, possibly
+  ///   nondefault Kokkos Node type.
+  ///
+  /// If Node is the default, use \c createContigMap instead.
+  /// The Map is configured to use zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createContigMapWithNode (global_size_t numElements,
-                           size_t localNumElements,
+  createContigMapWithNode (const global_size_t numElements,
+                           const size_t localNumElements,
                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<Node>& node =
-                             defaultArgNode<Node> ());
+                           const Teuchos::RCP<Node>& node = Teuchos::null);
 
-  /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
-
-      This method returns a Map instantiated on the Kokkos default node type.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Nonmember constructor for a non-contiguous Map using the
+  ///   default Kokkos::Device type.
+  ///
+  /// The Map is configured to use zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createNonContigMap (const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
                       const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-  /** \brief Non-member constructor for a non-contiguous Map with a user-specified Kokkos Node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Nonmember constructor for a noncontiguous Map with a
+  ///   user-specified, possibly nondefault Kokkos Node type.
+  ///
+  /// If Node is the default, use \c createNonContigMap instead.
+  /// The Map is configured to use zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
                               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                               const Teuchos::RCP<Node>& node = Teuchos::null);
 
-  /** \brief Non-member constructor for a contiguous Map with user-defined weights and a user-specified Kokkos Node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Nonmember constructor for a contiguous Map with
+  ///   user-defined weights and a user-specified, possibly nondefault
+  ///   Kokkos Node type.
+  ///
+  /// The Map is configured to use zero-based indexing.
+  /// 
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   createWeightedContigMapWithNode (const int thisNodeWeight,
                                    const global_size_t numElements,
                                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                    const Teuchos::RCP<Node>& node = Teuchos::null);
 
-  /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
-
-      The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
-
-      \relatesalso Map
-   */
+  /// \brief Creates a one-to-one version of the given Map where each
+  ///   GID lives on only one process.
+  ///
+  /// \relatesalso Map
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createOneToOne (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
+  createOneToOne (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& M);
 
-  /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
-             The rule to break ties is specifed by the tie break object.
-
-      The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
-
-      \relatesalso Map
-   */
+  /// \brief Creates a one-to-one version of the given Map where each
+  ///   GID lives on only one process.  The given TieBreak object
+  ///   specifies the rule to break ties.
+  ///
+  /// \relatesalso Map
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
                  const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
 
-} // Tpetra namespace
+} // namespace Tpetra
 
 #include "Tpetra_Directory_decl.hpp"
 
@@ -1659,7 +1510,7 @@ namespace Tpetra {
         // the case that the memory spaces differ, so it doesn't hurt
         // to make a deep copy here.
         Kokkos::View<GO*, Kokkos::LayoutLeft, out_device_type>
-          lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
+          lgMapOut ("lgMap", mapIn.lgMap_.extent (0));
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const
 
@@ -1688,8 +1539,6 @@ namespace Tpetra {
       // expectations.  (Kokkos::View::operator= only does a shallow
       // copy, EVER.)
       mapOut.glMap_ = out_table_type (mapIn.glMap_);
-      // New Map gets the new Node instance.
-      mapOut.node_ = nodeOut;
 
       // We could cleverly clone the Directory here if it is
       // initialized, but there is no harm in simply creating it
@@ -1703,7 +1552,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {
@@ -1713,6 +1562,7 @@ namespace Tpetra {
     // Copy constructor does a shallow copy.
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
+
 
 } // namespace Tpetra
 

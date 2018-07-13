@@ -182,22 +182,23 @@ if scaling or left preconditioning is applied to the linear system.
 
   </ul>
 */
-
-
 class InexactNewton {
 
 public:
 
   //! Constructor
+  InexactNewton();
+
+  //! Constructor
   InexactNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-        Teuchos::ParameterList& directionSublist);
+                Teuchos::ParameterList& directionSublist);
 
   //! Destructor
   virtual ~InexactNewton();
 
   //! Reset the utilities
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-             Teuchos::ParameterList& directionSublist);
+                     Teuchos::ParameterList& directionSublist);
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).

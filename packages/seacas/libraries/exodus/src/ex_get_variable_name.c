@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,12 +50,14 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid
 #include <stdio.h>
 
 /*!
+ * \ingroup ResultsData
+ *
  * reads the name of a particular results variable from the database
  */
 
@@ -66,7 +68,8 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
   char        errmsg[MAX_ERR_LENGTH];
   const char *vname = NULL;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* inquire previously defined variables  */
 
@@ -82,19 +85,17 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
   case EX_SIDE_SET: vname   = VAR_NAME_SSET_VAR; break;
   case EX_ELEM_SET: vname   = VAR_NAME_ELSET_VAR; break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid variable type (%d) given for file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_name", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_variable_name", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variable names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_name", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_variable_name", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* read the variable name */
@@ -106,8 +107,8 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
     status = ex_get_name_internal(exoid, varid, var_num - 1, var_name, name_size, obj_type,
                                   "ex_get_variable_name");
     if (status != NC_NOERR) {
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

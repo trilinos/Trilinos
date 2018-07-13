@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,19 +50,19 @@ namespace Excn {
     ParallelDisks();
     ~ParallelDisks();
 
-    void Number_of_Raids(int);
-    void Raid_Offset(int);
+    void Number_of_Raids(int /*i*/);
+    void Raid_Offset(int /*i*/);
 
     int Number_of_Raids() const;
     int Raid_Offset() const;
 
-    static void Create_IO_Filename(std::string &, int num, int total_num);
+    static void Create_IO_Filename(std::string & /*name*/, int processor, int num_processors);
 
     void rename_file_for_mp(const std::string &rootdir, const std::string &subdir,
-                            std::string &name, int num, int total_num) const;
+                            std::string &name, int node, int numproc) const;
 
   private:
-    std::string *disk_names;
+    std::vector<std::string> disk_names;
 
     int number_of_raids;
     int raid_offset;
@@ -73,5 +73,5 @@ namespace Excn {
     ParallelDisks(const ParallelDisks &);
     ParallelDisks &operator=(const ParallelDisks &);
   };
-}
+} // namespace Excn
 #endif

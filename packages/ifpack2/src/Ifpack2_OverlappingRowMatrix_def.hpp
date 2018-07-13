@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -42,6 +42,8 @@
 
 #ifndef IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 #define IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
+
+#include <sstream>
 
 #include <Ifpack2_OverlappingRowMatrix_decl.hpp>
 #include <Ifpack2_Details_OverlappingRowGraph.hpp>
@@ -266,7 +268,15 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getDomainMap () const
 {
-  return A_->getDomainMap();
+  // The original matrix's domain map is irrelevant; we want the map associated
+  // with the overlap. This can then be used by LocalFilter, for example, while
+  // letting LocalFilter still filter based on domain and range maps (instead of
+  // column and row maps).
+  // FIXME Ideally, this would be the same map but restricted to a local
+  // communicator. If replaceCommWithSubset were free, that would be the way to
+  // go. That would require a new Map ctor. For now, we'll stick with ColMap_'s
+  // global communicator.
+  return ColMap_;
 }
 
 
@@ -274,7 +284,7 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getRangeMap () const
 {
-  return A_->getRangeMap ();
+  return RowMap_;
 }
 
 
@@ -366,20 +376,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 
 
 template<class MatrixType>
-global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumDiags() const
-{
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalNumDiags() not supported.");
-}
-
-
-template<class MatrixType>
-size_t OverlappingRowMatrix<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-
-template<class MatrixType>
 size_t OverlappingRowMatrix<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalMaxNumRowEntries() not supported.");
@@ -397,20 +393,6 @@ template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-
-template<class MatrixType>
-bool OverlappingRowMatrix<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-
-template<class MatrixType>
-bool OverlappingRowMatrix<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 
@@ -519,7 +501,31 @@ void
 OverlappingRowMatrix<MatrixType>::
 getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getLocalDiagCopy not supported.");
+  using Teuchos::Array;
+
+  //extract diagonal of original matrix
+  vector_type baseDiag(A_->getRowMap());         // diagonal of original matrix A_
+  A_->getLocalDiagCopy(baseDiag);
+  Array<scalar_type> baseDiagVals(baseDiag.getLocalLength());
+  baseDiag.get1dCopy(baseDiagVals());
+  //extra diagonal of ghost matrix
+  vector_type extDiag(ExtMatrix_->getRowMap());
+  ExtMatrix_->getLocalDiagCopy(extDiag);
+  Array<scalar_type> extDiagVals(extDiag.getLocalLength());
+  extDiag.get1dCopy(extDiagVals());
+
+  Teuchos::ArrayRCP<scalar_type> allDiagVals = diag.getDataNonConst();
+  if (allDiagVals.size() != baseDiagVals.size() + extDiagVals.size()) {
+    std::ostringstream errStr;
+    errStr << "Ifpack2::OverlappingRowMatrix::getLocalDiagCopy : Mismatch in diagonal lengths, "
+           << allDiagVals.size() << " != " << baseDiagVals.size() << "+" << extDiagVals.size();
+    throw std::runtime_error(errStr.str());
+  }
+  for (Teuchos::Ordinal i=0; i<baseDiagVals.size(); ++i)
+    allDiagVals[i] = baseDiagVals[i];
+  Teuchos_Ordinal offset=baseDiagVals.size();
+  for (Teuchos::Ordinal i=0; i<extDiagVals.size(); ++i)
+    allDiagVals[i+offset] = extDiagVals[i];
 }
 
 
@@ -738,7 +744,6 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
       }
       // O(1) globals, minus what was already printed by description()
       //if (isFillComplete() && myRank == 0) {
-      //  out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
       //  out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
       //}
       // constituent objects
@@ -807,9 +812,6 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
           if (myRank == curRank) {
             out << "Process rank: " << curRank << std::endl;
             out << "  Number of entries: " << getNodeNumEntries() << std::endl;
-            if (isFillComplete()) {
-              out << "  Number of diagonal entries: " << getNodeNumDiags() << std::endl;
-            }
             out << "  Max number of entries per row: " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();

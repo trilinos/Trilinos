@@ -48,8 +48,6 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
@@ -230,11 +228,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
 
       // scatter test
@@ -256,11 +254,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
 
       // scatter dirichlet test
@@ -282,11 +280,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
    }
 
@@ -308,11 +306,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
 
       // scatter test
@@ -333,11 +331,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
 
       // scatter dirichlet test
@@ -359,11 +357,11 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
    }
 }
@@ -514,9 +512,9 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer<int,panzer::Ordinal64>(myRank,numProc));
 
-   std::vector<panzer::Ordinal64> ownedIndices, ownedAndSharedIndices;
+   std::vector<panzer::Ordinal64> ownedIndices, ownedAndGhostedIndices;
    indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
+   indexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
@@ -644,28 +642,28 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
       TEST_EQUALITY(tGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_A(),    Teuchos::null)
-	TEST_EQUALITY(tGhostedContainer->get_x()->getLocalLength(),(std::size_t) ownedAndSharedIndices.size());
+	TEST_EQUALITY(tGhostedContainer->get_x()->getLocalLength(),(std::size_t) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(LOC::DxDt,*ghostedContainer);
       TEST_EQUALITY(tGhostedContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(tGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(tGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_A(),    Teuchos::null)
-	TEST_EQUALITY(tGhostedContainer->get_dxdt()->getLocalLength(),(std::size_t) ownedAndSharedIndices.size());
+	TEST_EQUALITY(tGhostedContainer->get_dxdt()->getLocalLength(),(std::size_t) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(LOC::F,*ghostedContainer);
       TEST_EQUALITY(tGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(tGhostedContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(tGhostedContainer->get_A(),    Teuchos::null)
-	TEST_EQUALITY(tGhostedContainer->get_f()->getLocalLength(),(std::size_t) ownedAndSharedIndices.size());
+	TEST_EQUALITY(tGhostedContainer->get_f()->getLocalLength(),(std::size_t) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(LOC::Mat,*ghostedContainer);
       TEST_EQUALITY(tGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(tGhostedContainer->get_A()!=Teuchos::null);
-      TEST_EQUALITY(tGhostedContainer->get_A()->getNodeNumRows(),(std::size_t) ownedAndSharedIndices.size());
+      TEST_EQUALITY(tGhostedContainer->get_A()->getNodeNumRows(),(std::size_t) ownedAndGhostedIndices.size());
    
       // jacobian and residual vector output
       la_factory->initializeGhostedContainer(LOC::F | LOC::Mat,*ghostedContainer);

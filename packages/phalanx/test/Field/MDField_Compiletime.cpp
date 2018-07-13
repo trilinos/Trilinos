@@ -41,14 +41,13 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -57,8 +56,6 @@
 
 // From test/Utilities directory
 #include "Traits.hpp"
-
-typedef PHX::MDField<double>::size_type size_type;
 
 // Dimension tags for this problem
 struct Dim : public PHX::DimTag {
@@ -125,8 +122,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
   
-  PHX::InitializeKokkosDevice();
-  
   // *********************************************************************
   // Start of MDField Testing
   // *********************************************************************
@@ -165,6 +160,78 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     MDField<double,Cell,Point> e;
     MDField<MyTraits::FadType,Cell,Point,Dim> f;
     cout << "passed!" << endl;
+
+    // Test create, set and get for RCP<FieldTag>
+    {
+      RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
+      MDField<double,Cell,Node> f1(t1); // rcp(tag) ctor
+      MDField<double,Cell,Node> f2; 
+      f2.setFieldTag(t1); // set rcp(tag)
+      auto t2 = f1.fieldTagPtr(); // accessor
+      auto t3 = f2.fieldTagPtr();
+      TEST_ASSERT(nonnull(t1));
+      TEST_ASSERT(nonnull(t2));
+      TEST_ASSERT(nonnull(t3));
+      TEST_EQUALITY(*t1,*t2);
+      TEST_EQUALITY(*t2,*t3);
+    }
+
+    // MDField ctor interoperability between const and non-const tags
+    {
+      Tag<double> nonconst_tag("non-const tag", node_scalar);
+      Tag<const double> const_tag("const tag", node_scalar);
+
+      // Create a const field from a non-const field tag
+      MDField<const double,Cell,Point> c_field1(nonconst_tag);
+
+      // Create a non-const field from a const field tag
+      MDField<double,Cell,Point> nc_field1(const_tag);
+
+      // Create a non-const field from a non-const field tag
+      MDField<double,Cell,Point> nc_field2(nonconst_tag);
+
+      // Create a const field from a const field tag
+      MDField<const double,Cell,Point> c_field2(const_tag);
+    }
+
+    // Copy constructor from const/non-const MDFields
+    {
+      RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));
+      MDField<double,Cell,Point> ctor_nonconst_p("ctor_nonconst_p",ctor_dl_p);
+      MDField<const double,Cell,Point> ctor_const_p("ctor_const_p",ctor_dl_p);
+
+      MDField<double,Cell,Point> cc1(ctor_nonconst_p);       // non-const from non-const
+      MDField<const double,Cell,Point> cc2(ctor_nonconst_p); // const from non-const
+      MDField<const double,Cell,Point> cc3(ctor_const_p);    // const from const
+
+      // NOTE: we allow the tag template types to be DIFFERENT as long
+      // as the rank is the same! A field might use the "Point" DimTag
+      // but another evaluator might reference the same field using
+      // QuadraturePoint DimTag.
+      RCP<DataLayout> ctor_dl_qp = rcp(new MDALayout<Cell,Quadrature>(10,4));
+      MDField<double,Cell,Quadrature> ctor_nonconst_qp("ctor_nonconst",ctor_dl_qp);
+      MDField<const double,Cell,Quadrature> ctor_const_qp("ctor_const_qp",ctor_dl_qp); 
+
+      // Repeat test above but with different tags for Quadrature --> Point
+      MDField<double,Cell,Point> cc4(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double,Cell,Point> cc5(ctor_nonconst_qp); // const from non-const
+      MDField<const double,Cell,Point> cc6(ctor_const_qp);    // const from const
+
+      // While we have these objects, lets test the assignment operator as well
+      MDField<double,Cell,Point> cc7(ctor_nonconst_p);         // non-const from non-const
+      MDField<const double,Cell,Point> cc8(ctor_nonconst_p);   // const from non-const
+      MDField<const double,Cell,Point> cc9(ctor_const_p);      // const from const
+      MDField<double,Cell,Point> cc10(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double,Cell,Point> cc11(ctor_nonconst_qp); // const from non-const
+      MDField<const double,Cell,Point> cc12(ctor_const_qp);    // const from const
+
+      cc7 = ctor_nonconst_p;
+      cc8 = ctor_nonconst_p;
+      cc9 = ctor_const_p;
+      cc10 = ctor_nonconst_qp;
+      cc11 = ctor_nonconst_qp;
+      cc12 = ctor_const_qp;
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // FieldTag accessor
@@ -343,7 +410,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
-    // PHX::any.  the field manager always sotres the non-const
+    // PHX::any.  the field manager always stores the non-const
     // version.
     {
       MDField<const double,Cell> c_f1("CONST Test1",d1);
@@ -402,8 +469,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     output << a;
     TEST_EQUALITY(output.str(), "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)"); 
   }
-
-  PHX::FinalizeKokkosDevice();  
 
   TimeMonitor::summarize();
 }

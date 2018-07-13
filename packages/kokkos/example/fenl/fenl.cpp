@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 */
@@ -46,7 +46,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
@@ -68,7 +68,7 @@ Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
 #endif
 
 
-#if defined (KOKKOS_HAVE_OPENMP)
+#if defined (KOKKOS_ENABLE_OPENMP)
 
 template
 Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
@@ -89,7 +89,28 @@ Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
 
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined (KOKKOS_ENABLE_SERIAL)
+
+template
+Perf fenl< Kokkos::Serial , Kokkos::Example::BoxElemPart::ElemLinear >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+
+template
+Perf fenl< Kokkos::Serial , Kokkos::Example::BoxElemPart::ElemQuadratic >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+#endif
+
+#if defined( KOKKOS_ENABLE_CUDA )
 
 template
 Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
@@ -102,6 +123,27 @@ Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
 
 template
 Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemQuadratic >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+#endif
+
+#if defined( KOKKOS_ENABLE_ROCM )
+
+template
+Perf fenl< Kokkos::Experimental::ROCm , Kokkos::Example::BoxElemPart::ElemLinear >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+
+template
+Perf fenl< Kokkos::Experimental::ROCm , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   MPI_Comm comm ,
   const int use_print ,
   const int use_trials ,

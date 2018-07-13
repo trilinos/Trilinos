@@ -400,14 +400,13 @@ const NOX::Abstract::Vector& NOX::LAPACK::Group::getF() const
 
 double NOX::LAPACK::Group::getNormF() const
 {
-  if (isValidF)
-    return fVector.norm();
+  if (!isValidF) {
+    std::cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
+	      << "- invalid F, please call computeF() first." << std::endl;
+    throw "NOX Error";
+  }
 
-  std::cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
-       << "- invalid F, please call computeF() first." << std::endl;
-  throw "NOX Error";
-
-  return 0.0;
+  return fVector.norm();
 }
 
 const NOX::Abstract::Vector& NOX::LAPACK::Group::getGradient() const

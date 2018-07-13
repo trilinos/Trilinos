@@ -94,7 +94,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
 
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
@@ -202,23 +202,23 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // check that owned is_subset owned_and_ghosted
    //////////////////////////////////////////////////////////////////////////
-   std::vector<int> owned, owned_and_shared;
+   std::vector<int> owned, owned_and_ghosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(owned_and_shared);
+   dofManager->getOwnedAndGhostedIndices(owned_and_ghosted);
 
    if(numProcs==1) {
-     TEST_EQUALITY(owned.size(),owned_and_shared.size());
+     TEST_EQUALITY(owned.size(),owned_and_ghosted.size());
    }
    else  {
      out << "owned size = " << owned.size() << std::endl;
-     out << "owned_and_shared size = " << owned_and_shared.size() << std::endl;
-     TEST_ASSERT(owned.size()<=owned_and_shared.size());
+     out << "owned_and_ghosted size = " << owned_and_ghosted.size() << std::endl;
+     TEST_ASSERT(owned.size()<=owned_and_ghosted.size());
    }
    for(std::size_t i=0;i<owned.size();i++) {
-     TEST_EQUALITY(owned[i],owned_and_shared[i]);
+     TEST_EQUALITY(owned[i],owned_and_ghosted[i]);
    }
-   for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
-     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
+   for(std::size_t i=owned.size();i<owned_and_ghosted.size();i++) {
+     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_ghosted[i])==owned.end());
    }
 }
 
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = 
        Teuchos::rcp(new panzer_stk::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));

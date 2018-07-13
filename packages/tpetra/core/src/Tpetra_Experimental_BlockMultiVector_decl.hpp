@@ -168,10 +168,9 @@ public:
   typedef Scalar scalar_type;
   /// \brief The implementation type of entries in the matrix.
   ///
-  /// Letting scalar_type and impl_scalar_type differ addresses a
-  /// work-around that the new ("Kokkos refactor," as opposed to
-  /// "classic") version of Tpetra uses, to deal with missing device
-  /// macros and volatile overloads in types like std::complex<T>.
+  /// Letting scalar_type and impl_scalar_type differ addresses
+  /// Tpetra's work-around to deal with missing device macros and
+  /// volatile overloads in types like std::complex<T>.
   typedef typename mv_type::impl_scalar_type impl_scalar_type;
   //! The type of local indices.
   typedef LO local_ordinal_type;
@@ -195,8 +194,8 @@ public:
   /// const_little_vec_type types, is to get them from the typedefs
   /// below.  This is because different specializations of BlockVector
   /// reserve the right to use different types to implement
-  /// little_vec_type or const_little_vec_type.  This gives us a
-  /// porting strategy to move from "classic" Tpetra to the Kokkos
+  /// little_vec_type or const_little_vec_type.  This was our porting
+  /// strategy circa 2014 to move from "classic" Tpetra to the Kokkos
   /// refactor version.
   typedef Kokkos::View<impl_scalar_type*,
                        Kokkos::LayoutRight,

@@ -92,7 +92,7 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return NULL; // Never be called!
+  TEUCHOS_UNREACHABLE_RETURN(NULL);
 }
 
 
@@ -409,7 +409,7 @@ const std::string toString(const ESolveStatus solveStatus)
     case SOLVE_STATUS_UNKNOWN:      return "SOLVE_STATUS_UNKNOWN";
     default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return ""; // Never be called!
+  TEUCHOS_UNREACHABLE_RETURN("");
 }
 
 

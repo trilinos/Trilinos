@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,9 +33,8 @@
  *
  */
 
-#include "rf_allo.h" // for array_alloc
-#include <cstddef>   // for size_t
-#include <cstdint>
+#include "rf_allo.h"    // for array_alloc
+#include <cstddef>      // for size_t
 #include <nem_spread.h> // for NemSpread
 
 template void NemSpread<double, int>::create_elem_types(void);
@@ -63,8 +62,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::create_elem_types()
     size_t ielem_count = 0;
     for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
       int ielem_type = globals.Proc_Elem_Blk_Types[iproc][i];
-      for (int j = 0; j < globals.Proc_Num_Elem_In_Blk[iproc][i]; j++)
+      for (int j = 0; j < globals.Proc_Num_Elem_In_Blk[iproc][i]; j++) {
         globals.Elem_Type[iproc][ielem_count++] = ielem_type;
+      }
     }
   }
 }

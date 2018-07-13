@@ -51,13 +51,9 @@ project votd
     <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
-    <valgrind>on:<define>BOOST_POOL_VALGRIND
-    <valgrind>on:<include>/usr/netpub/valgrind/include
   : usage-requirements
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
-    <valgrind>on:<define>BOOST_POOL_VALGRIND
-    <valgrind>on:<include>/usr/netpub/valgrind/include
   : build-dir $(stk_mesh-builddir)
   ;
 
@@ -114,49 +110,49 @@ alias install-exe-targets : ;
 #
 exe stk_mesh_utest
   :
-    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
-    [ glob $(stk_mesh-root)/unit_tests/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
-           $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/user_created/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/mesh_diagnostics/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/element_graph/*.cpp 
-           $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
-           $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
+    [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/change_parts/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/user_created/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/skin_mesh/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/mesh_diagnostics/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/integration/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/element_graph/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/custom_ghosting/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/entity_sorting/*.cpp 
     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
 
 exe stk_mesh_utest_field_blas
   :
-    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
-    [ glob $(stk_mesh-root)/unit_tests/FieldBlas/*.cpp ]
+    [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/FieldBlas/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
 
 
 exe stk_mesh_docs_tests
   :
-    $(stk_mesh-root)/testsForDocumentation/testMain.cpp
-    [ glob $(stk_mesh-root)/testsForDocumentation/*.cpp ]
+    [ glob $(stk_mesh-root)/../stk_doc_tests/stk_mesh/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
@@ -165,6 +161,7 @@ exe stk_mesh_docs_tests
     /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_doc_tests/stk_mesh
   ;
 
 lib stk_mesh_base
@@ -179,6 +176,7 @@ lib stk_mesh_base
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_diag
     /sierra/stk_topology//stk_topology
     /tpl/trilinos//shards
     /mpi//mpi
@@ -195,7 +193,7 @@ lib stk_mesh_fixtures
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(stk_mesh-root)/stk_mesh/fixtures/*.cpp ]
+        [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh_fixtures/*.cpp ]
     ]
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils

@@ -55,16 +55,15 @@ namespace {
 //**********************************************************************
 template<typename ScalarT,typename ArrayT>                   
 void evaluateDiv_withSens(int numCells,
-                          int basis_dimension,
                           PHX::MDField<ScalarT,Cell,IP> & dof_div, 
-                          PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                          PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                           const ArrayT & div_basis)
 { 
   if(numCells>0) {
     // evaluate at quadrature points
 
-    int numFields = div_basis.dimension(1);
-    int numPoints = div_basis.dimension(2);
+    int numFields = div_basis.extent(1);
+    int numPoints = div_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -89,6 +88,7 @@ void evaluateDiv_withSens(int numCells,
 template<typename EvalT, typename TRAITS>                   
 DOFDiv<EvalT, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
+  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -103,9 +103,33 @@ DOFDiv(const Teuchos::ParameterList & p) :
                              "DOFDiv: Basis of type \"" << basis->name() << "\" in DOF Div should require orientations. So we are throwing.");
 
   // build dof_div
-  basis_dimension = basis->dimension();
   dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"), 
       	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
+
+  // add to evaluation graph
+  this->addEvaluatedField(dof_div);
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename EvalT, typename TRAITS>                   
+DOFDiv<EvalT, TRAITS>::
+DOFDiv(const PHX::FieldTag & input,
+       const PHX::FieldTag & output,
+       const panzer::BasisDescriptor & bd,
+       const panzer::IntegrationDescriptor & id)
+  : use_descriptors_(true)
+  , bd_(bd) 
+  , id_(id) 
+  , dof_value(input)
+{
+  TEUCHOS_ASSERT(bd.getType()=="HDiv");
+
+  // build dof_div
+  dof_div = output;
 
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
@@ -124,7 +148,8 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_div,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+  if(not use_descriptors_)
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -132,7 +157,10 @@ template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  evaluateDiv_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_div,dof_value,this->wda(workset).bases[basis_index]->div_basis);
+  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                                      : *this->wda(workset).bases[basis_index];
+
+  evaluateDiv_withSens<ScalarT>(workset.num_cells,dof_div,dof_value,basisValues.div_basis);
 }
 
 //**********************************************************************
@@ -145,6 +173,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS>                   
 DOFDiv<panzer::Traits::Jacobian, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
+  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -169,9 +198,35 @@ DOFDiv(const Teuchos::ParameterList & p) :
                              "DOFDiv: Basis of type \"" << basis->name() << "\" in DOF Div should require orientations. So we are throwing.");
 
   // build dof_div
-  basis_dimension = basis->dimension();
   dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"), 
       	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
+
+  // add to evaluation graph
+  this->addEvaluatedField(dof_div);
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename TRAITS>                   
+DOFDiv<panzer::Traits::Jacobian, TRAITS>::
+DOFDiv(const PHX::FieldTag & input,
+       const PHX::FieldTag & output,
+       const panzer::BasisDescriptor & bd,
+       const panzer::IntegrationDescriptor & id)
+  : use_descriptors_(true)
+  , bd_(bd) 
+  , id_(id) 
+  , dof_value(input)
+{
+  TEUCHOS_ASSERT(bd.getType()=="HDiv");
+
+  // build dof_div
+  dof_div = output;
+
+  accelerate_jacobian = false; // don't short cut for identity matrix
 
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
@@ -190,16 +245,20 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_div,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+  if(not use_descriptors_)
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 template<typename TRAITS>                   
 void DOFDiv<panzer::Traits::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
+  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                                      : *this->wda(workset).bases[basis_index];
+
   if(!accelerate_jacobian) {
     // do the case where we use the AD types to determine the derivatives
-    evaluateDiv_withSens(workset.num_cells,basis_dimension,dof_div,dof_value,this->wda(workset).bases[basis_index]->div_basis);
+    evaluateDiv_withSens(workset.num_cells,dof_div,dof_value,basisValues.div_basis);
     return;
   }
 

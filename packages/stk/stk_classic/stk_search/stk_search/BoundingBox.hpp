@@ -205,7 +205,7 @@ struct SphereBoundingBox
       }
     }
 
-    return dist <= radius*radius;;
+    return dist <= radius*radius;
   }
   Data center[DIMENSION];
   Data radius;

@@ -97,7 +97,11 @@ struct DeviceConfig {
 
 template< typename ValueType , class Space >
 struct CrsMatrix {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE // Don't remove this until Kokkos has removed the deprecated code path probably around September 2018
   typedef Kokkos::StaticCrsGraph< unsigned , Space , void , unsigned >  StaticCrsGraphType ;
+#else
+  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , void , unsigned >  StaticCrsGraphType ;
+#endif
   typedef View< ValueType * , Space > values_type ;
 
   StaticCrsGraphType  graph ;
@@ -107,7 +111,7 @@ struct CrsMatrix {
 
   CrsMatrix( const StaticCrsGraphType & arg_graph )
     : graph( arg_graph )
-    , values( "crs_matrix_values" , arg_graph.entries.dimension_0() )
+    , values( "crs_matrix_values" , arg_graph.entries.extent(0) )
     {}
 };
 
@@ -129,9 +133,8 @@ struct LocalViewTraits {
   { return v; }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 template <typename ViewType>
 struct LocalViewTraits<
   ViewType,
@@ -152,46 +155,7 @@ struct LocalViewTraits<
   }
 };
 
-#else
-
-template <typename T, typename L, typename M>
-struct LocalViewTraits< Kokkos::View<T,L,Kokkos::Cuda,M,Kokkos::Impl::ViewMPVectorContiguous> > {
-  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
-  typedef Kokkos::View<T,L,Kokkos::Cuda,M,Specialize> view_type;
-  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
-  typedef typename local_view_type::value_type local_value_type;
-  static const bool use_team = true;
-
-  KOKKOS_INLINE_FUNCTION
-  static local_view_type create_local_view(const view_type& v,
-                                           const unsigned local_rank)
-  {
-    local_view_type local_v =
-      Kokkos::partition<local_view_type>(v, local_rank, local_rank+1);
-    return local_v;
-  }
-};
-
-template <typename T, typename M, typename V>
-struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVectorContiguous> > {
-  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
-  typedef Kokkos::View<T,Kokkos::Cuda,M,V,Specialize> view_type;
-  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
-  typedef typename local_view_type::value_type local_value_type;
-  static const bool use_team = true;
-
-  KOKKOS_INLINE_FUNCTION
-  static local_view_type create_local_view(const view_type& v,
-                                           const unsigned local_rank)
-  {
-    local_view_type local_v =
-      Kokkos::partition<local_view_type>(v, local_rank, local_rank+1);
-    return local_v;
-  }
-};
-#endif
-
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
 
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
@@ -210,11 +174,11 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
   static void eval( Kokkos::Example::FENL::DeviceConfig& dev_config_elem,
                     Kokkos::Example::FENL::DeviceConfig& dev_config_bc ) {
     static const unsigned VectorSize = StorageType::static_size;
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { is_cuda = Kokkos::Impl::is_same< execution_space, Kokkos::Cuda >::value };
 #else
     enum { is_cuda = false };
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
     if ( is_cuda ) {
       dev_config_elem = Kokkos::Example::FENL::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
       dev_config_bc   = Kokkos::Example::FENL::DeviceConfig( 0 , VectorSize , 256/VectorSize );
@@ -308,7 +272,7 @@ public:
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
 
-        Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+        Kokkos::parallel_for( elem_node_id.extent(0) , *this );
       }
 
       execution_space::fence();
@@ -369,8 +333,8 @@ public:
       // Element-to-graph mapping:
       wall_clock.reset();
       phase = FILL_ELEMENT_GRAPH ;
-      elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
-      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+      elem_graph = ElemGraphType("elem_graph", elem_node_id.extent(0) );
+      Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
       execution_space::fence();
       results.fill_element_graph = wall_clock.seconds();
@@ -383,25 +347,25 @@ public:
   void fill_set( const unsigned ielem ) const
   {
     // Loop over element's (row_local_node,col_local_node) pairs:
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         // If either node is locally owned then insert the pair into the unordered map:
 
-        if ( row_node < row_count.dimension_0() || col_node < row_count.dimension_0() ) {
+        if ( row_node < row_count.extent(0) || col_node < row_count.extent(0) ) {
 
           const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
 
           const typename SetType::insert_result result = node_node_set.insert( key );
 
           if ( result.success() ) {
-            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
-            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+            if ( row_node < row_count.extent(0) ) { atomic_fetch_add( & row_count( row_node ) , (typename RowMapType::value_type)1 ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , (typename RowMapType::value_type)1 ); }
           }
         }
       }
@@ -416,13 +380,13 @@ public:
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
 
-      if ( row_node < row_count.dimension_0() ) {
-        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
+      if ( row_node < row_count.extent(0) ) {
+        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , (typename RowMapType::value_type)1 );
         graph.entries( offset ) = col_node ;
       }
 
-      if ( col_node < row_count.dimension_0() && col_node != row_node ) {
-        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
+      if ( col_node < row_count.extent(0) && col_node != row_node ) {
+        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , (typename RowMapType::value_type)1 );
         graph.entries( offset ) = row_node ;
       }
     }
@@ -448,17 +412,17 @@ public:
   void fill_elem_graph_map( const unsigned ielem ) const
   {
     typedef typename CrsGraphType::data_type entry_type;
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         entry_type entry = 0 ;
 
-        if ( row_node + 1 < graph.row_map.dimension_0() ) {
+        if ( row_node + 1 < graph.row_map.extent(0) ) {
 
           const entry_type entry_end = static_cast<entry_type> (graph.row_map( row_node + 1 ));
 
@@ -505,7 +469,7 @@ public:
     update += row_count( irow );
 
     if ( final ) {
-      if ( irow + 1 == row_count.dimension_0() ) {
+      if ( irow + 1 == row_count.extent(0) ) {
         row_map( irow + 1 ) = update ;
         row_total()         = update ;
       }
@@ -849,7 +813,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = this->elem_node_ids.dimension_0();
+    const size_t nelem = this->elem_node_ids.extent(0);
     parallel_for( nelem , *this );
   }
 
@@ -887,7 +851,7 @@ public:
   {
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
-      if ( row < this->residual.dimension_0() ) {
+      if ( row < this->residual.extent(0) ) {
         atomic_add( & this->residual( row ) , res[i] );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
@@ -1064,7 +1028,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = this->elem_node_ids.dimension_0();
+    const size_t nelem = this->elem_node_ids.extent(0);
     parallel_for( nelem , *this );
   }
 
@@ -1096,7 +1060,7 @@ public:
   {
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
-      if ( row < this->residual.dimension_0() ) {
+      if ( row < this->residual.extent(0) ) {
         atomic_add( & this->residual( row ) , res[i].val() );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
@@ -1245,7 +1209,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = this->elem_node_ids.dimension_0();
+    const size_t nelem = this->elem_node_ids.extent(0);
     parallel_for( nelem , *this );
   }
 
@@ -1411,7 +1375,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = this->elem_node_ids.dimension_0();
+    const size_t nelem = this->elem_node_ids.extent(0);
     parallel_for( nelem , *this );
   }
 
@@ -1637,7 +1601,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = elem_node_ids.dimension_0();
+    const size_t nelem = elem_node_ids.extent(0);
     if ( use_team ) {
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
@@ -1801,7 +1765,7 @@ public:
     const unsigned ielem =
       dev.league_rank() * num_element_threads + element_rank;
 
-    if (ielem >= elem_node_ids.dimension_0())
+    if (ielem >= elem_node_ids.extent(0))
       return;
 
     (*this)( ielem, ensemble_rank );
@@ -1891,7 +1855,7 @@ public:
 
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
-      if ( row < residual.dimension_0() ) {
+      if ( row < residual.extent(0) ) {
         atomic_add( & local_residual( row ) , elem_vec[i] );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {

@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -207,18 +207,6 @@ size_t DiagonalFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow
 }
 
 template<class MatrixType>
-global_size_t DiagonalFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-template<class MatrixType>
-size_t DiagonalFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-template<class MatrixType>
 size_t DiagonalFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return A_->getGlobalMaxNumRowEntries();
@@ -234,18 +222,6 @@ template<class MatrixType>
 bool DiagonalFilter<MatrixType>::hasColMap() const
 {
   return A_->hasColMap();
-}
-
-template<class MatrixType>
-bool DiagonalFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-template<class MatrixType>
-bool DiagonalFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 template<class MatrixType>

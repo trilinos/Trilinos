@@ -102,7 +102,6 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
   typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
   typedef idInput_t::part_t part_t;
-  typedef idInput_t::base_adapter_t base_adapter_t;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -139,7 +138,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   // An environment.  This is usually created by the problem.
 
   Teuchos::ParameterList pl("test list");
-  pl.set("num_local_parts", double(numLocalParts));
+  pl.set("num_local_parts", numLocalParts);
   
   RCP<const Zoltan2::Environment> env = 
     rcp(new Zoltan2::Environment(pl, comm));
@@ -198,7 +197,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
     weights.push_back(wgts);
 
-  const idInput_t *ia;
+  idInput_t *ia = NULL;
 
   try{
     ia = new idInput_t(numLocalObj, myGids, weights, strides);

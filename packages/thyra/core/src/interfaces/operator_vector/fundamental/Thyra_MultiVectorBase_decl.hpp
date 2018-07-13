@@ -513,6 +513,122 @@ public:
   void assign(Scalar alpha)
     { assignImpl(alpha); }
 
+  /** \brief V = mv
+   *
+   * \param mv [in] Multi-vector whose value is assigned to this multi-vector
+   * 
+   *
+   * NVI function.
+   */
+  void assign(const MultiVectorBase<Scalar>& mv)
+    { assignMultiVecImpl(mv); }
+
+  /** V = alpha*V.
+   *
+   * \param alpha [in] Scaling factor.
+   *
+   * NVI function.
+   */
+  void scale(Scalar alpha)
+    { scaleImpl(alpha); }
+
+  /** V = alpha*mv + V.
+   *
+   * \param alpha [in] Scaling factor for input mv.
+   *
+   * \param mv [in] Multi-vector to be added to this multi-vector.
+   *
+   * NVI function.
+   */
+  void update(
+    Scalar alpha,
+    const MultiVectorBase<Scalar>& mv
+    )
+    { updateImpl(alpha, mv); }
+
+  /** \brief <tt>Y.col(j)(i) = beta*Y.col(j)(i) + sum( alpha[k]*X[k].col(j)(i),
+   *
+   * k=0...m-1 )</tt>, for <tt>i = 0...Y->range()->dim()-1</tt>, <tt>j =
+   * 0...Y->domain()->dim()-1</tt>.
+   *
+   * \param alpha [in] Array (length <tt>m</tt>) of input scalars.
+   *
+   * \param X [in] Array (length <tt>m</tt>) of input multi-vectors.
+   *
+   * \param beta [in] Scalar multiplier for Y
+   *
+   * \param Y [in/out] Target multi-vector that is the result of the linear
+   * combination.
+   *
+   * This function implements a general linear combination:
+   \verbatim
+   Y.col(j)(i) = beta*Y.col(j)(i) + alpha[0]*X[0].col(j)(i) + alpha[1]*X[1].col(j)(i) + ... + alpha[m-1]*X[m-1].col(j)(i)
+
+      for:
+          i = 0...y->space()->dim()-1
+          j = 0...y->domain()->dim()-1
+
+   \endverbatim
+   * NVI function.
+   */
+  void linear_combination(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+    const Scalar& beta
+    )
+    { linearCombinationImpl(alpha, mv, beta); }
+
+  /** \brief Column-wise Euclidean dot product
+   *
+   * \param V [in] Multi-vector with which to take the dot product.
+   *
+   * \param prods [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * dot prods <tt>prods[j] = dot(*mv.col(j))</tt>, for <tt>j=0...m-1</tt>.
+   *
+   * NVI function.
+   */
+  void dots(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const
+    { dotsImpl(mv, prods); }
+
+  /** \brief Column-wise 1-norms
+   *
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * 1-norms <tt>norms[j] = norm_1(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
+   *
+   * NVI function.
+   */
+  void norms_1(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const
+    { norms1Impl(norms); }
+
+  /** \brief Column-wise 2-norms
+   *
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * 2-norms <tt>norms[j] = norm_2(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
+   *
+   * NVI function.
+   */
+  void norms_2(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const
+    { norms2Impl(norms); }
+
+  /** \brief Column-wise infinity-norms
+   *
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * inf-norms <tt>norms[j] = norm_inf(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
+   *
+   * NVI function.
+   */
+  void norms_inf(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const
+    { normsInfImpl(norms); }
+
   //@}
 
   /** @name Provide access to the columns as VectorBase objects */
@@ -684,10 +800,66 @@ protected:
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
-  /** \brief Virtual implementation for NVI assign().
+  /** \brief Virtual implementation for NVI assign(Scalar).
    *
    */
   virtual void assignImpl(Scalar alpha) = 0;
+
+  /** \brief Virtual implementation for NVI assign(MV).
+   *
+   */
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv) = 0;
+
+  /** \brief Virtual implementation for NVI scale().
+   *
+   */
+  virtual void scaleImpl(Scalar alpha) = 0;
+
+  /** \brief Virtual implementation for NVI update().
+   *
+   */
+  virtual void updateImpl(
+    Scalar alpha,
+    const MultiVectorBase<Scalar>& mv
+    ) = 0;
+
+  /** \brief Virtual implementation for NVI linear_combination().
+   *
+   */
+  virtual void linearCombinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+    const Scalar& beta
+    ) = 0;
+
+  /** \brief Virtual implementation for NVI dots().
+   *
+   */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const = 0;
+
+  /** \brief Virtual implementation for NVI norms_1().
+   *
+   */
+  virtual void norms1Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const = 0;
+
+  /** \brief Virtual implementation for NVI norms_2().
+   *
+   */
+  virtual void norms2Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const = 0;
+
+  /** \brief Virtual implementation for NVI norms_inf().
+   *
+   */
+  virtual void normsInfImpl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const = 0;
 
   /** \brief Return a non-changeable view of a constituent column vector.
    *

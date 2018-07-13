@@ -62,7 +62,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Assert.hpp"
-#include "mpi.h"
+#include <mpi.h>
 #include <iterator>
 
 // This must be defined globally for the whole program!
@@ -1061,8 +1061,17 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
     "MPI_Type_commit failed with error \"" << mpiErrorCodeToString (err)
     << "\".");
 
-  err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
-                       char_block, op, *rawMpiComm_);
+  if (sendBuffer == globalReducts) {
+    // NOTE (mfh 31 May 2017) This is only safe if the communicator is
+    // NOT an intercomm.  The usual case is that communicators are
+    // intracomms.
+    err = MPI_Allreduce (MPI_IN_PLACE, globalReducts, 1,
+                         char_block, op, *rawMpiComm_);
+  }
+  else {
+    err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
+                         char_block, op, *rawMpiComm_);
+  }
   if (err != MPI_SUCCESS) {
     // Don't throw until we release the type resources we allocated
     // above.  If freeing fails for some reason, let the memory leak
@@ -1200,7 +1209,7 @@ void MpiComm<Ordinal>::readySend(
 #endif // TEUCHOS_MPI_COMM_DUMP
 
   const int err =
-    MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
+    MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), static_cast<int>(sendBuffer.size()),
                MPI_CHAR, destRank, tag_, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error \""

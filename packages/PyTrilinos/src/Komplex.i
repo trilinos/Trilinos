@@ -64,57 +64,19 @@ following class:
 	docstring = %komplex_docstring) Komplex
 
 %{
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Komplex includes
-#include "Komplex_Version.h"
-#include "Komplex_LinearProblem.h"
+// Komplex include files
+#include "PyTrilinos_Komplex_Headers.hpp"
 
 #endif
 
@@ -126,24 +88,24 @@ following class:
 // Include Komplex documentation
 %include "Komplex_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 using std::string;
 %include "stl.i"
 
 ///////////////////////////////////
 // Komplex configuration support //
 ///////////////////////////////////
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
+// #undef PACKAGE_BUGREPORT
+// #undef PACKAGE_NAME
+// #undef PACKAGE_STRING
+// #undef PACKAGE_TARNAME
+// #undef PACKAGE_VERSION
 %include "Komplex_config.h"
 %include "PyTrilinos_config.h"
 
 // Teuchos::RCP<> support
 #ifdef TEUCHOS
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 #endif
 
 // External Trilinos modules

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stddef.h>       // for size_t
@@ -68,23 +68,23 @@ below.
 the objects
                        of the type specified (element blocks, node sets, or side
 sets).
-\param[in] prop_names  Array containing \c num_props names (of maximum length
+\param[in] prop_names  Array containing  num_props names (of maximum length
                        of \p MAX_STR_LENGTH ) of properties to be stored.
 
-<table>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_MAP   </td><td>  Element Map entity type  </td></tr>
-<tr><td> \c EX_NODE_MAP   </td><td>  Node Map entity type     </td></tr>
-<tr><td> \c EX_EDGE_MAP   </td><td>  Edge Map entity type     </td></tr>
-<tr><td> \c EX_FACE_MAP   </td><td>  Face Map entity type     </td></tr>
-</table>
+| ex_entity_type | description               |
+| -------------- | ------------------------- |
+|  EX_NODE_SET   |  Node Set entity type     |
+|  EX_EDGE_BLOCK |  Edge Block entity type   |
+|  EX_EDGE_SET   |  Edge Set entity type     |
+|  EX_FACE_BLOCK |  Face Block entity type   |
+|  EX_FACE_SET   |  Face Set entity type     |
+|  EX_ELEM_BLOCK |  Element Block entity type|
+|  EX_ELEM_SET   |  Element Set entity type  |
+|  EX_SIDE_SET   |  Side Set entity type     |
+|  EX_ELEM_MAP   |  Element Map entity type  |
+|  EX_NODE_MAP   |  Node Map entity type     |
+|  EX_EDGE_MAP   |  Edge Map entity type     |
+|  EX_FACE_MAP   |  Face Map entity type     |
 
 For instance, suppose a user wanted to assign the 1st, 3rd, and 5th
 element blocks (those element blocks stored 1st, 3rd, and 5th,
@@ -92,7 +92,7 @@ regardless of their ID) to a group (property) called \b TOP, and the
 2nd, 3rd, and 4th element blocks to a group called \b LSIDE. This
 could be accomplished with the following code:
 
-\code
+~~~{.c}
 
 char* prop_names[2];
 int top_part[]   = {1,0,1,0,1};
@@ -122,7 +122,7 @@ ex_put_prop_array (exoid, EX_ELEM_BLOCK, prop_names[0],
 ex_put_prop_array (exoid, EX_ELEM_BLOCK, prop_names[1],
                    lside_part);
 
-\endcode
+~~~
 
 */
 
@@ -139,7 +139,8 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
 
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
     int_type = NC_INT64;
@@ -150,21 +151,19 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
 
   /* inquire id of previously defined dimension (number of objects) */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of %s in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_put_prop_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_prop_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   nc_set_fill(exoid, NC_FILL, &oldfill); /* fill with zeros per routine spec */
 
   /* put netcdf file into define mode  */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-    ex_err("ex_put_prop_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_prop_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* define num_props variables; we postpend the netcdf variable name with  */
@@ -186,18 +185,16 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
     case EX_EDGE_MAP: name   = VAR_EDM_PROP(i + 2); break;
     case EX_NODE_MAP: name   = VAR_NM_PROP(i + 2); break;
     default:
-      exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
                exoid);
-      ex_err("ex_put_prop_names", errmsg, exerrval);
+      ex_err("ex_put_prop_names", errmsg, EX_BADPARAM);
       goto error_ret; /* Exit define mode and return */
     }
 
     if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to create property array variable in file id %d", exoid);
-      ex_err("ex_put_prop_names", errmsg, exerrval);
+      ex_err("ex_put_prop_names", errmsg, status);
       goto error_ret; /* Exit define mode and return */
     }
 
@@ -206,10 +203,9 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
     /*   create attribute to cause variable to fill with zeros per routine spec
      */
     if ((status = nc_put_att_longlong(exoid, propid, _FillValue, int_type, 1, vals)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to create property name fill attribute in file id %d", exoid);
-      ex_err("ex_put_prop_names", errmsg, exerrval);
+      ex_err("ex_put_prop_names", errmsg, status);
       goto error_ret; /* Exit define mode and return */
     }
 
@@ -229,33 +225,31 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME, prop_name_len, prop_names[i])) !=
         NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property name %s in file id %d",
                prop_names[i], exoid);
-      ex_err("ex_put_prop_names", errmsg, exerrval);
+      ex_err("ex_put_prop_names", errmsg, status);
       goto error_ret; /* Exit define mode and return */
     }
   }
 
   /* leave define mode  */
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to leave define mode in file id %d", exoid);
-    ex_err("ex_put_prop_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_prop_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Update the maximum_name_length attribute on the file. */
   ex_update_max_name_length(exoid, max_name_len - 1);
 
   nc_set_fill(exoid, oldfill, &temp); /* default: turn off fill */
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if (nc_enddef(exoid) != NC_NOERR) { /* exit define mode */
+  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_put_prop_names", errmsg, exerrval);
+    ex_err("ex_put_prop_names", errmsg, status);
   }
-  return (EX_FATAL);
+  EX_FUNC_LEAVE(EX_FATAL);
 }

@@ -46,6 +46,8 @@
     \brief Test of Primal Dual Interior Point KKT system
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS32.hpp" 
 #include "ROL_InteriorPointPrimalDualResidual.hpp"
 #include "ROL_RandomVector.hpp"
@@ -67,18 +69,18 @@ int main(int argc, char *argv[]) {
   typedef typename vector::size_type    uint;
 
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  
+  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -93,73 +95,73 @@ int main(int argc, char *argv[]) {
 
     // ----[ Full primal-dual vector ]----------------
 
-    RCP<vector> xo_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> xs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> xe_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> xi_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::Ptr<vector> xo_ptr = ROL::makePtr<vector>(xo_dim,0.0); // opt
+    ROL::Ptr<vector> xs_ptr = ROL::makePtr<vector>(ci_dim,0.0); // slack
+    ROL::Ptr<vector> xe_ptr = ROL::makePtr<vector>(ce_dim,0.0); // equality multipliers
+    ROL::Ptr<vector> xi_ptr = ROL::makePtr<vector>(ci_dim,0.0); // inequality multipliers
 
-    RCP<V> xo = rcp( new SV(xo_rcp) ); 
-    RCP<V> xs = rcp( new SV(xs_rcp) );
-    RCP<V> xe = rcp( new SV(xe_rcp) );
-    RCP<V> xi = rcp( new SV(xi_rcp) );     
+    ROL::Ptr<V> xo = ROL::makePtr<SV>(xo_ptr); 
+    ROL::Ptr<V> xs = ROL::makePtr<SV>(xs_ptr);
+    ROL::Ptr<V> xe = ROL::makePtr<SV>(xe_ptr);
+    ROL::Ptr<V> xi = ROL::makePtr<SV>(xi_ptr);     
 
     ROL::RandomizeVector(*xo,left,right);
     ROL::RandomizeVector(*xs,left,right);
     ROL::RandomizeVector(*xe,left,right);
     ROL::RandomizeVector(*xi,left,right);
 
-    RCP<V> x = ROL::CreatePartitionedVector( xo, xs, xe, xi );
+    ROL::Ptr<V> x = ROL::CreatePartitionedVector( xo, xs, xe, xi );
     
 
     // ----[ Full primal-dual direction vector ]------
 
-    RCP<vector> vo_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> vs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> ve_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> vi_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::Ptr<vector> vo_ptr = ROL::makePtr<vector>(xo_dim,0.0); // opt
+    ROL::Ptr<vector> vs_ptr = ROL::makePtr<vector>(ci_dim,0.0); // slack
+    ROL::Ptr<vector> ve_ptr = ROL::makePtr<vector>(ce_dim,0.0); // equality multipliers
+    ROL::Ptr<vector> vi_ptr = ROL::makePtr<vector>(ci_dim,0.0); // inequality multipliers
  
-    RCP<V> vo = rcp( new SV(vo_rcp) );
-    RCP<V> vs = rcp( new SV(vs_rcp) );
-    RCP<V> ve = rcp( new SV(ve_rcp) );
-    RCP<V> vi = rcp( new SV(vi_rcp) );     
+    ROL::Ptr<V> vo = ROL::makePtr<SV>(vo_ptr);
+    ROL::Ptr<V> vs = ROL::makePtr<SV>(vs_ptr);
+    ROL::Ptr<V> ve = ROL::makePtr<SV>(ve_ptr);
+    ROL::Ptr<V> vi = ROL::makePtr<SV>(vi_ptr);     
 
     ROL::RandomizeVector(*vo,left,right);
     ROL::RandomizeVector(*vs,left,right);
     ROL::RandomizeVector(*ve,left,right);
     ROL::RandomizeVector(*vi,left,right);
 
-    RCP<V> v = ROL::CreatePartitionedVector( vo, vs, ve, vi );
+    ROL::Ptr<V> v = ROL::CreatePartitionedVector( vo, vs, ve, vi );
 
 
     // ----[ Full primal-dual residual vector ]------
 
-    RCP<vector> ro_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> rs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> re_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> ri_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::Ptr<vector> ro_ptr = ROL::makePtr<vector>(xo_dim,0.0); // opt
+    ROL::Ptr<vector> rs_ptr = ROL::makePtr<vector>(ci_dim,0.0); // slack
+    ROL::Ptr<vector> re_ptr = ROL::makePtr<vector>(ce_dim,0.0); // equality multipliers
+    ROL::Ptr<vector> ri_ptr = ROL::makePtr<vector>(ci_dim,0.0); // inequality multipliers
  
-    RCP<V> ro = rcp( new SV(vo_rcp) );
-    RCP<V> rs = rcp( new SV(vs_rcp) );
-    RCP<V> re = rcp( new SV(ve_rcp) );
-    RCP<V> ri = rcp( new SV(vi_rcp) );     
+    ROL::Ptr<V> ro = ROL::makePtr<SV>(vo_ptr);
+    ROL::Ptr<V> rs = ROL::makePtr<SV>(vs_ptr);
+    ROL::Ptr<V> re = ROL::makePtr<SV>(ve_ptr);
+    ROL::Ptr<V> ri = ROL::makePtr<SV>(vi_ptr);     
 
     ROL::RandomizeVector(*ro,left,right);
     ROL::RandomizeVector(*rs,left,right);
     ROL::RandomizeVector(*re,left,right);
     ROL::RandomizeVector(*ri,left,right);
 
-    RCP<V> r = ROL::CreatePartitionedVector( ro, rs, re, ri );
+    ROL::Ptr<V> r = ROL::CreatePartitionedVector( ro, rs, re, ri );
 
     // ----[ Primal-dual constraint ]-------
 
-    RCP<ROL::Objective<RealT> > obj_hs32 = 
-      rcp( new ROL::ZOO::Objective_HS32<RealT> );
+    ROL::Ptr<ROL::Objective<RealT> > obj_hs32 = 
+      ROL::makePtr<ROL::ZOO::Objective_HS32<RealT>>();
 
-    RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
-      rcp( new ROL::ZOO::EqualityConstraint_HS32<RealT> );
+    ROL::Ptr<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
+      ROL::makePtr<ROL::ZOO::EqualityConstraint_HS32<RealT>>();
     
-    RCP<ROL::EqualityConstraint<RealT> > incon_hs32 = 
-      rcp( new ROL::ZOO::InequalityConstraint_HS32<RealT> );      
+    ROL::Ptr<ROL::EqualityConstraint<RealT> > incon_hs32 = 
+      ROL::makePtr<ROL::ZOO::InequalityConstraint_HS32<RealT>>();      
 
 
     *outStream << "Performing finite difference check on Primal-Dual KKT system" 

@@ -40,8 +40,8 @@
 // @HEADER
 
 
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -107,14 +107,14 @@ namespace { // (anonymous)
   }
 
 
-  // Get a Tpetra::Experimental::BlockCrsMatrix for use in benchmarks.
+  // Get a Tpetra::BlockCrsMatrix for use in benchmarks.
   // This method takes the result of getTpetraGraph() (above)
-  Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<> >
+  Teuchos::RCP<Tpetra::BlockCrsMatrix<> >
   getTpetraBlockCrsMatrix (const Teuchos::RCP<const Tpetra::CrsGraph<> >& graph)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef Tpetra::Experimental::BlockCrsMatrix<> matrix_type;
+    typedef Tpetra::BlockCrsMatrix<> matrix_type;
     typedef matrix_type::impl_scalar_type SC;
     typedef Tpetra::Map<>::local_ordinal_type LO;
     //typedef Tpetra::Map<>::global_ordinal_type GO;
@@ -153,7 +153,7 @@ namespace { // (anonymous)
       for (LO k = 0; k < static_cast<LO> (lclColInds.size ()); ++k) {
         const LO lclColInd = lclColInds[k];
         const LO err =
-          A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+          A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
         TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
       }
     }
@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
 
   if(newdist.howInitialized()!=Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS)
     {
-      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initalized with createFromSendsAndRecvs is incorrect" << endl;
+      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initialized with createFromSendsAndRecvs is incorrect" << endl;
       success = false;
     }
 

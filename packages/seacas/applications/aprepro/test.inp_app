@@ -148,19 +148,19 @@ $ Test if - else lines
 {endif}
 $ ========================================================================
 $ Test switch
-{switch(PI)}
+{ switch(PI) }
 This is in a switch, but prior to any case, it should not run
 {a = 0.5} Should not execute
 
-{case (1)}
+   {case (1) }
 This should not echo
 {a = 1}
 
-{case (2)}
+{	case (2)	}
 This should not echo
 {a = 2}
 
-{case (PI)}
+	{case	(PI)}
 This should echo
 {a = PI}
 
@@ -171,7 +171,7 @@ This should not echo since a previous case matched.
 {default}
 {a=4}
 
-{endswitch}
+{  endswitch	}
 
 This should be equal to PI --  {PI}
 $ Test int and [] (shortcut for int)

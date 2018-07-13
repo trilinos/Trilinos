@@ -116,6 +116,7 @@ public:
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
@@ -181,7 +182,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjgnos;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   int nEwgt = model->getNumWeightsPerEdge();
   size_t nEdge = model->getEdgeList(adjgnos, offsets, ewgts);
@@ -194,7 +195,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
+  TPL_Traits<pm_idx_t,const offset_t>::ASSIGN_ARRAY(&pm_offsets, offsets);
   pm_idx_t *pm_adjs;  
   pm_idx_t pm_dummy_adj;
   if (nEdge)
@@ -214,8 +215,8 @@ void AlgParMETIS<Adapter>::partition(
   RCP<Comm<int> > subcomm;
   MPI_Comm mpicomm;  // Note:  mpicomm is valid only while subcomm is in scope
 
+  int nKeep = 0;
   if (np > 1) {
-    int nKeep = 0;
     Array<int> keepRanks(np);
     for (int i = 0; i < np; i++) {
       if ((pm_vtxdist[i+1] - pm_vtxdist[i]) > 0) {
@@ -288,11 +289,14 @@ void AlgParMETIS<Adapter>::partition(
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
       if ((approach == "repartition") || (approach == "maximize_overlap")) {
-        if (np > 1) 
+        if (nKeep > 1) 
           // ParMETIS_V3_AdaptiveRepart requires two or more processors
           parmetis_method = "ADAPTIVE_REPART";
         else
-          parmetis_method = "REFINE_KWAY";
+          // Probably best to do PartKway if nKeep == 1; 
+          // I think REFINE_KWAY won't give a good answer in most use cases
+          // parmetis_method = "REFINE_KWAY";
+          parmetis_method = "PARTKWAY";
       }
     }
 
@@ -302,7 +306,7 @@ void AlgParMETIS<Adapter>::partition(
     pm_idx_t pm_edgecut = -1;
     pm_idx_t pm_options[METIS_NOPTIONS];
     pm_options[0] = 1;   // Use non-default options for some ParMETIS options
-    for (int i = 0; i < METIS_NOPTIONS; i++) 
+    for (int i = 1; i < METIS_NOPTIONS; i++) 
       pm_options[i] = 0; // Default options
     pm_options[2] = 15;  // Matches default value used in Zoltan
   
@@ -333,12 +337,17 @@ void AlgParMETIS<Adapter>::partition(
                                              pm_partList, &mpicomm);
       delete [] pm_vsize;
     }
-    else if (parmetis_method == "REFINE_KWAY") {
-      pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
-                                         pm_vwgts, pm_ewgts, &pm_wgtflag,
-                                         &pm_numflag, &pm_nCon, &pm_nPart,
-                                         pm_partsizes, pm_imbTols, pm_options,
-                                         &pm_edgecut, pm_partList, &mpicomm);
+    // else if (parmetis_method == "REFINE_KWAY") {
+    //   We do not currently have an execution path that calls REFINE_KWAY.
+    //   pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
+    //                                      pm_vwgts, pm_ewgts, &pm_wgtflag,
+    //                                     &pm_numflag, &pm_nCon, &pm_nPart,
+    //                                    pm_partsizes, pm_imbTols, pm_options,
+    //                                      &pm_edgecut, pm_partList, &mpicomm);
+    // }
+    else {
+      // We should not reach this condition.
+      throw std::logic_error("\nInvalid ParMETIS method requested.\n");
     }
 
     // Clean up 

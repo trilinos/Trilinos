@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2016-01-16 18:41:36 loftuser"
+#+DATE: Time-stamp: "2017-12-14 09:39:50 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -10,9 +10,216 @@ following website: http://orgmode.org
 
 This file is best viewed and edited using Emacs (version >= 23), but
 you may view and edit it using any text editor.  Editors, please defer
-to the mark-up conventions already existing in this document.
+to the mark-up conventions already existing in this document.  For
+readers who are not familiar with org-mode, please note that text
+between tildes, like ~this~, denotes literal (verbatim) text.  We use
+this with source code, error messages, and other such things that call
+for literalness.
 
-* Questions about building Tpetra
+* Building and running Tpetra
+** How do I build and run Tpetra to use OpenMP for threads?
+*** Introduction
+
+OpenMP is a portable standard for thread parallelism.  Tpetra uses
+Kokkos (see github.com/kokkos) to run in a thread-parallel way using
+any of various back-ends, including OpenMP.  You do not need to know
+OpenMP in order to build or use Tpetra on GPUs.  However, you should
+have some familiarity with thread parallelism and Kokkos ideas.
+
+*** Assumptions
+
+Tpetra relies on Kokkos for OpenMP support.  Thus, Tpetra inherits
+Kokkos' assumptions about OpenMP.  Kokkos's OpenMP back-end assumes
+only OpenMP 3.x; it does not currently require OpenMP 4.x.  (Kokkos
+has a separate OpenMP 4.x back-end in development.)
+
+In order for Tpetra to use OpenMP, you must build Trilinos with a
+compiler that supports OpenMP 3.x.
+
+*** How do I build Tpetra for OpenMP?
+
+Set the following CMake variable:
+
+#+BEGIN_EXAMPLE
+-D Trilinos_ENABLE_OpenMP:BOOL=ON
+#+END_EXAMPLE
+
+Setting this option tells Trilinos' build system to deduce any
+OpenMP-related compiler and linker flags.  Trilinos will then add
+those flags automatically to the compiler's or linker's command line.
+You generally do not need to add such flags to e.g.,
+~CMAKE_CXX_FLAGS~.  We have success with this approach with the GCC
+and Intel compilers; other compilers are supported too.  If Trilinos
+cannot figure out the OpenMP compiler or linker flags, the
+configuration process will fail with an informative error message.  In
+that case, you must add the required flags yourself.
+
+If you enable OpenMP using the above instructions, Kokkos will enable
+its OpenMP support by default.  If Kokkos enables its OpenMP support,
+Tpetra will enable its OpenMP support by default.  (See "How does
+Tpetra pick its default Kokkos execution space?" below.)  Avoid
+setting CMake options explicitly; this hinders portability and makes
+your build configuration unnecessarily complicated.
+
+*** How do I set run-time options for Intel KNL?
+
+"KNL" refers to "Knights Landing," a code name for Intel's
+second-generation Xeon Phi processor, with product numbers 72x0 or
+72x0F (replace "x" with a single-digit number).  For best practice
+when running on KNL, please refer to the following Trilinos GitHub
+issue:
+
+https://github.com/trilinos/Trilinos/issues/1727
+
+** How do I build and run Tpetra for NVIDIA GPUs (CUDA)?
+*** Introduction
+
+Tpetra uses Kokkos (see github.com/kokkos) to run in a thread-parallel
+way on NVIDIA Graphics Processing Units (GPUs).  Tpetra does so using
+Kokkos' CUDA back-end.  CUDA is a programming language that extends a
+subset of the C++ programming language.  You do not need to know CUDA
+in order to build or use Tpetra on GPUs.  However, you should have
+some familiarity with Kokkos ideas of multiple memory spaces, multiple
+execution spaces, and asynchronous kernel launch.
+
+*** Assumptions
+
+Tpetra requires at least CUDA 7.5, and is regularly tested with CUDA
+8.0.  Tpetra itself requires C++11 and depends on the optional "device
+lambdas" feature in order to build and pass tests.  Trilinos currently
+tests CUDA builds only with MPI enabled, and exercises the OpenMPI
+implementation of MPI most heavily.  We recommend OpenMPI 1.8.x at a
+minimum, preferably newer.  Other MPI implementations should work.
+
+Tpetra currently assumes Unified Virtual Memory (UVM) with CUDA.  It
+currently requires kernel launches to block.  In particular, it
+requires the following environment variables to be set:
+
+#+BEGIN_EXAMPLE
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+#+END_EXAMPLE
+
+We are currently working on relaxing these restrictions.  This is not
+just a Tpetra issue, however; downstream solver libraries in Trilinos
+currently depend on these settings.  Those libraries must be changed
+in order to relax these restrictions for all Trilinos users.
+
+*** How do I build Tpetra for GPUs?
+
+First, set the following environment variables, in which
+~TRILINOS_PATH~ points to your Trilinos source directory:
+
+#+BEGIN_EXAMPLE
+  export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+#+END_EXAMPLE
+
+Then set the following CMake variables, in addition to the CMake
+variables that you would normally set:
+
+#+BEGIN_EXAMPLE
+-D TPL_ENABLE_MPI:BOOL=ON
+-D TPL_ENABLE_CUDA:BOOL=ON
+-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
+-D Trilinos_CXX11_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
+#+END_EXAMPLE
+
+If you already define ~CMAKE_CXX_FLAGS~ yourself, just make sure that
+you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
+that live in your path are correct, then this should work.  The
+~-std=c++11~ option is required, though it may cause harmless build
+warnings that look like this:
+
+#+BEGIN_EXAMPLE
+cc1: warning: command line option '-std=c++11' is valid for C++/ObjC++
+but not for C [enabled by default]
+#+END_EXAMPLE
+
+If you enable CUDA using the above instructions, Kokkos will enable
+its CUDA support by default.  If Kokkos enables its CUDA support,
+Tpetra will enable its CUDA support by default.  (See "How does Tpetra
+pick its default Kokkos execution space?" below.)  Avoid setting CMake
+options explicitly; this hinders portability and makes your build
+configuration unnecessarily complicated.  However, if you wish to
+enable Tpetra's CUDA support explicitly, you may add the following
+CMake option:
+
+#+BEGIN_EXAMPLE
+-D Tpetra_INST_CUDA:BOOL=ON
+#+END_EXAMPLE
+
+*** Do I need a special MPI implementation to use CUDA?
+
+Some MPI implementations are "CUDA aware."  This means that they know
+how to send and receive from CUDA device buffers.  Tpetra attempts to
+detect whether the MPI implementation is CUDA aware at configure time.
+However, it currently (as of Aug / Sep 2017) only knows how to do so
+for OpenMPI.  Furthermore, automatic detection only works if not cross
+compiling, since it requires running an OpenMPI executable.  If
+automatic detection does not work, you may set the CMake variable
+~TPETRA_ASSUME_CUDA_AWARE_MPI~ to control the default assumption at
+configure time.  For example:
+
+#+BEGIN_EXAMPLE
+-D TPETRA_ASSUME_CUDA_AWARE_MPI:BOOL=ON
+#+END_EXAMPLE
+
+You may also tell Tpetra, via the environment variable
+~TPETRA_ASSUME_CUDA_AWARE_MPI~, whether to assume that the MPI
+implementation that Trilinos uses is CUDA aware.  To make Tpetra
+assume that MPI is CUDA aware, set this environment variable to some
+true value, like "1" or "TRUE".  To make Tpetra assume that MPI is
+/not/ CUDA aware, by setting this environment variable to some false
+value, like "0" or "FALSE".  (Tpetra interprets an empty string "" as
+true.)
+
+** What about Pthreads?  Does Tpetra support that?
+
+Tpetra does have an option to use Pthreads (POSIX Threads) for thread
+parallelism.  It does so through Kokkos, using the ~Kokkos::Threads~
+execution space.  However, Trilinos disables this option by default.
+This is for the following reasons:
+
+  1. Trilinos automatically enables Pthreads if it finds the library
+     on your system.  This surprises users who did not intend to run
+     with threads enabled.
+  2. Kokkos' Pthreads back-end is slower than its OpenMP back-end.
+  3. Use of OpenMP and Kokkos' Pthreads back-end in the same
+     application can hurt performance of both.  This is because
+     compilers' OpenMP implementations often set up their own threads
+     that keep running continuously to reserve hardware resources.
+     These threads fight the threads that Kokkos' Pthreads back-end
+     launches.
+  4. It is possible for multiple OpenMP libraries to work correctly
+     and performantly, as long as they share a common OpenMP run-time
+     environment.  It is /not/ possible for multiple libraries that
+     each launch their own Pthreads to work correctly and
+     performantly, for reasons analogous to those in (3) above.
+
+If you really /really/ want Tpetra to use Pthreads, you will need to
+do the following:
+
+  1. Make sure that Trilinos enables the Pthreads TPL, by checking
+     that the CMake variable ~TPL_ENABLE_Pthread~ is ~ON~.  If not,
+     you may need to tell Trilinos where to find the Pthreads library
+     and header file.
+  2. Enable Kokkos' Pthreads support, by setting
+     ~Kokkos_ENABLE_Pthread:BOOL=OFF~.
+  3. Enable Tpetra's Pthreads support, by setting 
+     ~Tpetra_INST_PTHREAD:BOOL=OFF~.
+  4. Make Tpetra use Pthreads by default, by setting
+     ~Tpetra_INST_SERIAL:BOOL=OFF~.
+
+If you choose to do this, we /highly/ recommend turning off OpenMP.
+Step 4 is optional, but if you do not do Step 3, Pthreads will not be
+Tpetra's default execution space.  In that case, if you want to use
+Pthreads in Tpetra, you must set the ~Node~ template parameter
+explicitly to
+~Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>~.
+
 ** Weird C++ errors with Intel compiler
 
 The Intel compiler uses GCC header files for the C++ Standard Library.
@@ -55,6 +262,50 @@ You can tell the Intel compiler to use a specific set of GCC headers
 by setting its "-gxx-name" flag.  Please refer to the Intel
 compiler's documentation for details.
 
+** NVCC link errors in debug builds
+
+NVCC's linker may report errors of the following form:
+#+BEGIN_EXAMPLE
+nvcc error   : 'nvlink' died due to signal 11 (Invalid memory reference)
+nvcc error   : 'nvlink' core dumped
+#+END_EXAMPLE
+See [[https://github.com/trilinos/Trilinos/issues/655][#655]] for an example.  This is not a Tpetra issue; it usually
+manifests downstream.  The cause appears to be excessively large
+executables.  It manifests even with dynamic shared libraries enabled.
+
+One thing that can help is to set the CMake option
+~CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"~.  The -Os flag tells the
+compiler to minimize code size.  You may do this in your debug build
+by adding the following to your CMake invocation line:
+#+BEGIN_EXAMPLE
+-D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"
+#+END_EXAMPLE
+
+** "Error 127" link error in CUDA builds
+
+In a CUDA build of kokkos-kernels (upstream of Tpetra) with complex
+arithmetic and explicit template instantiation (ETI) enabled, one
+might see a link error with the mysterious "Error 127" message.
+
+Short answer: Try setting the following CMake option:
+#+BEGIN_EXAMPLE
+-D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON
+#+END_EXAMPLE
+
+For details, see the following GitHub issue:
+
+https://github.com/trilinos/Trilinos/issues/2141
+
+and the following instructions:
+
+http://trilinos.org/docs/files/TrilinosBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
+If you have trouble seeing the above trilinos.org link, due to web
+page certificate issues, please refer to the following tribits.org
+link instead:
+
+https://tribits.org/doc/TribitsBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
 * Thread safety
 ** Weak and strong thread safety
 
@@ -73,7 +324,7 @@ the Kokkos execution space that Tpetra objects use for thread-parallel
 operations, and the Kokkos memory space that Tpetra objects use for
 memory allocations.
 
-The only valid Node types as of Trilinos 12.4 are specializations of
+The only valid Node types as of Trilinos 12.x are specializations of
 ~Kokkos::Compat::KokkosDeviceWrapperNode~, which lives in
 ~teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp~.
 You do /not/ need to include this header file or worry about the
@@ -91,9 +342,10 @@ rules to decide which execution space to use by default:
 
   - If CUDA is enabled, use ~Kokkos::Cuda~.
   - Else, if OpenMP is enabled, use ~Kokkos::OpenMP~.
-  - Else, if Kokkos::Serial is enabled, use ~Kokkos::Serial~.
-  - Else, if Kokkos::Threads is enabled, use ~Kokkos::Threads~.
-  - Otherwise, report an error (no Kokkos execution spaces are enabled).
+  - Else, if ~Kokkos::Serial~ is enabled, use ~Kokkos::Serial~.
+  - Else, if ~Kokkos::Threads~ is enabled, use ~Kokkos::Threads~.
+  - Otherwise, report an error (no Kokkos execution spaces are
+    enabled).
 
 ** How do I enable other Kokkos execution spaces in Tpetra?
 
@@ -102,14 +354,18 @@ rules to decide which execution space to use by default:
   - Set ~Tpetra_INST_PTHREAD=ON~ to enable ~Kokkos::Threads~
   - Set ~Tpetra_INST_SERIAL=ON~ to enable ~Kokkos::Serial~
 
-** Why is performance bad when I use both ~Kokkos::OpenMP~ and ~Kokkos::Threads~?
+** Why does Kokkos forbid enabling both OpenMP and Pthreads?
 
-Please don't do that.  ~Kokkos::Threads~ uses Pthreads; OpenMP uses
-its own threads.  The two sets of worker threads fight over hardware
-resources.  As soon as you start up either of these execution spaces
-in the same executable, it dominates the hardware and makes life hard
-for the other one.  Pick one of these two (we prefer OpenMP) and stick
-to it.
+As of Dec 2017, Kokkos forbids, at configure time, enabling both
+~Kokkos::OpenMP~ (OpenMP back-end) and ~Kokkos::Threads~ (Pthreads
+back-end).  This would be a bad idea anyway, because using both
+execution spaces at the same time would result in very poor
+performance.  This is because ~Kokkos::Threads~ uses Pthreads; OpenMP
+uses its own threads.  The two sets of worker threads fight over
+hardware resources.  As soon as you start up either of these execution
+spaces in the same executable, it dominates the hardware and makes
+life hard for the other one.  Pick one of these two (we prefer OpenMP)
+and stick to it.
 
 ** What GlobalOrdinal (GO) types does Tpetra allow?
 
@@ -135,32 +391,28 @@ GO types it enables by default.
 
 ** How does Tpetra pick which GO types to enable by default?
 
-By default, Tpetra currently enables ~GO = int~, and exactly one of
-~GO = long long~ or ~GO = long~.  This ensures coverage of both the
-32-bit case (~int~) and the 64-bit case (~long long~ always, or ~long~
-on most platforms other than Windows).  Bug 6358 prevents Tpetra from
-disabling ~GO = int~ by default.  Tpetra does not enable more types by
-default, because that would increase build times and library sizes.
+By default, Tpetra currently enables ~GO = int~ and ~GO = long long~.
+Some build options affect Tpetra's default behavior; see below.
+Tpetra prefers ~GO = long long~, because the C++11 standard requires
+that ~long long~ have at least 64 bits.  Depending on the platform,
+~long~ could be either 32 or 64 bits.  Tpetra does not enable more
+types by default, because that would increase build times and library
+sizes.  Bug 6358 (in the Bugzilla bug tracking system) prevents Tpetra
+from disabling ~GO = int~ by default.
 
-If the user /explicitly/ enables either ~long long~ or ~long~ (by
-setting ~Tpetra_INST_INT_LONG_LONG=ON~
-resp. ~Tpetra_INST_INT_LONG=ON~), Tpetra uses that type and does not
-enable the other by default.
+Two build options control Tpetra's default-enabled GO types:
 
-If the user did /not/ explicitly enable either ~long long~ or ~long~,
-Tpetra picks one of these.  Tpetra /prefers/ ~GO = long long~.  This
-is because the C++11 standard requires that ~long long~ have at least
-64 bits, while it only requires that ~long~ have at least 32 bits.  In
-particular, ~long~ is 32 bits on Windows.  Thus, Tpetra enables ~GO =
-long long~ by default.  However, two things prevent Tpetra from doing
-this:
+  - If users enable ~GO = long~ (by setting
+    ~Tpetra_INST_INT_LONG:BOOL=ON~ explicitly), then Tpetra does not
+    enable ~GO = long long~ by default.
+  - Tpetra currently requires Teuchos to have support for ~long long~.
+    Specifically, the CMake option ~Teuchos_ENABLE_LONG_LONG_INT~ must
+    be ON (or ~NOT DEFINED~).  If it is ~DEFINED~ but OFF, then Tpetra
+    enables ~long~ by default instead.
 
-  1. CUDA lacks support for ~long long~, so Tpetra enables ~long~ by
-     default instead if CUDA is enabled.
-  2. Tpetra currently requires Teuchos to have support for ~long
-     long~.  Specifically, the CMake option
-     ~Teuchos_ENABLE_LONG_LONG_INT~ must be ON.  If it's not, Tpetra
-     enables ~long~ by default instead.
+These two options help Tpetra work around environments that lack
+correct ~long long~ support.  (This used to be the case for CUDA,
+but is not true any more.  See GitHub issue #1683.)
 
 ** What Scalar types does Tpetra allow?
 
@@ -551,4 +803,38 @@ specializes the Belos adapter, so the work-around for the latter is
 either to disable TSQR for Belos (~Belos_ENABLE_TSQR:BOOL=OFF~) or to
 disable TSQR altogether (the default behavior).
 
+** Adding ETI for a new Tpetra class or function broke Stokhos' build; why?
 
+Stokhos needs to instantiate Tpetra classes and functions for its own
+Scalar types.  If Tpetra does ETI for a class or function that takes a
+Scalar (or Packet; see Tpetra::DistObject) template parameter, Stokhos
+must also instantiate that Tpetra class or function for its own Scalar
+(or Packet) types.  Otherwise, if explicit template instantiation is
+enabled in Trilinos, you may see build or link errors.
+
+You may fix this by telling Stokhos about your new class or function.
+You only need to do this if doing explicit instantiation for your new
+class or function.
+
+Stokhos uses a CMake-based system for generating explicit
+instantiations automatically.  Its system is pickier than Tpetra's.
+For example, if the class is called ~Tpetra::TheClass~, the
+corresponding Tpetra header files must be ~Tpetra_TheClass_decl.hpp~
+and ~Tpetra_TheClass_def.hpp~, and the corresponding explicit
+instantiation macro must be called ~TPETRA_THECLASS_INSTANT~.  If the
+function is ~Tpetra::Details::theFunction~, the corresponding Tpetra
+header files must be ~Tpetra_Details_theFunction_decl.hpp~ and
+~Tpetra_Details_theFunction_def.hpp~, and the corresponding explicit
+instantiation macro must be called
+~TPETRA_DETAILS_THEFUNCTION_INSTANT~.  (Tpetra has a more general
+system that lets developers specify class, header, and macro names
+separately.)
+
+You must first follow these requirements for naming classes,
+functions, header files, and explicit instantiation macros.  You must
+then add your class or function to Stokhos' list of "Tpetra ETI
+classes."  Do this by editing the CMake file
+~Trilinos/packages/stokhos/src/CMakeLists.txt~, and adding the new
+Tpetra class or function to the list of ~TPETRA_ETI_CLASSES~.  This
+requires rerunning CMake before rebuilding (typing ~make~ will usually
+do that for you automaticaly).

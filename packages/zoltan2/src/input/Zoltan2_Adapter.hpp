@@ -50,6 +50,7 @@
 #ifndef _ZOLTAN2_ADAPTER_HPP_
 #define _ZOLTAN2_ADAPTER_HPP_
 
+#include <Kokkos_Core.hpp>
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -68,7 +69,6 @@ enum BaseAdapterType {
   MeshAdapterType         /*!< \brief mesh data */
 };
 
-
 /*! \brief BaseAdapter defines methods required by all Adapters
 
     Adapters provide access from Zoltan2 to the user's data.  The
@@ -78,22 +78,9 @@ enum BaseAdapterType {
 
  */
 
-template <typename User>
-  class BaseAdapter {
-
+class BaseAdapterRoot {
 public:
-  typedef typename InputTraits<User>::lno_t lno_t;
-  typedef typename InputTraits<User>::gno_t gno_t;
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::part_t part_t;  
-
-  /*! \brief Returns the type of adapter.
-   */
-  virtual enum BaseAdapterType adapterType()const = 0;
-
-  /*! \brief Destructor
-   */
-  virtual ~BaseAdapter() {};
+  virtual ~BaseAdapterRoot() {}; // required virtual declaration
 
   /*! \brief Returns the number of objects on this process
    *
@@ -102,32 +89,78 @@ public:
    */
   virtual size_t getLocalNumIDs() const = 0;
 
-  /*! \brief Provide a pointer to this process' identifiers.
-
-      \param Ids will on return point to the list of the global Ids for 
-        this process.
-   */
-  virtual void getIDsView(const gno_t *&Ids) const = 0;
-
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
    *   zero, then it is assumed that all objects are equally weighted.
    *   Default is zero weights per ID.
-   */ 
-  virtual int getNumWeightsPerID() const { return 0;};
+   */
+  virtual int getNumWeightsPerID() const { return 0; };
+};
 
-  /*! \brief Provide pointer to a weight array with stride.
-   *    \param wgt on return a pointer to the weights for this idx
-   *    \param stride on return, the value such that
-   *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
-   *    \param idx  the weight index, zero or greater
-   *   This function must be implemented in derived adapter if
-   *   getNumWeightsPerID > 0.
-   *   This function should not be called if getNumWeightsPerID is zero.
-   */ 
+template <typename User>
+  class BaseAdapter : public BaseAdapterRoot {
+
+public:
+  typedef typename InputTraits<User>::lno_t lno_t;
+  typedef typename InputTraits<User>::gno_t gno_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::part_t part_t;  
+  typedef typename InputTraits<User>::offset_t offset_t;
+
+  /*! \brief Returns the type of adapter.
+   */
+  virtual enum BaseAdapterType adapterType() const = 0;
+
+  /*! \brief Destructor
+   */
+  virtual ~BaseAdapter() {};
+
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param ids will on return point to the list of the global Ids for 
+        this process.
+   */
+  virtual void getIDsView(const gno_t *&ids) const {
+    Kokkos::View<gno_t *> kokkosIds;
+    getIDsKokkosView(kokkosIds);
+    ids = kokkosIds.data();
+  }
+
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param ids will on return point to the list of the global Ids for 
+        this process.
+   */
+  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  ///*! \brief Provide pointer to a weight array with stride.
+  // *    \param wgt on return a pointer to the weights for this idx
+  // *    \param stride on return, the value such that
+  // *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
+  // *    \param idx  the weight index, zero or greater
+  // *   This function must be implemented in derived adapter if
+  // *   getNumWeightsPerID > 0.
+  // *   This function should not be called if getNumWeightsPerID is zero.
+  // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const 
-  {
+                              int idx = 0) const {
+    Kokkos::View<scalar_t *> tempWeightsView;
+    getWeightsKokkosView(tempWeightsView, idx);
+    wgt = tempWeightsView.data();
+    stride = 1;
+  }
+
+  ///*! \brief Provide pointer to a weight View.
+  // *    \param wgt on return a pointer to the weights for this idx
+  // *    \param idx  the weight index, zero or greater
+  // *   This function must be implemented in derived adapter if
+  // *   getNumWeightsPerID > 0.
+  // *   This function should not be called if getNumWeightsPerID is zero.
+  // */ 
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, 
+                              int idx = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -140,8 +173,7 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-  void getPartsView(const part_t *&inputPart) const
-  {
+  void getPartsView(const part_t *&inputPart) const {
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
     inputPart = NULL;
@@ -164,11 +196,9 @@ public:
    *      user data.
    *  \return   Returns the number of local Ids in the new partition.
    */
-
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
-      const PartitioningSolution<Adapter> &solution) const
-  {
+      const PartitioningSolution<Adapter> &solution) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 

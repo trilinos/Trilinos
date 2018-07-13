@@ -44,9 +44,10 @@
 #define __Panzer_BlockedDOFManager_hpp__
 
 #include <map>
+#include <set>
 
 #ifdef HAVE_MPI
-   #include "mpi.h"
+   #include <mpi.h>
 #endif
 
 #include "PanzerDofMgr_config.hpp"
@@ -54,7 +55,6 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_HashUtils.hpp"
@@ -112,14 +112,14 @@ public:
    /** \brief Get the string name associated with a field number.
      *
      * Get the string used for access to this
-     * field. 
+     * field.
      *
      * \param[in] int A unique integer associated with the
      *                field.
-     * 
+     *
      * \returns Human readable name of the field
      *
-     * \note This method will throw if invalid field number is 
+     * \note This method will throw if invalid field number is
      *       passed in as an argument.
      */
    const std::string & getFieldString(int num) const;
@@ -129,7 +129,7 @@ public:
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { getConnManager()->getElementBlockIds(elementBlockIds); }
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const; // ?
 
@@ -175,17 +175,62 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const; // ?
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinal> & indices) const; // ?
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *              owned by this processor.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinal> & indices) const; // ?
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the indices
+    *              ghosted for this processor.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] indices A `vector` that will be filled with the owned and
+    *              ghosted indices for this processor.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinal>& indices) const;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -194,21 +239,17 @@ public:
    //@}
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
- 
+
    /** \brief Use the FEI DOF manager internally, or the standard version.
-     */ 
+     */
    void setUseDOFManagerFEI(bool useFEI)
    { useDOFManagerFEI_ = useFEI; }
 
    /** \brief which DOF Manager is used internally?
-     */ 
+     */
    bool getUseDOFManagerFEI() const
-   { 
-     #ifdef PANZER_HAVE_FEI
-     return useDOFManagerFEI_; 
-     #else
+   {
      return false;
-     #endif
    }
 
    /** \brief Set the connection manager and MPI_Comm objects.
@@ -230,7 +271,7 @@ public:
      */
    Teuchos::RCP<const FieldPattern> getGeometricFieldPattern() const // ?
    { return geomPattern_; }
-   
+
    /** \brief Reset the indicies for this DOF manager.
      *
      * This method resets the indices and wipes out internal state. This method
@@ -250,7 +291,7 @@ public:
      * \param[in] str Human readable name of the field
      * \param[in] pattern Pattern defining the basis function to be used
      *
-     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code>
      *       or <code>registerFields</code>.
      */
    void addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
@@ -262,7 +303,7 @@ public:
      *
      * \param[in] fieldOrder Vector of field IDs order in the correct way
      *
-     * \note If no ordering is set then the default ordering is alphabetical on 
+     * \note If no ordering is set then the default ordering is alphabetical on
      *       the field names (as dictated by <code>std::map<std::string,*></code>).
      */
    void setFieldOrder(const std::vector<std::vector<std::string> > & fieldOrder);
@@ -276,7 +317,7 @@ public:
      */
    void getFieldOrder(std::vector<std::vector<std::string> > & fieldOrder) const;
 
-   void getFieldOrder(std::vector<std::string> & fieldOrder) const {TEUCHOS_ASSERT(false); } // what???
+   void getFieldOrder(std::vector<std::string>& /* fieldOrder */) const { TEUCHOS_ASSERT(false); } // what???
 
    /** \brief Find a field pattern stored for a particular block and field number. This will
      *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
@@ -292,10 +333,10 @@ public:
      *          otherwise <code>Teuchos::null</code> is returned.
      */
    Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const; // ?
- 
+
    /** \brief How many fields are handled by this manager.
      *
-     * How many fields are handled by this manager. 
+     * How many fields are handled by this manager.
      *
      * \returns The number of fields used by this
      *          manager.
@@ -304,13 +345,13 @@ public:
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
-   { return connMngr_; } 
+   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const
+   { return connMngr_; }
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() 
-   { return connMngr_; } 
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager()
+   { return connMngr_; }
 
    virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
    { return getConnManager(); }
@@ -321,7 +362,7 @@ public:
      *   3. initializes the connectivity
      *   4. calls initComplete
      */
-   virtual void buildGlobalUnknowns(); 
+   virtual void buildGlobalUnknowns();
 
    /** build the global unknown numberings
      *   1. this builds the pattens
@@ -339,7 +380,7 @@ public:
      *       to notify interested parties of possible changes to the unknown structure
      *       and CRS matrix graph.
      */
-   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern); 
+   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
 
    /** This method simply builds the global unknowns by using the passed in global indexers.
      * The internal connection manager must use the underlying connection manager for all
@@ -368,26 +409,26 @@ public:
    /** This builds all numbers for the fields as well as
      * constructing a default field orderand validating the user specified field order.
      */
-   void registerFields(bool buildSubUGIs); 
+   void registerFields(bool buildSubUGIs);
 
    /** Has the method <code>registerFields</code> been called?
      */
-   bool fieldsRegistered() const 
+   bool fieldsRegistered() const
    { return fieldsRegistered_; }
 
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
-     */ 
+     */
    const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
    /** Return the maximum field number returned by any sub DOFManager.
      * Mostly exposed for testing purposes.
-     */ 
+     */
    inline int getMaxSubFieldNumber() const
    { return maxSubFieldNum_; }
- 
+
    /** Get field block associated with this field number.
      *
      * \note No bounds checking is performed in this method
@@ -400,8 +441,8 @@ public:
      * \note No bounds checking is performed in this method
      */
    int getBlockGIDOffset(const std::string & elementBlock,int fieldBlock) const
-   { 
-      std::map<std::pair<std::string,int>,int>::const_iterator itr = 
+   {
+      std::map<std::pair<std::string,int>,int>::const_iterator itr =
             blockGIDOffset_.find(std::make_pair(elementBlock,fieldBlock));
 
       if(itr==blockGIDOffset_.end())
@@ -417,12 +458,12 @@ public:
 
    /** Enable computation of the orientations.
      */
-   void setOrientationsRequired(bool ro) 
+   void setOrientationsRequired(bool ro)
    { requireOrientations_ = ro; }
 
    /** Enable TieBreak in sub dofmanger
      */
-   void enableTieBreak(bool useTieBreak) 
+   void enableTieBreak(bool useTieBreak)
    { useTieBreak_ = useTieBreak; }
 
    /** \brief How any GIDs are associate with a particular element block
@@ -440,7 +481,7 @@ public:
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const;
 
 protected:
-   
+
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
      */
    Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,
@@ -473,16 +514,6 @@ protected:
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
-  
-   #ifdef PANZER_HAVE_FEI
-   /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
-     * the fields it is supposed to control, and then calls registerFields.
-     *
-     * This method assumes that the activeFields are a legitimate ordering for the local field block.
-     */
-   void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
-   #endif
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -494,10 +525,10 @@ protected:
 
 
    // computes connectivity
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
-   
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_;
+
    //! \defgroup MapFunctions Mapping objects
-   //@{ 
+   //@{
    //! field string ==> field number
    std::map<std::string,int> fieldStrToNum_;
 
@@ -536,7 +567,7 @@ protected:
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;
 
-   /** Maps: elem block ids ==> (fieldNum ==> gidFieldOffsets vector) 
+   /** Maps: elem block ids ==> (fieldNum ==> gidFieldOffsets vector)
      * This uses lazy evaluation for construction.
      */
    mutable std::map<std::string,std::map<int,std::vector<int> > > gidFieldOffsets_;
@@ -551,7 +582,7 @@ protected:
    mutable std::map<std::string,TupleToVectorPairMap> gidFieldOffsets_closure_;
 
    bool requireOrientations_;
-   
+
    bool useDOFManagerFEI_;
    bool useTieBreak_;
 };

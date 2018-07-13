@@ -63,15 +63,15 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
 {
   intrepidBasis = fieldBasis.getIntrepid2Basis();
 
-  int cellCount = fieldBasis.functional->dimension(0);
-  int coeffCount = fieldBasis.functional->dimension(1);
-  int pointCount = coordLayout->dimension(0);
-  int dimCount = coordLayout->dimension(1);
+  int cellCount = fieldBasis.functional->extent(0);
+  int coeffCount = fieldBasis.functional->extent(1);
+  int pointCount = coordLayout->extent(0);
+  int dimCount = coordLayout->extent(1);
 
   Teuchos::RCP<PHX::DataLayout> basisLayout = fieldBasis.functional;
 
-  coordinates = PHX::MDField<ScalarT,Point,Dim>(coordinateName,coordLayout);
-  dof_coeff = PHX::MDField<ScalarT>(fieldName,basisLayout);
+  coordinates = PHX::MDField<const ScalarT,Point,Dim>(coordinateName,coordLayout);
+  dof_coeff = PHX::MDField<const ScalarT>(fieldName,basisLayout);
   dof_field = PHX::MDField<ScalarT>(fieldName+postfixFieldName,quadLayout);
 
   this->addDependentField(coordinates);
@@ -89,7 +89,7 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
 
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
-void DOF_PointField<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
+void DOF_PointField<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData /* d */,
 			                                  PHX::FieldManager<TRAITST>& fm)
 {
   this->utils.setFieldData(coordinates,fm);
@@ -114,13 +114,12 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 
     // transfer reference basis values to physical frame values
-    Intrepid2::FunctionSpaceTools::
-      HGRADtransformVALUE<double>(basis,
-				  basisRef);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      HGRADtransformVALUE(basis,basisRef);
 
     // evaluate function at specified points
-    Intrepid2::FunctionSpaceTools::
-      evaluate<ScalarT>(dof_field,dof_coeff,basis);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      evaluate(dof_field.get_view(),dof_coeff.get_view(),basis);
   }
 }
 

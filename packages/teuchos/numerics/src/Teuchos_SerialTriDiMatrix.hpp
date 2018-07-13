@@ -96,8 +96,7 @@ public:
   /*!
     \param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
     \param values - Pointer to an array of ScalarType.
-    \param numRows - Number of rows in matrix.
-    \param numCols - Number of columns in matrix.
+    \param numRowsCols - Number of rows and columns in matrix. 
   */
   SerialTriDiMatrix(DataAccess CV, ScalarType* values, OrdinalType numRowsCols);
 
@@ -427,15 +426,21 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(DataAccess CV, Sca
   : CompObject(), numRowsCols_(numRowsCols_in),
     valuesCopied_(false), values_(values_in)
 {
+  const OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
   if(CV == Copy) {
-    const OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
     values_ = new ScalarType[numvals];
-    DL_ = values_;
-    D_  = DL_    + (numRowsCols_-1);
-    DU_ = D_     + numRowsCols_;
-    DU2_ = DU_   + (numRowsCols_-1);
     valuesCopied_ = true;
-
+  }
+  else //CV == View
+  {
+    values_ = values_in;
+    valuesCopied_ = false;
+  }
+  DL_ = values_;
+  D_  = DL_    + (numRowsCols_-1);
+  DU_ = D_     + numRowsCols_;
+  DU2_ = DU_   + (numRowsCols_-1);
+  if(CV == Copy) {
     for(OrdinalType i = 0 ; i < numRowsCols_ ; ++i )
       values_[i] = values_in[i];
   }
@@ -470,34 +475,34 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiM
       if(min > Source.numRowsCols_) min = Source.numRowsCols_;
 
       for(OrdinalType i = 0 ; i< min ; ++i) {
-        D_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.D_[i]);
+        D_[i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.D_[i]);
         if(i < (min-1)) {
-          DL_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DL_[i]);
-          DU_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU_[i]);
+          DL_[i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DL_[i]);
+          DU_[i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU_[i]);
         }
         if(i < (min-2)) {
-          DU2_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU2_[i]);
+          DU2_[i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU2_[i]);
         }
       }
     }
   else
     {
-      numRowsCols_ = Source.numCols_;
+      numRowsCols_ = Source.numRowsCols_;
       const OrdinalType numvals = (numRowsCols_  == 1) ? 1 : 4*(numRowsCols_-1);
       values_ = new ScalarType[numvals];
       OrdinalType min = numRowsCols_;
       if(min > Source.numRowsCols_) min = Source.numRowsCols_;
       for(OrdinalType i = 0 ; i< min ; ++i) {
-        D_ = Source.D_[i];
+        D_[i] = Source.D_[i];
         if(i < (min-1)) {
-          DL_ = Source.DL_[i];
-          DU_ = Source.DU_[i];
+          DL_[i] = Source.DL_[i];
+          DU_[i] = Source.DU_[i];
         }
         if(i < (min-2)) {
-          DU2_ = Source.DU2_[i];
+          DU2_[i] = Source.DU2_[i];
         }
-      }
     }
+  }
 }
 
 template<typename OrdinalType, typename ScalarType>

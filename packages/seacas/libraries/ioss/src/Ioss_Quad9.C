@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Quad9 registerThis; }
 
   protected:
-    St_Quad9() : ElementVariableType("quad9", 9) {}
+    St_Quad9() : ElementVariableType(Ioss::Quad9::name, 9) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -73,12 +73,12 @@ void Ioss::Quad9::factory()
   Ioss::St_Quad9::factory();
 }
 
-Ioss::Quad9::Quad9() : Ioss::ElementTopology("quad9", "Quadrilateral_9")
+Ioss::Quad9::Quad9() : Ioss::ElementTopology(Ioss::Quad9::name, "Quadrilateral_9")
 {
-  Ioss::ElementTopology::alias("quad9", "Solid_Quad_9_2D");
-  Ioss::ElementTopology::alias("quad9", "QUADRILATERAL_9_2D");
-  Ioss::ElementTopology::alias("quad9", "Face_Quad_9_3D");
-  Ioss::ElementTopology::alias("quad9", "quadface9");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "Solid_Quad_9_2D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "QUADRILATERAL_9_2D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "Face_Quad_9_3D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "quadface9");
 }
 
 Ioss::Quad9::~Quad9() = default;

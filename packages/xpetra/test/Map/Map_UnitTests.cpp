@@ -288,6 +288,71 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, localMap, M, LO, GO, N )
+  {
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
+    // create a comm
+    auto comm = getDefaultComm();
+    const auto numProcs = comm->getSize();
+    const auto myRank    = comm->getRank();
+
+    const auto INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+
+    {
+      // Contiguous map
+      const int numDofsPerProc = 2;
+      const int offset = myRank*numDofsPerProc;
+
+      M m(numDofsPerProc*numProcs, 0/*indexBase*/, comm);
+      auto localMap = m.getLocalMap();
+
+      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      for (int i = 0; i < numDofsPerProc; i++)
+        TEST_EQUALITY(localMap.getGlobalElement(i), offset + i);
+    }
+    {
+      // Permuted map
+      const int numDofsPerProc = 4;
+      const int indexBase = 1;
+      const int offset = myRank*numDofsPerProc + indexBase;
+
+      Teuchos::Array<GO> elementList(numDofsPerProc);
+      elementList[0] = offset + 0;
+      elementList[1] = offset + 1;
+      elementList[2] = offset + 3;
+      elementList[3] = offset + 2;
+
+      M m(INVALID, elementList, indexBase, comm);
+      auto localMap = m.getLocalMap();
+
+      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      for (int i = 0; i < numDofsPerProc; i++)
+        TEST_EQUALITY(localMap.getGlobalElement(i), elementList[i]);
+    }
+    {
+      // Sparse map
+      const int numDofsPerProc = 4;
+      const int indexBase = 1;
+      const int offset = myRank*numDofsPerProc + indexBase;
+
+      Teuchos::Array<GO> elementList(numDofsPerProc);
+      elementList[0] = offset + 10;
+      elementList[1] = offset + 6;
+      elementList[2] = offset + 4;
+      elementList[3] = offset + 2;
+
+      M m(INVALID, elementList, indexBase, comm);
+      auto localMap = m.getLocalMap();
+
+      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      for (int i = 0; i < numDofsPerProc; i++)
+        TEST_EQUALITY(localMap.getGlobalElement(i), elementList[i]);
+    }
+#endif
+#endif
+  }
+
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, sameasTests, M, LO, GO, N )
@@ -396,13 +461,14 @@ namespace {
 
 // List of tests (which run both on Epetra and Tpetra)
 #define XP_MAP_INSTANT(LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor1, M##LO##GO##N , LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor2, M##LO##GO##N , LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, compatabilityTests, M##LO##GO##N ,  LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, sameasTests, M##LO##GO##N ,         LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, ContigUniformMap, M##LO##GO##N ,    LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor1, M##LO##GO##N,    LO, GO, N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor2, M##LO##GO##N,    LO, GO, N)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor1, M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor2, M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, compatabilityTests,  M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, localMap,            M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, sameasTests,         M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, ContigUniformMap,    M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor1,   M##LO##GO##N, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor2,   M##LO##GO##N, LO, GO, N)
   //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor3, M##LO##GO##N , LO, GO, N)
 
 

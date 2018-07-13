@@ -46,8 +46,6 @@
 #ifndef MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 #define MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -107,9 +105,11 @@ namespace MueLu {
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
+
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A);
     RCP<BlockedCrsMatrix> bP = rcp_dynamic_cast<BlockedCrsMatrix>(P);
     TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null() || bP.is_null(), Exceptions::BadCast, "Matrices A and P must be of type BlockedCrsMatrix.");
+
 
     RCP<BlockedCrsMatrix> bAP;
     RCP<BlockedCrsMatrix> bAc;
@@ -241,7 +241,6 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_BLOCKEDRAPFACTORY_SHORT
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif // MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
 // TODO add plausibility check

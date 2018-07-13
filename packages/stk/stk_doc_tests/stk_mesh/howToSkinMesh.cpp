@@ -109,7 +109,7 @@ TEST(StkMeshHowTo, SkinInteriorHex)
     bulkData.modification_begin();
     stk::mesh::Part &block_2 = metaData.declare_part("block_2", stk::topology::ELEM_RANK);
     stk::io::put_io_part_attribute(block_2);
-    bulkData.change_entity_parts(elem2, {&block_2}, {block_1});
+    bulkData.change_entity_parts(elem2, stk::mesh::ConstPartVector{&block_2}, stk::mesh::ConstPartVector{block_1});
     bulkData.modification_end();
 
     stk::mesh::create_interior_block_boundary_sides(bulkData, allEntities, {&skinPart});

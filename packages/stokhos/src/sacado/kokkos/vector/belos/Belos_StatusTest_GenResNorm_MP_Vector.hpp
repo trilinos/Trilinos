@@ -116,7 +116,7 @@ class StatusTestGenResNorm<Sacado::MP::Vector<Storage>, MV, OP> :
     of the initial residual.  The least costly form of the 2-norm depends on the chosen iterative
     method.  Most Krylov methods produce the preconditioned residual std::vector in a form that would be
     exact in infinite precision arithmetic.  This std::vector may be different from the true residual
-    either because left scaling or preconditioning was used, or because round-off error has
+    either because left preconditioning was used, or because round-off error has
     introduced significant error, or both.
 
     You can also state the number of vectors that must pass the convergence criteria before the
@@ -303,9 +303,9 @@ class StatusTestGenResNorm<Sacado::MP::Vector<Storage>, MV, OP> :
       else {
         oss << "(";
         oss << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
-        if (scaletype_==NormOfInitRes)
+        if (scaletype_==NormOfInitRes || scaletype_==NormOfFullInitRes || scaletype_==NormOfFullScaledInitRes)
           oss << " Res0";
-        else if (scaletype_==NormOfPrecInitRes)
+        else if (scaletype_==NormOfPrecInitRes || scaletype_==NormOfFullPrecInitRes || scaletype_==NormOfFullScaledPrecInitRes)
           oss << " Prec Res0";
         else
           oss << " RHS ";
@@ -690,13 +690,13 @@ StatusType StatusTestGenResNorm<Sacado::MP::Vector<StorageType>,MV,OP>::firstCal
       scalevector_.resize( numrhs_ );
       MVT::MvNorm( *rhs, scalevector_, scalenormtype_ );
     }
-    else if (scaletype_==NormOfInitRes) {
+    else if (scaletype_==NormOfInitRes || scaletype_==NormOfFullInitRes || scaletype_==NormOfFullScaledInitRes) {
       Teuchos::RCP<const MV> init_res = lp.getInitResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
     }
-    else if (scaletype_==NormOfPrecInitRes) {
+    else if (scaletype_==NormOfPrecInitRes || scaletype_==NormOfFullPrecInitRes || scaletype_==NormOfFullScaledPrecInitRes) {
       Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );

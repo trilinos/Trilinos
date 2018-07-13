@@ -159,6 +159,8 @@ public:
                          const Teuchos::EVerbosityLevel verbLevel) const;
 
 protected:
+   using BlockImplicitLinearOp::implicitApply;
+
    // fundamental operators to use
    const BlockedLinearOp A_;  ///< operator \f$ A \f$
    const LinearOp hatInvA00_;  ///< inverse of \f$ A_{00} \f$

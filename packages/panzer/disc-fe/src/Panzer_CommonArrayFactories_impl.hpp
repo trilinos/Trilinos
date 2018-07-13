@@ -44,10 +44,7 @@
 #define PANZER_COMMON_ARRAY_FACTORIES_IMPL_HPP
 
 #include "Teuchos_RCP.hpp"
-
 #include "Phalanx_DataLayout_MDALayout.hpp"
-
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 
 namespace panzer {

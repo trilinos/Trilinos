@@ -152,7 +152,9 @@ int main(int argc, char *argv[])
   typedef zlno_t ncoord_t;
   typedef zlno_t part_t;
 
-  Zoltan2::MachineRepresentation<ncoord_t, part_t> mach(*comm);
+  Teuchos::ParameterList pl;
+
+  Zoltan2::MachineRepresentation<ncoord_t, part_t> mach(*comm, pl);
 
   // Tests that all machines should pass
   if (mach.getNumRanks() != np) fail += 1;
@@ -165,50 +167,73 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_ZOLTAN2_LDMS)
   { // Add tests specific to LDMS
+    if (me == 0 ) std::cout << "LDMS Topology" << std::endl;
     if (checkErrorCode(*comm, fail))
       return 1;
   }
-#elif defined(HAVE_ZOLTAN2_RCA)
-  { // Add tests specific to RCA
+#elif defined(HAVE_ZOLTAN2_RCALIB)
+  {
+    if (me == 0 ) std::cout << "RCALIB Topology" << std::endl;
+    // Add tests specific to RCA
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
-  { // Add tests specific to TopoMgr
+  { 
+    if (me == 0 ) std::cout << "TOPOMANAGER Topology" << std::endl;
+    // Add tests specific to TopoMgr
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
-  { // Add tests specific to BGQ
+  {
+    if (me == 0 ) std::cout << "BGQTEST Topology" << std::endl;
+    // Add tests specific to BGQ
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #else
-
-  { // Tests specific to MachineForTesting
-
-    if (mach.getMachineDim() != 3) fail += 10;
+  {
+    if (me == 0 ) std::cout << "TEST Topology" << std::endl;
+    // Tests specific to MachineForTesting
+    if (mach.getMachineDim() != 3) {
+      std::cout << "Error:  Dimension != 3" << std::endl;
+      fail += 10;
+    }
 
     int nxyz[3];
-    if (!mach.getMachineExtent(nxyz)) fail += 100;
-    if (nxyz[0] != np || nxyz[1] != 2*np || nxyz[2] != 3*np)  
+    if (!mach.getMachineExtent(nxyz)) {
+      std::cout << "Error:  getMachineExtent failed" << std::endl;
+      fail += 100;
+    }
+    if (nxyz[0] != np || nxyz[1] != 2*np || nxyz[2] != 3*np) {
       // Depends on ficticious extent in Zoltan2_MachineForTesting.hpp
+      std::cout << "Error:  incorrect MachineExtent" << std::endl;
       fail += 1000;
+    }
 
     ncoord_t xyz[3];
 
     // Depends on ficticious coordinates in Zoltan2_MachineForTesting.hpp
     ncoord_t xyz_expected[3] = {me, np, np+1}; 
 
-    if (!mach.getMyMachineCoordinate(xyz)) fail += 1000;
+    if (!mach.getMyMachineCoordinate(xyz)) {
+      std::cout << "Error:  getMyMachineCoordinate failed" << std::endl;
+      fail += 1000;
+    }
   
     if ((xyz[0] != xyz_expected[0]) || 
         (xyz[1] != xyz_expected[1]) ||
-        (xyz[2] != xyz_expected[2]))
+        (xyz[2] != xyz_expected[2])) {
+      std::cout << "Error:  incorrect MyMachineCoordinate" << std::endl;
       fail += 10000;
+    }
 
     // MachineForTesting cannot retrieve coords by node name
-    if (mach.getMachineCoordinate(name, xyz)) fail += 10000000;
+    if (mach.getMachineCoordinate(name, xyz)) {
+      std::cout << "Error:  getMachineCoordinate failed" << std::endl;
+      fail += 10000000;
+    }
 
     if (checkErrorCode(*comm, fail))
       return 1;

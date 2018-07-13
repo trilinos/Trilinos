@@ -59,7 +59,7 @@ namespace stk {
   //  Usage Guidelines:
   //    Generally type T must be a plain data type with no pointers or allocated memory.  
   //    Thus T could be standard types such as int or double or structs or classes that contain only ints
-  //    and double (such as gtk::Vec3d).
+  //    and double (such as mtk::Vec3<double>).
   //    T should NOT be a general structure that contains pointers, strings, or vectors as these structures cannot be
   //    properly transfered between processors.  
   //    A handful of specializations are available to handle certain more complex types
@@ -88,7 +88,7 @@ namespace stk {
     //
     std::vector<int> messageSizes(p_size);
     int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allgather(&localSize, 1, MPI_INT, &messageSizes[0], 1, MPI_INT, comm);
+    mpiResult = MPI_Allgather(&localSize, 1, MPI_INT, messageSizes.data(), 1, MPI_INT, comm);
     if(mpiResult != MPI_SUCCESS) {
       // Unknown failure, pass error code up the chain
       return mpiResult;
@@ -109,9 +109,9 @@ namespace stk {
     //  Note, localVec should not be modified by the MPI call, but MPI does not guarntee the const in the 
     //  interface argument.
     //
-    T* ptrNonConst = const_cast<T*>(&localVec[0]);
+    T* ptrNonConst = const_cast<T*>(localVec.data());
 
-    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, &globalVec[0], &messageSizes[0], &offsets[0], MPI_CHAR, comm);
+    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, globalVec.data(), messageSizes.data(), offsets.data(), MPI_CHAR, comm);
     return mpiResult;
   }
 
@@ -156,7 +156,7 @@ namespace stk {
       char curChar = charGlobalList[curCharIndex];
       nextString.push_back(curChar);
       if(curChar == 0) {
-        globalList.push_back(std::string(&nextString[0]));
+        globalList.push_back(std::string(nextString.data()));
         nextString.clear();
       }
       curCharIndex++;

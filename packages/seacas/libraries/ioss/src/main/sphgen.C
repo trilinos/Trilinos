@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -34,10 +34,10 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <stddef.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -53,32 +53,18 @@
 #include "Ioss_Region.h"
 #include "Ioss_State.h"
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #define OUTPUT std::cerr
 
 // ========================================================================
 
 namespace {
-
-  template <typename T> struct remove_pointer
-  {
-    typedef T type;
-  };
-  template <typename T> struct remove_pointer<T *>
-  {
-    typedef T type;
-  };
-
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
   struct Globals
   {
     std::string working_directory;
-    double      scale_factor;
+    double      scale_factor{};
   };
 
   void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates,

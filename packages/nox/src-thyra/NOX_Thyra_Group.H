@@ -104,14 +104,17 @@ namespace NOX {
           Jacobian-Free Newton-Krylov cases, the power user
           constructor should be used.
 
-          \param[in] initial_guess Initial guess for the solution vector
-      \param[in] model ModelEvaluator
-      \param[in] weight_vector Optional diagonal weighting vector for the model.
+          \param[in] initialGuess Initial guess for the solution vector
+          \param[in] model ModelEvaluator
+          \param[in] weightVector Optional diagonal weighting vector for the model.
+          \param[in] rightWeightVector Optional solution vector weighting
+          \param[in] rightScalingFirst Optional bool to select if right scaling should be applied before left scaling
       */
-      Group(const NOX::Thyra::Vector& initial_guess,
-        const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
+      Group(const NOX::Thyra::Vector& initialGuess,
+            const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVector = Teuchos::null,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& rightWeightVector = Teuchos::null,
+            const bool rightScalingFirst = false);
 
       /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
 
@@ -121,22 +124,29 @@ namespace NOX {
           Jacobian-Free Newton Krylov operator (use the class
           NOX::Thyra::MatrixFreeJacobianOperator).
 
-          \param[in] initial_guess (Required) Initial guess for the solution vector
-      \param[in] model (Required) ModelEvaluator
-      \param[in] linear_op (Optional) Forward operator for the Jacobian.  Must be non-null for Newton-based solvers.
-      \param[in] lows_factory (Optional) Factory for building and updating linear solver.
-      \param[in] prec_op (Optional) Preconditioner operator.  If set to Teuchos::null and a non-null prec_factory exists, the prec_op will be constructed using the preconditioner factory.
-      \param[in] prec_factory (Optional) Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
-      \param[in] weight_vector (Optional) diagonal weighting vector for the model.
+          \param[in] initialGuess (Required) Initial guess for the solution vector
+          \param[in] model (Required) ModelEvaluator
+          \param[in] linearOp (Optional) Forward operator for the Jacobian.  Must be non-null for Newton-based solvers.
+          \param[in] lowsFactory (Optional) Factory for building and updating linear solver.
+          \param[in] precOp (Optional) Preconditioner operator.  If set to Teuchos::null and a non-null prec_factory exists, the prec_op will be constructed using the preconditioner factory.
+          \param[in] precFactory (Optional) Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
+          \param[in] weightVector (Optional) diagonal weighting vector for the model.
+          \param[in] rightWeightVector Optional solution vector weighting
+          \param[in] rightScalingFirst Optional bool to select if right scaling should be applied before left scaling
+          \param[in] updatePreconditioner Optional bool to select if the Group should auotmatically update the preconditioner matrix values between Newton iterations
+          \param[in] jacobianIsEvaluated Optional bool, if true this means that the input Jacobian operator (linearOp) has been evaluated externally and is consistent with the initialGuess. In this case, the isJacobian() flag is initialized to true.
       */
-      Group(const NOX::Thyra::Vector& initial_guess,
-        const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
-        const Teuchos::RCP< ::Thyra::LinearOpBase<double> >& linear_op,
-        const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
-        const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
-        const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
+      Group(const NOX::Thyra::Vector& initialGuess,
+            const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
+            const Teuchos::RCP< ::Thyra::LinearOpBase<double> >& linearOp,
+            const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lowsFactory,
+            const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& precOp,
+            const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& precFactory,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVector = Teuchos::null,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& rightWeightVector = Teuchos::null,
+            const bool rightScalingFirst = false,
+            const bool updatePreconditioner = true,
+            const bool jacobianIsEvaluated = false);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -155,6 +165,11 @@ namespace NOX {
 
       Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
       getJacobianOperator() const;
+
+      Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
+      getScaledJacobianOperator() const;
+
+      void unscaleJacobianOperator() const;
 
       Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
       getNonconstJacobian();
@@ -402,6 +417,12 @@ namespace NOX {
 
       //! Scaled solution vector scaled by the 
       mutable Teuchos::RCP<NOX::Thyra::Vector> scaled_x_vec_;
+
+      //! Do right scaling before left scaling?
+      bool rightScalingFirst_;
+
+      //! If set to true, the preconditioner matrix values will be automatically updated via precFactory or ModelEvalautor. If set to false, the user must manually handle updating the preconditioner.
+      bool updatePreconditioner_;
     };
 
   } // namespace LAPACK

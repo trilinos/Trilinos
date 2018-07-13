@@ -284,6 +284,8 @@ private:
    * *compressed-row* format because that is the format Amesos used.
    */
 
+  bool is_contiguous_;
+
 };                              // End class Superlumt
 
 

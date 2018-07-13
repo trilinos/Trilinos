@@ -46,12 +46,14 @@
 #include <algorithm>
 #include "Panzer_PointRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
 
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
+template<typename EvalT, typename Traits>
+BasisValues_Evaluator<EvalT, Traits>::
+BasisValues_Evaluator(
+  const Teuchos::ParameterList& p)
   : derivativesRequired_(true)
 {
   Teuchos::RCP<const panzer::PointRule> pointRule 
@@ -97,16 +99,18 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 
   int space_dim = basis->dimension();
 
-  panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_",false);
-       
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
-  this->addDependentField(pointValues.coords_ref);
-  this->addDependentField(pointValues.jac);
-  this->addDependentField(pointValues.jac_inv);
-  this->addDependentField(pointValues.jac_det);
+  {
+    constPointValues = pointValues;
+    this->addDependentField(constPointValues.coords_ref);
+    this->addDependentField(constPointValues.jac);
+    this->addDependentField(constPointValues.jac_inv);
+    this->addDependentField(constPointValues.jac_det);
+  }
 
   // setup all fields to be evaluated and constructed
   Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*pointRule));
@@ -149,23 +153,21 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     }
   }
 
-  // inject orientations as needed
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    std::string orientationFieldName = basis->name()+" Orientation";
-    orientation = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
-                                        basis->functional);
-    this->addDependentField(orientation);
-  }
-
   std::string n = "BasisValues_Evaluator: " +basis->name() + "_" + pointRule->getName();
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  sd,
+  PHX::FieldManager<Traits>&  fm)
 {
   int space_dim = basis->dimension();
+
+  orientations = sd.orientations_;
 
   basisValues->setExtendedDimensions(fm.template getKokkosExtendedDataTypeDimensions<EvalT>());
 
@@ -211,24 +213,30 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
     }
   }
 
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    this->utils.setFieldData(orientation,fm);        
-  }
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
 { 
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,
-                             pointValues.jac,
-                             pointValues.jac_det,
-                             pointValues.jac_inv);
+                              pointValues.jac,
+                              pointValues.jac_det,
+                              pointValues.jac_inv);
 
-  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
-     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    basisValues->applyOrientations(orientation);
+  // this can be over-ridden in basisValues e.g., DG element setting
+  if(basis->requiresOrientations()) {
+    const WorksetDetails & details = workset;
+    
+    std::vector<Intrepid2::Orientation> ortPerWorkset;
+    for (index_t c=0;c<workset.num_cells;++c)
+      ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
+    
+    basisValues->applyOrientations(ortPerWorkset);
   }
 }
 

@@ -56,18 +56,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (Piro_ENABLE_NOX)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    EpetraSolver
-    SOURCES
-    Main_EpetraSolver.cpp
-    MockModelEval_A.cpp
-    MockModelEval_A.hpp
-    SaveEigenData_Epetra.cpp
-    SaveEigenData_Epetra.hpp
-    NUM_MPI_PROCS 1-4
-    ARGS -v
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
-  )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    EpetraSolver
+#    SOURCES
+#    Main_EpetraSolver.cpp
+#    MockModelEval_A.cpp
+#    MockModelEval_A.hpp
+#    SaveEigenData_Epetra.cpp
+#    SaveEigenData_Epetra.hpp
+#    NUM_MPI_PROCS 1-4
+#    ARGS -v
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ThyraSolver
@@ -87,6 +87,17 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     ObserveSolution_Epetra.hpp
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+  
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AnalysisDriverTpetra
+    SOURCES
+    Main_AnalysisDriver_Tpetra.cpp
+    MockModelEval_A_Tpetra.cpp
+    MockModelEval_A_Tpetra.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -146,6 +157,9 @@ IF (Piro_ENABLE_NOX)
           input_Analysis_Dakota.xml dak.in
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml
           input_Analysis_ROL.xml
+          input_Analysis_ROL_Tpetra.xml
+          input_Analysis_ROL_AdjointSensitivities.xml
+          input_Analysis_ROL_AdjointSensitivities_Tpetra.xml
           input_Solve_RythmosMatrixFree_Fails.xml
 	  input_SGSolve.xml
 	  input_problem1.xml input_problem2.xml input_coupled.xml
@@ -153,7 +167,8 @@ IF (Piro_ENABLE_NOX)
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
+    #EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
+    EXEDEPS ThyraSolver AnalysisDriver AnalysisDriverTpetra UnitTests NOXSolver_UnitTests
   )
 
 ENDIF()
@@ -183,3 +198,17 @@ IF (Piro_ENABLE_Rythmos)
     STANDARD_PASS_OUTPUT
   )
 ENDIF (Piro_ENABLE_Rythmos)
+
+IF (Piro_ENABLE_Tempus)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_UnitTests
+    SOURCES
+    Piro_TempusSolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF (Piro_ENABLE_Tempus)

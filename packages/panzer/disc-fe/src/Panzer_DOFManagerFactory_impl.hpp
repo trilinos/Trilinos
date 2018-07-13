@@ -43,8 +43,8 @@
 #ifndef PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 #define PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
@@ -58,15 +58,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
 {
-
-#ifdef PANZER_HAVE_FEI
-   if(useDOFManagerFEI_)
-      return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-   else
-      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-#else
-   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-#endif
+  return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
 }
 
 template <typename LO,typename GO>
@@ -95,9 +87,9 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
          Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
      if (nativeDofMngr!=Teuchos::null) {
        nativeDofMngr->enableTieBreak(useTieBreak_);
-       nativeDofMngr->enableGhosting(enableGhosting_);
+       nativeDofMngr->useNeighbors(useNeighbors_);
      }
-     TEUCHOS_TEST_FOR_EXCEPTION(enableGhosting_ && nativeDofMngr.is_null(), std::logic_error,
+     TEUCHOS_TEST_FOR_EXCEPTION(useNeighbors_ && nativeDofMngr.is_null(), std::logic_error,
                                 "The non-native DOF manager does not support the necessary ghosting.");
    }
 
@@ -122,7 +114,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
          // orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL)); 
          orientationsRequired |= fieldItr->second->requiresOrientations();
 
-         Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepidBasis 
+         Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepidBasis 
                = fieldItr->second->getIntrepid2Basis();
          Teuchos::RCP<Intrepid2FieldPattern> fp = Teuchos::rcp(new Intrepid2FieldPattern(intrepidBasis));
          dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);

@@ -1,0 +1,71 @@
+%YAML 1.1
+---
+ANONYMOUS:
+  Problem:
+    Solution Method: ATO Problem
+    Number of Subproblems: 3
+    Number of Homogenization Problems: 2
+    Verbose Output: true
+    Mesh Filename: ../meshes/cube.exo
+    Objective Aggregator:
+      Output Value Name: F
+      Output Derivative Name: dFdTopo
+      Values: [R0, R1, R2]
+      Derivatives: [dR0dTopo, dR1dTopo, dR2dTopo]
+      Weighting: Scaled
+      Weights: [0.5, 0.375, 0.125]
+      Spatial Filter: 0
+    Spatial Filters:
+      Number of Filters: 1
+      Filter 0:
+        Iterations: 2
+        Filter Radius: 0.012
+        Blocks: [block_1]
+    Topological Optimization:
+      Package: OC
+      Stabilization Parameter: 0.5
+      Move Limiter: 1.0
+      Convergence Tests:
+        Maximum Iterations: 4
+        Combo Type: OR
+        Relative Topology Change: 5e-5
+        Relative Objective Change: 1e-6
+      Measure Enforcement:
+        Measure: Mass
+        Maximum Iterations: 120
+        Convergence Tolerance: 1e-6
+        # block 1 volume:  1.31822e-04 m3
+        # block 2 volume:  3.10614e-06 m3
+        # Density (Ti-6-4):  4430.0 kg/m3
+        # Filled mass:  0.59773 kg
+        Target: 0.075
+      Objective: Aggregator
+      Constraint: Measure
+    Configuration:
+      Element Blocks:
+        Number of Element Blocks: 2
+        Element Block 0:
+          Name: block_1
+          Mixture:
+            Number of Materials: 2
+            # constituent materials
+            Material 0:
+              Elastic Modulus: 113.8e9
+              Poissons Ratio: 0.342
+              Isotropic Modulus: 6.7
+              Density: 4430.0
+            Material 1:
+              Homogenized Constants:
+                Stiffness Name: Stiffness Tensor
+                Conduction Name: Conduction Tensor
+              Density: 886.0
+            Mixed Parameters:
+              Number of Mixed Parameters: 1
+              Mixed Parameter 0:
+                Parameter Name: Density
+                Rule Type: Voigt
+                Voigt:
+                  Material Indices: [0, 1]
+                  Topology Indices: [1]
+                  Function Indices: [1]
+...

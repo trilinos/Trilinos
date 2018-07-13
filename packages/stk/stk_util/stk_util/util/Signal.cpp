@@ -93,15 +93,6 @@ public:
   }
 
   /**
-   * @brief Member function <b>disableSigLongJmp</b> disables the returning of
-   * <b>true</b> to signalException when a signal is detected.
-   *
-   */
-  void disableSigLongJmp() {
-    m_enabled = false;
-  }
-
-  /**
    * @brief Member function <b>faultMessage</b> returns a
    * <b>std::runtime_error</b> with the message associated with the most recent
    * signal.
@@ -252,13 +243,11 @@ EnvSignal::termHandler()
 
 } // namespace <unnamed>
 
-
 void
 activate_signals()
 {
   EnvSignal::instance().activateSignals();
 }
-
 
 void
 deactivate_signals()
@@ -266,27 +255,17 @@ deactivate_signals()
   EnvSignal::instance().deactivateSignals();
 }
 
-
 sigjmp_buf *
 get_sigjmpbuf()
 {
   return EnvSignal::instance().getSigJmpBuf();
 }
 
-
-void
-disable_siglongjmp()
-{
-  return EnvSignal::instance().disableSigLongJmp();
-}
-
-
 const std::string &
 get_signal_message()
 {
   return EnvSignal::instance().message();
 }
-
 
 bool
 HUP_received()

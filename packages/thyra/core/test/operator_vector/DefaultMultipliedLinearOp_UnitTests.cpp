@@ -73,10 +73,6 @@ using Teuchos::fancyOStream;
 //
 
 
-const Ordinal m = 5;
-const Ordinal n = 3;
-
-
 TEUCHOS_UNIT_TEST( DefaultMultipliedLinearOp, defaultConstruct )
 {
 
@@ -135,6 +131,9 @@ TEUCHOS_UNIT_TEST( DefaultMultipliedLinearOp, multiplyConst )
 {
 
   typedef double Scalar;
+
+  const Ordinal m = 5;
+  const Ordinal n = 3;
 
   const RCP<const VectorSpaceBase<Scalar> > vs = defaultSpmdVectorSpace<Scalar>(m);
   const RCP<const MultiVectorBase<Scalar> > A = createMembers(vs, n, "A");

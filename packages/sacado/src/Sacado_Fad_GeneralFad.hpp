@@ -59,6 +59,22 @@ namespace Sacado {
   //! Namespace for forward-mode AD classes
   namespace Fad {
 
+#ifndef SACADO_FAD_DERIV_LOOP
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
+#else
+#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=0; I<SZ; ++I)
+#endif
+#endif
+
+#ifndef SACADO_FAD_THREAD_SINGLE
+#if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#define SACADO_FAD_THREAD_SINGLE if (threadIdx.x == 0)
+#else
+#define SACADO_FAD_THREAD_SINGLE /* */
+#endif
+#endif
+
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
      * This class provides a general forward mode AD implementation for any
@@ -110,7 +126,7 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const int sz, const int i, const T & x) :
-        Storage(sz, x) {
+        Storage(sz, x, InitDerivArray) {
         this->fastAccessDx(i)=1.;
       }
 
@@ -127,16 +143,16 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
-        Storage(x.size(), T(0.))
+        Storage(x.size(), T(0.), NoInitDerivArray)
       {
         const int sz = x.size();
 
         if (sz) {
           if (x.hasFastAccess())
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) = x.fastAccessDx(i);
           else
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) = x.dx(i);
         }
 
@@ -171,6 +187,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
+      //! Cache values
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
@@ -178,7 +198,8 @@ namespace Sacado {
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = IE::eval(x.val(), this->val());
-        for (int i=0; i<this->size(); i++)
+        const int sz = this->size();
+        SACADO_FAD_DERIV_LOOP(i,sz)
           eq = eq && IE::eval(x.dx(i), this->dx(i));
         return eq;
       }
@@ -254,11 +275,12 @@ namespace Sacado {
         // assignment below
 
         if (sz) {
-          if (x.hasFastAccess())
-            for(int i=0; i<sz; ++i)
+          if (x.hasFastAccess()) {
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
           else
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) = x.dx(i);
         }
 
@@ -296,7 +318,7 @@ namespace Sacado {
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator *= (const S& v) {
         const int sz = this->size();
         this->val() *= v;
-        for (int i=0; i<sz; ++i)
+        SACADO_FAD_DERIV_LOOP(i,sz)
           this->fastAccessDx(i) *= v;
         return *this;
       }
@@ -307,7 +329,7 @@ namespace Sacado {
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator /= (const S& v) {
         const int sz = this->size();
         this->val() /= v;
-        for (int i=0; i<sz; ++i)
+        SACADO_FAD_DERIV_LOOP(i,sz)
           this->fastAccessDx(i) /= v;
         return *this;
       }
@@ -324,12 +346,12 @@ namespace Sacado {
 
         if (xsz) {
           if (sz) {
-            for (int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) += x.fastAccessDx(i);
           }
           else {
             this->resizeAndZero(xsz);
-            for (int i=0; i<xsz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,xsz)
               this->fastAccessDx(i) = x.fastAccessDx(i);
           }
         }
@@ -351,12 +373,12 @@ namespace Sacado {
 
         if (xsz) {
           if (sz) {
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) -= x.fastAccessDx(i);
           }
           else {
             this->resizeAndZero(xsz);
-            for(int i=0; i<xsz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,xsz)
               this->fastAccessDx(i) = -x.fastAccessDx(i);
           }
         }
@@ -381,18 +403,18 @@ namespace Sacado {
 
         if (xsz) {
           if (sz) {
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
           }
           else {
             this->resizeAndZero(xsz);
-            for(int i=0; i<xsz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,xsz)
               this->fastAccessDx(i) = v*x.fastAccessDx(i);
           }
         }
         else {
           if (sz) {
-            for (int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) *= xval;
           }
         }
@@ -416,19 +438,19 @@ namespace Sacado {
 
         if (xsz) {
           if (sz) {
-            for(int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) =
                 ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
           }
           else {
             this->resizeAndZero(xsz);
-            for(int i=0; i<xsz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,xsz)
               this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
           }
         }
         else {
           if (sz) {
-            for (int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) /= xval;
           }
         }
@@ -452,7 +474,7 @@ namespace Sacado {
         if (xsz) {
           if (sz) {
             if (x.hasFastAccess())
-              for (int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) += x.fastAccessDx(i);
             else
               for (int i=0; i<sz; ++i)
@@ -461,10 +483,10 @@ namespace Sacado {
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
-              for (int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = x.fastAccessDx(i);
             else
-              for (int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = x.dx(i);
           }
         }
@@ -488,19 +510,19 @@ namespace Sacado {
         if (xsz) {
           if (sz) {
             if (x.hasFastAccess())
-              for(int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) -= x.fastAccessDx(i);
             else
-              for (int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) -= x.dx(i);
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
-              for(int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = -x.fastAccessDx(i);
             else
-              for (int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = -x.dx(i);
           }
         }
@@ -527,25 +549,25 @@ namespace Sacado {
         if (xsz) {
           if (sz) {
             if (x.hasFastAccess())
-              for(int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
             else
-              for (int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
-              for(int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = v*x.fastAccessDx(i);
             else
-              for (int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = v*x.dx(i);
           }
         }
         else {
           if (sz) {
-            for (int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) *= xval;
           }
         }
@@ -571,25 +593,25 @@ namespace Sacado {
         if (xsz) {
           if (sz) {
             if (x.hasFastAccess())
-              for(int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
             else
-              for (int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
-              for(int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
             else
-              for (int i=0; i<xsz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,xsz)
                 this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
           }
         }
         else {
           if (sz) {
-            for (int i=0; i<sz; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz)
               this->fastAccessDx(i) /= xval;
           }
         }

@@ -38,7 +38,6 @@
 #include <exception>                    // for uncaught_exception
 #include <stk_util/environment/Env.hpp>        // for cpu_now
 #include <stk_util/environment/FormatTime.hpp>  // for formatTime
-#include <stk_util/util/heap_usage.hpp>   // for get_heap_info
 #include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
 #include <string>                       // for basic_string, string, etc
 #include <utility>                      // for pair
@@ -49,7 +48,7 @@ namespace stk {
 namespace diag {
 
 Trace::ExtraFuncPtr
-Trace::s_extra = 0;
+Trace::s_extra = nullptr;
 
 Trace::TraceList
 Trace::s_traceList;
@@ -103,8 +102,10 @@ prefix_find(
   const char *    s)
 {
   for (Trace::TraceList::const_iterator it = trace_list.begin(); it != trace_list.end(); ++it)
+  {
     if (prefix_compare((*it), s))
-      return true;;
+      return true;
+  }
   return false;
 }
 
@@ -200,77 +201,7 @@ get_function_spec_parts(
   }
 }
 
-std::string
-format_memory(
-  int      size)
-{
-  static const char *suffix[] = {" B", " KB", " MB", " GB"};
-
-  char sign = size < 0 ? '-' : '+';
-
-  size = size > 0 ? size : -size;
-
-  int s = size/10240;
-
-  unsigned int i = 0;
-  for (i = 0; i < sizeof(suffix)/sizeof(suffix[0])-1; i++) {
-    if (s == 0)
-      break;
-    size /= 1024;
-    s /= 1024;
-  }
-
-  std::stringstream strout;
-
-  strout << sign << size << suffix[i];
-
-  return strout.str();
-}
-
 } // namespace
-
-
-std::string
-Tracespec::getFunctionNamespace() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return namespace_name;
-}
-
-
-std::string
-Tracespec::getFunctionClass() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return namespace_name + "::" + class_name;
-}
-
-
-std::string
-Tracespec::getFunctionShortClass() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return class_name;
-}
-
 
 std::string
 Tracespec::getFunctionName() const
@@ -283,20 +214,6 @@ Tracespec::getFunctionName() const
   get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
 
   return namespace_name + "::" + class_name + "::" + function_name;
-}
-
-
-std::string
-Tracespec::getFunctionShortName() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return function_name;
 }
 
 
@@ -315,7 +232,6 @@ Trace::Trace(
   : Traceback(function_name),
     m_diagWriter(dout),
     m_startCpuTime(0.0),
-    m_startMemAlloc(0),
     m_lineMask(line_mask),
     m_do_trace(do_trace),
     m_flags((dout.isTracing()
@@ -331,7 +247,6 @@ Trace::Trace(
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now();
-      m_startMemAlloc = stk::get_heap_used();
     }
   }
 }
@@ -342,12 +257,10 @@ Trace::~Trace()
   if (m_do_trace && (m_flags & IN_TRACE_LIST)) {
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
-      m_startMemAlloc = stk::get_heap_used() - m_startMemAlloc;
     }
 
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
-      m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime)
-                                 << "s, " << format_memory(m_startMemAlloc) << "]" << dendl;
+      m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime) << "s]" << dendl;
     }
 
     m_diagWriter.m(m_lineMask) << (std::uncaught_exception() ? " (throw unwinding) " : "")

@@ -1096,6 +1096,8 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    /* need extra room (2) for diagonal guy and wasted space */
 
    bindx[0] = imatrix->getrow->Nrows+1;
+   val[imatrix->getrow->Nrows] = 0.0; /* generally, unused but */
+                                      /* avoids valgrind warning */
    next_nz = bindx[0];
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
       ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val,

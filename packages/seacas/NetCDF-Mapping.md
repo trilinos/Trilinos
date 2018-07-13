@@ -60,7 +60,7 @@ Then there would be about:
  `10 + 5*(2+1) + 4*(2) + 3*(2) + 1 + 1 + 1 = 42` Dimensions
 
 There would be about:
- `5*(1+2*2+4) + 4*(2+3) + 3*(3+2) + 3*(5+4+3) + 3 + 1 = 120` Varibles.
+ `5*(1+2*2+4) + 4*(2+3) + 3*(3+2) + 3*(5+4+3) + 3 + 1 = 120` Variables.
 
 From this, you can see that a moderately complicated model would
 quickly overflow the standard values for `NC_MAX_DIMS` and `NC_MAX_VARS`.

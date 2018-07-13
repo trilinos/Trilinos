@@ -120,6 +120,9 @@ void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Pa
    // now that edges are built, sidets can be added
    addSideSets(mesh);
 
+   // add nodesets
+   addNodeSets(mesh);
+
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
 }
@@ -190,7 +193,7 @@ void SquareTriMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Triangle<> TriTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<TriTopo>();
@@ -218,6 +221,9 @@ void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+
+   // add nodesets
+   mesh.addNodeset("origin");
 }
 
 void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -232,7 +238,7 @@ void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_I
    mesh.endModification();
 }
 
-void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xBlock, int yBlock, STK_Interface& mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -289,7 +295,7 @@ void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlo
    }
 }
 
-std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
@@ -312,7 +318,7 @@ std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,u
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t yProcLoc = procTuple_[1];
    unsigned int minElements = nYElems_/size;
@@ -400,6 +406,25 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
          if(mesh.entityOwnerRank(edge)==machRank_)
             mesh.addEntityToSideset(edge,top);
       }
+   }
+
+   mesh.endModification();
+}
+
+void SquareTriMeshFactory::addNodeSets(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   // get all part vectors
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   if(machRank_==0) 
+   {
+      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
+
+      // add zero node to origin node set
+      mesh.addEntityToNodeset(node,origin);
    }
 
    mesh.endModification();

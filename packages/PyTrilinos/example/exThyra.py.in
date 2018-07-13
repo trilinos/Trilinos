@@ -45,7 +45,8 @@
 
 #
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -66,16 +67,14 @@ Epetra = fromPyTrilinosImport('Epetra', options.testharness)
 Thyra  = fromPyTrilinosImport('Thyra' , options.testharness)
 
 vs = Thyra.SerialVectorSpaceStd_double(4)
-print "vs.dim() =", vs.dim()
-print "dir(vs) =", dir(vs)
+print("vs.dim() =", vs.dim())
+print("dir(vs) =", dir(vs)  )
 v = Thyra.createMember_double(vs)
-print "type(v) =", type(v)
-print "v.this =", v.this
-print "dir(v) =", dir(v)
-print "v.space().dim() =", v.space().dim()
+print("type(v) =", type(v))
+print("v.this =", v.this  )
+print("dir(v) =", dir(v)  )
+print("v.space().dim() =", v.space().dim())
 v2 = Thyra.createMember_double(v.space())
-print "v2.space().dim() =", v2.space().dim()
+print("v2.space().dim() =", v2.space().dim())
 Thyra.V_S_double(v.__deref__(),1.0)
-#Thyra.V_S_double(v,1.0)
-print "sum_double(v) =", Thyra.sum_double(v.__deref__())
-#print "sum_double(v) =", Thyra.sum_double(v)
+print("sum_double(v) =", Thyra.sum_double(v.__deref__()))

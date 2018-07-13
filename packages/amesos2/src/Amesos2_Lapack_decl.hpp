@@ -217,6 +217,8 @@ namespace Amesos2 {
     // Teuchos::SerialDenseSolver<global_ordinal_type,scalar_type> solver_;
     mutable Teuchos::SerialDenseSolver<int,scalar_type> solver_;
 
+    bool is_contiguous_;
+
   };                              // End class Lapack
 
   

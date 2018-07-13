@@ -41,18 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Kokkos_View.hpp"
 #include "Shards_Array.hpp"
@@ -122,8 +119,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator () (const size_type c) const
   {
-    const size_type num_ip = a_.dimension_1();
-    const size_type num_dim = a_.dimension_2();
+    const size_type num_ip = a_.extent(1);
+    const size_type num_dim = a_.extent(2);
     for (size_type i = 0; i < num_ip; ++i) {
       for (size_type d = 0; d < num_dim; ++d) {
 	a_(c,i,d) =  b_(c,i,d) * c_(c,i,d) + b_(c,i,d) + b_(c,i,d) / c_(c,i,d);
@@ -176,9 +173,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   RCP<Time> raw_ptr_time = TimeMonitor::getNewTimer("double* Time");
   
   {    
-    TimeMonitor tm(*total_time);
-
-    PHX::InitializeKokkosDevice();
+    TimeMonitor tm_total(*total_time);
 
     std::cout << std::endl << std::endl
 	      << "PHX::Device::size_type = " 
@@ -382,11 +377,9 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
 	    }
     }
 
-    delete [] raw_ptr_a;    
-    delete [] raw_ptr_b;    
-    delete [] raw_ptr_c;    
-  
-   PHX::FinalizeKokkosDevice();
+    delete [] raw_ptr_a;
+    delete [] raw_ptr_b;
+    delete [] raw_ptr_c;  
   }
 
   TimeMonitor::summarize();  

@@ -66,13 +66,35 @@ namespace panzer {
     </ParameterList>
   \endverbatim
   */
-PANZER_EVALUATOR_CLASS(Integrator_Scalar)
+template<typename EvalT, typename Traits>
+class Integrator_Scalar
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Integrator_Scalar(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT> integral;  // result
     
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+  PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_qp;
   std::size_t quad_index;
@@ -90,7 +112,8 @@ public:
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Integrator_Scalar
+
 
 }
 

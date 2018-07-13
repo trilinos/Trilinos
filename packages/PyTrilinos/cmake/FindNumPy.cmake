@@ -66,27 +66,43 @@ ELSE(NOT PYTHON_EXECUTABLE)
 
   # Retrieve the NumPy version
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.__version__"
+    ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.__version__)"
     OUTPUT_VARIABLE NumPy_VERSION
     ERROR_VARIABLE  NumPy_VERSION_ERROR
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
+  # If we are using a debug version of Python, then
+  # NumPy_VERSION_ERROR will be "[##### refs]", which will register as
+  # an error in the logic below. So we fix it here.
+  STRING(FIND "${NumPy_VERSION_ERROR}" " refs]" REFS_POS)
+  IF(${REFS_POS} GREATER -1)
+    SET(NumPy_VERSION_ERROR "")
+  ENDIF(${REFS_POS} GREATER -1)
+
   # If NumPy_VERSION_ERROR does not exist, then we know NumPy exists;
   # now look for the NumPy include directory
   IF(NOT NumPy_VERSION_ERROR)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.get_include()"
+      ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
       OUTPUT_VARIABLE NumPy_INCLUDE_DIR
       ERROR_VARIABLE  NumPy_INCLUDE_ERROR
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
 
+    # If we are using a debug version of Python, then
+    # NumPy_INCLUDE_ERROR will be "[##### refs]", which will register as
+    # an error in the logic below. So we fix it here.
+    STRING(FIND "${NumPy_INCLUDE_ERROR}" " refs]" REFS_POS)
+    IF(${REFS_POS} GREATER -1)
+      SET(NumPy_INCLUDE_ERROR "")
+    ENDIF(${REFS_POS} GREATER -1)
+
     # If there is a NumPy include error, it is because NumPy is older
     # and the wrong function name was called
     IF(NumPy_INCLUDE_ERROR)
       EXECUTE_PROCESS(COMMAND
-	${PYTHON_EXECUTABLE} -c "import numpy; print numpy.get_numpy_include()"
+	${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_numpy_include())"
         OUTPUT_VARIABLE NumPy_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
@@ -117,7 +133,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
   ELSE(NOT NumPy_VERSION_ERROR)
     IF(NumPy_FIND_REQUIRED)
       MESSAGE(SEND_ERROR
-	"Required NumPy python module not found"
+	"Required NumPy python module not found ${NumPy_VERSION_ERROR}"
 	)
     ENDIF(NumPy_FIND_REQUIRED)
 

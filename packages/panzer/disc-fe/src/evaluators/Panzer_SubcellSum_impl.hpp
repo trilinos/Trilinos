@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(SubcellSum,p) 
+template<typename EvalT, typename Traits>
+SubcellSum<EvalT, Traits>::
+SubcellSum(
+  const Teuchos::ParameterList& p) 
   : evaluateOnClosure_(false)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
@@ -65,28 +68,37 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
   if(p.isType<bool>("Evaluate On Closure"))
     evaluateOnClosure_ = p.get<bool>("Evaluate On Closure");
 
-  inField = PHX::MDField<ScalarT,Cell,BASIS>( inName, basis->functional);
+  inField = PHX::MDField<const ScalarT,Cell,BASIS>( inName, basis->functional);
   outField = PHX::MDField<ScalarT,Cell>( outName, basis->cell_data);
 
   this->addDependentField(inField);
   this->addEvaluatedField(outField);
 
   // build a field pattern object so that looking up closure indices is easy
-  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis()));
+  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::exec_space,double,double>()));
     
   std::string n = "SubcellSum: " + outField.fieldTag().name();
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(SubcellSum,sd,fm)
+template<typename EvalT, typename Traits>
+void
+SubcellSum<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(inField,fm);
   this->utils.setFieldData(outField,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(SubcellSum,workset)
+template<typename EvalT, typename Traits>
+void
+SubcellSum<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   std::vector<int> indices;
  

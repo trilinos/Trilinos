@@ -138,28 +138,13 @@ public:
   //@{ \name PyTrilinos Interface functions (require RCPs)
 
   //! Return a RCP to the solution group
-  virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const
-  {
-     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-            "NOX::Generic::Solver::getSolutionGroupPtr() not implemented!");
-     return Teuchos::null;
-  }
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const = 0;
 
   //! Return a RCP to the previous solution group
-  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-               "NOX::Generic::Solver::getPreviousSolutionGroupPtr() not implemented!");
-     return Teuchos::null;
-  }
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const = 0;
 
   //! Return a RCP to the solver parameters.
-  virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-               "NOX::Generic::Solver::getListPtr() not implemented!");
-     return Teuchos::null;
-  }
+  virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const = 0;
 
   //@}
 

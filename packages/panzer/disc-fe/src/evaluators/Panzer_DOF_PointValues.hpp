@@ -45,11 +45,9 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_BasisValues2.hpp"
-
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
@@ -71,7 +69,7 @@ private:
 
   typedef typename EvalT::ScalarT ScalarT;
   
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<const ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;
 
@@ -79,6 +77,14 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
+  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+    constBasisRefScalar_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+    constBasisScalar_;
+  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+    constBasisRefVector_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+    constBasisVector_;
 };
 
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
@@ -101,7 +107,7 @@ private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
   
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<const ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;
 
@@ -112,6 +118,14 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
+  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+    constBasisRefScalar_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+    constBasisScalar_;
+  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+    constBasisRefVector_;
+  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+    constBasisVector_;
 };
 
 }

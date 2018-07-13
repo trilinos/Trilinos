@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -96,8 +96,9 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
   maxhop = 0;
   for (i = 0; i < nsets; i++) {
     for (j = 0; j < nsets; j++) {
-      if (hops[i][j] > maxhop)
+      if (hops[i][j] > maxhop) {
         maxhop = hops[i][j];
+      }
     }
   }
 
@@ -108,10 +109,12 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
       twptr = term_wgts[j];
       for (i = nvtxs; i; i--) {
         ++twptr;
-        if (*twptr > maxterm)
+        if (*twptr > maxterm) {
           maxterm = *twptr;
-        else if (-*twptr > maxterm)
+        }
+        else if (-*twptr > maxterm) {
           maxterm = -*twptr;
+        }
       }
     }
     if (CUT_TO_HOP_COST > 1) {

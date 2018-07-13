@@ -6,7 +6,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <mpi.h>
+#include "mpi.h"
 
 namespace unitTestUtils
 {
@@ -42,7 +42,7 @@ private:
 
     void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, stkMeshBulkData);
+        stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);
     }
 
 private:

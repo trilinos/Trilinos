@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -39,21 +39,21 @@
 #include "netcdf.h"            // for nc_set_fill, NC_NOFILL
 #include "pe_common.h"         // for MAX_CHUNK_SIZE
 #include "pe_str_util_const.h" // for string_to_lower
-#include "ps_pario_const.h"    // for PIO_Info, Parallel_IO, etc
+#include "ps_pario_const.h"    // for PIO_Time_Array, etc
 #include "rf_allo.h"           // for safe_free, array_alloc
 #include "rf_format.h"         // for ST_ZU
-#include "rf_io_const.h"       // for Debug_Flag, ExoFile
+#include "rf_io_const.h"       // for Debug_Flag, etc
 #include "rf_util.h"           // for print_line, my_sort
 #include "sort_utils.h"        // for gds_qsort
 #include <cassert>             // for assert
 #include <climits>             // for INT_MAX
 #include <cstddef>             // for size_t
-#include <cstdio>              // for printf, fprintf, nullptr, etc
+#include <cstdio>              // for printf, fprintf, stderr
 #include <cstdlib>             // for exit, free
-#include <cstring>             // for strcpy, strrchr, strlen
-#include <iostream>
-#include <sys/types.h> // for int64_t
-#include <vector>      // for vector
+#include <cstring>             // for strncpy, strrchr, strlen
+#include <iostream>            // for operator<<, cerr, ostream, etc
+#include <string>              // for string
+#include <vector>              // for vector
 template <typename T, typename INT> class Globals;
 
 #if __cplusplus > 199711L
@@ -101,20 +101,24 @@ namespace {
 
     /* Do we need 64-bit to write the global node/element maps? */
     bool global_counts_64bit = false;
-    if (globals.Num_Node >= INT_MAX)
+    if (globals.Num_Node >= INT_MAX) {
       global_counts_64bit = true;
-    if (globals.Num_Elem >= INT_MAX)
+    }
+    if (globals.Num_Elem >= INT_MAX) {
       global_counts_64bit = true;
+    }
 
     /* Does any individual mesh have > INT_MAX nodes/elements? */
     bool local_counts_64bit = false;
     for (int iproc = 0; iproc < num_proc && !local_counts_64bit; iproc++) {
       if (globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
               globals.Num_External_Nodes[iproc] >=
-          INT_MAX)
+          INT_MAX) {
         local_counts_64bit = true;
-      if (globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc] >= INT_MAX)
+      }
+      if (globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc] >= INT_MAX) {
         local_counts_64bit = true;
+      }
     }
 
     int mode = 0;
@@ -142,23 +146,26 @@ namespace {
     // Function which determines information regarding the size and number of
     //    messages to be used by the functions which broadcast the mesh information.
 
-    if (iunit_size > 0)
+    if (iunit_size > 0) {
       *num_units_per_message = MAX_CHUNK_SIZE / (2 * iunit_size);
+    }
     else {
       fprintf(stderr, "ERROR:  find_message_info called with unit_size = 0.\n");
       exit(1);
     }
 
-    if (*num_units_per_message > max_units)
+    if (*num_units_per_message > max_units) {
       *num_units_per_message = max_units;
+    }
 
     *num_messages        = max_units / (*num_units_per_message);
     *num_units_left_over = max_units - *num_messages * (*num_units_per_message);
 
-    if (max_units % (*num_units_per_message) != 0)
+    if (max_units % (*num_units_per_message) != 0) {
       (*num_messages)++;
+    }
   }
-}
+} // namespace
 
 template void NemSpread<double, int>::load_mesh();
 template void NemSpread<float, int>::load_mesh();
@@ -258,22 +265,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   globals.Proc_Global_Node_Id_Map = globals.Proc_Global_Elem_Id_Map + Proc_Info[2];
 
   /* Initialize */
-  for (int iproc              = 0; iproc < 25 * Proc_Info[2]; iproc++)
+  for (int iproc = 0; iproc < 25 * Proc_Info[2]; iproc++) {
     globals.GElem_Blks[iproc] = nullptr;
+  }
 
   globals.Coor = (T ***)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(T **));
 
   /* Initialize */
-  for (int iproc        = 0; iproc < Proc_Info[2]; iproc++)
+  for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
     globals.Coor[iproc] = nullptr;
+  }
 
   globals.Proc_Elem_Attr = (T **)array_alloc(__FILE__, __LINE__, 1, 3 * Proc_Info[2], sizeof(T *));
   globals.Proc_NS_Dist_Fact = globals.Proc_Elem_Attr + Proc_Info[2];
   globals.Proc_SS_Dist_Fact = globals.Proc_NS_Dist_Fact + Proc_Info[2];
 
   /* Initialize */
-  for (int iproc                  = 0; iproc < 3 * Proc_Info[2]; iproc++)
+  for (int iproc = 0; iproc < 3 * Proc_Info[2]; iproc++) {
     globals.Proc_Elem_Attr[iproc] = nullptr;
+  }
 
   /* Check for a problem which has too many processors for a given mesh */
 
@@ -316,12 +326,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   /* Add a QA record for the spreader */
   globals.Num_QA_Recs++;
 
-  int length_qa     = 4 * (globals.Num_QA_Recs);
-  globals.QA_Record = (char **)array_alloc(__FILE__, __LINE__, 1, length_qa, sizeof(char *));
+  int length_qa = 4 * (globals.Num_QA_Recs);
+  globals.QA_Record =
+      reinterpret_cast<char **>(array_alloc(__FILE__, __LINE__, 1, length_qa, sizeof(char *)));
   for (int i1 = 0, index = 0; i1 < globals.Num_QA_Recs; i1++) {
     for (int i2 = 0; i2 < 4; i2++) {
-      globals.QA_Record[index++] =
-          (char *)array_alloc(__FILE__, __LINE__, 1, MAX_STR_LENGTH + 1, sizeof(char));
+      globals.QA_Record[index++] = reinterpret_cast<char *>(
+          array_alloc(__FILE__, __LINE__, 1, MAX_STR_LENGTH + 1, sizeof(char)));
     }
   }
 
@@ -447,7 +458,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_elem_blk_ids(mesh_exoid, max_name_length);
 
-  printf("\tTime to read element block IDs: %.2f\n", second() - start_time);
+  printf("\tTime to read element block IDs: %.4f\n", second() - start_time);
 
   /*
    * Process the Node Set IDs and associated information related to node sets
@@ -458,7 +469,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     start_time = second();
     read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
-    printf("\tTime to read node set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read node set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -468,7 +479,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
-    printf("\tTime to read side set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read side set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -481,7 +492,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   extract_elem_blk();
 
-  printf("\tTime to extract element block information: %.2f\n", second() - start_time);
+  printf("\tTime to extract element block information: %.4f\n", second() - start_time);
 
   /*
    * Read the mesh information from the exodus file and broadcast it to the
@@ -510,7 +521,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_coord(mesh_exoid, max_name_length);
 
-  printf("\tTime to read nodal coordinates: %.2f\n", second() - start_time);
+  printf("\tTime to read nodal coordinates: %.4f\n", second() - start_time);
 
   /*
    * Read the element connectivity and attributes information.  Broadcast it
@@ -518,25 +529,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    */
   start_time = second();
   read_elem_blk(mesh_exoid);
-  printf("\tTime to read element blocks: %.2f\n", second() - start_time);
+  printf("\tTime to read element blocks: %.4f\n", second() - start_time);
 
   /* Read the node sets and sort */
   if (globals.Num_Node_Set > 0) {
     start_time = second();
     read_node_sets(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets);
-    printf("\tTime to read node sets: %.2f\n", second() - start_time);
+    printf("\tTime to read node sets: %.4f\n", second() - start_time);
   }
 
   /* Assign the element types. */
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     create_elem_types(); /* globals.Elem_Type only used in sideset read */
-    printf("\tTime to categorize element types: %.2f\n", second() - start_time);
+    printf("\tTime to categorize element types: %.4f\n", second() - start_time);
 
     /* Read the side sets and sort */
     start_time = second();
     read_side_sets(mesh_exoid, num_elem_in_ssets, num_df_in_ssets);
-    printf("\tTime to read side sets: %.2f\n", second() - start_time);
+    printf("\tTime to read side sets: %.4f\n", second() - start_time);
   }
 
   /* Close the EXODUS  mesh file */
@@ -566,10 +577,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     cTemp[511] = '\0';
   }
 
-  if (strlen(PIO_Info.Exo_Extension) == 0)
+  if (strlen(PIO_Info.Exo_Extension) == 0) {
     add_fname_ext(cTemp, ".par");
-  else
+  }
+  else {
     add_fname_ext(cTemp, PIO_Info.Exo_Extension);
+  }
 
   /* Check sizes to see if need to store using 64-bit on the database */
   int db_mode = check_sizes(Proc_Info[2], Elem_Blk_Ids, Node_Set_Ids, Side_Set_Ids, globals);
@@ -582,13 +595,16 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     std::string Parallel_File_Name = gen_par_filename(cTemp, Proc_Ids[iproc], Proc_Info[0]);
 
     /* Create the parallel Exodus file for writing */
-    if (Debug_Flag >= 7)
+    if (Debug_Flag >= 7) {
       printf("%sParallel mesh file name is %s\n", yo, Parallel_File_Name.c_str());
+    }
     else {
-      if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1)
+      if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
         printf("%d", iproc);
-      else
+      }
+      else {
         printf(".");
+      }
     }
 
     int mode = EX_CLOBBER;
@@ -609,8 +625,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
       nc_set_fill(mesh_exoid, NC_NOFILL, &old_fill);
     }
 
-    if (Debug_Flag >= 7)
+    if (Debug_Flag >= 7) {
       printf("%sParallel mesh file id is %d\n", yo, mesh_exoid);
+    }
 
     /* Write out a parallel mesh file local to each processor */
     write_parExo_data(mesh_exoid, max_name_length, iproc, num_nodes_in_node_set, num_elem_in_ssets,
@@ -632,15 +649,17 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     }
     printf("\nOutput rate: %6.2f kB/s\n", PIO_Time_Array[25]);
   }
-  else if (Debug_Flag >= 1)
+  else if (Debug_Flag >= 1) {
     printf("\n\nOutput rate: %6.2f kB/s\n", PIO_Time_Array[25]);
+  }
 
   /*--------------------------------------------------------------------------*/
   /*--------------------------------------------------------------------------*/
 
   /* Free QA records */
-  for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++)
+  for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
     safe_free((void **)&(globals.QA_Record[i1]));
+  }
 
   safe_free((void **)&globals.QA_Record);
 
@@ -659,8 +678,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   }
 
   /* done with the Coordinate names */
-  for (int i1 = 0; i1 < globals.Num_Dim; i1++)
+  for (int i1 = 0; i1 < globals.Num_Dim; i1++) {
     safe_free((void **)&(Coord_Name[i1]));
+  }
 
   /* Free some local arrays */
   safe_free((void **)&Num_Elem_In_Blk);
@@ -687,23 +707,26 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     safe_free((void **)&(globals.Proc_Elem_Connect[iproc]));
 
     safe_free((void **)&(globals.Coor[iproc]));
-    if (globals.Proc_Elem_Attr[iproc])
+    if (globals.Proc_Elem_Attr[iproc]) {
       safe_free((void **)&(globals.Proc_Elem_Attr[iproc]));
-    if (globals.Proc_NS_Dist_Fact[iproc])
+    }
+    if (globals.Proc_NS_Dist_Fact[iproc]) {
       safe_free((void **)&(globals.Proc_NS_Dist_Fact[iproc]));
-    if (globals.Proc_SS_Dist_Fact[iproc])
+    }
+    if (globals.Proc_SS_Dist_Fact[iproc]) {
       safe_free((void **)&(globals.Proc_SS_Dist_Fact[iproc]));
+    }
 
-    if (globals.N_Comm_Map[iproc])
+    if (globals.N_Comm_Map[iproc]) {
       safe_free((void **)&(globals.N_Comm_Map[iproc]));
-    if (globals.E_Comm_Map[iproc])
+    }
+    if (globals.E_Comm_Map[iproc]) {
       safe_free((void **)&(globals.E_Comm_Map[iproc]));
+    }
   }
   free(globals.N_Comm_Map);
   free(globals.E_Comm_Map);
   printf("\n");
-
-  return;
 
 } /* END of routine load_mesh () *********************************************/
 
@@ -768,7 +791,7 @@ void NemSpread<T, INT>::read_elem_blk_ids(int mesh_exoid, int max_name_length)
 
 template <typename T, typename INT>
 void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_set[],
-                                          INT num_df_in_nsets[], int max_name_length)
+                                          INT num_df_in_nsets[], int /*max_name_length*/)
 
 /*
  * This function reads part of the node set info from the EXODUS file.  It
@@ -804,8 +827,9 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_
     print_line("-", 79);
 
     if (globals.Num_Node_Set > 0) {
-      for (int i = 0; i < globals.Num_Node_Set; i++)
+      for (int i = 0; i < globals.Num_Node_Set; i++) {
         printf("%6d%11lu%12lu\n", i, (size_t)Node_Set_Ids[i], (size_t)num_nodes_in_node_set[i]);
+      }
     }
 
     else {
@@ -822,7 +846,7 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_
 
 template <typename T, typename INT>
 void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[],
-                                          INT num_df_in_ssets[], int max_name_length)
+                                          INT num_df_in_ssets[], int /*max_name_length*/)
 
 /* This function reads part of the side set info from the EXODUS file.  It
  * reads all information having a length equal to the number of side sets,
@@ -857,8 +881,9 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
     print_line("-", 79);
 
     if (globals.Num_Side_Set > 0) {
-      for (int i = 0; i < globals.Num_Side_Set; i++)
+      for (int i = 0; i < globals.Num_Side_Set; i++) {
         printf("%6d%11lu  %12lu\n", i, (size_t)Side_Set_Ids[i], (size_t)num_elem_in_ssets[i]);
+      }
     }
 
     else {
@@ -922,8 +947,10 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
   }
   safe_free((void **)&coord);
 
-  for (int i      = 0; i < globals.Num_Dim; i++)
-    Coord_Name[i] = (char *)array_alloc(__FILE__, __LINE__, 1, max_name_length + 1, sizeof(char));
+  for (int i = 0; i < globals.Num_Dim; i++) {
+    Coord_Name[i] = reinterpret_cast<char *>(
+        array_alloc(__FILE__, __LINE__, 1, max_name_length + 1, sizeof(char)));
+  }
 
   /* Get the coordinate names */
   if (ex_get_coord_names(exoid, Coord_Name) < 0) {
@@ -1074,8 +1101,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
           globals.Proc_Elem_Blk_Types[iproc] + globals.Proc_Num_Elem_Blk[iproc];
       globals.Proc_Num_Elem_In_Blk[iproc] = globals.Proc_Num_Attr[iproc] + globals.Num_Elem_Blk;
       /* Initialize */
-      for (int i = 0; i < (4 * globals.Num_Elem_Blk + globals.Proc_Num_Elem_Blk[iproc]); i++)
+      for (int i = 0; i < (4 * globals.Num_Elem_Blk + globals.Proc_Num_Elem_Blk[iproc]); i++) {
         globals.Proc_Nodes_Per_Elem[iproc][i] = 0;
+      }
     }
     else {
       std::cerr << "ERROR globals.Num_Elem_Blk = " << globals.Num_Elem_Blk << "\n";
@@ -1141,7 +1169,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
              "Num_Attributes  Elem_Blk_Type  globals.Proc_Num_Elem_In_Blk "
              "Glb_Elm_In_Blk");
       print_line("-", 79);
-      for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++)
+      for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
         printf("%4d\t\t%5lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\n", i,
                (size_t)globals.GElem_Blks[iproc][i], (size_t)globals.Proc_Elem_Blk_Ids[iproc][i],
                (size_t)globals.Proc_Nodes_Per_Elem[iproc][i],
@@ -1149,6 +1177,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
                (size_t)globals.Proc_Elem_Blk_Types[iproc][i],
                (size_t)globals.Proc_Num_Elem_In_Blk[iproc][i],
                (size_t)Num_Elem_In_Blk[globals.GElem_Blks[iproc][i]]);
+      }
       print_line("=", 79);
     }
   }
@@ -1239,8 +1268,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
      * is nonzero
      */
     size_t iattr_length = 0;
-    for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++)
+    for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
       iattr_length += globals.Proc_Num_Attr[iproc][i] * globals.Proc_Num_Elem_In_Blk[iproc][i];
+    }
     if (iattr_length > 0) {
       globals.Proc_Elem_Attr[iproc] =
           (T *)array_alloc(__FILE__, __LINE__, 1, iattr_length, sizeof(T));
@@ -1270,11 +1300,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       find_message_info(iconnect_size, Num_Elem_In_Blk[ielem_blk], &num_elem_per_message,
                         &num_elem_messages, &num_elem_left_over);
 
-      if (iattr_size > 0)
+      if (iattr_size > 0) {
         find_message_info(iattr_size, Num_Elem_In_Blk[ielem_blk], &num_attr_per_message,
                           &num_attr_messages, &num_attr_left_over);
-      else
+      }
+      else {
         num_attr_messages = 0;
+      }
 
       if (Debug_Flag > 1) {
         printf("\n\nMessage summary for Element Block number %d, ", ielem_blk);
@@ -1287,10 +1319,11 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
                (size_t)Num_Nodes_Per_Elem[ielem_blk]);
         printf("\tLength of each message = " ST_ZU " bytes\n",
                (size_t)(Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message * sizeof(INT)));
-        if (num_attr_messages > 0)
+        if (num_attr_messages > 0) {
           printf("\tNumber of attribute messages: " ST_ZU "\n\tNumber "
                  "of attributes per message: " ST_ZU "\n\n",
                  num_attr_messages, num_attr_per_message);
+        }
       }
 
       /*
@@ -1299,11 +1332,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
        */
       elem_blk = (INT *)array_alloc(
           __FILE__, __LINE__, 1, Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message, sizeof(INT));
-      if (num_attr_messages > 0)
+      if (num_attr_messages > 0) {
         elem_attr = (T *)array_alloc(
             __FILE__, __LINE__, 1, Num_Attr_Per_Elem[ielem_blk] * num_attr_per_message, sizeof(T));
-      else
+      }
+      else {
         elem_attr = nullptr;
+      }
 
       /*
        * Read in the element connectivity list for the current element block,
@@ -1311,13 +1346,15 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
        */
       for (size_t i = 0; i < num_elem_messages; i++) {
 
-        if (Debug_Flag >= 2)
+        if (Debug_Flag >= 2) {
           printf("\telem block message: " ST_ZU " of " ST_ZU "\n", i + 1, num_elem_messages);
+        }
 
         /* Initialize the element connectivity list to a value of -1.0 */
         for (size_t j      = 0; j < Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message;
-             elem_blk[j++] = -1)
+             elem_blk[j++] = -1) {
           ;
+        }
 
         size_t num_to_get = 0;
         istart_elem       = i * num_elem_per_message;
@@ -1330,11 +1367,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         iend_elem = istart_elem + num_to_get;
 
         int el_type;
-        check_exodus_error(ex_get_n_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
-                                         (istart_elem + 1), num_to_get, elem_blk, nullptr, nullptr),
-                           "ex_get_n_conn");
-        if (Debug_Flag >= 2)
+        check_exodus_error(ex_get_partial_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+                                               (istart_elem + 1), num_to_get, elem_blk, nullptr,
+                                               nullptr),
+                           "ex_get_partial_conn");
+        if (Debug_Flag >= 2) {
           printf("\t\tread connectivity\n");
+        }
 
         el_type =
             get_type(Elem_Blk_Types[ielem_blk], Num_Nodes_Per_Elem[ielem_blk], globals.Num_Dim);
@@ -1342,8 +1381,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           GM_Elem_Types[icount++] = el_type;
         }
 
-        if (Debug_Flag >= 2)
+        if (Debug_Flag >= 2) {
           printf("\t\tgot element types\n");
+        }
 
         /* PRINT OUT THE ELEMENT CONNECTIVITY TABLE IF IN DEBUGGING MODE */
         if (Debug_Flag >= 6) {
@@ -1358,8 +1398,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           ipos = 0;
           for (size_t j = 0; j < num_to_get; j++) {
             printf("\t elem: " ST_ZU ", nodes:", j);
-            for (int k = 0; k < Num_Nodes_Per_Elem[ielem_blk]; k++)
+            for (int k = 0; k < Num_Nodes_Per_Elem[ielem_blk]; k++) {
               printf(" " ST_ZU "", (size_t)elem_blk[ipos++]);
+            }
             printf("\n");
           }
           print_line("=", 79);
@@ -1373,43 +1414,50 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           extract_elem_connect(elem_blk, ielem_blk, istart_elem, iend_elem, &local_ielem_blk,
                                iproc);
         }
-        if (Debug_Flag >= 2)
+        if (Debug_Flag >= 2) {
           printf("\t\textract connectivity\n");
+        }
 
       } /* End "for(i=0; i < num_elem_messages; i++)" */
 
       /* Read in the element attribute lists and broadcast to the processors */
       for (size_t i = 0; i < num_attr_messages; i++) {
 
-        if (Debug_Flag >= 2)
+        if (Debug_Flag >= 2) {
           printf("\tattribute message: " ST_ZU " of " ST_ZU "\n", i + 1, num_attr_messages);
+        }
 
         /* Initialize */
-        for (size_t j  = 0; j < Num_Attr_Per_Elem[ielem_blk] * num_attr_per_message; j++)
+        for (size_t j = 0; j < Num_Attr_Per_Elem[ielem_blk] * num_attr_per_message; j++) {
           elem_attr[j] = 0.0;
+        }
 
         istart_attr = i * num_attr_per_message;
 
-        if (num_attr_left_over == 0 || i < (num_attr_messages - 1))
-          iend_attr = istart_attr + num_attr_per_message;
-        else
-          iend_attr = istart_attr + num_attr_left_over;
-
         if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
-                                                num_attr_per_message, elem_attr),
-                             "ex_get_n_elem_attr");
+          iend_attr = istart_attr + num_attr_per_message;
         }
         else {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
-                                                num_attr_left_over, elem_attr),
-                             "ex_get_n_elem_attr");
+          iend_attr = istart_attr + num_attr_left_over;
+        }
+
+        if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+                                                 (istart_attr + 1), num_attr_per_message,
+                                                 elem_attr),
+                             "ex_get_partial_attr");
+        }
+        else {
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+                                                 (istart_attr + 1), num_attr_left_over, elem_attr),
+                             "ex_get_partial_attr");
         }
 
         for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
-          if (Debug_Flag > 6)
+          if (Debug_Flag > 6) {
             printf("\t\tExtract attributes for processor %d\n", Proc_Ids[iproc]);
+          }
           /*
            * On each processor, extract the element attributes that the
            * processor needs
@@ -1495,7 +1543,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   }
 #endif
 
-  if (error_flag) {
+  if (error_flag != 0) {
     fprintf(stderr, "read_elem_blk FAILURE: error flag was "
                     "set in routine\n");
     exit(1);
@@ -1508,7 +1556,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
 /*****************************************************************************/
 
 template <typename T, typename INT>
-void NemSpread<T, INT>::extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc)
+void NemSpread<T, INT>::extract_global_element_ids(INT global_ids[], size_t /*Num_Elem*/, int iproc)
 {
   /*
    * globals.Num_Elem -- number of elements in serial mesh.
@@ -1530,7 +1578,7 @@ void NemSpread<T, INT>::extract_global_element_ids(INT global_ids[], size_t Num_
 /*****************************************************************************/
 
 template <typename T, typename INT>
-void NemSpread<T, INT>::extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc)
+void NemSpread<T, INT>::extract_global_node_ids(INT global_ids[], size_t /*Num_Node*/, int iproc)
 {
   /*
    * Num_Elem -- number of elements in serial mesh.
@@ -1573,7 +1621,7 @@ size_t NemSpread<T, INT>::extract_elem_connect(INT elem_blk[], int icurrent_elem
    * The end result is the currect value of ielem_blk, Store this value in the
    * output variable, local_ielem_blk.
    */
-  for (int ielem_blk = 0; ielem_blk < globals.Proc_Num_Elem_Blk[iproc]; ielem_blk++)
+  for (int ielem_blk = 0; ielem_blk < globals.Proc_Num_Elem_Blk[iproc]; ielem_blk++) {
     if (globals.Proc_Elem_Blk_Ids[iproc][ielem_blk] == Elem_Blk_Ids[icurrent_elem_blk]) {
       *local_ielem_blk = ielem_blk;
       found            = true;
@@ -1588,8 +1636,9 @@ size_t NemSpread<T, INT>::extract_elem_connect(INT elem_blk[], int icurrent_elem
        *                            element blocks preceding this one
        */
       size_t iglobal_offset = 0;
-      for (int i = 0; i < globals.GElem_Blks[iproc][ielem_blk]; i++)
+      for (int i = 0; i < globals.GElem_Blks[iproc][ielem_blk]; i++) {
         iglobal_offset += Num_Elem_In_Blk[i];
+      }
 
       /* Calculate iproc_offset - The sum of the elements in all the
        *                          processor's
@@ -1624,8 +1673,9 @@ size_t NemSpread<T, INT>::extract_elem_connect(INT elem_blk[], int icurrent_elem
           /* globals.GElems is sorted, so if we are outside the iglobal range,
            * break out of this loop...
            */
-          if (iglobal_elem > iglobal_end)
+          if (iglobal_elem > iglobal_end) {
             break;
+          }
 
           if (iglobal_begin <= iglobal_elem && iglobal_elem < iglobal_end) {
             count_hits++;
@@ -1649,9 +1699,11 @@ size_t NemSpread<T, INT>::extract_elem_connect(INT elem_blk[], int icurrent_elem
         }
       }
     } /* END if (globals.Proc_Elem_Blk_Ids[ielem_blk]== ... */
+  }
 
-  if (!found)
+  if (!found) {
     *local_ielem_blk = -1;
+  }
 
   return count_hits;
 
@@ -1695,7 +1747,7 @@ void NemSpread<T, INT>::extract_elem_attr(T *elem_attr, int icurrent_elem_blk, s
    */
 
   /* Match the Element Block Id of the global block with the local block number */
-  for (int ielem_blk = 0; ielem_blk < globals.Proc_Num_Elem_Blk[iproc]; ielem_blk++)
+  for (int ielem_blk = 0; ielem_blk < globals.Proc_Num_Elem_Blk[iproc]; ielem_blk++) {
     if (globals.Proc_Elem_Blk_Ids[iproc][ielem_blk] == Elem_Blk_Ids[icurrent_elem_blk]) {
 
       /* Some elements in the current element block passed in from
@@ -1708,8 +1760,9 @@ void NemSpread<T, INT>::extract_elem_attr(T *elem_attr, int icurrent_elem_blk, s
        *                            element blocks preceding this one
        */
       size_t iglobal_offset = 0;
-      for (int i = 0; i < globals.GElem_Blks[iproc][ielem_blk]; i++)
+      for (int i = 0; i < globals.GElem_Blks[iproc][ielem_blk]; i++) {
         iglobal_offset += Num_Elem_In_Blk[i];
+      }
 
       /* Calculate iproc_offset - The sum of the elements in all the
        *                          processor's
@@ -1743,8 +1796,9 @@ void NemSpread<T, INT>::extract_elem_attr(T *elem_attr, int icurrent_elem_blk, s
           /* globals.GElems is sorted, so if we are outside the iglobal range,
            * break out of this loop...
            */
-          if (iglobal_elem > iglobal_end)
+          if (iglobal_elem > iglobal_end) {
             break;
+          }
 
           if (iglobal_begin <= iglobal_elem && iglobal_elem < iglobal_end) {
             size_t ipos        = iproc_start + (i - iproc_offset) * natt_p_elem;
@@ -1756,12 +1810,14 @@ void NemSpread<T, INT>::extract_elem_attr(T *elem_attr, int icurrent_elem_blk, s
              * globals.Proc_Elem_Connect [].  At the same time, Decrement by one the
              * value of all nodes in the connectivity matrix.
              */
-            for (int j                              = 0; j < natt_p_elem; j++)
+            for (int j = 0; j < natt_p_elem; j++) {
               globals.Proc_Elem_Attr[iproc][ipos++] = elem_attr[iglobal_pos++];
+            }
           }
         }
       }
     } /* END if (globals.Proc_Elem_Blk_Ids[ielem_blk]== ... */
+  }
 } /* extract_elem_connect */
 
 /*****************************************************************************/
@@ -1769,7 +1825,7 @@ void NemSpread<T, INT>::extract_elem_attr(T *elem_attr, int icurrent_elem_blk, s
 /*****************************************************************************/
 
 template <typename T, typename INT>
-void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_for)
+void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*proc_for*/)
 
 {
   /* Function which finds the element block which owns each element on the
@@ -1814,8 +1870,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_
    * element connectivity list (vector)
    */
   elem_blk_point[0] = 0;
-  for (int i              = 0; i < globals.Num_Elem_Blk; i++)
+  for (int i = 0; i < globals.Num_Elem_Blk; i++) {
     elem_blk_point[i + 1] = elem_blk_point[i] + Num_Elem_In_Blk[i];
+  }
 
   /*
    * Find out which elements belonging to the current processor are in which
@@ -1912,9 +1969,11 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_
 
   /* Count the number of element blocks defined on this processor */
   globals.Proc_Num_Elem_Blk[iproc] = 0;
-  for (int i = 0; i < globals.Num_Elem_Blk; i++)
-    if (elem_in_blk[i])
+  for (int i = 0; i < globals.Num_Elem_Blk; i++) {
+    if (elem_in_blk[i] != 0) {
       globals.Proc_Num_Elem_Blk[iproc]++;
+    }
+  }
 
   /*
    * Create a map from the current processor's element block number to the
@@ -1924,13 +1983,12 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_
   globals.GElem_Blks[iproc] =
       (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(INT));
 
-  for (int i = 0, icount = 0; i < globals.Num_Elem_Blk; i++)
-    if (elem_in_blk[i])
+  for (int i = 0, icount = 0; i < globals.Num_Elem_Blk; i++) {
+    if (elem_in_blk[i] != 0) {
       globals.GElem_Blks[iproc][icount++] = i;
-
-  return;
+    }
+  }
 } /* END of routine find_elem_block() ****************************************/
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -2073,15 +2131,16 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
       }
 
       size_t iss_size = sizeof(INT);
-      if (num_df_in_nsets[i] > 0)
+      if (num_df_in_nsets[i] > 0) {
         iss_size += sizeof(T);
+      }
 
       find_message_info(iss_size, num_nodes_in_node_set[i], &num_node_per_message, &num_messages,
                         &num_left_over);
 
       if (Debug_Flag > 1) {
         printf("\nMessage summary for Node Set number " ST_ZU ", with an ID of " ST_ZU ":\n",
-               (size_t)i, (size_t)Node_Set_Ids[i]);
+               static_cast<size_t>(i), (size_t)Node_Set_Ids[i]);
         printf("\tNumber of messages need for node set = " ST_ZU "\n", num_messages);
         printf("\tNumber of node IDs and dist. factors per message = " ST_ZU "\n",
                num_node_per_message);
@@ -2094,8 +2153,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
 
       std::vector<INT> node_set(num_node_per_message);
       std::vector<T>   node_set_df;
-      if (num_df_in_nsets[i] > 0)
+      if (num_df_in_nsets[i] > 0) {
         node_set_df.resize(num_node_per_message);
+      }
 
       /*---------------------------------------------------------------------*/
       /*                  LOOP OVER THE MESSAGES                             */
@@ -2111,19 +2171,21 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
         }
 
         /* Read in the part of the node set that will fit in the message */
-        check_exodus_error(ex_get_n_node_set(exoid, Node_Set_Ids[i], (istart_ns + 1),
-                                             num_node_per_message, TOPTR(node_set)),
-                           "ex_get_n_node_set");
+        check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
+                                              num_node_per_message, TOPTR(node_set), nullptr),
+                           "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
-          check_exodus_error(ex_get_n_node_set_df(exoid, Node_Set_Ids[i], (istart_ns + 1),
-                                                  num_node_per_message, TOPTR(node_set_df)),
-                             "ex_get_n_node_set_df");
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i],
+                                                          (istart_ns + 1), num_node_per_message,
+                                                          TOPTR(node_set_df)),
+                             "ex_get_partial_node_set_df");
         }
 
         /* Renumber nodes to start at node '0' instead of node '1' */
-        for (size_t j = 0; j < num_node_per_message; j++)
+        for (size_t j = 0; j < num_node_per_message; j++) {
           node_set[j]--;
+        }
 
         for (size_t j = 0; j < num_node_per_message; j++) {
           size_t node = node_set[j];
@@ -2162,8 +2224,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
             int nset = globals.Proc_Num_Node_Sets[iproc];
             proc_list[iproc][nset].resize(proc_num_ns[iproc]);
             proc_gmap_list[iproc][nset].resize(proc_num_ns[iproc]);
-            if (num_df_in_nsets[i] > 0)
+            if (num_df_in_nsets[i] > 0) {
               proc_list_df[iproc][nset].resize(proc_num_ns[iproc]);
+            }
 
             for (INT j = 0; j < proc_ns_node_count[iproc]; j++) {
 
@@ -2195,8 +2258,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
           if (num_df_in_nsets[i] > 0) {
             proc_list_df_count[iproc][globals.Proc_Num_Node_Sets[iproc]] = proc_num_ns[iproc];
           }
-          else
+          else {
             proc_list_df_count[iproc][globals.Proc_Num_Node_Sets[iproc]] = 0;
+          }
 
           (globals.Proc_Num_Node_Sets[iproc])++;
 
@@ -2496,8 +2560,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       /*---------------------------------------------------------------------*/
       for (size_t imess = 0; imess < num_messages; imess++) {
 
-        if (Debug_Flag >= 2)
+        if (Debug_Flag >= 2) {
           printf("\tside set message: " ST_ZU " of " ST_ZU "\n", imess + 1, num_messages);
+        }
 
         size_t istart_ss = imess * num_elem_per_message;
 
@@ -2507,10 +2572,10 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
         /* Read in the part of the side set that will fit in the message. */
 
-        check_exodus_error(ex_get_n_side_set(exoid, Side_Set_Ids[i], (istart_ss + 1),
-                                             num_elem_per_message, TOPTR(ss_elem_list),
-                                             TOPTR(ss_side_list)),
-                           "ex_get_n_side_set");
+        check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
+                                              num_elem_per_message, TOPTR(ss_elem_list),
+                                              TOPTR(ss_side_list)),
+                           "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
         if (imess == 0) {
@@ -2539,8 +2604,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
              * where distribution factors are concerned, only count
              * 4 nodes on the 6 node faces (they are just like HEX's)
              */
-            if (GM_Elem_Types[(ss_elem_list[j - 1]) - 1] == HEXSHELL)
+            if (GM_Elem_Types[(ss_elem_list[j - 1]) - 1] == HEXSHELL) {
               ilast_side = 4;
+            }
           }
 
           ss_df_ptr[j] = ss_df_ptr[j - 1] + ilast_side;
@@ -2548,8 +2614,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
         }
 
         /* Renumber elements to start at '0' instead of '1' */
-        for (size_t j = 0; j < num_elem_per_message; ss_elem_list[j++]--)
+        for (size_t j = 0; j < num_elem_per_message; ss_elem_list[j++]--) {
           ;
+        }
 
 #if 1
         /* This method may be slightly faster, but uses lots of push backs
@@ -2676,13 +2743,15 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
         for (size_t imess = 0; imess < num_messages; imess++) {
 
           size_t istart_ss = imess * num_elem_per_message;
-          if (num_left_over != 0 && imess == (num_messages - 1))
+          if (num_left_over != 0 && imess == (num_messages - 1)) {
             num_elem_per_message = num_left_over;
+          }
 
           /* Read in the part of the side set df's that will fit in the msg. */
-          check_exodus_error(ex_get_n_side_set_df(exoid, Side_Set_Ids[i], (istart_ss + 1),
-                                                  num_elem_per_message, TOPTR(ss_dist_fact)),
-                             "ex_get_n_side_set_df");
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i],
+                                                          (istart_ss + 1), num_elem_per_message,
+                                                          TOPTR(ss_dist_fact)),
+                             "ex_get_partial_set_dist_fact");
 
           /*
            * At this point a processor has the list of global element IDs
@@ -2698,8 +2767,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
            */
           for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
 
-            if (imess == 0)
+            if (imess == 0) {
               ntotal[iproc] = 0;
+            }
 
             if (imess == 0 && ss_on_proc[iproc]) {
 
@@ -2735,8 +2805,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                    * where distribution factors are concerned, only count
                    * 4 nodes on the 6 node faces (they are just like HEX's)
                    */
-                  if (GM_Elem_Types[loc_elem] == HEXSHELL)
+                  if (GM_Elem_Types[loc_elem] == HEXSHELL) {
                     ntotal_s = 4;
+                  }
                 }
 
                 ntotal[iproc] += ntotal_s;
@@ -2788,18 +2859,21 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                 if (indx >= proc_df_ptr[iproc][ss_indx][0]) {
 
                   while (k < proc_elem_list_cnt[iproc][ss_indx] - 1 &&
-                         indx >= proc_df_ptr[iproc][ss_indx][k + 1])
+                         indx >= proc_df_ptr[iproc][ss_indx][k + 1]) {
                     k++;
+                  }
 
                   /* now get the proper location from the map */
                   INT ipos_elem = proc_df_map[iproc][k];
 
                   INT idx_begin = proc_df_indx[iproc][ss_indx][ipos_elem];
                   INT idx_end;
-                  if ((ipos_elem + 1) < proc_elem_list_cnt[iproc][ss_indx])
+                  if ((ipos_elem + 1) < proc_elem_list_cnt[iproc][ss_indx]) {
                     idx_end = proc_df_indx[iproc][ss_indx][ipos_elem + 1];
-                  else
+                  }
+                  else {
                     idx_end = ntotal[iproc];
+                  }
 
                   INT idx_diff = idx_end - idx_begin;
 
@@ -2877,11 +2951,13 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       globals.Proc_SS_Elem_List_Length[iproc] += globals.Proc_SS_Elem_Count[iproc][i];
       globals.Proc_SS_DF_Count[iproc][i] = proc_ss_df_cnt[iproc][i];
 
-      if (i == 0)
+      if (i == 0) {
         globals.Proc_SS_DF_Pointers[iproc][i] = 0;
-      else
+      }
+      else {
         globals.Proc_SS_DF_Pointers[iproc][i] =
             globals.Proc_SS_DF_Pointers[iproc][i - 1] + proc_ss_df_cnt[iproc][i - 1];
+      }
     }
 
     if (globals.Proc_Num_Side_Sets[iproc] > 0) {

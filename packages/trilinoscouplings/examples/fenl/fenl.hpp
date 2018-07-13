@@ -44,6 +44,12 @@
 #ifndef KOKKOS_EXAMPLE_FENL_HPP
 #define KOKKOS_EXAMPLE_FENL_HPP
 
+#include "TrilinosCouplings_config.h"
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+#include "Sacado.hpp"
+#include "Sacado_mpl_apply.hpp"
+#endif
+
 #include <iostream>
 
 #include <stdlib.h>
@@ -54,7 +60,7 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <SGPreconditioner.hpp>
@@ -86,6 +92,7 @@ struct Perf {
   double fill_element_graph ;
   double create_sparse_matrix ;
   double fill_time ;
+  double tangent_fill_time ;
   double import_time ;
   double bc_time ;
   double mat_vec_time ;
@@ -93,10 +100,13 @@ struct Perf {
   double prec_setup_time ;
   double prec_apply_time ;
   double cg_total_time ;
+  double newton_total_time ;
   double newton_residual ;
   double error_max ;
   double response_mean ;
   double response_std_dev ;
+
+  std::vector<size_t> ensemble_cg_iter_count;
 
   Perf() : uq_count(1) ,
            global_elem_count(0) ,
@@ -111,6 +121,7 @@ struct Perf {
            fill_element_graph(0) ,
            create_sparse_matrix(0) ,
            fill_time(0) ,
+           tangent_fill_time(0) ,
            import_time(0) ,
            bc_time(0) ,
            mat_vec_time(0) ,
@@ -118,10 +129,12 @@ struct Perf {
            prec_setup_time(0) ,
            prec_apply_time(0) ,
            cg_total_time(0) ,
+           newton_total_time(0) ,
            newton_residual(0) ,
            error_max(0) ,
            response_mean(0) ,
-           response_std_dev(0) {}
+           response_std_dev(0),
+           ensemble_cg_iter_count() {}
 
   void increment(const Perf& p, const bool accumulate_solve_times) {
     global_elem_count     = p.global_elem_count;
@@ -137,10 +150,17 @@ struct Perf {
     fill_element_graph   += p.fill_element_graph;
     create_sparse_matrix += p.create_sparse_matrix;
     fill_time            += p.fill_time;
+    tangent_fill_time    += p.tangent_fill_time;
     import_time          += p.import_time;
     bc_time              += p.bc_time ;
+    newton_total_time    += p.newton_total_time ;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
+
+    const int n = p.ensemble_cg_iter_count.size();
+    ensemble_cg_iter_count.resize(n);
+    for (int i=0; i<n; ++i)
+      ensemble_cg_iter_count[i] += p.ensemble_cg_iter_count[i];
 
     if (accumulate_solve_times) {
       mat_vec_time       += p.mat_vec_time;
@@ -168,12 +188,14 @@ struct Perf {
     create_sparse_matrix= std::min( create_sparse_matrix , p.create_sparse_matrix );
     import_time         = std::min( import_time , p.import_time );
     fill_time           = std::min( fill_time , p.fill_time );
+    tangent_fill_time   = std::min( tangent_fill_time , p.tangent_fill_time );
     bc_time             = std::min( bc_time , p.bc_time );
     mat_vec_time        = std::min( mat_vec_time , p.mat_vec_time );
     cg_iter_time        = std::min( cg_iter_time , p.cg_iter_time );
     prec_setup_time     = std::min( prec_setup_time , p.prec_setup_time );
     prec_apply_time     = std::min( prec_apply_time , p.prec_apply_time );
     cg_total_time       = std::min( cg_total_time , p.cg_total_time );
+    newton_total_time   = std::min( newton_total_time , p.newton_total_time );
   }
 
   void reduceMax(const Teuchos::Comm<int>& comm) {
@@ -186,12 +208,14 @@ struct Perf {
     create_sparse_matrix = maximum( comm , create_sparse_matrix);
     import_time          = maximum( comm , import_time );
     fill_time            = maximum( comm , fill_time );
+    tangent_fill_time    = maximum( comm , tangent_fill_time );
     bc_time              = maximum( comm , bc_time );
     mat_vec_time         = maximum( comm , mat_vec_time );
     cg_iter_time         = maximum( comm , cg_iter_time  );
     prec_setup_time      = maximum( comm , prec_setup_time );
     prec_apply_time      = maximum( comm , prec_apply_time );
     cg_total_time        = maximum( comm , cg_total_time );
+    newton_total_time    = maximum( comm , newton_total_time );
   }
 };
 
@@ -229,15 +253,29 @@ struct LocalViewTraits {
   { return v; }
 };
 
+// Traits class for replacing a nested scalar type with the local scalar type
+template <typename ScalarType, typename LocalScalarType,
+          typename Enabled = void>
+struct ReplaceLocalScalarType {
+  typedef LocalScalarType type;
+};
+
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+template <typename ScalarType, typename LocalScalarType>
+struct ReplaceLocalScalarType<ScalarType,LocalScalarType,typename std::enable_if< Sacado::IsFad<ScalarType>::value >::type> {
+  typedef typename Sacado::mpl::apply<ScalarType,LocalScalarType>::type type;
+};
+#endif
+
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
 struct CreateDeviceConfigs {
-  static void eval( Kokkos::DeviceConfig& dev_config_elem,
-                    Kokkos::DeviceConfig& dev_config_gath,
-                    Kokkos::DeviceConfig& dev_config_bc ) {
-    dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+  static void eval( KokkosSparse::DeviceConfig& dev_config_elem,
+                    KokkosSparse::DeviceConfig& dev_config_gath,
+                    KokkosSparse::DeviceConfig& dev_config_bc ) {
+    dev_config_elem = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
+    dev_config_gath = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
+    dev_config_bc   = KokkosSparse::DeviceConfig( 0 , 1 , 1 );
   }
 };
 
@@ -377,6 +415,14 @@ public:
   }
 };
 
+template <typename CoeffType, typename FadType>
+struct FadCoeffFunctionTraits {
+  typedef CoeffType type;
+  static type eval(const CoeffType& coeff_function) {
+    return coeff_function;
+  }
+};
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
@@ -391,6 +437,16 @@ public:
 namespace Kokkos {
 namespace Example {
 namespace FENL {
+
+template <typename T>
+struct EnsembleTraits {
+  static const int size = 1;
+  typedef T value_type;
+  KOKKOS_INLINE_FUNCTION
+  static const value_type& coeff(const T& x, int i) { return x; }
+  KOKKOS_INLINE_FUNCTION
+  static value_type& coeff(T& x, int i) { return x; }
+};
 
 // Exponential KL from Stokhos
 template < typename Scalar, typename MeshScalar, typename Device >
@@ -420,6 +476,7 @@ public:
   const bool m_use_exp;           // Take exponential of random field
   const MeshScalar m_exp_shift;   // Shift of exponential of random field
   const MeshScalar m_exp_scale;   // Scale of exponential of random field
+  const bool m_use_disc_exp_scale; // Use discontinuous exponential scale
   RandomVariableView m_rv;        // KL random variables
 
 public:
@@ -431,7 +488,9 @@ public:
     const size_type num_rv,
     const bool use_exp,
     const MeshScalar exp_shift,
-    const MeshScalar exp_scale) :
+    const MeshScalar exp_scale,
+    const bool use_disc_exp_scale,
+    const bool init_random_variables = true) :
     m_mean( mean ),
     m_variance( variance ),
     m_corr_len( correlation_length ),
@@ -439,7 +498,7 @@ public:
     m_use_exp( use_exp ),
     m_exp_shift( exp_shift ),
     m_exp_scale( exp_scale ),
-    m_rv( "KL Random Variables", m_num_rv )
+    m_use_disc_exp_scale( use_disc_exp_scale )
   {
     Teuchos::ParameterList solverParams;
     solverParams.set("Number of KL Terms", int(num_rv));
@@ -453,6 +512,9 @@ public:
     solverParams.set("Correlation Lengths", correlation_lengths);
 
     m_rf = rf_type(solverParams);
+
+    if (init_random_variables)
+      m_rv = RandomVariableView( "KL Random Variables", m_num_rv );
   }
 
   ExponentialKLCoefficient( const ExponentialKLCoefficient & rhs ) :
@@ -464,6 +526,7 @@ public:
     m_use_exp( rhs.m_use_exp ) ,
     m_exp_shift( rhs.m_exp_shift ) ,
     m_exp_scale( rhs.m_exp_scale ) ,
+    m_use_disc_exp_scale( rhs.m_use_disc_exp_scale ),
     m_rv( rhs.m_rv ) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -481,12 +544,62 @@ public:
 
     local_scalar_type val = m_rf.evaluate(point, local_rv);
 
-    if (m_use_exp)
-      val = m_exp_shift + m_exp_scale * std::exp(val);
+    if (m_use_exp) {
+      local_scalar_type exp_scale = m_exp_scale;
+      if (m_use_disc_exp_scale) {
+        MeshScalar D = std::sqrt(3.0);
+        local_scalar_type r = 0.0;
+        for (size_type i=0; i<m_num_rv; ++i)
+          r += local_rv(i)*local_rv(i);
+        r = std::sqrt(r);
+        typedef EnsembleTraits<local_scalar_type> ET;
+        const int ensemble_size = ET::size;
+        for (int j=0; j<ensemble_size; ++j) {
+          typename ET::value_type rj = ET::coeff(r,j);
+          if (rj < D/4.0)
+            ET::coeff(exp_scale,j) = 1.0;
+          else if (rj >= D/4.0 && rj < D/2.0)
+            ET::coeff(exp_scale,j) = 100.0;
+          else
+            ET::coeff(exp_scale,j) = 10.0;
+        }
+      }
+      val = m_exp_shift + exp_scale * std::exp(val);
+    }
 
     return val;
   }
 };
+
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+template <typename Scalar, typename MeshScalar, typename Device,
+          typename FadType>
+struct FadCoeffFunctionTraits<
+  ExponentialKLCoefficient<Scalar,MeshScalar,Device>, FadType> {
+  typedef ExponentialKLCoefficient<Scalar,MeshScalar,Device> coeff_type;
+  typedef ExponentialKLCoefficient<FadType,MeshScalar,Device> type;
+  static type eval(const coeff_type& coeff_function) {
+    typedef typename type::RandomVariableView FadRV;
+    type fad_coeff_function(coeff_function.m_mean,
+                            coeff_function.m_variance,
+                            coeff_function.m_corr_len,
+                            coeff_function.m_num_rv,
+                            coeff_function.m_use_exp,
+                            coeff_function.m_exp_shift,
+                            coeff_function.m_exp_scale,
+                            coeff_function.m_use_disc_exp_scale,
+                            false);
+    FadRV fad_rv("Fad KL Random Variables",
+                 coeff_function.m_num_rv, coeff_function.m_num_rv+1 );
+    for (unsigned i=0; i<coeff_function.m_num_rv; ++i) {
+      fad_rv(i).val() = coeff_function.m_rv(i);
+      fad_rv(i).fastAccessDx(i) = 1.0;
+    }
+    fad_coeff_function.setRandomVariables(fad_rv);
+    return fad_coeff_function;
+  }
+};
+#endif
 
 } /* namespace FENL */
 } /* namespace Example */

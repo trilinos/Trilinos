@@ -207,6 +207,10 @@ public:
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const;
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+     */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const;
+
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -217,10 +221,10 @@ public:
      */
    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
-   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & s) const
+   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & /* s */) const
    { return emptyVector_; }
 
-   virtual const std::vector<LocalOrdinal> & getAssociatedNeighbors(const LocalOrdinal& el) const
+   virtual const std::vector<LocalOrdinal> & getAssociatedNeighbors(const LocalOrdinal& /* el */) const
    { return emptyVector_; }
 
    virtual bool hasAssociatedNeighbors() const 

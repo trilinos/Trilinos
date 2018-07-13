@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -303,6 +303,10 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
+
   /// \brief The level of fill.
   ///
   /// For ILUT, this means the maximum number of entries in each row
@@ -353,12 +357,15 @@ public:
   //@}
 
 private:
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
 
   //! Copy constructor (declared private and undefined; may not be used)
   ILUT (const ILUT<MatrixType>& RHS);
+
+  void allocateSolvers ();
 
   //! operator= (declared private and undefined; may not be used)
   ILUT<MatrixType>& operator= (const ILUT<MatrixType>& RHS);

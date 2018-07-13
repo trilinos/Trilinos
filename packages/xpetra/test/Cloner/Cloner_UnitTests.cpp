@@ -136,8 +136,6 @@ namespace {
     RCP<const Map1> map1 = MapFactory<LO,GO,N1>::createContigMap(Xpetra::UseTpetra, INVALID, numLocal, comm);
     RCP<const Map2> map2  = Xpetra::clone(*map1, n2);
     RCP<const Map1> map1b = Xpetra::clone(*map2, n1);
-    TEST_EQUALITY      (map2->getNode(),            n2);
-    TEST_EQUALITY      (map1b->getNode(),           n1);
     TEST_EQUALITY_CONST(map1->isCompatible(*map1b), true);
     TEST_EQUALITY_CONST(map1->isSameAs(*map1b),     true);
 #endif
@@ -218,8 +216,6 @@ namespace {
     // Node type than the left-hand side.
     RCP<Matrix2> matrix2  = clone(*matrix1, n2);
     RCP<Matrix1> matrix1b = clone(*matrix2, n1);
-    TEST_EQUALITY      (matrix2 ->getRowMap()->getNode(), n2);
-    TEST_EQUALITY      (matrix1b->getRowMap()->getNode(), n1);
     TEST_EQUALITY_CONST(matrix1b->getRowMap()->isCompatible(*matrix1->getRowMap()), true);
     TEST_EQUALITY_CONST(matrix1b->getRowMap()->isSameAs(*matrix1->getRowMap()),     true);
 #endif

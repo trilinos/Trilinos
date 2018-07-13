@@ -49,6 +49,7 @@
 #include <vector>
 
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -315,7 +316,6 @@ namespace MueLu {
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::Build: minimization mode not supported. error");
-        break;
       }
 
 

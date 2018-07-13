@@ -1,6 +1,6 @@
-C Copyright (c) 2008 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright (c) 2008 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
 C 
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -31,16 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C+++ Copyright 1988, Sandia Corporation. The United States Government
-C+++ retains a limited license in this software as prescribed in AL 88-1
-C+++ and AL 91-7. Export of this program may require a license from
-C+++ the United States Government.
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C -*- Mode: fortran -*-
 C=======================================================================
 C $Id: gjoin2.f,v 1.10 2008/07/31 20:15:56 gdsjaar Exp $
@@ -83,16 +73,17 @@ C   --   "User's Manual for GJOIN"
       include 'gj_dbvars.blk'
       include 'gj_filnum.blk'
       include 'gj_xyzrot.blk'
+      include 'argparse.inc'
 
       DIMENSION A(1), IA(1)
 C      --A - the dynamic numeric memory base array
       EQUIVALENCE (A(1),IA(1))
       character*1 c(1)
 
-      LOGICAL USESDF, NONQUD
+      LOGICAL USESDF, NONQUD, L64BIT, NC4
       LOGICAL RENNP, RENEL, REN, DELNP, DELEL, BATCH, CLOSE, MATMAT
       LOGICAL FIRST, DONE, MDEBUG
-      character*(2048) filnam, string
+      character*(2048) filnam, string, syntax, scratch
 
 C... String containing name of common element topology in model
 C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
@@ -105,6 +96,9 @@ C      --INFREC - the information records
 
       include 'gj_qainfo.blk'
 
+      L64BIT = .false.
+      Nc4    = .false.
+      
       CALL STRTUP (QAINFO)
 
       CALL BANNER (0, QAINFO,
@@ -112,10 +106,6 @@ C      --INFREC - the information records
      &   ' ', ' ')
 
       call cpyrgt (0, '1988')
-
-      call exinq (netid, EXLBVR, idummy, exlibversion, name, nerr)
-      write(*,'(A,F6.3)')'ExodusII Library version ',
-     &          exlibversion
 
 C     --Open LOG file if running interactively
       IF (.NOT. BATCH()) THEN
@@ -148,6 +138,31 @@ C      end if
       USESDF = .FALSE.
 
  80   CONTINUE
+
+C .. Get filename from command line.  If not specified, emit error message
+      SYNTAX = 'Syntax is: "gjoin [-64] [-netcdf4]"'
+      NARG = argument_count()
+C ... Parse options...
+      name_len = 0
+      if (narg .ge. 1) then
+        iarg = 1
+        do
+          CALL get_argument(iarg,STRING, LNAM)
+          iarg = iarg + 1
+          if (string(:lnam) .eq. '-64') then
+            l64bit = .true.
+          else if (string(:lnam) .eq. '-netcdf4') then
+            nc4 = .true.
+          else
+            SCRATCH =
+     *        'Unrecognized command option "'//STRING(:LNAM)//'"'
+            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
+            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+            go to 150
+          end if
+          if (iarg .ge. narg) exit
+        end do
+      end if
 
       CALL INIGEN (A, FIRST,
      &   KXN, KYN, KZN, KMAPEL,
@@ -713,7 +728,8 @@ C   --Write the QA records
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, KFACSS,
-     &   kltsss, NQAREC, QAREC, NINFO, INFREC, C(KNMLB), *140)
+     &   kltsss, NQAREC, QAREC, NINFO, INFREC, C(KNMLB), L64BIT, NC4,
+     &   *140)
 
       FIRST = .FALSE.
 

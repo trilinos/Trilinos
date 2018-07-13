@@ -1,7 +1,6 @@
-// Copyright(C) 2016
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Wedge20() : ElementVariableType("wedge20", 20) {}
+    St_Wedge20() : ElementVariableType(Ioss::Wedge20::name, 20) {}
   };
 } // namespace Ioss
 void Ioss::St_Wedge20::factory() { static Ioss::St_Wedge20 registerThis; }
@@ -95,9 +95,9 @@ void Ioss::Wedge20::factory()
   Ioss::St_Wedge20::factory();
 }
 
-Ioss::Wedge20::Wedge20() : Ioss::ElementTopology("wedge20", "Wedge_20")
+Ioss::Wedge20::Wedge20() : Ioss::ElementTopology(Ioss::Wedge20::name, "Wedge_20")
 {
-  Ioss::ElementTopology::alias("wedge20", "Solid_Wedge_20_3D");
+  Ioss::ElementTopology::alias(Ioss::Wedge20::name, "Solid_Wedge_20_3D");
 }
 
 Ioss::Wedge20::~Wedge20() = default;
@@ -170,9 +170,8 @@ Ioss::ElementTopology *Ioss::Wedge20::face_type(int face_number) const
   if (face_number <= 3) {
     return Ioss::ElementTopology::factory("quad9");
   }
-  else {
-    return Ioss::ElementTopology::factory("tri7");
-  }
+
+  return Ioss::ElementTopology::factory("tri7");
 }
 
 Ioss::ElementTopology *Ioss::Wedge20::edge_type(int edge_number) const

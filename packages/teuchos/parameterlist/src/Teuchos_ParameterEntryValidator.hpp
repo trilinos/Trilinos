@@ -152,6 +152,45 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(0==entry);
       this->validate(*entry,paramName,sublistName);
     }
+
+  double convertStringToDouble(std::string str) const
+  {
+    #ifdef HAVE_TEUCHOSCORE_CXX11
+      size_t idx = 0;
+      double result = std::stod(str, &idx); // can throw std::invalid_argument
+      if(idx != str.length()) { // check for extra bad format characters
+        throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to a double." );
+      }
+      return result;
+    #else
+      return std::atof(str.c_str());
+    #endif
+  }
+
+  int convertStringToInt(std::string str) const
+  {
+    #ifdef HAVE_TEUCHOSCORE_CXX11
+      size_t idx = 0;
+      int result = std::stoi(str, &idx); // can throw std::invalid_argument
+      if(idx != str.length()) { // check for extra bad format characters
+        throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to an int." );
+      }
+      return result;
+    #else
+      return std::atoi(str.c_str());
+    #endif
+  }
+
+  int convertStringToLongLong(std::string str) const
+  {
+    size_t idx = 0;
+    long long result = std::stoll(str, &idx); // can throw std::invalid_argument
+    if(idx != str.length()) { // check for extra bad format characters
+      throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to a long long." );
+    }
+    return result;
+  }
+
 };
 
 

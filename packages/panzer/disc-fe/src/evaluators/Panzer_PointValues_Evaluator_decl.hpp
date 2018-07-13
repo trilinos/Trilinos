@@ -45,21 +45,41 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
+#include "Phalanx_MDField.hpp"
 #include "Panzer_PointValues2.hpp"
-
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
+template<typename EvalT, typename Traits>
+class PointValues_Evaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    PointValues_Evaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT,PHX::MDField> pointValues;
+  PointValues2<ScalarT> pointValues;
  
-  Kokkos::DynRankView<double,PHX::Device> refPointArray;
+  PHX::MDField<double,NODE,Dim> refPointArray;
 
   bool useBasisValuesRefArray; // if true then basis is non-null
   Teuchos::RCP<const panzer::PureBasis> basis;
@@ -83,7 +103,8 @@ public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                         const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class PointValues_Evaluator
+
 
 }
 

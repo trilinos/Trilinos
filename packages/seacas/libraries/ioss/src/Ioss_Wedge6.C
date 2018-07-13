@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Wedge6() : ElementVariableType("wedge6", 6) {}
+    St_Wedge6() : ElementVariableType(Ioss::Wedge6::name, 6) {}
   };
 } // namespace Ioss
 void Ioss::St_Wedge6::factory() { static Ioss::St_Wedge6 registerThis; }
@@ -93,11 +93,11 @@ void Ioss::Wedge6::factory()
   Ioss::St_Wedge6::factory();
 }
 
-Ioss::Wedge6::Wedge6() : Ioss::ElementTopology("wedge6", "Wedge_6")
+Ioss::Wedge6::Wedge6() : Ioss::ElementTopology(Ioss::Wedge6::name, "Wedge_6")
 {
-  Ioss::ElementTopology::alias("wedge6", "wedge");
-  Ioss::ElementTopology::alias("wedge6", "Solid_Wedge_6_3D");
-  Ioss::ElementTopology::alias("wedge6", "WEDGE_6");
+  Ioss::ElementTopology::alias(Ioss::Wedge6::name, "wedge");
+  Ioss::ElementTopology::alias(Ioss::Wedge6::name, "Solid_Wedge_6_3D");
+  Ioss::ElementTopology::alias(Ioss::Wedge6::name, "WEDGE_6");
 }
 
 Ioss::Wedge6::~Wedge6() = default;
@@ -171,10 +171,9 @@ Ioss::ElementTopology *Ioss::Wedge6::face_type(int face_number) const
     //    return Ioss::ElementTopology::factory("quadface4");
     return Ioss::ElementTopology::factory("quad4");
   }
-  else {
-    //    return Ioss::ElementTopology::factory("triface3");
-    return Ioss::ElementTopology::factory("tri3");
-  }
+
+  //    return Ioss::ElementTopology::factory("triface3");
+  return Ioss::ElementTopology::factory("tri3");
 }
 
 Ioss::ElementTopology *Ioss::Wedge6::edge_type(int edge_number) const

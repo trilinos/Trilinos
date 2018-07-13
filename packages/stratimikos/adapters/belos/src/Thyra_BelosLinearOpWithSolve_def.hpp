@@ -223,6 +223,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
           "find that type using Teuchos::ScalarTraits<Scalar>::magnitudeType.");
       }
     }
+
+    if (solverPL_->isParameter("Timer Label") && solverPL_->isType<std::string>("Timer Label"))
+      lp_->setLabel(solverPL_->get<std::string>("Timer Label"));
   }
   else {
     RCP<const Teuchos::ParameterList> defaultPL =
@@ -489,7 +492,6 @@ BelosLinearOpWithSolve<Scalar>::solveSupportsNewImpl(EOpTransp transp,
   return false; // ToDo: Support adjoint solves!
   // Otherwise, Thyra/Belos now supports every solve criteria type that exists
   // because of the class Thyra::GeneralSolveCriteriaBelosStatusTest!
-  return true;
 /*
   if (real_trans(M_trans)==NOTRANS) {
     return (

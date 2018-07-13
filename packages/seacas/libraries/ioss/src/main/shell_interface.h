@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2012 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 #ifndef shell_SystemInterface_h
 #define shell_SystemInterface_h
@@ -64,22 +63,29 @@ namespace IOShell {
     std::string              outFiletype;
     std::string              groupName;
     std::string              decomp_method;
-    std::string              compose_output;
-    double                   maximum_time;
-    double                   minimum_time;
-    int                      surface_split_type;
-    int                      compression_level;
-    bool                     shuffle;
-    bool                     debug;
-    bool                     statistics;
-    bool                     do_transform_fields;
-    bool                     ints_64_bit;
-    bool                     reals_32_bit;
-    bool                     netcdf4;
-    bool                     in_memory_read;
-    bool                     in_memory_write;
-    bool                     lower_case_variable_names;
-    char                     fieldSuffixSeparator;
+    std::string              compose_output{"none"};
+    double                   maximum_time{0.0};
+    double                   minimum_time{0.0};
+    double                   append_time{std::numeric_limits<double>::max()};
+    int                      append_step{std::numeric_limits<int>::max()};
+    int                      surface_split_type{1};
+    int                      data_storage_type{0};
+    int                      compression_level{0};
+    int                      serialize_io_size{0};
+    bool                     shuffle{false};
+    bool                     debug{false};
+    bool                     statistics{false};
+    bool                     memory_statistics{false};
+    bool                     do_transform_fields{false};
+    bool                     ints_64_bit{false};
+    bool                     ints_32_bit{false};
+    bool                     reals_32_bit{false};
+    bool                     netcdf4{false};
+    bool                     in_memory_read{false};
+    bool                     in_memory_write{false};
+    bool                     lower_case_variable_names{true};
+    bool                     delete_timesteps{false};
+    char                     fieldSuffixSeparator{'_'};
   };
-}
+} // namespace IOShell
 #endif

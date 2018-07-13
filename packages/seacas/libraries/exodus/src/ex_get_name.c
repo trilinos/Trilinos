@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,7 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for ex_inquire_int, exerrval, etc
+#include "exodusII.h"     // for ex_inquire_int, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid
 #include <stdio.h>
@@ -67,7 +67,8 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
   char *      vobj    = NULL;
   const char *routine = "ex_get_name";
 
-  exerrval = 0;
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   switch (obj_type) {
   case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
@@ -84,10 +85,9 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
   case EX_ELEM_MAP: vobj   = VAR_NAME_EM; break;
   default:
     /* invalid variable type */
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vobj, &varid)) == NC_NOERR) {
@@ -107,7 +107,7 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
 
       status = ex_get_name_internal(exoid, varid, ent_ndx - 1, name, name_size, obj_type, routine);
       if (status != NC_NOERR) {
-        return (EX_FATAL);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
   }
@@ -117,5 +117,5 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
      */
     name[0] = '\0';
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

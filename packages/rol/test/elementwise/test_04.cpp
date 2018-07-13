@@ -50,9 +50,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_BarrierFunctions.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 int main( int argc, char *argv[] ) {
 
@@ -64,35 +64,35 @@ int main( int argc, char *argv[] ) {
 
   typedef typename vector::size_type uint;
 
-  using Teuchos::RCP;  using Teuchos::rcp;
+    
 
   RealT xmin = -1.0;
   RealT xmax =  2.0;
 
   uint N = 30;
 
-  RCP<vector> x_rcp = rcp( new vector(N,0.0) );
-  RCP<vector> y_rcp = rcp( new vector(N,0.0) );
-  RCP<vector> z_rcp = rcp( new vector(N,0.0) );
+  ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(N,0.0);
+  ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(N,0.0);
+  ROL::Ptr<vector> z_ptr = ROL::makePtr<vector>(N,0.0);
 
-  RCP<vector> u_rcp = rcp( new vector(N,1.0) );
-  RCP<vector> l_rcp = rcp( new vector(N,0.0) );
+  ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(N,1.0);
+  ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(N,0.0);
 
-  SV x(x_rcp);
-  SV y(y_rcp);
-  SV z(z_rcp);
+  SV x(x_ptr);
+  SV y(y_ptr);
+  SV z(z_ptr);
 
-  SV u(u_rcp);
-  SV l(l_rcp);
+  SV u(u_ptr);
+  SV l(l_ptr);
 
-  RCP<V> x_minus_l = x.clone();
-  RCP<V> u_minus_x = x.clone();
+  ROL::Ptr<V> x_minus_l = x.clone();
+  ROL::Ptr<V> u_minus_x = x.clone();
 
   
 
 /*
-  Teuchos::ParameterList logList;
-  Teuchos::ParameterList quadList;
+  ROL::ParameterList logList;
+  ROL::ParameterList quadList;
 
   logList.sublist("Barrier Function").set("Type","Logarithmic");
   quadList.sublist("Barrier Function").set("Type","Quadratic");
@@ -100,17 +100,17 @@ int main( int argc, char *argv[] ) {
   ROL::Elementwise::BarrierFunctionFactory<RealT> logFactory( logList );
   ROL::Elementwise::BarrierFunctionFactory<RealT> quadFactory( quadList );
 
-  RCP<ROL::Elementwise::BarrierFunction<RealT> > logFunction = logFactory.getBarrierFunction();
-  RCP<ROL::Elementwise::BarrierFunction<RealT> > quadFunction = quadFactory.getBarrierFunction();
+  ROL::Ptr<ROL::Elementwise::BarrierFunction<RealT> > logFunction = logFactory.getBarrierFunction();
+  ROL::Ptr<ROL::Elementwise::BarrierFunction<RealT> > quadFunction = quadFactory.getBarrierFunction();
 */
   
-  RCP<ROL::Elementwise::BinaryFunction<RealT> > lesser = rcp( new ROL::Elementwise::Lesser<RealT> );
-  RCP<ROL::Elementwise::BinaryFunction<RealT> > greater = rcp( new ROL::Elementwise::Greater<RealT> );
+  ROL::Ptr<ROL::Elementwise::BinaryFunction<RealT> > lesser = ROL::makePtr<ROL::Elementwise::Lesser<RealT>>();
+  ROL::Ptr<ROL::Elementwise::BinaryFunction<RealT> > greater = ROL::makePtr<ROL::Elementwise::Greater<RealT>>();
    
 
   for( uint i=0; i<N; ++i ) {
     RealT t = static_cast<RealT>(i)/(N-1);
-    (*x_rcp)[i] = xmin*(1-t) + xmax*t;
+    (*x_ptr)[i] = xmin*(1-t) + xmax*t;
   }
 
 
@@ -137,8 +137,8 @@ int main( int argc, char *argv[] ) {
   y.applyBinary(*lesser,u);
   y.applyBinary(*greater,l);
   
-  RCP<vector> xml = Teuchos::rcp_static_cast<SV>(x_minus_l)->getVector();
-  RCP<vector> umx = Teuchos::rcp_static_cast<SV>(u_minus_x)->getVector();
+  ROL::Ptr<vector> xml = ROL::staticPtrCast<SV>(x_minus_l)->getVector();
+  ROL::Ptr<vector> umx = ROL::staticPtrCast<SV>(u_minus_x)->getVector();
 
   for(uint i=0; i<N; ++i ) {
     std::cout << std::setw(16) << (*xml)[i] 

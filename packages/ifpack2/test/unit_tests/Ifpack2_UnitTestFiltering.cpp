@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -203,7 +203,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // Zoltan2 would normally do this, but for unit testing we do it
   // without Zoltan2.
 
-  // Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering ((size_t)num_rows_per_proc);
+  // Zoltan2::LocalOrderingSolution<LocalOrdinal>
+  //   Ordering ((size_t)num_rows_per_proc);
   // ArrayRCP<LocalOrdinal> l_perm = Ordering.getPermutationRCP ();
   // ArrayRCP<LocalOrdinal> l_invperm = Ordering.getPermutationRCP (true);
 

@@ -466,7 +466,7 @@ namespace Belos {
       // Update the solution std::vector x := x + alpha * P_
       //
       MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
-      lp_->updateSolution();
+      lp_->updateSolution();// what does this do?
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
       //
@@ -509,7 +509,7 @@ namespace Belos {
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
         Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );
+        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );       
       }
 
       // Condition estimate (if needed)

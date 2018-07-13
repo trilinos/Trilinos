@@ -22,7 +22,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "../FaceCreationTestUtils.hpp"
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -74,34 +74,34 @@
 #define NCNTCM 20
 #define ECNTCM 17
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
 
   /* Local function calls */
-  int ne_test_glbp(int);
-  int ne_test_piinf(int);
-  int ne_test_pinig(int);
-  int ne_test_pelbid(int);
-  int ne_test_pnsp(int);
-  int ne_test_pssp(int);
-  int ne_test_pnm(int);
-  int ne_test_pem(int);
-  int ne_test_pcmp(int);
-  int ne_test_pncm(int);
-  int ne_test_pecm(int);
+  int ne_test_glbp(int /*fileid*/);
+  int ne_test_piinf(int /*fileid*/);
+  int ne_test_pinig(int /*fileid*/);
+  int ne_test_pelbid(int /*fileid*/);
+  int ne_test_pnsp(int /*fileid*/);
+  int ne_test_pssp(int /*fileid*/);
+  int ne_test_pnm(int /*fileid*/);
+  int ne_test_pem(int /*fileid*/);
+  int ne_test_pcmp(int /*fileid*/);
+  int ne_test_pncm(int /*fileid*/);
+  int ne_test_pecm(int /*fileid*/);
 
-  int ne_test_giinf(int);
-  int ne_test_ginig(int);
-  int ne_test_gelbid(int);
-  int ne_test_gnsp(int);
-  int ne_test_gssp(int);
-  int ne_test_gnm(int);
-  int ne_test_gem(int);
-  int ne_test_gncm(int);
-  int ne_test_gecm(int);
+  int ne_test_giinf(int /*fileid*/);
+  int ne_test_ginig(int /*fileid*/);
+  int ne_test_gelbid(int /*fileid*/);
+  int ne_test_gnsp(int /*fileid*/);
+  int ne_test_gssp(int /*fileid*/);
+  int ne_test_gnm(int /*fileid*/);
+  int ne_test_gem(int /*fileid*/);
+  int ne_test_gncm(int /*fileid*/);
+  int ne_test_gecm(int /*fileid*/);
 
-  int ne_test_plbpc(int);
-  int ne_test_pcmpc(int);
+  int ne_test_plbpc(int /*fileid*/);
+  int ne_test_pcmpc(int /*fileid*/);
 
   /* Unitialized local variables */
   int   ne_file_id;
@@ -571,16 +571,20 @@ int ne_test_pnm(int fileid)
   /*-----------------------------Execution Begins-----------------------------*/
 
   for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (j = 0; j < NINTN; node_mapi[j++] = j1++)
+    for (j = 0; j < NINTN; node_mapi[j++] = j1++) {
       ;
-    for (j = 0; j < NBORN; node_mapb[j++] = j1++)
+    }
+    for (j = 0; j < NBORN; node_mapb[j++] = j1++) {
       ;
-    for (j = 0; j < NEXTN; node_mape[j++] = j1++)
+    }
+    for (j = 0; j < NEXTN; node_mape[j++] = j1++) {
       ;
+    }
     j1    = 0;
     error = ex_put_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
   }
 
   return 0;
@@ -595,14 +599,17 @@ int ne_test_pem(int fileid)
   /*-----------------------------Execution Begins-----------------------------*/
 
   for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (j = 0; j < NINTE; elem_mapi[j++] = j1++)
+    for (j = 0; j < NINTE; elem_mapi[j++] = j1++) {
       ;
-    for (j = 0; j < NBORE; elem_mapb[j++] = j1++)
+    }
+    for (j = 0; j < NBORE; elem_mapb[j++] = j1++) {
       ;
+    }
     j1    = 0;
     error = ex_put_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
   }
 
   return 0;
@@ -630,8 +637,9 @@ int ne_test_pcmp(int fileid)
 
     error = ex_put_cmap_params(fileid, node_map_node_cnts, node_map_ids, elem_map_elem_cnts,
                                elem_map_ids, iproc);
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
   }
 
   return 0;
@@ -656,8 +664,9 @@ int ne_test_pncm(int fileid)
 
     for (i = 0; i < NNCMAP; i++) {
       error = ex_put_node_cmap(fileid, node_map_ids[i], node_ids, proc_ids, iproc);
-      if (error < 0)
+      if (error < 0) {
         return error;
+      }
     }
   }
 
@@ -685,8 +694,9 @@ int ne_test_pecm(int fileid)
 
     for (i = 0; i < NECMAP; i++) {
       error = ex_put_elem_cmap(fileid, elem_map_ids[i], elem_ids, side_ids, proc_ids, iproc);
-      if (error < 0)
+      if (error < 0) {
         return error;
+      }
     }
   }
 
@@ -702,15 +712,19 @@ int ne_test_giinf(int fileid)
   /*-----------------------------Execution Begins-----------------------------*/
   error = ex_get_init_info(fileid, &nproc, &nprocf, ftype);
 
-  if (error < 0)
+  if (error < 0) {
     return error;
+  }
 
-  if (nproc != NPROC)
+  if (nproc != NPROC) {
     return -1;
-  if (nprocf != NPROCF)
+  }
+  if (nprocf != NPROCF) {
     return -1;
-  if (strcmp(ftype, "s") != 0)
+  }
+  if (strcmp(ftype, "s") != 0) {
     return -1;
+  }
 
   return 0;
 }
@@ -727,19 +741,25 @@ int ne_test_ginig(int fileid)
   error = ex_get_init_global(fileid, &num_nodes_g, &num_elems_g, &num_elem_blks_g, &num_ns_g,
                              &num_ss_g);
 
-  if (error < 0)
+  if (error < 0) {
     return error;
+  }
 
-  if (num_nodes_g != NNG)
+  if (num_nodes_g != NNG) {
     return -1;
-  if (num_elems_g != NEG)
+  }
+  if (num_elems_g != NEG) {
     return -1;
-  if (num_elem_blks_g != NEBG)
+  }
+  if (num_elem_blks_g != NEBG) {
     return -1;
-  if (num_ns_g != NNSG)
+  }
+  if (num_ns_g != NNSG) {
     return -1;
-  if (num_ss_g != NSSG)
+  }
+  if (num_ss_g != NSSG) {
     return -1;
+  }
 
   return 0;
 }
@@ -755,14 +775,17 @@ int ne_test_gelbid(int fileid)
 
   error = ex_get_eb_info_global(fileid, el_blk_ids, el_blk_cnt);
 
-  if (error < 0)
+  if (error < 0) {
     return error;
+  }
 
   for (i = 0; i < NEBG; i++) {
-    if (el_blk_ids[i] != (i + 1))
+    if (el_blk_ids[i] != (i + 1)) {
       return -1;
-    if (el_blk_cnt[i] != NEBCG)
+    }
+    if (el_blk_cnt[i] != NEBCG) {
       return -1;
+    }
   }
 
   return 0;
@@ -779,16 +802,20 @@ int ne_test_gnsp(int fileid)
 
   error = ex_get_ns_param_global(fileid, global_ids, global_n_cnts, global_df_cnts);
 
-  if (error < 0)
+  if (error < 0) {
     return error;
+  }
 
   for (i = 0; i < NNSG; i++) {
-    if (global_ids[i] != 2 * (i + 1))
+    if (global_ids[i] != 2 * (i + 1)) {
       return -1;
-    if (global_n_cnts[i] != 3 * (i + 1))
+    }
+    if (global_n_cnts[i] != 3 * (i + 1)) {
       return -1;
-    if (global_df_cnts[i] != 1)
+    }
+    if (global_df_cnts[i] != 1) {
       return -1;
+    }
   }
 
   return 0;
@@ -805,16 +832,20 @@ int ne_test_gssp(int fileid)
 
   error = ex_get_ss_param_global(fileid, global_ids, global_e_cnts, global_df_cnts);
 
-  if (error < 0)
+  if (error < 0) {
     return error;
+  }
 
   for (i = 0; i < NSSG; i++) {
-    if (global_ids[i] != 3 * (i + 1))
+    if (global_ids[i] != 3 * (i + 1)) {
       return -1;
-    if (global_e_cnts[i] != 2 * (i + 1))
+    }
+    if (global_e_cnts[i] != 2 * (i + 1)) {
       return -1;
-    if (global_df_cnts[i] != 1)
+    }
+    if (global_df_cnts[i] != 1) {
       return -1;
+    }
   }
 
   return 0;
@@ -833,23 +864,31 @@ int ne_test_glbp(int fileid)
     error = ex_get_loadbal_param(fileid, &nintn, &nborn, &nextn, &ninte, &nbore, &nncmap, &necmap,
                                  iproc);
 
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
 
-    if (nintn != NINTN)
+    if (nintn != NINTN) {
       return -1;
-    if (nborn != NBORN)
+    }
+    if (nborn != NBORN) {
       return -1;
-    if (nextn != NEXTN)
+    }
+    if (nextn != NEXTN) {
       return -1;
-    if (ninte != NINTE)
+    }
+    if (ninte != NINTE) {
       return -1;
-    if (nbore != NBORE)
+    }
+    if (nbore != NBORE) {
       return -1;
-    if (nncmap != NNCMAP)
+    }
+    if (nncmap != NNCMAP) {
       return -1;
-    if (necmap != NECMAP)
+    }
+    if (necmap != NECMAP) {
       return -1;
+    }
   }
 
   return 0;
@@ -866,20 +905,24 @@ int ne_test_gnm(int fileid)
   for (iproc = 0; iproc < NPROCF; iproc++) {
     error = ex_get_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
 
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
 
     for (j = 0; j < NINTN; j++) {
-      if (node_mapi[j] != j1++)
+      if (node_mapi[j] != j1++) {
         return -1;
+      }
     }
     for (j = 0; j < NBORN; j++) {
-      if (node_mapb[j] != j1++)
+      if (node_mapb[j] != j1++) {
         return -1;
+      }
     }
     for (j = 0; j < NEXTN; j++) {
-      if (node_mape[j] != j1++)
+      if (node_mape[j] != j1++) {
         return -1;
+      }
     }
 
     j1 = 0;
@@ -900,16 +943,19 @@ int ne_test_gem(int fileid)
 
     error = ex_get_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
 
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
 
     for (j = 0; j < NINTE; j++) {
-      if (elem_mapi[j] != j1++)
+      if (elem_mapi[j] != j1++) {
         return -1;
+      }
     }
     for (j = 0; j < NBORE; j++) {
-      if (elem_mapb[j] != j1++)
+      if (elem_mapb[j] != j1++) {
         return -1;
+      }
     }
     j1 = 0;
   }
@@ -930,20 +976,24 @@ int ne_test_gncm(int fileid)
 
     error = ex_get_cmap_params(fileid, node_map_ids, node_map_cnts, NULL, NULL, iproc);
 
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
 
     for (i = 0; i < NNCMAP; i++) {
       error = ex_get_node_cmap(fileid, node_map_ids[i], node_ids, proc_ids, iproc);
 
-      if (error < 0)
+      if (error < 0) {
         return error;
+      }
 
       for (j = 0; j < NCNTCM; j++) {
-        if (node_ids[j] != 2 * (j + 1))
+        if (node_ids[j] != 2 * (j + 1)) {
           return -1;
-        if (proc_ids[j] != 3 * (j + 1))
+        }
+        if (proc_ids[j] != 3 * (j + 1)) {
           return -1;
+        }
       }
     }
   }
@@ -964,22 +1014,27 @@ int ne_test_gecm(int fileid)
 
     error = ex_get_cmap_params(fileid, NULL, NULL, elem_map_ids, elem_map_cnts, iproc);
 
-    if (error < 0)
+    if (error < 0) {
       return error;
+    }
 
     for (i = 0; i < NECMAP; i++) {
       error = ex_get_elem_cmap(fileid, elem_map_ids[i], elem_ids, side_ids, proc_ids, iproc);
 
-      if (error < 0)
+      if (error < 0) {
         return error;
+      }
 
       for (j = 0; j < ECNTCM; j++) {
-        if (elem_ids[j] != 2 * (j + 1))
+        if (elem_ids[j] != 2 * (j + 1)) {
           return -1;
-        if (side_ids[j] != 3 * (j + 1))
+        }
+        if (side_ids[j] != 3 * (j + 1)) {
           return -1;
-        if (proc_ids[j] != 4 * (j + 1))
+        }
+        if (proc_ids[j] != 4 * (j + 1)) {
           return -1;
+        }
       }
     }
   }

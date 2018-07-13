@@ -105,7 +105,7 @@ computeScaling(const NOX::Solver::Generic& solver)
   }
 
   RCP< const ::Thyra::LinearOpBase< double > > jac =
-    thyra_group->getJacobianOperator();
+    thyra_group->getScaledJacobianOperator();
 
   RCP< const ::Thyra::RowStatLinearOpBase< double > > row_stat_jac =
     Teuchos::rcp_dynamic_cast< const ::Thyra::RowStatLinearOpBase< double > >(jac);
@@ -117,5 +117,6 @@ computeScaling(const NOX::Solver::Generic& solver)
 
   row_stat_jac->getRowStat( ::Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
                 inv_row_sum_vec_.ptr());
+  thyra_group->unscaleJacobianOperator();
 
 }

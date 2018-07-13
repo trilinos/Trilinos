@@ -44,12 +44,12 @@ namespace std {
 template<>
 struct hash<stk::mesh::Entity>
 {
-    const size_t operator()(const stk::mesh::Entity& entity) const
+    size_t operator()(const stk::mesh::Entity& entity) const
     {
         return hash<uint64_t>()(entity.m_value);
     }
 
-    const size_t operator()(const stk::mesh::Entity& entity1, const stk::mesh::Entity& entity2) const
+    size_t operator()(const stk::mesh::Entity& entity1, const stk::mesh::Entity& entity2) const
     {
         return hash<uint64_t>()(entity1.m_value)^hash<uint64_t>()(entity2.m_value);
     }
@@ -58,12 +58,12 @@ struct hash<stk::mesh::Entity>
 template<>
 struct hash<stk::mesh::EntityKey>
 {
-    const size_t operator()(const stk::mesh::EntityKey& entityKey) const
+    size_t operator()(const stk::mesh::EntityKey& entityKey) const
     {
         return hash<unsigned long long>()(entityKey.m_value);
     }
 
-    const size_t operator()(const stk::mesh::EntityKey& entityKey1, const stk::mesh::EntityKey& entityKey2)     const
+    size_t operator()(const stk::mesh::EntityKey& entityKey1, const stk::mesh::EntityKey& entityKey2) const
     {
         return hash<unsigned long long>()(entityKey1.m_value)^hash<unsigned long long>()(entityKey2.m_value    );
     }

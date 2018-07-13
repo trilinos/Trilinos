@@ -306,7 +306,8 @@ double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
 float *part_sizes = NULL, *fdummy = NULL;
-int wgt_dim, part_dim;
+int wgt_dim = zz->Obj_Weight_Dim;
+int part_dim;
 int i;
 #ifdef ZOLTAN_OVIS
 struct OVIS_parameters ovisParameters;
@@ -315,9 +316,7 @@ struct OVIS_parameters ovisParameters;
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS){
-    printf("Build configuration:\n");
     Zoltan_Print_Configuration("  ");
-    printf("\n");
     Zoltan_Print_Key_Params(zz);
   }
 
@@ -424,7 +423,6 @@ struct OVIS_parameters ovisParameters;
     }
 #endif
 
-    wgt_dim = zz->Obj_Weight_Dim;
     part_dim = ((wgt_dim > 0) ? wgt_dim : 1);
 
     part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 

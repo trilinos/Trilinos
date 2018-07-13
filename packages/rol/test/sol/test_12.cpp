@@ -1,0 +1,335 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+#include "ROL_ParameterList.hpp"
+
+#include "ROL_Stream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "ROL_ScaledStdVector.hpp"
+#include "ROL_StdBoundConstraint.hpp"
+#include "ROL_StdConstraint.hpp"
+#include "ROL_Types.hpp"
+#include "ROL_Algorithm.hpp"
+
+#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_StdObjective.hpp"
+#include "ROL_BatchManager.hpp"
+#include "ROL_UserInputGenerator.hpp"
+
+typedef double RealT;
+
+template<class Real>
+class ObjectiveEx12 : public ROL::StdObjective<Real> {
+private:
+  const Real alpha_;
+public:
+  ObjectiveEx12(const Real alpha = 1e-4) : alpha_(alpha) {}
+
+  Real value( const std::vector<Real> &x, Real &tol ) {
+    unsigned size = x.size();
+    Real val(0);
+    for ( unsigned i = 0; i < size; i++ ) {
+      val += static_cast<Real>(0.5)*alpha_*x[i]*x[i] + x[i];
+    }
+    return val;
+  }
+
+  void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
+    unsigned size = x.size();
+    for ( unsigned i = 0; i < size; i++ ) {
+      g[i] = alpha_*x[i] + static_cast<Real>(1);
+    }
+  }
+
+  void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
+    unsigned size = x.size();
+    for ( unsigned i = 0; i < size; i++ ) {
+      hv[i] = alpha_*v[i];
+    }
+  }
+
+  void precond( std::vector<Real> &pv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
+    unsigned size = x.size();
+    for ( unsigned i = 0; i < size; i++ ) {
+      pv[i] = v[i]/alpha_;
+    }
+  }
+};
+
+template<class Real>
+class ConstraintEx12 : public ROL::StdConstraint<Real> {
+private:
+  const std::vector<Real> zeta_;
+
+public:
+  ConstraintEx12(const std::vector<Real> &zeta) : zeta_(zeta) {}
+
+  void value( std::vector<Real> &c,
+              const std::vector<Real> &x,
+              Real &tol ) {
+    unsigned size = x.size();
+    const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
+    for ( unsigned i = 0; i < size; ++i ) {
+      c[i] = std::exp(param[7])/zeta_[i] - std::exp(param[i])*x[i];
+    }
+  }
+
+  void applyJacobian( std::vector<Real> &jv,
+                      const std::vector<Real> &v,
+                      const std::vector<Real> &x,
+                      Real &tol ) {
+    unsigned size = x.size();
+    const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
+    for ( unsigned i = 0; i < size; ++i ) {
+      jv[i] = -std::exp(param[i])*v[i];
+    }
+  }
+
+   void applyAdjointJacobian( std::vector<Real> &ajv,
+                              const std::vector<Real> &v,
+                              const std::vector<Real> &x,
+                              Real &tol ) {
+    unsigned size = x.size();
+    const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
+    for ( unsigned i = 0; i < size; ++i ) {
+      ajv[i] = -std::exp(param[i])*v[i];
+    }
+  }
+
+  void applyAdjointHessian( std::vector<Real> &ahuv,
+                            const std::vector<Real> &u,
+                            const std::vector<Real> &v,
+                            const std::vector<Real> &x,
+                            Real &tol ) {
+    unsigned size = x.size();
+    for ( unsigned i = 0; i < size; ++i ) {
+      ahuv[i] = static_cast<Real>(0);
+    }
+  }
+
+  void applyPreconditioner( std::vector<Real> &pv,
+                            const std::vector<Real> &v,
+                            const std::vector<Real> &x,
+                            const std::vector<Real> &g,
+                            Real &tol ) {
+    unsigned size = x.size();
+    const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
+    for ( unsigned i = 0; i < size; ++i ) {
+      pv[i] = v[i]/std::pow(std::exp(param[i]),2);
+    }
+  }
+};
+
+template<class Real>
+Real setUpAndSolve(ROL::ParameterList                    &list,
+                   ROL::Ptr<ROL::Objective<Real> >       &obj,
+                   ROL::Ptr<ROL::Vector<Real> >          &x,
+                   ROL::Ptr<ROL::BoundConstraint<Real> > &bnd,
+                   ROL::Ptr<ROL::Constraint<Real> >      &con,
+                   ROL::Ptr<ROL::Vector<Real> >          &mul,
+                   ROL::Ptr<ROL::BoundConstraint<Real> > &ibnd,
+                   ROL::Ptr<ROL::SampleGenerator<Real> > &sampler,
+                   std::ostream & outStream) {
+  ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,mul,ibnd);
+  optProblem.setRiskNeutralInequality(sampler,sampler->getBatchManager());
+  optProblem.check(outStream);
+  // Run ROL algorithm
+  ROL::OptimizationSolver<Real> optSolver(optProblem, list);
+  optSolver.solve(outStream);
+  ROL::Ptr<ROL::Objective<Real> > robj = optProblem.getObjective();
+  Real tol(1.e-8);
+  return robj->value(*(optProblem.getSolutionVector()),tol);
+}
+
+template<class Real>
+void printSolution(const std::vector<Real> &x,
+                   std::ostream & outStream) {
+  unsigned dim = x.size();
+  outStream << "x = (";
+  for ( unsigned i = 0; i < dim-1; i++ ) {
+    outStream << x[i] << ", ";
+  }
+  outStream << x[dim-1] << ")\n";
+}
+
+int main(int argc, char* argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = ROL::makePtrFromRef(std::cout);
+  else
+    outStream = ROL::makePtrFromRef(bhs);
+
+  int errorFlag  = 0;
+
+  try {
+    /**********************************************************************************************/
+    /************************* CONSTRUCT ROL ALGORITHM ********************************************/
+    /**********************************************************************************************/
+    // Get ROL parameterlist
+    std::string filename = "input_12.xml";
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    ROL::ParameterList list = *parlist;
+    /**********************************************************************************************/
+    /************************* CONSTRUCT SOL COMPONENTS *******************************************/
+    /**********************************************************************************************/
+    // Build vectors
+    const RealT zero(0), half(0.5), one(1), two(2);
+    unsigned dim = 7;
+    ROL::Ptr<std::vector<RealT> > x_ptr;
+    x_ptr = ROL::makePtr<std::vector<RealT>>(dim,zero);
+    ROL::Ptr<ROL::Vector<RealT> > x;
+    x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    // Build samplers
+    int nSamp = 50;
+    unsigned sdim = dim + 1;
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::BatchManager<RealT>>();
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::UserInputGenerator<RealT>>("points.txt","weights.txt",nSamp,sdim,bman);
+    // Build objective function
+    ROL::Ptr<ROL::Objective<RealT> > obj
+      = ROL::makePtr<ObjectiveEx12<RealT>>();
+    // Build bound constraints
+    std::vector<RealT> lx(dim,half);
+    std::vector<RealT> ux(dim,two);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::StdBoundConstraint<RealT>>(lx,ux);
+    // Build inequality constraint
+    std::vector<RealT> zeta(dim,one/static_cast<RealT>(std::sqrt(3.)));
+    zeta[0] *= half;
+    zeta[1] *= half;
+    ROL::Ptr<ROL::Constraint<RealT> > con
+      = ROL::makePtr<ConstraintEx12<RealT>>(zeta);
+    // Build inequality bound constraint
+    std::vector<RealT> lc(dim,ROL::ROL_NINF<RealT>());
+    std::vector<RealT> uc(dim,zero);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > ibnd
+      = ROL::makePtr<ROL::StdBoundConstraint<RealT>>(lc,uc);
+    ibnd->deactivateLower();
+    // Build multipliers
+    std::vector<RealT> mean(sdim,zero), gmean(sdim,zero);
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      std::vector<RealT> pt = sampler->getMyPoint(i);
+      RealT              wt = sampler->getMyWeight(i);
+      for (unsigned j = 0; j < sdim; ++j) {
+        mean[j] += wt*std::exp(pt[j]);
+      }
+    }
+    sampler->sumAll(&mean[0],&gmean[0],sdim);
+    ROL::Ptr<std::vector<RealT> > scaling_vec
+      = ROL::makePtr<std::vector<RealT>>(dim,zero);
+    for (unsigned i = 0; i < dim; ++i) {
+      RealT cl = std::abs(gmean[dim]/zeta[i] - gmean[i]*lx[i]);
+      RealT cu = std::abs(gmean[dim]/zeta[i] - gmean[i]*ux[i]);
+      RealT scale = static_cast<RealT>(1e2)/std::pow(std::max(cl,cu),two);
+      (*scaling_vec)[i] = (scale > std::sqrt(ROL::ROL_EPSILON<RealT>()))
+                            ? scale : one;
+    }
+    ROL::Ptr<std::vector<RealT> > l_ptr
+      = ROL::makePtr<std::vector<RealT>>(dim,one);
+    ROL::Ptr<ROL::Vector<RealT> > l
+      = ROL::makePtr<ROL::DualScaledStdVector<RealT>>(l_ptr,scaling_vec);
+
+    /**********************************************************************************************/
+    /************************* SUPER QUANTILE QUADRANGLE ******************************************/
+    /**********************************************************************************************/
+    RealT val = setUpAndSolve(list,obj,x,bnd,con,l,ibnd,sampler,*outStream);
+    *outStream << "Computed Solution" << std::endl;
+    printSolution<RealT>(*x_ptr,*outStream);
+
+    // Compute exact solution
+    ROL::Ptr<std::vector<RealT> > ximean, gximean, xsol;
+    ximean  = ROL::makePtr<std::vector<RealT>>(dim+1,0);
+    gximean = ROL::makePtr<std::vector<RealT>>(dim+1);
+    xsol    = ROL::makePtr<std::vector<RealT>>(dim);
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      std::vector<RealT> pt = sampler->getMyPoint(i);
+      RealT              wt = sampler->getMyWeight(i);
+      for (unsigned j = 0; j < dim+1; ++j) {
+        (*ximean)[j] += wt*std::exp(pt[j]);
+      }
+    }
+    bman->reduceAll(&(*ximean)[0],&(*gximean)[0],dim+1,ROL::Elementwise::ReductionMax<RealT>());
+    for (unsigned i = 0; i < dim; ++i) {
+      (*xsol)[i] = std::max(half,((*gximean)[dim]/(*gximean)[i])/zeta[i]);
+    }
+    ROL::Ptr<ROL::Vector<RealT> > xtrue
+      = ROL::makePtr<ROL::StdVector<RealT>>(xsol);
+    *outStream << "True Solution" << std::endl;
+    printSolution<RealT>(*xsol,*outStream);
+    xtrue->axpy(-one,*x);
+
+    RealT error = xtrue->norm();
+    *outStream << std::right
+               << std::setw(20) << "obj val"
+               << std::setw(20) << "error"
+               << std::endl;
+    *outStream << std::fixed << std::setprecision(0) << std::right
+               << std::scientific << std::setprecision(11) << std::right
+               << std::setw(20) << val
+               << std::setw(20) << error
+               << std::endl;
+
+    errorFlag = (error < std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 0 : 1;
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
+}

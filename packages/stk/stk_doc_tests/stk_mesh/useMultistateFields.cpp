@@ -45,7 +45,7 @@
 
 namespace {
 
-//BEGIN
+//BEGINUseMultistateField
 TEST(stkMeshHowTo, useMultistateField)
 {
     const unsigned spatialDimension = 3;
@@ -62,7 +62,7 @@ TEST(stkMeshHowTo, useMultistateField)
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     mesh.modification_begin();
     stk::mesh::EntityId nodeId = 1;
-    stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    stk::mesh::Entity node = mesh.declare_node(nodeId);
     mesh.modification_end();
 
     EXPECT_EQ(stk::mesh::StateNP1, temperatureFieldStateNp1.state());
@@ -80,6 +80,6 @@ TEST(stkMeshHowTo, useMultistateField)
     temperatureStateN = stk::mesh::field_data(temperatureFieldStateN, node);
     EXPECT_EQ(newTemperatureValue, *temperatureStateN);
 }
-//END
+//ENDUseMultistateField
 
 }

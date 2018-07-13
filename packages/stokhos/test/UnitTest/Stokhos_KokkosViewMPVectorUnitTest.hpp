@@ -90,12 +90,12 @@ checkVectorView(const ViewType& v,
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
-    num_rows = h_a.dimension_0();
-    num_cols = h_a.dimension_1();
+    num_rows = h_a.extent(0);
+    num_cols = h_a.extent(1);
   }
   else {
-    num_rows = h_a.dimension_1();
-    num_cols = h_a.dimension_0();
+    num_rows = h_a.extent(1);
+    num_cols = h_a.extent(0);
   }
   bool success = true;
   if (is_right) {
@@ -138,7 +138,7 @@ checkConstantVectorView(const ViewType& v,
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
 
-  const size_type num_rows = h_v.dimension_0();
+  const size_type num_rows = h_v.extent(0);
   const size_type num_cols = Kokkos::dimension_scalar(h_v);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
@@ -417,12 +417,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  ViewType v2(v.ptr_on_device(), num_rows, num_cols);
+  ViewType v2(v.data(), num_rows, num_cols);
 
   success = checkVectorView(v2, out);
 }
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout )
 {
   typedef typename Storage::execution_space Device;
@@ -453,9 +452,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layou
 
   success = checkVectorView(v, out);
 }
-#else
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout ) {}
-#endif
 
 /*
 // This test does not work because we can't call deep_copy on partitioned views
@@ -539,7 +535,7 @@ struct MPVectorAtomicFunctor {
 
   MPVectorAtomicFunctor( const ViewType & v , const scalar_type & s ) : m_v( v ), m_s( s )
   {
-    Kokkos::parallel_for( m_v.dimension_0() , *this );
+    Kokkos::parallel_for( m_v.extent(0) , *this );
   }
 
   KOKKOS_INLINE_FUNCTION

@@ -45,7 +45,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
   HAVE_TPETRA_ENABLE_SS_TESTING
   "Enabling testing of Secondary Stable Code."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}
   )
 
 # If this variable isn't defined, then the TpetraTSQR subpackage of
@@ -67,11 +67,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT}
   )
 
+# mfh 20 Oct 2017: This option only exists for backwards
+# compatibility.  It should always be true.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
-  "Enabling testing of previous Tpetra bugs."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  "Enable testing of previous Tpetra bugs.  This option only exists for backwards compatibility, and no longer has an effect.  The tests in question always build and run, if Tpetra's tests are enabled."
+  ON
   )
 
 # ==================================================================

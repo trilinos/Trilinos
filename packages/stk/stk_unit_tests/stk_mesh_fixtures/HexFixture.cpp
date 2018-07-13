@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>
 #include <algorithm>                    // for sort, unique
 #include <set>                          // for set
 #include <stk_mesh/base/Entity.hpp>     // for Entity
@@ -44,8 +44,8 @@
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
-#include "stk_mesh/fixtures/CoordinateMapping.hpp"
-#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp"
+#include "stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
@@ -57,6 +57,36 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
+HexFixture::HexFixture(   MetaData& meta
+            , BulkData& bulk
+            , size_t nx
+            , size_t ny
+            , size_t nz
+            , size_t nid_start
+            , size_t eid_start
+          )
+: m_spatial_dimension(3),
+  m_nx(nx),
+  m_ny(ny),
+  m_nz(nz),
+  node_id_start(nid_start),
+  elem_id_start(eid_start),
+  m_meta_p( &meta ),
+  m_bulk_p( &bulk ),
+  m_meta( meta),
+  m_bulk_data( bulk ),
+  m_elem_parts( ),
+  m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+  m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+  owns_mesh(false)
+{
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+}
+
   HexFixture::HexFixture(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
@@ -67,15 +97,17 @@ namespace fixtures {
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
                 , pm
                 , stk::mesh::BulkData::AUTO_AURA
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map
+                , connectivity_map)
                ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("hex_part", stk::topology::HEX_8) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
@@ -93,6 +125,39 @@ namespace fixtures {
               , size_t nx
               , size_t ny
               , size_t nz
+              , const std::string& coordinate_name
+              , ConnectivityMap const* connectivity_map
+            )
+  : m_spatial_dimension(3),
+    m_nx(nx),
+    m_ny(ny),
+    m_nz(nz),
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
+                , pm
+                , stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map)
+               ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("hex_part", stk::topology::HEX_8) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordinate_name) )
+  {
+    //put coord-field on all nodes:
+    put_field(
+      m_coord_field,
+      m_meta.universal_part(),
+      m_spatial_dimension);
+  }
+
+  HexFixture::HexFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
               , bool auraOn
               , ConnectivityMap const* connectivity_map
             )
@@ -100,15 +165,17 @@ namespace fixtures {
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
                 , pm
                 , auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map
+                , connectivity_map)
                ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("hex_part", stk::topology::HEX_8) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
@@ -120,6 +187,14 @@ namespace fixtures {
     m_meta.universal_part(),
     m_spatial_dimension);
 
+}
+
+HexFixture::~HexFixture()
+{
+  if( owns_mesh ) {
+    delete m_bulk_p;
+    delete m_meta_p;
+  }
 }
 
 void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
@@ -135,8 +210,8 @@ void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
     fill_node_map(rank);
   }
 
-  const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
-  const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const EntityId beg_elem = elem_id_start + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
   for ( EntityId i = beg_elem; i != end_elem; ++i) {
     element_ids_on_this_processor.push_back(i);
@@ -147,7 +222,7 @@ void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
 
 void HexFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
-  entity_id -= 1;
+  entity_id -= node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -160,7 +235,7 @@ void HexFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t 
 
 void HexFixture::elem_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
-  entity_id -= 1;
+  entity_id -= elem_id_start;
 
   x = entity_id % m_nx;
   entity_id /= m_nx;
@@ -178,8 +253,8 @@ void HexFixture::fill_node_map( int p_rank)
   const size_t p_size = m_bulk_data.parallel_size();
   const size_t num_elems = m_nx * m_ny * m_nz ;
 
-  const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
-  const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const EntityId beg_elem = elem_id_start + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
   for ( EntityId i = beg_elem; i != end_elem; ++i) {
     element_ids_on_this_processor.push_back(i);

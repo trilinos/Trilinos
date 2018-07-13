@@ -38,8 +38,8 @@
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket

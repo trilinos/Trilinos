@@ -126,6 +126,7 @@ class LOCASolver
 
   //@}
   
+  void resetCounters();
   
   public:
   
@@ -159,6 +160,11 @@ class LOCASolver
 
    Teuchos::RCP<LOCA::Epetra::Group> grp;
    Teuchos::RCP<LOCA::GlobalData> globalData;
+
+  mutable int totalNewtonIters;
+  mutable int totalKrylovIters;
+  mutable int totalLinSolves;
+  mutable int stepNum;
 };
 
 }

@@ -53,7 +53,12 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_TestingHelpers.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterXMLFileReader.hpp>
+
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -61,13 +66,6 @@
 
 #include "Amesos2.hpp"
 #include "Amesos2_Meta.hpp"
-
-//#include "Amesos2_Basker_decl.hpp"
-//#include "Amesos2_Basker_def.hpp"
-
-//#ifdef SHYLUBASKER
-//#pragma message("FLAG EXISTS")
-//#endif
 
 
 namespace {
@@ -110,8 +108,7 @@ namespace {
   using Amesos2::Basker;
   using Amesos2::Meta::is_same;
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Platform::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;
 
@@ -132,7 +129,7 @@ namespace {
   {
     RCP<const Comm<int> > ret;
     if( testMpi ){
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     } else {
       ret = rcp(new Teuchos::SerialComm<int>());
     }
@@ -272,7 +269,11 @@ namespace {
 
     solver->symbolicFactorization().numericFactorization();
 
-    // Good way to check the factors L and U?  Probs not, since they are private members
+    if ( rank == 0 ) {
+      TEST_ASSERT( solver->getStatus().getNnzLU() != 0 );
+      TEST_ASSERT( solver->getStatus().getNnzLU() == numLocal*static_cast<const size_t>(2*comm->getSize()) );
+      // Good way to check the factors L and U?  Probs not, since they are private members
+    }
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Basker, Solve, SCALAR, LO, GO )
@@ -284,13 +285,10 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
-
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
 
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
@@ -316,7 +314,6 @@ namespace {
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("Basker", A, Xhat, B );
 
-
     solver->symbolicFactorization();
     solver->numericFactorization();
     solver->solve();
@@ -341,12 +338,10 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -390,6 +385,169 @@ namespace {
    * Unit Tests for Complex data types
    */
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Basker, NonContgGID, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+
+    using Tpetra::global_size_t;
+    using Teuchos::tuple;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Scalar = SCALAR;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    size_t myRank = comm->getRank();
+    const global_size_t numProcs = comm->getSize();
+
+    // Unit test created for 2 processes
+    if ( numProcs == 2 ) {
+
+      const global_size_t numVectors = 1;
+      const global_size_t nrows = 6;
+
+      const GO numGlobalEntries = nrows;
+      const LO numLocalEntries = nrows / numProcs;
+
+      // Create non-contiguous Map
+      // This example: np 2 leads to GIDS: proc0 - 0,2,4  proc 1 - 1,3,5
+      Teuchos::Array<GO> elementList(numLocalEntries);
+      for ( LO k = 0; k < numLocalEntries; ++k ) {
+        elementList[k] = myRank + k*numProcs + 4*myRank;
+      }
+
+      typedef Tpetra::Map<LO,GO>  map_type;
+      RCP< const map_type > map = rcp( new map_type(numGlobalEntries, elementList, 0, comm) );
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && map->isContiguous (),
+          std::logic_error,
+          "Basker NonContigGID Test: The non-contiguous map claims to be contiguous.");
+
+      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
+      RCP<MAT> A = rcp( new MAT(map,0) );
+      A->setObjectLabel("A");
+
+      /*
+       * We will solve a system with a known solution, for which we will be using
+       * the following matrix:
+       *
+       *  GID  0   2   4   5   7   9
+       * [ 0 [ 7,  0, -3,  0, -1,  0 ]
+       *   2 [ 2,  8,  0,  0,  0,  0 ]
+       *   4 [ 0,  0,  1,  0,  0,  0 ]
+       *   5 [-3,  0,  0,  5,  0,  0 ]
+       *   7 [ 0, -1,  0,  0,  4,  0 ]
+       *   9 [ 0,  0,  0, -2,  0,  6 ] ]
+       *
+       */
+
+      // Construct matrix
+      if( myRank == 0 ){
+        A->insertGlobalValues(0,tuple<GO>(0,4,7),tuple<Scalar>(7,-3,-1));
+        A->insertGlobalValues(2,tuple<GO>(0,2),tuple<Scalar>(2,8));
+        A->insertGlobalValues(4,tuple<GO>(4),tuple<Scalar>(1));
+        A->insertGlobalValues(5,tuple<GO>(0,5),tuple<Scalar>(-3,5));
+        A->insertGlobalValues(7,tuple<GO>(2,7),tuple<Scalar>(-1,4));
+        A->insertGlobalValues(9,tuple<GO>(5,9),tuple<Scalar>(-2,6));
+      }
+
+      A->fillComplete();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && A->getMap()->isContiguous (),
+          std::logic_error,
+          "Basker NonContigGID Test: The non-contiguous map of A claims to be contiguous.");
+
+
+      // Create X with random values
+      RCP<MV> X = rcp(new MV(map,numVectors));
+      X->setObjectLabel("X");
+      X->randomize();
+
+      /* Create B, use same GIDs
+       *
+       * Use RHS:
+       *
+       *  [[-7]
+       *   [18]
+       *   [ 3]
+       *   [17]
+       *   [18]
+       *   [28]]
+       */
+      RCP<MV> B = rcp(new MV(map,numVectors));
+      B->setObjectLabel("B");
+      GO rowids[nrows] = {0,2,4,5,7,9};
+      Scalar data[nrows] = {-7,18,3,17,18,28};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( B->getMap()->isNodeGlobalElement(rowids[i]) ){
+          B->replaceGlobalValue(rowids[i],0,data[i]);
+        }
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && X->getMap()->isContiguous () && B->getMap()->isContiguous (),
+          std::logic_error,
+          "Basker NonContigGID Test: The non-contiguous maps of X or B claims to be contiguous.");
+
+
+      // Create solver interface with Amesos2 factory method
+      RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Basker", A, X, B);
+
+      // Create a Teuchos::ParameterList to hold solver parameters
+      Teuchos::ParameterList amesos2_params("Amesos2");
+      amesos2_params.sublist("Basker").set("IsContiguous", false, "Are GIDs Contiguous");
+
+      solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+
+      solver->symbolicFactorization().numericFactorization().solve();
+
+
+      /* Check the solution
+       *
+       * Should be:
+       *
+       *  [[1]
+       *   [2]
+       *   [3]
+       *   [4]
+       *   [5]
+       *   [6]]
+       */
+      // Solution Vector for later comparison
+      RCP<MV> Xhat = rcp(new MV(map,numVectors));
+      Xhat->setObjectLabel("Xhat");
+      GO rowids_soln[nrows] = {0,2,4,5,7,9};
+      Scalar data_soln[nrows] = {1,2,3,4,5,6};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( Xhat->getMap()->isNodeGlobalElement(rowids_soln[i]) ){
+          Xhat->replaceGlobalValue(rowids_soln[i],0,data_soln[i]);
+        }
+      }
+
+      A->describe(out, Teuchos::VERB_EXTREME);
+      B->describe(out, Teuchos::VERB_EXTREME);
+      Xhat->describe(out, Teuchos::VERB_EXTREME);
+      X->describe(out, Teuchos::VERB_EXTREME);
+
+      //A->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+      // Check result of solve
+      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
+      Xhat->norm2(xhatnorms());
+      X->norm2(xnorms());
+      TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+    } // end if numProcs = 2
+  }
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Basker, ComplexSolve, SCALAR, LO, GO )
   {
     typedef std::complex<SCALAR> cmplx;
@@ -398,12 +556,10 @@ namespace {
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     //typedef ScalarTraits<Mag> MT;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat4.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat4.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -470,12 +626,10 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat2.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat2.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -518,12 +672,10 @@ namespace {
     //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<MAT> A =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat3.mtx",comm,node);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat3.mtx",comm);
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -565,8 +717,7 @@ namespace {
    * Instantiations
    */
 
-#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(SHYLUBASKER)
-  //#ifndef SHYLUBASKER
+#if defined(HAVE_TEUCHOS_COMPLEX)
 
   // mfh 11 Jan 2016: Clang 3.7 doesn't like the following
   // commented-out pragma.  It says: "error: pragma message requires
@@ -597,7 +748,6 @@ namespace {
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #  endif//end complex_double
-       //#endif //SHYLUBASKER
 #else  // !(defined HAVE_TEUCHOS_COMPLEX
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
@@ -622,24 +772,12 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
   //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
 
-#ifdef SHYLUBASKER
-
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO )
-
-
-
-
-#else
-
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO )
-
-#endif
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NonContgGID, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )

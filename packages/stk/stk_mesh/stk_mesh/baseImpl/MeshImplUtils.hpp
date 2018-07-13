@@ -88,6 +88,13 @@ int check_for_connected_nodes(const BulkData& mesh);
 bool check_permutations_on_all(stk::mesh::BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
+inline
+stk::mesh::EntityId side_id_formula(stk::mesh::EntityId elemId, unsigned sideOrdinal)
+{
+    //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
+    return 10*elemId + sideOrdinal + 1;
+}
+
 class GlobalIdEntitySorter : public EntitySorterBase
 {
 public:
@@ -110,19 +117,9 @@ void VisitClosureGeneral(
         if (mesh.is_valid(entity_of_interest)) {
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
             for (EntityRank rank = stk::topology::NODE_RANK ; rank < entity_of_interest_rank ; ++rank) {
-                EntityVector entities_of_rank;
-                size_t num_entities_of_rank = 0;
-                const Entity * entity_it = NULL;
-                if (mesh.connectivity_map().valid(mesh.entity_rank(entity_of_interest),rank))
-                {
-                    num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
-                    entity_it = mesh.begin(entity_of_interest,rank);
-                }
-                else
-                {
-                    num_entities_of_rank = get_connectivity(mesh,entity_of_interest,rank,entities_of_rank);
-                    entity_it = &*entities_of_rank.begin();
-                }
+                size_t num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
+                const Entity * entity_it = mesh.begin(entity_of_interest,rank);
+
                 for (size_t i=0 ; i<num_entities_of_rank ; ++i, ++entity_it) {
                     VisitClosureGeneral(mesh,*entity_it,do_this,desired_entity);
                 }
@@ -247,18 +244,9 @@ void VisitUpwardClosureGeneral(
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
             EntityVector entities_of_rank_up;
             for (EntityRank rank_up = EntityRank(stk::topology::END_RANK-1) ; rank_up > entity_of_interest_rank ; --rank_up) {
-                size_t num_entities_of_rank_up = 0;
-                const Entity * entity_up_it = NULL;
-                if (mesh.connectivity_map().valid(mesh.entity_rank(entity_of_interest),rank_up))
-                {
-                    num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
-                    entity_up_it = mesh.begin(entity_of_interest,rank_up);
-                }
-                else
-                {
-                    num_entities_of_rank_up = get_connectivity(mesh,entity_of_interest,rank_up,entities_of_rank_up);
-                    entity_up_it = &*entities_of_rank_up.begin();
-                }
+                size_t num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
+                const Entity * entity_up_it = mesh.begin(entity_of_interest,rank_up);
+
                 for (size_t j=0 ; j<num_entities_of_rank_up ; ++j, ++entity_up_it) {
                     VisitUpwardClosureGeneral(mesh,*entity_up_it,do_this,desired_entity);
                 }
@@ -357,12 +345,20 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData&
                              const OrdinalVector       & omit ,
                              EntityRank            entity_rank_to ,
                              OrdinalVector       & induced_parts);
+void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
+                             const Entity entity_from ,
+                             EntityRank            entity_rank_to ,
+                             OrdinalVector       & induced_parts);
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
                                                      stk::mesh::EntityId new_face_global_id,
                                                      const stk::mesh::PartVector & parts = stk::mesh::PartVector());
+
+template<typename PARTVECTOR>
+stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
+        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top);
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,
@@ -472,6 +468,13 @@ struct HashValueForEntityVector
 void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
                                     const OrdinalVector& input_ordinals,
                                     stk::mesh::PartVector& output_parts);
+
+stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<stk::mesh::Entity> &sides,
+                                                            stk::mesh::ConnectivityOrdinal const * ordinals,
+                                                            stk::mesh::Entity side);
+stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh::BulkData &bulkData,
+                                                                 stk::mesh::Entity element,
+                                                                 stk::mesh::Entity side);
 
 } // namespace impl
 } // namespace mesh

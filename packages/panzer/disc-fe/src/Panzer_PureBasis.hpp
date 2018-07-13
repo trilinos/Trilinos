@@ -55,6 +55,7 @@
 namespace panzer {
 
   class CellData;
+  class BasisDescriptor;
 
   //! Description and data layouts associated with a particular basis
   class PureBasis { 
@@ -76,6 +77,14 @@ namespace panzer {
       \param[in] cell_topo A shards topology description
     */
     PureBasis(const std::string & basis_type,const int basis_order,const int num_cells,const Teuchos::RCP<const shards::CellTopology> & cell_topo);
+
+
+    /** Build a basis given a type, order, number of cells (for data layouts) and shards topology
+      \param[in] description Description of basis
+      \param[in] cell_topo A shards topology description
+      \param[in] num_cells Number of cells used in the data layouts for this basis
+    */
+    PureBasis(const panzer::BasisDescriptor & description, const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells);
 
     //! Returns the number of basis coefficients
     int cardinality() const;
@@ -101,19 +110,21 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
     getIntrepid2Basis() const;
 
-    template <typename ScalarT,typename ArrayT>
-    Teuchos::RCP< Intrepid2::Basis<ScalarT,ArrayT> > 
+    template <typename ExecutionSpace,typename OutputValueType, typename PointValueType>
+    Teuchos::RCP< Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> > 
     getIntrepid2Basis() const
-    { return panzer::createIntrepid2Basis<ScalarT,ArrayT>(type(), order(), getCellTopology()); }
+    { return panzer::createIntrepid2Basis<ExecutionSpace,OutputValueType,PointValueType>(type(), order(), *(getCellTopology())); }
 
     EElementSpace getElementSpace() const
     { return element_space_; }
 
     bool requiresOrientations() const
-    { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
+    { 
+      return intrepid_basis_->requireOrientation(); 
+    }
 
     bool supportsGrad() const
     { return getElementSpace()==HGRAD; }
@@ -149,6 +160,8 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_D2;
     //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> coordinates;
+    //! <Cell,Basis,Basis>
+    Teuchos::RCP<PHX::DataLayout> local_mat_layout;
 
   private:
     
@@ -158,7 +171,7 @@ namespace panzer {
   private:
 
     Teuchos::RCP<const shards::CellTopology> topology_;
-    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepid_basis_;
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepid_basis_;
 
     std::string basis_type_;
     std::string basis_name_;

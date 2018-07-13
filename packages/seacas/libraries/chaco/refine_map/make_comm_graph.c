@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -71,25 +71,31 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
 
   /* First construct some mappings to ease later manipulations. */
   sizes = smalloc_ret(nsets_tot * sizeof(int));
-  if (sizes == NULL)
+  if (sizes == NULL) {
     goto skip;
+  }
 
-  for (i     = 0; i < nsets_tot; i++)
+  for (i = 0; i < nsets_tot; i++) {
     sizes[i] = 0;
-  for (i = 1; i <= nvtxs; i++)
+  }
+  for (i = 1; i <= nvtxs; i++) {
     ++(sizes[assign[i]]);
+  }
 
   /* Now make sizes reflect the start index for each set. */
-  for (i = 1; i < nsets_tot - 1; i++)
+  for (i = 1; i < nsets_tot - 1; i++) {
     sizes[i] += sizes[i - 1];
-  for (i     = nsets_tot - 1; i; i--)
+  }
+  for (i = nsets_tot - 1; i; i--) {
     sizes[i] = sizes[i - 1];
-  sizes[0]   = 0;
+  }
+  sizes[0] = 0;
 
   /* Now construct list of all vertices in set 0, all in set 1, etc. */
   order = smalloc_ret(nvtxs * sizeof(int));
-  if (order == NULL)
+  if (order == NULL) {
     goto skip;
+  }
   for (i = 1; i <= nvtxs; i++) {
     set               = assign[i];
     order[sizes[set]] = i;
@@ -101,8 +107,9 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
   edges_list = smalloc_ret(nsets_tot * sizeof(int *));
   ewgts_list = smalloc_ret(nsets_tot * sizeof(int *));
   start      = smalloc_ret((nsets_tot + 1) * sizeof(int));
-  if (adj_sets == NULL || edges_list == NULL || ewgts_list == NULL || start == NULL)
+  if (adj_sets == NULL || edges_list == NULL || ewgts_list == NULL || start == NULL) {
     goto skip;
+  }
 
   start[0]    = 0;
   ewgt        = 1;
@@ -114,15 +121,17 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
   }
 
   for (set = 0; set < nsets_tot; set++) {
-    for (i        = 0; i < nsets_tot; i++)
+    for (i = 0; i < nsets_tot; i++) {
       adj_sets[i] = 0;
+    }
     for (i = (set ? sizes[set - 1] : 0); i < sizes[set]; i++) {
       vertex = order[i];
       for (j = 1; j < graph[vertex]->nedges; j++) {
         set2 = assign[graph[vertex]->edges[j]];
         if (set2 != set) {
-          if (using_ewgts)
+          if (using_ewgts) {
             ewgt = graph[vertex]->ewgts[j];
+          }
           adj_sets[set2] += ewgt;
         }
       }
@@ -130,16 +139,19 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
 
     /* Now save adj_sets data to later construct graph. */
     j = 0;
-    for (i = 0; i < nsets_tot; i++)
-      if (adj_sets[i])
+    for (i = 0; i < nsets_tot; i++) {
+      if (adj_sets[i]) {
         j++;
+      }
+    }
     ncomm_edges += j;
     start[set + 1] = ncomm_edges;
     if (j) {
       edges_list[set] = edges = smalloc_ret(j * sizeof(int));
       ewgts_list[set] = ewgts = smalloc_ret(j * sizeof(int));
-      if (edges == NULL || ewgts == NULL)
+      if (edges == NULL || ewgts == NULL) {
         goto skip;
+      }
     }
     j = 0;
     for (i = 0; i < nsets_tot; i++) {
@@ -159,8 +171,9 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
   /* I now need to pack the edge and weight data into single arrays. */
   adjacency   = smalloc_ret((ncomm_edges + 1) * sizeof(int));
   float_ewgts = smalloc_ret((ncomm_edges + 1) * sizeof(float));
-  if (adjacency == NULL || float_ewgts == NULL)
+  if (adjacency == NULL || float_ewgts == NULL) {
     goto skip;
+  }
 
   for (set = 0; set < nsets_tot; set++) {
     j     = start[set];
@@ -188,16 +201,18 @@ skip:
   sfree(sizes);
   if (edges_list != NULL) {
     for (set = nsets_tot - 1; set >= 0; set--) {
-      if (edges_list[set] != NULL)
+      if (edges_list[set] != NULL) {
         sfree(edges_list[set]);
+      }
     }
     sfree(edges_list);
   }
 
   if (ewgts_list != NULL) {
     for (set = nsets_tot - 1; set >= 0; set--) {
-      if (ewgts_list[set] != NULL)
+      if (ewgts_list[set] != NULL) {
         sfree(ewgts_list[set]);
+      }
     }
     sfree(ewgts_list);
   }

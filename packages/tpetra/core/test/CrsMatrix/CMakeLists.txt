@@ -1,11 +1,6 @@
-
+ADD_SUBDIRECTORIES(Regression)
 
 SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
-
-IF (SITE STREQUAL "gabriel.sandia.gov")
-  SET(ARGS
-    "${ARGS} --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
-ENDIF()
 
 #
 # We break up CrsMatrix's unit tests into several files, to reduce
@@ -73,16 +68,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_TriSolve
-  SOURCES
-    CrsMatrix_TriSolve
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_LeftRightScale
   SOURCES
     CrsMatrix_LeftRightScale
@@ -96,7 +81,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # This speeds up the build.
 
 ASSERT_DEFINED (Tpetra_INST_CUDA)
-IF (Tpetra_INST_CUDA) 
+IF (Tpetra_INST_CUDA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Cuda
     SOURCES
@@ -109,7 +94,7 @@ IF (Tpetra_INST_CUDA)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_OPENMP)
-IF (Tpetra_INST_OPENMP) 
+IF (Tpetra_INST_OPENMP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_OpenMP
     SOURCES
@@ -122,7 +107,7 @@ IF (Tpetra_INST_OPENMP)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_SERIAL)
-IF (Tpetra_INST_SERIAL) 
+IF (Tpetra_INST_SERIAL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Serial
     SOURCES
@@ -135,7 +120,7 @@ IF (Tpetra_INST_SERIAL)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_PTHREAD)
-IF (Tpetra_INST_PTHREAD) 
+IF (Tpetra_INST_PTHREAD)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Threads
     SOURCES
@@ -204,57 +189,56 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# FIXME (mfh 26 Sep 2015) Many (if not all) of these tests should not
-# depend on GO = int; they should be able to use the default GO type.
-IF (Tpetra_INST_INT_INT)
-  # This test only makes sense for exactly 2 MPI processes.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug5978
-    SOURCES
-    bug5978
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
+# This test only makes sense for exactly 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug5978
+  SOURCES
+  Bug5978
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
-  # First test for Bug 6069.  This test only makes sense for exactly 3
-  # MPI processes.  Run under Valgrind for best results.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6069_1
-    SOURCES
-    Bug6069_1
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 3
-    STANDARD_PASS_OUTPUT
-    )
+# First test for Bug 6069.  This test only makes sense for exactly 3
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_1
+  SOURCES
+  Bug6069_1
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
 
-  # Second test for Bug 6069.  This test only makes sense for exactly 2
-  # MPI processes.  Run under Valgrind for best results.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6069_2
-    SOURCES
-    Bug6069_2
-    ARGS
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
+# Second test for Bug 6069.  This test only makes sense for exactly 2
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_2
+  SOURCES
+  Bug6069_2
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
-  # Test for Bug 6171.  This test only makes sense for exactly 2 MPI
-  # processes.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_Bug6171
-    SOURCES
-    Bug6171
-    ARGS ""
-    COMM mpi
-    NUM_MPI_PROCS 2
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF()
+# Test for Bug 6171.  This test only makes sense for exactly 2 MPI
+# processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6171
+  SOURCES
+  Bug6171
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues
@@ -303,6 +287,48 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+# I want this test to _build_ in either MPI or non-MPI ("serial"),
+# but I only want it to _run_ in an MPI build with exactly 1 MPI
+# process.
+TRIBITS_ADD_EXECUTABLE(
+  CrsMatrix_PackUnpack
+  SOURCES
+    CrsMatrix_PackUnpack.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+)
+
+TRIBITS_ADD_TEST(
+  CrsMatrix_PackUnpack
+  NAME CrsMatrix_PackUnpack_MPI_1
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  assembleElement
+  SOURCES
+    assembleElement
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Equilibration
+  SOURCES 
+    Equilibration.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
   )
 

@@ -47,7 +47,7 @@
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
 #include "Teuchos_ConstTypeTraits.hpp"
-
+#include <vector>
 
 namespace Teuchos {
 
@@ -188,7 +188,7 @@ public:
    * </ul>
    */
   ArrayView (T* p, size_type size,
-	     const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
+             const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
 
   /** \brief Initialize from another <tt>ArrayView<T></tt> object.
    *
@@ -376,7 +376,7 @@ public:
 
 private:
   T *ptr_; //<! Pointer to the data
-  int size_; //<! Number of entries in the view
+  size_type size_; //<! Number of entries in the view
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ArrayRCP<T> arcp_;
 #endif
@@ -447,7 +447,7 @@ public:
   ArrayView( ENull null_arg = null );
 
   ArrayView (const T* p, size_type size,
-	     const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
+             const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
   ArrayView (const ArrayView<const T>& array);
 

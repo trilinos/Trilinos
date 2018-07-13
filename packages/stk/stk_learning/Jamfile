@@ -65,6 +65,7 @@ alias install-targets
     stk_learning_kokkos_utest
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
+    stk_learning_imbalance_utest
 #    stk_learning_sphere_utest
 ;
 
@@ -87,7 +88,7 @@ install install-user-jamfile
 explicit install-user-bin ;
 install install-user-bin
   :
-  : <location>$(install-root)/bin
+  : <location>$(install-bin-dir)
   ;
 
 explicit install-user-include ;
@@ -98,7 +99,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : 
+  : stk_learning_ngp
   : <location>$(install-root)/stk/stk_learning/lib
   ;
 
@@ -112,9 +113,11 @@ alias install-exe-targets : ;
 exe stk_learning_dgelement_utest
   :
     [ glob $(stk_learning-root)/DGElement/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /sierra/stk_util//stk_util_environment
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_tools//stk_tools_lib
   :
     <tag>@sierra-exec-tag
   ;
@@ -133,6 +136,7 @@ exe stk_learning_mpi_openmp_utest
   :
     [ glob $(stk_learning-root)/MpiPlusOpenMp/*.C ]
     [ glob $(stk_learning-root)/ForEachEntityLoops/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/gtest//gtest
     /mpi//mpi
@@ -165,6 +169,7 @@ lib stk_learning_game_of_life
 exe stk_learning_game_of_life_utest
   :
     [ glob $(stk_learning-root)/GameOfLife/UnitTest/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -197,9 +202,23 @@ lib stk_learning_mesh_builder
     ]
   ;
 
+exe stk_learning_imbalance_utest
+  :
+    [ glob $(stk_learning-root)/LoadImbalanceTimer/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /tpl/gtest//gtest
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_diag
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  :
+    <tag>@sierra-exec-tag
+  ;
+
 exe stk_learning_mesh_builder_utest
   :
     [ glob $(stk_learning-root)/MeshBuilder/UnitTest/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -212,30 +231,39 @@ exe stk_learning_mesh_builder_utest
     <tag>@sierra-exec-tag
   ;
 
-#exe stk_learning_sphere_utest
-#  :
-#    [ glob $(stk_learning-root)/Sphere/UnitTest/*.cpp ]
-#    /tpl/gtest//gtest
-#    /mpi//mpi
-#    /sierra/stk_unit_test_utils//stk_unit_test_utils
-#    /sierra/stk_mesh//stk_mesh_base
-#    /sierra/stk_topology//stk_topology
-#    /sierra/stk_util//stk_util_environment
-#  :
-#    <tag>@sierra-exec-tag
-#  ;
+lib stk_learning_ngp
+  :
+    [ ifdevbuild 
+      [ glob $(stk_learning-root)/ngp/*.cpp ]
+    ]
+    /tpl/trilinos-kokkoscore//kokkoscore
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_learning-root)/lib/libstk_learning_ngp.a
+    ]
+  ;
 
 exe stk_learning_kokkos_utest 
   :
     [ glob $(stk_learning-root)/Kokkos/*.C ]
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
+    /mpi//mpi
+    /tpl/trilinos-kokkoscore//kokkoscore
     /sierra/stk_util//stk_util_environment
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
     /sierra/stk_topology//stk_topology
+    stk_learning_ngp
   :
     <tag>@sierra-exec-tag
   ;

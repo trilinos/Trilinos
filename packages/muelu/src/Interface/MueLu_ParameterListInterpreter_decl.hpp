@@ -63,6 +63,8 @@
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_FacadeClassBase.hpp"
+#include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
@@ -71,6 +73,7 @@
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_RAPShiftFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
@@ -84,16 +87,25 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
+#ifdef HAVE_MUELU_MATLAB
+#include "MueLu_MatlabSmoother_fwd.hpp"
+#include "MueLu_TwoLevelMatlabFactory_fwd.hpp"
+#include "MueLu_SingleLevelMatlabFactory_fwd.hpp"
+#endif
+
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
-#include "MueLu_FilteredAFactory_kokkos_fwd.hpp"
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
+#endif
+
+#ifdef HAVE_MUELU_INTREPID2
+#include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #endif
 
 namespace MueLu {
@@ -116,6 +128,7 @@ namespace MueLu {
      */
     ParameterListInterpreter() {
       factFact_ = Teuchos::null;
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
     }
 
   public:
@@ -128,9 +141,10 @@ namespace MueLu {
         @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
         @param[in] comm  (RCP<Teuchos::Comm<int> >): Optional RCP of a Teuchos communicator  (default: Teuchos::null)
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+        @param[in] facadeFact (RCP<FacadeFactory>): Optional parameter containing a FacadeFactory class. The user can register its own facade classes in the FacadeFactory and provide it to the ParameterListInterpreter. (default: Teuchos::null, means, only standard FacadeClass that come with MueLu are available)
 
      */
-    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
+    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
     /*! @brief Constructor that reads parameters from an XML file.
 
@@ -139,9 +153,10 @@ namespace MueLu {
         @param[in] xmlFileName (std::string): XML file to read
         @param[in] comm  (Teuchos::Comm<int>): Teuchos communicator
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+        @param[in] facadeFact (RCP<FacadeFactory>): Optional parameter containing a FacadeFactory class. The user can register its own facade classes in the FacadeFactory and provide it to the ParameterListInterpreter. (default: Teuchos::null, means, only standard FacadeClass that come with MueLu are available)
 
     */
-    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
+    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }
@@ -175,6 +190,7 @@ namespace MueLu {
 
     int       blockSize_;     ///< block size of matrix (fixed block size)
     CycleType Cycle_;         ///< multigrid cycle type (V-cycle or W-cycle)
+    double    scalingFactor_; ///< prolongator scaling factor
     GlobalOrdinal dofOffset_; ///< global offset variable describing offset of DOFs in operator
 
     //! Easy interpreter stuff
@@ -189,7 +205,40 @@ namespace MueLu {
     void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                               int levelID, std::vector<keep_pair>& keeps) const;
 
+    // "Generic components" for UpdateFactoryManager
+    void UpdateFactoryManager_Smoothers(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_CoarseSolvers(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                            int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Aggregation_TentativeP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                                     int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Restriction(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                  int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                          int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                          int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
+    void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
+
+    // Algorithm-specific components for UpdateFactoryManager
+    void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                          int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_PCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                       int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_SA(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                 int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Emin(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                   int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_PG(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                 int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Matlab(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                     int levelID, std::vector<keep_pair>& keeps) const;
+
     bool useCoordinates_;
+    bool useKokkos_;
     //@}
 
     //! Factory interpreter stuff
@@ -210,6 +259,10 @@ namespace MueLu {
 
     //! Internal factory for factories
     Teuchos::RCP<FactoryFactory> factFact_;
+
+    //! FacadeClass factory
+    Teuchos::RCP<MueLu::FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> > facadeFact_;
+
     //@}
   };
 

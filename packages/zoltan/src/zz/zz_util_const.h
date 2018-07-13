@@ -79,7 +79,6 @@ void Zoltan_Transform_Box_Points(double *lo, double *hi, double (*m)[3],
 int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
 void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly);
 long Zoltan_get_process_kilobytes();
-int Zoltan_get_global_id_type(char **name);
 int Zoltan_overflow_test(size_t val);
 
 MPI_Datatype Zoltan_mpi_gno_type();

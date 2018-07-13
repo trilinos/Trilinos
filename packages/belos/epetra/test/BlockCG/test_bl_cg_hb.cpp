@@ -49,7 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     int maxiters = -1;  // maximum number of iterations for solver to use
     std::string filename("bcsstk14.hb");
     double tol = 1.0e-5;  // relative residual tolerance
+    bool use_single_red = false; // use single-reduction iteration.
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by CG solver.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single-reduction CG iteration.");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
     int MyPID;
     RCP<Epetra_CrsMatrix> A;
     RCP<Epetra_MultiVector> B, X;
-    int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
+    int return_val =Belos::Util::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
     if(return_val != 0) return return_val;
     proc_verbose = ( verbose && (MyPID==0) );
     //
@@ -131,6 +133,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    if ((blocksize==1) && use_single_red)
+      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );

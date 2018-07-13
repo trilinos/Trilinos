@@ -40,28 +40,13 @@
 #include <string>                       // for basic_string, string, etc
 #include "stk_util/diag/String.hpp"     // for String
 
-#if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5 || __GNUC__ == 6
+#if __GNUC__ >= 3
 #include <cxxabi.h>
 #endif
-
 
 //----------------------------------------------------------------------
 
 namespace sierra {
-
-std::istream &
-getline(
-  std::istream &		is,
-  sierra::String &		s,
-  char				eol)
-{
-  std::string std_string;
-
-  getline(is, std_string, eol);
-  s = std_string.c_str();
-  return is;
-}
-
 
 int
 case_strcmp(
@@ -119,7 +104,7 @@ case_strstr(
     cp++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -166,18 +151,6 @@ to_string(
   os << std::setprecision(precision) << r;
   return std::string(os.str());
 }
-
-
-std::string
-to_string(
-  const float &		r,
-  int			precision)
-{
-  std::ostringstream os;
-  os << std::setprecision(precision) << r;
-  return std::string(os.str());
-}
-
 
 
 std::ostream &
@@ -295,9 +268,6 @@ word_wrap(
       std::string
       demangle(const char * symbol)
      {
-     #ifdef PURIFY_BUILD
-       return symbol;
-     #else
        std::string s;
        int status;
 
@@ -312,16 +282,12 @@ word_wrap(
          s = std::string(symbol);
 
        return s;
-     #endif
      }
 
     #elif (__GNUC__ == 4)
       std::string
       demangle(const char * symbol)
       {
-      #ifdef PURIFY_BUILD
-        return symbol;
-      #else
         std::string s;
 
         int status = -1;
@@ -337,16 +303,12 @@ word_wrap(
           s = std::string(symbol);
 
         return s;
-      #endif
       }
 
-    #elif (__GNUC__ == 5)
+    #elif (__GNUC__ >= 5)
       std::string
       demangle(const char * symbol)
       {
-      #ifdef PURIFY_BUILD
-        return symbol;
-      #else
         std::string s;
 
         int status = -1;
@@ -362,32 +324,6 @@ word_wrap(
           s = std::string(symbol);
 
         return s;
-      #endif
-      }
-      
-    #elif (__GNUC__ == 6)
-      std::string
-      demangle(const char * symbol)
-      {
-      #ifdef PURIFY_BUILD
-        return symbol;
-      #else
-        std::string s;
-
-        int status = -1;
-
-        char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
-
-        if (demangled_symbol) {
-          s = std::string(demangled_symbol);
-          free(demangled_symbol);
-        }
-
-        if (status != 0)
-          s = std::string(symbol);
-
-        return s;
-      #endif
       }
       
     #endif // (__GNUC__ == 3)

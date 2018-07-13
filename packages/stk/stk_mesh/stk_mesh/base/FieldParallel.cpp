@@ -33,7 +33,8 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/util/PairIter.hpp>   // for PairIter
@@ -95,32 +96,39 @@ void communicate_field_data(
     }
 
     const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
-    PairIterEntityComm ec(infovec.begin(), infovec.end());
     if ( owned ) {
-      for ( ; ! ec.empty() ; ++ec ) {
-        if (ec->ghost_id == ghost_id) {
-          send_size[ ec->proc ] += e_size ;
+      for (const EntityCommInfo& ec : infovec) {
+        if (ec.ghost_id == ghost_id) {
+          send_size[ ec.proc ] += e_size ;
         }
       }
     }
     else {
-      for ( ; ! ec.empty() ; ++ec ) {
-        if (ec->ghost_id == ghost_id) {
+      for (const EntityCommInfo& ec : infovec) {
+        if (ec.ghost_id == ghost_id) {
           recv_size[ i->owner ] += e_size ;
-          break;//jump out since we know we're only recving 1 msg from the 1-and-only owner
+          break;//jump out since we know we're only recving 1 msg for this entity from the 1-and-only owner
         }
       }
     }
   }
 
-  // Allocate send and receive buffers:
+  std::vector<int> send_procs, recv_procs;
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          send_procs.push_back(p);
+      }
+      if (recv_size[p] > 0) {
+          recv_procs.push_back(p);
+      }
+  }
 
-  CommAll sparse ;
+  CommNeighbors sparse(mesh.parallel(), send_procs, recv_procs);
 
-  {
-    const unsigned * const snd_size = & send_size[0] ;
-    const unsigned * const rcv_size = & recv_size[0] ;
-    sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          sparse.send_buffer(p).reserve(send_size[p]);
+      }
   }
 
   // Send packing:
@@ -145,19 +153,18 @@ void communicate_field_data(
               reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , bucketId, meshIdx.bucket_ordinal, size ));
 
             const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
-            PairIterEntityComm ec(infovec.begin(), infovec.end());
             if (phase == 0) { // send
-              for ( ; !ec.empty() ; ++ec ) {
-                if (ec->ghost_id == ghost_id) {
-                  CommBuffer & b = sparse.send_buffer( ec->proc );
+              for (const EntityCommInfo& ec : infovec) {
+                if (ec.ghost_id == ghost_id) {
+                  CommBufferV & b = sparse.send_buffer( ec.proc );
                   b.pack<unsigned char>( ptr , size );
                 }
               }
             }
             else { //recv
-              for ( ; !ec.empty(); ++ec ) {
-                if (ec->ghost_id == ghost_id) {
-                  CommBuffer & b = sparse.recv_buffer( i->owner );
+              for (const EntityCommInfo& ec : infovec) {
+                if (ec.ghost_id == ghost_id) {
+                  CommBufferV & b = sparse.recv_buffer( i->owner );
                   b.unpack<unsigned char>( ptr , size );
                   break;
                 }
@@ -209,64 +216,6 @@ struct DoOp<T, MAX>
   T operator()(T lhs, T rhs) const
   { return lhs > rhs ? lhs : rhs; }
 };
-
-template<typename T>
-struct CommMsgs {
-  std::vector<int> comm_procs;
-  std::vector<bool> msg_recvd;
-  std::vector<std::vector<T> > send_data;
-  std::vector<std::vector<T> > recv_data;
-};
-
-template<typename T, typename MsgPacker, typename MsgUnpacker>
-void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
-                                            const std::vector<int>& comm_procs,
-                                            MsgPacker& pack_msg,
-                                            MsgUnpacker& unpack_msg,
-                                            bool deterministic)
-{
-  //
-  //  Determine the number of processors involved in this communication
-  //
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int class_size = sizeof(T);
-
-  int num_comm_procs = comm_procs.size();
-  std::vector<std::vector<T> > send_data(num_comm_procs);
-  std::vector<std::vector<T> > recv_data(num_comm_procs);
-  std::vector<MPI_Request> send_requests(num_comm_procs);
-  std::vector<MPI_Request> recv_requests(num_comm_procs);
-  std::vector<MPI_Status> statuses(num_comm_procs);
-
-  for(int i=0; i<num_comm_procs; ++i) {
-    int iproc = comm_procs[i];
-    pack_msg(iproc, send_data[i]);
-    recv_data[i].resize(send_data[i].size());
-
-    char* recv_buffer = (char*)&recv_data[i][0];
-    int buf_size = recv_data[i].size()*class_size;
-    MPI_Irecv(recv_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_requests[i]);
-
-    char* send_buffer = (char*)&send_data[i][0];
-    MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
-  }
-
-  MPI_Status status;
-  for(int i = 0; i < num_comm_procs; ++i) {
-      int idx = i;
-      if (deterministic) {
-          MPI_Wait(&recv_requests[i], &status);
-      }
-      else {
-          MPI_Waitany(num_comm_procs, &recv_requests[0], &idx, &status);
-      }
-      unpack_msg(comm_procs[idx], recv_data[idx]);
-  }
-
-  MPI_Waitall(num_comm_procs, &send_requests[0], &statuses[0]);
-#endif
-}
 
 template <typename T, Operation OP>
 void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool deterministic = false)
@@ -374,7 +323,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
   };
 
   MPI_Comm comm = mesh.parallel();
-  parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);
+  stk::parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);
 }
 
 template <Operation OP>
@@ -424,57 +373,5 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
   parallel_op<MIN>(mesh, fields, false);
 }
 
-//
-//  Determine the number of items each other process will send to the current processor
-//
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
-  const int msg_tag = 10240;
-  int num_procs = sendSizeArray.size();
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
-  std::vector<int> receiveSizeArray(num_procs, 0);
-  //
-  //  Determine the total number of messages every processor will receive
-  //
-  std::vector<int> local_number_to_receive(num_procs, 0);
-  std::vector<int> global_number_to_receive(num_procs, 0);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(sendSizeArray[iproc] > 0) local_number_to_receive[iproc] = 1;
-  }
-  MPI_Allreduce(&local_number_to_receive[0], &global_number_to_receive[0], num_procs, MPI_INT, MPI_SUM, mpi_communicator);
-  //
-  //  Now each processor knows how many messages it will recive, but does not know the message lengths or where
-  //  the messages will be recived from.  Need to extract this information.
-  //  Post a recieve for each expected message.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  int num_to_recv = global_number_to_receive[my_proc];
-  std::vector<int> recv_size_buffers(num_to_recv);
-  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
-    int *recv_buffer = &(recv_size_buffers[imsg]);
-    MPI_Irecv(recv_buffer, 1, MPI_INT, MPI_ANY_SOURCE,
-              msg_tag, mpi_communicator, &recv_handles[imsg]);
-  }
-  MPI_Barrier(mpi_communicator);
-  //
-  //  Send message lengths
-  //
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(sendSizeArray[iproc] > 0) {
-      int send_length = sendSizeArray[iproc];
-      MPI_Send(&send_length, 1, MPI_INT, iproc, msg_tag, mpi_communicator);
-    }
-  }
-  //
-  //  Get each message and place the length in the proper place in the length array
-  //
-  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
-    MPI_Status status;
-    MPI_Wait(&recv_handles[imsg], &status);
-    receiveSizeArray[status.MPI_SOURCE] = recv_size_buffers[imsg];
-  }
-
-  return receiveSizeArray;
-}
 } // namespace mesh
 } // namespace stk

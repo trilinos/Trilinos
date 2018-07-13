@@ -592,7 +592,7 @@ void field_axpy(
         ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
-        Scalar * y = (Scalar*) field_data(yFieldBase, b);
+        Scalar * y = (Scalar*) stk::mesh::field_data(yFieldBase, b);
 
         FortranBLAS<Scalar>::axpy(kmax,alpha,x,y);
     }
@@ -635,7 +635,7 @@ void field_axpy(
         ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
-        Scalar * y = (Scalar*) field_data(yField, b);
+        Scalar * y = (Scalar*) stk::mesh::field_data(yField, b);
 
         FortranBLAS<Scalar>::axpy(kmax,alpha,x,y);
     }

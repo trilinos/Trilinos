@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,7 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <stddef.h>       // for size_t
@@ -75,21 +75,19 @@ Possible causes of errors include:
 
 \param[in] exoid   exodus file ID returned from a previous call to ex_create()
 or ex_open().
-\param[in] x_coor  The X-coordinates of the nodes. If this is \c NULL, the
+\param[in] x_coor  The X-coordinates of the nodes. If this is NULL, the
                    X-coordinates will not be written.
-\param[in] y_coor  The Y-coordinates of the nodes. These are stored only if \c
-num_dim
-                   > 1; otherwise, pass in \c NULL. If this is \c NULL, the
+\param[in] y_coor  The Y-coordinates of the nodes. These are stored only if num_dim
+                   > 1; otherwise, pass in NULL. If this is NULL, the
                    Y-coordinates will not be written.
-\param[in] z_coor  The Z-coordinates of the nodes. These are stored only if \c
-num_dim
-                   > 2; otherwise, pass in \c NULL. If this is \c NULL, the
+\param[in] z_coor  The Z-coordinates of the nodes. These are stored only if num_dim
+                   > 2; otherwise, pass in NULL. If this is NULL, the
                    Z-coordinates will not be written.
 
 The following will write the nodal coordinates to an open
 exodus file :
 
-\code
+~~~{.c}
 int error, exoid;
 
 // \comment{if file opened with compute word size of sizeof(float)}
@@ -107,11 +105,12 @@ x[7] = 1.0; y[7] = 1.0; z[7] = 0.0;
 
 error = ex_put_coord(exoid, x, y, z);
 
-// \comment{Do the same as the previous call in three separate calls}
+\comment{Do the same as the previous call in three separate calls}
 error = ex_put_coord(exoid, x,    NULL, NULL);
 error = ex_put_coord(exoid, NULL, y,    NULL);
 error = ex_put_coord(exoid, NULL, NULL, z);
-\endcode
+
+~~~
 
  */
 
@@ -125,48 +124,45 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
   size_t num_nod, num_dim, start[2], count[2], i;
   char   errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* inquire id's of previously defined dimensions  */
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim)) != NC_NOERR) {
     /* If not found, then this file is storing 0 nodes.
        Return immediately */
-    return (EX_NOERR);
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: inquire failed to return number of nodes in file id %d", exoid);
-    ex_err("ex_put_coord", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
-    ex_err("ex_put_coord", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
              exoid);
-    ex_err("ex_put_coord", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out the coordinates  */
   if (ex_large_model(exoid) == 0) {
     if ((status = nc_inq_varid(exoid, VAR_COORD, &coordid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate nodal coordinates in file id %d",
                exoid);
-      ex_err("ex_put_coord", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_coord", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     for (i = 0; i < num_dim; i++) {
@@ -206,30 +202,27 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
       }
 
       if (status != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d", which,
                  exoid);
-        ex_err("ex_put_coord", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_coord", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
   }
   else {
     if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate x nodal coordinates in file id %d",
                exoid);
-      ex_err("ex_put_coord", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_coord", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (num_dim > 1) {
       if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate y nodal coordinates in file id %d", exoid);
-        ex_err("ex_put_coord", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_coord", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     else {
@@ -237,11 +230,10 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
     }
     if (num_dim > 2) {
       if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate z nodal coordinates in file id %d", exoid);
-        ex_err("ex_put_coord", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_coord", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     else {
@@ -278,14 +270,13 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
         }
 
         if (status != NC_NOERR) {
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d",
                    which, exoid);
-          ex_err("ex_put_coord", errmsg, exerrval);
-          return (EX_FATAL);
+          ex_err("ex_put_coord", errmsg, status);
+          EX_FUNC_LEAVE(EX_FATAL);
         }
       }
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

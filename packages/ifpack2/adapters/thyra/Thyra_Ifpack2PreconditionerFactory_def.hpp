@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -160,16 +160,29 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // Process parameter list
 
-  const Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  if (constParamList.is_null ()) {
+    constParamList = getValidParameters ();
+  }
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
   const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
 
+  // precTypeUpper is the upper-case version of preconditionerType.
+  std::string precTypeUpper (preconditionerType);
+  if (precTypeUpper.size () > 0) {
+    std::locale locale;
+    for (size_t k = 0; k < precTypeUpper.size (); ++k) {
+      precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
+    }
+  }
+  
   // mfh 09 Nov 2013: If the Ifpack2 list doesn't already have the
   // "schwarz: overlap level" parameter, then override it with the
   // value of "Overlap".  This avoids use of the newly deprecated
   // three-argument version of Ifpack2::Factory::create() that takes
   // the overlap as an integer.
-  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level")) {
+  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
+      precTypeUpper == "SCHWARZ") {
     const int overlap = constParamList->get<int> ("Overlap");
     Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList =
       Teuchos::sublist (paramList_, "Ifpack2 Settings");

@@ -81,7 +81,7 @@ using Teuchos::ArrayView;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> simpleUser_t;
 
-typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>      tcrsMatrix_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>     tcrsMatrix_t;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t>                 tcrsGraph_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t>                      tmap_t;
 
@@ -97,9 +97,10 @@ using std::string;
 using std::vector;
 
 /////////////////////////////////////////////////////////////////////////////
+template<typename offset_t>
 void printGraph(zlno_t nrows, const zgno_t *v,
     const zgno_t *elid, const zgno_t *egid,
-    const zlno_t *idx,
+    const offset_t *idx,
     const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
@@ -112,10 +113,10 @@ void printGraph(zlno_t nrows, const zgno_t *v,
       for (zlno_t i=0; i < nrows; i++){
         std::cout << "  Vtx " << i << ": ";
         if (elid)
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *elid++ << " ";
         else
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *egid++ << " ";
         std::cout << std::endl;
       }
@@ -125,6 +126,63 @@ void printGraph(zlno_t nrows, const zgno_t *v,
   }
   comm->barrier();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+template <typename MatrixOrGraph>
+void computeNumDiags(
+    RCP<const MatrixOrGraph> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  // See specializations below
+}
+
+template <>
+void computeNumDiags<tcrsGraph_t>(
+    RCP<const tcrsGraph_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  typedef typename tcrsGraph_t::global_ordinal_type gno_t;
+
+  size_t maxnnz = M->getNodeMaxNumRowEntries();
+  Teuchos::Array<gno_t> colGids(maxnnz);
+
+  numLocalDiags = 0;
+  numGlobalDiags = 0;
+
+  int nLocalRows = M->getNodeNumRows();
+  for (int i = 0; i < nLocalRows; i++) {
+
+    gno_t rowGid = M->getRowMap()->getGlobalElement(i);
+    size_t nnz;
+    M->getGlobalRowCopy(rowGid, colGids(), nnz);
+
+    for (size_t j = 0; j < nnz; j++) {
+      if (rowGid == colGids[j]) {
+        numLocalDiags++;
+        break;
+      }
+    }
+  }
+  Teuchos::reduceAll<int, size_t>(*(M->getComm()), Teuchos::REDUCE_SUM, 1,
+                                  &numLocalDiags, &numGlobalDiags);
+}
+
+template <>
+void computeNumDiags<tcrsMatrix_t>(
+    RCP<const tcrsMatrix_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  RCP<const tcrsGraph_t> graph = M->getCrsGraph();
+  computeNumDiags<tcrsGraph_t>(graph, numLocalDiags, numGlobalDiags);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename BaseAdapter, typename Adapter, typename MatrixOrGraph>
@@ -137,11 +195,13 @@ void testAdapter(
     bool consecutiveIdsRequested, bool removeSelfEdges, bool buildLocalGraph)
 {
   typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
+  typedef typename
+    Zoltan2::InputTraits<typename BaseAdapter::user_t>::offset_t offset_t;
 
   int fail=0;
   int rank = comm->getRank();
   int nprocs = comm->getSize();
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
   zlno_t nLocalRows = M->getNodeNumRows();
   zlno_t nLocalNZ = M->getNodeNumEntries();
@@ -214,8 +274,11 @@ void testAdapter(
     tmi.setCoordinateInput(via);
   }
 
-  int numLocalDiags = M->getNodeNumDiags();
-  int numGlobalDiags = M->getGlobalNumDiags();
+  size_t numLocalDiags = 0;
+  size_t numGlobalDiags = 0;
+  if (removeSelfEdges) {
+    computeNumDiags<MatrixOrGraph>(M, numLocalDiags, numGlobalDiags);
+  }
 
   const RCP<const tmap_t> rowMap = M->getRowMap();
   const RCP<const tmap_t> colMap = M->getColMap();
@@ -225,7 +288,7 @@ void testAdapter(
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
   bool *haveDiag = new bool [nLocalRows];
-  zgno_t totalLocalNbors = 0;
+  size_t totalLocalNbors = 0;
 
   for (zlno_t i=0; i < nLocalRows; i++){
     numLocalNbors[i] = 0;
@@ -278,7 +341,7 @@ void testAdapter(
     if (model->getLocalNumVertices() != size_t(nLocalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags)
+    size_t num = (removeSelfEdges ? totalLocalNbors - numLocalDiags
                                   : totalLocalNbors);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
@@ -290,7 +353,7 @@ void testAdapter(
     if (model->getGlobalNumVertices() != size_t(nGlobalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
+    size_t num = (removeSelfEdges ? nLocalNZ-numLocalDiags : nLocalNZ);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
 
@@ -423,7 +486,7 @@ void testAdapter(
 
   if (!buildLocalGraph) {
     ArrayView<const zgno_t> edgeGids;
-    ArrayView<const zlno_t> offsets;
+    ArrayView<const offset_t> offsets;
     size_t numEdges=0;
 
     try{
@@ -438,8 +501,9 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
     size_t num = 0;
-    for (ArrayView<const zlno_t>::size_type i=0; i < offsets.size()-1; i++){
-      size_t edgeListSize = offsets[i+1] - offsets[i];
+    for (typename ArrayView<const offset_t>::size_type i=0;
+      i < offsets.size()-1; i++){
+      offset_t edgeListSize = offsets[i+1] - offsets[i];
       num += edgeListSize;
       size_t val = numNbors[i];
       if (removeSelfEdges && haveDiag[i])
@@ -454,7 +518,7 @@ void testAdapter(
     if (nGlobalRows < SMALL_NUMBER_OF_ROWS){
       if (rank == 0)
         std::cout << "Printing graph now " << nGlobalRows << std::endl;
-      printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
+      printGraph<offset_t>(nLocalRows, vertexGids.getRawPtr(), NULL,
         edgeGids.getRawPtr(), offsets.getRawPtr(), comm);
     }
     else{
@@ -468,7 +532,7 @@ void testAdapter(
 
     if (rank == 0) std::cout << "        Checking local edges" << std::endl;
     ArrayView<const zgno_t> localEdges;
-    ArrayView<const zlno_t> localOffsets;
+    ArrayView<const offset_t> localOffsets;
     size_t numLocalNeighbors=0;
 
     try{
@@ -485,7 +549,7 @@ void testAdapter(
 
     size_t num = 0;
     for (zlno_t i=0; i < nLocalRows; i++){
-      size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
+      offset_t edgeListSize = localOffsets[i+1] - localOffsets[i];
       num += edgeListSize;
       size_t val = numLocalNbors[i];
       if (removeSelfEdges && haveDiag[i])
@@ -504,8 +568,8 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
                        "getLocalEdgeList sum size", 1)
 
-    fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
-                             : size_t(totalLocalNbors))
+    fail = ((removeSelfEdges ? totalLocalNbors-numLocalDiags
+                             : totalLocalNbors)
             != numLocalNeighbors);
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
 
@@ -515,7 +579,7 @@ void testAdapter(
         std::cout << "  Graph of local edges is empty" << std::endl; 
       }
       else{
-        printGraph(nLocalRows, vertexGids.getRawPtr(), 
+        printGraph<offset_t>(nLocalRows, vertexGids.getRawPtr(),
           localEdges.getRawPtr(), NULL, localOffsets.getRawPtr(), comm);
       }
     }

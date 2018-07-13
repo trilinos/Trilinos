@@ -207,7 +207,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   typedef Zoltan2::CoordinateModel<base_ia_t> model_t;
   modelFlags_t modelFlags;
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
   RCP<model_t> model;
   
 

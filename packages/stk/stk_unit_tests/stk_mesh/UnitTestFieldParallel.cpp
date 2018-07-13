@@ -53,7 +53,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
-#include "stk_mesh/fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 namespace stk { namespace mesh { class Part; } }
@@ -159,7 +159,7 @@ void do_parallel_assemble()
 
   Selector shared_sel = meta.globally_shared_part();
 
-  std::vector<unsigned> counts;
+  std::vector<size_t> counts;
   count_entities( shared_sel, bulk, counts );
 
   int multiplier = (p_rank == 0 || p_rank == p_size - 1) ? 1 : 2;
@@ -193,7 +193,7 @@ void do_parallel_assemble()
 
       *field_data(universal_scalar_node_field, node) = p_rank + 1.0 + node_id;
 
-      double* data = field_data(universal_cartesian_node_field, node);
+      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
       for (int d = 0; d < 3; ++d) {
         data[d] = p_rank + (2.0*d) + node_id;
       }
@@ -246,7 +246,7 @@ void do_parallel_assemble()
                  (do_operation<double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       ++field_id;
 
-      double* data = field_data(universal_cartesian_node_field, node);
+      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
       for (int d = 0; d < 3; ++d) {
         EXPECT_EQ( data[d], (do_operation<double>(Op, p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id)) );
       }

@@ -48,6 +48,10 @@
    \brief Modified boost::any class for holding a templated value
 */
 
+#include <utility>
+#include <type_traits>
+#include <exception>
+
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -79,6 +83,70 @@
 //
 
 namespace Teuchos {
+
+template<class T>
+struct is_comparable
+{
+    template<class X>
+    static auto test(int) -> decltype(std::declval<X>() == std::declval<X>(),
+                                      void(), std::true_type());
+    template<class X>
+    static auto test(...) -> std::false_type;
+    using type = decltype(test<T>(0));
+};
+
+template<class T>
+struct is_printable
+{
+    template<class X>
+    static auto test(int) -> decltype(std::declval<std::ostream&>() << std::declval<X>(),
+                                      void(), std::true_type());
+    template<class X>
+    static auto test(...) -> std::false_type;
+    using type = decltype(test<T>(0));
+};
+
+template <class T, class ok = typename is_comparable<T>::type>
+struct compare;
+
+template <class T>
+struct compare<T, std::false_type> {
+  bool operator()(T const&, T const&) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Trying to compare type " << typeid(T).name() << " which is not comparable");
+#ifndef __CUDACC__
+    return false;
+#endif
+  }
+};
+
+template <class T>
+struct compare<T, std::true_type> {
+  bool operator()(T const& a, T const& b) const {
+    return a == b;
+  }
+};
+
+template <class T, class ok = typename is_printable<T>::type>
+struct print;
+
+template <class T>
+struct print<T, std::false_type> {
+  std::ostream& operator()(std::ostream& s, T const&) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Trying to print type " << typeid(T).name() << " which is not printable");
+#ifndef __CUDACC__
+    return s;
+#endif
+  }
+};
+
+template <class T>
+struct print<T, std::true_type> {
+  std::ostream& operator()(std::ostream& a, T const& b) const {
+    return a << b;
+  }
+};
 
 /** \brief Modified boost::any class, which is a container for a templated
  * value.
@@ -148,7 +216,10 @@ public:
       return content ? content->typeName() : "NONE";
     }
 
-  //! \brief Return if two any objects are the same or not.
+  /*! \brief Return if two any objects are the same or not.
+   *  \warning This function with throw an exception if
+   *           operator== can't be applied to the held type!
+   */
   bool same( const any &other ) const
     {
       if( this->empty() && other.empty() )
@@ -161,7 +232,10 @@ public:
       return content->same(*other.content);
     }
 
-  //! Print this value to the output stream <tt>os</tt>
+  /*! \brief Print this value to the output stream <tt>os</tt>
+   *  \warning This function with throw an exception if
+   *           the held type can't be printed via operator<< !
+   */
   void print(std::ostream& os) const
     {
       if (content) content->print(os);
@@ -216,11 +290,11 @@ public:
         // type() == other.type()
         const ValueType
           &other_held = dynamic_cast<const holder<ValueType>&>(other).held;
-        return held == other_held;
+        return ::Teuchos::compare<ValueType>{}(held, other_held);
       }
     /** \brief . */
     void print(std::ostream & os) const
-      { os << held; }
+      { ::Teuchos::print<ValueType>{}(os, held); }
     /** \brief . */
     ValueType held;
   };
@@ -304,7 +378,22 @@ const ValueType& any_cast(const any &operand)
 }
 
 /*! \relates any
+    \brief Keep the convenient behavior of Teuchos::any_cast w.r.t. references, but don't confuse it
+      with the behavior for C++17 std::any_cast.
+
+    \note In C++17, one must use std::any_cast<T&> to get a reference. This function will ensure
+    that uses of Teuchos::any_ref_cast<T> are consciously replaced with std::any_cast<T&> when C++17 is used.
+*/
+template<typename ValueType>
+ValueType& any_ref_cast(any &operand)
+{
+  return Teuchos::any_cast<ValueType>(operand);
+}
+
+/*! \relates any
     \brief Converts the value in <tt>any</tt> to a std::string.
+    \warning This function with throw an exception if
+             the held type can't be printed via operator<< !
 */
 inline std::string toString(const any &rhs)
 {
@@ -315,6 +404,8 @@ inline std::string toString(const any &rhs)
 
 /*! \relates any
     \brief Returns true if two any objects have the same value.
+    \warning This function with throw an exception if
+             operator== can't be applied to the held type!
 */
 inline bool operator==( const any &a, const any &b )
 {
@@ -323,6 +414,8 @@ inline bool operator==( const any &a, const any &b )
 
 /*! \relates any
     \brief Returns true if two any objects <b>do not</b> have the same value.
+    \warning This function with throw an exception if
+             operator== can't be applied to the held type!
 */
 inline bool operator!=( const any &a, const any &b )
 {
@@ -331,11 +424,30 @@ inline bool operator!=( const any &a, const any &b )
 
 /*! \relates any
     \brief Writes "any" input <tt>rhs</tt> to the output stream <tt>os</tt>.
+    \warning This function with throw an exception if
+             the held type can't be printed via operator<< !
 */
 inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
   rhs.print(os);
   return os;
+}
+
+/*! \relates any
+    \brief Special swap for other code to find via Argument Dependent Lookup
+*/
+inline void swap(Teuchos::any& a, Teuchos::any& b) {
+  a.swap(b);
+}
+
+/*! \relates any
+    \brief Default constructs a new T value and returns a reference to it.
+*/
+template <typename T>
+T & make_any_ref(any &rhs)
+{
+  any(T()).swap(rhs);
+  return any_cast<T>(rhs);
 }
 
 } // namespace Teuchos

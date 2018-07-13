@@ -1,6 +1,6 @@
-C Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
 C                         
-C * Neither the name of Sandia Corporation nor the names of its
+C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
 C                                                 
@@ -29,7 +29,6 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
 
 C     -*- Mode: fortran -*-
 C=======================================================================
@@ -40,7 +39,7 @@ C=======================================================================
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS,
      $  LTEESS, LTSESS, FACESS,
      &  XN, YN, ZN, XEXPL, YEXPL, ZEXPL, MODBLK,
-     *  ISATRB, ATRSCL, IEQUIV, MAPNOD,
+     *  ISATRB, ATRSCL, IEQUIV, MAPNOD, MAPEL, 
      $  IELBST, INPSST, IESSST,
      *  NQAREC, QAREC, NINFO, INFREC, BLKTYP,
      *  ebname, nsname, ssname, atname,
@@ -103,7 +102,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       INTEGER NUMLNK(*)
       INTEGER NUMATR(*)
       INTEGER IELBST(*), INPSST(*), IESSST(*), ITIMST(*)
-      INTEGER IEQUIV(*), MAPNOD(*)
+      INTEGER IEQUIV(*), MAPNOD(*), MAPEL(*)
 
       logical glonod, absolute
       
@@ -1041,6 +1040,9 @@ C=======================================================================
         VERB = ' '
         
 C=======================================================================
+C NAME BLOCK|SIDESET|SSET|NODESET|NSET id newname
+C NAME ATTRIBUTE attindex BLOCK id newname
+
       ELSE IF (VERB .EQ. 'NAME') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
@@ -1053,10 +1055,18 @@ C=======================================================================
         ELSE IF (MATSTR(WORD,'NODESETS',3) .OR.
      $      MATSTR(WORD,'NSETS',   3) ) THEN
           itype = 'N'
+        ELSE IF (MATSTR(WORD,'ATTRIBUTE',3)) THEN
+          itype = 'A'
         END IF
 
         CALL FFINTG (IFLD, INTYP, IFIELD,
-     $    'block ID', 0, IDOLD, *420)
+     $    'entity ID', 0, IDOLD, *420)
+        if (itype .eq. 'A') then
+C.. Skip over 'block' and get block id 
+          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+          CALL FFINTG (IFLD, INTYP, IFIELD,
+     $      'block ID', 0, IDBLK, *420)
+        end if
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
         if (itype .eq. 'B') then
           CALL NEWNAM ('B', IDELB, EBNAME, NELBLK, IDOLD, WORD)
@@ -1064,6 +1074,9 @@ C=======================================================================
           CALL NEWNAM ('N', IDNPS, NSNAME, NUMNPS, IDOLD, WORD)
         else if (itype .eq. 'S') then
           CALL NEWNAM ('S', IDESS, SSNAME, NUMESS, IDOLD, WORD)
+        else if (itype .eq. 'A') then
+          CALL NEWATT (IDELB, IDBLK,  NELBLK, IDOLD, NUMATR, ATNAME,
+     *      WORD)
         end if
         verb = ' '
 C=======================================================================
@@ -1073,7 +1086,7 @@ C=======================================================================
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
         if (.NOT. MATSTR (WORD2, 'VARIABLE', 2)) THEN
           call PRTERR('CMDERR',
-     *      'SYNTAX: RENAME [global|nodal|node|elemnet|nodeset|nset|',
+     *      'SYNTAX: RENAME [global|nodal|node|element|nodeset|nset|',
      *      'sideset|sset] VARIABLE [oldname] [newname]')
           go to 399
         end if
@@ -1528,7 +1541,21 @@ C========================================================================
      &        .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
               CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
-              IF (MATSTR (WORD2, 'ALL', 2)) THEN
+              IF (MATSTR (WORD2, 'MAP', 3)) THEN
+                IF (MATSTR (WORD, 'NODE', 2)) THEN
+                  do i=1, numnp
+                    mapnod(i) = i
+                  end do
+                ELSE IF (MATSTR (WORD, 'ELEMENT', 2)) THEN
+                  do i=1, numel
+                    mapel(i) = i
+                  end do
+                ELSE
+                  CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
+     &              // '" is an invalid DELETE MAP -- NODE or ELEMENT')
+                  GO TO 333
+                END IF
+              ELSE IF (MATSTR (WORD2, 'ALL', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
                   do i=1, nelblk
@@ -1553,6 +1580,32 @@ C ... Field is character
                   GO TO 333
                 END IF
 
+              ELSE IF (MATSTR (WORD2, 'NAMES', 2)) THEN
+                IF (MATSTR(WORD,'MATERIALS',1) .OR.
+     &            MATSTR(WORD, 'BLOCKS',1)) THEN
+                  do i=1, nelblk
+                    ebname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC',
+     *              'All material block names deleted.')
+                ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
+     &              MATSTR(WORD,'NSETS',   1) ) THEN
+                  do i=1, numnps
+                    nsname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
+                ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+     &              MATSTR(WORD,'SSETS',   1) ) THEN
+                  do i=1, numess
+                    ssname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All sideset names deleted.')
+                ELSE
+                  CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
+     &              // '" is an invalid DELETE NAME option')
+                  GO TO 333
+                END IF
+                
               ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
@@ -1606,9 +1659,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .TRUE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .TRUE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 1
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')
@@ -1675,9 +1736,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .FALSE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .FALSE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 0
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')
@@ -2239,27 +2308,27 @@ C========================================================================
       END
 
 C=======================================================================
-      integer function ng2l (type, idglo, numel, mapel)
+      integer function ng2l (type, idglo, num, map)
 C=======================================================================
 
-C   --G2L locates the local node corresponding to the global id
+C   --G2L locates the local node/element corresponding to the global id
 C   --
 C   --Parameters:
 C   --   TYPE - IN - 'node' or 'element'
-C   --   NUMEL - IN - the number of node/elements
-C   --   MAPEL - IN - the node/element number map
+C   --   NUM  - IN - the number of node/elements
+C   --   MAP  - IN - the node/element number map
 
 C ... TYPE = Node or Element
       CHARACTER*(*) TYPE
-      INTEGER MAPEL(*)
+      INTEGER MAP(*)
 
       CHARACTER*128 STRA
       LOGICAL FOUND
 
       ng2l = idglo
       found = .FALSE.
-      do i = 1, numel
-        if (idglo .eq. mapel(i)) then
+      do i = 1, num
+        if (idglo .eq. map(i)) then
           ng2l = i
           return
         end if

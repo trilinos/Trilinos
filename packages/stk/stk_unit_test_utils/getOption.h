@@ -7,10 +7,12 @@
 extern int gl_argc;
 extern char** gl_argv;
 
-namespace unitTestUtils
+namespace stk
+{
+namespace unit_test_util
 {
 
-inline std::string getOption(const std::string& option, const std::string defaultString="no")
+inline std::string get_option(const std::string& option, const std::string defaultString="no")
 {
     std::string returnValue = defaultString;
     if ( gl_argv != 0 )
@@ -32,16 +34,17 @@ inline std::string getOption(const std::string& option, const std::string defaul
 }
 
 template <typename T>
-T get_command_line_option(const std::string &option, const std::string &defaultValue)
+T get_command_line_option(const std::string &option, const T &defaultValue)
 {
-    std::string str = unitTestUtils::getOption(option, defaultValue);
+    std::string str = get_option(option, std::to_string(defaultValue));
     std::istringstream ss(str);
     T val=0;
     ss >> val;
     return val;
 }
 
-} // end namespace
+}
+}
 
 #endif
 

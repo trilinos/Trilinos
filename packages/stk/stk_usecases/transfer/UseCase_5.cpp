@@ -38,6 +38,7 @@
 
 #include <stk_mesh/base/Comm.hpp>
 
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
@@ -104,16 +105,10 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
       transfer.initialize();
       transfer.apply();
     } catch (std::exception &e) {
-      std::cout <<__FILE__<<":"<<__LINE__
-                <<" Caught an std::exception with what string:"
-                <<e.what()
-                <<"      rethrowing....."
-                <<std::endl;
+      std::cout <<__FILE__<<":"<<__LINE__ <<" Caught an std::exception with what string:" <<e.what() <<"      rethrowing....." <<std::endl;
       status = status && false;
     } catch (...) {
-      std::cout <<__FILE__<<":"<<__LINE__
-                <<" Caught an exception, rethrowing..."
-                <<std::endl;
+      std::cout <<__FILE__<<":"<<__LINE__ <<" Caught an exception, rethrowing..." <<std::endl;
       status = status && false;
     }
   }
@@ -128,19 +123,11 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
         check_q += j*ToPoints(i,j);
       }
       if (TOLERANCE < fabs(check_l-ToValues(i,0)) ) {
-        std::cout <<__FILE__<<":"<<__LINE__
-                  <<" ToValues:"<<ToValues(i,0)
-                  <<" check:"<<check_l
-                  <<" error:"<<fabs(check_l-ToValues(i,0))
-                  <<std::endl;
+        std::cout <<__FILE__<<":"<<__LINE__ <<" ToValues:"<<ToValues(i,0) <<" check:"<<check_l <<" error:"<<fabs(check_l-ToValues(i,0)) <<std::endl;
         success = false;
       }
       if (TOLERANCE < fabs(check_q-ToValues(i,1)) ) {
-        std::cout <<__FILE__<<":"<<__LINE__
-                  <<" ToValues:"<<ToValues(i,1)
-                  <<" check:"<<check_q
-                  <<" error:"<<fabs(check_q-ToValues(i,1))
-                  <<std::endl;
+        std::cout <<__FILE__<<":"<<__LINE__ <<" ToValues:"<<ToValues(i,1) <<" check:"<<check_q <<" error:"<<fabs(check_q-ToValues(i,1)) <<std::endl;
         success = false;
       }
     }
@@ -148,6 +135,6 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   }
   timer.stop();
 
-  const bool collective_result = use_case::print_status(comm, status);
+  const bool collective_result = stk::is_true_on_all_procs(comm, status);
   return collective_result;
 }

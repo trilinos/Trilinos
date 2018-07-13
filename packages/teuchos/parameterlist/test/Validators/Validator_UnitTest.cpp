@@ -82,6 +82,36 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(intList->set("Double Parameter", 5.0, "double parameter", intVali),
     Exceptions::InvalidParameterType);
 
+  // Test String Conversions with int
+  RCP<ParameterList> validList = rcp(new ParameterList("Valid List"));
+  RCP<ParameterList> userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Int Parameter", 4, "int parameter",
+    intVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Int Parameter", "x4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Int Parameter", "4x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Int Parameter", "12")); // ok string bad range
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Int Parameter", 4));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Int Parameter", "8"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  int readInt = userList->getEntry("Int Parameter").getValue<int>(&readInt);
+  TEST_ASSERT(readInt == 8);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Int Parameter", "20"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+
 	/*
 	 * Testing Short Validator.
 	 */
@@ -106,6 +136,36 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(shortList->set("Short Parameter", (short)11),
     Exceptions::InvalidParameterValue);
 	TEST_THROW(shortList->set("Double Parameter", 5.0, "double parameter", shortVali),
+    Exceptions::InvalidParameterType);
+
+  // Test String Conversions with short
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Short Parameter", (short)4, "short parameter",
+    shortVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Short Parameter", "x4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Short Parameter", "4x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Short Parameter", "12")); // ok string bad range
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Short Parameter", (short)4));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Short Parameter", "8"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  short readShort = userList->getEntry("Short Parameter").getValue<short>(&readShort);
+  TEST_ASSERT(readShort == 8);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Short Parameter", "20"));
+  TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidParameterType);
 
 	/*
@@ -135,6 +195,36 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(floatList->set("Int Parameter", 5, "int parameter", floatVali),
     Exceptions::InvalidParameterType);
 
+  // Test String Conversions with float
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Float Parameter", (float)4.0, "float parameter",
+    floatVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Float Parameter", "x4.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Float Parameter", "4.0x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Float Parameter", "12.0")); // ok string bad range
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Float Parameter", (float)8.0));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Float Parameter", "8.0"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  float readFloat = userList->getEntry("Float Parameter").getValue<float>(&readFloat);
+  TEST_ASSERT(readFloat == 8.0);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Float Parameter", "20.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+
 	/*
 	 * Testing Double Validator.
 	 */
@@ -161,6 +251,223 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
     Exceptions::InvalidParameterValue);
 	TEST_THROW(doubleList->set("Int Parameter", 5, "int parameter", doubleVali),
     Exceptions::InvalidParameterType);
+
+  // Test String Conversions with double
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Double Parameter", 4.0, "double parameter",
+    doubleVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Double Parameter", "x4.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Double Parameter", "4.0x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Double Parameter", "12.0"));
+  TEST_THROW(userList->validateParameters(*validList), // bad range
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("Valid List"));
+  TEST_NOTHROW(userList->set("Double Parameter", 8.0));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Double Parameter", "8.0"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  double readDouble = userList->getEntry("Double Parameter").getValue<double>(&readDouble);
+  TEST_ASSERT(readDouble == 8.0);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Double Parameter", "20.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+ }
+
+TEUCHOS_UNIT_TEST(Teuchos_Validators, anyNumberValidator)
+{
+	RCP<ParameterList> userList = rcp(new ParameterList("User List"));
+	RCP<ParameterList> validList = rcp(new ParameterList("Valid List"));
+
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes intDoubleTypes;
+  intDoubleTypes.allowString(false);
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes intStringTypes;
+  intStringTypes.allowDouble(false);
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes intTypes;
+  intTypes.allowDouble(false);
+  intTypes.allowString(false);
+
+  // set up validators to test
+  // default prefers double and allows string and int
+  RCP<Teuchos::AnyNumberParameterEntryValidator> allValidator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
+  RCP<Teuchos::AnyNumberParameterEntryValidator> intDoubleValidator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE, intDoubleTypes) );
+  RCP<Teuchos::AnyNumberParameterEntryValidator> intStringValidator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, intStringTypes) );
+  RCP<Teuchos::AnyNumberParameterEntryValidator> intValidator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, intTypes) );
+
+  // first check the 'good' setups which do not throw
+  TEST_NOTHROW(validList->set( "allParameter", "1.1", "documentation",
+    allValidator));
+  TEST_NOTHROW(validList->set( "allParameter", 1.1, "documentation",
+    allValidator));
+  TEST_NOTHROW(validList->set( "allParameter", "1", "documentation",
+    allValidator));
+  TEST_NOTHROW(validList->set( "allParameter", 1, "documentation",
+    allValidator));
+  TEST_NOTHROW(validList->set( "intDoubleParameter", 1.1, "documentation",
+    intDoubleValidator));
+  TEST_NOTHROW(validList->set( "intDoubleParameter", 1, "documentation",
+    intDoubleValidator));
+  TEST_NOTHROW(validList->set( "intStringParameter", "1", "documentation",
+    intStringValidator));
+  TEST_NOTHROW(validList->set( "intStringParameter", 1, "documentation",
+    intStringValidator));
+  TEST_NOTHROW(validList->set( "intParameter", 1, "documentation",
+    intValidator));
+
+  // This was a special case that might warrant discussion.
+  // The issue is for validators which accept string/int but not double.
+  // In the original setup the validator would always call getDouble
+  // internally and accept a string of "1.1" without error.
+  TEST_NOTHROW(validList->set( "intStringParameter", "1.1", "documentation",
+    intStringValidator));
+
+  //
+  // these are some cases which  throw independent of HAVE_TEUCHOSCORE_CXX11
+  //
+
+  // if string it not allowed you can't use a string ever
+  TEST_THROW(validList->set( "intDoubleParameter", "1.1", "documentation",
+    intDoubleValidator), Exceptions::InvalidParameterType);
+
+   // it also throws for a double number - double not allowed
+  TEST_THROW(validList->set( "intStringParameter", 1.1, "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+
+  // for int only it can't be a string - any string will throw
+  TEST_THROW(validList->set( "intParameter", "1", "documentation",
+    intValidator), Exceptions::InvalidParameter);
+
+  // this int only it can't be a double because double is not allowed
+  TEST_THROW(validList->set( "intParameter", 1.1, "documentation",
+    intValidator), Exceptions::InvalidParameter);
+
+  //
+  // these behaviors now depend on HAVE_TEUCHOSCORE_CXX11
+  // std::stod and std::stoi will be used for HAVE_TEUCHOSCORE_CXX11
+  // std::atof and std::atoi will be used for no CXX11
+  //
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  // for double types we throw for badly formatted string on std::stod
+  // this will check the double type first because it is PREFER_DOUBLE
+  TEST_THROW(validList->set( "allParameter", "1.1x", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intDoubleParameter", "1.1x", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "allParameter", "x1.1", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intDoubleParameter", "x1.1", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  // for int/string but no double - std::stoi throws for invalid formatting
+  TEST_THROW(validList->set( "intStringParameter", "1x", "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intStringParameter", "x1", "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intStringParameter", "1 x", "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+#else
+  // for int/double/string std::atod does NOT throw - this is the old behavior
+  // this is different now when HAVE_TEUCHOSCORE_CXX11 is ON - see above
+  TEST_NOTHROW(validList->set( "allParameter", "1.1x", "documentation",
+    allValidator));
+  // for int/string std::atoi does NOT throw - this is the old behavior
+  // this is different now when HAVE_TEUCHOSCORE_CXX11 is ON - see above
+  TEST_NOTHROW(validList->set( "intStringParameter", "1.1x", "documentation",
+    intStringValidator));
+#endif
+}
+
+TEUCHOS_UNIT_TEST(Teuchos_Validators, boolValidator)
+{
+  RCP<ParameterList> userList = rcp(new ParameterList("User List"));
+  RCP<ParameterList> validList = rcp(new ParameterList("Valid List"));
+
+  // first without validator - accepts only true/false
+  validList->set( "justBool", false, "documentation" );
+  TEST_NOTHROW(userList->set( "justBool", false));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  TEST_NOTHROW(userList->set( "justBool", true));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // this will not validate because we did not add a bool validator
+  TEST_NOTHROW(userList->set( "justBool", "true"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+  // this will not validate because we did not add a bool validator
+  TEST_NOTHROW(userList->set( "justBool", "false"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+
+  // now with BoolParameterEntryValidator validator
+  // accepts true/false/"true"/"false"
+  RCP<Teuchos::BoolParameterEntryValidator> boolValidator =
+    Teuchos::rcp( new Teuchos::BoolParameterEntryValidator() );
+  userList = rcp(new ParameterList("User List")); // make a new list
+  validList = rcp(new ParameterList("Valid List")); // make a new list
+  validList->set( "boolOrString", false, "documentation", boolValidator );
+  TEST_NOTHROW(userList->set( "boolOrString", false));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  TEST_NOTHROW(userList->set( "boolOrString", true));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // this will validate because we added a bool validator
+  TEST_NOTHROW(userList->set( "boolOrString", "true"));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // this will validate because we added a bool validator
+  TEST_NOTHROW(userList->set( "boolOrString", "false"));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // but only "false" and "true" work - anything else will not validate
+  TEST_NOTHROW(userList->set( "boolOrString", "falsex")); // sets ok
+  TEST_THROW(userList->validateParameters(*validList), // but throws
+    Exceptions::InvalidParameterType);
+
+  // now with BoolParameterEntryValidator validator
+  // but consider what happens if we created it using "false" instead of false
+  // this should still work identically to the previous case
+  userList = rcp(new ParameterList("User List")); // make a new list
+  validList = rcp(new ParameterList("Valid List")); // make a new list
+  validList->set( "boolOrString", "false", "documentation", boolValidator );
+  TEST_NOTHROW(userList->set( "boolOrString", false));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  TEST_NOTHROW(userList->set( "boolOrString", true ));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // this will validate because we added a bool validator
+  TEST_NOTHROW(userList->set( "boolOrString", "true"));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // this will validate because we added a bool validator
+  TEST_NOTHROW(userList->set( "boolOrString", "false"));
+  TEST_NOTHROW(userList->validateParameters(*validList));
+  // but only "false" and "true" work - anything else will not validate
+  TEST_NOTHROW(userList->set( "boolOrString", "falsex")); // sets ok
+  TEST_THROW(userList->validateParameters(*validList), // but throws
+    Exceptions::InvalidParameterType);
+
+  // do another test using validateParametersAndSetDefaults
+  userList = rcp(new ParameterList("User List")); // make a new list
+  validList = rcp(new ParameterList("Valid List")); // make a new list
+  // Default values for parameters are bool
+  validList->set("boolOne", true, "doc", boolValidator);
+  validList->set("boolTwo", false, "doc", boolValidator);
+  bool defOne = validList->getEntry("boolOne").getValue(&defOne);
+  bool defTwo = validList->getEntry("boolTwo").getValue(&defTwo);
+
+  // Create user parameter list
+  userList->set("boolOne", false);   // User can provide bool value...
+  userList->set("boolTwo", "true");  // or string "true"/"false"
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
 }
 
 
@@ -477,6 +784,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
 	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", arrayFileNameVali),
     Exceptions::InvalidParameterType);
 }
+
 
 } // namespace Teuchos
 

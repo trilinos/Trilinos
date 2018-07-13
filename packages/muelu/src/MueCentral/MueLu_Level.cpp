@@ -335,7 +335,7 @@ namespace MueLu {
           v = Teuchos::null; // free data
           map_[factory].erase(ename);
           if (map_.count(factory) == 0) {
-            break; // last occurence for factory has been removed. proceed with next factory
+            break; // last occurrence for factory has been removed. proceed with next factory
           }
         }
         else
@@ -451,9 +451,9 @@ namespace MueLu {
         const container_type& requestedBy = it->second->Requests();
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
-          if (ct != requestedBy.begin())    ss << ",";
-                                            ss << ct->first;
-          if (ct->second > 1)               ss << "(" << ct->second << ")";
+          if (ct != requestedBy.begin()) ss << ",";
+          ss << ct->first;
+          if (ct->second > 1) ss << "(" << ct->second << ")";
         }
         outputter.outputField(ss.str());
 
@@ -482,11 +482,11 @@ namespace MueLu {
             if (vindices.find(rit->first) == vindices.end()) {
               // requested by factory which is unknown
               BoostVertex boost_vertex = boost::add_vertex(graph);
-              boost::put("label", dp, boost_vertex, rit->first->description());
+	      boost::put("label", dp, boost_vertex, rit->first->description());
               vindices[rit->first] = vind++;
             }
 
-            edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+	    edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
           }
         }
       }

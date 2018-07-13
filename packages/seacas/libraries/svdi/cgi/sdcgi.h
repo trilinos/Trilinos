@@ -1,3 +1,37 @@
+/*
+* Copyright(C) 2009 National Technology &Engineering Solutions
+* of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
+* NTESS, the U.S.Government retains certain rights in this software.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are
+* met:
+*
+* * Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer.
+*
+* * Redistributions in binary form must reproduce the above
+* copyright notice, this list of conditions and the following
+* disclaimer in the documentation and / or other materials provided
+* with the                                                 distribution.
+*
+* * Neither the name of NTESS nor the names of its
+* contributors may be used to endorse or promote products derived
+* from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+* A PARTICULAR PURPOSE ARE DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT
+* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifndef SDCGI_H
 #define SDCGI_H
 
@@ -26,7 +60,7 @@ void cdqerr_(f_integer *nreq, f_integer *vstat, f_integer *nrem, f_integer *nret
 void cerhct_(f_integer *n, f_integer *erclas, f_integer *hflag);
 void ccixp_(f_integer *cip);
 void cesc1_(f_integer *funcid, f_integer *ldr, char *data, f_integer *drec_size);
-void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid[4]);
+void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid);
 void cqd_(f_integer *vstat, f_integer *hscopy, f_integer *disp, f_integer *bcolor, f_integer *dynbc,
           f_integer *dynvdm, f_integer *dx1, f_integer *dy1, f_integer *dx2, f_integer *dy2,
           f_real *width, f_real *height, f_integer *pixloc);
@@ -79,8 +113,8 @@ void cqfl_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
            f_integer *dynmod, f_integer *ninsty, f_integer *instyl, f_integer *npdefp,
            f_integer *nsetp, f_integer *maxpi, f_integer *pdiv, f_integer *maxpx, f_integer *maxpy,
            f_integer *ptrans);
-void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nint[3],
-          f_integer *cmode, f_integer *dynmod, f_integer *overit, f_integer *monoc);
+void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nint, f_integer *cmode,
+          f_integer *dynmod, f_integer *overit, f_integer *monoc);
 void cqlna_(f_integer *vstat, f_integer *lnbi, f_integer *lntyp, f_integer *lwmode,
             f_integer *lnwid, f_integer *csmode, f_integer *lnclr, f_integer *lcmode);
 void cqtxa_(f_integer *vstat, f_integer *txbi, f_integer *fonti, f_integer *fontp, f_real *chexp,

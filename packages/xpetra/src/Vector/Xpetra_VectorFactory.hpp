@@ -56,6 +56,8 @@
 #  include "Xpetra_EpetraVector.hpp"
 #  include "Xpetra_EpetraIntVector.hpp"
 #endif
+#include "Xpetra_BlockedMap.hpp"
+#include "Xpetra_BlockedVector.hpp"
 
 #include "Xpetra_Exceptions.hpp"
 
@@ -78,6 +80,11 @@ namespace Xpetra {
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Vector> Build(const Teuchos::RCP<const Map> &map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
+
+      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -115,6 +122,12 @@ namespace Xpetra {
 
     static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
+
+      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+      }
+
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -154,6 +167,11 @@ namespace Xpetra {
 
     static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
+
+      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -198,6 +216,11 @@ namespace Xpetra {
     static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 
+      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+      }
+
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
         return rcp( new TpetraVector(map, zeroOut) );
@@ -238,6 +261,11 @@ namespace Xpetra {
 
     static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
+
+      RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)

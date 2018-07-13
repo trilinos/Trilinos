@@ -51,7 +51,6 @@
 #include "Panzer_ClosureModel_Factory.hpp"
 
 #include "Sacado_mpl_placeholders.hpp"
-using namespace Sacado::mpl::placeholders;
 
 namespace panzer {
 

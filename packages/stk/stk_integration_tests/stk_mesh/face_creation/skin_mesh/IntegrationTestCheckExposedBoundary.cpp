@@ -21,7 +21,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
-#include "../FaceCreationTestUtils.hpp"
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
 namespace
 {
@@ -70,7 +70,7 @@ private:
         if(get_bulk().parallel_rank() == 0) {
             stk::mesh::EntityVector notSkinFaces = get_faces(!skin);
             ASSERT_EQ(1u, notSkinFaces.size());
-            get_bulk().change_entity_parts(notSkinFaces[0], {&skin});
+            get_bulk().change_entity_parts(notSkinFaces[0], stk::mesh::ConstPartVector{&skin});
         }
     }
 };
@@ -90,7 +90,7 @@ private:
     {
         stk::mesh::EntityVector skinFaces = get_faces(skin);
         ASSERT_EQ(5u, skinFaces.size());
-        get_bulk().change_entity_parts(skinFaces[0], {}, {&skin});
+        get_bulk().change_entity_parts(skinFaces[0], stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&skin});
     }
 };
 

@@ -89,6 +89,7 @@ namespace MueLu {
     }
 
     aggregates->AggregatesCrossProcessors(true);
+    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     // Level Set
     Set(currentLevel, "Aggregates", aggregates);

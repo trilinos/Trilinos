@@ -185,17 +185,15 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
     const Bucket   & bucket = mesh.bucket(entity);
     const MetaData & mesh_meta_data = MetaData::get(mesh);
     const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
-    for ( std::vector< FieldBase * >::const_iterator
-            i = fields.begin() ; i != fields.end() ; ++i ) {
-        const FieldBase & f = **i ;
-        if ( f.data_traits().is_pod ) {
-            const unsigned size = field_bytes_per_entity( f, bucket );
+    for ( FieldBase* field : fields ) {
+        if ( field->data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( *field, bucket );
 #ifndef NDEBUG
             buf.pack<unsigned>( size );
 #endif
             if ( size ) {
                 unsigned char * const ptr =
-                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( *field , entity ) );
                 buf.pack<unsigned char>( ptr , size );
             }
         }
@@ -211,14 +209,10 @@ bool unpack_field_values(const BulkData& mesh,
     const Bucket   & bucket = mesh.bucket(entity);
     const MetaData & mesh_meta_data = MetaData::get(mesh);
     const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
-    const std::vector< FieldBase * >::const_iterator i_end = fields.end();
-    const std::vector< FieldBase * >::const_iterator i_beg = fields.begin();
-    std::vector< FieldBase * >::const_iterator i ;
     bool ok = true ;
-    for ( i = i_beg ; i_end != i ; ) {
-        const FieldBase & f = **i ; ++i ;
-        if ( f.data_traits().is_pod ) {
-            const unsigned size = field_bytes_per_entity( f, bucket );
+    for ( const FieldBase* f : fields) {
+        if ( f->data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( *f, bucket );
 #ifndef NDEBUG
             unsigned recv_data_size = 0 ;
             buf.unpack<unsigned>( recv_data_size );
@@ -227,7 +221,7 @@ bool unpack_field_values(const BulkData& mesh,
                     ok = false ;
                     error_msg << mesh.identifier(entity);
                 }
-                error_msg << " " << f.name();
+                error_msg << " " << f->name();
                 error_msg << " " << size ;
                 error_msg << " != " << recv_data_size ;
                 buf.skip<unsigned char>( recv_data_size );
@@ -236,7 +230,7 @@ bool unpack_field_values(const BulkData& mesh,
             if ( size )
             { // Non-zero and equal
                 unsigned char * ptr =
-                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( *f , entity ) );
                 buf.unpack<unsigned char>( ptr , size );
             }
         }

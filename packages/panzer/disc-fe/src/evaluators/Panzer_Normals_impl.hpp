@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Normals,p)
+template<typename EvalT, typename Traits>
+Normals<EvalT, Traits>::
+Normals(
+  const Teuchos::ParameterList& p)
    : normalize(true)
 {
   // Read from parameters
@@ -76,25 +79,34 @@ PHX_EVALUATOR_CTOR(Normals,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Normals<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(normals,fm);
 
-  num_qp  = normals.dimension(1);
-  num_dim = normals.dimension(2);
+  num_qp  = normals.extent(1);
+  num_dim = normals.extent(2);
   
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Normals,workset)
+template<typename EvalT, typename Traits>
+void
+Normals<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
-    Intrepid2::CellTools<ScalarT>::getPhysicalSideNormals(normals,
-                                                         this->wda(workset).int_rules[quad_index]->jac,
-                                                         side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
+    Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normals.get_view(),
+                                                                  this->wda(workset).int_rules[quad_index]->jac.get_view(),
+                                                                  side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 

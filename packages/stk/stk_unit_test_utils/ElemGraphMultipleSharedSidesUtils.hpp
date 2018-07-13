@@ -100,12 +100,13 @@ public:
         create_elements(bulkData, nodeIDs, activePart);
         add_shared_nodes(bulkData, sharedNodeIds);
         bulkData.modification_end();
+        bulkData.initialize_face_adjacent_element_graph();
     }
 
     void create_element(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePart, stk::mesh::EntityId id)
     {
         stk::mesh::Entity elem = stk::mesh::declare_element(bulkData, block1, id, nodeIds[id-1]);
-        bulkData.change_entity_parts(elem, {&activePart});
+        bulkData.change_entity_parts(elem, stk::mesh::ConstPartVector{&activePart});
     }
 
     bool i_should_create_elem_1(stk::mesh::BulkData& bulkData)
@@ -196,7 +197,7 @@ inline void remove_part_if_owned(stk::mesh::BulkData& bulkData, stk::mesh::Entit
 {
     if (bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
     {
-        bulkData.change_entity_parts(entity, {}, {&part});
+        bulkData.change_entity_parts(entity, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&part});
     }
 }
 
@@ -237,13 +238,12 @@ inline stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData
 
 inline void test_element_death_with_multiple_shared_sides(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePart, stk::mesh::Part& skinPart)
 {
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData);
     remove_element_from_part(bulkData, 2, activePart);
 
     stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
-    stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, elem_elem_graph, activePart, remoteActiveSelector);
+    stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, bulkData.get_face_adjacent_element_graph(), activePart, remoteActiveSelector);
 
-    process_killed_elements(bulkData, elem_elem_graph, get_killed_elements(bulkData), activePart, remoteActiveSelector, {&activePart, &skinPart});
+    process_killed_elements(bulkData, bulkData.get_face_adjacent_element_graph(), get_killed_elements(bulkData), activePart, remoteActiveSelector, {&activePart, &skinPart});
     test_total_sides_and_sides_per_element(bulkData, 2u, {2u, 2u});
 }
 

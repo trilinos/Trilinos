@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -84,7 +82,7 @@ std::string prws (const panzer::Workset& w) {
     for (size_t j = 0; j < d.int_rules.size(); ++j) {
       const panzer::IntegrationValues2<double>& ir = *d.int_rules[j];
       const int num_ip = ir.ip_coordinates.extent_int(1);
-      const size_t num_dim = ir.ip_coordinates.dimension(2);
+      const size_t num_dim = ir.ip_coordinates.extent(2);
       ss << "int_rule " << j << ":\n";
       ss << "cub_points:\n";
       for (int ip = 0; ip < num_ip; ++ip) {
@@ -94,7 +92,7 @@ std::string prws (const panzer::Workset& w) {
       }
       ss << "side_cub_points:\n";
       for (int ip = 0; ip < num_ip; ++ip) {
-        for (size_t dim = 0; dim < ir.side_cub_points.dimension(1); ++dim)
+        for (size_t dim = 0; dim < ir.side_cub_points.extent(1); ++dim)
           ss << " " << ir.side_cub_points(ip, dim);
         ss << "\n";
       }
@@ -205,10 +203,12 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   const int eb_idxs[2][2] = {{0,1}, {1,0}};
   for (int ebi = 0; ebi < 2; ++ebi) {
     std::string sideset = "vertical_0";
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks);
+    Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks);
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
       *mesh,
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][0]], physicsBlocks)),
-      *(panzer::findPhysicsBlock(element_blocks[eb_idxs[ebi][1]], physicsBlocks)),
+      pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+      pb_b->getWorksetNeeds(),pb_b->elementBlockID(), 
       sideset);
 
     TEST_EQUALITY(worksets->size(), 1);
@@ -293,8 +293,8 @@ void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails&
 #define TED01(m) TEST_EQUALITY(d0.m, d1.m)
   TED01(int_rules.size());
   for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
-    const std::size_t num_ip = d0.int_rules[iri]->cub_points.dimension(0),
-      num_dim = d0.int_rules[iri]->cub_points.dimension(1);
+    const std::size_t num_ip = d0.int_rules[iri]->cub_points.extent(0),
+      num_dim = d0.int_rules[iri]->cub_points.extent(1);
     for (index_t cell = 0; cell < num_cells; ++cell)
       for (std::size_t ip = 0; ip < num_ip; ++ip)
         for (std::size_t dim = 0; dim < num_dim; ++dim)

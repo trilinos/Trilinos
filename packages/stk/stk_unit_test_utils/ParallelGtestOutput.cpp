@@ -1,6 +1,6 @@
 #include "ParallelGtestOutput.hpp"
 #include <gtest/gtest.h>                // for TestInfo, etc
-#include <mpi.h>                        // for MPI_Comm_rank, MPI_Finalize, etc
+#include "mpi.h"                        // for MPI_Comm_rank, MPI_Finalize, etc
 #include <stdarg.h>                     // for va_end, va_list, va_start
 #include <stdio.h>                      // for printf, vprintf, fflush, etc
 #include "gtest/gtest-test-part.h"      // for TestPartResult
@@ -64,12 +64,21 @@ private:
     int mNumFails;
     MPI_Comm m_comm;
 
+    std::string get_filename_for_print(const char* filepath)
+    {
+        std::string filename = filepath;
+        return filename.substr(filename.find_last_of("/") + 1);
+    }
+
     virtual void OnTestStart(const ::testing::TestInfo& test_info)
     {
         if(mProcId == 0)
         {
-            printf("*** Starting test %s.%s.\n",
-                    test_info.test_case_name(), test_info.name());
+            printf("*** Starting test %s.%s from %s:%d\n",
+                   test_info.test_case_name(),
+                   test_info.name(),
+                   get_filename_for_print(test_info.file()).c_str(),
+                   test_info.line());
         }
     }
 

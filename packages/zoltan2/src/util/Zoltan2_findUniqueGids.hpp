@@ -151,7 +151,7 @@ size_t findUniqueGids(
   MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
 #endif
 
-  int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
+  int num_gid = TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID * num_entries;
   int num_user = sizeof(gno_t);
 
   // Buffer the keys for Zoltan_DD
@@ -232,7 +232,7 @@ size_t findUniqueGids(
   MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
 #endif
 
-  int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
+  int num_gid = TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID * num_entries;
   int num_user = sizeof(gno_t);
 
   // Buffer the keys for Zoltan_DD

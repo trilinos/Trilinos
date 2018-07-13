@@ -1030,7 +1030,7 @@ namespace PAMGEN_NEVADA {
 
     //get function body
     Token token2 = token_stream->Shift();
-    if (!token2.Type() == TK_STRING){
+    if (token2.Type() != TK_STRING){
       token_stream->Parse_Error("expected a quoted C-language function body");
     }
     std::string funcBody = token2.As_Stripped_String();
@@ -1071,7 +1071,7 @@ namespace PAMGEN_NEVADA {
 
     //get function body
     Token token2 = token_stream->Shift();
-    if (!token2.Type() == TK_STRING){
+    if (token2.Type() != TK_STRING){
       token_stream->Parse_Error("expected a quoted C-language function body");
     }
     std::string funcBody = token2.As_Stripped_String();

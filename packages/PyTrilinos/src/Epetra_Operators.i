@@ -55,7 +55,6 @@
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Util.h"
-
 #include "PyTrilinos_Epetra_Util.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 

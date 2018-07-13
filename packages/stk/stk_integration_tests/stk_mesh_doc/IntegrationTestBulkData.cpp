@@ -48,8 +48,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
-#include <unit_tests/Setup8Quad4ProcMesh.hpp>
+#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -87,7 +86,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -114,7 +113,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -142,7 +141,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -168,7 +167,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);

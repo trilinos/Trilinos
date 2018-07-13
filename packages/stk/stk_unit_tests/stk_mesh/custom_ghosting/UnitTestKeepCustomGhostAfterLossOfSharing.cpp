@@ -140,8 +140,8 @@ private:
     {
         if (bulk->parallel_rank() == 0)
         {
-            particle = bulk->declare_entity(stk::topology::ELEMENT_RANK,1,*particle_part);
-            node1 = bulk->declare_entity(stk::topology::NODE_RANK,1,*node_part);
+            particle = bulk->declare_element(1, {particle_part});
+            node1 = bulk->declare_node(1, {node_part});
             bulk->declare_relation(particle,node1,0);
         }
     }
@@ -162,14 +162,14 @@ private:
     void declareBeamRelationsToNodes()
     {
         node1 = bulk->get_entity(stk::topology::NODE_RANK,1);
-        node2 = bulk->declare_entity(stk::topology::NODE_RANK,2,*node_part);
+        node2 = bulk->declare_node(2, {node_part});
         bulk->declare_relation(beam,node1,0);
         bulk->declare_relation(beam,node2,1);
     }
 
     void createBeam()
     {
-        beam = bulk->declare_entity(stk::topology::ELEMENT_RANK,2,*beam_part);
+        beam = bulk->declare_element(2, {beam_part});
         declareBeamRelationsToNodes();
     }
 

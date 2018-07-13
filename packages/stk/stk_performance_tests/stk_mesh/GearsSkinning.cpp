@@ -38,8 +38,8 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_mesh/fixtures/GearsFixture.hpp>
-#include <stk_mesh/fixtures/Gear.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -51,7 +51,6 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#include <Teuchos_RCP.hpp>
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
@@ -386,9 +385,6 @@ TEST( gears_skinning, gears_skinning )
   const double y = 0;
   const double z = 0;
   const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
-
-  Teuchos::RCP<Ioss::Region> volume_out_region;
-  Teuchos::RCP<Ioss::Region> surface_out_region;
 
   stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
 

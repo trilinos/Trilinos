@@ -33,6 +33,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -52,50 +53,62 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-//BEGIN
-TEST(CommunicateFieldData, CommunicateMultipleGhostings)
+class ParallelHowTo : public stk::unit_test_util::MeshFixture {};
+
+//BEGINCommuniateFieldData
+TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 {
-  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    auto& field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "temperature");
 
-  const std::string fileName = "generated:8x8x8";
-  stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
-  meshReader.create_input_mesh();
+    double initialValue = 25.0;
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field, &initialValue);
 
-  stk::mesh::MetaData& meta = meshReader.meta_data();
-  typedef stk::mesh::Field<double> ScalarField;
-  ScalarField& temperatureField = meta.declare_field<ScalarField>(stk::topology::NODE_RANK, "temperature");
+    setup_mesh("generated:8x8x8", stk::mesh::BulkData::AUTO_AURA);
 
-  double initialTemperatureValue = 25.0;
-  stk::mesh::put_field_on_entire_mesh_with_initial_value(temperatureField, &initialTemperatureValue);
+    const stk::mesh::BucketVector& notOwnedBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
+                                                                            !get_meta().locally_owned_part());
 
-  meshReader.populate_bulk_data();
+    for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
+        for(stk::mesh::Entity node : *bucket)
+            *stk::mesh::field_data(field, node) = -1.2345;
 
-  stk::mesh::BulkData& bulk = meshReader.bulk_data();
+    stk::mesh::communicate_field_data(get_bulk(), {&field});
 
-  stk::mesh::Selector select_not_owned = !meta.locally_owned_part();
-  const stk::mesh::BucketVector& buckets_not_owned = bulk.get_buckets(stk::topology::NODE_RANK,select_not_owned);
-
-  for(size_t i=0; i<buckets_not_owned.size(); ++i) {
-    stk::mesh::Bucket& bucket = *buckets_not_owned[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
-        stk::mesh::Entity node = bucket[j];
-        double* data = stk::mesh::field_data(temperatureField, node);
-        double garbage = -1.2345;
-        *data = garbage;
-    }
-  }
-
-  std::vector<const stk::mesh::FieldBase*> fields(1, &temperatureField);
-  stk::mesh::communicate_field_data(bulk, fields);
-
-  for(size_t i=0; i<buckets_not_owned.size(); ++i) {
-      stk::mesh::Bucket& bucket = *buckets_not_owned[i];
-      for(size_t j=0; j<bucket.size(); ++j) {
-          stk::mesh::Entity node = bucket[j];
-          double* data = stk::mesh::field_data(temperatureField, node);
-          EXPECT_EQ(initialTemperatureValue, *data);
-      }
-  }
+    for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
+        for(stk::mesh::Entity node : *bucket)
+            EXPECT_EQ(initialValue, *stk::mesh::field_data(field, node));
 }
-//END
+//ENDCommuniateFieldData
+
+//BEGINSum
+void expect_field_has_value(const stk::mesh::BucketVector& buckets,
+                            const stk::mesh::Field<double> &field,
+                            double value)
+{
+    for(const stk::mesh::Bucket *bucket : buckets)
+        for(stk::mesh::Entity node : *bucket)
+            EXPECT_EQ(value, *stk::mesh::field_data(field, node));
+}
+
+TEST_F(ParallelHowTo, computeParallelSum)
+{
+    auto& field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "temperature");
+
+    double initialValue = 25.0;
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field, &initialValue);
+
+    setup_mesh("generated:8x8x8", stk::mesh::BulkData::AUTO_AURA);
+
+    const stk::mesh::BucketVector& shared = get_bulk().get_buckets(stk::topology::NODE_RANK,
+                                                                   get_meta().globally_shared_part());
+    const stk::mesh::BucketVector& notShared = get_bulk().get_buckets(stk::topology::NODE_RANK,
+                                                                      !get_meta().globally_shared_part());
+    expect_field_has_value(shared, field, initialValue);
+    expect_field_has_value(notShared, field, initialValue);
+
+    stk::mesh::parallel_sum(get_bulk(), {&field});
+
+    expect_field_has_value(shared, field, 2*initialValue);
+    expect_field_has_value(notShared, field, initialValue);
+}
+//ENDSum

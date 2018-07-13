@@ -31,6 +31,23 @@
 #define SACADO_FAD_STATICSTORAGE_HPP
 
 #include "Sacado_ConfigDefs.h"
+
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+#include "Sacado_Fad_Exp_StaticStorage.hpp"
+
+namespace Sacado {
+  namespace Fad {
+
+    template <typename T, int N>
+    using StaticStorage = Exp::StaticStorage<T,N>;
+
+  }
+}
+
+#else
+
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {
@@ -191,5 +208,7 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
+
+#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_STATICSTORAGE_HPP

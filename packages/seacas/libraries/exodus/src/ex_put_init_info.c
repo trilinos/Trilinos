@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -69,15 +69,15 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* Check the file type */
   if (!ftype) {
-    exerrval = EX_MSG;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: NULL file type input for file ID %d", exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, EX_BADPARAM);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Set the file type */
@@ -88,33 +88,30 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
     lftype = 1;
   }
   else {
-    exerrval = EX_MSG;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file type requested for file ID %d", exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, EX_BADPARAM);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Put file into define mode */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file ID %d into define mode", exoid);
-    ex_err(func_name, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(func_name, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Define dimension for the number of processors */
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid)) != NC_NOERR) {
     ltempsv = num_proc;
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS, ltempsv, &dimid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
                DIM_NUM_PROCS, exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -122,49 +119,46 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   if (nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid) != NC_NOERR) {
     ltempsv = num_proc_in_f;
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS_F, ltempsv, &dimid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
                DIM_NUM_PROCS_F, exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
 
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
   /* Output the file type */
   if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define file type in file ID %d", exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
 
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (ex_leavedef(exoid, func_name) != EX_NOERR) {
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_put_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to output file type variable in file ID %d",
                exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
   else {
     if (ex_leavedef(exoid, func_name) != EX_NOERR) {
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

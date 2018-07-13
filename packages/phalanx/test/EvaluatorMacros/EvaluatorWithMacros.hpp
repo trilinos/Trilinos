@@ -53,6 +53,7 @@ namespace PHX {
   public:
     void evaluates(const std::string& field_name);
     void requires(const std::string& field_name);
+    void bindField(const PHX::FieldTag& ft, const PHX::any& f);
   PHX_EVALUATOR_CLASS_END
   
   // Macro with no pre/post evaluate methods
@@ -60,6 +61,7 @@ namespace PHX {
   public:
     void evaluates(const std::string& field_name);
     void requires(const std::string& field_name);
+    void bindField(const PHX::FieldTag& ft, const PHX::any& f);
   PHX_EVALUATOR_CLASS_END
 
 }

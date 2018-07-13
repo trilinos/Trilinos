@@ -2,25 +2,38 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -52,6 +65,7 @@
 // templated multivector and sparse matrix classes
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
+#include "MySDMHelpers.hpp"
 
 using namespace Teuchos;
 using namespace Anasazi;
@@ -255,7 +269,7 @@ int main(int argc, char *argv[])
       // Set X1=X1b*M1, so that <Y1,X1> is s.p.d.
       // Set M1 = R1'*R1, where R1 is random matrix
       SerialDenseMatrix<int,ST> R1(yTx1), M1(yTx1);
-      R1.random();
+      Anasazi::randomSDM(R1);
       M1.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,R1,R1,ZERO);
       M1.scale(ONE/M1.normFrobenius());
       MVT::MvTimesMatAddMv(ONE,*X1b,M1,ZERO,*X1);
@@ -318,7 +332,7 @@ int main(int argc, char *argv[])
       // Set X2=X2b*M2, so that <Y2,X2> is s.p.d.
       // Set M2 = R2'*R2, where R2 is random matrix
       SerialDenseMatrix<int,ST> R2(yTx2), M2(yTx2);
-      R2.random();
+      Anasazi::randomSDM(R2);
       M2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,R2,R2,ZERO);
       M2.scale(ONE/M2.normFrobenius());
       MVT::MvTimesMatAddMv(ONE,*X2b,M2,ZERO,*X2);
@@ -366,8 +380,8 @@ int main(int argc, char *argv[])
       // and 
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
       
@@ -388,8 +402,8 @@ int main(int argc, char *argv[])
       // and 
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
       
@@ -419,8 +433,8 @@ int main(int argc, char *argv[])
       // and
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
       
@@ -441,8 +455,8 @@ int main(int argc, char *argv[])
       // and 
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
       
@@ -472,12 +486,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
       
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing on rank-1 multivector " << endl;
@@ -666,9 +682,9 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         MScopy = MVT::CloneCopy(*lclMS);
       }
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       int ret = OM->projectAndNormalizeGen(
@@ -723,9 +739,9 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
           MScopy = MVT::CloneCopy(*lclMS);
         }
         // randomize this data, it should be overwritten
-        B->random();
+        Anasazi::randomSDM(*B);
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
@@ -1017,7 +1033,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       }
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       OM->projectGen(*Scopy,theX,theY,localIsBiortho,C,MScopy,theMX,theMY);
@@ -1042,7 +1058,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         }
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );

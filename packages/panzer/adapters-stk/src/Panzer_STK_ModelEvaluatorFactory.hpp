@@ -89,9 +89,6 @@ namespace panzer {
   template <typename> class LinearObjFactory;
 
   template <typename,typename> class BlockedDOFManager;
-#ifdef PANZER_HAVE_FEI
-  template <typename,typename> class DOFManagerFEI;
-#endif
   template <typename,typename> class DOFManager;
   template <typename> class ConnManagerBase;
 }
@@ -207,6 +204,7 @@ namespace panzer_stk {
                                 const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                 const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                const Teuchos::ParameterList & closure_pl,
                                 const Teuchos::ParameterList & initial_cond_pl,
                                 const Teuchos::ParameterList & user_data_pl,
                                 bool write_dot_files,const std::string & dot_file_prefix) const;

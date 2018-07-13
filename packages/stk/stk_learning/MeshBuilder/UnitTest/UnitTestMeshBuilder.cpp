@@ -1,11 +1,9 @@
-
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <GameOfLife/NoGhostGameofLife.hpp>  // for NoGhostGameofLife
 #include <GameOfLife/PNGProcessor.hpp>  // for PNGProcessor
 #include <MeshBuilder/CoordinateSets.hpp>  // for generate_two_dim_elem_id
 #include <MeshBuilder/MeshBuilder.hpp>  // for HexMeshBuilder, etc
 #include <MeshBuilder/MeshSnake.hpp>    // for HexMeshSnake, QuadMeshSnake, etc
-#include <MeshBuilder/MultiImageReader.hpp>  // for MultiImageReader
 #include <iostream>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Field.hpp>      // for Field
@@ -659,9 +657,13 @@ TEST(MeshBuilder, 4ProcQuadFillAreaLayers)
         Mesh.end_modification();
 
         if (0 == procRank || 1 == procRank)
+        {
             EXPECT_EQ(8u, Mesh.num_elems());
+        }
         else if (2 == procRank || 3 == procRank)
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
 
         stk::mesh::EntityIdVector elemIds;
 
@@ -897,9 +899,13 @@ TEST(MeshBuilder, 4ProcHexFillAreaLayers)
         Mesh.end_modification();
 
         if (0 == numProcs || 1 == numProcs)
+        {
             EXPECT_EQ(12u, Mesh.num_elems());
+        }
         else if (2 == numProcs || 3 == numProcs)
+        {
             EXPECT_EQ(6u, Mesh.num_elems());
+        }
 
         stk::mesh::EntityIdVector elemIds;
         if (0 == procRank)
@@ -1001,9 +1007,13 @@ TEST(MeshBuilder, 4ProcQuadRemove)
         Mesh.end_modification();
 
         if (0 == procRank)
+        {
             EXPECT_EQ(3u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
 
         Mesh.begin_modification();
         Mesh.remove_element(1, 2);
@@ -1061,9 +1071,13 @@ TEST(MeshBuilder, 4ProcHexRemove)
         stk::mesh::get_entities(Mesh.bulk_data(), stk::topology::ELEM_RANK, elements);
 
         if (0 == procRank)
+        {
             EXPECT_EQ(15u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(16u, Mesh.num_elems());
+        }
 
         Mesh.begin_modification();
         Mesh.remove_element(1, 1, 2);
@@ -1118,9 +1132,13 @@ TEST(MeshBuilder, 4ProcQuadRemoveArea)
         Mesh.end_modification();
 
         if (3 == procRank)
+        {
             EXPECT_EQ(4u, Mesh.num_elems());
+        }
         else
+        {
             EXPECT_EQ(1u, Mesh.num_elems());
+        }
     }
 }
 TEST(MeshBuilder, 1ProcHexRemoveArea)
@@ -1340,331 +1358,5 @@ TEST(MeshSnake, 1ProcHexSnakeBegin)
         EXPECT_NE(INVALID_DIR, Snake.dir());
     }
 }
-TEST(Mesh3D, DISABLED_FullBodyPerformanceTest)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int procRank = stk::parallel_machine_rank(comm);
 
-    MultiImageReader reader("fullbody", 146);
-
-    {
-        HexMeshBuilder meshRandom(comm, "RandomBody");
-        meshRandom.commit_meta();
-        meshRandom.begin_modification();
-        reader.create_randomly_decomposed_mesh(meshRandom);
-        double t1 = MPI_Wtime();
-        meshRandom.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t1 << std::endl;
-        meshRandom.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshX(comm, "SingleXBody");
-        meshX.commit_meta();
-        meshX.begin_modification();
-        reader.create_x_layered_decomposed_mesh(meshX);
-        double t2 = MPI_Wtime();
-        meshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t2 << std::endl;
-        meshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshY(comm, "SingleYBody");
-        meshY.commit_meta();
-        meshY.begin_modification();
-        reader.create_y_layered_decomposed_mesh(meshY);
-        double t3 = MPI_Wtime();
-        meshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t3 << std::endl;
-        meshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshZ(comm, "SingleZBody");
-        meshZ.commit_meta();
-        meshZ.begin_modification();
-        reader.create_z_layered_decomposed_mesh(meshZ);
-        double t4 = MPI_Wtime();
-        meshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t4 << std::endl;
-        meshZ.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshX(comm, "BlockXBody");
-        MeshX.commit_meta();
-        MeshX.begin_modification();
-        reader.create_x_blocked_decomposed_mesh(MeshX);
-        double t5 = MPI_Wtime();
-        MeshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t5 << std::endl;
-        MeshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshY(comm, "BlockYBody");
-        MeshY.commit_meta();
-        MeshY.begin_modification();
-        reader.create_y_blocked_decomposed_mesh(MeshY);
-        double t6 = MPI_Wtime();
-        MeshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t6 << std::endl;
-        MeshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshZ(comm, "BlockZBody");
-        MeshZ.commit_meta();
-        MeshZ.begin_modification();
-        reader.create_z_blocked_decomposed_mesh(MeshZ);
-        double t7 = MPI_Wtime();
-        MeshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
-        MeshZ.write_mesh();
-    }
-}
-TEST(Mesh3D, DISABLED_BroccoliPerformanceTest)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int procRank = stk::parallel_machine_rank(comm);
-
-    MultiImageReader reader("broccoli", 50);
-
-    {
-        HexMeshBuilder meshRandom(comm, "RandomBroccoli");
-        meshRandom.commit_meta();
-        meshRandom.begin_modification();
-        reader.create_randomly_decomposed_mesh(meshRandom);
-        double t1 = MPI_Wtime();
-        meshRandom.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t1 << std::endl;
-        meshRandom.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshX(comm, "SingleXBroccoli");
-        meshX.commit_meta();
-        meshX.begin_modification();
-        reader.create_x_layered_decomposed_mesh(meshX);
-        double t2 = MPI_Wtime();
-        meshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t2 << std::endl;
-        meshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshY(comm, "SingleYBroccoli");
-        meshY.commit_meta();
-        meshY.begin_modification();
-        reader.create_y_layered_decomposed_mesh(meshY);
-        double t3 = MPI_Wtime();
-        meshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t3 << std::endl;
-        meshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshZ(comm, "SingleZBroccoli");
-        meshZ.commit_meta();
-        meshZ.begin_modification();
-        reader.create_z_layered_decomposed_mesh(meshZ);
-        double t4 = MPI_Wtime();
-        meshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t4 << std::endl;
-        meshZ.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshX(comm, "BlockXBroccoli");
-        MeshX.commit_meta();
-        MeshX.begin_modification();
-        reader.create_x_blocked_decomposed_mesh(MeshX);
-        double t5 = MPI_Wtime();
-        MeshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t5 << std::endl;
-        MeshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshY(comm, "BlockYBroccoli");
-        MeshY.commit_meta();
-        MeshY.begin_modification();
-        reader.create_y_blocked_decomposed_mesh(MeshY);
-        double t6 = MPI_Wtime();
-        MeshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t6 << std::endl;
-        MeshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshZ(comm, "BlockZBroccoli");
-        MeshZ.commit_meta();
-        MeshZ.begin_modification();
-        reader.create_z_blocked_decomposed_mesh(MeshZ);
-        double t7 = MPI_Wtime();
-        MeshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
-        MeshZ.write_mesh();
-    }
-}
-TEST(Mesh3D, DISABLED_HeadPerformanceTest)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int procRank = stk::parallel_machine_rank(comm);
-
-    MultiImageReader reader("brain3", 80);
-
-    {
-        HexMeshBuilder meshRandom(comm, "RandomHead");
-        meshRandom.commit_meta();
-        meshRandom.begin_modification();
-        reader.create_randomly_decomposed_mesh(meshRandom);
-        double t1 = MPI_Wtime();
-        meshRandom.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t1 << std::endl;
-        meshRandom.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshX(comm, "SingleXHead");
-        meshX.commit_meta();
-        meshX.begin_modification();
-        reader.create_x_layered_decomposed_mesh(meshX);
-        double t2 = MPI_Wtime();
-        meshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t2 << std::endl;
-        meshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshY(comm, "SingleYHead");
-        meshY.commit_meta();
-        meshY.begin_modification();
-        reader.create_y_layered_decomposed_mesh(meshY);
-        double t3 = MPI_Wtime();
-        meshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t3 << std::endl;
-        meshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder meshZ(comm, "SingleZHead");
-        meshZ.commit_meta();
-        meshZ.begin_modification();
-        reader.create_z_layered_decomposed_mesh(meshZ);
-        double t4 = MPI_Wtime();
-        meshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t4 << std::endl;
-        meshZ.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshX(comm, "BlockXHead");
-        MeshX.commit_meta();
-        MeshX.begin_modification();
-        reader.create_x_blocked_decomposed_mesh(MeshX);
-        double t5 = MPI_Wtime();
-        MeshX.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t5 << std::endl;
-        MeshX.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshY(comm, "BlockYHead");
-        MeshY.commit_meta();
-        MeshY.begin_modification();
-        reader.create_y_blocked_decomposed_mesh(MeshY);
-        double t6 = MPI_Wtime();
-        MeshY.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t6 << std::endl;
-        MeshY.write_mesh();
-    }
-
-    {
-        HexMeshBuilder MeshZ(comm, "BlockZHead");
-        MeshZ.commit_meta();
-        MeshZ.begin_modification();
-        reader.create_z_blocked_decomposed_mesh(MeshZ);
-        double t7 = MPI_Wtime();
-        MeshZ.end_modification();
-        if (0 == procRank)
-            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
-        MeshZ.write_mesh();
-    }
-}
-TEST(JFF, DISABLED_GoLTuring)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
-    {
-        QuadMeshBuilder Mesh(comm, "8ProcRainbowGoL");
-        stk::mesh::Field<int>* lifeField = nullptr;
-        stk::mesh::Field<int>* neighborField = nullptr;
-        Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
-        Mesh.commit_meta();
-
-        PNGProcessor PNG("turing.png");
-        PNG.commit_image_vector_to_pixel_vector();
-
-        Mesh.begin_modification();
-        unsigned width = PNG.get_image_width();
-        unsigned height = PNG.get_image_height();
-        Mesh.fill_area(1, width, 1, height);
-        Mesh.end_modification();
-
-        NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "RainbowTuring");
-
-        std::vector<std::pair<unsigned, unsigned>> coords;
-        PNG.get_coordinates_of_active_pixels(coords);
-
-        stk::mesh::EntityIdVector elemIds;
-        for (std::pair<unsigned, unsigned>& pair : coords)
-            elemIds.push_back(generate_two_dim_elem_id(pair.first, pair.second));
-
-        Game.activate_these_ids(elemIds);
-        Game.run_game_of_life(29);
-    }
-}
-TEST(JFF, DISABLED_Maze)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-
-    QuadMeshBuilder Mesh(comm, "Maze");
-    stk::mesh::Field<int>* lifeField = nullptr;
-    stk::mesh::Field<int>* neighborField = nullptr;
-    Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
-    Mesh.commit_meta();
-
-    Mesh.begin_modification();
-    Mesh.fill_area(1, 201, 1, 201);
-    Mesh.end_modification();
-
-    stk::mesh::EntityIdVector elemIds = {generate_two_dim_elem_id(100, 100)};
-
-    NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "Maze");
-    Game.activate_these_ids(elemIds);
-    Game.run_game_of_life(500);
-}
 }

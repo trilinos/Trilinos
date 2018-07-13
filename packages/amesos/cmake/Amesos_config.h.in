@@ -93,3 +93,6 @@
 
 /* Define to 1 if SuperLU_DIST's LUstructInit is declared with 2 arguments. */
 #cmakedefine HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
+
+/* Define to 1 if SuperLU's *gssvx and *gsisx routines need a GlobalLU_t argument. */
+#cmakedefine HAVE_AMESOS_SUPERLU5_API

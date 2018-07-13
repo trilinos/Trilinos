@@ -220,13 +220,20 @@ namespace MueLu {
 
     // special types
 
-    // Note: for Ifpack there is no distinction between block and banded relaxation as there is no BandedContainer.
-    if (type == "LINESMOOTHING_BLOCKRELAXATION")     { return "LINESMOOTHING_BLOCKRELAXATION"; }
-    if (type == "LINESMOOTHING_BLOCK RELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
-    if (type == "LINESMOOTHING_BLOCK_RELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
-    if (type == "LINESMOOTHING_BANDEDRELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
-    if (type == "LINESMOOTHING_BANDED RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
-    if (type == "LINESMOOTHING_BANDED_RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    // Note: for Ifpack there is no distinction between block and banded relaxation as there is no
+    // BandedContainer or TridiagonalContainer.
+    if (type == "LINESMOOTHING_BLOCKRELAXATION")         { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BLOCK RELAXATION")        { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BLOCK_RELAXATION")        { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDEDRELAXATION")        { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDED RELAXATION")       { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDED_RELAXATION")       { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDIRELAXATION")         { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDI RELAXATION")        { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDI_RELAXATION")        { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDIAGONALRELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDIAGONAL RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_TRIDIAGONAL_RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: \"" + type + "\"");
   }

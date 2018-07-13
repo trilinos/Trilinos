@@ -147,15 +147,14 @@ TEUCHOS_STATIC_SETUP()
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::FileNameValidator, std::string);
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::StringValidator, std::string);
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
   TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(long long int);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
   TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Teuchos::EVerbosityLevel);
 
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::FileNameValidator, Teuchos::FileNameValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::StringValidator, Teuchos::StringValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::AnyNumberParameterEntryValidator, Teuchos::AnyNumberValidatorXMLConverter);
+  TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::BoolParameterEntryValidator, Teuchos::BoolValidatorXMLConverter);
 
 }
 

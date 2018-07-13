@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -114,14 +114,18 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
 
   if (goal == NULL) { /* If not passed in, default goals have equal set sizes. */
     default_goal = TRUE;
-    if (architecture == 0)
+    if (architecture == 0) {
       nsets_tot = 1 << ndims_tot;
-    else if (architecture == 1)
+    }
+    else if (architecture == 1) {
       nsets_tot = mesh_dims[0];
-    else if (architecture == 2)
+    }
+    else if (architecture == 2) {
       nsets_tot = mesh_dims[0] * mesh_dims[1];
-    else if (architecture > 2)
+    }
+    else if (architecture > 2) {
       nsets_tot = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
+    }
 
     if (MAKE_VWGTS && start != NULL) {
       vwgt_sum = start[nvtxs] - start[0] + nvtxs;
@@ -132,20 +136,23 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
     else {
       vwgt_sum = 0;
       vptr     = vwgts;
-      for (i = nvtxs; i; i--)
+      for (i = nvtxs; i; i--) {
         vwgt_sum += *(vptr++);
+      }
     }
 
-    if (nsets_tot > 0)
+    if (nsets_tot > 0) {
       vwgt_sum /= nsets_tot;
+    }
     goal = smalloc_ret(nsets_tot * sizeof(double));
     if (goal == NULL) {
       strout("\nERROR: No room to make goals.\n");
       flag = 1;
       goto skip;
     }
-    for (i    = 0; i < nsets_tot; i++)
+    for (i = 0; i < nsets_tot; i++) {
       goal[i] = vwgt_sum;
+    }
   }
   else {
     default_goal = FALSE;
@@ -163,12 +170,14 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
       goto skip;
     }
     if (start != NULL) {
-      for (i     = 0; i < nvtxs; i++)
+      for (i = 0; i < nvtxs; i++) {
         vwgts[i] = 1 + start[i + 1] - start[i];
+      }
     }
     else {
-      for (i     = 0; i < nvtxs; i++)
+      for (i = 0; i < nvtxs; i++) {
         vwgts[i] = 1;
+      }
     }
   }
 
@@ -241,11 +250,13 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
 skip:
   sfree(coords);
 
-  if (default_goal)
+  if (default_goal) {
     sfree(goal);
+  }
 
-  if (graph != NULL)
+  if (graph != NULL) {
     free_graph(graph);
+  }
 
   if (flag && FREE_GRAPH) {
     sfree(start);
@@ -258,8 +269,9 @@ skip:
     ewgts = NULL;
   }
 
-  if (!Using_Main && params_file != NULL)
+  if (!Using_Main && params_file != NULL) {
     fclose(params_file);
+  }
 
   sfree(vwgts);
   sfree(ewgts);

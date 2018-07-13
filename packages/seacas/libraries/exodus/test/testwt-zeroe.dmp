@@ -3,7 +3,7 @@ dimensions:
 	len_string = 33 ;
 	len_line = 81 ;
 	four = 4 ;
-	len_name = 33 ;
+	len_name = 256 ;
 	time_step = UNLIMITED ; // (10 currently)
 	num_dim = 3 ;
 	num_nodes = 33 ;
@@ -29,7 +29,6 @@ variables:
 	int node_ns2(num_nod_ns2) ;
 	float dist_fact_ns2(num_nod_ns2) ;
 	int ns_prop2(num_node_sets) ;
-		ns_prop2:_FillValue = 0 ;
 		ns_prop2:name = "FACE" ;
 	int ns_prop3(num_node_sets) ;
 		ns_prop3:name = "VELOCITY" ;

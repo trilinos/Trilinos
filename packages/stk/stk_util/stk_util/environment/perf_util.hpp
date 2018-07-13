@@ -123,9 +123,9 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg Available memory per processor " << avail_avg / bytes_in_MB << " MB" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Max Available memory per processor " << avail_max / bytes_in_MB << " MB\n" << std::endl;
 
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min No-output time " << min_time << " sec" << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg No-output time " << avg_time << " sec" << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max No-output time " << max_time << " sec" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(4) << "Min No-output time " << min_time << " sec" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(4) << "Avg No-output time " << avg_time << " sec" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(4) << "Max No-output time " << max_time << " sec" << std::endl;
   }
 }
 

@@ -65,83 +65,40 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
+%define %nox_epetra_import_code
+"
+from . import ___init__
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %nox_epetra_import_code,
 	docstring    = %nox_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#include "Epetra_BLAS.h"
-#include "Epetra_Object.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_DLLExportMacro.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
-// EpetraExt includes
+// EpetraExt include files
 #ifdef HAVE_NOX_EPETRAEXT
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_ModelEvaluator.h"
+#include "PyTrilinos_EpetraExt_Headers.hpp"
 #endif
 
-// NOX includes
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_Scaling.H"
-#include "NOX_Epetra_LinearSystem.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_ModelEvaluatorInterface.H"
+// NOX include files
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
@@ -169,26 +126,26 @@ using namespace NOX::Epetra;
 %ignore *::operator<<;
 %ignore *::operator[];
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import
 %import "Teuchos.i"
 %teuchos_rcp(NOX::Abstract::Group)
-// %teuchos_rcp(NOX::Abstract::MultiVector)
-// %teuchos_rcp(NOX::Abstract::Vector)
 %teuchos_rcp(NOX::Epetra::Interface::Required)
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the parent directory
+// Allow import from the this directory and its parent, and force
+// correct import of ___init__
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir)
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 %}
 
 // Include typemaps for Abstract base classes
@@ -216,11 +173,12 @@ from .. import Abstract
 
 // Epetra import
 %import "Epetra.i"
+%#if PY_VERSION_HEX >= 0x03000000
 
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT
 %ignore EpetraExt::Add;
-%include "EpetraExt.i"
+%import "EpetraExt.i"
 #endif
 
 // General exception handling
@@ -260,15 +218,6 @@ from .. import Abstract
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 //////////////////////////////
 // NOX.Epetra.Group support //
@@ -493,10 +442,10 @@ def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Extract parameter lists
     printParams = nonlinearParameters["Printing"     ]
@@ -660,10 +609,10 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Get the communicator
     comm = initGuess.Comm()

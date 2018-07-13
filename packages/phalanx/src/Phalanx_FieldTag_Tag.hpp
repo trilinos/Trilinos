@@ -48,6 +48,7 @@
 #include <string>
 #include <typeinfo>
 #include <iostream>
+#include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -58,7 +59,8 @@ namespace PHX {
 
       This class is a concrete implementation of the FieldTag base
       class that is templated on the data type to determine type
-      information.
+      information. NOTE: The constness on the DataT is ignored for
+      object comparisons and identifier string creation.
 
   */
   template<typename DataT>
@@ -68,25 +70,49 @@ namespace PHX {
 
     typedef DataT value_type;
 
+    // Default constructor
+    Tag();
+
     Tag(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
+
+    // Use SFINAE to remove this ctor if the data types are not the
+    // same (excluding const differences). This works but the error
+    // message is cryptic. Instead use the static_assert version below
+    // template<typename InDataT, typename T = DataT>
+    // Tag(const Tag<InDataT>& t,
+    //     typename std::enable_if<std::is_same<typename std::remove_const<InDataT>::type,typename std::remove_const<T>::type>::value>::type * = nullptr)
+    //   : Tag(t.m_name,t.m_data_layout) {}
+
+    template<typename InDataT, typename T = DataT>
+    Tag(const Tag<InDataT>& t) : Tag(t.m_name,t.m_data_layout)
+    {
+      using type1 = typename std::remove_const<InDataT>::type;
+      using type2 = typename std::remove_const<T>::type;
+      static_assert(std::is_same<type1,type2>::value,
+                    "** ERROR ** PHX::Tag ctor: tag data types are not the same (excluding const)!");
+    }
+
+    ~Tag() noexcept;
+
+    Teuchos::RCP<FieldTag> clone() const override;
+
+    void operator=(const PHX::Tag<const DataT>& t);
     
-    ~Tag();
-
-    Teuchos::RCP<FieldTag> clone() const;
-
-    void operator=(const PHX::Tag<DataT>& t);
+    bool operator==(const FieldTag& t) const override;
     
-    bool operator==(const FieldTag& t) const;
-    
-    const std::string& name() const;
+    const std::string& name() const override;
 
-    const PHX::DataLayout& dataLayout() const;
+    const PHX::DataLayout& dataLayout() const override;
 
-    const std::type_info& dataTypeInfo() const;
+    PHX::DataLayout& nonConstDataLayout() override;
 
-    const std::string identifier() const;
+    const std::type_info& dataTypeInfo() const override;
 
-    void print(std::ostream& os) const;
+    const std::string identifier() const override;
+
+    void print(std::ostream& os) const override;
+
+    template<typename> friend class Tag;
 
   protected:
 

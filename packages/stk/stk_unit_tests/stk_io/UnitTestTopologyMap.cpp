@@ -34,7 +34,6 @@
 #include <Ioss_ConcreteVariableType.h>  // for StorageInitializer
 #include <Ioss_ElementTopology.h>       // for ElementTopology, NameList
 #include <Ioss_Initializer.h>           // for Initializer
-#include <stddef.h>                     // for NULL
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
 #include <stk_topology/topology.hpp>    // for topology, etc
@@ -42,9 +41,6 @@
 #include <string>                       // for operator<<, operator!=, etc
 #include "gtest/gtest.h"                // for AssertHelper
 #include "stk_topology/topology.hpp"    // for topology::num_edges, etc
-
-
-
 
 
 namespace {
@@ -59,11 +55,11 @@ int my_assert(T a, T b, U msg) {
 }
 
 namespace {
-int testElement(const std::string &name)
+int testElement(const std::string &name, unsigned spatialDim)
 {
   int errors = 0;
   Ioss::ElementTopology *element = Ioss::ElementTopology::factory(name);
-  if (element == NULL) {
+  if ( element == nullptr ) {
     std::cerr << "\tERROR: Element type '" << name << "' could not be constructed.";
     // Must return since we have a NULL pointer and can't do further tests...
     return 1;
@@ -76,20 +72,20 @@ int testElement(const std::string &name)
 
   std::cerr << "Testing element '" << name << "'\n";
   // Currently not supported:
-  if (element->name() == "unknown" ||
-      element->name() == "tetra14" || element->name() == "tetra15" ||
-      element->name() == "tri7"    || element->name() == "trishell7" ||
-      element->name() == "wedge20" || element->name() == "wedge21" ||
+  if (element->name() == "unknown"   ||
+      element->name() == "tetra14"   || element->name() == "tetra15" ||
+      element->name() == "tri7"      || element->name() == "trishell7" ||
+      element->name() == "pyramid18" || element->name() == "pyramid19" ||
+      element->name() == "wedge20"   || element->name() == "wedge21" ||
       element->name() == "wedge16") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
 
   // Get the corresponding stk::topology:
-  stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
+  stk::topology cell = stk::io::map_ioss_topology_to_stk(element, spatialDim);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
-    std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '"
-              << name << "'.\n";
+    std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '" << name << "'.\n";
     return 1;
   }
 
@@ -97,9 +93,7 @@ int testElement(const std::string &name)
   // stk::topology to Ioss::ElementToplogy
   Ioss::ElementTopology *new_element = Ioss::ElementTopology::factory(cell.name());
   if (element->name() != new_element->name()) {
-    std::cerr << "\tERROR: New name = '" << new_element->name()
-              << "' doesn't match old name '" << element->name()
-              << "'\n";
+    std::cerr << "\tERROR: New name = '" << new_element->name() << "' doesn't match old name '" << element->name() << "'\n";
     errors++;
   }
 
@@ -133,68 +127,6 @@ int testElement(const std::string &name)
                       element->number_boundaries(),
                       "boundary count");
 
-
-#if 0
-  // Check face topologies for all elements...
-  if (element->is_element()) {
-    if (cell.dimension() == 3) {
-      int face_count = element->number_faces();
-      for (int i=0; i < face_count; i++) {
-        Ioss::ElementTopology *face = element->face_type(i+1);
-        stk::topology cell_face = cell.face_topology(i);
-        Ioss::ElementTopology *cell_face_top = Ioss::ElementTopology::factory(cell_face.name());
-        errors += my_assert(face->name(),
-                            cell_face_top->name()
-                            "face type");
-
-        Ioss::IntVector fcon = element->face_connectivity(i+1);
-        size_t node_count = fcon.size();
-        for (size_t j=0; j < node_count; j++) {
-          std::ostringstream msg;
-          msg << "face node connectivity for node " << j << " on face " << i;
-          errors += my_assert(fcon[j],
-                              static_cast<int>(cell.getNodeMap(cell.dimension()-1, i, j)),
-                              msg.str());
-        }
-      }
-
-      int edge_count = element->number_edges();
-      for (int i=0; i < edge_count; i++) {
-
-        Ioss::IntVector fcon = element->edge_connectivity(i+1);
-        size_t node_count = fcon.size();
-        for (size_t j=0; j < node_count; j++) {
-          std::ostringstream msg;
-          msg << "edge node connectivity for node " << j << " on edge " << i;
-          errors += my_assert(fcon[j],
-                              static_cast<int>(cell.getNodeMap(cell.dimension()-2, i, j)),
-                              msg.str());
-        }
-      }
-    }
-    else if (cell.getDimension() == 2) {
-      int edge_count = element->number_edges();
-      for (int i=0; i < edge_count; i++) {
-        Ioss::ElementTopology *edge = element->edge_type(i+1);
-        const CellTopologyData *cell_edge = cell.getCellTopologyData(cell.dimension()-1,i);
-        errors += my_assert(edge->name(),
-                            stk::io::map_stk_topology_to_ioss(cell_edge, edge->spatial_dimension()),
-                            "edge type");
-
-        Ioss::IntVector econ = element->edge_connectivity(i+1);
-        size_t node_count = econ.size();
-        for (size_t j=0; j < node_count; j++) {
-          std::ostringstream msg;
-          msg << "edge node connectivity for node " << j << " on edge " << i;
-          errors += my_assert(econ[j],
-                              static_cast<int>(cell.getNodeMap(cell.getDimension()-1, i, j)),
-                              msg.str());
-        }
-      }
-
-    }
-  }
-#endif
   return errors;
 }
 }
@@ -208,13 +140,14 @@ TEST(UnitTestTopology, testUnit)
   int element_count = Ioss::ElementTopology::describe(&elements);
 
   int errors = 0;
+  unsigned spatialDim = 3;
   for (int i=0; i < element_count; i++) {
     // FIXME: Need to totally skip tetra7 for now
     if (elements[i] == "tetra7") {
       continue;
     }
 
-    int current_error = testElement(elements[i]);
+    int current_error = testElement(elements[i], spatialDim);
     if (elements[i] != "node" &&
         elements[i] != "rod3d2" &&
         elements[i] != "rod3d3" &&

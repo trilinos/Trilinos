@@ -40,7 +40,7 @@
 #
 # @MACRO: ADD_SUBDIRECTORIES()
 #
-# Macro that adds a list of subdirectories all at once (removes boiler-place
+# Macro that adds a list of subdirectories all at once (removes boiler-plate
 # code).
 #
 # Usage::

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -35,9 +35,9 @@
 
 double determinant(double M[3][3], int ndims)
 {
-  if (ndims == 1)
+  if (ndims == 1) {
     return (M[0][0]);
-
+  }
   else if (ndims == 2) {
     return (M[0][0] * M[1][1] - M[0][1] * M[1][0]);
   }
@@ -48,6 +48,7 @@ double determinant(double M[3][3], int ndims)
             M[2][0] * (M[0][1] * M[1][2] - M[1][1] * M[0][2]));
   }
 
-  else
+  else {
     return (0.0);
+  }
 }

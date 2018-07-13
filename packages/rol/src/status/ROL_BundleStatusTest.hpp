@@ -60,7 +60,7 @@ public:
 
   virtual ~BundleStatusTest() {}
 
-  BundleStatusTest( Teuchos::ParameterList &parlist ) {
+  BundleStatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     tol_      = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance", em6);
     max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
@@ -77,6 +77,12 @@ public:
          && (state.iter < max_iter_) 
          && (state.flag == false) ) {
        stat = true;
+     }
+     else {
+       state.statusFlag = (std::max(state.aggregateGradientNorm,state.aggregateModelError) <= tol_ ? EXITSTATUS_CONVERGED
+                           : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                           : state.flag == true ? EXITSTATUS_CONVERGED
+                           : EXITSTATUS_LAST);
      }
      return stat;
   }

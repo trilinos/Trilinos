@@ -50,14 +50,14 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
 template <typename Storage>
-void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+void mainHost(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 template <typename Storage>
-void mainCuda(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+void mainCuda(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 
 int main(int argc, char *argv[])
 {
@@ -88,15 +88,15 @@ int main(int argc, char *argv[])
     int threads_per_vector = 1;
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     bool openmp = true;
     CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int cuda_threads_per_vector = 16;
@@ -116,55 +116,60 @@ int main(int argc, char *argv[])
     typedef int Ordinal;
     typedef double Scalar;
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "Threads performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      KokkosSparse::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
       mainHost<Storage>(nGrid, nIter, dev_config);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "OpenMP performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      KokkosSparse::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
       mainHost<Storage>(nGrid, nIter, dev_config);
 
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -173,15 +178,14 @@ int main(int argc, char *argv[])
                 << deviceProp.name << "):"
                 << std::endl;
 
-      Kokkos::DeviceConfig dev_config(
+      KokkosSparse::DeviceConfig dev_config(
         num_cuda_blocks,
         cuda_threads_per_vector,
         cuda_threads_per_vector == 0 ? 0 : cuda_block_size / cuda_threads_per_vector);
 
       mainCuda<Storage>(nGrid,nIter,dev_config);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

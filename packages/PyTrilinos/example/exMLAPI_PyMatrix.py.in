@@ -55,11 +55,12 @@
 
 #
 # System imports
+from   __future__ import print_function
+from optparse     import *
 import sys
 
 #
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -88,7 +89,7 @@ def main():
   # Creates a rectangular matrix, corresponding to non-smoothed
   # aggregation for a simple 1D problem
   NumGlobalRows = 12
-  NumGlobalCols = NumGlobalRows / 3
+  NumGlobalCols = NumGlobalRows // 3
   RowSpace = ML.Space(NumGlobalRows)
   ColSpace = ML.Space(NumGlobalCols)
   MyGlobalRows = RowSpace.GetMyGlobalElements()
@@ -101,28 +102,28 @@ def main():
   # Off-processor elements can be set (for example, the entire matrix
   # can be specified on processor 0 only). 
   for i in MyGlobalRows:
-    P[i, i / 3] = 1
+    P[i, i // 3] = 1
   
   # Most of MLAPI functions will work only *after* having called
-  # FillComplete() on the P object. `print P' will not print
+  # FillComplete() on the P object. `print(P)' will not print
   # anything before FillComplete()
   P.FillComplete()
 
   Comm.Barrier()
 
-  print P
+  print(P)
 
   # Modifies the already inserted elements. Note that new elements cannot 
   # be inserted after FillComplete().
   for i in MyGlobalRows:
-    P[i, i / 3] = 10
+    P[i, i // 3] = 10
 
   # Prints out the nonzeros of the matrix, row-by-row. Note that only
   # *local* elements can be queried.
   for i in MyGlobalRows:
     Indices, Values = P[i]
-    for j in xrange(len(Indices)):
-      print "P(%d, %d) = %e" %(i, Indices[j], Values[j])
+    for j in range(len(Indices)):
+      print("P(%d, %d) = %e" %(i, Indices[j], Values[j]))
 
   Comm.Barrier()
 
@@ -130,7 +131,7 @@ def main():
   # for a given row
   Row = MyGlobalRows[0]
   for Col in MyGlobalCols:
-    print "P(%d, %d) = %f" %(Row, Col, P[Row, Col])
+    print("P(%d, %d) = %f" %(Row, Col, P[Row, Col]))
 
   # Build a tridiagonal matrix by summing up three matrices
   # (clearly there is a quicker way of doing this, by simply setting
@@ -170,11 +171,11 @@ def main():
   # 7) Compute lambda max of A_coarse using the A-norm
   max_eig = ML.MaxEigAnorm(A)
   if Comm.MyPID() == 0:
-    print "lambda_max(D * A) using A-norm = ", max_eig
+    print("lambda_max(D * A) using A-norm = ", max_eig)
   # 8) Compute lambda max of A_coarse using CG
   max_eig = ML.MaxEigCG(A)
   if Comm.MyPID() == 0:
-    print "lambda_max(D * A) using CG     = ", max_eig
+    print("lambda_max(D * A) using CG     = ", max_eig)
   # 9) Compute all the eigenvalues of a matrix, using LAPACK
   #    (MLAPI will convert the matrix into dense format). In this case,
   #    the imaginary part (EI) is zero. This can be done only in serial
@@ -185,20 +186,20 @@ def main():
     ML.Eig(A, ER, EI)
     ER.Sort()
     if Comm.MyPID() == 0:
-      for i in xrange(NumGlobalRows):
-        print "lambda_%d = %e" % (i, ER[i,0])
+      for i in range(NumGlobalRows):
+        print("lambda_%d = %e" % (i, ER[i,0]))
   # 10) Get the lower triangular part of a distributed matrix
   L = ML.PyMatrix(RowSpace, RowSpace)
   for i in MyGlobalRows:
     Indices, Values = A[i]
-    for j in xrange(len(Indices)):
+    for j in range(len(Indices)):
       if Indices[j] <= i:
         L[i, Indices[j]] = Values[j]
   L.FillComplete()
 
-  print L
+  print(L)
  
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 ################################################################################
 

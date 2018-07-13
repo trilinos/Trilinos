@@ -45,7 +45,7 @@ INCLUDE(TribitsGeneralMacros)
 
 INCLUDE(PrintVar)
 INCLUDE(AppendSet)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
@@ -93,7 +93,7 @@ INCLUDE(ParseVariableArguments)
 #
 #   ``<exeRootName>``
 #
-#     The root name of the exectuable (and CMake target) (see `Executable and
+#     The root name of the executable (and CMake target) (see `Executable and
 #     Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This must be the first
 #     argument.
 #
@@ -106,15 +106,15 @@ INCLUDE(ParseVariableArguments)
 #   ``NOEXESUFFIX``
 #
 #     If passed in, then ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` and
-#     not added to the end of the executable name (see `Executable and
-#     Target Name (TRIBITS_ADD_EXECUTABLE())`_).
+#     not added to the end of the executable name (except for native Windows
+#     builds, see `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).
 #
 #   ``ADD_DIR_TO_NAME``
 #
 #     If passed in, the directory path relative to the package's base
 #     directory (with "/" replaced by "_") is added to the executable name
 #     (see `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
-#     provides a simple way to create unique test exectuable names inside of a
+#     provides a simple way to create unique test executable names inside of a
 #     given TriBITS package.  Only test executables in the same directory
 #     would need to have unique ``<execRootName>`` passed in.
 #
@@ -214,11 +214,25 @@ INCLUDE(ParseVariableArguments)
 #   ``LINKER_LANGUAGE (C|CXX|Fortran)``
 #
 #     If specified, overrides the linker language used by setting the built-in
-#     CMake target property ``LINKER_LANGUAGE``.  By default, CMake chooses the
-#     compiler to be used as the linker based on file extensions.  The most
-#     typical use case for this option is when Fortran-only or C-only sources
-#     are passed in through ``SOURCES`` but a C++ linker is needed because
-#     there are upstream C++ libraries.
+#     CMake target property ``LINKER_LANGUAGE``.  TriBITS sets the default
+#     linker language as follows::
+#
+#       IF (${PROJECT_NAME}_ENABLE_CXX)
+#         SET(LINKER_LANGUAGE CXX)
+#       ELSEIF (${PROJECT_NAME}_ENABLE_C)
+#         SET(LINKER_LANGUAGE C)
+#       ELSE()
+#         # Let CMake set the default linker language it wants based
+#         # on source file extensions passed into ``ADD_EXECUTABLE()``.
+#       ENDIF()
+#
+#     The reason for this logic is that on some platform if you have a Fortran
+#     or C main that links to C++ libraries, then you need the C++ compiler to
+#     do the final linking.  CMake does not seem to automatically know that it
+#     is pulling in C++ libraries and therefore needs to be told use C++ for
+#     linking.  This is the correct default behavior for mixed-language
+#     projects. However, this argument allows the developer to override this
+#     logic and use any linker language desired based on other considerations.
 #
 #   ``TARGET_DEFINES -D<define0> -D<define1> ...``
 #
@@ -239,7 +253,7 @@ INCLUDE(ParseVariableArguments)
 #     set with the name of the executable target passed to
 #     ``ADD_EXECUTABLE(<exeTargetName> ... )``.  Having this name allows the
 #     calling ``CMakeLists.txt`` file access and set additional target
-#     propeties (see `Additional Executable and Source File Properties
+#     properties (see `Additional Executable and Source File Properties
 #     (TRIBITS_ADD_EXECUTABLE())`_).
 #
 # .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
@@ -263,6 +277,9 @@ INCLUDE(ParseVariableArguments)
 # The executable suffix ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` will be
 # added to the actual executable file name if the option ``NOEXESUFFIX`` is
 # *not* passed in but this suffix is never added to the target name.
+# (However, note that on Windows platforms, the default ``*.exe`` extension is
+# always added because windows will not run an executable in many contexts
+# unless it has the ``*.exe`` extension.)
 #
 # The reason that a default prefix is prepended to the executable and target
 # name is because the primary reason to create an executable is typically to
@@ -317,26 +334,66 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     MESSAGE("")
     MESSAGE("TRIBITS_ADD_EXECUTABLE: ${EXE_NAME} ${ARGN}")
   ENDIF()
+  
+  #
+  # Confirm that package and subpackage macros/functions have been called inteh correct order
+  #
+  
+  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
+
+    # This is a subpackage being processed
+
+    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_EXECUTABLE()"
+        " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_EXECUTABLE() before "
+        " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+  ELSE()
+
+    # This is a package being processed
+
+    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_PACKAGE() before TRIBITS_ADD_EXECUTABLE()"
+        " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+    IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_EXECUTABLE() before "
+        " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+  ENDIF()
+
 
   #
   # A) Parse the input arguments
   #
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     #prefix
     PARSE
-    #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     ${ARGN}
     )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
     SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} PARENT_SCOPE)
   ENDIF()
+
   #
-  # B) Exclude building the test executable based on some several criteria
+  # B) Exclude building the test executable based on some criteria
   #
 
   SET(ADD_THE_TEST FALSE)
@@ -382,6 +439,14 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   IF(DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
     SET(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
+  ENDIF()
+
+  # Exclude the build if requested
+  IF (${EXE_BINARY_NAME}_EXE_DISABLE)
+    MESSAGE("-- "
+      "${EXE_BINARY_NAME} EXE NOT being built due to ${EXE_BINARY_NAME}_EXE_DISABLE="
+      "'${${EXE_BINARY_NAME}_EXE_DISABLE}'")
+    RETURN()
   ENDIF()
 
   # If exe is in subdirectory prepend that dir name to the source files

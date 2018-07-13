@@ -204,7 +204,11 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
           break;
         case GRAPH:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MGraph>>, MuemexArg>(args[i])->convertToMatlab();
+#ifdef HAVE_MUELU_INTREPID2
+        case FIELDCONTAINER_ORDINAL:
+          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<FieldContainer_ordinal>>, MuemexArg>(args[i])->convertToMatlab();
           break;
+#endif
       }
     }
     catch (std::exception& e)
@@ -344,6 +348,9 @@ Teuchos::RCP<Teuchos::ParameterList> getInputParamList()
   validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Factory for the nullspace.");
   validParamList->set<RCP<const FactoryBase>>("Aggregates",  Teuchos::null, "Factory for the aggregates.");
   validParamList->set<RCP<const FactoryBase>>("UnamalgamationInfo", Teuchos::null, "Factory for amalgamation.");
+#ifdef HAVE_MUELU_INTREPID2
+  validParamList->set<RCP<const FactoryBase>>("pcoarsen: element to node map", Teuchos::null, "Generating factory of the element to node map");
+#endif
   return validParamList;
 }
 

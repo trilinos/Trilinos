@@ -8,12 +8,16 @@ AggregationPhase2bAlgorithm
 AggregationPhase2bAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 AggregationPhase3Algorithm
 AggregationPhase3Algorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationStructuredAlgorithm
 AmalgamationInfo
 CoupledAggregationCommHelper
 CoupledAggregationFactory
-DemoFactory
+GlobalLexicographicIndexManager
 Graph
 GraphBase
+HybridAggregationFactory
+IndexManager
+InterfaceAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
@@ -21,6 +25,7 @@ LWGraph
 LWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
+LocalLexicographicIndexManager
 OnePtAggregationAlgorithm
 OnePtAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 PreserveDirichletAggregationAlgorithm
@@ -30,4 +35,5 @@ RebalanceMapFactory
 RepartitionInterface
 UncoupledAggregationFactory
 UncoupledAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+UncoupledIndexManager
 UserAggregationFactory

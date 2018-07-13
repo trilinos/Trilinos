@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,12 +33,10 @@
  *
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
-
 #include "elb_err.h"
+#include <cstddef> // for size_t
+#include <cstdio>  // for fprintf, stderr
+#include <vector>  // for vector
 
 const int MAX_ERR_MSG = 1024;
 int       error_lev   = 1;
@@ -55,9 +53,9 @@ static std::vector<error_message> error_info;
  *****************************************************************************/
 void error_add(int level, const std::string &message, const std::string &filename, int line_no)
 {
-  if (error_info.size() < (size_t)MAX_ERR_MSG)
-    error_info.push_back(error_message(level, message, line_no, filename));
-  return;
+  if (error_info.size() < static_cast<size_t>(MAX_ERR_MSG)) {
+    error_info.emplace_back(level, message, line_no, filename);
+  }
 }
 
 /*****************************************************************************/
@@ -81,11 +79,13 @@ void error_report()
         }
 
         fprintf(stderr, "\t%s\n", error_info[i].err_mesg.c_str());
-        if (error_lev >= 2)
+        if (error_lev >= 2) {
           fprintf(stderr, "\t\tin file %s\n", error_info[i].filename.c_str());
+        }
 
-        if (error_lev >= 3)
+        if (error_lev >= 3) {
           fprintf(stderr, "\t\t\tat line %d\n", error_info[i].line_no);
+        }
       }
     }
   }

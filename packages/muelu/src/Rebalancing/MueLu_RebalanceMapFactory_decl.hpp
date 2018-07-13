@@ -47,6 +47,7 @@
 #define MUELU_REBALANCEMAPFACTORY_DECL_HPP_
 
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>

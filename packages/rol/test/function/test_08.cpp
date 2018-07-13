@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_StdVector.hpp"
@@ -55,10 +55,10 @@ template<class Real>
 class ObjectiveFunctionTest08_1 : public ROL::Objective_SimOpt<Real> {
 public:
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<const std::vector<Real> > up
+      = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp
+      = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     Real half(0.5), quadu(0), quadz(0);
     unsigned usize = up->size();
     for ( unsigned i = 0; i < usize; i++ ) {
@@ -72,27 +72,27 @@ public:
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > up
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
+    ROL::Ptr<std::vector<Real> > gp
+      = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > up
+      = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
     gp->assign(up->begin(),up->end());
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<std::vector<Real> > gp
+      = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > zp
+      = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     gp->assign(zp->begin(),zp->end());
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp
+      = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     hvp->assign(vp->begin(),vp->end());
   }
 
@@ -108,10 +108,10 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp
+      = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     hvp->assign(vp->begin(),vp->end());
   }
 };
@@ -120,10 +120,10 @@ template<class Real>
 class ObjectiveFunctionTest08_2 : public ROL::Objective_SimOpt<Real> {
 public:
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<const std::vector<Real> > up
+      = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp
+      = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     Real linu(0), linz(0);
     unsigned usize = up->size();
     for ( unsigned i = 0; i < usize; i++ ) {
@@ -137,18 +137,18 @@ public:
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > up
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
+    ROL::Ptr<std::vector<Real> > gp
+      = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > up
+      = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
     gp->assign(up->size(),1);
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<std::vector<Real> > gp
+      = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > zp
+      = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     gp->assign(zp->size(),1);
   }
 
@@ -208,12 +208,12 @@ int main(int argc, char* argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -223,28 +223,28 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build vectors
     unsigned dim = 2;
-    Teuchos::RCP<std::vector<RealT> > u_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > u = Teuchos::rcp(new ROL::StdVector<RealT>(u_rcp));
-    setRandomVector(*u_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > z = Teuchos::rcp(new ROL::StdVector<RealT>(z_rcp));
-    setRandomVector(*z_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(u,z));
-    Teuchos::RCP<std::vector<RealT> > du_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > du = Teuchos::rcp(new ROL::StdVector<RealT>(du_rcp));
-    setRandomVector(*du_rcp);
-    Teuchos::RCP<std::vector<RealT> > dz_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > dz = Teuchos::rcp(new ROL::StdVector<RealT>(dz_rcp));
-    setRandomVector(*dz_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > d = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(du,dz));
+    ROL::Ptr<std::vector<RealT> > u_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT> > u = ROL::makePtr<ROL::StdVector<RealT>>(u_ptr);
+    setRandomVector(*u_ptr);
+    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT> > z = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
+    setRandomVector(*z_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(u,z);
+    ROL::Ptr<std::vector<RealT> > du_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT> > du = ROL::makePtr<ROL::StdVector<RealT>>(du_ptr);
+    setRandomVector(*du_ptr);
+    ROL::Ptr<std::vector<RealT> > dz_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT> > dz = ROL::makePtr<ROL::StdVector<RealT>>(dz_ptr);
+    setRandomVector(*dz_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(du,dz);
     // Build objective function
-    std::vector<Teuchos::RCP<ROL::Objective_SimOpt<RealT> > > vec_obj(2,Teuchos::null);
-    vec_obj[0] = Teuchos::rcp(new ObjectiveFunctionTest08_1<RealT>);
-    vec_obj[1] = Teuchos::rcp(new ObjectiveFunctionTest08_2<RealT>);
-    Teuchos::RCP<ROL::StdObjective<RealT> > obj_scalarize
-      = Teuchos::rcp(new ObjectiveFunctionTest08_scalarize<RealT>);
-    Teuchos::RCP<ROL::CompositeObjective_SimOpt<RealT> > obj
-      = Teuchos::rcp(new ROL::CompositeObjective_SimOpt<RealT>(vec_obj,obj_scalarize));
+    std::vector<ROL::Ptr<ROL::Objective_SimOpt<RealT> > > vec_obj(2,ROL::nullPtr);
+    vec_obj[0] = ROL::makePtr<ObjectiveFunctionTest08_1<RealT>>();
+    vec_obj[1] = ROL::makePtr<ObjectiveFunctionTest08_2<RealT>>();
+    ROL::Ptr<ROL::StdObjective<RealT> > obj_scalarize
+      = ROL::makePtr<ObjectiveFunctionTest08_scalarize<RealT>>();
+    ROL::Ptr<ROL::CompositeObjective_SimOpt<RealT> > obj
+      = ROL::makePtr<ROL::CompositeObjective_SimOpt<RealT>>(vec_obj,obj_scalarize);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of CompositeObjective_SimOpt\n";
     obj->checkGradient(*x,*d,true,*outStream);

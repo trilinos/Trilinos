@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -59,14 +59,16 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
   xmax = 0.0;
   for (i = 0; i < 3; i++) {
     for (j = i; j < 3; j++) {
-      if (fabs(H[i][j]) > xmax)
+      if (fabs(H[i][j]) > xmax) {
         xmax = fabs(H[i][j]);
+      }
     }
   }
   if (xmax != 0) {
     for (i = 0; i < 3; i++) {
-      for (j      = 0; j < 3; j++)
+      for (j = 0; j < 3; j++) {
         mat[i][j] = H[i][j] / xmax;
+      }
     }
   }
 
@@ -96,12 +98,14 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
     }
 
     if (q3 >= r2) { /* Three real roots. */
-      if (r == 0)
+      if (r == 0) {
         theta = HALFPI;
+      }
       else {
         q3 = sqrt(q3);
-        if (q3 < fabs(r))
-          q3  = fabs(r);
+        if (q3 < fabs(r)) {
+          q3 = fabs(r);
+        }
         theta = acos(r / q3);
       }
       q = -2 * sqrt(q);
@@ -124,12 +128,15 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
   *eval1 = min(*eval1, root3);
   *eval3 = max(root1, root2);
   *eval3 = max(*eval3, root3);
-  if (root1 != *eval1 && root1 != *eval3)
+  if (root1 != *eval1 && root1 != *eval3) {
     *eval2 = root1;
-  else if (root2 != *eval1 && root2 != *eval3)
+  }
+  else if (root2 != *eval1 && root2 != *eval3) {
     *eval2 = root2;
-  else
+  }
+  else {
     *eval2 = root3;
+  }
 }
 
 void kramer3(                                         /* Use Kramer's rule to solve 3x3 */
@@ -175,11 +182,14 @@ void ch_eigenvec3(double  A[3][3], /* matrix to find eigenvector of */
   int    imax = -1, jmax = -1; /* indices of max value in matrix */
   int    i, j;                 /* loop counters */
 
-  for (i = 0; i < 3; i++)
-    for (j      = 0; j < 3; j++)
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
       mat[i][j] = A[i][j];
-  for (i = 0; i < 3; i++)
+    }
+  }
+  for (i = 0; i < 3; i++) {
     mat[i][i] -= eval;
+  }
 
   ind[0] = 0;
   ind[1] = 1;
@@ -205,17 +215,19 @@ void ch_eigenvec3(double  A[3][3], /* matrix to find eigenvector of */
   else {
     /* Scale the matrix so largest value is 1.0 */
     for (i = 0; i < 3; i++) {
-      for (j = 0; j < 3; j++)
+      for (j = 0; j < 3; j++) {
         mat[i][j] /= xmax;
+      }
     }
 
     /* Swap rows if necessary to move max element to first row. */
-    if (imax != 0)
+    if (imax != 0) {
       for (j = 0; j < 3; j++) {
         tmp          = mat[0][j];
         mat[0][j]    = mat[imax][j];
         mat[imax][j] = tmp;
       }
+    }
 
     /* Swap columns if necessary to move max element to first position. */
     if (jmax != 0) {
@@ -254,12 +266,13 @@ void ch_eigenvec3(double  A[3][3], /* matrix to find eigenvector of */
 
     else {
       /* Swap rows 2 and 3 to move max element to 2nd row. */
-      if (imax != 1)
+      if (imax != 1) {
         for (j = 0; j < 3; j++) {
           tmp          = mat[1][j];
           mat[1][j]    = mat[imax][j];
           mat[imax][j] = tmp;
         }
+      }
 
       /* Swap columns to move max element to (1,1) position. */
       if (jmax != 1) {
@@ -286,8 +299,9 @@ void ch_eigenvec3(double  A[3][3], /* matrix to find eigenvector of */
 
   /* Normalize eigenvector and calculate a normalized eigen-residual. */
   norm = sqrt(evec[0] * evec[0] + evec[1] * evec[1] + evec[2] * evec[2]);
-  for (i = 0; i < 3; i++)
+  for (i = 0; i < 3; i++) {
     evec[i] /= norm;
+  }
   res1 = (A[0][0] - eval) * evec[0] + A[0][1] * evec[1] + A[0][2] * evec[2];
   res2 = A[1][0] * evec[0] + (A[1][1] - eval) * evec[1] + A[1][2] * evec[2];
   res3 = A[2][0] * evec[0] + A[2][1] * evec[1] + (A[2][2] - eval) * evec[2];

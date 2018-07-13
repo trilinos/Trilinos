@@ -59,6 +59,7 @@
 #############################################################################
 
 # System imports
+from   __future__ import print_function
 import numpy
 from   optparse import *
 import sys
@@ -145,7 +146,7 @@ class MyInterface(NOX.Epetra.Interface.Required):
     def initializeMesh(self, xmin, xmax):
         x = xmin + numpy.array(self.__stdMap.MyGlobalElements()) * \
             (xmax-xmin) / (self.__numElem-1.0)
-        print "Proc", self.__myPID, "x =", x
+        print("Proc", self.__myPID, "x =", x)
         self.__x = Epetra.Vector(self.__stdMap, x)
         self.__h = (xmax - xmin) / (self.__numElem - 1.0)
 
@@ -234,9 +235,10 @@ class MyInterface(NOX.Epetra.Interface.Required):
             if self.__haveBC0: F[ 0] = ou[ 0] - self.bc0
             if self.__haveBC1: F[-1] = ou[-1] - self.bc1
             return True
-        except Exception, e:
-            print "Proc", self.__myPID, "MyInterface.computeF() has thrown an exception:"
-            print str(type(e))[18:-2] + ":", e
+        except Exception as e:
+            print("Proc", self.__myPID,
+                  "MyInterface.computeF() has thrown an exception:")
+            print(str(type(e))[18:-2] + ":", e)
             return False
 
 ######################################################################
@@ -258,7 +260,7 @@ def main():
         msg = "numBlocks = %d cannot be < number of processors = %d" % \
               (numElements,numProc)
         msg += "\nTest failed!"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     # Get the boundary conditions
     bc0 = options.bc0
@@ -296,22 +298,22 @@ def main():
     # Output the parameter list
     if options.verbosity:
         if myPID == 0:
-            print "Final Parameters\n****************"
+            print("Final Parameters\n****************")
             solver.getList()._print()
-            print
+            print()
 
     # Tests
     status = 0
     if solveStatus != NOX.StatusTest.Converged:
         status += 1
-        if myPID == 0: print "Nonlinear solver failed to converge"
+        if myPID == 0: print("Nonlinear solver failed to converge")
 
     # Summarize the test results
     if myPID == 0:
         if status == 0:
-            print "End Result: TEST PASSED"
+            print("End Result: TEST PASSED")
         else:
-            print "End Result: TEST FAILED"
+            print("End Result: TEST FAILED")
 
     # Obtain a view of the plot data. Note that the following code is the Python
     # alalog of what you might use in C++:
@@ -330,7 +332,7 @@ def main():
         xplot.Import(x, importer, Epetra.Insert)
         uplot.Import(u, importer, Epetra.Insert)
         if myPID == 0:
-            print "Plotting results..."
+            print("Plotting results...")
             mp.plot(xplot,uplot)
             mp.title("exNOX_1Dfdm Problem Solution, k = %d" % options.k)
             mp.xlabel("x")

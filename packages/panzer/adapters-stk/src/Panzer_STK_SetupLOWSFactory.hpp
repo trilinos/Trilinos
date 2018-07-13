@@ -54,9 +54,6 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#ifdef PANZER_HAVE_FEI
-#include "Panzer_DOFManagerFEI.hpp"
-#endif
 
 #include "Panzer_STKConnManager.hpp"
 
@@ -80,7 +77,9 @@ buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
 
 /** Build LOWS factory.
@@ -97,16 +96,10 @@ buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
-
-template <typename GO>
-void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
-
-#ifdef PANZER_HAVE_FEI
-template <typename GO> 
-void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
-#endif
 
 }
 

@@ -79,4 +79,8 @@
 
 #include <Stratimikos_Config.h>
 
+// We need these macros in a lot of files and this is small so let's include
+// it here.
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+
 #endif /*_STRATIMIKOS_CONFIGDEFS_H_*/

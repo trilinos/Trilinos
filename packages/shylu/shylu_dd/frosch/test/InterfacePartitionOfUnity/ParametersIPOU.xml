@@ -1,0 +1,45 @@
+<ParameterList name="IPOU">
+    
+    <ParameterList name="GDSW">
+        <Parameter name="Type"                  type="string"   value="Full"/>
+        <!--Type:
+         -> Full                - Use the full partition of unity
+         -> Vertices            - Use only vertices
+         -> ShortEdges          - Use only short edges
+         -> StraightEdges       - Use only straight edges
+         -> Edges               - Use only edges
+         -> AllEdges            - Use only all types of edges
+         -> Faces               - Use only faces
+         -> NoVertices          - Use all but vertices
+         -> NoShortEdges        - Use all but short edges
+         -> NoStraightEdges     - Use all but straight edges
+         -> NoEdges             - Use all but edges
+         -> NoAllEdges          - Use all but all types of edges
+         -> NoFaces             - Use all but faces
+         -> Custom              - Use a custom combination defined in the "Custom block"
+         -->
+        <ParameterList name="Custom">
+            <Parameter name="Vertices"          type="bool"     value="true"/>
+            <Parameter name="ShortEdges"        type="bool"     value="true"/>
+            <Parameter name="StraightEdges"     type="bool"     value="true"/>
+            <Parameter name="Edges"             type="bool"     value="true"/>
+            <Parameter name="Faces"             type="bool"     value="true"/>
+        </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="RGDSW">
+        <Parameter name="Option"                type="string"   value="1"/>
+        <!-- Option:
+         -> 1                   - Option 1
+         -> 2.1                 - Option 2.1 (not implemented)
+         -> 2.2                 - Option 2.2
+         -->
+        <Parameter name="Base"                  type="string"   value="1"/>
+        <!-- Base:
+         -> Vertices            - Top ancestors are vertices
+         -> Edges               - Top ancestors are edges
+         -> Faces               - Top ancestors are faces
+         -->
+    </ParameterList>
+    
+</ParameterList>

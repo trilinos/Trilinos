@@ -41,12 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -88,8 +88,6 @@ namespace phalanx_test {
     using namespace std;
     using namespace Teuchos;
     using namespace PHX;
-    
-    PHX::InitializeKokkosDevice();
 
     RCP<DataLayout> dl = rcp(new MDALayout<Cell,Quadrature,Dim>(10,4,3));
     
@@ -107,7 +105,5 @@ namespace phalanx_test {
 	  b(i,j,k) = 2.0;
  	     
     simulated_intrepid_integrate(b);
-    
-    PHX::FinalizeKokkosDevice();
   }
 }

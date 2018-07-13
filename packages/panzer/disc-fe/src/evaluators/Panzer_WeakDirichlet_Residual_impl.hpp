@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
+template<typename EvalT, typename Traits>
+WeakDirichletResidual<EvalT, Traits>::
+WeakDirichletResidual(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
   std::string flux_name = p.get<std::string>("Flux Name");
@@ -73,11 +76,11 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
 
   residual = PHX::MDField<ScalarT>(residual_name, basis->functional);
   normal_dot_flux_plus_pen = PHX::MDField<ScalarT>(normal_dot_flux_name, ir->dl_scalar);
-  flux = PHX::MDField<ScalarT>(flux_name, ir->dl_vector);
-  normal = PHX::MDField<ScalarT>(normal_name, ir->dl_vector);
-  dof = PHX::MDField<ScalarT>(dof_name, ir->dl_scalar);
-  value = PHX::MDField<ScalarT>(value_name, ir->dl_scalar);
-  sigma = PHX::MDField<ScalarT>(sigma_name, ir->dl_scalar);
+  flux = PHX::MDField<const ScalarT>(flux_name, ir->dl_vector);
+  normal = PHX::MDField<const ScalarT>(normal_name, ir->dl_vector);
+  dof = PHX::MDField<const ScalarT>(dof_name, ir->dl_scalar);
+  value = PHX::MDField<const ScalarT>(value_name, ir->dl_scalar);
+  sigma = PHX::MDField<const ScalarT>(sigma_name, ir->dl_scalar);
 
   this->addEvaluatedField(residual);
   this->addEvaluatedField(normal_dot_flux_plus_pen);
@@ -94,7 +97,12 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
+template<typename EvalT, typename Traits>
+void
+WeakDirichletResidual<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(normal_dot_flux_plus_pen,fm);
@@ -104,17 +112,21 @@ PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(sigma,fm);
 
-  num_ip = flux.dimension(1);
-  num_dim = flux.dimension(2);
+  num_ip = flux.extent(1);
+  num_dim = flux.extent(2);
 
-  TEUCHOS_ASSERT(flux.dimension(1) == normal.dimension(1));
-  TEUCHOS_ASSERT(flux.dimension(2) == normal.dimension(2));
+  TEUCHOS_ASSERT(flux.extent(1) == normal.extent(1));
+  TEUCHOS_ASSERT(flux.extent(2) == normal.extent(2));
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
+template<typename EvalT, typename Traits>
+void
+WeakDirichletResidual<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
@@ -127,10 +139,10 @@ PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(residual, normal_dot_flux_plus_pen, 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_CPP);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      integrate(residual.get_view(),
+                normal_dot_flux_plus_pen.get_view(), 
+                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   
 }
 

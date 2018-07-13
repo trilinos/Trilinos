@@ -58,7 +58,6 @@ explicit install-targets ;
 alias install-targets
   : stk_app_driver
     stk_usecases_app
-    stk_usecases_util
     stk_usecases_mesh
     stk_transfer_use_cases
     stk_usecases_edge_face_skin
@@ -141,27 +140,12 @@ exe stk_usecases_app
     /sierra/seacas//ioss
     /sierra/seacas//ioinit
     /sierra/framework//etet
-    /sierra/geometry_toolkit//geometry_toolkit
     /tpl/trilinos//shards
     /tpl/boost-program-options//boost_program_options
   : <tag>@sierra-exec-tag
     <tbb>on,<threading>multi,<toolset>gcc-3.4.3,<target-os>linux,<address-model>32:<linkflags>"-L/usr/sharelan/tbb21_20080605oss/build/linux_ia32_gcc_cc3.4.3_libc2.3.4_kernel2.6.9_release -ltbb"
     <tbb>on,<threading>multi,<toolset>gcc-4.2.4,<target-os>linux,<address-model>64:<linkflags>"-L/usr/sharelan/tbb21_20080605oss/build/linux_em64t_gcc_cc4.2.4_libc2.3.4_kernel2.6.9_release -ltbb"
     <tbb>on,<threading>multi,<toolset>intel-10.1,<target-os>linux,<address-model>64:<linkflags>"-L/usr/sharelan/tbb21_20080605oss/build/linux_em64t_icc_cc3.4.5_libc2.3.4_kernel2.6.9_release -ltbb"
-  ;
-
-exe stk_usecases_util
-  :
-    $(stk_usecases-root)/util/UtilUseCaseMain.cpp
-    [ glob $(stk_usecases-root)/util/*.cpp ]
-    /sierra/stk_util//stk_util_util
-    /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_environment
-    /sierra/stk_util//stk_util_diag
-    /sierra/stk_util//stk_util_parallel
-    /tpl/boost-program-options//boost_program_options
-    /mpi//mpi
-  : <tag>@sierra-exec-tag
   ;
 
 exe stk_usecases_mesh
@@ -179,8 +163,8 @@ exe stk_usecases_mesh
 
 exe stk_transfer_use_cases
   :
-    $(stk_transfer-root)/use_cases/UseCaseMain.cpp
-    [ glob $(stk_transfer-root)/use_cases/*.cpp ]
+    $(stk_usecases-root)/transfer/UseCaseMain.cpp
+    [ glob $(stk_usecases-root)/transfer/*.cpp ]
     /sierra/stk_transfer//stk_transfer
     /tpl/operating_system//pthread
     /sierra/stk_io//stk_io
@@ -190,7 +174,6 @@ exe stk_transfer_use_cases
     /sierra/stk_util//stk_util_diag
     /tpl/operating_system//pthread
     /tpl/trilinos//shards
-    /tpl/trilinos//teuchos
     /tpl/trilinos//intrepid
   : <tag>@sierra-exec-tag
   ;

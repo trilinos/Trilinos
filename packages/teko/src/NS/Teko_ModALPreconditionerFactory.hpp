@@ -173,6 +173,7 @@ public:
    }
 
 protected:
+   using BlockPreconditionerFactory::buildPreconditionerOperator;
 
    Teuchos::RCP<InvModALStrategy> invOpsStrategy_;
 

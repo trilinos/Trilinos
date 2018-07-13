@@ -38,7 +38,7 @@
 # @HEADER
 
 INCLUDE(TribitsCreateClientTemplateHeaders)
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(GlobalSet)
 INCLUDE(AppendSet)
 INCLUDE(AppendGlob)
@@ -234,7 +234,7 @@ ENDFUNCTION()
 #
 #   ``<libBaseName>``
 #
-#     Required base name of the library.  The name of the actual libray name
+#     Required base name of the library.  The name of the actual library name
 #     will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
 #     produce::
 #     
@@ -355,7 +355,7 @@ ENDFUNCTION()
 #     If specified, then on output the variable ``<libTargetName>`` will be
 #     set with the name of the library passed to ``ADD_LIBRARY()``.  Having
 #     this name allows the calling ``CMakeLists.txt`` file access and set
-#     additional target propeties (see `Additional Library and Source File
+#     additional target properties (see `Additional Library and Source File
 #     Properties (TRIBITS_ADD_LIBRARY())`_).
 #
 # .. _Include Directories (TRIBITS_ADD_LIBRARY()):
@@ -364,10 +364,49 @@ ENDFUNCTION()
 #
 # Any base directories for the header files listed in the arguments
 # ``HEADERS`` or ``NOINSTALLHEADERS`` should be passed into the standard CMake
-# command ``INCLUDE_DIRECTORIES()`` *before* calling this function.  These
-# include directories will then be added to current packages list of include
-# directories ``${PACKAGE_NAME}_INCLUDE_DIRS`` which is then exported to
-# downstream SE packages..
+# command ``INCLUDE_DIRECTORIES()`` **before** calling this function.  For
+# example, a CMakeLists.txt file will look like::
+#
+#   ...
+#
+#   TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+#   CONFIGURE_FILE(...)
+#
+#   ...
+#
+#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+#
+#   ...
+#
+#   TRIBITS_ADD_LIBRARY( <libName>
+#     SOURCES
+#       <src0>.c
+#       <subdir0>/<src1>.cpp
+#       <subdir1>/<src2>.F90
+#       ...
+#     HEADERS
+#        <header0>.h
+#        <subdir0>/<header1>.hpp
+#         ...
+#     NONINSTALLHEADERS <header2>.hpp <header3>.hpp ...
+#     ...
+#     )
+#
+# The include of ``${CMAKE_CURRENT_BINARY_DIR}`` is needed for any generated
+# header files (e.g. using raw ``CONFIGURE_FILE()`` or
+# `TRIBITS_CONFIGURE_FILE()`_) or any generated Fortran ``*.mod`` module files
+# generated as a byproduct of compiling F90+ source files (that contain one or
+# more Fortran module declarations).
+#
+# The function ``TRIBITS_ADD_LIBRARY()`` will grab the list of all of the
+# include directories in scope from prior calls to ``INCLUDE_DIRECTORIES()``
+# and will append these to the variable ``${PACKAGE_NAME}_INCLUDE_DIRS``.
+# This list of include directories is exported to downstream SE packages so
+# they appear on the compile lines of all downstream object file compiles.
+# This is a critical part of the "glue" that allows TriBITS packages to link
+# up automatically (just by clearing dependencies in
+# `<packageDir>/cmake/Dependencies.cmake`_ files).
 #
 # .. _Install Targets (TRIBITS_ADD_LIBRARY()):
 #
@@ -430,8 +469,41 @@ ENDFUNCTION()
 #
 FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
 
-  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+  #
+  # Confirm that package and subpackage macros/functions have been called in the correct order
+  #
 
+  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
+
+    # This is a subpackage being processed
+
+    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
+        " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+        " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+  ELSE()
+
+    # This is a package being processed
+
+    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_PACKAGE() before TRIBITS_ADD_LIBRARY()"
+        " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+    IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+        " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    ENDIF()
+
+  ENDIF()
+
+  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
   SET(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -448,12 +520,19 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
 
-  PARSE_ARGUMENTS(
-    PARSE #prefix
-    "HEADERS;HEADERS_INSTALL_SUBDIR;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT" # Lists
-    "STATIC;SHARED;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
-    ${ARGN} # Remaining arguments passed in
+  CMAKE_PARSE_ARGUMENTS(
+    #prefix
+    PARSE
+    #Options    
+    "STATIC;SHARED;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY"
+    #one_value_keywords
+    ""
+    #mulit_value_keywords
+    "HEADERS;HEADERS_INSTALL_SUBDIR;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT"
+    ${ARGN}
     )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   # ToDo: Assert that HEADERS_INSTALL_SUBDIR has 0 or 1 entries!
   # ToDo: Assert that ADDED_LIB_TARGET_NAME_OUT as 0 or 1 entries!
@@ -813,8 +892,6 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     ENDIF()
 
     IF (INSTALL_LIB)
-      SET_PROPERTY(TARGET ${LIBRARY_NAME} PROPERTY INSTALL_RPATH
-        "${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
       INSTALL(
         TARGETS ${LIBRARY_NAME}
         EXPORT ${PACKAGE_NAME}

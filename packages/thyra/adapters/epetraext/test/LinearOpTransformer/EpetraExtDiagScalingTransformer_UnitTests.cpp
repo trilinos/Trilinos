@@ -136,10 +136,7 @@ buildADOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<double
       break;
    default:
       TEUCHOS_ASSERT(false);
-      break;
    }
-
-
    out << "\nM = " << *M;
 
    return M;

@@ -102,6 +102,19 @@ IF ( NETCDF_NCDUMP_BINARY )
     testwt-compress
   )
 
+  IF (SEACASExodus_ENABLE_THREADSAFE)
+     SET(TS "_ts")
+     SET(cbind_OLDTESTS
+       ${cbind_OLDTESTS}
+       test_ts_nvar
+       test_ts_nvar_rd
+       test_ts_partial_nvar
+       test_ts_partial_nvar_rd
+       test_ts_files
+       test_ts_errval
+     )
+  ENDIF()
+
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/testall.in
     ${CMAKE_CURRENT_BINARY_DIR}/testall
@@ -127,10 +140,10 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
-   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
+   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall 
 	  OUTPUT_FILE exodus_unit_tests.out
 	  PASS_ANY
-   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
+   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
 		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
    COMM mpi serial
    OVERALL_NUM_MPI_PROCS 1
@@ -140,10 +153,10 @@ IF ( NETCDF_NCDUMP_BINARY )
   if ( TPL_Netcdf_Enables_Netcdf4 )
     TRIBITS_ADD_ADVANCED_TEST(
      exodus_unit_tests_nc4_env
-     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf4
+     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf4 
 	    OUTPUT_FILE exodus_unit_tests.out
 	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
+     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS} 
                            ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
      COMM mpi serial
      FINAL_PASS_REGULAR_EXPRESSION 

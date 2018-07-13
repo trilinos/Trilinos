@@ -67,6 +67,8 @@ namespace Zoltan2 {
 
 class Solution
 {
+public:
+  virtual ~Solution() {}
 };
 
 }

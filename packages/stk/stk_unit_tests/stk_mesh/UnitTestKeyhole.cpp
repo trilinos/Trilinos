@@ -45,7 +45,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/SetupKeyholeMesh.hpp"
+#include "stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 TEST(UnitTestKeyhole, NodeParts_case1)
@@ -217,6 +217,7 @@ TEST(UnitTestKeyhole, EdgeParts_case2)
   const unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
+  bulk.initialize_face_adjacent_element_graph();
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 

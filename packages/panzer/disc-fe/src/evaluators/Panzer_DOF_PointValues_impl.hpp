@@ -78,7 +78,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
       evalName = fieldName;
   }
 
-  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+  dof_basis = PHX::MDField<const ScalarT,Cell,Point>(fieldName, basis->functional);
 
   this->addDependentField(dof_basis);
 
@@ -94,18 +94,20 @@ DOF_PointValues(const Teuchos::ParameterList & p)
                 evalName,
      	        pointRule->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
-
-     this->addDependentField(basisValues->basis_ref_scalar); 
-     this->addDependentField(basisValues->basis_scalar); 
+     constBasisRefScalar_ = basisValues->basis_ref_scalar;
+     constBasisScalar_    = basisValues->basis_scalar;
+     this->addDependentField(constBasisRefScalar_);
+     this->addDependentField(constBasisScalar_);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
                 evalName,
      	        pointRule->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
-
-     this->addDependentField(basisValues->basis_ref_vector); 
-     this->addDependentField(basisValues->basis_vector); 
+     constBasisRefVector_ = basisValues->basis_ref_vector;
+     constBasisVector_    = basisValues->basis_vector;
+     this->addDependentField(constBasisRefVector_);
+     this->addDependentField(constBasisVector_);
   }
   else
   { TEUCHOS_ASSERT(false); }
@@ -117,7 +119,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 void DOF_PointValues<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
@@ -143,10 +145,8 @@ template<typename EvalT, typename TRAITS>
 void DOF_PointValues<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
-
   if(is_vector_basis) {
-    int spaceDim  = basisValues->basis_vector.dimension(3);
+    int spaceDim  = basisValues->basis_vector.extent(3);
     if(spaceDim==3) {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
@@ -197,7 +197,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
       evalName = fieldName;
   }
 
-  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+  dof_basis = PHX::MDField<const ScalarT,Cell,Point>(fieldName, basis->functional);
 
   this->addDependentField(dof_basis);
 
@@ -213,18 +213,20 @@ DOF_PointValues(const Teuchos::ParameterList & p)
                 evalName,
      	        pointRule->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
-
-     this->addDependentField(basisValues->basis_ref_scalar); 
-     this->addDependentField(basisValues->basis_scalar); 
+     constBasisRefScalar_ = basisValues->basis_ref_scalar;
+     constBasisScalar_    = basisValues->basis_scalar;
+     this->addDependentField(constBasisRefScalar_); 
+     this->addDependentField(constBasisScalar_); 
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
                 evalName,
      	        pointRule->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
-
-     this->addDependentField(basisValues->basis_ref_vector); 
-     this->addDependentField(basisValues->basis_vector); 
+     constBasisRefVector_ = basisValues->basis_ref_vector;
+     constBasisVector_    = basisValues->basis_vector;
+     this->addDependentField(constBasisRefVector_); 
+     this->addDependentField(constBasisVector_); 
   }
   else
   { TEUCHOS_ASSERT(false); }
@@ -236,7 +238,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename TRAITS>                   
 void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
@@ -264,7 +266,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   if(is_vector_basis) {
     if(accelerate_jacobian) {
-      int spaceDim  = basisValues->basis_vector.dimension(3);
+      int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
@@ -275,7 +277,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
     else {
-      int spaceDim  = basisValues->basis_vector.dimension(3);
+      int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);

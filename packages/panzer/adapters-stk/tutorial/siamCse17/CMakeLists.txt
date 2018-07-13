@@ -1,0 +1,17 @@
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(main_SOURCES
+  main.cpp
+  mySourceTerm.cpp
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  siamCse17
+  SOURCES ${main_SOURCES}
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(siamCse17_files
+  SOURCE_FILES
+    input.xml
+    EXEDEPS siamCse17
+  )

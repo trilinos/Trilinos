@@ -46,8 +46,6 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -77,9 +75,10 @@ namespace panzer {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using panzer::Dim;
-  using panzer::Cell;
-  using panzer::Point;
+  //These are commented out, still used but implied by namespace panzer
+  //using panzer::Dim;
+  //using panzer::Cell;
+  //using panzer::Point;
 
   TEUCHOS_UNIT_TEST(evaluators, Constant)
   {

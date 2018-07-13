@@ -39,6 +39,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -54,6 +55,76 @@
 
 #include <vector>
 #include <utility>
+
+namespace boost {
+namespace geometry {
+namespace traits {
+
+// traits for stk::search::Box<T>
+template <typename T> struct tag< stk::search::Box<T> > { typedef box_tag type; };
+template <typename T> struct point_type< stk::search::Box<T> > { typedef stk::search::Point<T> type; };
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Box<T>, min_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Box<T> const& s) { return s.min_corner()[Index]; }
+};
+
+
+
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Box<T>, max_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Box<T> const& s) { return s.max_corner()[Index]; }
+};
+
+
+}}} // namespace boost::geometry::traits
+
+
+namespace boost { namespace geometry { namespace traits {
+
+// traits for stk::search::Point<T>
+template <typename T> struct tag< stk::search::Point<T> > { typedef point_tag type; };
+template <typename T> struct coordinate_type< stk::search::Point<T> > { typedef T type; };
+template <typename T> struct coordinate_system< stk::search::Point<T> > { typedef cs::cartesian type; };
+template <typename T> struct dimension< stk::search::Point<T> > : public boost::mpl::int_<3> {};
+
+template <typename T, size_t Index>
+struct access< stk::search::Point<T>, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Point<T> const& p) { return p[Index]; }
+  static inline void set( stk::search::Point<T> const& p, T const& v) { p[Index] = v; }
+};
+
+}}} // namespace boost::geometry::traits
+
+namespace boost { namespace geometry { namespace traits {
+
+// traits for stk::search::Sphere<T>
+template <typename T> struct tag< stk::search::Sphere<T> > { typedef box_tag type; };
+template <typename T> struct point_type< stk::search::Sphere<T> > { typedef stk::search::Point<T> type; };
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Sphere<T>, min_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] - s.radius(); }
+};
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Sphere<T>, max_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] + s.radius(); }
+};
+
+}}} // namespace boost::geometry::traits
+
 
 
 namespace stk { namespace search {
@@ -178,13 +249,6 @@ struct IntersectPredicate
 
 } // namespace impl
 
-// #if defined(__APPLE__) && !defined(isnan)
-//   /* for Mac OSX 10, this isnan function may need to be manually declared;
-//    * however, on some g++ versions, isnan is a macro so it doesn't need
-//    * to be manually declared...
-//    */
-//   extern "C" int isnan(double value);
-// #endif
 using boost::math::isnan;
 
 template <typename CoordType, int Dimension>
@@ -263,7 +327,7 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
   bgi::query(global_domain, bgi::intersects(local_box), std::back_inserter(intersecting_procs));
 
   // Communicate overlapping domains
-  stk::CommAll comm_all( comm );
+  stk::CommSparse comm_sparse( comm );
   int size = stk::parallel_machine_size(comm);
   for (int phase = 0; phase < 2; ++phase) {
     for (size_t i=0, ie=intersecting_procs.size(); i < ie; ++i) {
@@ -274,19 +338,19 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
       std::vector<value_type> overlaps;
       bgi::query(local_domain, bgi::intersects(box), std::back_inserter(overlaps));
 
-      stk::CommBuffer & buff = comm_all.send_buffer(proc);
+      stk::CommBuffer & buff = comm_sparse.send_buffer(proc);
       buff.pack<value_type>(&*overlaps.begin(), overlaps.size());
     }
     if (phase == 0) {
-      comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+      comm_sparse.allocate_buffers();
     }
   }
 
-  comm_all.communicate();
+  comm_sparse.communicate();
 
   // Add overlapping processes to local domain
   for ( int p = 0 ; p < size ; ++p ) {
-    stk::CommBuffer & buf = comm_all.recv_buffer( p );
+    stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
     const int num_recv = buf.remaining() / sizeof(value_type);
     std::vector<value_type> values(num_recv);
@@ -340,20 +404,20 @@ int coarse_search_boost_rtree_gather_range( std::vector< std::pair<RangeBox,Rang
 
   // gather all range that can potentially intersect my local domain
   {
-    stk::CommAll comm_all( comm );
+    stk::CommSparse comm_sparse( comm );
     for (int phase = 0; phase < 2; ++phase) {
       for (int p = 0; p < p_size; ++p) {
-        comm_all.send_buffer(p).pack<RangeValue>(&*range_send[p].begin(), range_send[p].size());
+        comm_sparse.send_buffer(p).pack<RangeValue>(&*range_send[p].begin(), range_send[p].size());
       }
       if (phase == 0) {
-        comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
+        comm_sparse.allocate_buffers();
       }
     }
 
-    comm_all.communicate();
+    comm_sparse.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
-      stk::CommBuffer & buf = comm_all.recv_buffer( p );
+      stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
       const int num_recv = buf.remaining() / sizeof(RangeValue);
       std::vector<RangeValue> values(num_recv);
@@ -445,7 +509,7 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
   {
     int p_rank = stk::parallel_machine_rank(comm);
 
-    stk::CommAll comm_all( comm );
+    stk::CommSparse comm_sparse( comm );
     std::vector<OutputVector> send_matches(p_size);
     for (size_t r = 0, re = gather_range.size(); r < re; ++r) {
       RangeBox const& range = gather_range[r].first;
@@ -472,17 +536,17 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
     {
       for (int phase = 0; phase < 2; ++phase) {
         for (int p = 0; p < p_size; ++p) {
-          comm_all.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
+          comm_sparse.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
         }
         if (phase == 0) {
-          comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
+          comm_sparse.allocate_buffers();
         }
       }
 
-      comm_all.communicate();
+      comm_sparse.communicate();
 
       for ( int p = 0 ; p < p_size ; ++p ) {
-        stk::CommBuffer & buf = comm_all.recv_buffer( p );
+        stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
         const int num_recv = buf.remaining() / sizeof(Output);
         OutputVector values(num_recv);

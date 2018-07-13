@@ -147,7 +147,7 @@ void TabularOutputter::outputHeader()
   using std::left;
   using std::setw;
 
-  const int numFields = fieldSpecs_.size();
+  const int numFields = static_cast<int>(fieldSpecs_.size());
 
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -184,7 +184,7 @@ void TabularOutputter::outputHeader()
 
 void TabularOutputter::nextRow(const bool allowRemainingFields)
 {
-  const int numFields = fieldSpecs_.size();
+  const int numFields = static_cast<int>(fieldSpecs_.size());
   if (allowRemainingFields) {
     while (currFieldIdx_ < numFields) {
       outputField("-");

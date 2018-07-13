@@ -1,7 +1,6 @@
-// Copyright(C) 2014
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,10 +33,10 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
+#include <cstddef>                        // for size_t
+#include <cstdint>                        // for int64_t
 #include <exception>                      // for exception
 #include <generated/Iogn_GeneratedMesh.h> // for GeneratedMesh
-#include <stddef.h>                       // for size_t
-#include <stdint.h>                       // for int64_t
 #include <string>                         // for string
 #include <utility>                        // for pair
 #include <vector>                         // for vector
@@ -100,7 +100,7 @@ namespace Iogn {
           globalNumberOfElementsInBlock(globalNumOfElemsInBlock),
           localNumberOfElementsInBlock(localNumOfElemsInBlock), blockTopologicalData(blockTopoData),
           globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-          globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0),
+          globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(nullptr),
           sidesetConnectivity(std::move(sidesetConn)),
           sidesetTouchingBlocks(std::move(sidesetBlocks))
     {
@@ -113,11 +113,11 @@ namespace Iogn {
     const std::vector<int> &   surfaceAConnectivity;
     const std::vector<int> &   surfaceBConnectivity;
 
-    int globalNumberOfNodes;
-    int globalNumberOfElements;
+    int globalNumberOfNodes{};
+    int globalNumberOfElements{};
 
-    int globalNumberOfElementsSurface1;
-    int globalNumberOfElementsSurface2;
+    int globalNumberOfElementsSurface1{};
+    int globalNumberOfElementsSurface2{};
 
     std::vector<int> globalIdsOfLocalElements;
     std::vector<int> globalIdsOfLocalNodes;
@@ -127,7 +127,7 @@ namespace Iogn {
     DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1,
                     const std::vector<int> &connectivity2)
         : coordinates(coords), surfaceAConnectivity(connectivity1),
-          surfaceBConnectivity(connectivity2), sharedNodes(0)
+          surfaceBConnectivity(connectivity2), sharedNodes(nullptr)
     {
       this->setSerialDefaults();
     }
@@ -161,49 +161,49 @@ namespace Iogn {
     {
     }
 
-    virtual ~DashSurfaceMesh() {}
+    ~DashSurfaceMesh() override = default;
 
-    virtual int64_t node_count() const;
-    virtual int64_t node_count_proc() const;
+    int64_t node_count() const override;
+    int64_t node_count_proc() const override;
 
-    virtual int64_t element_count() const;
-    virtual int64_t element_count(int64_t surfaceNumber) const;
-    virtual int64_t element_count_proc() const;
-    virtual int64_t element_count_proc(int64_t block_number) const;
+    int64_t element_count() const override;
+    int64_t element_count(int64_t surfaceNumber) const override;
+    int64_t element_count_proc() const override;
+    int64_t element_count_proc(int64_t block_number) const override;
 
-    virtual int64_t block_count() const;
+    int64_t block_count() const override;
 
-    virtual int64_t nodeset_count() const;
-    virtual int64_t nodeset_node_count_proc(int64_t id) const;
+    int64_t nodeset_count() const override;
+    int64_t nodeset_node_count_proc(int64_t id) const override;
 
-    virtual int64_t sideset_count() const;
-    virtual int64_t sideset_side_count_proc(int64_t id) const;
+    int64_t sideset_count() const override;
+    int64_t sideset_side_count_proc(int64_t id) const override;
 
-    virtual int64_t communication_node_count_proc() const;
+    int64_t communication_node_count_proc() const override;
 
-    virtual void coordinates(double *coord) const;
-    virtual void coordinates(std::vector<double> &coord) const;
-    virtual void coordinates(int component, std::vector<double> &xyz) const;
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y,
-                             std::vector<double> &z) const;
+    void coordinates(double *coord) const override;
+    void coordinates(std::vector<double> &coord) const override;
+    void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(std::vector<double> &x, std::vector<double> &y,
+                     std::vector<double> &z) const override;
 
-    virtual void connectivity(int64_t block_number, int *connect) const;
+    void connectivity(int64_t block_number, int *connect) const override;
 
-    virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
+    std::pair<std::string, int> topology_type(int64_t block_number) const override;
 
-    virtual void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const;
+    void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const override;
 
-    virtual void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const;
+    void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const override;
 
-    virtual void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc);
+    void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc) override;
 
-    virtual void node_map(std::vector<int> &map) const;
-    virtual void node_map(std::vector<int64_t> &map) const;
+    void node_map(std::vector<int> &map) const override;
+    void node_map(std::vector<int64_t> &map) const override;
 
-    virtual void element_map(int64_t block_number, std::vector<int> &map) const;
-    virtual void element_map(int64_t block_number, std::vector<int64_t> &map) const;
-    virtual void element_map(std::vector<int64_t> &map) const;
-    virtual void element_map(std::vector<int> &map) const;
+    void element_map(int64_t block_number, std::vector<int> &map) const override;
+    void element_map(int64_t block_number, std::vector<int64_t> &map) const override;
+    void element_map(std::vector<int64_t> &map) const override;
+    void element_map(std::vector<int> &map) const override;
 
   private:
     DashSurfaceData &mDashSurfaceData;
@@ -214,51 +214,51 @@ namespace Iogn {
   public:
     explicit ExodusMesh(const ExodusData &exodusData);
 
-    virtual ~ExodusMesh() {}
+    ~ExodusMesh() override = default;
 
-    virtual int64_t node_count() const;
-    virtual int64_t node_count_proc() const;
+    int64_t node_count() const override;
+    int64_t node_count_proc() const override;
 
-    virtual int64_t element_count() const;
-    virtual int64_t element_count(int64_t blockNumber) const;
-    virtual int64_t element_count_proc() const;
-    virtual int64_t element_count_proc(int64_t blockNumber) const;
+    int64_t element_count() const override;
+    int64_t element_count(int64_t blockNumber) const override;
+    int64_t element_count_proc() const override;
+    int64_t element_count_proc(int64_t blockNumber) const override;
 
-    virtual int64_t block_count() const;
+    int64_t block_count() const override;
 
-    virtual int64_t nodeset_count() const;
-    virtual int64_t nodeset_node_count_proc(int64_t id) const;
+    int64_t nodeset_count() const override;
+    int64_t nodeset_node_count_proc(int64_t id) const override;
 
-    virtual int64_t sideset_count() const;
-    virtual int64_t sideset_side_count_proc(int64_t id) const;
+    int64_t sideset_count() const override;
+    int64_t sideset_side_count_proc(int64_t id) const override;
 
-    virtual int64_t communication_node_count_proc() const;
+    int64_t communication_node_count_proc() const override;
 
-    virtual void coordinates(double *coord) const;
-    virtual void coordinates(std::vector<double> &coord) const;
-    virtual void coordinates(int component, std::vector<double> &xyz) const;
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y,
-                             std::vector<double> &z) const;
+    void coordinates(double *coord) const override;
+    void coordinates(std::vector<double> &coord) const override;
+    void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(std::vector<double> &x, std::vector<double> &y,
+                     std::vector<double> &z) const override;
 
-    virtual void connectivity(int64_t blockNumber, int *connectivityForBlock) const;
+    void connectivity(int64_t blockNumber, int *connectivityForBlock) const override;
 
-    virtual std::pair<std::string, int> topology_type(int64_t blockNumber) const;
+    std::pair<std::string, int> topology_type(int64_t blockNumber) const override;
 
-    virtual void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const;
+    void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const override;
 
-    virtual std::vector<std::string> sideset_touching_blocks(int64_t setId) const;
+    std::vector<std::string> sideset_touching_blocks(int64_t setId) const override;
 
-    virtual void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const;
+    void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const override;
 
-    virtual void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc);
+    void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc) override;
 
-    virtual void node_map(std::vector<int> &map) const;
-    virtual void node_map(std::vector<int64_t> &map) const;
+    void node_map(std::vector<int> &map) const override;
+    void node_map(std::vector<int64_t> &map) const override;
 
-    virtual void element_map(int64_t blockNumber, std::vector<int> &map) const;
-    virtual void element_map(int64_t blockNumber, std::vector<int64_t> &map) const;
-    virtual void element_map(std::vector<int64_t> &map) const;
-    virtual void element_map(std::vector<int> &map) const;
+    void element_map(int64_t blockNumber, std::vector<int> &map) const override;
+    void element_map(int64_t blockNumber, std::vector<int64_t> &map) const override;
+    void element_map(std::vector<int64_t> &map) const override;
+    void element_map(std::vector<int> &map) const override;
 
   private:
     int64_t mGlobalNumberOfElements;
@@ -267,6 +267,6 @@ namespace Iogn {
     const ExodusData &   mExodusData;
     std::vector<int64_t> mElementOffsetForBlock;
   };
-}
+} // namespace Iogn
 
 #endif

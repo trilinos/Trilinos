@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2014 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -67,7 +67,7 @@ namespace SEAMS {
 
     array(int r, int c) : rows(r), cols(c) { data.resize(r * c); }
     array() : rows(0), cols(0) {}
-    ~array() {}
+    ~array() = default;
   };
 
   struct symrec
@@ -225,7 +225,7 @@ namespace SEAMS {
      * @param sname	stream name for error messages
      * @return		true if successfully parsed
      */
-    bool parse_stream(std::istream &in, const std::string &sname = "stream input");
+    bool parse_stream(std::istream &in, const std::string &in_name = "stream input");
 
     /** Invoke the scanner and parser on an input string.
      * @param input	input string
@@ -267,12 +267,12 @@ namespace SEAMS {
 
     std::stack<std::ostream *> outputStream;
 
-    SEAMS::symrec *getsym(const char *) const;
+    SEAMS::symrec *getsym(const char * /*sym_name*/) const;
     SEAMS::symrec *putsym(const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal);
 
     void add_variable(const std::string &sym_name, const std::string &sym_value,
-                      bool is_immutable = false);
-    void add_variable(const std::string &sym_name, double sym_value, bool is_immutable = false);
+                      bool immutable = false);
+    void add_variable(const std::string &sym_name, double sym_value, bool immutable = false);
     std::vector<std::string> get_variable_names(bool doInternal = false);
     void remove_variable(const std::string &sym_name);
 
@@ -298,8 +298,9 @@ namespace SEAMS {
     // specified, use info(...) instead.
     std::ostream *infoStream;
 
-    void set_error_streams(std::ostream *error, std::ostream *warning, std::ostream *info);
+    void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info);
 
+    void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
 
   private:

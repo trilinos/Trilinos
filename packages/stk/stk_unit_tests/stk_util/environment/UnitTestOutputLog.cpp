@@ -40,7 +40,7 @@
 
 TEST(UnitTestOutputLog, UnitTest)
 {
-  // UseCaseEnvironment registers a bunch of things automatically, some of
+  // UseCase-Environment registers a bunch of things automatically, some of
   // which conflict with this test. We unregister the conflicting streams
   // here.
   if (stk::get_log_ostream("cout") != NULL) {

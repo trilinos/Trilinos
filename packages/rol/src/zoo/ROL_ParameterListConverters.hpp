@@ -47,7 +47,7 @@
 
 #include <map>
 #include "ROL_Types.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 
 namespace ROL {
@@ -109,7 +109,7 @@ inline std::vector<std::string> join( const std::string &s1,
 } // namespace StringList
 
 template<class ParameterType>
-void setParameter( Teuchos::ParameterList &parlist, 
+void setParameter( ROL::ParameterList &parlist, 
                    const std::vector<std::string> &location,
                    const std::vector<std::string>::iterator iter,
                    ParameterType value ) {
@@ -118,7 +118,7 @@ void setParameter( Teuchos::ParameterList &parlist,
     parlist.set(*iter,value); 
   }
   else { // sublist 
-    Teuchos::ParameterList &sublist = parlist.sublist(*iter);
+    ROL::ParameterList &sublist = parlist.sublist(*iter);
     setParameter(sublist,location,iter+1,value);
   }
  
@@ -128,8 +128,8 @@ void setParameter( Teuchos::ParameterList &parlist,
 
 
 /// Produce a heirarchical parameter list using the new names from a flat list of the old names
-inline void tierParameterList( Teuchos::ParameterList &outList, 
-                               const Teuchos::ParameterList &inList ) {
+inline void tierParameterList( ROL::ParameterList &outList, 
+                               const ROL::ParameterList &inList ) {
 
   using namespace Teuchos;
   using StringList::join;
@@ -149,14 +149,13 @@ inline void tierParameterList( Teuchos::ParameterList &outList,
   dict["Use Inexact Hessian-Times-A-Vector"]                = join("General","Inexact Hessian-Times-A-Vector");
   dict["Use Projected Gradient Criticality Measure"]        = join("General","Projected Gradient Criticality Measure");
   dict["Scale for Epsilon Active Sets"]                     = join("General","Scale for Epsilon Active Sets");
-  dict["Variable Objective Function"]                       = join("General","Variable Objective Function");
 
   dict["Absolute Krylov Tolerance"]                         = join("General","Krylov","Absolute Tolerance");
   dict["Relative Krylov Tolerance"]                         = join("General","Krylov","Relative Tolerance");
   dict["Maximum Number of Krylov Iterations"]               = join("General","Krylov","Iteration Limit");
   dict["Krylov Type"]                                       = join("General","Krylov","Type");
 
-  dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
+  dict["Barzilai-Borwein"]                                  = join("General","Secant","Barzilai-Borwein");
   dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
   dict["Secant Type"]                                       = join("General","Secant","Type");
   dict["Use Secant Hessian-Times-A-Vector"]                 = join("General","Secant","Use as Hessian");
@@ -241,7 +240,7 @@ inline void tierParameterList( Teuchos::ParameterList &outList,
         setParameter( outList, location, itvec, value );
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>>Error: Unhandled parameter type." );  
       }
     } 

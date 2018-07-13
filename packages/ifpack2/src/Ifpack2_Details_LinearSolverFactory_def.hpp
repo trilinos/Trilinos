@@ -130,7 +130,7 @@ registerLinearSolverFactory ()
     (factoryBase.get () == NULL, std::logic_error, "Factory is null!  This "
      "should never happen!  Please report this bug to the Ifpack2 developers.");
 
-// #ifdef HAVE_TEUCHOS_DEBUG
+// #ifdef HAVE_IFPACK2_DEBUG
 //   {
 //     using std::cerr;
 //     using std::endl;
@@ -143,7 +143,7 @@ registerLinearSolverFactory ()
 //          << ", and mag_type = " << TypeNameTraits<mag_type>::name ()
 //          << endl;
 //   }
-// #endif // HAVE_TEUCHOS_DEBUG
+// #endif // HAVE_IFPACK2_DEBUG
   Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
 }
 

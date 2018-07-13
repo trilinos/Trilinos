@@ -131,35 +131,35 @@ if HAVE_AMESOS_KLU
 #  hence they are commented out from here.  
 #
 KLU_H = \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_decl.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_internal.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_decl.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_internal.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_version.h \
+	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_decl.h \
+	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_internal.h \
 	$(srcdir)/Amesos_Klu.h
 
 KLU = \
 	$(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_diagnostics.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_dump.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_extract.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_factor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_free_numeric.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_free_symbolic.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_kernel.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_memory.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_refactor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_scale.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_solve.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_sort.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_tsolve.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_order.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_maxtrans.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_strongcomp.c
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_analyze.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_analyze_given.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_impl.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_defaults.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_diagnostics.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_dump.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_extract.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_factor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_free_numeric.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_free_symbolic.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_kernel.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_memory.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_refactor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_scale.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_solve.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_sort.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_tsolve.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_order.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
 
 
 else
@@ -211,41 +211,41 @@ endif
 
 
 PARAKLETE_KLU_COMMON = \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_1.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_2.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_aat.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_control.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_defaults.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_dump.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_global.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_info.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_order.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_postorder.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_post_tree.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_preprocess.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_valid.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_global.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_1.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_control.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_defaults.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_dump.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_global.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_info.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_order.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_postorder.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_post_tree.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_valid.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd_global.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_common.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_complex.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_error.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_memory.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_sparse.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_transpose.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_postorder.c
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_postorder.c
 
 PARAKLETE_KLU_COMMON_H = \
-	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd.h \
-	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd_internal.h \
-	$(srcdir)/SuiteSparse/COLAMD/Include/amesos_colamd.h \
+	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd.h \
+	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd_internal.h \
+	$(srcdir)/SuiteSparse/COLAMD/Include/trilinos_colamd.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_check.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_core.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_internal.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_io64.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_partition.h \
-	$(srcdir)/SuiteSparse/UFconfig/amesos_UFconfig.h
+	$(srcdir)/SuiteSparse/UFconfig/trilinos_UFconfig.h
 
 if HAVE_AMESOS_PARAKLETE
 PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
@@ -264,7 +264,7 @@ PARAKLETE_H = \
 	$(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/SuiteSparse/PARAKLETE/Include/amesos_paraklete_decl.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_complexity.h \
-	$(srcdir)/SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h \
+	$(srcdir)/SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_blas.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_cholesky.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_config.h \
@@ -276,8 +276,8 @@ PARAKLETE_H = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_solve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_lsolve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_ltsolve.c \
-	$(srcdir)/SuiteSparse/CAMD/Include/amesos_camd.h \
-	$(srcdir)/SuiteSparse/CAMD/Include/amesos_camd_internal.h 
+	$(srcdir)/SuiteSparse/CAMD/Include/trilinos_camd.h \
+	$(srcdir)/SuiteSparse/CAMD/Include/trilinos_camd_internal.h 
 
 #  Note:  PARAKLETE requires KLU (for colamd) 
 
@@ -320,34 +320,34 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
-	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
-	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_defaults.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_free_numeric.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_free_symbolic.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_factor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_kernel.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_memory.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_scale.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_solve.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_order.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l1.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_order.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_valid.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_global.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd_l.c \
+	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c \
+	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_analyze.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_analyze_given.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_defaults.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_free_numeric.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_free_symbolic.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_factor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_kernel.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_memory.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_scale.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_solve.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_order.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c \
 	$(srcdir)/Amesos_Paraklete.cpp
 else
 PARAKLETE_H =

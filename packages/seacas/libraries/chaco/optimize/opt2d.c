@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -74,10 +74,11 @@ double opt2d(
   pdtol    = 1.0e-8;
   hfact    = 2;
 
-  for (i      = 0; i < 5; i++)
+  for (i = 0; i < 5; i++) {
     coeffs[i] = 0;
-  aptr        = yvecs[1] + 1;
-  bptr        = yvecs[2] + 1;
+  }
+  aptr = yvecs[1] + 1;
+  bptr = yvecs[2] + 1;
   for (i = 1; i <= nmyvtxs; i++) {
     a = *aptr++;
     b = *bptr++;
@@ -100,8 +101,9 @@ double opt2d(
   }
   /* Adjust for normalization of eigenvectors. */
   /* This should make tolerances independent of vector length */
-  for (i = 0; i < 5; i++)
+  for (i = 0; i < 5; i++) {
     coeffs[i] *= nvtxs;
+  }
 
   i      = 0;
   theta  = 0.0;
@@ -113,19 +115,24 @@ double opt2d(
     grad = grad2d(coeffs, theta);
     hess = hess2d(coeffs);
 
-    if (hess < -pdtol)
+    if (hess < -pdtol) {
       pdflag = FALSE;
-    else
+    }
+    else {
       pdflag = TRUE;
+    }
 
     hess_min = hfact * fabs(grad) / step_max;
-    if (hess < hess_min)
+    if (hess < hess_min) {
       hess = hess_min;
+    }
 
-    if (fabs(grad) > fabs(hess * step_max))
+    if (fabs(grad) > fabs(hess * step_max)) {
       step = -step_max * sign(grad);
-    else
+    }
+    else {
       step = -grad / hess;
+    }
 
     theta += step;
     if (fabs(step) < step_min && !pdflag) { /* Convergence to non-min. */

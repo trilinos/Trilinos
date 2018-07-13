@@ -70,7 +70,7 @@ SET(CTEST_TEST_TYPE Experimental)
 SET( CTEST_BUILD_FLAGS "-j11 -i" )
 SET( CTEST_PARALLEL_LEVEL "11" )
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
 SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos Optika)

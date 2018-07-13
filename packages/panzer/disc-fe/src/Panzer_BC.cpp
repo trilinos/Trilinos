@@ -44,6 +44,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Panzer_WorksetDescriptor.hpp"
+
 //=======================================================================
 //=======================================================================
 void 
@@ -320,4 +322,22 @@ panzer::operator<<(std::ostream & os, const panzer::BC& bc)
 {
   bc.print(os);
   return os;
+}
+
+//=======================================================================
+//=======================================================================
+
+panzer::WorksetDescriptor 
+panzer::bcDescriptor(const panzer::BC & bc)
+{
+  if(bc.bcType()==BCT_Interface) {
+    WorksetDescriptor desc(bc.elementBlockID(),bc.elementBlockID2(),bc.sidesetID(),bc.sidesetID());
+ 
+    return desc;
+  }
+  else {
+    WorksetDescriptor desc(bc.elementBlockID(),bc.sidesetID());
+
+    return desc;
+  }
 }

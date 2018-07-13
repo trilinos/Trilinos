@@ -45,7 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues2.hpp"
@@ -97,7 +96,7 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
@@ -125,6 +124,7 @@ namespace panzer {
     const std::string basis_type = "Const";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -200,7 +200,7 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
@@ -228,6 +228,7 @@ namespace panzer {
     const std::string basis_type = "Q1";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
     basis_values.setupArrays(basis);
@@ -312,7 +313,7 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
@@ -341,6 +342,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -352,14 +354,14 @@ namespace panzer {
 				int_values.weighted_measure,
                                 node_coordinates);
 
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),4);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),2);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(0),4);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(2),2);
 
     TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
 
-    TEST_EQUALITY(basis_values.curl_basis_ref_scalar.dimension(0),4);
-    TEST_EQUALITY(basis_values.curl_basis_ref_scalar.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.curl_basis_ref_scalar.extent(0),4);
+    TEST_EQUALITY(basis_values.curl_basis_ref_scalar.extent(1),num_qp);
 
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
     for(unsigned int i=0;i<num_qp;i++) {
@@ -427,7 +429,7 @@ namespace panzer {
     const size_type x = 0;
     const size_type y = 1;
     const size_type z = 2;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
@@ -461,6 +463,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -472,14 +475,14 @@ namespace panzer {
 				int_values.weighted_measure,
                                 node_coordinates);
 
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),4);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),base_cell_dimension);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(0),4);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent_int(2),base_cell_dimension);
 
     TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
 
-    TEST_EQUALITY(basis_values.div_basis_ref.dimension(0),4);
-    TEST_EQUALITY(basis_values.div_basis_ref.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.div_basis_ref.extent(0),4);
+    TEST_EQUALITY(basis_values.div_basis_ref.extent(1),num_qp);
 
     double relCellVol = (1.0/72) / (1.0/6.0);
     for(unsigned int i=0;i<num_qp;i++) {
@@ -519,59 +522,55 @@ namespace panzer {
        }
     }
 
-    PHX::MDField<double,Cell,BASIS> orientations 
-        = af.buildStaticArray<double,Cell,BASIS>("orientations",num_cells, 4);
+    std::vector<Intrepid2::Orientation> orientations;
 
+    int faceOrts[4][4], cnt = 0;
     for(int cell=0;cell<num_cells;cell++) {
-      double o0 = double(cell % 2); 
-      double o1 = double(int(cell/2)); 
-      orientations(cell,0) = 1.0;
-      orientations(cell,1) = std::pow(-1.0,o0);
-      orientations(cell,2) = std::pow(-1.0,o1);
-      orientations(cell,3) = std::pow(-1.0,o0+o1);
+      faceOrts[cell][0] = cnt++ % 6;
+      faceOrts[cell][1] = cnt++ % 6;
+      faceOrts[cell][2] = cnt++ % 6;
+      faceOrts[cell][3] = cnt++ % 6;
+
+      Intrepid2::Orientation ort;
+      ort.setFaceOrientation(4, faceOrts[cell]);
+      orientations.push_back(ort);
     }
 
     for(int i=0;i<4;i++) {
-       out << "Orientations: Cell " << i << " = ";
-       out << orientations(i,0) << ", "
-           << orientations(i,1) << ", "
-           << orientations(i,2) << ", "
-           << orientations(i,3) << std::endl;
+      out << "Orientations: Cell " << i << " = ";
+      out << faceOrts[i][0] << ", "
+          << faceOrts[i][1] << ", "
+          << faceOrts[i][2] << ", "
+          << faceOrts[i][3] << std::endl;
     }
     out << std::endl;
 
     basis_values.applyOrientations(orientations);
 
     // check with orientations
+    const double ortVal[6] = {  1.0,  1.0,  1.0,
+                               -1.0, -1.0, -1.0 };
     for(unsigned int i=0;i<num_qp;i++) {
        double weight = int_values.cub_weights(i);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
-          double o0 = double(cell % 2); 
-          double o1 = double(int(cell/2)); 
+         TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
-
-          double ort[4];
-          ort[0] = 1.0;
-          ort[1] = std::pow(-1.0,o0);
-          ort[2] = std::pow(-1.0,o1);
-          ort[3] = std::pow(-1.0,o0+o1);
-          for(int b=0;b<4;b++) {
-          // check out basis on transformed elemented
-            TEST_EQUALITY(ort[b]*0.5*basis_values.basis_ref_vector(b,i,0)/relCellVol,basis_values.basis_vector(cell,b,i,0));
-            TEST_EQUALITY(ort[b]*0.5*basis_values.basis_ref_vector(b,i,1)/relCellVol,basis_values.basis_vector(cell,b,i,1));
-            TEST_EQUALITY(ort[b]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,basis_values.basis_vector(cell,b,i,2));
-
-            TEST_EQUALITY(ort[b]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
-
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
-            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
-
-            TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
-          }
+         for(int b=0;b<4;b++) {
+           // check out basis on transformed elemented
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,0)/relCellVol,  basis_values.basis_vector(cell,b,i,0));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,1)/relCellVol,  basis_values.basis_vector(cell,b,i,1));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,  basis_values.basis_vector(cell,b,i,2));
+           
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
+           
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
+           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
+           
+           TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
+         }
        }
     }
   }
@@ -624,7 +623,7 @@ namespace panzer {
     const size_type x = 0;
     const size_type y = 1;
     const size_type z = 2;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int znum = cell % 4;
       int xleft = znum % 2;
       int yleft = int(znum/2);
@@ -676,6 +675,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("prefix_",true,true);
 
@@ -685,13 +685,13 @@ namespace panzer {
                                 int_values.jac_det,
                                 int_values.jac_inv);
 
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),12);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(1),12);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(3),3);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(0),12);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent(2),3);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent(1),12);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent(3),3);
 
     TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
     TEST_EQUALITY(basis_values.weighted_grad_basis.size(),0);
@@ -699,17 +699,17 @@ namespace panzer {
     TEST_EQUALITY(basis_values.curl_basis_scalar.size(),0);
     TEST_EQUALITY(basis_values.weighted_curl_basis_scalar.size(),0);
 
-    TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(0),12);
-    TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(1),12);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(3),3);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(1),12);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(3),3);
+    TEST_EQUALITY(basis_values.curl_basis_ref_vector.extent(0),12);
+    TEST_EQUALITY(basis_values.curl_basis_ref_vector.extent(1),num_qp);
+    TEST_EQUALITY(basis_values.curl_basis_ref_vector.extent(2),3);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent(1),12);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent(2),num_qp);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent(3),3);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent(1),12);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent(3),3);
 
   }
 
@@ -741,53 +741,53 @@ namespace panzer {
 
     // check basis
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().extent(1),num_qp);
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
 
     // check gradients
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(1),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(2),2);
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(2),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(3),2);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().name(),"prefix_weighted_grad_basis");
 
     // check coordinates
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(1),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().extent(1),2);
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
   }
 
@@ -821,53 +821,53 @@ namespace panzer {
 
     // check basis
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().dataLayout().extent(1),num_qp);
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
 
     // check gradients
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(1),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().extent(2),2);
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(2),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent(3),2);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().name(),"prefix_weighted_grad_basis");
 
     // check coordinates
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(0),9);
-    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(1),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().extent(0),9);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().extent(1),2);
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent(1),9);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
   }
 
@@ -906,7 +906,7 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
@@ -944,9 +944,9 @@ namespace panzer {
                                   int_values_vol.jac_det,
                                   int_values_vol.jac_inv);
 
-    TEST_EQUALITY(basis_values.basis_scalar.dimension(0),num_cells);
-    TEST_EQUALITY(basis_values.basis_scalar.dimension(1),4);
-    TEST_EQUALITY(basis_values.basis_scalar.dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.basis_scalar.extent_int(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.extent(1),4);
+    TEST_EQUALITY(basis_values.basis_scalar.extent(2),num_qp);
 
    // check basis values, control volume integration points are defined on physical cells
     for(int cell=0;cell<num_cells;cell++) {

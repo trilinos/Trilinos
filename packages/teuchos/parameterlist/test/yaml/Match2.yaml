@@ -1,0 +1,15 @@
+%YAML 1.1
+---
+ANONYMOUS:
+  tolerance: 1e-60
+  numIters: 25
+  verbose: 2
+  child:
+    tolerance: 1e-28
+    numIters: 25
+    verbose: 2
+    child:
+      tolerance: 1e-14
+      verbose: 0
+      Extract Diagonal: true
+...

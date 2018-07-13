@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef _PNGPROCESSOR_HPP_
 #define _PNGPROCESSOR_HPP_
 
@@ -39,16 +71,9 @@ public:
 
     inline unsigned get_image_height() const;
 
-    unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
-
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
-    void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
-
-    void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
-
-    //data dump
-    void print_image();
+    //void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
 protected:
     unsigned m_imageWidth;
@@ -111,45 +136,45 @@ struct Pixel
     unsigned y;
 };
 
-class ColoredPNGProcessor : public PNGProcessor
-{
-public:
-    ColoredPNGProcessor(std::string fileName);
-
-    virtual ~ColoredPNGProcessor() {}
-
-    virtual void commit_image_vector_to_pixel_vector();
-
-    void commit_image_vector_to_pixel_vector_with_exclusion();
-
-    void commit_image_vector_to_pixel_vector_with_greyscale();
-
-    //io
-    void print_grey_bits();
-
-private:
-    // members
-    unsigned char m_medianValue;
-    unsigned char m_lowerBound;
-    unsigned char m_upperBound;
-    std::vector<unsigned char> m_greyBits;
-    std::vector<Pixel> mRedPixels;
-    std::vector<Pixel> mGreenPixels;
-    std::vector<Pixel> mBluePixels;
-
-    // constructor
-    void convert_to_grey_bits();
-    void process_unsigned_int_to_grey_bit(unsigned row, unsigned col);
-
-    void find_median_grey_bit_value();
-
-    // commit image
-    void update_image_value_according_to_relation_with_median_value(unsigned row, unsigned col);
-    void update_image_value_according_to_proximity_with_median_value(unsigned row, unsigned col);
-    void update_image_value_according_to_grayscale(unsigned row, unsigned col);
-
-    void find_upper_and_lower_bounds();
-};
+//class ColoredPNGProcessor : public PNGProcessor
+//{
+//public:
+//    ColoredPNGProcessor(std::string fileName);
+//
+//    virtual ~ColoredPNGProcessor();
+//
+//    virtual void commit_image_vector_to_pixel_vector();
+//
+//    void commit_image_vector_to_pixel_vector_with_exclusion();
+//
+//    void commit_image_vector_to_pixel_vector_with_greyscale();
+//
+//    //io
+//    void print_grey_bits();
+//
+//private:
+//    // members
+//    unsigned char m_medianValue;
+//    unsigned char m_lowerBound;
+//    unsigned char m_upperBound;
+//    std::vector<unsigned char> m_greyBits;
+//    std::vector<Pixel> mRedPixels;
+//    std::vector<Pixel> mGreenPixels;
+//    std::vector<Pixel> mBluePixels;
+//
+//    // constructor
+//    void convert_to_grey_bits();
+//    void process_unsigned_int_to_grey_bit(unsigned row, unsigned col);
+//
+//    void find_median_grey_bit_value();
+//
+//    // commit image
+//    void update_image_value_according_to_relation_with_median_value(unsigned row, unsigned col);
+//    void update_image_value_according_to_proximity_with_median_value(unsigned row, unsigned col);
+//    void update_image_value_according_to_grayscale(unsigned row, unsigned col);
+//
+//    void find_upper_and_lower_bounds();
+//};
 
 class SimpleColoredPng : public PNGProcessor
 {
@@ -158,6 +183,8 @@ public:
     virtual ~SimpleColoredPng() {}
 
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
+
+    size_t get_number_other_pixels() { return mOtherPixelCount; }
 
     std::vector<Pixel> get_red_color_coords() { return mRedPixels; }
     std::vector<Pixel> get_green_color_coords() { return mGreenPixels; }
@@ -168,6 +195,7 @@ private:
     void store_special_colors_with_coordinates(unsigned row, unsigned col);
     void update_image_value_ignoring_white(unsigned row, unsigned col);
 private:
+    size_t mOtherPixelCount;
     stk::mesh::EntityIdVector mRedElementIds;
 
     std::vector<Pixel> mRedPixels;

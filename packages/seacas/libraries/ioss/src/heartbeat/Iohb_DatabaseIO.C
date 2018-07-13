@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -34,13 +34,13 @@
 #include <Ioss_Utils.h>
 #include <cassert>
 #include <cstddef>
+#include <ctime>
 #include <fstream>
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <heartbeat/Iohb_Layout.h>
 #include <iostream>
 #include <string>
 #include <sys/select.h>
-#include <time.h>
 #include <vector>
 
 #include "Ioss_DBUsage.h"
@@ -165,12 +165,14 @@ namespace Iohb {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), logStream(nullptr),
-        layout_(nullptr), legend_(nullptr), tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5),
-        fieldWidth_(0), showLabels(false), showLegend(true), appendOutput(false),
-        addTimeField(false), initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), timeLastFlush_(0),
+        flushInterval_(10), logStream(nullptr), layout_(nullptr), legend_(nullptr),
+        tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5), fieldWidth_(0), showLabels(false),
+        showLegend(true), appendOutput(false), addTimeField(false), initialized_(false),
+        streamNeedsDelete(false), fileFormat(DEFAULT)
   {
-    dbState = Ioss::STATE_UNKNOWN;
+    timeLastFlush_ = time(nullptr);
+    dbState        = Ioss::STATE_UNKNOWN;
   }
 
   DatabaseIO::~DatabaseIO()
@@ -216,6 +218,10 @@ namespace Iohb {
       }
 
       // Pull variables from the regions property data...
+      if (properties.exists("FLUSH_INTERVAL")) {
+        new_this->flushInterval_ = properties.get("FLUSH_INTERVAL").get_int();
+      }
+
       if (properties.exists("TIME_STAMP_FORMAT")) {
         new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
@@ -280,11 +286,11 @@ namespace Iohb {
     }
   }
 
-  bool DatabaseIO::begin(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::end(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state(Ioss::Region *region, int /* state */, double time)
+  bool DatabaseIO::begin_state__(Ioss::Region *region, int /* state */, double time)
   {
     // If this is the first time, open the output stream and see if user wants a legend
     initialize(region);
@@ -303,7 +309,9 @@ namespace Iohb {
     return true;
   }
 
-  bool DatabaseIO::end_state(Ioss::Region * /* region */, int /* state */, double /* time */)
+  void DatabaseIO::flush_database__() const { logStream->flush(); }
+
+  bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
   {
     if (legend_ != nullptr) {
       if (fileFormat == SPYHIS) {
@@ -320,6 +328,20 @@ namespace Iohb {
     *logStream << *layout_ << '\n';
     delete layout_;
     layout_ = nullptr;
+
+    // Flush the buffer to disk...
+    // flush if there is more than 'flushInterval_' seconds since the last flush to avoid
+    // the flush eating up cpu time for small fast jobs...
+
+    // This code is derived from code in finalize_write() in Ioex_DatabaseIO.C
+    // See other comments there...
+
+    time_t cur_time = time(nullptr);
+    if (cur_time - timeLastFlush_ >= flushInterval_) {
+      timeLastFlush_ = cur_time;
+      flush_database();
+    }
+
     return true;
   }
 

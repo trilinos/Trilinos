@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <cstdlib>
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include <cuda_runtime_api.h>
 #endif
 
@@ -34,15 +34,17 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
-  const int num_grouping_types = 3;
+  const int num_grouping_types = 4;
   const GroupingType grouping_values[] = {
-    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
-  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z,
+    GROUPING_TASMANIAN_SURROGATE };
+  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z", "tasmanian-surrogate" };
 
-  const int num_sampling_types = 3;
+  const int num_sampling_types = 5;
   const SamplingType sampling_values[] = {
-    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
-  const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
+    SAMPLING_STOKHOS, SAMPLING_DAKOTA, SAMPLING_TASMANIAN, SAMPLING_FILE,
+    SAMPLING_VPS };
+  const char *sampling_names[] = { "stokhos", "dakota", "tasmanian", "file", "vps" };
 
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
@@ -74,6 +76,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("uq-order",                 &cmdline.USE_UQ_ORDER,  "UQ order");
   clp.setOption("uq-init-level",            &cmdline.USE_UQ_INIT_LEVEL,  "Initial adaptive sparse grid level");
   clp.setOption("uq-max-level",             &cmdline.USE_UQ_MAX_LEVEL,  "Max adaptive sparse grid level");
+  clp.setOption("uq-max-samples",           &cmdline.USE_UQ_MAX_SAMPLES,  "Max number of samples to run");
   clp.setOption("uq-tol",                   &cmdline.USE_UQ_TOL,  "Adaptive sparse grid tolerance");
   clp.setOption("diff-coeff-linear",        &cmdline.USE_DIFF_COEFF_LINEAR,  "Linear term in diffusion coefficient");
   clp.setOption("diff-coeff-constant",      &cmdline.USE_DIFF_COEFF_CONSTANT,  "Constant term in diffusion coefficient");
@@ -83,12 +86,14 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("exponential", "no-exponential", &cmdline.USE_EXPONENTIAL,  "take exponential of KL diffusion coefficient");
   clp.setOption("exp-shift",                &cmdline.USE_EXP_SHIFT,  "Linear shift of exponential of KL diffusion coefficient");
   clp.setOption("exp-scale",                &cmdline.USE_EXP_SCALE,  "Multiplicative scale of exponential of KL diffusion coefficient");
+  clp.setOption("discontinuous-exp-scale", "continuous-exp-scale", &cmdline.USE_DISC_EXP_SCALE,  "use discontinuous scale factor on exponential");
   clp.setOption("isotropic", "anisotropic", &cmdline.USE_ISOTROPIC,  "use isotropic or anisotropic diffusion coefficient");
   clp.setOption("coeff-src",                &cmdline.USE_COEFF_SRC,  "Coefficient for source term");
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
   clp.setOption("ensemble",                 &cmdline.USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
   clp.setOption("grouping", &cmdline.USE_GROUPING, num_grouping_types, grouping_values, grouping_names, "Sample grouping method for ensemble propagation");
+  clp.setOption("surrogate-grouping-level", &cmdline.TAS_GROUPING_INITIAL_LEVEL,  "Starting level for surrogate-based grouping");
 
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");
@@ -106,7 +111,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   // Set CUDA device based on local node rank
   if (cmdline.USE_CUDA && cmdline.USE_CUDA_DEV == -1) {
     int local_rank = 0;

@@ -1,0 +1,41 @@
+Prerequisites:
+
+  python3 (available via SEMS modules)
+  python modules:  numpy, pyyaml, matplotlib, pandas, docopt, transitions
+
+  Modules can be installed like so:
+
+    pip3 --proxy <proxy:port> install --user <module>
+
+Instructions for analyzing MueLu setup timers:
+
+1) Generate a file that contains only the MueLu timer summary.  If your log file has multiple timer summaries, this
+should be the last summary of interest to you.  It must start with the line "TimMonitor results over ..." and include the
+separate line "========= ...".
+
+
+TimeMonitor results over 512 processors
+Timer Name                  MinOverProcs        MeanOverProcs         MaxOverProcs         MeanOverCallCounts      
+---------------------------------------------------------------------------------------------------
+<various Belos and MueLu timer data here>
+================================================================================================================
+
+2) Convert each timer summary file "foo.txt" to yaml.
+
+   log2yaml.py --mode=muelu -i foo.txt
+
+   This will produce an output file called "foo.txt.yaml".
+
+3) Generate the plot.
+
+   To get a plot that "stacks" multiple timers (e.g., timer summaries over different core counts):
+
+   ./analysis.py --analysis=muelu_strong_scaling --input-files=*-run1.yaml -d display -o abl-strongscaling-solo-time.png
+
+   To get the stack plot with percentages:
+
+   ./analysis.py --analysis=muelu_strong_scaling --input-files=*-run1.yaml -d display -s stack-percentage -o abl-strongscaling-solo-time.png
+
+   To get a plot that shows scaling of multiple timers (e.g., timer summaries over different core counts):
+
+   ./analysis.py --analysis=muelu_strong_scaling --input-files=*-run1.yaml -d display -s scaling -o abl-strongscaling-solo-time.png

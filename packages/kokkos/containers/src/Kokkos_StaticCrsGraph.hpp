@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -50,6 +50,197 @@
 #include <Kokkos_Core.hpp>
 
 namespace Kokkos {
+
+namespace Impl {
+  template<class RowOffsetsType, class RowBlockOffsetsType>
+  struct StaticCrsGraphBalancerFunctor {
+    typedef typename RowOffsetsType::non_const_value_type int_type;
+    RowOffsetsType row_offsets;
+    RowBlockOffsetsType row_block_offsets;
+
+    int_type cost_per_row, num_blocks;
+
+    StaticCrsGraphBalancerFunctor(RowOffsetsType row_offsets_,
+                                  RowBlockOffsetsType row_block_offsets_,
+                                  int_type cost_per_row_, int_type num_blocks_):
+                                    row_offsets(row_offsets_),
+                                    row_block_offsets(row_block_offsets_),
+                                    cost_per_row(cost_per_row_),
+                                    num_blocks(num_blocks_){}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const int_type& iRow) const {
+      const int_type num_rows = row_offsets.extent(0)-1;
+      const int_type num_entries = row_offsets(num_rows);
+      const int_type total_cost = num_entries + num_rows*cost_per_row;
+
+      const double cost_per_workset = 1.0*total_cost/num_blocks;
+
+      const int_type row_cost = row_offsets(iRow+1)-row_offsets(iRow) + cost_per_row;
+
+      int_type count = row_offsets(iRow+1) + cost_per_row*iRow;
+
+      if(iRow == num_rows-1) row_block_offsets(num_blocks) = num_rows;
+
+      if(true) {
+        int_type current_block = (count-row_cost-cost_per_row)/cost_per_workset;
+        int_type end_block = count/cost_per_workset;
+
+        // Handle some corner cases for the last two blocks.
+        if(current_block >= num_blocks-2) {
+          if((current_block == num_blocks-2) && (count >= (current_block + 1) * cost_per_workset)) {
+            int_type row = iRow;
+            int_type cc = count-row_cost-cost_per_row;
+            int_type block = cc/cost_per_workset;
+            while((block>0) && (block==current_block)) {
+              cc = row_offsets(row)+row*cost_per_row;
+              block = cc/cost_per_workset;
+              row--;
+            }
+            if((count-cc-row_cost-cost_per_row) < num_entries-row_offsets(iRow+1)) {
+              row_block_offsets(current_block+1) = iRow+1;
+            } else {
+              row_block_offsets(current_block+1) = iRow;
+            }
+          }
+        } else {
+          if((count >= (current_block + 1) * cost_per_workset) ||
+             (iRow+2 == row_offsets.extent(0))) {
+            if(end_block>current_block+1) {
+              int_type num_block = end_block-current_block;
+              row_block_offsets(current_block+1) = iRow;
+              for(int_type block = current_block+2; block <= end_block; block++)
+                if((block<current_block+2+(num_block-1)/2))
+                  row_block_offsets(block) = iRow;
+                else
+                  row_block_offsets(block) = iRow+1;
+            } else {
+              row_block_offsets(current_block+1) = iRow+1;
+            }
+          }
+        }
+
+      }
+    }
+  };
+}
+
+/// \class GraphRowViewConst
+/// \brief View of a row of a sparse graph.
+/// \tparam GraphType Sparse graph type, such as (but not limited to) StaticCrsGraph.
+///
+/// This class provides a generic view of a row of a sparse graph.
+/// We intended this class to view a row of a StaticCrsGraph, but
+/// GraphType need not necessarily be CrsMatrix.
+///
+/// The row view is suited for computational kernels like sparse
+/// matrix-vector multiply, as well as for modifying entries in the
+/// sparse matrix.  The view is always const as it does not allow graph modification.
+///
+/// Here is an example loop over the entries in the row:
+/// \code
+/// typedef typename GraphRowViewConst<MatrixType>::ordinal_type ordinal_type;
+///
+/// GraphRowView<GraphType> G_i = ...;
+/// const ordinal_type numEntries = G_i.length;
+/// for (ordinal_type k = 0; k < numEntries; ++k) {
+///   ordinal_type j = G_i.colidx (k);
+///   // ... do something with A_ij and j ...
+/// }
+/// \endcode
+///
+/// GraphType must provide the \c data_type
+/// typedefs. In addition, it must make sense to use GraphRowViewConst to
+/// view a row of GraphType. In particular, column
+/// indices of a row must be accessible using the <tt>entries</tt>
+/// resp. <tt>colidx</tt> arrays given to the constructor of this
+/// class, with a constant <tt>stride</tt> between successive entries.
+/// The stride is one for the compressed sparse row storage format (as
+/// is used by CrsMatrix), but may be greater than one for other
+/// sparse matrix storage formats (e.g., ELLPACK or jagged diagonal).
+template<class GraphType>
+struct GraphRowViewConst {
+  //! The type of the column indices in the row.
+  typedef const typename GraphType::data_type ordinal_type;
+
+private:
+  //! Array of (local) column indices in the row.
+  ordinal_type* colidx_;
+  /// \brief Stride between successive entries in the row.
+  ///
+  /// For compressed sparse row (CSR) storage, this is always one.
+  /// This might be greater than one for storage formats like ELLPACK
+  /// or Jagged Diagonal.  Nevertheless, the stride can never be
+  /// greater than the number of rows or columns in the matrix.  Thus,
+  /// \c ordinal_type is the correct type.
+  const ordinal_type stride_;
+
+public:
+  /// \brief Constructor
+  ///
+  /// \param values [in] Array of the row's values.
+  /// \param colidx [in] Array of the row's column indices.
+  /// \param stride [in] (Constant) stride between matrix entries in
+  ///   each of the above arrays.
+  /// \param count [in] Number of entries in the row.
+  KOKKOS_INLINE_FUNCTION
+  GraphRowViewConst ( ordinal_type* const colidx_in,
+                      const ordinal_type& stride,
+                      const ordinal_type& count) :
+    colidx_ (colidx_in), stride_ (stride), length (count)
+  {}
+
+  /// \brief Constructor with offset into \c colidx array
+  ///
+  /// \param colidx [in] Array of the row's column indices.
+  /// \param stride [in] (Constant) stride between matrix entries in
+  ///   each of the above arrays.
+  /// \param count [in] Number of entries in the row.
+  /// \param idx [in] Start offset into \c colidx array
+  ///
+  /// \tparam OffsetType The type of \c idx (see above).  Must be a
+  ///   built-in integer type.  This may differ from ordinal_type.
+  ///   For example, the matrix may have dimensions that fit in int,
+  ///   but a number of entries that does not fit in int.
+  template<class OffsetType>
+  KOKKOS_INLINE_FUNCTION
+  GraphRowViewConst ( const typename GraphType::entries_type& colidx_in,
+                      const ordinal_type& stride,
+                      const ordinal_type& count,
+                      const OffsetType& idx,
+                      const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0) :
+    colidx_ (&colidx_in(idx)), stride_ (stride), length (count)
+  {}
+
+  /// \brief Number of entries in the row.
+  ///
+  /// This is a public const field rather than a public const method,
+  /// in order to avoid possible overhead of a method call if the
+  /// compiler is unable to inline that method call.
+  ///
+  /// We assume that rows contain no duplicate entries (i.e., entries
+  /// with the same column index).  Thus, a row may have up to
+  /// A.numCols() entries.  This means that the correct type of
+  /// 'length' is ordinal_type.
+  const ordinal_type length;
+
+  /// \brief (Const) reference to the column index of entry i in this
+  ///   row of the sparse matrix.
+  ///
+  /// "Entry i" is not necessarily the entry with column index i, nor
+  /// does i necessarily correspond to the (local) row index.
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type& colidx (const ordinal_type& i) const {
+    return colidx_[i*stride_];
+  }
+
+  /// \brief An alias for colidx
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type& operator()(const ordinal_type& i) const {
+    return colidx(i);
+  }
+};
+
 
 /// \class StaticCrsGraph
 /// \brief Compressed row storage array.
@@ -66,6 +257,9 @@ namespace Kokkos {
 ///
 /// \tparam Arg2Type The third template parameter, which if provided
 ///   corresponds to the Device type.
+///
+/// \tparam Arg3Type The third template parameter, which if provided
+///   corresponds to the MemoryTraits.
 ///
 /// \tparam SizeType The type of row offsets.  Usually the default
 ///   parameter suffices.  However, setting a nondefault value is
@@ -84,57 +278,130 @@ namespace Kokkos {
 template< class DataType,
           class Arg1Type,
           class Arg2Type = void,
-          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type, void >::size_type>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type >::size_type,
+          class Arg3Type = void>
+#else
+          class Arg3Type = void,
+          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type >::size_type>
+#endif
 class StaticCrsGraph {
 private:
-  typedef ViewTraits<DataType*, Arg1Type, Arg2Type, void> traits;
+  typedef ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type> traits;
 
 public:
   typedef DataType                                            data_type;
   typedef typename traits::array_layout                       array_layout;
   typedef typename traits::execution_space                    execution_space;
   typedef typename traits::device_type                        device_type;
+  typedef typename traits::memory_traits                      memory_traits;
   typedef SizeType                                            size_type;
 
-  typedef StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType > staticcrsgraph_type;
-  typedef StaticCrsGraph< DataType , array_layout , typename traits::host_mirror_space , SizeType > HostMirror;
-  typedef View< const size_type* , array_layout, device_type >  row_map_type;
-  typedef View<       DataType*  , array_layout, device_type >  entries_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  typedef StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType , Arg3Type > staticcrsgraph_type;
+  typedef StaticCrsGraph< data_type , array_layout , typename traits::host_mirror_space , size_type, memory_traits > HostMirror;
+#else
+  typedef StaticCrsGraph< DataType , Arg1Type , Arg2Type , Arg3Type, SizeType > staticcrsgraph_type;
+  typedef StaticCrsGraph< data_type , array_layout , typename traits::host_mirror_space , memory_traits, size_type > HostMirror;
+#endif
+
+  typedef View< const size_type* , array_layout, device_type , memory_traits >  row_map_type;
+  typedef View<       data_type* , array_layout, device_type , memory_traits >  entries_type;
+  typedef View< const size_type* , array_layout, device_type , memory_traits >  row_block_type;
 
   entries_type entries;
   row_map_type row_map;
+  row_block_type row_block_offsets;
 
   //! Construct an empty view.
-  StaticCrsGraph () : entries(), row_map() {}
+  KOKKOS_INLINE_FUNCTION
+  StaticCrsGraph () : entries(), row_map(), row_block_offsets() {}
 
   //! Copy constructor (shallow copy).
-  StaticCrsGraph (const StaticCrsGraph& rhs) : entries (rhs.entries), row_map (rhs.row_map)
+  KOKKOS_INLINE_FUNCTION
+  StaticCrsGraph (const StaticCrsGraph& rhs) : entries (rhs.entries), row_map (rhs.row_map),
+                                               row_block_offsets(rhs.row_block_offsets)
   {}
 
   template<class EntriesType, class RowMapType>
-  StaticCrsGraph (const EntriesType& entries_,const RowMapType& row_map_) : entries (entries_), row_map (row_map_)
+  KOKKOS_INLINE_FUNCTION
+  StaticCrsGraph (const EntriesType& entries_,const RowMapType& row_map_) : entries (entries_), row_map (row_map_),
+  row_block_offsets()
   {}
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
+  KOKKOS_INLINE_FUNCTION
   StaticCrsGraph& operator= (const StaticCrsGraph& rhs) {
     entries = rhs.entries;
     row_map = rhs.row_map;
+    row_block_offsets = rhs.row_block_offsets;
     return *this;
   }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
+  KOKKOS_INLINE_FUNCTION
   ~StaticCrsGraph() {}
 
+  /**  \brief  Return number of rows in the graph
+   */
   KOKKOS_INLINE_FUNCTION
   size_type numRows() const {
-    return (row_map.dimension_0 () != 0) ?
-      row_map.dimension_0 () - static_cast<size_type> (1) :
+    return (row_map.extent(0) != 0) ?
+      row_map.extent(0) - static_cast<size_type> (1) :
       static_cast<size_type> (0);
+  }
+
+  /// \brief Return a const view of row i of the graph.
+  ///
+  /// If row i does not belong to the graph, return an empty view.
+  ///
+  /// The returned object \c view implements the following interface:
+  /// <ul>
+  /// <li> \c view.length is the number of entries in the row </li>
+  /// <li> \c view.colidx(k) returns a const reference to the
+  ///      column index of the k-th entry in the row </li>
+  /// </ul>
+  /// k is not a column index; it just counts from 0 to
+  /// <tt>view.length - 1</tt>.
+  ///
+  /// Users should not rely on the return type of this method.  They
+  /// should instead assign to 'auto'.  That allows compile-time
+  /// polymorphism for different kinds of sparse matrix formats (e.g.,
+  /// ELLPACK or Jagged Diagonal) that we may wish to support in the
+  /// future.
+  KOKKOS_INLINE_FUNCTION
+  GraphRowViewConst<StaticCrsGraph> rowConst (const data_type i) const {
+    const size_type start = row_map(i);
+    // count is guaranteed to fit in ordinal_type, as long as no row
+    // has duplicate entries.
+    const data_type count = static_cast<data_type> (row_map(i+1) - start);
+
+    if (count == 0) {
+      return GraphRowViewConst<StaticCrsGraph> (NULL, 1, 0);
+    } else {
+      return GraphRowViewConst<StaticCrsGraph> (entries, 1, count, start);
+    }
+  }
+
+  /**  \brief  Create a row partitioning into a given number of blocks
+   *           balancing non-zeros + a fixed cost per row.
+   */
+  void create_block_partitioning(size_type num_blocks, size_type fix_cost_per_row = 4) {
+    View< size_type* , array_layout, device_type >
+      block_offsets("StatisCrsGraph::load_balance_offsets",num_blocks+1);
+
+    Impl::StaticCrsGraphBalancerFunctor<row_map_type,View< size_type* , array_layout, device_type > >
+      partitioner(row_map,block_offsets,fix_cost_per_row,num_blocks);
+
+    Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,numRows()),partitioner);
+    Kokkos::fence();
+
+    row_block_offsets = block_offsets;
   }
 };
 
@@ -155,16 +422,32 @@ create_staticcrsgraph( const std::string & label ,
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+          typename SizeType ,
+          class Arg3Type >
+typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType , Arg3Type >::HostMirror
+create_mirror_view( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType,Arg3Type > & input );
+#else
+          class Arg3Type ,
           typename SizeType >
-typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
-create_mirror_view( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType > & input );
+typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , Arg3Type , SizeType >::HostMirror
+create_mirror_view( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,Arg3Type,SizeType > & input );
+#endif
 
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+          typename SizeType ,
+          class Arg3Type >
+typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType , Arg3Type >::HostMirror
+create_mirror_view( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType,Arg3Type > & input );
+#else
+          class Arg3Type ,
           typename SizeType >
-typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
-create_mirror( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType > & input );
+typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , Arg3Type , SizeType >::HostMirror
+create_mirror( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,Arg3Type,SizeType > & input );
+#endif
 
 } // namespace Kokkos
 
@@ -205,14 +488,21 @@ struct StaticCrsGraphMaximumEntry {
 
 }
 
-template< class DataType, class Arg1Type, class Arg2Type, typename SizeType >
-DataType maximum_entry( const StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType > & graph )
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+template< class DataType, class Arg1Type, class Arg2Type, typename SizeType , class Arg3Type >
+DataType maximum_entry( const StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType , Arg3Type > & graph )
 {
-  typedef StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType> GraphType ;
+  typedef StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType,Arg3Type> GraphType ;
+#else
+template< class DataType, class Arg1Type, class Arg2Type, class Arg3Type, typename SizeType >
+DataType maximum_entry( const StaticCrsGraph< DataType , Arg1Type , Arg2Type , Arg3Type , SizeType > & graph )
+{
+  typedef StaticCrsGraph<DataType,Arg1Type,Arg2Type,Arg3Type,SizeType> GraphType ;
+#endif
   typedef Impl::StaticCrsGraphMaximumEntry< GraphType > FunctorType ;
 
   DataType result = 0 ;
-  Kokkos::parallel_reduce( graph.entries.dimension_0(),
+  Kokkos::parallel_reduce( graph.entries.extent(0),
                            FunctorType(graph), result );
   return result ;
 }

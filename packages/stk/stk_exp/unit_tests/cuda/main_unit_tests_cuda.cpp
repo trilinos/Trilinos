@@ -2,7 +2,7 @@
 #include <stk_util/stk_config.h>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include "mpi.h"
 #endif
 
 int gl_argc;

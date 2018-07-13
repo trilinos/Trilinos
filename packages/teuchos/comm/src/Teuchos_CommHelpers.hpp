@@ -54,36 +54,31 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_as.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_TEUCHOS_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
-#endif // HAVE_MPI
+#endif // HAVE_TEUCHOS_MPI
 #include "Teuchos_DefaultSerialComm.hpp"
-
+#include "Teuchos_EReductionType.hpp"
 
 namespace Teuchos {
-
 
 //
 // Teuchos::Comm Helper Functions
 //
 
-/** \brief Enumeration for selecting from a set of pre-defined reduction
- * operations.
- *
- * \relates Comm
- */
-enum EReductionType {
-  REDUCE_SUM, ///< Sum
-  REDUCE_MIN, ///< Min
-  REDUCE_MAX, ///< Max
-  REDUCE_AND ///< Logical AND
-};
+#ifdef HAVE_TEUCHOS_MPI
+namespace Details {
 
-/** \brief Convert to std::string representation.
- *
- * \relates EReductionType
- */
-const char* toString (const EReductionType reductType);
+/// \brief MPI's error string corresponding to the given integer error code.
+///
+/// \warning This is an implementation detail and not for public use.
+///   It only exists when Trilinos was built with MPI.
+///
+/// \param errCode [in] Integer error code returned by MPI functions.
+std::string getMpiErrorString (const int errCode);
+
+} // namespace Details
+#endif // HAVE_TEUCHOS_MPI
 
 /** \brief Get the process rank.
  *
@@ -1147,20 +1142,28 @@ createOp (const EReductionType reductType)
       return new SumValueReductionOp<Ordinal,Packet> ();
     }
     case REDUCE_MIN: {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
-        "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
-        << " is not less-than comparable, so it does not make sense to do a "
-        "MIN reduction with it.");
-      return new MinValueReductionOp<Ordinal,Packet> ();
+      if (ST::isComparable) {
+        return new MinValueReductionOp<Ordinal,Packet> ();
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
+           "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
+           << " is not less-than comparable, so it does not make sense to do a "
+           "MIN reduction with it.");
+      }
     }
     case REDUCE_MAX: {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
-        "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
-        << " is not less-than comparable, so it does not make sense to do a "
-        "MAX reduction with it.");
-      return new MaxValueReductionOp<Ordinal,Packet> ();
+      if (ST::isComparable) {
+        return new MaxValueReductionOp<Ordinal,Packet> ();
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
+           "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
+           << " is not less-than comparable, so it does not make sense to do a "
+           "MAX reduction with it.");
+      }
     }
     case REDUCE_AND: {
       return new ANDValueReductionOp<Ordinal, Packet> ();
@@ -1662,7 +1665,6 @@ isend<int, float> (const ArrayRCP<const float>& sendBuffer,
                    const int tag,
                    const Comm<int>& comm);
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1774,7 +1776,6 @@ isend<int, unsigned long long> (const ArrayRCP<const unsigned long long>& sendBu
                                 const int destRank,
                                 const int tag,
                                 const Comm<int>& comm);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>
@@ -1922,6 +1923,38 @@ reduce<int, int> (const int sendBuf[],
                   const EReductionType reductType,
                   const int root,
                   const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, long> (const long sendBuf[],
+                   long recvBuf[],
+                   const int count,
+                   const EReductionType reductType,
+                   const int root,
+                   const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, unsigned long> (const unsigned long sendBuf[],
+                            unsigned long recvBuf[],
+                            const int count,
+                            const EReductionType reductType,
+                            const int root,
+                            const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, unsigned long long > (const unsigned long long sendBuf[],
+                                  unsigned long long recvBuf[],
+                                  const int count,
+                                  const EReductionType reductType,
+                                  const int root,
+                                  const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, double> (const double sendBuf[],
+                     double recvBuf[],
+                     const int count,
+                     const EReductionType reductType,
+                     const int root,
+                     const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, int> (const Comm<int>& comm,

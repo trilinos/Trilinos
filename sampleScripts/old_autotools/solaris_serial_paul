@@ -1,7 +1,0 @@
-../configure \
-	--with-blas=/usr/people/faculty/math/mheroux/lib/SOLARIS/libblas.a \
-	--with-lapack=/usr/people/faculty/math/mheroux/lib/SOLARIS/liblapack.a \
-	CC=cc CXX=CC F77=f77 \
-	CXXFLAGS="-pto -g" \
-	--disable-default-packages \
-	--enable-tpetra

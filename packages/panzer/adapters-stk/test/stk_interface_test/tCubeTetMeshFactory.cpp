@@ -95,6 +95,13 @@ TEUCHOS_UNIT_TEST(tCubeTetMeshFactory, defaults)
    TEST_EQUALITY(mesh->getNumSidesets(),6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*125);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),6*6*6+5*5*5);
+
+   // check for nodeset
+   std::vector<std::string> nodesets;
+   mesh->getNodesetNames(nodesets);
+ 
+   TEST_EQUALITY(nodesets.size(),1);
+   TEST_EQUALITY(nodesets[0],"origin");
 }
 
 }

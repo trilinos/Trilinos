@@ -58,13 +58,8 @@ void filter_superimposed_entities(const BulkData& mesh, const Entity entity, Ent
 {
   // Get the node entities for the nodes that make up the entity, we'll
   // use this to check for superimposed entities
-  EntityVector entity_nodes;
-  entity_nodes.reserve(mesh.num_nodes(entity));
-  Entity const *rels_itr = mesh.begin_nodes(entity);
-  Entity const *rels_end = mesh.end_nodes(entity);
-  for ( ; rels_itr != rels_end; ++rels_itr ) {
-    entity_nodes.push_back(*rels_itr);
-  }
+  EntityVector entity_nodes(mesh.begin_nodes(entity), mesh.end_nodes(entity));
+
   std::sort(entity_nodes.begin(), entity_nodes.end());
 
   // Make sure to remove the all superimposed entities from the list

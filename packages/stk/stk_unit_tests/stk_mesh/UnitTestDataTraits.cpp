@@ -42,14 +42,14 @@
 #include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
-#include "stk_util/parallel/ParallelComm.hpp"  // for CommAll
+#include "stk_util/parallel/CommSparse.hpp"  // for CommSparse
 
 
 
 
 using stk::mesh::DataTraits;
 using stk::mesh::data_traits;
-using stk::CommAll;
+using stk::CommSparse;
 
 //----------------------------------------------------------------------
 
@@ -94,9 +94,9 @@ TEST(TestDataTraits, testVoid)
   ASSERT_THROW( traits.bit_xor( NULL, NULL, 0 ), std::runtime_error );
   ASSERT_THROW( traits.print( std::cout, NULL, 0), std::runtime_error);
 
-  CommAll comm( pm );
+  CommSparse comm( pm );
   ASSERT_THROW( traits.pack( comm.send_buffer(0) , NULL , 0 ), std::runtime_error );
-  comm.allocate_buffers( 0 );
+  comm.allocate_buffers();
   comm.communicate();
   ASSERT_THROW( traits.unpack( comm.recv_buffer(0) , NULL , 0 ), std::runtime_error );
 }
@@ -191,9 +191,9 @@ void test_fundamental_type()
 
   // Test data trait pack/unpack (communication) of type T
   traits.construct( b , array_size );
-  CommAll comm( pm );
+  CommSparse comm( pm );
   traits.pack( comm.send_buffer(0) , a , array_size );
-  comm.allocate_buffers( 0 );
+  comm.allocate_buffers();
   traits.pack( comm.send_buffer(0) , a , array_size );
   comm.communicate();
   if (p_rank == 0) {
@@ -331,9 +331,9 @@ void test_fundamental_pointer()
   ASSERT_THROW(traits.bit_xor(b, a, array_size),   std::runtime_error);
   ASSERT_THROW(traits.print  (std::cout, NULL, 0), std::runtime_error);
 
-  CommAll comm( pm );
+  CommSparse comm( pm );
   ASSERT_THROW( traits.pack( comm.send_buffer(0) , a , array_size ), std::runtime_error );
-  comm.allocate_buffers( 0 );
+  comm.allocate_buffers();
   comm.communicate();
   ASSERT_THROW( traits.unpack( comm.recv_buffer(0) , b , array_size ), std::runtime_error );
 }
@@ -486,9 +486,9 @@ TEST(TestDataTraits, testEnum)
 
   // Test pack/unpack (communication) of enum type
   traits.construct( b , array_size );
-  CommAll comm( pm );
+  CommSparse comm( pm );
   traits.pack( comm.send_buffer(0) , a , array_size );
-  comm.allocate_buffers( 0 );
+  comm.allocate_buffers();
   traits.pack( comm.send_buffer(0) , a , array_size );
   comm.communicate();
   if (p_rank == 0) {
@@ -597,9 +597,9 @@ TEST(TestDataTraits, testClass)
 
   // Test data trait pack/unpack (communication) of class type
   traits.construct( & b , array_size );
-  CommAll comm( pm );
+  CommSparse comm( pm );
   traits.pack( comm.send_buffer(0) , & a , array_size );
-  comm.allocate_buffers( 0 );
+  comm.allocate_buffers();
   traits.pack( comm.send_buffer(0) , & a , array_size );
   comm.communicate();
   if (p_rank == 0) {

@@ -33,6 +33,10 @@
       <Poisson-3D>1</Poisson-3D>
       <Elasticity-2D>2</Elasticity-2D>
       <Elasticity-3D>3</Elasticity-3D>
+      <Poisson-2D-complex>1</Poisson-2D-complex>
+      <Poisson-3D-complex>1</Poisson-3D-complex>
+      <Elasticity-2D-complex>2</Elasticity-2D-complex>
+      <Elasticity-3D-complex>3</Elasticity-3D-complex>
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
       <name-ML>PDE equations</name-ML>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
@@ -62,6 +66,14 @@
     </parameter>
 
     <parameter>
+      <name>coarse grid correction scaling factor</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>
@@ -87,7 +99,15 @@
       <description>Syntax of ParameterList to use.  This should either be "muelu" or "ml." </description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
-    </parameter>
+     </parameter>
+
+     <parameter>
+       <name>hierarchy label</name>
+       <type>string</type>
+       <default>""</default>
+       <description>Label for the hierarchy. Is applied to timer labels.</description>
+       <visible>true</visible>
+     </parameter>
 
   </general>
 
@@ -112,6 +132,10 @@
       <Poisson-3D>"CHEBYSHEV"</Poisson-3D>
       <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
       <Elasticity-3D>"CHEBYSHEV"</Elasticity-3D>
+      <Poisson-2D-complex>"RELAXATION"</Poisson-2D-complex>
+      <Poisson-3D-complex>"RELAXATION"</Poisson-3D-complex>
+      <Elasticity-2D-complex>"RELAXATION"</Elasticity-2D-complex>
+      <Elasticity-3D-complex>"RELAXATION"</Elasticity-3D-complex>
       <MHD>"SCHWARZ"</MHD>
       <ConvectionDiffusion>"RELAXATION"</ConvectionDiffusion>
       <description>Smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
@@ -137,6 +161,34 @@
       <name>smoother: params</name>
       <comment-ML>not supported by ML</comment-ML>
       <type>\parameterlist</type>
+      <Poisson-2D-complex>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>Symmetric Gauss-Seidel</default>
+        </parameter>
+      </Poisson-2D-complex>
+      <Poisson-3D-complex>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>Symmetric Gauss-Seidel</default>
+        </parameter>
+      </Poisson-3D-complex>
+      <Elasticity-2D-complex>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>Symmetric Gauss-Seidel</default>
+        </parameter>
+      </Elasticity-2D-complex>
+      <Elasticity-3D-complex>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>Symmetric Gauss-Seidel</default>
+        </parameter>
+      </Elasticity-3D-complex>
       <MHD>
         <parameter>
           <name>schwarz: overlap level</name>
@@ -378,6 +430,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: phase 1 algorithm</name>
+      <type>string</type>
+      <default>Serial</default>
+      <description>Choice of algorithm for aggregation phase 1.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: enable phase 1</name>
       <type>bool</type>
       <default>true</default>
@@ -414,6 +474,18 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: error on nodes with no on-rank neighbors</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to throw an error for
+      non-Dirichlet nodes that have no on-rank neighbors.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
       <name>aggregation: allow empty prolongator columns</name>
       <type>bool</type>
       <default>false</default>
@@ -436,6 +508,15 @@
       <type>bool</type>
       <default>false</default>
       <description>Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: use interface aggregation</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Allow an application to prescribe root nodes to uncoupled aggregation</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -539,7 +620,7 @@
       three MatrixMarket files: a) data is saved in
       \textit{X\_level.mm}; b) its row map is saved in
       \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
-      \textit{colmap\_X\_level.mm}.</description> 
+      \textit{colmap\_X\_level.mm}.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -581,6 +662,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>synchronize factory timers</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Add barriers before and after Factory Build() calls.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>
@@ -593,6 +683,10 @@
       <Poisson-3D>"sa"</Poisson-3D>
       <Elasticity-2D>"sa"</Elasticity-2D>
       <Elasticity-3D>"sa"</Elasticity-3D>
+      <Poisson-2D-complex>"sa"</Poisson-2D-complex>
+      <Poisson-3D-complex>"sa"</Poisson-3D-complex>
+      <Elasticity-2D-complex>"sa"</Elasticity-2D-complex>
+      <Elasticity-3D-complex>"sa"</Elasticity-3D-complex>
       <MHD>"unsmoothed"</MHD>
       <ConvectionDiffusion>"pg"</ConvectionDiffusion>
       <description>Multigrid method. Possible values: see Table~\ref{t:mgs}.</description>
@@ -695,6 +789,45 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>pcoarsen: element</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Element class for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>pcoarsen: schedule</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Coarsening schedule for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+    <parameter>
+      <name>pcoarsen: hi basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Higher order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>pcoarsen: lo basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Lower order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>smoother: neighborhood type</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Valid options: node, edge, face, cell</description>
+      <visible>false</visible>
+    </parameter>
 
     <parameter>
       <name>filtered matrix: use lumping</name>
@@ -761,6 +894,14 @@
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>tentative: calculate qr</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip local QR decomposition phase of smoothed aggregation.</description>
+      <visible>false</visible>
+    </parameter>
+
   </multigrid>
 
   <rebalancing>
@@ -808,11 +949,21 @@
       <name>repartition: min rows per proc</name>
       <type>int</type>
       <default>800</default>
-      <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
+      <description>Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.</description>
       <name-ML>repartition: min per proc</name-ML>
       <default-ML>512</default-ML>
       <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
-      <description-ML>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description-ML>
+      <description-ML>Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: target rows per proc</name>
+      <type>int</type>
+      <!-- We want to be backwards compatible at the moment. If the value is
+           0, we set it to the value of `min rows per proc` in the code. -->
+      <default>0</default>
+      <description>Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -871,6 +1022,56 @@
 
   </rebalancing>
 
+  <rap>
+
+    <parameter>
+      <name>rap: fix zero diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Shift to use in the RAPShiftFactory</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: algorithm</name>
+      <type>string</type>
+      <default>galerkin</default>
+      <description>Whether to use the Galerkin RAP or the Shift version</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: triple product</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use all-at-once triple matrix product kernel</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+  </rap>
+
+  <matrixmatrix>
+    <parameter>
+      <name>matrixmatrix: kernel params</name>
+      <type>\parameterlist</type>
+      <description>Controls the kernel algorithms for matrix-matrix operations</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+  </matrixmatrix>
+
   <reuse>
 
     <parameter>
@@ -915,5 +1116,7 @@
     </parameter>
 
   </debug>
+
+
 
 </masterlist>

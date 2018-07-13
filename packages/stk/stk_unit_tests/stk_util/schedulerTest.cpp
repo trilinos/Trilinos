@@ -142,4 +142,29 @@ TEST(SchedulerTest, emptyScheduler)
     EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.5, 2));
 }
 
+TEST(SchedulerTest, largeStartingTimeFollowedBySmallStep)
+{
+    stk::util::Scheduler scheduler;
+
+    const int number_of_time_steps = 10000;
+    const stk::util::Time startTime = 8.0e4;
+    const stk::util::Time dt = 1.0e-8;
+    const int skip = 4;
+    scheduler.add_interval(startTime, skip*dt);
+
+    const stk::util::Time terminationTime = startTime + number_of_time_steps * dt;
+    scheduler.set_termination_time(terminationTime);
+
+    stk::util::Time t = startTime;
+    for(int i = 0; i < number_of_time_steps; ++i) {
+      t = startTime + dt * i;
+      bool write = scheduler.is_it_time(t, i);
+      if (i % skip == 0) {
+	EXPECT_TRUE(write) << "time= " << t << ", step= " << i << ", write= " << write;
+      }
+      else {
+	EXPECT_FALSE(write) << "time= " << t << ", step= " << i << ", write= " << write;
+      }
+    }
+}
 }

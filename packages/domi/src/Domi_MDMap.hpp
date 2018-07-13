@@ -195,7 +195,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <iframe src="domi.xml" width="100%" scroling="no" frameborder="no">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    *
@@ -210,7 +211,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    */
@@ -224,7 +226,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    */
@@ -239,6 +242,12 @@ public:
    * \param myGlobalBounds [in] an array of Slices, one for each axis,
    *        that represent the global indexes of the bounds on this
    *        processor, excluding padding
+   *
+   * \param padding [in] an array of padding_type (a 2-tuple of
+   *        integers) specifying the local padding along each
+   *        axis. Since this is local, the MDMap constructor can
+   *        determine from context whether each pad refers to
+   *        communication padding or boundary padding.
    *
    * \param replicatedBoundary [in] An array of ints which are simple
    *        flags denoting whether each axis contains replicated
@@ -2576,24 +2585,30 @@ MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
   int oldNumDims = numDims();
   Teuchos::Array< int > newCommDims(oldNumDims);
   Teuchos::Array< int > newPeriodic(oldNumDims);
+  Teuchos::Array< int > newReplicatedBndry(oldNumDims);
+  
   for (int axis = 0; axis < oldNumDims; ++axis)
   {
-    newCommDims[axis] = getCommDim(axis);
-    newPeriodic[axis] = int(isPeriodic(axis));
+    newCommDims[axis]        = getCommDim(axis);
+    newPeriodic[axis]        = int(isPeriodic(axis));
+    newReplicatedBndry[axis] = int(isReplicatedBoundary(axis));
   }
   if (leadingDim > 0)
   {
     newCommDims.insert(newCommDims.begin(),1);
     newPeriodic.insert(newPeriodic.begin(),0);
+    newReplicatedBndry.insert(newReplicatedBndry.begin(),0);
   }
   if (trailingDim > 0)
   {
     newCommDims.push_back(1);
     newPeriodic.push_back(0);
+    newReplicatedBndry.push_back(0);
   }
   newMdMap->_mdComm = Teuchos::rcp(new MDComm(getTeuchosComm(),
                                               newCommDims,
                                               newPeriodic));
+  newMdMap->_replicatedBoundary = newReplicatedBndry;
 
   // Adjust new MDMap arrays for a new leading dimension
   Slice slice = Slice(leadingDim);

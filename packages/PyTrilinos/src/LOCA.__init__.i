@@ -50,7 +50,7 @@ algorithm package LOCA:
     http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA is to provide a library of continuation
-algorithms.  It includes the following sub-modules:
+algorithms.  It include files the following sub-modules:
 
     * Abstract           - Abstract continuation problem base classes
     * Extended           - Classes that extend NOX.Abstract classes to
@@ -97,62 +97,36 @@ and classes:
 	docstring    = %loca_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_Time.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+%}
+
+%pythoncode
+%{
+# Fix ___init__ ambiguity
+del ___init__
+from . import ___init__
 %}
 
 // Ignore/renames
@@ -161,7 +135,7 @@ and classes:
 %ignore operator<<(ostream&, const LOCA::ParameterVector&);
 %rename(Print) LOCA::ParameterVector::print(ostream& stream) const;
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import.  Note: Teuchos.i turns off warnings for
@@ -246,7 +220,6 @@ from . import Hopf
 from . import Pitchfork
 from . import Homotopy
 from . import PhaseTransition
-from . import Abstract
 from . import Parameter
 from . import BorderedSolver
 from . import BorderedSystem
@@ -285,6 +258,17 @@ from . import AnasaziOperator
 %teuchos_rcp(LOCA::Abstract::Iterator)
 %import(module="Abstract") "LOCA_Abstract_Iterator.H"
 
+// At this point, 'Abstract' might be 'NOX.Abstract' (depending on the
+// Python version and related import rules), but we need it to be
+// 'LOCA.Abstract'
+%pythoncode
+%{
+import os.path
+if 'NOX' in Abstract.__file__.split(os.path.sep):
+  del Abstract
+  from . import Abstract
+%}
+
 // LOCA Stepper class
 %teuchos_rcp(LOCA::Stepper)
 %feature("director") LOCA::Stepper;
@@ -306,9 +290,5 @@ from . import AnasaziOperator
 # Epetra namespace
 __all__.append("Epetra")
 from . import Epetra
-
-# Fix ___init__ ambiguity
-del ___init__
-from . import ___init__
 %}
 #endif

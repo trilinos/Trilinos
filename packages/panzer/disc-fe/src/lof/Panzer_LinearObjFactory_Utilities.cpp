@@ -4,7 +4,6 @@
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
@@ -43,8 +42,6 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   typedef UniqueGlobalIndexer<int,Ordinal64> TpetraUGI;
   typedef BlockedDOFManager<int,int>         BlockedEpetraUGI;
   typedef BlockedDOFManager<int,Ordinal64>   BlockedTpetraUGI;
-
-  typedef EpetraLinearObjFactory<panzer::Traits,int>                         EpetraLOF;
 */
   typedef TpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64>        TpetraLOF;
   typedef BlockedEpetraLinearObjFactory<panzer::Traits,int>                  BlockedEpetraLOF;

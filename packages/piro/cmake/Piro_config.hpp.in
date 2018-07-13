@@ -16,6 +16,7 @@
 /* Define if want to build piro-tests */
 #cmakedefine HAVE_PIRO_TESTS
 
+
 /* Defines for optional package dependencies */
 #cmakedefine HAVE_PIRO_NOX
 /* DEPRECATED */
@@ -23,6 +24,9 @@
 #cmakedefine HAVE_PIRO_RYTHMOS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Rythmos
+#cmakedefine HAVE_PIRO_TEMPUS
+/* DEPRECATED */
+#cmakedefine Piro_ENABLE_Tempus
 #cmakedefine HAVE_PIRO_MOOCHO
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_MOOCHO

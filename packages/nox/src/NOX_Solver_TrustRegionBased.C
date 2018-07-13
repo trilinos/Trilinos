@@ -68,8 +68,6 @@ TrustRegionBased::
 TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
 		 const Teuchos::RCP<NOX::StatusTest::Generic>& t,
 		 const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()),
   solnPtr(grp),
   oldSolnPtr(grp->clone(DeepCopy)),
   newtonVecPtr(grp->getX().clone(ShapeCopy)),
@@ -78,10 +76,13 @@ TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   bVecPtr(grp->getX().clone(ShapeCopy)),
   testPtr(t),
   paramsPtr(p),
-  meritFuncPtr(globalDataPtr->getMeritFunction()),
-  useAredPredRatio(false),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  useAredPredRatio(false)
 {
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utilsPtr = globalDataPtr->getUtils();
+  meritFuncPtr = globalDataPtr->getMeritFunction();
+  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
   init();
 }
 

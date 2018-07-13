@@ -50,7 +50,7 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
@@ -100,7 +100,7 @@ public:
 template <class Map, class Fixture >
 void build_lid_to_gid(const Map& lid_to_gid, const Fixture& fixture) {
   typedef BuildLocalToGlobalMap<Map,Fixture> F;
-  Kokkos::parallel_for(lid_to_gid.dimension_0(), F(lid_to_gid, fixture));
+  Kokkos::parallel_for(lid_to_gid.extent(0), F(lid_to_gid, fixture));
 }
 
 } /* namespace FENL */
@@ -126,10 +126,12 @@ public:
   typedef Kokkos::Compat::KokkosDeviceWrapperNode< Device >  NodeType;
 
   typedef Kokkos::View<     Scalar * , Kokkos::LayoutLeft, Device >  LocalVectorType ;
+  typedef Kokkos::View<     Scalar** , Kokkos::LayoutLeft, Device >  LocalMultiVectorType ;
   typedef Kokkos::DualView< Scalar** , Kokkos::LayoutLeft, Device >  LocalDualVectorType;
 
   typedef Tpetra::Map<int, int, NodeType>              MapType;
   typedef Tpetra::Vector<Scalar,int,int,NodeType>      GlobalVectorType;
+  typedef Tpetra::MultiVector<Scalar,int,int,NodeType> GlobalMultiVectorType;
   typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>   GlobalMatrixType;
   typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
   typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
@@ -168,8 +170,8 @@ private:
     Kokkos::deep_copy(lid_to_gid_row_host, lid_to_gid_row);
 
     return  Teuchos::rcp (new MapType( fixture.node_count_global(),
-        Teuchos::arrayView(lid_to_gid_row_host.ptr_on_device(),
-                           lid_to_gid_row_host.dimension_0()),
+        Teuchos::arrayView(lid_to_gid_row_host.data(),
+                           lid_to_gid_row_host.extent(0)),
         0, comm, node));
   }
 
@@ -186,8 +188,8 @@ private:
 
     return Teuchos::rcp (new MapType (
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-        Teuchos::arrayView( lid_to_gid_all_host.ptr_on_device(),
-                            lid_to_gid_all_host.dimension_0()),
+        Teuchos::arrayView( lid_to_gid_all_host.data(),
+                            lid_to_gid_all_host.extent(0)),
         0,comm, node) );
   }
 
@@ -211,21 +213,26 @@ public:
   const rcpMapType   ColMap ;
   const import_type  import ;
 
-  GlobalVectorType   g_nodal_solution ;
-  GlobalVectorType   g_nodal_residual ;
-  GlobalVectorType   g_nodal_delta ;
-  GlobalVectorType   g_nodal_solution_no_overlap ;
-  GlobalMatrixType   g_jacobian ;
+  GlobalVectorType      g_nodal_solution ;
+  GlobalVectorType      g_nodal_residual ;
+  GlobalVectorType      g_nodal_delta ;
+  GlobalVectorType      g_nodal_solution_no_overlap ;
+  GlobalMultiVectorType g_nodal_solution_dp ;
+  GlobalMultiVectorType g_nodal_residual_dp ;
+  GlobalMultiVectorType g_nodal_delta_dp ;
+  GlobalMultiVectorType g_nodal_solution_no_overlap_dp ;
+  GlobalMatrixType      g_jacobian ;
 
-  Scalar             response ;
-  Perf               perf ;
-  bool               print_flag ;
+  Perf                   perf ;
+  bool                   print_flag ;
+  unsigned               num_sensitivities ;
 
   Problem( const rcpCommType & use_comm
          , const rcpNodeType & use_node
          , const int use_nodes[]
          , const double grid_bubble[]
          , const bool use_print
+         , const unsigned num_sens
          )
     : comm( use_comm )
     , node( use_node )
@@ -249,12 +256,12 @@ public:
     , g_nodal_solution_no_overlap(
         RowMap ,
         Kokkos::subview( g_nodal_solution.getDualView()
-                                            , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
-                                            , Kokkos::ALL()
+                       , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
+                       , Kokkos::ALL()
                                             ) )
     , g_jacobian( RowMap, ColMap, LocalMatrixType( "jacobian" , mesh_to_graph.graph ) )
-    , response()
     , perf()
+    , num_sensitivities(num_sens)
     {
       if ( maximum(*comm, ( fixture.ok() ? 0 : 1 ) ) ) {
         throw std::runtime_error(std::string("Problem fixture setup failed"));
@@ -302,11 +309,11 @@ public:
         std::cout << "}" << std::endl ;
 
         std::cout << "ElemGraph {" << std::endl ;
-        for ( unsigned ielem = 0 ; ielem < elem_graph.dimension_0() ; ++ielem ) {
+        for ( unsigned ielem = 0 ; ielem < elem_graph.extent(0) ; ++ielem ) {
           std::cout << "  elem[" << ielem << "]{" ;
-          for ( unsigned irow = 0 ; irow < elem_graph.dimension_1() ; ++irow ) {
+          for ( unsigned irow = 0 ; irow < elem_graph.extent(1) ; ++irow ) {
             std::cout << " {" ;
-            for ( unsigned icol = 0 ; icol < elem_graph.dimension_2() ; ++icol ) {
+            for ( unsigned icol = 0 ; icol < elem_graph.extent(2) ; ++icol ) {
               std::cout << " " << elem_graph(ielem,irow,icol);
             }
             std::cout << " }" ;
@@ -314,6 +321,23 @@ public:
           std::cout << " }" << std::endl ;
         }
         std::cout << "}" << std::endl ;
+      }
+
+      if (num_sensitivities > 0) {
+        g_nodal_solution_dp =
+          GlobalMultiVectorType( ColMap, num_sensitivities );
+        g_nodal_residual_dp =
+          GlobalMultiVectorType( RowMap, num_sensitivities );
+        g_nodal_delta_dp =
+          GlobalMultiVectorType( RowMap, num_sensitivities );
+        g_nodal_solution_no_overlap_dp =
+          GlobalMultiVectorType(
+            RowMap ,
+            Kokkos::subview(
+              g_nodal_solution_dp.getDualView()
+              , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
+              , Kokkos::ALL()
+              ) );
       }
     }
 
@@ -336,6 +360,8 @@ public:
             , const bool   use_muelu
             , const bool   use_mean_based
             , const Teuchos::RCP<Teuchos::ParameterList>& fenlParams
+            , Scalar& response
+            , Teuchos::Array<Scalar>& response_gradient
             )
     {
       typedef ElementComputation< FixtureType , LocalMatrixType , CoeffFunctionType > ElementComputationType ;
@@ -343,6 +369,8 @@ public:
       typedef ResponseComputation< FixtureType , LocalVectorType > ResponseComputationType ;
 
       Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Impl::Timer newton_clock ;
+      newton_clock.reset();
 
       LocalMatrixType jacobian = g_jacobian.getLocalMatrix();
 
@@ -362,7 +390,7 @@ public:
         Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
 
       // Get DeviceConfig structs used by some functors
-      Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+      KokkosSparse::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
 
       CreateDeviceConfigs<Scalar>::eval( dev_config_elem,
                                          dev_config_gath,
@@ -377,6 +405,8 @@ public:
                                              dev_config_elem , qd );
 
       // Create boundary condition functor
+      // This also sets the boundary conditions in the solution vector
+      // and zeros out non BC values
       const DirichletComputationType dirichlet(
         fixture , nodal_solution , jacobian , nodal_residual ,
         2 /* apply at 'z' ends */ ,
@@ -393,11 +423,11 @@ public:
 
       Magnitude residual_norm_init = 0 ;
 
-      // RCP<Teuchos::FancyOStream> out =
-      //   Teuchos::fancyOStream(rcp(&std::cout,false));
+      // Teuchos::RCP<Teuchos::FancyOStream> out =
+      //   Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false));
       // out->setShowProcRank(true);
 
-
+      Teuchos::RCP< Tpetra::Operator<Scalar,int,int,NodeType> > precOp;
       for ( perf.newton_iter_count = 0 ;
             perf.newton_iter_count < newton_iteration_limit ;
             ++perf.newton_iter_count ) {
@@ -469,19 +499,26 @@ public:
         //--------------------------------
         // Solve for nonlinear update
 
+        // Zero out newton update vector before solve
+        g_nodal_delta.putScalar(0.0);
+
         result_struct cgsolve;
         if (use_belos) {
-          // Don't accumulate Belos times as the internal Teuchos timers
-          // already accumulate
-          cgsolve = belos_solve(rcpFromRef(g_jacobian),
-                                rcpFromRef(g_nodal_residual),
-                                rcpFromRef(g_nodal_delta),
+          // Destroy previous preconditioner (we could make reusing it optional)
+          precOp = Teuchos::null;
+          cgsolve = belos_solve(g_jacobian,
+                                g_nodal_residual,
+                                g_nodal_delta,
+                                precOp,
                                 fixture,
                                 use_muelu,
                                 use_mean_based ,
                                 fenlParams ,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
+
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
           perf.mat_vec_time    = cgsolve.matvec_time ;
           perf.cg_iter_time    = cgsolve.iter_time ;
           perf.prec_setup_time = cgsolve.prec_setup_time ;
@@ -502,6 +539,10 @@ public:
           perf.cg_total_time   += cgsolve.total_time ;
         }
         perf.cg_iter_count   += cgsolve.iteration ;
+        const int ne = cgsolve.ensemble_its.size();
+        perf.ensemble_cg_iter_count.resize(ne);
+        for (int i=0; i<ne; ++i)
+          perf.ensemble_cg_iter_count[i] += cgsolve.ensemble_its[i];
 
         // Update solution vector
 
@@ -561,6 +602,141 @@ public:
 
       response = responseFunc.apply();
       response = Kokkos::Example::all_reduce( response , comm );
+
+      // Compute sensitivity of response function if requested
+      if (response_gradient.size() > 0 && num_sensitivities > 0) {
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+        typedef Sacado::Fad::SLFad<Scalar,10> FadType;
+        typedef FadCoeffFunctionTraits<CoeffFunctionType, FadType> CoeffTraits;
+        typedef typename CoeffTraits::type FadCoeffFunctionType;
+        typedef ParamSensitivityGatherScatterOp<LocalMultiVectorType> SensGatherScatter;
+        typedef ElementComputation< FixtureType , LocalMatrixType , FadCoeffFunctionType, SensGatherScatter, FadType > FadElementComputationType ;
+
+        // Check sizes match
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          response_gradient.size() != num_sensitivities,
+          std::logic_error,
+          "Response gradient length must match number of sensitivities specified in constuctor");
+
+        // Extract DualViews
+        const LocalDualVectorType k_nodal_solution_dp =
+          g_nodal_solution_dp.getDualView();
+        const LocalDualVectorType k_nodal_residual_dp =
+          g_nodal_residual_dp.getDualView();
+        const LocalDualVectorType k_nodal_delta_dp    =
+          g_nodal_delta_dp.getDualView();
+
+        const LocalMultiVectorType nodal_solution_dp =
+          k_nodal_solution_dp.d_view;
+        const LocalMultiVectorType nodal_residual_dp =
+          k_nodal_residual_dp.d_view;
+        const LocalMultiVectorType nodal_delta_dp =
+          k_nodal_delta_dp.d_view;
+
+        LocalMultiVectorType nodal_solution_no_overlap_dp =
+          Kokkos::subview(
+            nodal_solution_dp,
+            std::pair<unsigned,unsigned>(0,fixture.node_count_owned()),
+            Kokkos::ALL());
+
+        const FadCoeffFunctionType coeff_function_dp =
+          CoeffTraits::eval(coeff_function);
+
+        const SensGatherScatter gather_scatter(nodal_solution_dp,
+                                               nodal_residual_dp);
+        const FadElementComputationType elemcomp_dp(
+          fixture , coeff_function_dp , isotropic ,
+          coeff_source , coeff_advection ,
+          nodal_solution ,
+          elem_graph ,
+          jacobian , nodal_residual ,
+          dev_config_elem , qd , gather_scatter , false );
+
+        const DirichletComputationType dirichlet_dp(
+          fixture , nodal_solution , jacobian , nodal_residual ,
+          2 /* apply at 'z' ends */ ,
+          bc_lower_value ,
+          bc_upper_value ,
+          dev_config_bc ,
+          nodal_solution_dp , nodal_residual_dp , false , true );
+
+        const ResponseComputationType responseFunc_dp(
+          fixture , nodal_solution_no_overlap , nodal_solution_no_overlap_dp );
+
+        g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
+        g_nodal_solution_dp.doImport (g_nodal_solution_no_overlap_dp, import, Tpetra::REPLACE);
+
+        Device::fence();
+        wall_clock.reset();
+
+        Kokkos::deep_copy( nodal_residual , 0.0 );
+        Kokkos::deep_copy( nodal_residual_dp , 0.0 );
+
+        elemcomp_dp.apply();
+        dirichlet_dp.apply();
+
+        Device::fence();
+        perf.tangent_fill_time = wall_clock.seconds();
+
+        result_struct cgsolve;
+        if (use_belos) {
+          // Reuse preconditioner from forward solve
+          cgsolve = belos_solve(g_jacobian,
+                                g_nodal_residual_dp,
+                                g_nodal_delta_dp,
+                                precOp,
+                                fixture,
+                                use_muelu,
+                                use_mean_based ,
+                                fenlParams ,
+                                cg_iteration_limit ,
+                                cg_iteration_tolerance);
+
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
+          perf.mat_vec_time    = cgsolve.matvec_time ;
+          perf.cg_iter_time    = cgsolve.iter_time ;
+          perf.prec_setup_time = cgsolve.prec_setup_time ;
+          perf.prec_apply_time = cgsolve.prec_apply_time ;
+          perf.cg_total_time   = cgsolve.total_time ;
+          perf.cg_iter_count  += cgsolve.iteration ;
+        }
+        else {
+          for (unsigned i=0; i<num_sensitivities; ++i) {
+            cgsolve = cg_solve(rcpFromRef(g_jacobian),
+                               g_nodal_residual_dp.getVectorNonConst(i),
+                               g_nodal_delta_dp.getVectorNonConst(i),
+                               cg_iteration_limit,
+                               cg_iteration_tolerance,
+                               print_flag);
+            perf.mat_vec_time    += cgsolve.matvec_time ;
+            perf.cg_iter_time    += cgsolve.iter_time ;
+            perf.prec_setup_time += cgsolve.prec_setup_time ;
+            perf.prec_apply_time += cgsolve.prec_apply_time ;
+            perf.cg_total_time   += cgsolve.total_time ;
+            perf.cg_iter_count   += cgsolve.iteration ;
+          }
+        }
+        const int ne = cgsolve.ensemble_its.size();
+        perf.ensemble_cg_iter_count.resize(ne);
+        for (int i=0; i<ne; ++i)
+          perf.ensemble_cg_iter_count[i] += cgsolve.ensemble_its[i];
+
+        g_nodal_solution_no_overlap_dp.update(-1.0,g_nodal_delta_dp,1.0);
+
+        Teuchos::Array<Scalar> response_and_gradient =
+          responseFunc_dp.apply_gradient();
+
+        response_and_gradient =
+          Kokkos::Example::all_reduce( response_and_gradient , comm );
+        for (unsigned i=0; i<num_sensitivities; ++i)
+          response_gradient[i] = response_and_gradient[i+1];
+        response = response_and_gradient[0];
+#endif
+      }
+
+      Device::fence();
+      perf.newton_total_time = newton_clock.seconds();
     }
 };
 
@@ -582,6 +758,7 @@ Perf fenl(
   const double bc_lower_value ,
   const double bc_upper_value ,
   Scalar& response,
+  Teuchos::Array<Scalar>& response_gradient,
   const QuadratureData<Device>& qd = QuadratureData<Device>() )
 {
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
@@ -608,9 +785,12 @@ Perf fenl(
   problem.perf.prec_setup_time = 0;
   problem.perf.prec_apply_time  = 0;
   problem.perf.cg_total_time = 0;
+  problem.perf.newton_total_time = 0;
   problem.perf.cg_iter_count = 0;
+  problem.perf.ensemble_cg_iter_count.clear();
   problem.perf.import_time = 0;
   problem.perf.fill_time = 0;
+  problem.perf.tangent_fill_time = 0;
   problem.perf.bc_time = 0;
 
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
@@ -631,12 +811,13 @@ Perf fenl(
                  , use_muelu
                  , use_mean_based
                  , fenlParams
+                 , response
+                 , response_gradient
                  );
 
     problem.perf.reduceMax(*problem.comm);
 
     if ( 0 == itrial ) {
-      response   = problem.response ;
       perf_stats = problem.perf ;
     }
     else {
@@ -667,6 +848,7 @@ Perf fenl(
   const double bc_lower_value ,
   const double bc_upper_value ,
   Scalar& response,
+  Teuchos::Array<Scalar>& response_gradient,
   const QuadratureData<Device>& qd = QuadratureData<Device>() )
 {
 
@@ -682,7 +864,8 @@ Perf fenl(
   // Problem setup:
 
   const double geom_bubble[3] = { 1.0 , 1.0 , 1.0 };
-  ProblemType problem( comm , node , use_nodes , geom_bubble , use_print );
+  ProblemType problem( comm , node , use_nodes , geom_bubble , use_print ,
+                       response_gradient.size() );
 
   //------------------------------------
   // Solve
@@ -702,6 +885,7 @@ Perf fenl(
                bc_lower_value,
                bc_upper_value,
                response,
+               response_gradient,
                qd );
 }
 

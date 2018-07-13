@@ -62,6 +62,8 @@ namespace Teko {
   */
 class BlockLowerTriInverseOp : public BlockImplicitLinearOp {
 public:
+   using BlockImplicitLinearOp::implicitApply;
+
    /** \brief This constructor explicitly takes a lower triangular matrix
      *        and inverse diagonal operators and builds a forward substitution operator.
      *

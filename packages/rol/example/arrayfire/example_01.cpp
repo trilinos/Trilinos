@@ -49,7 +49,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_StatusTest.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFRomRef(bhs);
 
   int errorFlag  = 0;
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
       filename = "input-float.xml";
     }
     *outStream << std::endl << "Using input file: " << filename << std::endl << std::endl;
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Define algorithm.
@@ -109,23 +109,23 @@ int main(int argc, char *argv[]) {
     afinfo = af::infoString(true);
     *outStream << std::endl << afinfo << std::endl;
 
-    /***** Define RCP to AF array with initial guess. *****/
+    /***** Define ROL::Ptr to AF array with initial guess. *****/
     ElementT zero(0);
     ElementT op2(1.2);
     ElementT one(1);
-    Teuchos::RCP<af::array> x_rcp = Teuchos::rcp( new af::array(dim,afType));
-    *x_rcp = af::constant(zero,x_rcp->dims(),afType);
+    ROL::Ptr<af::array> x_ptr = ROL::makePtr<af::array>(dim,afType);
+    *x_ptr = af::constant(zero,x_ptr->dims(),afType);
     // Set Initial Guess
     for (dim_t i=0; i<dim/2; i++) {
-      (*x_rcp)(2*i)   = -op2;
-      (*x_rcp)(2*i+1) =  one;
+      (*x_ptr)(2*i)   = -op2;
+      (*x_ptr)(2*i+1) =  one;
     }
-    //af_print(*x_rcp);
-    ROL::ArrayFireVector<RealT,ElementT> x(x_rcp);
+    //af_print(*x_ptr);
+    ROL::ArrayFireVector<RealT,ElementT> x(x_ptr);
 
     // Run Algorithm
     algo.run(x, obj, true, *outStream);
-    //af_print(*x_rcp);
+    //af_print(*x_ptr);
 
   }
   catch (std::logic_error err) {

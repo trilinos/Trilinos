@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -49,6 +49,15 @@
 #include <Ifpack2_Experimental_RBILUK.hpp>
 #include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_RILUK.hpp>
+
+//#define IFPACK2_RBILUK_INITIAL
+#define IFPACK2_RBILUK_INITIAL_NOKK
+
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+#include <KokkosBatched_Gemm_Decl.hpp>
+#include <KokkosBatched_Gemm_Serial_Impl.hpp>
+#include <KokkosBatched_Util.hpp>
+#endif
 
 namespace Ifpack2 {
 
@@ -250,7 +259,9 @@ void RBILUK<MatrixType>::initialize ()
 
     this->Graph_->initialize ();
     allocate_L_and_U_blocks ();
+#ifdef IFPACK2_RBILUK_INITIAL
     initAllValues (*A_block_);
+#endif
   } // Stop timing
 
   this->isInitialized_ = true;
@@ -474,6 +485,7 @@ void RBILUK<MatrixType>::compute ()
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
 
     // MinMachNum should be officially defined, for now pick something a little
@@ -571,8 +583,17 @@ void RBILUK<MatrixType>::compute ()
         colflag[InI[j]] = j;
       }
 
+#ifndef IFPACK2_RBILUK_INITIAL
+      for (local_ordinal_type i = 0; i < blockSize_; ++i)
+        for (local_ordinal_type j = 0; j < blockSize_; ++j){
+          {
+            diagModBlock(i,j) = 0;
+          }
+        }
+#else
       scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
       Kokkos::deep_copy (diagModBlock, diagmod);
+#endif
 
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
@@ -582,9 +603,17 @@ void RBILUK<MatrixType>::compute ()
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
         // alpha = 1, beta = 0
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+        KokkosBatched::Experimental::SerialGemm
+          <KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          (STS::one (), currentVal, dmatInverse, STS::zero (), matTmp);
+#else
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
                                     STS::zero (), matTmp);
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+#endif
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
 
@@ -599,9 +628,17 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
               little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+        KokkosBatched::Experimental::SerialGemm
+          <KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          ( magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
+#else
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+#endif
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -612,14 +649,30 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+        KokkosBatched::Experimental::SerialGemm
+          <KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
+#else
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+#endif
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+        KokkosBatched::Experimental::SerialGemm
+          <KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), diagModBlock);
+#else
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+#endif
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -668,9 +721,17 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal((typename little_block_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
         // scale U by the diagonal inverse
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+        KokkosBatched::Experimental::SerialGemm
+          <KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Trans::NoTranspose,
+          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          (STS::one (), dmat, currentVal, STS::zero (), matTmp);
+#else
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
                                     STS::zero (), matTmp);
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+#endif
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
       }
@@ -680,10 +741,17 @@ void RBILUK<MatrixType>::compute ()
         U_block_->replaceLocalValues (local_row, &InI[NumL+1], &InV[blockMatSize*(NumL+1)], NumU);
       }
 
+#ifndef IFPACK2_RBILUK_INITIAL
+      // Reset column flags
+      for (size_t j = 0; j < NumIn; ++j) {
+        colflag[InI[j]] = -1;
+      }
+#else
       // Reset column flags
       for (size_t j = 0; j < num_cols; ++j) {
         colflag[j] = -1;
       }
+#endif
     }
 
   } // Stop timing
@@ -894,7 +962,7 @@ std::string RBILUK<MatrixType>::description () const
 // handled internally via dynamic cast.
 
 #define IFPACK2_EXPERIMENTAL_RBILUK_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::Experimental::RBILUK< Tpetra::Experimental::BlockCrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Experimental::RBILUK< Tpetra::BlockCrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Experimental::RBILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

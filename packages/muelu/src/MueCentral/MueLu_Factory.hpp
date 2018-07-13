@@ -93,6 +93,11 @@ namespace MueLu {
 
     //! Default implementation of FactoryAcceptor::GetFactory()
     const RCP<const FactoryBase> GetFactory(const std::string& varName) const {
+
+      // Special treatment for "NoFactory"
+      if (varName == "NoFactory")
+        return MueLu::NoFactory::getRCP();
+
       if (!GetParameterList().isParameter(varName)&& GetValidParameterList() == Teuchos::null) {
         // If the parameter is not on the list and there is not validator, the defaults values for 'varName' is not set.
         // Failback by using directly the FactoryManager
@@ -164,6 +169,13 @@ namespace MueLu {
     bool IsAvailable(Level& level, const std::string& varName) const {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }
+
+  public:
+    static void EnableTimerSync() { timerSync_ = true;  }
+    static void DisableTimerSync() { timerSync_ = false; }
+
+  protected:
+    static bool timerSync_;
 
 #ifdef HAVE_MUELU_DEBUG
   public:

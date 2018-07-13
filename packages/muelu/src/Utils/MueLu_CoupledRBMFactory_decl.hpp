@@ -47,8 +47,8 @@
 #define MUELU_COUPLEDRBMFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"

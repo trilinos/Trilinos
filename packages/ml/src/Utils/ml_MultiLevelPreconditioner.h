@@ -320,6 +320,38 @@ public:
                            Epetra_Vector & Rhs, 
                            const bool  rhsAndsolProvided,
 			   const bool ComputePrec = true);
+// ================================================ ====== ==== ==== == =
+/*! Constructor for scalar PDE problems based on applying AMG to the distance
+ *  Laplacian operator when constructing grid transfers. The main unique
+ *  feature is that there may be some dofs that correspond to the same node
+ *  location. These shared dofs fall into two categories. If these dofs are
+ *  strongly connected to each other (as determined by tol), they are
+ *  explicitly elminated from the Laplacian (merged into a supernode). Once
+ *  a P is obtained, this P is then expanded to account for shared nodes
+ *  by simply duplicating the supernodes row of P for each of the individual
+ *  vertices that contribute to the supernode. If share dofs are weakly
+ *  connected (or not connected at all), nothing special is done (other than
+ *  the ususal ignoring of weak connections). One last trick is employed, 
+ *  connections between supernodes and non-supernodes (i.e., regular nodes)
+ *  are always assumed to be weak. Shared nodes are often used to capture
+ *  interfaces or other features. By breaking these connections, the AMG
+ *  can better maintain these features throughout the hierarchy. Finally, the
+ *  constructor also allows for *  the removal of column nonzeros associated
+ *  with Dirichlet points. To use this option the rhs and initial guess must be
+ *  provided. Modification of the matrix, rhs, and initial guess must be 
+ *  allowable to use this option.
+ */
+
+  MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
+    const Teuchos::ParameterList & List,
+    const double distTol, // two points are at the same location when
+                          // || (x_1,y_1,z_1) -  (x_2,y_2,z_2)||_2 < distTol
+    const double tol,     // ignore values when
+                          //       A(i,j)^2 < A(i,i)*A(j,j)*tol^2
+    Epetra_Vector & Lhs,
+    Epetra_Vector & Rhs,
+    const bool  rhsAndsolProvided,
+    const bool ComputePrec = true);
 #endif
 #ifdef HAVE_ML_AZTECOO
   //! MultiLevelPreconditioner constructor for Maxwell's equations.
@@ -930,7 +962,7 @@ template <class T> class MLVec {
     // different constructors & destructors
 
     MLVec();              
-    MLVec(int size);
+    MLVec(int mysize);
     MLVec(T *startptr, T *endptr, bool okToChangePtr = false, free_s freeType = neither);
     ~MLVec();
 
@@ -966,20 +998,20 @@ template <class T> MLVec<T>::MLVec() {
 }
 
 // Create an vector without any data but allocate space
-template <class T> MLVec<T>::MLVec(int size) {
+template <class T> MLVec<T>::MLVec(int mysize) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION(size < 0,std::logic_error,
-  "MLVec error, cannot create a negative size (= " << size << ") vector\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(mysize < 0,std::logic_error,
+  "MLVec error, cannot create a negative size (= " << mysize << ") vector\n");
 
-  data_          = NULL;        size_          = size;
+  data_          = NULL;        size_          = mysize;
   okToChangePtr_ = true;        getPtrInvoked_ = false;
   freeType_      = neither;
 
-  if (size > 0) {
-     data_ = (T *) ML_allocate(sizeof(T)*size); 
+  if (size_ > 0) {
+     data_ = (T *) ML_allocate(sizeof(T)*size_); 
 
      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL,std::logic_error,
-     "MLVec error, not enough space for vector of size " << size << "\n");
+     "MLVec error, not enough space for vector of size " << size_ << "\n");
 
      freeType_ = useFree;
   }
@@ -997,6 +1029,7 @@ template <class T> MLVec<T>::MLVec(T *start, T *end, bool okToChangePtr,
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
+  if (size_ == 0) data_ = NULL;
   getPtrInvoked_ = false;
 }
 template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
@@ -1012,12 +1045,13 @@ template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
+  if (size_ == 0) data_ = NULL;
   getPtrInvoked_ = false;
 }
 
 template <class T> MLVec<T>::~MLVec()              { 
    if (data_ != NULL) {
-      TEUCHOS_TEST_FOR_EXCEPTION(size_ == 0,std::logic_error,
+      TEUCHOS_TEST_FOR_TERMINATION(size_ == 0,
       "MLVec error, data pointer should be null for 0 length vectors\n");
       if (okToChangePtr_ && (freeType_ == useFree))   ML_free(data_); 
       if (okToChangePtr_ && (freeType_ == useDelete)) delete data_;
@@ -1073,6 +1107,7 @@ template <class T> void MLVec<T>::resize(int newsize) {
 
          freeType_ = useFree;
        }
+       else data_ = NULL;
      }
      else {
        if ( newsize > 0) {
@@ -1280,6 +1315,24 @@ extern int MLcoarseStatus(const MLVec<bool>& rowEmpty,
 
 
 extern int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost);
+
+
+extern int ZeroDist(MLVec<double>& xxx, MLVec<double>& yyy, MLVec<double>& zzz,
+             MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals,
+             MLVec<double>& diagonal, double tol, MLVec<int>& rowZeros, MLVec<int>& colZeros,
+             double disttol);
+
+extern int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros, 
+                       MLVec<int>& groupHead, MLVec<int>& groupNext);
+
+extern int BuildNonSharedMap(MLVec<int>& newMap, MLVec<int>& groupHead, MLVec<int>& groupNext);
+
+extern int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
+                     MLVec<double>& inputVals, MLVec<double>& diagonal,
+                     MLVec<int>& groupHead, MLVec<int>& groupNext, 
+                     MLVec<int>& outputRowptr, MLVec<int>& outputCols,
+                     MLVec<int>& map, int newN, double tol);
+
 
 #endif /* NewStuff */
 #endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */

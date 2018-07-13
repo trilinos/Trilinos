@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -43,20 +43,25 @@ void vecout(double *vec, int beg, int end, char *tag, char *file_name)
   FILE *file;
   int   i;
 
-  if (file_name != NULL)
+  if (file_name != NULL) {
     file = fopen(file_name, "w");
-  else
+  }
+  else {
     file = stdout;
+  }
 
   fprintf(file, "%s:\n", tag);
   for (i = beg; i <= end; i++) {
-    if (fabs(vec[i]) >= 1.0e-16)
+    if (fabs(vec[i]) >= 1.0e-16) {
       fprintf(file, "%2d.   %24.16f\n", i, vec[i]);
-    else
+    }
+    else {
       fprintf(file, "%2d.         %g \n", i, vec[i]);
+    }
   }
-  if (file_name != NULL)
+  if (file_name != NULL) {
     fclose(file);
+  }
 }
 
 /* Scale the eigenvector such that the first element is non-negative.

@@ -54,7 +54,7 @@
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-//#include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
 
 namespace MueLu {
 // MPI helpers
@@ -77,6 +77,9 @@ namespace MueLu {
     static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
     static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
+
+  private:
+    static bool CheckMatrix(const Matrix& A);
   };
 
 } //namespace MueLu

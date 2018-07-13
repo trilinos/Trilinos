@@ -45,6 +45,7 @@
 
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_HashUtils.hpp"
 
@@ -154,12 +155,12 @@ BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<con
          // determine if orientations are required
          orientationsRequired |= fieldItr->second->requiresOrientations();
 
-         Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepidBasis 
+         Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepidBasis 
                = fieldItr->second->getIntrepid2Basis();
          Teuchos::RCP<Intrepid2FieldPattern> fp = Teuchos::rcp(new Intrepid2FieldPattern(intrepidBasis));
          dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);
       }
-   } 
+   }
 
    // set orientations required flag
    dofManager->setOrientationsRequired(orientationsRequired);

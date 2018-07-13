@@ -53,7 +53,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
 #include "ROL_ParameterListConverters.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -82,12 +82,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     RealT    pi = std::acos(-1);
     ComplexT i(RealT(0),RealT(1));
 
-    RCP<vector> xp = rcp(new vector(N));
+    ROL::Ptr<vector> xp = ROL::makePtr<vector>(N);
 
     RealT scale = 1.0/std::sqrt(N);    
 

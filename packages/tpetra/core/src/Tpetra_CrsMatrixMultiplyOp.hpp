@@ -253,16 +253,16 @@ namespace Tpetra {
 
       // Translate from global to local sweep direction.
       // While doing this, validate the input.
-      KokkosClassic::ESweepDirection localDirection;
+      ESweepDirection localDirection;
       if (direction == Forward) {
-        localDirection = KokkosClassic::Forward;
+        localDirection = Forward;
       }
       else if (direction == Backward) {
-        localDirection = KokkosClassic::Backward;
+        localDirection = Backward;
       }
       else if (direction == Symmetric) {
         // We'll control local sweep direction manually.
-        localDirection = KokkosClassic::Forward;
+        localDirection = Forward;
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -431,14 +431,14 @@ namespace Tpetra {
         else { // direction == Symmetric
           matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                      dampingFactor,
-                                                     KokkosClassic::Forward);
+                                                     Forward);
           // Communicate again before the Backward sweep.
           if (! importer.is_null ()) {
             X_colMap->doImport (*X_domainMap, *importer, INSERT);
           }
           matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                      dampingFactor,
-                                                     KokkosClassic::Backward);
+                                                     Backward);
         }
       }
 
@@ -497,16 +497,16 @@ namespace Tpetra {
 
       // Translate from global to local sweep direction.
       // While doing this, validate the input.
-      KokkosClassic::ESweepDirection localDirection;
+      ESweepDirection localDirection;
       if (direction == Forward) {
-        localDirection = KokkosClassic::Forward;
+        localDirection = Forward;
       }
       else if (direction == Backward) {
-        localDirection = KokkosClassic::Backward;
+        localDirection = Backward;
       }
       else if (direction == Symmetric) {
         // We'll control local sweep direction manually.
-        localDirection = KokkosClassic::Forward;
+        localDirection = Forward;
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -656,14 +656,14 @@ namespace Tpetra {
         else { // direction == Symmetric
           matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                      dampingFactor,
-                                                     KokkosClassic::Forward);
+                                                     Forward);
           // Communicate again before the Backward sweep, if necessary.
           if (! importer.is_null ()) {
             X_colMap->doImport (*X_domainMap, *importer, INSERT);
           }
           matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                      dampingFactor,
-                                                     KokkosClassic::Backward);
+                                                     Backward);
         }
       }
 

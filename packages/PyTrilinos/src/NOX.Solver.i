@@ -74,77 +74,29 @@ in addition to the following factory function:
 	docstring    = %nox_solver_docstring) Solver
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Epetra include files
+#ifdef HAVE_NOX_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.hpp"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
-#include "NOX_Solver_Factory.H"
+// NOX include files
+#include "PyTrilinos_NOX_StatusTest_Headers.hpp"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Solver_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// Configuration and optional include files
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_MapColoring.h"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_ModelEvaluatorInterface.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
-%}
-#endif
 
 // Standard exception handling
 %include "exception.i"
@@ -161,9 +113,9 @@ in addition to the following factory function:
 %rename(StatusTest_None   ) NOX::StatusTest::None;
 
 // Trilinos imports
-%import  "Teuchos.i"
-%import  "NOX.Abstract.i"
-%import  "NOX.StatusTest.i"
+%import "Teuchos.i"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 
 // General exception handling
 %feature("director:except")

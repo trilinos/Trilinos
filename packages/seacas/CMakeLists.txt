@@ -4,11 +4,31 @@
 #
 
 TRIBITS_PACKAGE_DECL( SEACAS ENABLE_SHADOWING_WARNINGS )
-TRIBITS_PACKAGE_DECL( SEACAS ENABLE_STRONG_C_COMPILE_WARNINGS )
-TRIBITS_PACKAGE_DECL( SEACAS ENABLE_STRONG_CXX_COMPILE_WARNINGS )
 
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  SEACASExodus_ENABLE_THREADSAFE
+  EXODUS_THREADSAFE
+  "Enable thread-safe version of Exodus."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  SEACASIoss_ENABLE_THREADSAFE
+  IOSS_THREADSAFE
+  "Enable thread-safe version of Ioss."
+  OFF
+  )
+
+ASSERT_DEFINED(TPL_ENABLE_Pthread)
+IF (SEACASExodus_ENABLE_THREADSAFE AND NOT TPL_ENABLE_Pthread)
+  MESSAGE(FATAL_ERROR "You set SEACASExodus_ENABLE_THREADSAFE=ON, but TriBITs support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads before attempting to enable the thread-safe Exodus support.")
+ENDIF ()
+IF (SEACASIoss_ENABLE_THREADSAFE AND NOT TPL_ENABLE_Pthread)
+  MESSAGE(FATAL_ERROR "You set SEACASIoss_ENABLE_THREADSAFE=ON, but TriBITs support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads before attempting to enable the thread-safe IOSS support.")
+ENDIF ()
 
 # C) Add the libraries, tests, and examples
 #- Add executable that will be installed in bin dir...

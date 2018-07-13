@@ -78,7 +78,7 @@ TEST(stkMeshHowTo, checkDeletedState)
   bulk.destroy_relation(element, node1, 0);
   EXPECT_TRUE(bulk.destroy_entity(node1));
   // Elements must have all their nodes defined:
-  stk::mesh::Entity new_node = bulk.declare_entity(stk::topology::NODE_RANK, 25);
+  stk::mesh::Entity new_node = bulk.declare_node(25);
   bulk.declare_relation(element,new_node, 0);
   bulk.modification_end();
   EXPECT_FALSE( bulk.is_valid(node1) ); // deleted makes it not valid
@@ -107,7 +107,7 @@ TEST(stkMeshHowTo, checkModifiedState)
   bulk.modification_begin();
   bulk.destroy_relation(element, node1, 0);
   // Elements must have all their nodes defined:
-  stk::mesh::Entity new_node = bulk.declare_entity(stk::topology::NODE_RANK, 25);
+  stk::mesh::Entity new_node = bulk.declare_node(25);
   bulk.declare_relation(element, new_node, 0);
   bulk.modification_end();
   EXPECT_EQ( stk::mesh::Modified, bulk.state(node1) );
@@ -191,7 +191,7 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   bulk.modification_begin();
   if (bulk.parallel_rank() == 0) {
       bulk.destroy_relation(element1, node1, 0);
-      stk::mesh::Entity new_node = bulk.declare_entity(stk::topology::NODE_RANK,15);
+      stk::mesh::Entity new_node = bulk.declare_node(15);
       bulk.declare_relation(element1,new_node,0);
   }
   if (bulk.parallel_rank() == 0) {

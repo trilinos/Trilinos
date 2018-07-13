@@ -68,57 +68,21 @@ NOX.Epetra.Interface provides the following user-level classes:
 	docstring    = %nox_epetra_interface_docstring) Interface
 
 %{
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// PyTrilinos include
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
-// Epetra includes
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_LinearProblem.hpp"
-
-// Local Epetra includes
+// Local Epetra include files
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// NOX::Epetra::Interface includes
-#include "NOX_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
+// NOX::Epetra::Interface include files
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 %}
 
 // General ignore directives
@@ -149,7 +113,7 @@ if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 try:
     from .. import Abstract
-except ValueError:
+except (ValueError, SystemError, ImportError):
     import Abstract
 %}
 

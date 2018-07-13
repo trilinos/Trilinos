@@ -243,7 +243,7 @@ namespace Belos {
     /// \brief Constructor
     ///
     /// \param label [in] Label for Belos timers.
-    SimpleOrthoManager (const std::string& label) :
+    SimpleOrthoManager (const std::string& label = "Belos") :
       label_ (label)
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -40,17 +40,19 @@
  *	find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include "elb.h"        // for Problem_Description, etc
-#include "elb_elem.h"   // for get_elem_info, E_Type, etc
+#include "elb_elem.h"   // for get_elem_info, NNODES, etc
 #include "elb_err.h"    // for Gen_Error
 #include "elb_format.h" // for ST_ZU
 #include "elb_graph.h"
 #include "elb_util.h" // for in_list, find_inter
 #include <cassert>    // for assert
 #include <cstddef>    // for size_t
-#include <cstdio>     // for sprintf, printf, nullptr
+#include <cstdio>     // for sprintf, printf
 #include <cstdlib>    // for free, malloc
 #include <cstring>    // for strcat, strcpy
-#include <sstream>    // for operator<<, ostringstream, etc
+#include <iostream>   // for operator<<, basic_ostream, etc
+#include <sstream>
+#include <vector> // for vector
 
 extern int is_hex(E_Type etype);
 extern int is_tet(E_Type etype);
@@ -58,12 +60,14 @@ extern int is_3d_element(E_Type etype);
 
 /* Local function prototypes */
 namespace {
-  template <typename INT> int find_surnd_elems(Mesh_Description<INT> *, Graph_Description<INT> *);
+  template <typename INT>
+  int find_surnd_elems(Mesh_Description<INT> * /*mesh*/, Graph_Description<INT> * /*graph*/);
 
   template <typename INT>
-  int find_adjacency(Problem_Description *, Mesh_Description<INT> *, Graph_Description<INT> *,
-                     Weight_Description<INT> *, Sphere_Info *);
-}
+  int find_adjacency(Problem_Description * /*problem*/, Mesh_Description<INT> * /*mesh*/,
+                     Graph_Description<INT> * /*graph*/, Weight_Description<INT> * /*weight*/,
+                     Sphere_Info * /*sphere*/);
+} // namespace
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -91,7 +95,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
     return 0;
   }
   double time2 = get_time();
-  printf("Time to find surrounding elements: %fs\n", time2 - time1);
+  std::cerr << "Time to find surrounding elements: " << time2 - time1 << "\n";
 
   /* Find the adjacency, if required */
   if (problem->alloc_graph == ELB_TRUE) {
@@ -100,7 +104,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
       return 0;
     }
     time1 = get_time();
-    printf("Time to find the adjacency: %fs\n", time1 - time2);
+    std::cerr << "Time to find the adjacency: " << time1 - time2 << "\n";
   }
   return 1;
 }
@@ -118,7 +122,69 @@ namespace {
   template <typename INT>
   int find_surnd_elems(Mesh_Description<INT> *mesh, Graph_Description<INT> *graph)
   {
+    std::vector<int>    surround_count(mesh->num_nodes);
+    std::vector<size_t> last_element(mesh->num_nodes);
+
+    size_t sur_elem_total_size = 0;
+    /* Find the count of surrounding elements for each node in the mesh */
+    // The hope is that this code will speed up the entire routine even
+    // though we are iterating the complete connectivity array twice.
+    for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
+      int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+      for (int ncnt = 0; ncnt < nnodes; ncnt++) {
+        INT node = mesh->connect[ecnt][ncnt];
+        assert(node < (INT)mesh->num_nodes);
+        /*
+         * in the case of degenerate elements, where a node can be
+         * entered into the connect table twice, need to check to
+         * make sure that this element is not already listed as
+         * surrounding this node
+         */
+        if (last_element[node] != ecnt + 1) {
+          last_element[node] = ecnt + 1;
+          surround_count[node]++;
+          sur_elem_total_size++;
+        }
+      }
+    } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
+
+    size_t v_size  = sizeof(std::vector<INT>);
+    size_t vv_size = sizeof(std::vector<std::vector<INT>>);
+    size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
+    std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size
+              << " entries (" << total << " bytes).\n";
+    last_element.resize(0);
+    last_element.shrink_to_fit();
+
+    // Attempt to reserve an array with this size...
+    double time1 = get_time();
+    {
+      char *block = reinterpret_cast<char *>(malloc(total));
+      if (block == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "fatal: Could not allocate memory for reverse-connectivity array "
+                  "(find_surnd_elems) of size "
+               << total << "bytes.\n";
+        Gen_Error(0, errmsg.str());
+      }
+      free(block);
+    }
+
     graph->sur_elem.resize(mesh->num_nodes);
+    for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
+      if (surround_count[ncnt] == 0) {
+        std::cerr << "WARNING: Node = " << ncnt + 1 << " has no elements\n";
+      }
+      else {
+        graph->sur_elem[ncnt].reserve(surround_count[ncnt]);
+        graph->max_nsur =
+            surround_count[ncnt] > graph->max_nsur ? surround_count[ncnt] : graph->max_nsur;
+      }
+    }
+    double time2 = get_time();
+
+    std::cerr << "\tmemory allocated...(" << time2 - time1 << " seconds)\n"
+              << "\tmax of " << graph->max_nsur << " elements per node\n";
 
     /* Find the surrounding elements for each node in the mesh */
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
@@ -132,24 +198,18 @@ namespace {
          * make sure that this element is not already listed as
          * surrounding this node
          */
-        if (graph->sur_elem[node].empty() ||
-            ecnt != (size_t)graph->sur_elem[node][graph->sur_elem[node].size() - 1]) {
+        if (graph->sur_elem[node].empty() || ecnt != (size_t)graph->sur_elem[node].back()) {
           /* Add the element to the list */
           graph->sur_elem[node].push_back(ecnt);
         }
       }
     } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
 
+#ifndef NDEBUG
     for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
-      if (graph->sur_elem[ncnt].empty()) {
-        printf("WARNING: Node = " ST_ZU " has no elements\n", ncnt + 1);
-      }
-      else {
-        size_t nsur = graph->sur_elem[ncnt].size();
-        if (nsur > graph->max_nsur)
-          graph->max_nsur = nsur;
-      }
+      assert(graph->sur_elem[ncnt].size() == (size_t)surround_count[ncnt]);
     }
+#endif
     return 1;
   }
 
@@ -194,6 +254,7 @@ namespace {
       graph->nadj = 0;
       for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
         graph->start[ncnt] = graph->nadj;
+        assert(graph->nadj == graph->adj.size());
         for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
           size_t elem   = graph->sur_elem[ncnt][ecnt];
           int    nnodes = get_elem_info(NNODES, mesh->elem_type[elem]);
@@ -204,6 +265,7 @@ namespace {
                 in_list(entry, graph->adj.size() - graph->start[ncnt],
                         &graph->adj[graph->start[ncnt]]) < 0) {
               graph->adj.push_back(entry);
+              graph->nadj++;
             }
           }
         } /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
@@ -235,8 +297,9 @@ namespace {
         Gen_Error(0, "fatal: insufficient memory");
         return 0;
       }
-      for (size_t ecnt    = 0; ecnt < mesh->num_elems; ecnt++)
+      for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
         tmp_element[ecnt] = -1;
+      }
 
       /* Cycle through the elements */
       E_Type etype_last = NULL_EL;
@@ -259,6 +322,7 @@ namespace {
 
         if (etype != SPHERE || (etype == SPHERE && problem->no_sph == 1)) {
           graph->start[cnt] = graph->nadj;
+          assert(graph->nadj == graph->adj.size());
 
           /*
            * now have to decide how to determine adjacency
@@ -297,8 +361,9 @@ namespace {
                     tmp_element[entry] = ecnt;
                     (graph->nadj)++;
                     graph->adj.push_back(entry);
-                    if (weight->type & EDGE_WGT)
+                    if (weight->type & EDGE_WGT) {
                       weight->edges.push_back(1.0);
+                    }
                   }
                   else if (weight->type & EDGE_WGT) {
                     iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
@@ -355,8 +420,9 @@ namespace {
                  * and side_cnt = 2
                  */
 
-                if (nnodes > side_cnt)
+                if (nnodes > side_cnt) {
                   nnodes = side_cnt;
+                }
 
                 nnodes--; /* decrement to find the number of intersections  */
 
@@ -387,8 +453,9 @@ namespace {
                      indices in pt_list.  When ncnt != 0, hold_elem and nhold
                      change */
                   nhold = graph->sur_elem[side_nodes[0]].size();
-                  for (size_t ncnt  = 0; ncnt < nhold; ncnt++)
+                  for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
                     hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+                  }
 
                   for (int ncnt = 0; ncnt < nnodes; ncnt++) {
                     nelem =
@@ -398,12 +465,14 @@ namespace {
                     /*  If less than 2 ( 0 or 1 ) elements only
                         touch nodes 0 and ncnt+1 then try next side node, i.e.,
                         repeat loop ncnt */
-                    if (nelem < 2)
+                    if (nelem < 2) {
                       break;
+                    }
                     else {
                       nhold = nelem;
-                      for (size_t i  = 0; i < nelem; i++)
+                      for (size_t i = 0; i < nelem; i++) {
                         hold_elem[i] = hold_elem[pt_list[i]];
+                      }
                     }
                   }
                 }
@@ -437,8 +506,9 @@ namespace {
                     if (nelem > 1) {
 
                       /* Then get the correct elements out of the hold array */
-                      for (size_t i  = 0; i < nelem; i++)
+                      for (size_t i = 0; i < nelem; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes[inode]][pt_list[i]];
+                      }
                       break;
                     }
                     else {
@@ -520,8 +590,9 @@ namespace {
                           /* if this element 1 is a hexshell, then only
                              require 4 of the 6 nodes to match between elements
                              1 and 2 */
-                          if (etype == HEXSHELL && side_cnt == 6)
+                          if (etype == HEXSHELL && side_cnt == 6) {
                             side_cnt = 4;
+                          }
 
                           /* side_cnt is the number of nodes on the face
                              of a particular element.  This number is passed
@@ -560,8 +631,9 @@ namespace {
                              * have to put a kluge in here for the
                              * tet/hex problem
                              */
-                            if (hflag1 && tflag2)
-                              (weight->edges[weight->edges.size() - 1])--;
+                            if (hflag1 && tflag2) {
+                              (weight->edges.back())--;
+                            }
                           }
                         }
                         else if ((sid < 0) && (!problem->skip_checks)) {
@@ -645,11 +717,13 @@ namespace {
 
                         (graph->nadj)++;
                         graph->adj.push_back(entry);
-                        if (weight->type & EDGE_WGT)
+                        if (weight->type & EDGE_WGT) {
                           weight->edges.push_back(1.0);
+                        }
                       }
-                      else if (weight->type & EDGE_WGT)
+                      else if (weight->type & EDGE_WGT) {
                         weight->edges[iret + (graph->start[cnt])] += 1.0;
+                      }
                     }
                   } /* End: if(ecnt != entry) */
                 }   /* for(i=0; i < graph->nsur_elem[node]; i++) */
@@ -677,7 +751,7 @@ namespace {
       std::ostringstream errmsg;
       errmsg << "fatal: Graph adjacency edge count (" << graph->nadj
              << ") exceeds chaco 32-bit integer range.\n";
-      Gen_Error(0, errmsg.str().c_str());
+      Gen_Error(0, errmsg.str());
       return 0;
     }
 
@@ -695,4 +769,4 @@ namespace {
     }
     return 1;
   }
-}
+} // namespace

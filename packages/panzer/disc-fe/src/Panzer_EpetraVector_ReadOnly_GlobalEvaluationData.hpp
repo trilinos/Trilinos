@@ -40,124 +40,293 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
-#define __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
+#ifndef   __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
+#define   __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Epetra
 #include "Epetra_Import.h"
-#include "Epetra_Vector.h"
 #include "Epetra_Map.h"
+#include "Epetra_Vector.h"
 
-#include "Teuchos_RCP.hpp"
-
-#include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_VectorBase.hpp"
-
+// Panzer
 #include "Panzer_ReadOnlyVector_GlobalEvaluationData.hpp"
 
+// Teuchos
+#include "Teuchos_RCP.hpp"
 
-namespace panzer {
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Forward Declarations
+//
+///////////////////////////////////////////////////////////////////////////////
 
-/** This class provides a boundary exchange communication mechanism for vectors.
-  * Not this provides a "read only" (RO) interface for parameters (so vectors are write protected).
-  */
-class EpetraVector_ReadOnly_GlobalEvaluationData : public ReadOnlyVector_GlobalEvaluationData {
-public:
+namespace panzer
+{
+  /**
+   *  \brief This class provides a boundary exchange communication mechanism
+   *         for vectors.
+   *
+   *  \note This provides a read-only (RO) interface for parameters (so vectors
+   *        are write protected).
+   */
+  class EpetraVector_ReadOnly_GlobalEvaluationData
+    :
+    public ReadOnlyVector_GlobalEvaluationData
+  {
+    public:
 
-   //! Default constructor
-   EpetraVector_ReadOnly_GlobalEvaluationData()
-      : isInitialized_(false) { }
+      /**
+       *  \brief Default Constructor.
+       */
+      EpetraVector_ReadOnly_GlobalEvaluationData()
+        :
+        isInitialized_(false)
+      {
+      } // end of Default Constructor
 
-   EpetraVector_ReadOnly_GlobalEvaluationData(const EpetraVector_ReadOnly_GlobalEvaluationData & src)
-      : isInitialized_(false) { initialize(src.importer_,src.ghostedMap_,src.uniqueMap_); }
+      /**
+       *  \brief Copy Constructor.
+       *
+       *  \param[in] src The object to be copied.
+       */
+      EpetraVector_ReadOnly_GlobalEvaluationData(
+        const EpetraVector_ReadOnly_GlobalEvaluationData& src)
+        :
+        isInitialized_(false)
+      {
+        initialize(src.importer_, src.ghostedMap_, src.ownedMap_);
+      } // end of Copy Constructor
 
-   /** Initialize this object with some Epetra communication objects. This method
-     * must be called before an object of this type can be used.
-     *
-     * \param[in] importer Importer for doing communication from the unique 
-     *                     to the ghosted vector.
-     * \param[in] ghostedMap Map describing the ghosted vector.
-     * \param[in] uniqueMap Map describing the ghosted vector.
-     */
-   EpetraVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const Epetra_Import> & importer,
-                                              const Teuchos::RCP<const Epetra_Map> & ghostedMap,
-                                              const Teuchos::RCP<const Epetra_Map> & uniqueMap)
-      : isInitialized_(false) { initialize(importer,ghostedMap,uniqueMap); }
+      /**
+       *  \brief Initializing Constructor.
+       *
+       *  Initialize this object with some `Epetra` communication objects.
+       *  This method must be called before an object of this type can be used.
+       *
+       *  \param[in] importer   Importer for doing communication from the owned
+       *                        to the ghosted vector.
+       *  \param[in] ghostedMap Map describing the ghosted vector.
+       *  \param[in] ownedMap   Map describing the owned vector.
+       */
+      EpetraVector_ReadOnly_GlobalEvaluationData(
+        const Teuchos::RCP<const Epetra_Import>& importer,
+        const Teuchos::RCP<const Epetra_Map>&    ghostedMap,
+        const Teuchos::RCP<const Epetra_Map>&    ownedMap)
+        :
+        isInitialized_(false)
+      {
+        initialize(importer, ghostedMap, ownedMap);
+      } // end of Initializing Constructor
 
-   /** Choose a few GIDs and instead of zeroing them out in the ghosted vector set
-     * them to a specified value. Note that this is only useful for GIDs in the
-     * ghosted map that are not in the unique map.
-     *
-     * This must be called before initialize. Also note that no attempt to synchronize
-     * these values a cross a processor is made. So its up to the user to be consistent.
-     */
-   void useConstantValues(const std::vector<int> & indices,double value);
+      /**
+       *  \brief Choose a few GIDs and, instead of zeroing them out in the
+       *         ghosted vector, set them to a specified value.
+       *
+       *  \note This is only useful for GIDs in the ghosted map.
+       *  \note This must be called before `initialize()`.
+       *  \note No attempt to synchronize these values across a processor is
+       *        made, so it's up to the user to be consistent.
+       *
+       *  \param[in] indices A `std::vector` of global IDs.
+       *  \param[in] value   The value to be assigned to the entries given by
+       *                     indices.
+       */
+      void
+      useConstantValues(
+        const std::vector<int>& indices,
+        double                  value);
 
-   /** Initialize this object with some Epetra communication objects. This method
-     * must be called before an object of this type can be used.
-     *
-     * \param[in] importer Importer for doing communication from the unique 
-     *                     to the ghosted vector.
-     * \param[in] ghostedMap Map describing the ghosted vector.
-     * \param[in] uniqueMap Map describing the ghosted vector.
-     */
-   void initialize(const Teuchos::RCP<const Epetra_Import> & importer,
-                   const Teuchos::RCP<const Epetra_Map> & ghostedMap,
-                   const Teuchos::RCP<const Epetra_Map> & uniqueMap);
+      /**
+       *  \brief Initialize this object with some `Epetra` communication
+       *         objects.
+       *
+       *  This method must be called before an object of this type can be used.
+       *
+       *  \param[in] importer   Importer for doing communication from the owned
+       *                        to the ghosted vector.
+       *  \param[in] ghostedMap Map describing the ghosted vector.
+       *  \param[in] ownedMap   Map describing the owned vector.
+       */
+      void
+      initialize(
+        const Teuchos::RCP<const Epetra_Import>& importer,
+        const Teuchos::RCP<const Epetra_Map>&    ghostedMap,
+        const Teuchos::RCP<const Epetra_Map>&    ownedMap);
 
-   /** For this class, this method does the halo exchange for the 
-     * vector.
-     */
-   virtual void globalToGhost(int mem);
+      /**
+       *  \brief Communicate the owned data to the ghosted vector.
+       *
+       *  For this class, this method does the halo exchange for the vector.
+       *
+       *  \param[in] mem Not needed for this class, but part of the
+       *                 `GlobalEvaluationData` interface.
+       */
+      virtual void
+      globalToGhost(
+        int mem = 0);
 
-   //! Clear out the ghosted vector 
-   virtual void initializeData(); 
-  
-   //! For this class this method does nothing.
-   virtual void ghostToGlobal(int mem) {} 
+      /**
+       *  \brief Clear out the ghosted vector.
+       */
+      virtual void
+      initializeData();
 
-   //! Nothing to do (its read only)
-   virtual bool requiresDirichletAdjustment() const { return false; }
+      /**
+       *  \brief Communicate the ghosted data to the owned vector.
+       *
+       *  For this class this method does nothing.
+       *
+       *  \param[in] mem Not needed for this class, but part of the
+       *                 `GlobalEvaluationData` interface.
+       */
+      virtual void
+      ghostToGlobal(
+        int mem = 0);
 
-   //! Set the unique vector (Epetra version)
-   void setUniqueVector_Epetra(const Teuchos::RCP<const Epetra_Vector> & uniqueVector);
+      /**
+       *  \brief Determine if a Dirichlet adjustment is necessary.
+       *
+       *  For this class, there's nothing to do because it's read-only.
+       *
+       *  \returns False.
+       */
+      virtual bool
+      requiresDirichletAdjustment() const
+      {
+        return false;
+      } // end of requiresDirichletAdjustment()
 
-   //! Get the ghosted vector (Epetra version)
-   Teuchos::RCP<Epetra_Vector> getGhostedVector_Epetra() const;
+      /**
+       *  \brief Set the owned vector (`Epetra` version).
+       *
+       *  \param[in] ownedVector An `Epetra_Vector` that you would like to set
+       *                         as the owned vector.
+       */
+      void
+      setOwnedVector_Epetra(
+        const Teuchos::RCP<const Epetra_Vector>& ownedVector);
 
-   //! Set the unique vector (Thyra version)
-   void setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector);
+      /**
+       *  \brief Get the ghosted vector (`Epetra` version).
+       *
+       *  \returns The ghosted vector as an `Epetra_Vector`.
+       */
+      Teuchos::RCP<Epetra_Vector>
+      getGhostedVector_Epetra() const;
 
-   //! Get the unique vector (Thyra version)
-   Teuchos::RCP<const Thyra::VectorBase<double> > getUniqueVector() const;
+      /**
+       *  \brief Set the owned vector (`Thyra` version).
+       *
+       *  \param[in] ownedVector A `Thyra::VectorBase<double>` that you would
+       *                         like to set as the owned vector.
+       */
+      void
+      setOwnedVector(
+        const Teuchos::RCP<const Thyra::VectorBase<double>>& ownedVector);
 
-   //! Get the ghosted vector (Thyra version)
-   Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const;
+      /**
+       *  \brief Get the owned vector (`Thyra` version).
+       *
+       *  \returns The owned vector as a `const Thyra::VectorBase<double>`.
+       */
+      Teuchos::RCP<const Thyra::VectorBase<double>>
+      getOwnedVector() const;
 
-   //! Is this object initialized
-   bool isInitialized() const { return isInitialized_; }
+      /**
+       *  \brief Get the ghosted vector (`Thyra` version).
+       *
+       *  \returns The ghosted vector as a `Thyra::VectorBase<double>`.
+       */
+      Teuchos::RCP<Thyra::VectorBase<double>>
+      getGhostedVector() const;
 
-   //! Diagnostic function
-   void print(std::ostream & os) const;
+      /**
+       *  \brief Is this object initialized?
+       *
+       *  \returns Whether or not the object is initialized.
+       */
+      bool
+      isInitialized() const
+      {
+        return isInitialized_;
+      } // end of isInitialized()
 
-private:
-   bool isInitialized_;
+      /**
+       *  \brief Print the object.
+       *
+       *  This is a diagnostic function for debugging purposes.
+       *
+       *  \param[in,out] os The output stream to which the data should be
+       *                    printed.
+       */
+      void
+      print(
+        std::ostream& os) const;
 
-   Teuchos::RCP<const Epetra_Map> ghostedMap_;
-   Teuchos::RCP<const Epetra_Map> uniqueMap_;
+    private:
 
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_;
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_;
+      /**
+       *  \brief A flag indicating whether or not the object has been
+       *         initialized.
+       */
+      bool isInitialized_;
 
-   Teuchos::RCP<const Epetra_Import> importer_;
-   Teuchos::RCP<Epetra_Vector> ghostedVector_;
-   // Teuchos::RCP<const Epetra_Vector> uniqueVector_;
+      /**
+       *  \brief The map corresponding to the ghosted vector.
+       */
+      Teuchos::RCP<const Epetra_Map> ghostedMap_;
 
-   Teuchos::RCP<const Thyra::VectorBase<double> > uniqueVector_;
+      /**
+       *  \brief The map corresponding to the owned vector.
+       */
+      Teuchos::RCP<const Epetra_Map> ownedMap_;
 
-   typedef std::pair<std::vector<int>,double> FilteredPair;
-   std::vector<FilteredPair> filteredPairs_; 
-};
+      /**
+       *  \brief The vector space corresponding to the ghosted vector.
+       */
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double>> ghostedSpace_;
 
-}
+      /**
+       *  \brief The vector space corresponding to the owned vector.
+       */
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double>> ownedSpace_;
 
-#endif
+      /**
+       *  \brief The importer used to communicate between the owned and ghosted
+       *         vectors.
+       */
+      Teuchos::RCP<const Epetra_Import> importer_;
+
+      /**
+       *  \brief The ghosted vector.
+       */
+      Teuchos::RCP<Epetra_Vector> ghostedVector_;
+
+      /**
+       *  \brief The owned vector.
+       */
+      Teuchos::RCP<const Thyra::VectorBase<double>> ownedVector_;
+
+      /**
+       *  \brief A list of global IDs (which will be translated to local IDs),
+       *         paired with a value to be assigned in the `ghostedVector_`.
+       */
+      typedef std::pair<std::vector<int>, double> FilteredPair;
+
+      /**
+       *  \brief The list of filtered pairs, used to initialize values on the
+       *         `ghostedVector_`.
+       */
+      std::vector<FilteredPair> filteredPairs_;
+
+  }; // end of class EpetraVector_ReadOnly_GlobalEvaluationData
+
+} // end of namespace panzer
+
+#endif // __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__

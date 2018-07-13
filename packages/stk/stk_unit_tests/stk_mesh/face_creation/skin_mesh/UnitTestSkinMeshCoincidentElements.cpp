@@ -1,4 +1,4 @@
-#include <mpi.h>                        // for MPI_Comm, etc
+#include "mpi.h"                        // for MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
@@ -223,7 +223,7 @@ class CoincidentHex8sWithAdjacentHexSerial : public CoincidentHex8sWithAdjacentH
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {});;
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {});
         expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 1, 1, 1, 1, 1});
     }
 };
@@ -238,7 +238,7 @@ class CoincidentHex8sWithAdjacentAirHex : public CoincidentHex8sWithAdjacentHex
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
         stk::mesh::Selector air = *block2;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, &air);;
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, &air);
 
         expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 3});
     }
@@ -255,8 +255,8 @@ class Hex8WithAdjacentCoincidentAirHex8s : public CoincidentHex8sWithAdjacentHex
         create_coincident_hex8s_with_adjacent_hex(auraOption);
 
         stk::mesh::Selector air = *block1;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, &air);;
-        expect_faces_connected_to_num_elements_locally({1, 1, 1, 1, 3, 1});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, &air);
+        expect_faces_connected_to_num_elements_locally({3, 1, 1, 1, 1, 1});
     }
 };
 TEST_F(Hex8WithAdjacentCoincidentAirHex8s, Skin)
@@ -329,7 +329,6 @@ protected:
         create_coincident_hex8s_with_adjacent_hex_on_2_procs(auraOption, ids);
         skin_part_with_part2_as_air(*block1, *block2);
         expect_faces_connected_to_num_elements_locally_per_proc( {2, 2, 2, 2, 2, 2}, {1});
-        expect_face_ids_per_proc({1, 3, 4, 5, 6, 7}, {1});
     }
 };
 TEST_F(CoincidentHex8sWithAdjacentAirHexInParallel, SkinHex1Hex2)

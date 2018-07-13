@@ -270,10 +270,8 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::computeReductionFunctional(
       break;
     case SOLVE_MEASURE_NORM_INIT_RESIDUAL:
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||r0||!)")
-      break;
     case SOLVE_MEASURE_NORM_RHS:
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||b||!)");
-      break;
     TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT();
    }
   if (rtn >= SMT::zero()) {

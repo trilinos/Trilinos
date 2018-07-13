@@ -43,13 +43,12 @@
 
 
 #include "Kokkos_DynRankView_Fad.hpp"
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -59,8 +58,6 @@
 
 // From test/Utilities directory
 #include "Traits.hpp"
-
-typedef PHX::MDField<double>::size_type size_type;
 
 // Dimension tags for this problem
 struct Dim : public PHX::DimTag {
@@ -126,8 +123,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
   
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
 
   // *********************************************************************
   // Start of MDField Testing
@@ -168,6 +163,97 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     MDField<double> e;
     MDField<MyTraits::FadType> f;
     out << "passed!" << endl;
+
+    // Test create, set and get for RCP<FieldTag>
+    {
+      RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
+      MDField<double> f1(t1); // rcp(tag) ctor
+      MDField<double> f2; 
+      f2.setFieldTag(t1); // set rcp(tag)
+      auto t2 = f1.fieldTagPtr(); // accessor
+      auto t3 = f2.fieldTagPtr();
+      TEST_ASSERT(nonnull(t1));
+      TEST_ASSERT(nonnull(t2));
+      TEST_ASSERT(nonnull(t3));
+      TEST_EQUALITY(*t1,*t2);
+      TEST_EQUALITY(*t2,*t3);
+    }
+
+    // MDField ctor interoperability between const and non-const tags
+    {
+      Tag<double> nonconst_tag("non-const tag", node_scalar);
+      Tag<const double> const_tag("const tag", node_scalar);
+
+      // Create a const field from a non-const field tag
+      MDField<const double> c_field1(nonconst_tag);
+
+      // Create a non-const field from a const field tag
+      MDField<double> nc_field1(const_tag);
+
+      // Create a non-const field from a non-const field tag
+      MDField<double> nc_field2(nonconst_tag);
+
+      // Create a const field from a const field tag
+      MDField<const double> c_field2(const_tag);
+    }
+
+    // Copy constructor from const/non-const MDFields. NOTE: this
+    // tests for assignment from both Compiletime and DynRank
+    // MDFields.
+    {
+      RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));
+      MDField<double,Cell,Point> ctor_nonconst_p("ctor_nonconst_p",ctor_dl_p);
+      MDField<const double,Cell,Point> ctor_const_p("ctor_const_p",ctor_dl_p);
+      MDField<double> ctor_dyn_nonconst_p("ctor_nonconst_p",ctor_dl_p);
+      MDField<const double> ctor_dyn_const_p("ctor_const_p",ctor_dl_p);
+
+      MDField<double> cc1(ctor_nonconst_p);       // non-const from non-const
+      MDField<const double> cc2(ctor_nonconst_p); // const from non-const
+      MDField<const double> cc3(ctor_const_p);    // const from const
+      MDField<const double> cc1dyn(ctor_dyn_nonconst_p);    // const from non-const
+      MDField<const double> cc2dyn(ctor_dyn_nonconst_p);    // const from non-const
+      MDField<const double> cc3dyn(ctor_dyn_const_p);    // const from const
+
+      // NOTE: we allow the tag template types to be DIFFERENT as long
+      // as the rank is the same! A field might use the "Point" DimTag
+      // but another evaluator might reference the same field using
+      // QuadraturePoint DimTag.
+      RCP<DataLayout> ctor_dl_qp = rcp(new MDALayout<Cell,Quadrature>(10,4));
+      MDField<double,Cell,Quadrature> ctor_nonconst_qp("ctor_nonconst",ctor_dl_qp);
+      MDField<const double,Cell,Quadrature> ctor_const_qp("ctor_const_qp",ctor_dl_qp); 
+      MDField<double,Cell,Quadrature> ctor_dyn_nonconst_qp("ctor_nonconst",ctor_dl_qp);
+      MDField<const double,Cell,Quadrature> ctor_dyn_const_qp("ctor_const_qp",ctor_dl_qp); 
+
+      // Repeat test above but with different tags for Quadrature --> Point
+      MDField<double> cc4(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double> cc5(ctor_nonconst_qp); // const from non-const
+      MDField<const double> cc6(ctor_const_qp);    // const from const
+      MDField<double> cc4dyn(ctor_dyn_nonconst_qp);       // non-const from non-const
+      MDField<const double> cc5dyn(ctor_dyn_nonconst_qp); // const from non-const
+      MDField<const double> cc6dyn(ctor_dyn_const_qp);    // const from const
+
+      // While we have these objects, lets test the assignment operator as well
+      MDField<double> cc7(ctor_nonconst_p);         // non-const from non-const
+      MDField<const double> cc8(ctor_nonconst_p);   // const from non-const
+      MDField<const double> cc9(ctor_const_p);      // const from const
+      MDField<double> cc10(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double> cc11(ctor_nonconst_qp); // const from non-const
+      MDField<const double> cc12(ctor_const_qp);    // const from const
+
+      cc7 = ctor_nonconst_p;
+      cc8 = ctor_nonconst_p;
+      cc9 = ctor_const_p;
+      cc10 = ctor_nonconst_qp;
+      cc11 = ctor_nonconst_qp;
+      cc12 = ctor_const_qp;
+
+      cc7 = ctor_dyn_nonconst_p;
+      cc8 = ctor_dyn_nonconst_p;
+      cc9 = ctor_dyn_const_p;
+      cc10 = ctor_dyn_nonconst_qp;
+      cc11 = ctor_dyn_nonconst_qp;
+      cc12 = ctor_dyn_const_qp;
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // FieldTag accessor
@@ -475,13 +561,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     
     out << "passed!" << endl;
       
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // check for array rank enforcement
-    TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    // Do NOT check for array rank enforcement. DynRank MDField sets
+    // the rank at runtime and we allow it to be changed!
+    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
-#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
     {
       // non-const view
       auto kva = a.get_view(); 
@@ -494,9 +580,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       const auto const_kvc = c.get_view(); 
       const_kvc(0,0) = MyTraits::FadType(1.0);
     }
-#else
-    // unsupported on the deprecated runtime view
-#endif
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream
@@ -508,6 +591,5 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << output.str() << endl;
   }
 
-  PHX::FinalizeKokkosDevice();  
   TimeMonitor::summarize();
 }

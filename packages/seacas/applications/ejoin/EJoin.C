@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,15 +46,14 @@
 #include <limits>
 #include <unistd.h>
 
+#include <cctype>
 #include <cstring>
 #include <ctime>
-#include <ctype.h>
 #include <sys/times.h>
 #include <sys/utsname.h>
 
 #include "add_to_log.h"
 #include "smart_assert.h"
-#include "to_string.h"
 
 #include <exodusII.h>
 
@@ -74,7 +73,7 @@
 #endif
 
 namespace {
-  bool valid_variable(const std::string variable, size_t id, const StringIdVector &variable_list);
+  bool valid_variable(const std::string &variable, size_t id, const StringIdVector &variable_list);
   void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                             const StringIdVector &variable_list);
   void define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
@@ -136,7 +135,7 @@ namespace {
       }
     }
   }
-}
+} // namespace
 
 namespace {
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
@@ -154,7 +153,7 @@ namespace {
                                     const std::string &field_name);
 
   std::string time_stamp(const std::string &format);
-}
+} // namespace
 
 std::string tsFormat = "[%H:%M:%S] ";
 
@@ -189,16 +188,19 @@ int main(int argc, char *argv[])
 
     debug_level = interface.debug();
 
-    if (debug_level & 64)
+    if ((debug_level & 64) != 0u) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
-    else
+    }
+    else {
       ex_opts(0);
+    }
 
     int error = 0;
 
     int int_byte_size = 4;
-    if (interface.ints64bit())
+    if (interface.ints64bit()) {
       int_byte_size = 8;
+    }
 
     const Omissions &               omissions = interface.block_omissions();
     std::vector<Ioss::Region *>     part_mesh(interface.inputFiles_.size());
@@ -206,31 +208,36 @@ int main(int argc, char *argv[])
     for (size_t p = 0; p < interface.inputFiles_.size(); p++) {
       dbi[p] = Ioss::IOFactory::create("exodusII", interface.inputFiles_[p], Ioss::READ_RESTART,
                                        (MPI_Comm)MPI_COMM_WORLD);
-      if (dbi[p] == nullptr || !dbi[p]->ok(true))
+      if (dbi[p] == nullptr || !dbi[p]->ok(true)) {
         std::exit(EXIT_FAILURE);
+      }
 
-      if (dbi[p]->int_byte_size_api() > int_byte_size)
+      if (dbi[p]->int_byte_size_api() > int_byte_size) {
         int_byte_size = dbi[p]->int_byte_size_api();
+      }
     }
 
     for (size_t p = 0; p < interface.inputFiles_.size(); p++) {
       dbi[p]->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
 
-      if (int_byte_size == 8)
+      if (int_byte_size == 8) {
         dbi[p]->set_int_byte_size_api(Ioss::USE_INT64_API);
+      }
 
-      if (interface.disable_field_recognition())
+      if (interface.disable_field_recognition()) {
         dbi[p]->set_field_separator(1);
+      }
 
       if (!omissions[p].empty()) {
         dbi[p]->set_block_omissions(omissions[p]);
       }
 
       // Generate a name for the region based on the part number...
-      std::string name = "p" + to_string(p + 1);
+      std::string name = "p" + std::to_string(p + 1);
       // NOTE: region owns database pointer at this time...
       part_mesh[p] = new Ioss::Region(dbi[p], name);
-      part_mesh[p]->property_add(Ioss::Property("block_omission_count", (int)omissions[p].size()));
+      part_mesh[p]->property_add(
+          Ioss::Property("block_omission_count", static_cast<int>(omissions[p].size())));
 
       vector3d offset = interface.offset();
       if (p > 0 && (offset.x != 0.0 || offset.y != 0.0 || offset.z != 0.0)) {
@@ -253,10 +260,10 @@ int main(int argc, char *argv[])
     process_sset_omissions(part_mesh, interface.sset_omissions());
 
     if (int_byte_size == 4) {
-      ejoin(interface, part_mesh, (int)0);
+      ejoin(interface, part_mesh, 0);
     }
     else {
-      ejoin(interface, part_mesh, (int64_t)0);
+      ejoin(interface, part_mesh, static_cast<int64_t>(0));
     }
 
     for (size_t p = 0; p < interface.inputFiles_.size(); p++) {
@@ -264,7 +271,7 @@ int main(int argc, char *argv[])
     }
 
     time_t end_time = time(nullptr);
-    add_to_log(argv[0], (int)(end_time - begin_time));
+    add_to_log(argv[0], static_cast<int>(end_time - begin_time));
 
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -303,8 +310,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
   output_region.property_add(Ioss::Property("code_name", qainfo[0]));
   output_region.property_add(Ioss::Property("code_version", qainfo[2]));
 
-  if (debug_level & 1)
+  if (debug_level & 1) {
     std::cerr << time_stamp(tsFormat);
+  }
 
   INT node_offset    = 0;
   INT element_offset = 0;
@@ -364,8 +372,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
 #ifndef NDEBUG
   std::vector<int> glob(node_count);
   for (size_t i = 0; i < local_node_map.size(); i++) {
-    if (local_node_map[i] >= 0)
+    if (local_node_map[i] >= 0) {
       glob[local_node_map[i]] = 1;
+    }
   }
   for (int i : glob) {
     SMART_ASSERT(i == 1);
@@ -423,8 +432,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
   output_elementblock(output_region, part_mesh, local_node_map, local_element_map);
   output_nodal_nodeset(output_region, part_mesh, interface, local_node_map);
 
-  if (!interface.omit_nodesets())
+  if (!interface.omit_nodesets()) {
     output_nodeset(output_region, part_mesh, local_node_map);
+  }
   if (!interface.omit_sidesets()) {
     output_sideset(output_region, part_mesh, local_element_map);
   }
@@ -435,8 +445,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
   // ***********************************************************************
   // 9. Get Variable Information and names
 
-  if (debug_level & 1)
+  if (debug_level & 1) {
     std::cerr << time_stamp(tsFormat);
+  }
 
   output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
@@ -447,8 +458,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
 
   define_element_fields(output_region, part_mesh, interface.elem_var_names());
 
-  if (!interface.omit_nodesets())
+  if (!interface.omit_nodesets()) {
     define_nset_fields(output_region, part_mesh, interface.nset_var_names());
+  }
   if (!interface.omit_sidesets()) {
     define_sset_fields(output_region, part_mesh, interface.sset_var_names());
   }
@@ -496,7 +508,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
   int ts_min    = interface.step_min();
   int ts_max    = interface.step_max();
   int ts_step   = interface.step_interval();
-  int num_steps = (int)global_times.size();
+  int num_steps = static_cast<int>(global_times.size());
 
   if (ts_min == -1 && ts_max == -1) {
     ts_min = num_steps;
@@ -519,8 +531,9 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh, IN
 
   /*************************************************************************/
   // EXIT program
-  if (debug_level & 1)
+  if (debug_level & 1) {
     std::cerr << time_stamp(tsFormat);
+  }
   output_region.output_summary(std::cout);
   std::cout << "******* END *******\n";
   return (0);
@@ -530,15 +543,16 @@ namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
   {
     bool omitted = false;
-    if (block->property_exists("omitted"))
+    if (block->property_exists("omitted")) {
       omitted = (block->get_property("omitted").get_int() == 1);
+    }
     return omitted;
   }
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    static int  used_blocks = 0;
-    std::string prefix      = region.name();
+    static int         used_blocks = 0;
+    const std::string &prefix      = region.name();
 
     Ioss::ElementBlockContainer ebs            = region.get_element_blocks();
     size_t                      total_elements = 0;
@@ -552,8 +566,9 @@ namespace {
             exit(EXIT_FAILURE);
           }
         }
-        if (debug)
+        if (debug) {
           std::cerr << name << ", ";
+        }
         std::string type     = eb->get_property("topology_type").get_string();
         size_t      num_elem = eb->get_property("entity_count").get_int();
         total_elements += num_elem;
@@ -579,7 +594,7 @@ namespace {
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    std::string prefix = region.name();
+    const std::string &prefix = region.name();
 
     Ioss::SideSetContainer fss         = region.get_sidesets();
     size_t                 total_sides = 0;
@@ -593,16 +608,18 @@ namespace {
             exit(EXIT_FAILURE);
           }
         }
-        if (debug)
+        if (debug) {
           std::cerr << name << ", ";
+        }
         auto surf = new Ioss::SideSet(output_region.get_database(), name);
         set_id(fs, surf);
 
         Ioss::SideBlockContainer fbs = fs->get_side_blocks();
         for (auto &fb : fbs) {
           std::string fbname = prefix + "_" + fb->name();
-          if (debug)
+          if (debug) {
             std::cerr << fbname << ", ";
+          }
           std::string fbtype   = fb->get_property("topology_type").get_string();
           std::string partype  = fb->get_property("parent_topology_type").get_string();
           size_t      num_side = fb->get_property("entity_count").get_int();
@@ -621,16 +638,16 @@ namespace {
   // in the input region.
   void create_nodal_nodeset(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    std::string prefix = region.name();
+    const std::string &prefix = region.name();
 
     std::string name = prefix + "_nodes";
     if (output_region.get_nodeset(name) != nullptr) {
       std::cerr << "ERROR: Duplicate node sets named '" << name << "'\n";
       exit(EXIT_FAILURE);
     }
-    if (debug)
+    if (debug) {
       std::cerr << name << ", ";
-
+    }
     size_t count = region.get_property("node_count").get_int();
     auto   ns    = new Ioss::NodeSet(output_region.get_database(), name, count);
     output_region.add(ns);
@@ -658,8 +675,9 @@ namespace {
         for (size_t i = 0; i < nodelist.size(); i++) {
           size_t  loc_node = part_mesh[p]->node_global_to_local(nodelist[i], true) - 1;
           ssize_t gpos     = local_node_map[node_offset + loc_node];
-          if (gpos >= 0)
+          if (gpos >= 0) {
             nodelist[i] = gpos + 1;
+          }
         }
         ons->put_field_data("ids", nodelist);
       }
@@ -669,8 +687,9 @@ namespace {
   void define_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                                    const StringIdVector &variable_list, SystemInterface &interface)
   {
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
 
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -689,7 +708,7 @@ namespace {
 
         Ioss::NameList fields;
         nb->field_describe(Ioss::Field::TRANSIENT, &fields);
-        for (auto field_name : fields) {
+        for (const auto &field_name : fields) {
           if (valid_variable(field_name, 0, variable_list)) {
             Ioss::Field field = nb->get_field(field_name);
             ons->field_add(field);
@@ -701,7 +720,7 @@ namespace {
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    std::string prefix = region.name();
+    const std::string &prefix = region.name();
 
     Ioss::NodeSetContainer nss = region.get_nodesets();
     for (auto &ns : nss) {
@@ -714,8 +733,9 @@ namespace {
             exit(EXIT_FAILURE);
           }
         }
-        if (debug)
+        if (debug) {
           std::cerr << name << ", ";
+        }
         size_t count    = ns->get_property("entity_count").get_int();
         auto   node_set = new Ioss::NodeSet(output_region.get_database(), name, count);
         output_region.add(node_set);
@@ -729,22 +749,20 @@ namespace {
     if (format == "") {
       return std::string("");
     }
-    else {
-      const int   length = 256;
-      static char time_string[length];
 
-      time_t     calendar_time = time(nullptr);
-      struct tm *local_time    = localtime(&calendar_time);
+    const int   length = 256;
+    static char time_string[length];
 
-      int error = strftime(time_string, length, format.c_str(), local_time);
-      if (error != 0) {
-        time_string[length - 1] = '\0';
-        return std::string(time_string);
-      }
-      else {
-        return std::string("[ERROR]");
-      }
+    time_t     calendar_time = time(nullptr);
+    struct tm *local_time    = localtime(&calendar_time);
+
+    int error = strftime(time_string, length, format.c_str(), local_time);
+    if (error != 0) {
+      time_string[length - 1] = '\0';
+      return std::string(time_string);
     }
+
+    return std::string("[ERROR]");
   }
 
   template <typename T, typename INT>
@@ -771,11 +789,12 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U &, int, int, std::vector<T> &, std::vector<T> &)
+  void map_nodeset_vars(U & /*unused*/, int /*unused*/, int /*unused*/, std::vector<T> & /*unused*/,
+                        std::vector<T> & /*unused*/)
   {
     SMART_ASSERT(1 == 0 && "Internal Error!");
   }
-}
+} // namespace
 
 namespace {
   template <typename INT>
@@ -860,10 +879,11 @@ namespace {
             size_t loc_node = part_mesh[p]->node_global_to_local(connectivity[i], true) - 1;
             SMART_ASSERT(node_offset + loc_node < local_node_map.size());
             ssize_t gpos = local_node_map[node_offset + loc_node];
-            if (gpos >= 0)
+            if (gpos >= 0) {
               connectivity[i] = gpos + 1;
+            }
           }
-          oeb->put_field_data("connectivity", connectivity);
+          oeb->put_field_data("connectivity_raw", connectivity);
           transfer_field_data(ieb, oeb, Ioss::Field::ATTRIBUTE);
         }
       }
@@ -874,8 +894,9 @@ namespace {
   void output_nodeset(Ioss::Region &output_region, RegionVector &part_mesh,
                       const std::vector<INT> &local_node_map)
   {
-    if (output_region.get_nodesets().empty())
+    if (output_region.get_nodesets().empty()) {
       return;
+    }
 
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -900,8 +921,9 @@ namespace {
           for (size_t i = 0; i < nodelist.size(); i++) {
             size_t  loc_node = part_mesh[p]->node_global_to_local(nodelist[i], true) - 1;
             ssize_t gpos     = local_node_map[node_offset + loc_node];
-            if (gpos >= 0)
+            if (gpos >= 0) {
               nodelist[i] = gpos + 1;
+            }
           }
           ons->put_field_data("ids", nodelist);
 
@@ -975,7 +997,7 @@ namespace {
     for (size_t p = 0; p < part_count; p++) {
       Ioss::NameList fields;
       part_mesh[p]->field_describe(Ioss::Field::TRANSIENT, &fields);
-      for (auto field : fields) {
+      for (const auto &field : fields) {
         std::vector<double> data;
         part_mesh[p]->get_field_data(field, data);
         output_region.put_field_data(field, data);
@@ -984,9 +1006,8 @@ namespace {
   }
 
   template <typename INT>
-  void output_nodal(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                    const IntVector &steps, const std::vector<INT> &local_node_map,
-                    SystemInterface &interface)
+  void output_nodal(Ioss::Region &output_region, RegionVector &part_mesh,
+                    const std::vector<INT> &local_node_map, SystemInterface &interface)
   {
     size_t part_count = part_mesh.size();
 
@@ -996,7 +1017,7 @@ namespace {
 
     Ioss::NameList fields;
     onb->field_describe(Ioss::Field::TRANSIENT, &fields);
-    for (auto field : fields) {
+    for (const auto &field : fields) {
       size_t              comp_count = onb->get_field(field).raw_storage()->component_count();
       std::vector<double> data(node_count * comp_count);
       for (size_t p = 0; p < part_count; p++) {
@@ -1026,7 +1047,7 @@ namespace {
   }
 
   void output_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
-                                   double time, const IntVector &steps, SystemInterface &interface)
+                                   SystemInterface &interface)
   {
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -1050,7 +1071,7 @@ namespace {
         Ioss::NameList fields;
         ons->field_describe(Ioss::Field::TRANSIENT, &fields);
         std::vector<double> data;
-        for (auto field : fields) {
+        for (const auto &field : fields) {
           nb->get_field_data(field, data);
           ons->put_field_data(field, data);
         }
@@ -1075,7 +1096,7 @@ namespace {
           if (oeb != nullptr) {
             Ioss::NameList fields;
             ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
-            for (auto field : fields) {
+            for (const auto &field : fields) {
               if (oeb->field_exists(field)) {
                 transfer_field_data_internal(ieb, oeb, field);
               }
@@ -1089,8 +1110,9 @@ namespace {
   void output_nset(Ioss::Region &output_region, RegionVector &part_mesh, double time,
                    const IntVector &steps)
   {
-    if (output_region.get_nodesets().empty())
+    if (output_region.get_nodesets().empty()) {
       return;
+    }
 
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -1107,7 +1129,7 @@ namespace {
 
           Ioss::NameList fields;
           in->field_describe(Ioss::Field::TRANSIENT, &fields);
-          for (auto field : fields) {
+          for (const auto &field : fields) {
             if (ons->field_exists(field)) {
               transfer_field_data_internal(in, ons, field);
             }
@@ -1121,8 +1143,9 @@ namespace {
                    const IntVector &steps)
   {
     Ioss::SideSetContainer os = output_region.get_sidesets();
-    if (os.empty())
+    if (os.empty()) {
       return;
+    }
 
     Ioss::SideBlockContainer out_eb;
     // Put all output side blocks in the same list...
@@ -1146,7 +1169,7 @@ namespace {
                          (eb->name() == (*II)->name()));
             Ioss::NameList fields;
             eb->field_describe(Ioss::Field::TRANSIENT, &fields);
-            for (auto field : fields) {
+            for (const auto &field : fields) {
               if ((*II)->field_exists(field)) {
                 transfer_field_data_internal(eb, *II, field);
               }
@@ -1175,8 +1198,9 @@ namespace {
         if (delta < min_delta) {
           min_delta = delta;
           min_step  = i;
-          if (delta == 0.0)
+          if (delta == 0.0) {
             break;
+          }
         }
         else {
           // Delta is increasing; times are moving apart...
@@ -1191,9 +1215,9 @@ namespace {
     }
 
     output_globals(output_region, part_mesh, time, steps);
-    output_nodal(output_region, part_mesh, time, steps, local_node_map, interface);
+    output_nodal(output_region, part_mesh, local_node_map, interface);
     output_element(output_region, part_mesh, time, steps);
-    output_nodal_nodeset_fields(output_region, part_mesh, time, steps, interface);
+    output_nodal_nodeset_fields(output_region, part_mesh, interface);
     if (!interface.omit_nodesets()) {
       output_nset(output_region, part_mesh, time, steps);
     }
@@ -1202,8 +1226,9 @@ namespace {
     }
 
     for (size_t p = 0; p < part_mesh.size(); p++) {
-      if (steps[p] != 0)
+      if (steps[p] != 0) {
         part_mesh[p]->end_state(steps[p]);
+      }
     }
   }
 
@@ -1219,7 +1244,7 @@ namespace {
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
     if (role == Ioss::Field::MESH) {
-      for (auto field_name : state_fields) {
+      for (const auto &field_name : state_fields) {
         if (oge->field_exists(field_name)) {
           if (field_name == "ids") {
             transfer_field_data_internal(ige, oge, field_name);
@@ -1229,13 +1254,14 @@ namespace {
       }
     }
 
-    for (auto field_name : state_fields) {
+    for (const auto &field_name : state_fields) {
       // All of the 'Ioss::EntityBlock' derived classes have a
       // 'connectivity' field, but it is only interesting on the
       // Ioss::ElementBlock class. On the other classes, it just
       // generates overhead...
-      if (!transfer_connectivity && field_name == "connectivity")
+      if (!transfer_connectivity && field_name == "connectivity") {
         continue;
+      }
 
       if (field_name != "ids" &&
           (prefix.length() == 0 ||
@@ -1261,13 +1287,14 @@ namespace {
   void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                             const StringIdVector &variable_list)
   {
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
       Ioss::NameList fields;
       part_mesh[p]->field_describe(Ioss::Field::TRANSIENT, &fields);
-      for (auto field_name : fields) {
+      for (const auto &field_name : fields) {
         if (valid_variable(field_name, 0, variable_list)) {
           Ioss::Field field = part_mesh[p]->get_field(field_name);
           output_region.field_add(field);
@@ -1279,8 +1306,9 @@ namespace {
   void define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                            const StringIdVector &variable_list, SystemInterface &interface)
   {
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     SMART_ASSERT(onb != nullptr);
     size_t node_count = onb->get_property("entity_count").get_int();
@@ -1291,7 +1319,7 @@ namespace {
         Ioss::NameList   fields;
         SMART_ASSERT(nb != nullptr);
         nb->field_describe(Ioss::Field::TRANSIENT, &fields);
-        for (auto field_name : fields) {
+        for (const auto &field_name : fields) {
           if (valid_variable(field_name, 0, variable_list)) {
             Ioss::Field field = nb->get_field(field_name);
             field.reset_count(node_count);
@@ -1306,8 +1334,9 @@ namespace {
                              const StringIdVector &variable_list)
   {
     // Element Block Fields...
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
       Ioss::ElementBlockContainer iebs = part_mesh[p]->get_element_blocks();
@@ -1323,7 +1352,7 @@ namespace {
             size_t         id = oeb->get_property("id").get_int();
             Ioss::NameList fields;
             ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
-            for (auto field_name : fields) {
+            for (const auto &field_name : fields) {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = ieb->get_field(field_name);
                 oeb->field_add(field);
@@ -1339,8 +1368,9 @@ namespace {
                           const StringIdVector &variable_list)
   {
     // Nodeset fields...
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
 
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -1358,7 +1388,7 @@ namespace {
           size_t         id = in->get_property("id").get_int();
           Ioss::NameList fields;
           in->field_describe(Ioss::Field::TRANSIENT, &fields);
-          for (auto field_name : fields) {
+          for (const auto &field_name : fields) {
             if (valid_variable(field_name, id, variable_list)) {
               Ioss::Field field = in->get_field(field_name);
               ons->field_add(field);
@@ -1372,8 +1402,9 @@ namespace {
   void define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
                           const StringIdVector &variable_list)
   {
-    if (!variable_list.empty() && variable_list[0].first == "none")
+    if (!variable_list.empty() && variable_list[0].first == "none") {
       return;
+    }
     Ioss::SideSetContainer os = output_region.get_sidesets();
 
     Ioss::SideBlockContainer out_eb;
@@ -1399,7 +1430,7 @@ namespace {
                          (eb->name() == (*II)->name()));
             Ioss::NameList fields;
             eb->field_describe(Ioss::Field::TRANSIENT, &fields);
-            for (auto field_name : fields) {
+            for (const auto &field_name : fields) {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = eb->get_field(field_name);
                 (*II)->field_add(field);
@@ -1422,7 +1453,7 @@ namespace {
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
     // whose names begin with the prefix
-    for (auto field_name : fields) {
+    for (const auto &field_name : fields) {
       if (field_name != "ids" && !oge->field_exists(field_name) &&
           (prefix.length() == 0 ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
@@ -1433,12 +1464,14 @@ namespace {
     }
   }
 
-  bool valid_variable(const std::string variable, size_t id, const StringIdVector &variable_list)
+  bool valid_variable(const std::string &variable, size_t id, const StringIdVector &variable_list)
   {
-    if (variable_list.empty() || variable_list[0].first == "all")
+    if (variable_list.empty() || variable_list[0].first == "all") {
       return true;
-    if (variable_list[0].first == "none")
+    }
+    if (variable_list[0].first == "none") {
       return false;
+    }
 
     for (auto var : variable_list) {
       if (var.first == variable) {
@@ -1463,7 +1496,7 @@ namespace {
           }
         }
         else {
-          for (auto omitted : omit[p]) {
+          for (const auto &omitted : omit[p]) {
             Ioss::NodeSet *ns = part_mesh[p]->get_nodeset(omitted);
             if (ns != nullptr) {
               ns->property_add(Ioss::Property(std::string("omitted"), 1));
@@ -1487,7 +1520,7 @@ namespace {
           }
         }
         else {
-          for (auto omitted : omit[p]) {
+          for (const auto &omitted : omit[p]) {
             Ioss::SideSet *ss = part_mesh[p]->get_sideset(omitted);
             if (ss != nullptr) {
               ss->property_add(Ioss::Property(std::string("omitted"), 1));
@@ -1497,4 +1530,4 @@ namespace {
       }
     }
   }
-}
+} // namespace

@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     TRIBITS_ADD_EXECUTABLE(
       PrecGCRODR_Epetra_File_Ex
-      SOURCES PrecGCRODREpetraExFile.cpp createEpetraProblem.cpp
+      SOURCES PrecGCRODREpetraExFile.cpp 
       COMM serial mpi
       )
 

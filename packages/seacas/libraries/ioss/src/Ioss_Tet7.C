@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tet7 registerThis; }
 
   protected:
-    St_Tet7() : ElementVariableType("tetra7", 7) {}
+    St_Tet7() : ElementVariableType(Ioss::Tet7::name, 7) {}
   };
 } // namespace Ioss
 
@@ -98,10 +98,10 @@ void Ioss::Tet7::factory()
   Ioss::St_Tet7::factory();
 }
 
-Ioss::Tet7::Tet7() : Ioss::ElementTopology("tetra7", "Tetrahedron_7")
+Ioss::Tet7::Tet7() : Ioss::ElementTopology(Ioss::Tet7::name, "Tetrahedron_7")
 {
-  Ioss::ElementTopology::alias("tetra7", "tet7");
-  Ioss::ElementTopology::alias("tetra7", "Solid_Tet_7_3D");
+  Ioss::ElementTopology::alias(Ioss::Tet7::name, "tet7");
+  Ioss::ElementTopology::alias(Ioss::Tet7::name, "Solid_Tet_7_3D");
 }
 
 Ioss::Tet7::~Tet7() = default;
@@ -185,9 +185,8 @@ Ioss::ElementTopology *Ioss::Tet7::face_type(int face_number) const
   if (face_number == 4) {
     return Ioss::ElementTopology::factory("tri6");
   }
-  else {
-    return Ioss::ElementTopology::factory("tri4a");
-  }
+
+  return Ioss::ElementTopology::factory("tri4a");
 }
 
 Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
@@ -203,9 +202,8 @@ Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
   if (edge_number <= 3) {
     return Ioss::ElementTopology::factory("edge3");
   }
-  else {
-    return Ioss::ElementTopology::factory("edge2");
-  }
+
+  return Ioss::ElementTopology::factory("edge2");
 }
 
 Ioss::IntVector Ioss::Tet7::face_edge_connectivity(int face_number) const

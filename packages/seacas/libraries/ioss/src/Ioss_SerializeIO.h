@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -32,9 +32,11 @@
 #ifndef IOSS_Ioss_SerializeIO_h
 #define IOSS_Ioss_SerializeIO_h
 
+#include <Ioss_CodeTypes.h>
+
 namespace Ioss {
   class DatabaseIO;
-}
+} // namespace Ioss
 
 namespace Ioss {
 
@@ -86,9 +88,12 @@ namespace Ioss {
     inline static bool inMyGroup() { return s_owner == s_groupRank; }
 
   private:
-    const DatabaseIO *m_databaseIO;     ///< Database I/O pointer
-    const bool        m_activeFallThru; ///< No barries since my group is running
-    int               m_manualOwner;    ///< Manually specified owner
+    const DatabaseIO *m_databaseIO; ///< Database I/O pointer
+#if defined(IOSS_THREADSAFE)
+    static std::mutex m_;
+#endif
+    bool m_activeFallThru; ///< No barries since my group is running
+    int  m_manualOwner;    ///< Manually specified owner
 
     static int s_groupFactor; ///< Grouping factor
     static int s_size;        ///< Number of processors

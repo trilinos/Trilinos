@@ -5,6 +5,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SideSetEntryCompare.hpp>
 #include <stk_mesh/base/FaceCreator.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
@@ -19,7 +20,6 @@ namespace mesh
 {
 
 SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
-                           const stk::mesh::PartVector& skinParts,
                            const stk::mesh::Selector& inputSkinSelector,
                            const stk::mesh::Selector* inputAirSelector)
 : eeGraph(elemElemGraph), skinSelector(inputSkinSelector), useAirSelector(inputAirSelector != nullptr)
@@ -162,11 +162,14 @@ std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Bucket& b
 
 bool checkIfSideIsNotCollapsed(stk::mesh::EntityVector& sideNodes, const stk::mesh::Bucket& bucket, const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, int sideOrdinal)
 {
+    unsigned dim = bulkData.mesh_meta_data().spatial_dimension();
+    if(dim==1) return true;
+
     sideNodes.resize(bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal).num_nodes());
     stk::mesh::EntityVector nodes(bulkData.begin_nodes(element), bulkData.end_nodes(element));
     bucket.topology().side_nodes(nodes, sideOrdinal, sideNodes.begin());
     stk::util::sort_and_unique(sideNodes);
-    return sideNodes.size()>=bulkData.mesh_meta_data().spatial_dimension();
+    return sideNodes.size() >= dim;
 }
 
 std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()

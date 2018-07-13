@@ -44,30 +44,90 @@
 #define PANZER_POINT_VALUES2_HPP
 
 #include "PanzerDiscFE_config.hpp"
+
 #include "Panzer_PointRule.hpp"
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"
 
 #include "Teuchos_RCP.hpp"
 
-#include "Intrepid2_CellTools.hpp"
-
 namespace panzer {
 
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
-  struct PointValues2 {
-    typedef typename ArrayTraits<Scalar, Array<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
+  template <typename Scalar>
+  class PointValues2 {
+  public:
+    typedef typename ArrayTraits<Scalar, PHX::MDField<Scalar> >::size_type size_type;
+
+    template<typename SourceScalar>
+    PointValues2<Scalar>&
+    operator=(const PointValues2<SourceScalar>& source);
+
+    PointValues2(const std::string & pre="",
+                 bool allocArrays=false)
+       : alloc_arrays_(allocArrays), prefix_(pre) {}
+
+    PointValues2(const std::string & pre,
+                 const std::vector<PHX::index_size_type> & ddims,
+                 bool allocArrays=false)
+       : alloc_arrays_(allocArrays), prefix_(pre), ddims_(ddims) {}
     
     //! Sizes/allocates memory for arrays
-    template <typename ArrayFactory>
-    void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr,const ArrayFactory & af);
+    void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr);
 
-    template <typename NodeCoordinateArray,typename PointCoordinateArray>
-    inline void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
+    /** Evaluate teh jacobian and derivative information at the requested reference
+      * points.
+      *
+      * \param[in] node_coords Cell vertices
+      * \param[in] point_coords Reference cell coordinates
+      */
+    template <typename CoordinateArray,typename PointArray>
+    void evaluateValues(const CoordinateArray & node_coords,
+                        const PointArray & in_point_coords)
+    { copyNodeCoords(node_coords);
+      copyPointCoords(in_point_coords);
+      evaluateValues(); }
+
+    /** Evaluate teh jacobian and derivative information at the requested reference
+      * points. This version allows a shallow copy of the vertex coordinates. 
+      *
+      * \param[in] node_coords Cell vertices
+      * \param[in] point_coords Reference cell coordinates
+      * \param[in] shallow_copy_nodes Enable or disable a shallow copy of the vertices
+      */ 
+    template <typename PointArray>
+    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coords,
+                        const PointArray & in_point_coords, 
+                        bool shallow_copy_nodes)
+    { if(shallow_copy_nodes)
+        node_coordinates = node_coords;
+      else
+        copyNodeCoords(node_coords);
+      copyPointCoords(in_point_coords);
+      evaluateValues(); }
+
+    //! Return reference cell coordinates this class uses (IP,Dim) sized
+    PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const 
+    { return coords_ref; }
+
+    //! Return the vertex coordinates this class uses (Cell,NODE,Dim) sized
+    PHX::MDField<Scalar,Cell,NODE,Dim> & getVertexCoordinates() const
+    { return node_coordinates; }
+
+    // input fields: both mutable because of getRefCoordinates/getVertexCoordinates
+    //               Not sure this is the best design, but works for this iteration
+    mutable PHX::MDField<Scalar,IP,Dim>        coords_ref;       // <IP,Dim>
+    mutable PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates; // <Cell,NODE,Dim>
+
+    // output fields
+    PHX::MDField<Scalar,Cell,IP,Dim,Dim>       jac;              // <Cell,IP,Dim,Dim>
+    PHX::MDField<Scalar,Cell,IP,Dim,Dim>       jac_inv;          // <Cell,IP,Dim,Dim>
+    PHX::MDField<Scalar,Cell,IP>               jac_det;          // <Cell,IP>
+    PHX::MDField<Scalar,Cell,IP,Dim>           point_coords;     // <Cell,IP,Dim> // cell points
+
+    Teuchos::RCP<const panzer::PointRule> point_rule;
+
+  private:
+    void evaluateValues();
 
     template <typename CoordinateArray>
     void copyNodeCoords(const CoordinateArray& in_node_coords);
@@ -75,47 +135,34 @@ namespace panzer {
     template <typename CoordinateArray>
     void copyPointCoords(const CoordinateArray& in_point_coords);
 
-    Array<Scalar,IP,Dim,void,void,void,void,void,void> coords_ref;      // <IP,Dim>
-    Array<Scalar,Cell,NODE,Dim,void,void,void,void,void> node_coordinates; // <Cell,NODE,Dim>
-    Array<Scalar,Cell,IP,Dim,Dim,void,void,void,void> jac;              // <Cell,IP,Dim,Dim>
-    Array<Scalar,Cell,IP,Dim,Dim,void,void,void,void> jac_inv;          // <Cell,IP,Dim,Dim>
-    Array<Scalar,Cell,IP,void,void,void,void,void,void> jac_det;        // <Cell,IP>
+    bool alloc_arrays_;
+    std::string prefix_;
+    std::vector<PHX::index_size_type> ddims_;
 
-    // cell points
-    Array<Scalar,Cell,IP,Dim,void,void,void,void,void> point_coords;    // <Cell,IP,Dim>
-
-    Teuchos::RCP<const panzer::PointRule> point_rule;
   };
 
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
-  template <typename NodeCoordinateArray,typename PointCoordinateArray>
-  void PointValues2<Scalar,Array>::
-  evaluateValues(const NodeCoordinateArray& in_node_coords,
-                 const PointCoordinateArray & in_point_coords)
+  template <typename Scalar>
+  template<typename SourceScalar>
+  PointValues2<Scalar>&
+  PointValues2<Scalar>::operator=(const PointValues2<SourceScalar>& source)
   {
-    if (point_rule->isSide()) {
-       TEUCHOS_ASSERT(false); // not implemented!!!!
-    }
-    
-    copyPointCoords(in_point_coords);
-    copyNodeCoords(in_node_coords);
-    
-    Intrepid2::CellTools<Scalar> cell_tools;
-    
-    cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
-    cell_tools.setJacobianInv(jac_inv, jac);
-    cell_tools.setJacobianDet(jac_det, jac);
-    
-    // IP coordinates
-    cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
+    // The separate template parameter for SourceScalar allows for
+    // assignment to a "const Scalar" from a non-const "Scalar", but
+    // we still need to enforce that the underlying scalar type is the
+    // same.
+    static_assert(std::is_same<typename std::decay<Scalar>::type,typename std::decay<SourceScalar>::type>::value,
+                  "ERROR: PointValues assignment requires consistent scalar types!");
+
+    coords_ref = source.coords_ref;
+    node_coordinates = source.node_coordinates;
+    jac = source.jac;
+    jac_inv = source.jac_inv;
+    jac_det = source.jac_det;
+    point_coords = source.point_coords;
+    point_rule = source.point_rule;
+    return *this;
   }
 
 } // namespace panzer
-
-#include "Panzer_PointValues2_impl.hpp"
 
 #endif

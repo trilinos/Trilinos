@@ -88,25 +88,15 @@ namespace MueLu {
   LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   LWGraph_kokkos(const local_graph_type&    graph,
                  const RCP<const map_type>& domainMap,
-                 const RCP<const map_type>& rangeMap,
+                 const RCP<const map_type>& importMap,
                  const std::string&         objectLabel)
-    : graph_(graph), domainMap_(domainMap), importMap_(rangeMap), objectLabel_(objectLabel)
+    : graph_(graph), domainMap_(domainMap), importMap_(importMap), objectLabel_(objectLabel)
   {
     minLocalIndex_ = domainMap_->getMinLocalIndex();
     maxLocalIndex_ = domainMap_->getMaxLocalIndex();
 
     MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", graph_.numRows(), maxNumRowEntriesFunctor, maxNumRowEntries_);
-  }
-
-  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::row_type
-  LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  getNeighborVertices(LocalOrdinal i) const {
-    auto rowPointers = graph_.row_map;
-    auto colIndices  = graph_.entries;
-
-    return Kokkos::subview(colIndices, std::pair<size_t,size_t>(rowPointers(i), rowPointers(i+1)));
+    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
   }
 
 }

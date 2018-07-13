@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/fixtures/Gear.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
 #include <cmath>                        // for cos, sin
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity

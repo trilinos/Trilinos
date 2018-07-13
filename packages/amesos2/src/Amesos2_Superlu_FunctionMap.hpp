@@ -77,27 +77,67 @@ namespace SLU {
     typedef int int_t;
 #include "supermatrix.h"
 #include "slu_util.h"
+#include "superlu_enum_consts.h"
+
 
     namespace S {               // single-precision real definitions
+
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+		typedef struct {
+			int     *xsup;    /* supernode and column mapping */
+			int     *supno;
+			int     *lsub;    /* compressed L subscripts */
+			int     *xlsub;
+			float  *lusup;   /* L supernodes */
+			int     *xlusup;
+			float  *ucol;    /* U columns */
+			int     *usub;
+			int     *xusub;
+			int     nzlmax;   /* current max size of lsub */
+			int     nzumax;   /*    "    "    "      ucol */
+			int     nzlumax;  /*    "    "    "     lusup */
+			int     n;        /* number of columns in the matrix */
+			LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
+			int     num_expansions;
+			ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+			LU_stack_t stack;     /* use user supplied memory */
+		} GlobalLU_t;
+#endif
+
       extern void
       sgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
              float *, float *, float *, float *,
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       sgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       sgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             float *, float *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+             float *, float *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       sgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       sCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, float *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
@@ -120,25 +160,63 @@ namespace SLU {
     }
 
     namespace D {               // double-precision real definitions
+
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+		typedef struct {
+			int     *xsup;    /* supernode and column mapping */
+			int     *supno;
+			int     *lsub;    /* compressed L subscripts */
+			int     *xlsub;
+			double  *lusup;   /* L supernodes */
+			int     *xlusup;
+			double  *ucol;    /* U columns */
+			int     *usub;
+			int     *xusub;
+			int     nzlmax;   /* current max size of lsub */
+			int     nzumax;   /*    "    "    "      ucol */
+			int     nzlumax;  /*    "    "    "     lusup */
+			int     n;        /* number of columns in the matrix */
+			LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
+			int     num_expansions;
+			ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+			LU_stack_t stack;     /* use user supplied memory */
+		} GlobalLU_t;
+#endif
+
       extern void
       dgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
              double *, double *, double *, double *,
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       dgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       dgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             double *, double *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+             double *, double *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       dgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       dCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, double *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
@@ -162,25 +240,63 @@ namespace SLU {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
     namespace C {              // single-precision complex definitions
+
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+		typedef struct {
+			int     *xsup;    /* supernode and column mapping */
+			int     *supno;
+			int     *lsub;    /* compressed L subscripts */
+			int     *xlsub;
+			complex  *lusup;   /* L supernodes */
+			int     *xlusup;
+			complex  *ucol;    /* U columns */
+			int     *usub;
+			int     *xusub;
+			int     nzlmax;   /* current max size of lsub */
+			int     nzumax;   /*    "    "    "      ucol */
+			int     nzlumax;  /*    "    "    "     lusup */
+			int     n;        /* number of columns in the matrix */
+			LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
+			int     num_expansions;
+			ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+			LU_stack_t stack;     /* use user supplied memory */
+		} GlobalLU_t;
+#endif
+
       extern void
       cgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
              float *, float *, float *, float *,
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       cgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       cgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             float *, float *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+             float *, float *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       cgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       cCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
@@ -203,25 +319,63 @@ namespace SLU {
     }
 
     namespace Z {              // double-precision complex definitions
+
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+		typedef struct {
+			int     *xsup;    /* supernode and column mapping */
+			int     *supno;
+			int     *lsub;    /* compressed L subscripts */
+			int     *xlsub;
+			doublecomplex  *lusup;   /* L supernodes */
+			int     *xlusup;
+			doublecomplex  *ucol;    /* U columns */
+			int     *usub;
+			int     *xusub;
+			int     nzlmax;   /* current max size of lsub */
+			int     nzumax;   /*    "    "    "      ucol */
+			int     nzlumax;  /*    "    "    "     lusup */
+			int     n;        /* number of columns in the matrix */
+			LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
+			int     num_expansions;
+			ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+			LU_stack_t stack;     /* use user supplied memory */
+		} GlobalLU_t;
+#endif
+
       extern void
       zgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
              double *, double *, double *, double *,
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       zgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       zgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             double *, double *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+             double *, double *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+             GlobalLU_t*,
+#endif
+             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       zgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+              SLU::SuperMatrix *, SLU::SuperMatrix *, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+              GlobalLU_t*,
+#endif
+              SLU::SuperLUStat_t*, int *);
       extern void
       zCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
@@ -284,6 +438,10 @@ namespace Amesos2 {
   {
     typedef TypeMap<Superlu,float> type_map;
 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+    typedef typename SLU::S::GlobalLU_t GlobalLU_type;
+#endif
+
     /**
      * \brief Binds to the appropriate Superlu solver driver based on data type
      */
@@ -291,22 +449,38 @@ namespace Amesos2 {
 		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-		      float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
+		      float* rcond, float* ferr, float* berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-		      float* rcond, SLU::mem_usage_t* mem_usage,
+		      float* rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     /**
@@ -331,19 +505,35 @@ namespace Amesos2 {
     static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		      int relax, int panel_size, int* etree, void* work,
 		      int lwork, int* perm_c, int* perm_r, SLU::SuperMatrix* L,
-		      SLU::SuperMatrix* U, SLU::SuperLUStat_t* stat, int* info)
+		      SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgstrf(options, AC, relax, panel_size, etree,
-		     work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         stat, info);
     }
 
     static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		      int relax, int panel_size, int* etree, void* work,
 		      int lwork, int* perm_c, int* perm_r, SLU::SuperMatrix* L,
-		      SLU::SuperMatrix* U, SLU::SuperLUStat_t* stat, int* info)
+		      SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgsitrf(options, AC, relax, panel_size, etree,
-		      work, lwork, perm_c, perm_r, L, U, stat, info);
+		      work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          lu, 
+#endif
+          stat, info);
     }
 
     /**
@@ -420,44 +610,78 @@ namespace Amesos2 {
   {
     typedef TypeMap<Superlu,double> type_map;
 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+    typedef typename SLU::D::GlobalLU_t GlobalLU_type;
+#endif
+
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-		      double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
+		      double* rcond, double* ferr, double* berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgstrf(options, AC, relax, panel_size, etree,
-		     work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         stat, info);
     }
 
     static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-		      double* rcond, SLU::mem_usage_t* mem_usage,
+		      double* rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
 		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
-		       SLU::SuperLUStat_t* stat, int* info)
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+		       GlobalLU_type* lu, 
+#endif
+           SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgsitrf(options, AC, relax, panel_size, etree,
-		      work, lwork, perm_c, perm_r, L, U, stat, info);
+		      work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          lu, 
+#endif
+          stat, info);
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
@@ -506,44 +730,78 @@ namespace Amesos2 {
   template <>
   struct FunctionMap<Superlu,SLU::C::complex>
   {
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+    typedef typename SLU::C::GlobalLU_t GlobalLU_type;
+#endif
+
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-		      float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
+		      float* rcond, float* ferr, float* berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgstrf(options, AC, relax, panel_size, etree,
-		     work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         stat, info);
     }
 
     static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-		      float* rcond, SLU::mem_usage_t* mem_usage,
+		      float* rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+           GlobalLU_type* lu, 
+#endif
 		       SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgsitrf(options, AC, relax, panel_size, etree,
-		      work, lwork, perm_c, perm_r, L, U, stat, info);
+		      work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          lu, 
+#endif
+          stat, info);
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
@@ -586,44 +844,78 @@ namespace Amesos2 {
   template <>
   struct FunctionMap<Superlu,SLU::Z::doublecomplex>
   {
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+    typedef typename SLU::Z::GlobalLU_t GlobalLU_type;
+#endif
+
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-		      double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
+		      double* rcond, double* ferr, double* berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgstrf(options, AC, relax, panel_size, etree,
-		     work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         stat, info);
     }
 
     static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
 		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-		      double* rcond, SLU::mem_usage_t* mem_usage,
+		      double* rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          GlobalLU_type* lu, 
+#endif
+          SLU::mem_usage_t* mem_usage,
 		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+         lu, 
+#endif
+         mem_usage, stat, info);
     }
 
     static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
 		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+           GlobalLU_type* lu, 
+#endif
 		       SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgsitrf(options, AC, relax, panel_size, etree,
-		      work, lwork, perm_c, perm_r, L, U, stat, info);
+		      work, lwork, perm_c, perm_r, L, U, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          lu, 
+#endif
+          stat, info);
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,

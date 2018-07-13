@@ -81,15 +81,6 @@ namespace Xpetra {
 
   public:
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -98,7 +89,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
       : map_ (Teuchos::rcp (new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > (numGlobalElements,
                                                                                   indexBase, comm,
                                                                                   toTpetra(lg), node)))
@@ -109,7 +100,7 @@ namespace Xpetra {
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
       : map_ (Teuchos::rcp (new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > (numGlobalElements,
                                                                                   numLocalElements,
                                                                                   indexBase, comm,
@@ -121,7 +112,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements,
                                                                                elementList, indexBase,
                                                                                comm, node)))
@@ -249,6 +240,16 @@ namespace Xpetra {
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return map_; }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      return map_->getLocalMap();
+    }
+#endif
+#endif
+
     //@}
 
   protected:
@@ -307,10 +308,10 @@ namespace Xpetra {
     //! Non-member function to create a locally replicated Map with a specified node.
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > & /* node */ = Teuchos::null) {
       XPETRA_MONITOR("useTpetra::createLocalMapWithNode");
 
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
     }
 
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
@@ -326,9 +327,9 @@ namespace Xpetra {
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > & /* node */ = Teuchos::null) {
       XPETRA_MONITOR("useTpetra::createContigMap");
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
     }
   } // useTpetra namespace
 
@@ -360,15 +361,6 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef EpetraNode Node;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -377,8 +369,8 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor with a user-defined contiguous distribution.
@@ -386,8 +378,8 @@ namespace Xpetra {
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -395,8 +387,8 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -506,13 +498,25 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) { }
+    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return UseTpetra; }
 
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      return local_map_type();
+    }
+#endif
+#endif
 
     //@}
 
@@ -531,15 +535,6 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef EpetraNode Node;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -548,8 +543,8 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor with a user-defined contiguous distribution.
@@ -557,8 +552,8 @@ namespace Xpetra {
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -566,8 +561,8 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -677,13 +672,26 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) { }
+    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return UseTpetra; }
 
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      // We will never be here, this is a stub class
+      return local_map_type();
+    }
+#endif
+#endif
 
     //@}
   }; // TpetraMap class (specialization for GO=int and NO=EpetraNode)

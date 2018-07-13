@@ -55,8 +55,6 @@
 
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Hashtable.hpp>
-using Teuchos::TimeMonitor;
-using Teuchos::Time;
 
 namespace Amesos2 {
 
@@ -64,26 +62,26 @@ namespace Amesos2 {
 struct Timers {
 
   Timers()
-    : mtxRedistTime_(*(TimeMonitor::getNewTimer("Time to redistribute data structures")))
-    , mtxConvTime_(*(TimeMonitor::getNewTimer("Time to convert matrix to solver format")))
-    , vecRedistTime_(*(TimeMonitor::getNewTimer("Time to redistribute vectors")))
-    , vecConvTime_(*(TimeMonitor::getNewTimer("Time to convert vectors to solver format")))
-    , preOrderTime_(*(TimeMonitor::getNewTimer("Time for matrix pre-order")))
-    , symFactTime_(*(TimeMonitor::getNewTimer("Time for symbolic factorization")))
-    , numFactTime_(*(TimeMonitor::getNewTimer("Time for numeric factorization")))
-    , solveTime_(*(TimeMonitor::getNewTimer("Time for solve")))
-    , totalTime_(*(TimeMonitor::getNewTimer("Total Time in Amesos2 interface")))
+    : mtxRedistTime_(*(Teuchos::TimeMonitor::getNewTimer("Time to redistribute data structures")))
+    , mtxConvTime_(*(Teuchos::TimeMonitor::getNewTimer("Time to convert matrix to solver format")))
+    , vecRedistTime_(*(Teuchos::TimeMonitor::getNewTimer("Time to redistribute vectors")))
+    , vecConvTime_(*(Teuchos::TimeMonitor::getNewTimer("Time to convert vectors to solver format")))
+    , preOrderTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for matrix pre-order")))
+    , symFactTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for symbolic factorization")))
+    , numFactTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for numeric factorization")))
+    , solveTime_(*(Teuchos::TimeMonitor::getNewTimer("Time for solve")))
+    , totalTime_(*(Teuchos::TimeMonitor::getNewTimer("Total Time in Amesos2 interface")))
     {}
 
-  Time mtxRedistTime_;
-  Time mtxConvTime_;
-  Time vecRedistTime_;
-  Time vecConvTime_;
-  Time preOrderTime_;
-  Time symFactTime_;
-  Time numFactTime_;
-  Time solveTime_;
-  Time totalTime_;
+  Teuchos::Time mtxRedistTime_;
+  Teuchos::Time mtxConvTime_;
+  Teuchos::Time vecRedistTime_;
+  Teuchos::Time vecConvTime_;
+  Teuchos::Time preOrderTime_;
+  Teuchos::Time symFactTime_;
+  Teuchos::Time numFactTime_;
+  Teuchos::Time solveTime_;
+  Teuchos::Time totalTime_;
 };
 
 

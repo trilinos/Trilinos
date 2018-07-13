@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STK_ELEM_ELEM_GRAPH_IMPL_HPP
 #define STK_ELEM_ELEM_GRAPH_IMPL_HPP
 
@@ -7,7 +39,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include "../../base/FEMHelpers.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "GraphTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
@@ -66,8 +98,10 @@ private:
 struct ParallelInfo
 {
 public:
+    ParallelInfo(int proc, int perm, stk::topology other_elem_topology) :
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc) {}
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -75,7 +109,6 @@ public:
 
     int m_permutation;
     stk::topology m_remote_element_toplogy;
-    stk::mesh::EntityId m_chosen_side_id;
 
 private:
     RemoteElementData remoteElementData;
@@ -87,7 +120,6 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
     out << "(other_proc=" << info.get_proc_rank_of_neighbor()
             << ", perm=" << info.m_permutation
             << ", remote_top=" << info.m_remote_element_toplogy
-            << ", chosen_side_id=" << info.m_chosen_side_id
             << ")";
     return out;
 }
@@ -139,8 +171,7 @@ private:
 struct ParallelElementData
 {
     ParallelElementData()
-    : m_suggestedFaceId(stk::mesh::InvalidEntityId),
-      remoteElementData(),
+    : remoteElementData(),
       serialElementData()
     {}
 
@@ -179,7 +210,7 @@ struct SharedEdgeInfo
 {
 public:
     SharedEdgeInfo()
-    : m_chosenSideId(stk::mesh::InvalidEntityId), m_sharedNodes(),
+    : m_sharedNodes(),
       m_remoteElementTopology(stk::topology::INVALID_TOPOLOGY),
       remoteElementData(), graphEdgeProc() {}
 
@@ -195,7 +226,6 @@ public:
 
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
-    stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
     stk::topology m_remoteElementTopology;
 
@@ -350,7 +380,7 @@ typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
-void fill_topologies(stk::mesh::BulkData& bulkData, stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
+void fill_topologies(const stk::mesh::BulkData& bulkData, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
@@ -368,9 +398,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
 
-stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
-
-stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
+stk::mesh::ConstPartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
 int get_element_side_multiplier();
 

@@ -27,7 +27,8 @@ TRIBITS_ADD_EXECUTABLE(
   test_tpi_hhpccg
   COMM serial mpi
   SOURCES main.c CGSolver.c BoxPartitionIB.c tpi_vector.c dcrs_matrix.c
-  DEPLIBS pthread m
+  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Pthread
+  IMPORTEDLIBS m
   DIRECTORY .
   )
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,7 +36,7 @@
  *
  *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <stdio.h>
@@ -52,7 +52,8 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
 
   const char *varidobj;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   switch (obj_type) {
   case EX_EDGE_BLOCK: varidobj = VAR_ID_ED_BLK; break;
@@ -68,28 +69,25 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   case EX_FACE_MAP: varidobj   = VAR_FAM_PROP(1); break;
   case EX_ELEM_MAP: varidobj   = VAR_EM_PROP(1); break;
   default: /* invalid variable type */
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err("ex_get_ids", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_ids", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Determine if there are any 'obj-type' objects */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s defined in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_ids", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_ids", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* inquire id's of previously defined dimensions and variables  */
   if ((status = nc_inq_varid(exoid, varidobj, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids variable in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_ids", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_ids", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* read in the element block ids  */
@@ -101,11 +99,10 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to return %s ids in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_ids", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_ids", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -65,6 +65,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <unistd.h>
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
@@ -149,7 +150,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int nprocs;                    /* Number of processors. */
   int i;                         /* Loop index */
   int ierr;                      /* Error code */
-  char errmsg[128];              /* Error message */
+  char errmsg[256];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
 

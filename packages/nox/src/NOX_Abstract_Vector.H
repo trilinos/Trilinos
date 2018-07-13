@@ -134,7 +134,7 @@ public:
 
     \return Reference to this object
    */
-  virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1);
+  virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1) = 0;
 
   //! Put element-wise absolute values of source vector \c y into this vector.
   /*!

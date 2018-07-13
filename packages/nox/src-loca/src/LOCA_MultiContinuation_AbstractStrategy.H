@@ -51,6 +51,8 @@
 #ifndef LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 #define LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 
 #include "LOCA_Extended_MultiAbstractGroup.H" // base class

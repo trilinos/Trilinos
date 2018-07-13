@@ -79,6 +79,8 @@
 
 #cmakedefine HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
+#cmakedefine HAVE_TEUCHOS_THREAD_SAFE
+
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
 /* Deprecated */
@@ -96,6 +98,8 @@
 #cmakedefine HAVE_TEUCHOS_ARPREC
 
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
+
+#cmakedefine HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
 
 #cmakedefine HAVE_TEUCHOS_COMM_TIMERS
 
@@ -134,6 +138,10 @@
 #cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
 
 #cmakedefine HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
+
+#cmakedefine HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+
+#cmakedefine HAVE_TEUCHOS_KOKKOS_PROFILING
 
 /* template qualifier required for calling template methods from non-template
    code */

@@ -59,7 +59,10 @@
 
 namespace panzer_stk {
 
-PHX_EVALUATOR_CTOR(ScatterCellAvgVector,p) :
+template<typename EvalT, typename Traits>
+ScatterCellAvgVector<EvalT, Traits>::
+ScatterCellAvgVector(
+  const Teuchos::ParameterList& p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))
 {
   using panzer::Cell;
@@ -91,7 +94,12 @@ PHX_EVALUATOR_CTOR(ScatterCellAvgVector,p) :
 }
 
 
-PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector,d,fm)
+template<typename EvalT, typename Traits>
+void
+ScatterCellAvgVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* d */,
+  PHX::FieldManager<Traits>&  fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) 
   {
@@ -105,7 +113,11 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector,d,fm)
 }
 
 
-PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
+template<typename EvalT, typename Traits>
+void
+ScatterCellAvgVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 {
   panzer::MDFieldArrayFactory af("",true);
 
@@ -119,9 +131,9 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
   {
     PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
     std::string fieldName = field.fieldTag().name();
-    int numCells = field.dimension(0);
-    int numPoints = field.dimension(1);  
-    int numDims = field.dimension(2);
+    int numCells = field.extent(0);
+    int numPoints = field.extent(1);  
+    int numDims = field.extent(2);
     
     for (int dim = 0; dim < numDims; dim++)
     {  

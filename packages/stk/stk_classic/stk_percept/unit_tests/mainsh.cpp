@@ -39,7 +39,7 @@ namespace stk_classic
           const ArrayDimTag* tags[2] = {&Tag1::tag(), &Tag2::tag()};
           ArrayUndim uu(storage, 2, dims, tags);
           uu(0,0)=1.0;
-          std::cout << "uu= " << uu(0,0) << std::endl;;
+          std::cout << "uu= " << uu(0,0) << std::endl;
         }
 
 #if 0
@@ -403,7 +403,7 @@ namespace stk_classic
           {
             double th = M_PI*((double)ith)/((double)ntheta);
             boost::array<double, 3> pt1 = {{0, rad*cos(th), rad*sin(th)}};
-            boost::array<double, 3> dr1 = {{0, -sin(th), cos(th)}};;
+            boost::array<double, 3> dr1 = {{0, -sin(th), cos(th)}};
             path3.push_back(pt1);
             dir3.push_back(dr1);
           }

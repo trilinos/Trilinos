@@ -55,13 +55,14 @@ std::string TableEntry::toChoppedString(int maxWidth) const
 
 /* --------- DoubleEntry methods -------------------------------------------- */
 
-DoubleEntry::DoubleEntry(const double& value, int precision)
-  : TableEntry(), data_(value), precision_(precision)
+DoubleEntry::DoubleEntry(const double& value, int precision, const std::ios_base::fmtflags& flags)
+  : TableEntry(), data_(value), precision_(precision), fmtflags_(flags)
 {}
 
 std::string DoubleEntry::toString() const
 {
   std::ostringstream toss;
+  toss.setf(fmtflags_);
   toss << std::setprecision(precision_) << data_;
   return toss.str();
 }
@@ -70,13 +71,14 @@ std::string DoubleEntry::toString() const
 
 /* --------- IntEntry methods -------------------------------------------- */
 
-IntEntry::IntEntry(int value)
-  : TableEntry(), data_(value)
+IntEntry::IntEntry(int value, const std::ios_base::fmtflags& flags)
+  : TableEntry(), data_(value), fmtflags_(flags)
 {}
 
 std::string IntEntry::toString() const
 {
   std::ostringstream toss;
+  toss.setf(fmtflags_);
   toss << data_;
   return toss.str();
 }

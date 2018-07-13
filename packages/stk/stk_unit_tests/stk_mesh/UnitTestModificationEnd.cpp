@@ -57,7 +57,6 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include <stk_util/parallel/CommSparse.hpp>
 
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
@@ -804,7 +803,7 @@ TEST(BulkDataModificationEnd, test_invalid_add_node_sharing)
         stk::unit_test_util::BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
         mesh.modification_begin();
 
-        stk::mesh::Entity node1 = mesh.declare_entity(stk::topology::NODE_RANK, 1, node_part);
+        stk::mesh::Entity node1 = mesh.declare_node(1, {&node_part});
 
         if ( myProcId == 2 )
         {
@@ -840,7 +839,7 @@ TEST(BulkDataModificationEnd, DISABLED_create_edges_with_min_map)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::default_map());
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -915,7 +914,7 @@ TEST(ModEndForEntityCreation, DISABLED_promotion_of_ghosted_to_shared)
 
     ghost_one_hex_to_p1(bulkData);
 
-    std::vector<unsigned> localCounts;
+    std::vector<size_t> localCounts;
     const Selector universalPart = Selector(metaData.universal_part());
     stk::mesh::count_entities(universalPart, bulkData, localCounts);
 

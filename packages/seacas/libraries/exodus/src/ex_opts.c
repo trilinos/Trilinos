@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -59,11 +59,11 @@ The function ex_opts() is used to set message reporting options.
 table below.
 
 <table>
-<tr><td> \c EX_ABORT  </td><td> Causes fatal errors to force program
+<tr><td> EX_ABORT  </td><td> Causes fatal errors to force program
                                 exit. (Default is false.) </td></tr>
-<tr><td> \c EX_DEBUG  </td><td> Causes certain messages to print
+<tr><td> EX_DEBUG  </td><td> Causes certain messages to print
                                 for debug use. (Default is false.)</td></tr>
-<tr><td> \c EX_VERBOSE</td><td> Causes all error messages to print when true,
+<tr><td> EX_VERBOSE</td><td> Causes all error messages to print when true,
                                 otherwise no error messages will print. (Default
 is false.)</td></tr>
 </table>
@@ -74,16 +74,16 @@ is false.)</td></tr>
 For example, the following will cause all messages to print
 and will cause the program to exit upon receipt of fatal error:
 
-\code
+~~~{.c}
 #include "exodusII.h"
 ex_opts(EX_ABORT|EX_VERBOSE);
-\endcode
+~~~
 
 */
 int ex_opts(int options)
 {
+  EX_FUNC_ENTER();
   int oldval = exoptval;
-  exerrval   = 0; /* clear error code */
   exoptval   = options;
-  return oldval;
+  EX_FUNC_LEAVE(oldval);
 }

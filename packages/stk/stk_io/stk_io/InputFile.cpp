@@ -64,7 +64,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 
 namespace {
@@ -133,6 +134,11 @@ namespace stk {
 	    << ". Must be READ_RESTART or READ_MODEL";
         throw std::runtime_error( msg.str() );
       }
+
+      ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+		      "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+		      "Only 'Unstructured' mesh is currently supported.");
+
       m_database.release(); // The m_region will delete the m_database pointer.
     }
 
@@ -146,6 +152,10 @@ namespace stk {
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
         m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
+
+	ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+			"Only 'Unstructured' mesh is currently supported.");
       }
     }
 
@@ -204,6 +214,11 @@ namespace stk {
       ThrowErrorMsgIf (Teuchos::is_null(m_region),
 		       "Attempt to read global variables before restart initialized.");
       m_region->field_describe(Ioss::Field::TRANSIENT, &names);
+    }
+
+    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta)
+    {
+        return stk::io::get_var_names(*m_region.get(), type, meta);
     }
 
     void InputFile::add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo)
@@ -575,6 +590,74 @@ namespace stk {
 	region->begin_state(step);
 
       return time_read;
+    }
+
+
+    double InputFile::read_defined_input_fields_at_step(int step,
+                                                std::vector<stk::io::MeshField> *missingFields,
+                                                stk::mesh::BulkData &bulk)
+    {
+        ThrowErrorMsgIf(step <= 0,
+                        "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
+
+        ThrowErrorMsgIf (Teuchos::is_null(m_region),
+                         "There is no Input mesh/restart region associated with this Mesh Data.");
+
+        Ioss::Region *region = m_region.get();
+
+        int step_count = region->get_property("state_count").get_int();
+
+        ThrowErrorMsgIf(step_count == 0,
+                        "ERROR: Input database '" << region->get_database()->get_filename()
+                        << "' has no transient data.");
+
+        ThrowErrorMsgIf(step > step_count,
+                        "ERROR: Input database '" << region->get_database()->get_filename()
+                        << "'. Step " << step << " was specified, but database only has "
+                        << step_count << " steps.");
+
+        // Sort fields to ensure they are iterated in the same order on all processors.
+        std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
+
+        bool ignore_missing_fields = (missingFields != NULL);
+
+        if (!m_fieldsInitialized) {
+            std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+            while (I != m_fields.end()) {
+                (*I).set_inactive(); ++I;
+            }
+
+            build_field_part_associations(bulk, missingFields);
+
+            m_fieldsInitialized = true;
+        }
+
+        double time  = region->get_state_time(step);
+        if (time < m_startTime || time > m_stopTime)
+            return 0.0;
+
+        std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+        double time_read = -1.0;
+        while (I != m_fields.end()) {
+            // NOTE: If the fields being restored have different settings, the time
+            // value can be different for each field and this will return the value
+            // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+            // and one is TIME_INTERPOLATION, then the time value to return is
+            // ambiguous.  Also an issue if some of the fields are inactive.
+            double time_t = (*I).restore_field_data_at_step(region, bulk, step, ignore_missing_fields);
+            if ((*I).is_active()) {
+                time_read = time_t > time_read ? time_t : time_read;
+            }
+            ++I;
+        }
+
+        int current_step = region->get_current_state();
+        if (current_step != -1 && current_step != static_cast<int>(step))
+            region->end_state(current_step);
+        if (current_step != static_cast<int>(step))
+            region->begin_state(step);
+
+        return time_read;
     }
 
   }

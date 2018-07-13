@@ -42,12 +42,15 @@
 // @HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Amesos2_Factory.hpp"
 #include "Trilinos_Details_LinearSolver.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
+
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterXMLFileReader.hpp>
 // Define typedefs and macros for testing over all Tpetra types.
 // They work whether or not ETI is enabled.
 #include "TpetraCore_ETIHelperMacros.h"
@@ -209,9 +212,48 @@ namespace {
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
+    // NDE: Beginning changes towards passing parameter list to shylu basker
+    // for controlling various parameters per test, matrix, etc.
+
+    Teuchos::ParameterList amesos2_paramlist;
+    if ( solverName == "ShyLUBasker" || solverName == "shylubasker" ) {
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("Basker");
+
+      shylubasker_paramlist.set("num_threads", 1,
+          "Number of threads");
+      shylubasker_paramlist.set("pivot", false,
+          "Should not pivot");
+      shylubasker_paramlist.set("pivot_tol", .0001,
+          "Tolerance before pivot, currently not used");
+      shylubasker_paramlist.set("symmetric", false,
+          "Should Symbolic assume symmetric nonzero pattern");
+      shylubasker_paramlist.set("realloc" , false,
+          "Should realloc space if not enough");
+      shylubasker_paramlist.set("verbose", false,
+          "Information about factoring");
+      shylubasker_paramlist.set("verbose_matrix", false,
+          "Give Permuted Matrices");
+      shylubasker_paramlist.set("matching", true,
+          "Use WC matching (Not Supported)");
+      shylubasker_paramlist.set("matching_type", 0,
+          "Type of WC matching (Not Supported)");
+      shylubasker_paramlist.set("btf", true,
+          "Use BTF ordering");
+      shylubasker_paramlist.set("amd_btf", true,
+          "Use AMD on BTF blocks (Not Supported)");
+      shylubasker_paramlist.set("amd_dom", true,
+          "Use CAMD on ND blocks (Not Supported)");
+      shylubasker_paramlist.set("transpose", false,
+          "Solve the transpose A");
+    }
+
     RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
       solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Amesos2", solverName);
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+
+      //set parameter list here as well
     } catch (std::exception& e) {
       out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;
@@ -266,8 +308,7 @@ namespace {
     return;
 #endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
     const size_t numVecs = 3;
 
@@ -282,8 +323,8 @@ namespace {
     //B->describe(out, Teuchos::VERB_EXTREME);
 
 
-    const int numSolvers = 9;
-    const char* solverNames[9] = {"basker", "klu2", "superlu_dist",
+    const int numSolvers = 10;
+    const char* solverNames[10] = {"shylubasker", "basker", "klu2", "superlu_dist",
                                   "superlu_mt", "superlu", "pardiso_mkl",
                                   "lapack", "mumps", "amesos2_cholmod"};
     // The number of solvers that Amesos2::create actually supports,
@@ -304,6 +345,44 @@ namespace {
         RCP<Amesos2::Solver<MAT, MV> > solver;
         try {
           solver = Amesos2::create<MAT, MV> (solverName, A, X, B);
+
+          // NDE: Beginning changes towards passing parameter list to shylu basker
+          // for controlling various parameters per test, matrix, etc.
+
+          Teuchos::ParameterList amesos2_paramlist;
+          if ( solverName == "shylubasker" ) {
+            amesos2_paramlist.setName("Amesos2");
+            Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("Basker");
+
+            shylubasker_paramlist.set("num_threads", 1,
+                "Number of threads");
+            shylubasker_paramlist.set("pivot", false,
+                "Should not pivot");
+            shylubasker_paramlist.set("pivot_tol", .0001,
+                "Tolerance before pivot, currently not used");
+            shylubasker_paramlist.set("symmetric", false,
+                "Should Symbolic assume symmetric nonzero pattern");
+            shylubasker_paramlist.set("realloc" , false,
+                "Should realloc space if not enough");
+            shylubasker_paramlist.set("verbose", false,
+                "Information about factoring");
+            shylubasker_paramlist.set("verbose_matrix", false,
+                "Give Permuted Matrices");
+            shylubasker_paramlist.set("matching", true,
+                "Use WC matching (Not Supported)");
+            shylubasker_paramlist.set("matching_type", 0,
+                "Type of WC matching (Not Supported)");
+            shylubasker_paramlist.set("btf", true,
+                "Use BTF ordering");
+            shylubasker_paramlist.set("amd_btf", true,
+                "Use AMD on BTF blocks (Not Supported)");
+            shylubasker_paramlist.set("amd_dom", true,
+                "Use CAMD on ND blocks (Not Supported)");
+            shylubasker_paramlist.set("transpose", false,
+                "Solve the transpose A");
+
+            solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+          }
         }
         catch (...) {
           out << "Amesos2::create threw an exception for solverName = \"" <<

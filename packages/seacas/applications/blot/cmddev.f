@@ -1,7 +1,7 @@
-C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software.
-C         
+C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
+C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
@@ -13,7 +13,7 @@ C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -125,6 +125,8 @@ C   --   * - return statement if command error; message is printed
            ISPEC = DEFAULT
          ELSE IF (MATSTR (WORD, 'RAINBOW', 3)) THEN
            ISPEC = RAINBW
+         ELSE IF (MATSTR (WORD, 'VIRIDIS', 3)) THEN
+           ISPEC = VIRDIS
          ELSE IF (MATSTR (WORD, 'GRAY', 2) .or.
      *            MATSTR (WORD, 'GREY', 2)) THEN
            ISPEC = GRAY
@@ -177,6 +179,13 @@ C ... User has specified the RGB components of the color.
          ELSE IF (MATSTR (WORD, 'INVERSE', 3)) THEN
            ISINV = 1
            GO TO 10
+         ELSE IF (MATSTR (WORD, 'HELP', 4)) THEN
+           CALL PRTERR ('CMDSPEC',
+     *       'Valid: RAINBOW, VIRIDIS, GRAY, TERRAIN, THERMAL, ASTRO,')
+           CALL PRTERR ('CMDSPEC',
+     *       '       COOL, METAL, a color, or enter rgb triplet')
+           ERRMSG = 'Unknown Color Map'
+           GO TO 100
          ELSE
            ERRMSG = 'Unknown Color Map'
            GO TO 100

@@ -105,8 +105,10 @@ namespace Stokhos {
       ~ExponentialOneDEigenFunction() {}
 
       //! Evaluate eigenfunction
+      template <typename point_type>
       KOKKOS_INLINE_FUNCTION
-      value_type evaluate(const value_type& x) const {
+      point_type
+      evaluate(const point_type& x) const {
         if (type == SIN)
           return A*sin(omega*(x-b));
         return A*cos(omega*(x-b));

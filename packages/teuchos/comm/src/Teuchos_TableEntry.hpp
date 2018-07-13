@@ -55,6 +55,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include <iostream>
+#include <iomanip>
 
 namespace Teuchos
 {
@@ -98,14 +99,15 @@ namespace Teuchos
   public:
     /** \brief Construct with a value
      * and a precision */
-    DoubleEntry(const double& value, int precision);
+    DoubleEntry(const double& value, int precision, const std::ios_base::fmtflags& flags);
 
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
 
   private:
-    double data_;
-    int precision_;
+    double                  data_;
+    int                     precision_;
+    std::ios_base::fmtflags fmtflags_;
   };
 
 
@@ -116,13 +118,14 @@ namespace Teuchos
   {
   public:
     /** \brief Construct with a value */
-    IntEntry(int value);
+    IntEntry(int value, const std::ios_base::fmtflags& flags);
 
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
 
   private:
-    int data_;
+    int                     data_;
+    std::ios_base::fmtflags fmtflags_;
   };
 
 

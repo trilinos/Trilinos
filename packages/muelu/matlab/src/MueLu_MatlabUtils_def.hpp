@@ -125,6 +125,11 @@ template<> MuemexType getMuemexType<RCP<MAmalInfo>>() {return AMALGAMATION_INFO;
 template<> MuemexType getMuemexType(const RCP<MGraph>& data) {return GRAPH;}
 template<> MuemexType getMuemexType<RCP<MGraph>>() {return GRAPH;}
 
+#ifdef HAVE_MUELU_INTREPID2
+template<> MuemexType getMuemexType(const RCP<FieldContainer_ordinal>& data) {return FIELDCONTAINER_ORDINAL;}
+template<> MuemexType getMuemexType<RCP<FieldContainer_ordinal>>() {return FIELDCONTAINER_ORDINAL;}
+#endif
+
 /* "prototypes" for specialized functions used in other specialized functions */
 
 template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz);
@@ -195,7 +200,7 @@ template<>
 string loadDataFromMatlab<string>(const mxArray* mxa)
 {
   string rv = "";
-  if(!mxGetClassID(mxa) != mxCHAR_CLASS)
+  if (mxGetClassID(mxa) != mxCHAR_CLASS)
   {
     throw runtime_error("Can't construct string from anything but a char array.");
   }
@@ -566,8 +571,8 @@ RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates>>(const mxArray* mxa)
   {
     agg->SetIsRoot(rootNodes_inArray[i], true);
   }
-  //Now recompute the aggSize array and cache the results in the object
-  agg->ComputeAggregateSizes(true, true);
+  //Now recompute the aggSize array the results in the object
+  agg->ComputeAggregateSizes(true);
   agg->AggregatesCrossProcessors(false);
   return agg;
 }
@@ -655,6 +660,30 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
   mgraph->SetBoundaryNodeMap(boundaryNodesInput);
   return mgraph;
 }
+
+
+#ifdef HAVE_MUELU_INTREPID2
+template<>
+RCP<FieldContainer_ordinal> loadDataFromMatlab<RCP<FieldContainer_ordinal>>(const mxArray* mxa)
+{
+  if(mxGetClassID(mxa) != mxINT32_CLASS)
+    throw runtime_error("FieldContainer must have integer storage entries");
+
+  int *data = (int *) mxGetData(mxa);
+  int nr = mxGetM(mxa);
+  int nc = mxGetN(mxa);
+
+  RCP<FieldContainer_ordinal> fc = rcp(new FieldContainer_ordinal("FC from Matlab",nr,nc));
+  for(int col = 0; col < nc; col++)
+  {
+    for(int row = 0; row < nr; row++)
+    {
+      (*fc)(row,col) = data[col * nr + row];
+    }
+  }
+  return fc;
+}
+#endif
 
 /* ******************************* */
 /* saveDataToMatlab                */
@@ -766,9 +795,13 @@ template<>
 mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
 {
   typedef double Scalar;
+  // Compute global constants, if we need them
+  Teuchos::rcp_const_cast<Xpetra_CrsGraph>(data->getCrsGraph())->computeGlobalConstants();
+
   int nr = data->getGlobalNumRows();
   int nc = data->getGlobalNumCols();
   int nnz = data->getGlobalNumEntries();
+
 #ifdef VERBOSE_OUTPUT
   RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   mat->describe(*fancyStream, Teuchos::VERB_EXTREME);
@@ -780,7 +813,10 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
   {
     jc[i] = 0;
   }
+
   size_t maxEntriesPerRow = data->getGlobalMaxNumRowEntries();
+  if(maxEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid() || maxEntriesPerRow == 0) maxEntriesPerRow = data->getNodeMaxNumRowEntries();
+
   int* rowProgress = new int[nc];
   //The array that will be copied to Pr and (if complex) Pi later
   Scalar* sparseVals = new Scalar[nnz];
@@ -799,6 +835,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
         jc[rowIndices[entry] + 1]++; //for each entry, increase jc for the entry's column
       }
     }
+
     //now jc holds the number of elements in each column, but needs cumulative sum over all previous columns also
     int entriesAccum = 0;
     for(int n = 0; n <= nc; n++)
@@ -877,6 +914,10 @@ template<>
 mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_complex>& data)
 {
   typedef complex_t Scalar;
+
+  // Compute global constants, if we need them
+  Teuchos::rcp_const_cast<Xpetra_CrsGraph>(data->getCrsGraph())->computeGlobalConstants();
+
   int nr = data->getGlobalNumRows();
   int nc = data->getGlobalNumCols();
   int nnz = data->getGlobalNumEntries();
@@ -1259,6 +1300,34 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data)
   return out[0];
 }
 
+#ifdef HAVE_MUELU_INTREPID2
+template<>
+mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
+{
+  int rank = data->rank();
+  // NOTE: Only supports rank 2 arrays
+  if(rank!=2)
+    throw std::runtime_error("Error: Only rank two FieldContainers are supported.");
+
+  int nr = data->dimension(0);
+  int nc = data->dimension(1);
+  
+  mwSize dims[]={(mwSize)nr,(mwSize)nc};
+  mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);
+  int *array = (int*) mxGetData(mxa);
+  
+  for(int col = 0; col < nc; col++)
+  {
+    for(int row = 0; row < nr; row++)
+    {
+      array[col * nr + row] = (*data)(row,col);
+    }
+  }
+  return mxa;
+}
+#endif
+
+
 template<typename T>
 MuemexData<T>::MuemexData(const mxArray* mxa) : MuemexArg(getMuemexType<T>())
 {
@@ -1289,7 +1358,7 @@ T& MuemexData<T>::getData()
 template<typename T>
 void MuemexData<T>::setData(T& newData)
 {
-  this->data = data;
+  this->data = newData;
 }
 
 /* ***************************** */
@@ -1317,7 +1386,7 @@ const T& getLevelVariable(std::string& name, Level& lvl)
 }
 
 //Functions used to put data through matlab factories - first arg is "this" pointer of matlab factory
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::string& needsParam, Level& lvl)
 {
   using namespace std;
@@ -1449,7 +1518,7 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
   return args;
 }
 
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl)
 {
   using namespace std;

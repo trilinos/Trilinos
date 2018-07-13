@@ -141,24 +141,19 @@ namespace MueLu {
       if (!comm.is_null())
         oldRank = SetProcRankVerbose(comm->getRank());
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       // Synchronization timer
       std::string syncTimer = this->ShortClassName() + ": Build sync (level=" + toString(requestedLevel.GetLevelID()) + ")";
-      if (!comm.is_null()) {
+      if (this->timerSync_ && !comm.is_null()) {
         TimeMonitor timer(*this, syncTimer);
         comm->barrier();
       }
-#endif
 
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-      // Synchronization timer
-      if (!comm.is_null()) {
+      if (this->timerSync_ && !comm.is_null()) {
         TimeMonitor timer(*this, syncTimer);
         comm->barrier();
       }
-#endif
 
       GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;
 

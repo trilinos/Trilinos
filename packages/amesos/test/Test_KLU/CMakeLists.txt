@@ -16,12 +16,12 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   # Amesos_KLU associated with reindexing
   # test is retained for primarily historical
   # reasons
-  #TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #  Test_KLU_memleak
-  #  SOURCES cxx_memleak_main.cpp
-  #  ARGS 
-  #  NUM_MPI_PROCS 4
-  #  COMM serial mpi
-  #  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Test_KLU_memleak
+    SOURCES cxx_memleak_main.cpp
+    ARGS 
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 
 ENDIF()

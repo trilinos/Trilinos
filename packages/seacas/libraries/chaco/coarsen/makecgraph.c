@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -96,8 +96,9 @@ void makecgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
 
   seenflag = smalloc((cnvtxs + 1) * sizeof(int));
   sptr     = seenflag;
-  for (i      = cnvtxs; i; i--)
+  for (i = cnvtxs; i; i--) {
     *(++sptr) = 0;
+  }
 
   countcedges(graph, nvtxs, start, seenflag, mflag, v2cv, pcnedges);
   cnedges = *pcnedges;
@@ -126,18 +127,21 @@ void makecgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
     links->edges    = edges;
     links->edges[0] = i;
     edges += size;
-    if (COARSEN_VWGTS)
+    if (COARSEN_VWGTS) {
       links->vwgt = 0;
-    else
+    }
+    else {
       links->vwgt = 1;
+    }
     if (COARSEN_EWGTS) {
       links->ewgts = eweights;
       eweights += size;
     }
-    else
+    else {
       links->ewgts = NULL;
-    *(++gptr)      = links++;
-    *(++sptr)      = 0;
+    }
+    *(++gptr) = links++;
+    *(++sptr) = 0;
   }
   sfree(start);
 
@@ -160,61 +164,72 @@ void makecgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
       ewgt_sum = 0;
 
       iptr = graph[i]->edges;
-      if (using_ewgts)
+      if (using_ewgts) {
         fptr = graph[i]->ewgts;
+      }
       for (j = graph[i]->nedges - 1; j; j--) {
         neighbor  = *(++iptr);
         cneighbor = v2cv[neighbor];
         if (cneighbor != cvtx) {
-          if (using_ewgts)
+          if (using_ewgts) {
             ewgt = *(++fptr);
+          }
           ewgt_sum += ewgt;
 
           /* Seenflags being used as map from cvtx to index. */
           if (seenflag[cneighbor] == 0) { /* New neighbor. */
             cgptr->edges[nseen] = cneighbor;
-            if (COARSEN_EWGTS)
+            if (COARSEN_EWGTS) {
               cgptr->ewgts[nseen] = ewgt;
-            seenflag[cneighbor]   = nseen++;
+            }
+            seenflag[cneighbor] = nseen++;
           }
           else { /* Already seen neighbor. */
-            if (COARSEN_EWGTS)
+            if (COARSEN_EWGTS) {
               cgptr->ewgts[seenflag[cneighbor]] += ewgt;
+            }
           }
         }
-        else if (using_ewgts)
+        else if (using_ewgts) {
           ++fptr;
+        }
       }
 
       if (mflag[i] > i) { /* Now handle the matched vertex. */
         iptr = graph[mflag[i]]->edges;
-        if (using_ewgts)
+        if (using_ewgts) {
           fptr = graph[mflag[i]]->ewgts;
+        }
         for (j = graph[mflag[i]]->nedges - 1; j; j--) {
           neighbor  = *(++iptr);
           cneighbor = v2cv[neighbor];
           if (cneighbor != cvtx) {
-            if (using_ewgts)
+            if (using_ewgts) {
               ewgt = *(++fptr);
+            }
             ewgt_sum += ewgt;
 
             if (seenflag[cneighbor] == 0) { /* New neighbor. */
               cgptr->edges[nseen] = cneighbor;
-              if (COARSEN_EWGTS)
+              if (COARSEN_EWGTS) {
                 cgptr->ewgts[nseen] = ewgt;
-              seenflag[cneighbor]   = nseen++;
+              }
+              seenflag[cneighbor] = nseen++;
             }
             else { /* Already seen neighbor. */
-              if (COARSEN_EWGTS)
+              if (COARSEN_EWGTS) {
                 cgptr->ewgts[seenflag[cneighbor]] += ewgt;
+              }
             }
           }
-          else if (using_ewgts)
+          else if (using_ewgts) {
             ++fptr;
+          }
         }
       }
-      if (COARSEN_EWGTS)
+      if (COARSEN_EWGTS) {
         cgptr->ewgts[0] = -ewgt_sum;
+      }
       /* Now clear the seenflag values. */
       iptr = cgraph[cvtx]->edges;
       for (j = cgraph[cvtx]->nedges - 1; j; j--) {

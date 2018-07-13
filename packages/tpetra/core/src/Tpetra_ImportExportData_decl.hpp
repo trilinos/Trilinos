@@ -122,15 +122,21 @@ namespace Tpetra {
     //! Destructor
     ~ImportExportData();
 
-    //! Output stream for debug output.
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
-
     /// \brief Copy the data, but reverse the direction of the
     ///   transfer as well as reversing the Distributor.
     ///
     /// "Reverse the direction of the transfer" means that an Import
     /// becomes an Export in the opposite direction, and vice versa.
     Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> > reverseClone();
+
+    //! Source Map of the Import or Export
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
+
+    //! Target Map of the Import or Export
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
+
+    //! Output stream for debug output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
 
     /// \brief Index of target Map LIDs to which to permute.
     ///
@@ -191,15 +197,6 @@ namespace Tpetra {
     /// LID.
     size_t numSameIDs_;
 
-    //! Source Map of the Import or Export
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
-
-    //! Target Map of the Import or Export
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
-
-    //! Communicator over which the source and target objects are distributed.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
     /// \brief Object that actually distributes (sends and receives) data.
     ///
     /// The Import or Export object that controls this
@@ -207,6 +204,24 @@ namespace Tpetra {
     /// Distributor.  The Distributor's constructor just gives it the
     /// communicator; it does not complete initialization.
     Distributor distributor_;
+
+    /// \brief Is this Export or Import locally complete?
+    ///
+    /// If this is an Export, then do all source Map indices on the
+    /// calling process exist on at least one process (not necessarily
+    /// this one) in the target Map?
+    ///
+    /// If this is an Import, then do all target Map indices on the
+    /// calling process exist on at least one process (not necessarily
+    /// this one) in the source Map?
+    ///
+    /// It's not necessarily an error for an Export or Import not to
+    /// be locally complete on one or more processes.  For example,
+    /// this may happen in the common use case of "restriction" --
+    /// that is, taking a subset of a large object.  Nevertheless, you
+    /// may find this predicate useful for figuring out whether you
+    /// set up your Maps in the way that you expect.
+    bool isLocallyComplete_;
 
   private:
     //! Copy constructor (declared but not defined, do not use)

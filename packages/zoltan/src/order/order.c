@@ -105,8 +105,10 @@ int Zoltan_Order (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
+  if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS) {
+    Zoltan_Print_Configuration("  ");
     Zoltan_Print_Key_Params(zz);
+  }
 
   start_time = Zoltan_Time(zz->Timer);
 

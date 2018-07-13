@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -142,10 +142,12 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
   factor       = 10;
   minfactor    = factor / 2;
   first        = TRUE;
-  if (res < tol)
+  if (res < tol) {
     converged = TRUE;
-  else
+  }
+  else {
     converged = FALSE;
+  }
   while (!converged) {
     if (res / tol < 1.2) {
       factor = max(factor / 2, minfactor);
@@ -175,8 +177,9 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
     }
     rqisteps++;
 
-    if (res < tol)
+    if (res < tol) {
       converged = TRUE;
+    }
 
     if (RQI_CONVERGENCE_MODE == 1 && !converged && ndims == 1) {
       if (first) {
@@ -203,12 +206,14 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
         assgn_pntr     = assignment;
         old_assgn_pntr = old_assignment;
         for (i = n + 1; i; i--) {
-          if (*old_assgn_pntr++ != *assgn_pntr++)
+          if (*old_assgn_pntr++ != *assgn_pntr++) {
             assigndiff++;
+          }
         }
         assigndiff = min(assigndiff, n - assigndiff);
-        if (assigndiff <= assigntol)
+        if (assigndiff <= assigntol) {
           converged = TRUE;
+        }
       }
     }
 
@@ -219,10 +224,12 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
       printf("     %3ld", itn);
       printf("          %ld", istop);
       printf("      %g", factor);
-      if (RQI_CONVERGENCE_MODE == 1)
+      if (RQI_CONVERGENCE_MODE == 1) {
         printf("     %d\n", assigndiff);
-      else
+      }
+      else {
         printf("\n");
+      }
     }
   }
   *evalest = shift;

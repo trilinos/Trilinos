@@ -132,7 +132,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords) {
     for(int agg = 0; agg < numLocalAggs; agg++) {
       std::list<int> aggNodes;
       for(int i = 0; i < numFineNodes; i++) {
@@ -219,7 +219,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_CGAL
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords) {
 
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef K::Point_2 Point_2;

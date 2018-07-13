@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -51,11 +51,20 @@ namespace Ioss {
 
   int SerializeIO::s_groupFactor = 0;
 
+#if defined(IOSS_THREADSAFE)
+  std::mutex SerializeIO::m_;
+#endif
+
   SerializeIO::SerializeIO(const DatabaseIO *database_io, int manual_owner_processor)
-      : m_databaseIO(database_io), m_activeFallThru(s_owner != -1)
+      : m_databaseIO(database_io), m_activeFallThru(true), m_manualOwner(-1)
 
   {
+    if (m_databaseIO->using_parallel_io()) {
+      return;
+    }
+    IOSS_FUNC_ENTER(m_);
 
+    m_activeFallThru               = s_owner != -1;
     const Ioss::ParallelUtils util = m_databaseIO->util();
     if (s_rank == -1) {
       s_rank = util.parallel_rank();
@@ -105,7 +114,11 @@ namespace Ioss {
 
   SerializeIO::~SerializeIO()
   {
+    if (m_databaseIO->using_parallel_io()) {
+      return;
+    }
     try {
+      IOSS_FUNC_ENTER(m_);
       if (m_activeFallThru) {
         ;
       }
@@ -139,6 +152,7 @@ namespace Ioss {
 
   void SerializeIO::setGroupFactor(int factor)
   {
+    IOSS_FUNC_ENTER(m_);
     if (s_rank != -1) {
       IOSS_WARNING << "Mesh I/O serialization group factor cannot be changed "
                       "once serialized I/O has begun";

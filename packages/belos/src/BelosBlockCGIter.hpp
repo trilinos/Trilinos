@@ -147,6 +147,11 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
+  void setDoCondEst(bool val){
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
+  }
+
+
 private:
   void setStateSize() {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
@@ -284,6 +289,20 @@ public:
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
 
+  //! Sets whether or not to store the diagonal for condition estimation
+  void setDoCondEst(bool val){/*ignored*/}
+
+  //! Gets the diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getDiag() { 
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
+
+  //! Gets the off-diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getOffDiag() {
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
   //@}
 
   private:
@@ -436,8 +455,7 @@ public:
       "length and width.";
 
     // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    //const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero(); // unused
 
     if (newstate.R != Teuchos::null) {
 
@@ -451,7 +469,7 @@ public:
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+        MVT::Assign( *newstate.R, *R_ );
       }
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
@@ -470,7 +488,7 @@ public:
       else {
         Z_ = R_;
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
+      MVT::Assign( *Z_, *P_ );
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -510,7 +528,7 @@ public:
     // Create dense spd solver.
     Teuchos::SerialSpdDenseSolver<int,ScalarType> lltSolver;
 
-    // Create convenience variables for zero and one.
+    // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
     // Get the current solution std::vector.

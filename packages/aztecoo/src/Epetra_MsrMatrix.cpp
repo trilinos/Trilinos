@@ -441,8 +441,8 @@ void Epetra_MsrMatrix::Print(std::ostream& os) const {
 	os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
 	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
 	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
-	if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
-	if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+	if (LowerTriangular()) { os <<    " ** Matrix is Lower Triangular **"; os << std::endl; }
+	if (UpperTriangular()) { os <<    " ** Matrix is Upper Triangular **"; os << std::endl; }
       }
 
       os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;

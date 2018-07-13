@@ -46,6 +46,6 @@
 
 namespace {
 
-const int dummy = 0;
+//const int dummy = 0;
 
 } // namespace

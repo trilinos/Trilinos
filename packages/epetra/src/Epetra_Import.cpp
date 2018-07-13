@@ -157,6 +157,9 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     if(NumRemotePIDs==NumRemoteIDs_){
       // Since I need to sort these, I'll copy them
       for(i=0; i<NumRemoteIDs_; i++)  RemotePIDs[i] = UserRemotePIDs[i];
+    } else {
+      // This can happen if the UserRemotePIDs comes from a Map that is not ordered properly
+      ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
     }
 
     //Get rid of IDs that don't exist in SourceMap
@@ -841,7 +844,7 @@ void Epetra_Import::Print(std::ostream & os) const
   if (sortIDs && NumExportIDs_ > 0) {
     int* intCompanions[1]; // Input for Epetra_Util::Sort().
     intCompanions[0] = &exportLIDs[0];
-    Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0],
+    Epetra_Util::Sort (true, NumExportIDs_, Epetra_Util_data_ptr(exportPIDs),
            0, (double**) NULL, 1, intCompanions, 0, 0);
   }
       }

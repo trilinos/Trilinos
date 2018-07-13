@@ -46,10 +46,11 @@ template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
 void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
 {
     const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+    const size_t numBuckets = buckets.size();
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(size_t j=0; j<buckets.size(); j++)
+    for(size_t j=0; j<numBuckets; j++)
     {
         stk::mesh::Bucket *bucket = buckets[j];
         for(size_t i=0; i<bucket->size(); i++)

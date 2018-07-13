@@ -147,7 +147,7 @@ struct TPL_Traits<first_t, first_t> {
   static inline void ASSIGN_ARRAY(first_t **a, ArrayView<first_t> &b)
   {
     if (b.size() > 0)
-      *a = const_cast<first_t *> (b.getRawPtr());
+      *a = b.getRawPtr();
     else
       *a = NULL;
       // Note:  the Scotch manual says that if any rank has a non-NULL array,
@@ -222,11 +222,14 @@ struct TPL_Traits<ZOLTAN_ID_PTR, second_t> {
     if (size > 0) {
       if (NUM_ID == 1) {
         // Don't have to make a new copy
-        *a = const_cast<ZOLTAN_ID_PTR> (b.getRawPtr());  
+        *a = reinterpret_cast<ZOLTAN_ID_PTR> (b.getRawPtr());  
       }
       else {
         *a = new ZOLTAN_ID_TYPE[size*NUM_ID];
-        for (size_t i = 0; i < size; i++) ASSIGN((*a)[i], b[i]);
+        for (size_t i = 0; i < size; i++) {
+          ZOLTAN_ID_PTR tmp = &((*a)[i*NUM_ID]);
+          ASSIGN(tmp, b[i]);
+        }
       }
     }
     else {

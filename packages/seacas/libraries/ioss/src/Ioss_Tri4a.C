@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tri4a registerThis; }
 
   protected:
-    St_Tri4a() : ElementVariableType("tri4a", 4) {}
+    St_Tri4a() : ElementVariableType(Ioss::Tri4a::name, 4) {}
   };
 } // namespace Ioss
 //------------------------------------------------------------------------
@@ -77,7 +77,7 @@ void Ioss::Tri4a::factory()
   Ioss::St_Tri4a::factory();
 }
 
-Ioss::Tri4a::Tri4a() : Ioss::ElementTopology("tri4a", "Triangle_4a") {}
+Ioss::Tri4a::Tri4a() : Ioss::ElementTopology(Ioss::Tri4a::name, "Triangle_4a") {}
 
 Ioss::Tri4a::~Tri4a() = default;
 
@@ -139,7 +139,6 @@ Ioss::ElementTopology *Ioss::Tri4a::edge_type(int edge_number) const
   if (edge_number == 1) {
     return Ioss::ElementTopology::factory("edge3");
   }
-  else {
-    return Ioss::ElementTopology::factory("edge2");
-  }
+
+  return Ioss::ElementTopology::factory("edge2");
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <stddef.h>       // for size_t
@@ -41,13 +41,16 @@
 #include <sys/types.h> // for int64_t
 
 /*!
+\deprecated Use ex_put_var()(exoid, time_step, EX_NODAL, nodal_var_index, 1, num_nodes,
+nodal_var_vals)
+
 The function ex_put_nodal_var() writes the values of a single nodal
 variable for a single time step. The function ex_put_variable_param()
 must be invoked before this call is made.
 
 Because nodal variables are floating point values, the application
-code must declare the array passed to be the appropriate type (\c
-float or \c double) to match the compute word size passed in
+code must declare the array passed to be the appropriate type
+(float or double) to match the compute word size passed in
 ex_create() or ex_open().
 
 \return In case of an error, ex_put_nodal_var() returns a negative number; a
@@ -75,15 +78,15 @@ variable has an index of 1.
 
 \param[in] num_nodes          The number of nodal points.
 
-\param[in]  nodal_var_vals    Array of \c num_nodes values of the \c
+\param[in]  nodal_var_vals    Array of num_nodes values of the
 nodal_var_index-th nodal
-                              variable for the \c time_step-th time step.
+                              variable for the time_step-th time step.
 
 
 As an example, the following code segment writes all the nodal
 variables for a single time step:
 
-\code
+~~~{.c}
 int num_nod_vars, num_nodes, error, exoid, time_step;
 float *nodal_var_vals;
 
@@ -97,7 +100,7 @@ for (k=1; k <= num_nod_vars; k++) {
    error = ex_put_nodal_var(exoid, time_step, k, num_nodes,
                             nodal_var_vals);
 }
-\endcode
+~~~
 
 */
 
@@ -105,62 +108,5 @@ int ex_put_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t num_
                      const void *nodal_var_vals)
 
 {
-  int    status;
-  int    varid;
-  size_t start[3], count[3];
-  char   errmsg[MAX_ERR_LENGTH];
-
-  exerrval = 0; /* clear error code */
-
-  if (ex_large_model(exoid) == 0) {
-    /* write values of the nodal variable */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
-      exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
-               exoid);
-      ex_err("ex_put_nodal_var", errmsg, exerrval);
-      return (EX_WARN);
-    }
-    start[0] = --time_step;
-    start[1] = --nodal_var_index;
-    start[2] = 0;
-
-    count[0] = 1;
-    count[1] = 1;
-    count[2] = num_nodes;
-  }
-  else {
-    /* nodal variables stored separately, find variable for this variable
-       index */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
-      exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_nodal_var", errmsg, exerrval);
-      return (EX_WARN);
-    }
-
-    start[0] = --time_step;
-    start[1] = 0;
-    start[2] = 0;
-
-    count[0] = 1;
-    count[1] = num_nodes;
-    count[2] = 0;
-  }
-
-  if (ex_comp_ws(exoid) == 4) {
-    status = nc_put_vara_float(exoid, varid, start, count, nodal_var_vals);
-  }
-  else {
-    status = nc_put_vara_double(exoid, varid, start, count, nodal_var_vals);
-  }
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
-    ex_err("ex_put_nodal_var", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-  return (EX_NOERR);
+  return ex_put_var(exoid, time_step, EX_NODAL, nodal_var_index, 1, num_nodes, nodal_var_vals);
 }

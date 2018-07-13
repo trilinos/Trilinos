@@ -48,153 +48,19 @@
 ///
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_HashTable.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
 
-// Tpetra::CrsMatrix uses the functions below in its implementation.
-// To avoid a circular include issue, only include the declarations
-// for CrsMatrix.  We will include the definition after the functions
-// here have been defined.
-#include "Tpetra_CrsMatrix_decl.hpp"
-
-
-namespace { // (anonymous)
-
-  template<class T, class D>
-  Kokkos::View<T*, D, Kokkos::MemoryUnmanaged>
-  getNonconstView (const Teuchos::ArrayView<T>& x)
-  {
-    typedef Kokkos::View<T*, D, Kokkos::MemoryUnmanaged> view_type;
-    typedef typename view_type::size_type size_type;
-    const size_type numEnt = static_cast<size_type> (x.size ());
-    return view_type (x.getRawPtr (), numEnt);
-  }
-
-  template<class T, class D>
-  Kokkos::View<const T*, D, Kokkos::MemoryUnmanaged>
-  getConstView (const Teuchos::ArrayView<const T>& x)
-  {
-    typedef Kokkos::View<const T*, D, Kokkos::MemoryUnmanaged> view_type;
-    typedef typename view_type::size_type size_type;
-    const size_type numEnt = static_cast<size_type> (x.size ());
-    return view_type (x.getRawPtr (), numEnt);
-  }
-
-  // For a given Kokkos (execution or memory) space, return both its
-  // execution space, and the corresponding host execution space.
-  template<class Space>
-  struct GetHostExecSpace {
-    typedef typename Space::execution_space execution_space;
-    typedef typename Kokkos::View<int*, execution_space>::HostMirror::execution_space host_execution_space;
-  };
-
-} // namespace (anonymous)
-
 namespace Tpetra {
 namespace Import_Util {
-
-/// \brief Special version of Tpetra::CrsMatrix::packAndPrepare that
-///   also packs owning process ranks.
-///
-/// One of several short-cut routines to optimize fill complete for
-/// the special case of sparse matrix-matrix multiply.
-///
-/// Note: The SourcePids vector should contain a list of owning PIDs
-/// for each column in the ColMap, as from Epetra_Util::GetPids,
-/// without the "-1 for local" option being used.  This routine is
-/// basically Tpetra::CrsMatrix::packAndPrepare, but it packs the
-/// owning PIDs as well as the GIDs.
-///
-/// \warning This method is intended for expert developer use only,
-///   and should never be called by user code.
-template<typename Scalar,
-         typename LocalOrdinal,
-         typename GlobalOrdinal,
-         typename Node>
-void
-packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
-                              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                              Kokkos::DualView<char*, typename Node::device_type>& exports,
-                              const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                              size_t& constantNumPackets,
-                              Distributor &distor,
-                              const Teuchos::ArrayView<const int>& SourcePids);
-
-/// \brief Special version of Tpetra::CrsMatrix::unpackAndCombine
-///   that also unpacks owning process ranks.
-///
-/// It belongs with packAndPrepareWithOwningPIDs() (see above).
-///
-/// Perform the count for unpacking the imported column indices pids,
-/// and values, and combining them into matrix.  Return (a ceiling on)
-/// the number of local stored entries ("nonzeros") in the matrix.  If
-/// there are no shared rows in the SourceMatrix this count is exact.
-///
-/// Note: This routine also counts the copyAndPermute nonzeros in
-/// addition to those that come in via import.
-///
-/// \warning This method is intended for expert developer use
-///   only, and should never be called by user code.
-template<typename Scalar,
-         typename LocalOrdinal,
-         typename GlobalOrdinal,
-         typename Node>
-size_t
-unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
-                                     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                                     const Teuchos::ArrayView<const char> &imports,
-                                     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                                     size_t constantNumPackets,
-                                     Distributor &distor,
-                                     CombineMode combineMode,
-                                     size_t numSameIDs,
-                                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-/// \brief unpackAndCombineIntoCrsArrays
-///
-/// \note You should call unpackAndCombineWithOwningPIDsCount first
-///   and allocate all arrays accordingly, before calling this
-///   function.
-///
-/// Note: The SourcePids vector (on input) should contain owning PIDs
-/// for each column in the (source) ColMap, as from
-/// Tpetra::Import_Util::getPids, with the "-1 for local" option being
-/// used.
-///
-/// Note: The TargetPids vector (on output) will contain owning PIDs
-/// for each entry in the matrix, with the "-1 for local" for locally
-/// owned entries.
-template<typename Scalar,
-         typename LocalOrdinal,
-         typename GlobalOrdinal,
-         typename Node>
-void
-unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
-                               const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                               const Teuchos::ArrayView<const char>& imports,
-                               const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                               size_t constantNumPackets,
-                               Distributor &distor,
-                               CombineMode combineMode,
-                               size_t numSameIDs,
-                               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                               const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-                               size_t TargetNumRows,
-                               size_t TargetNumNonzeros,
-                               int MyTargetPID,
-                               const Teuchos::ArrayView<size_t>& rowPointers,
-                               const Teuchos::ArrayView<GlobalOrdinal>& columnIndices,
-                               const Teuchos::ArrayView<Scalar>& values,
-                               const Teuchos::ArrayView<const int>& SourcePids,
-                               Teuchos::Array<int>& TargetPids);
 
 /// \brief Sort the entries of the (raw CSR) matrix by column index
 ///   within each row.
@@ -203,6 +69,22 @@ void
 sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind,
                 const Teuchos::ArrayView<Scalar>&CRS_vals);
+
+template<typename Ordinal>
+void
+sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                const Teuchos::ArrayView<Ordinal>& CRS_colind);
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind,
+                const vals_array_type& CRS_vals);
+
+template<typename rowptr_array_type, typename colind_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind);
 
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
@@ -213,6 +95,11 @@ void
 sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal>& CRS_colind,
                         const Teuchos::ArrayView<Scalar>& CRS_vals);
+
+template<typename Ordinal>
+void
+sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                        const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 /// \brief lowCommunicationMakeColMapAndReindex
 ///
@@ -234,11 +121,33 @@ void
 lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
                                       const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                      const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                                       const Teuchos::ArrayView<const int> &owningPids,
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
+
+
+
+  /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
+  /// Let:
+  ///   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+  ///   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+  ///   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+  ///   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+  /// Precondition:
+  ///  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
+  ///  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
+  ///  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
+  ///  --- Precondition 3 is only checked in DEBUG mode ---
+  /// Postcondition:
+  ///   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+  void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
+                                     bool useReverseModeForOwnership,
+                                     const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferForMigratingData,
+                                     bool useReverseModeForMigration,
+                                     Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs);
 
 } // namespace Import_Util
 } // namespace Tpetra
@@ -248,844 +157,8 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 // Implementations
 //
 
-namespace { // (anonymous)
-
-  /// \brief Return the (maximum) number of bytes required to pack a
-  ///   sparse matrix row's entries.
-  ///
-  /// \param numEnt [in] Number of entries in the row.
-  ///
-  /// \param numBytesPerValue [in] Maximum number of bytes per entry
-  ///   (value) of the row.
-  ///
-  /// If \c Scalar (the type of entries in the matrix) is a plain old
-  /// data (POD) type like \c float or \c double, or a struct of POD
-  /// (like <tt>std::complex<double></tt>), then the second argument
-  /// is just <tt>sizeof(Scalar)</tt>.  If a \c Scalar instance has a
-  /// size determined at run time (e.g., when calling its
-  /// constructor), then the second argument is the result of
-  /// <tt>PackTraits<Scalar>::packValueCount</tt>, called on a
-  /// <tt>Scalar</tt> value with the correct run-time size.
-  template<class LO, class GO, class D>
-  size_t
-  packRowCount (const size_t numEnt,
-                const size_t numBytesPerValue)
-  {
-    using Tpetra::Details::PackTraits;
-
-    if (numEnt == 0) {
-      // Empty rows always take zero bytes, to ensure sparsity.
-      return 0;
-    }
-    else {
-      // We store the number of entries as a local index (LO).
-      LO numEntLO = 0; // packValueCount wants this.
-      GO gid;
-      int lid;
-      const size_t numEntLen = PackTraits<LO, D>::packValueCount (numEntLO);
-      const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
-      const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (lid);
-      const size_t valsLen = numEnt * numBytesPerValue;
-      return numEntLen + gidsLen + pidsLen + valsLen;
-    }
-  }
-
-  template<class LO, class D>
-  size_t
-  unpackRowCount (const typename Tpetra::Details::PackTraits<LO, D>::input_buffer_type& imports,
-                  const size_t offset,
-                  const size_t numBytes,
-                  const size_t numBytesPerValue)
-  {
-    using Kokkos::subview;
-    using Tpetra::Details::PackTraits;
-    typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-    typedef typename input_buffer_type::size_type size_type;
-
-    if (numBytes == 0) {
-      // Empty rows always take zero bytes, to ensure sparsity.
-      return static_cast<size_t> (0);
-    }
-    else {
-      LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
-        "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
-        << ".");
-#endif // HAVE_TPETRA_DEBUG
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
-      const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
-      (void)actualNumBytes;
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
-        "actualNumBytes = " << actualNumBytes << " < numBytes = " << numBytes
-        << ".");
-#endif // HAVE_TPETRA_DEBUG
-      return static_cast<size_t> (numEntLO);
-    }
-  }
-
-  // Return the number of bytes packed.
-  template<class ST, class LO, class GO, class D>
-  size_t
-  packRow (const typename Tpetra::Details::PackTraits<LO, D>::output_buffer_type& exports,
-           const size_t offset,
-           const size_t numEnt,
-           const typename Tpetra::Details::PackTraits<GO, D>::input_array_type& gidsIn,
-           const typename Tpetra::Details::PackTraits<int, D>::input_array_type& pidsIn,
-           const typename Tpetra::Details::PackTraits<ST, D>::input_array_type& valsIn,
-           const size_t numBytesPerValue)
-  {
-    using Kokkos::subview;
-    using Tpetra::Details::PackTraits;
-    // NOTE (mfh 02 Feb 2015) This assumes that output_buffer_type is
-    // the same, no matter what type we're packing.  It's a reasonable
-    // assumption, given that we go through the trouble of PackTraits
-    // just so that we can pack data of different types in the same
-    // buffer.
-    typedef typename PackTraits<LO, D>::output_buffer_type output_buffer_type;
-    typedef typename output_buffer_type::size_type size_type;
-    typedef typename std::pair<size_type, size_type> pair_type;
-
-    if (numEnt == 0) {
-      // Empty rows always take zero bytes, to ensure sparsity.
-      return 0;
-    }
-
-    const GO gid = 0; // packValueCount wants this
-    const LO numEntLO = static_cast<size_t> (numEnt);
-    const int pid = 0; // packValueCount wants this
-
-    const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO, D>::packValueCount (numEntLO);
-    const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
-    const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (pid);
-    const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * numBytesPerValue;
-
-    output_buffer_type numEntOut =
-      subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
-    output_buffer_type gidsOut =
-      subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
-    output_buffer_type pidsOut =
-      subview (exports, pair_type (pidsBeg, pidsBeg + pidsLen));
-    output_buffer_type valsOut =
-      subview (exports, pair_type (valsBeg, valsBeg + valsLen));
-
-    size_t numBytesOut = 0;
-    numBytesOut += PackTraits<LO, D>::packValue (numEntOut, numEntLO);
-    numBytesOut += PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
-    numBytesOut += PackTraits<int, D>::packArray (pidsOut, pidsIn, numEnt);
-    numBytesOut += PackTraits<ST, D>::packArray (valsOut, valsIn, numEnt);
-
-    const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
-      "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-      << expectedNumBytes << ".");
-
-    return numBytesOut;
-  }
-
-  // Return the number of bytes actually read / used.
-  template<class ST, class LO, class GO, class D>
-  size_t
-  unpackRow (const typename Tpetra::Details::PackTraits<GO, D>::output_array_type& gidsOut,
-             const typename Tpetra::Details::PackTraits<int, D>::output_array_type& pidsOut,
-             const typename Tpetra::Details::PackTraits<ST, D>::output_array_type& valsOut,
-             const typename Tpetra::Details::PackTraits<int, D>::input_buffer_type& imports,
-             const size_t offset,
-             const size_t numBytes,
-             const size_t numEnt,
-             const size_t numBytesPerValue)
-  {
-    using Kokkos::subview;
-    using Tpetra::Details::PackTraits;
-    // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is
-    // the same, no matter what type we're unpacking.  It's a
-    // reasonable assumption, given that we go through the trouble of
-    // PackTraits just so that we can pack data of different types in
-    // the same buffer.
-    typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-    typedef typename input_buffer_type::size_type size_type;
-    typedef typename std::pair<size_type, size_type> pair_type;
-
-    if (numBytes == 0) {
-      // Rows with zero bytes always have zero entries.
-      return 0;
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.dimension_0 ()) <= offset, std::logic_error,
-      "unpackRow: imports.dimension_0() = " << imports.dimension_0 () <<
-      " <= offset = " << offset << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.dimension_0 ()) < offset + numBytes,
-      std::logic_error, "unpackRow: imports.dimension_0() = "
-      << imports.dimension_0 () << " < offset + numBytes = "
-      << (offset + numBytes) << ".");
-
-    const GO gid = 0; // packValueCount wants this
-    const LO lid = 0; // packValueCount wants this
-    const int pid = 0; // packValueCount wants this
-
-    const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO, D>::packValueCount (lid);
-    const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
-    const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (pid);
-    const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * numBytesPerValue;
-
-    input_buffer_type numEntIn = subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
-    input_buffer_type gidsIn = subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
-    input_buffer_type pidsIn = subview (imports, pair_type (pidsBeg, pidsBeg + pidsLen));
-    input_buffer_type valsIn = subview (imports, pair_type (valsBeg, valsBeg + valsLen));
-
-    size_t numBytesOut = 0;
-    LO numEntOut;
-    numBytesOut += PackTraits<LO, D>::unpackValue (numEntOut, numEntIn);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
-      "unpackRow: Expected number of entries " << numEnt
-      << " != actual number of entries " << numEntOut << ".");
-
-    numBytesOut += PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
-    numBytesOut += PackTraits<int, D>::unpackArray (pidsOut, pidsIn, numEnt);
-    numBytesOut += PackTraits<ST, D>::unpackArray (valsOut, valsIn, numEnt);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
-      << numBytesOut << " != numBytes = " << numBytes << ".");
-    const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
-      "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-      << expectedNumBytes << ".");
-    return numBytesOut;
-  }
-
-  // mfh 28 Apr 2016: Sometimes we have a raw host array, and we need
-  // to make a Kokkos::View out of it that lives in a certain memory
-  // space.  We don't want to make a deep copy of the input array if
-  // we don't need to, but if the memory spaces are different, we need
-  // to.  The following code does that.  The struct is an
-  // implementation detail, and the "free" function
-  // get1DConstViewOfUnmanagedArray is the interface to call.
-
-  template<class ST, class DT,
-           const bool outputIsHostMemory =
-             std::is_same<typename DT::memory_space, Kokkos::HostSpace>::value>
-  struct Get1DConstViewOfUnmanagedHostArray {};
-
-  template<class ST, class DT>
-  struct Get1DConstViewOfUnmanagedHostArray<ST, DT, true> {
-    typedef Kokkos::View<const ST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> output_view_type;
-
-    static output_view_type
-    getView (const char /* label */ [], const ST* x_raw, const size_t x_len)
-    {
-      // We can return the input array, wrapped as an unmanaged View.
-      // Ignore the label, since unmanaged Views don't have labels.
-      return output_view_type (x_raw, x_len);
-    }
-  };
-
-  template<class ST, class DT>
-  struct Get1DConstViewOfUnmanagedHostArray<ST, DT, false> {
-    typedef Kokkos::View<const ST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> input_view_type;
-    typedef Kokkos::View<const ST*, DT> output_view_type;
-
-    static output_view_type
-    getView (const char label[], const ST* x_raw, const size_t x_len)
-    {
-      input_view_type x_in (x_raw, x_len);
-      // The memory spaces are different, so we have to create a new
-      // View which is a deep copy of the input array.
-      //
-      // FIXME (mfh 28 Apr 2016) This needs to be converted to
-      // std::string, else the compiler can't figure out what
-      // constructor we're calling.
-      Kokkos::View<ST*, DT> x_out (std::string (label), x_len);
-      Kokkos::deep_copy (x_out, x_in);
-      return x_out;
-    }
-  };
-
-  template<class ST, class DT>
-  typename Get1DConstViewOfUnmanagedHostArray<ST, DT>::output_view_type
-  get1DConstViewOfUnmanagedHostArray (const char label[], const ST* x_raw, const size_t x_len)
-  {
-    return Get1DConstViewOfUnmanagedHostArray<ST, DT>::getView (label, x_raw, x_len);
-  }
-
-} // namespace (anonymous)
-
-
 namespace Tpetra {
 namespace Import_Util {
-
-template<typename Scalar,
-         typename LocalOrdinal,
-         typename GlobalOrdinal,
-         typename Node>
-void
-packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
-                              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                              Kokkos::DualView<char*, typename Node::device_type>& exports,
-                              const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                              size_t& constantNumPackets,
-                              Distributor &distor,
-                              const Teuchos::ArrayView<const int>& SourcePids)
-{
-  using Tpetra::Details::PackTraits;
-  using Kokkos::MemoryUnmanaged;
-  using Kokkos::subview;
-  using Kokkos::View;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::RCP;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename Node::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
-  // The device type of the HostMirror of a device_type View.  This
-  // might not necessarily be Kokkos::HostSpace!  In particular, if
-  // device_type::memory_space is CudaUVMSpace and the CMake option
-  // Kokkos_ENABLE_Cuda_UVM is ON, the corresponding HostMirror's
-  // memory space is also CudaUVMSpace.
-  typedef typename Kokkos::DualView<char*, device_type>::t_host::device_type HDS;
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef typename ArrayView<const LO>::size_type size_type;
-  typedef std::pair<typename View<int*, HDS>::size_type,
-                    typename View<int*, HDS>::size_type> pair_type;
-  const char prefix[] = "Tpetra::Import_Util::packAndPrepareWithOwningPIDs: ";
-
-  // FIXME (mfh 03 Jan 2015) Currently, it might be the case that if a
-  // graph or matrix owns no entries on a process, then it reports
-  // that it is neither locally nor globally indexed, even if the
-  // graph or matrix has a column Map.  This should change once we get
-  // rid of lazy initialization in CrsGraph and CrsMatrix.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! SourceMatrix.isLocallyIndexed (), std::invalid_argument,
-    prefix << "SourceMatrix must be locally indexed.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    SourceMatrix.getColMap ().is_null (), std::logic_error,
-    prefix << "The source matrix claims to be locally indexed, but its column "
-    "Map is null.  This should never happen.  Please report this bug to the "
-    "Tpetra developers.");
-  const size_type numExportLIDs = exportLIDs.size ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numExportLIDs != numPacketsPerLID.size (), std::invalid_argument, prefix
-    << "exportLIDs.size() = " << numExportLIDs << "!= numPacketsPerLID.size() "
-    << " = " << numPacketsPerLID.size () << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    static_cast<size_t> (SourcePids.size ()) != SourceMatrix.getColMap ()->getNodeNumElements (),
-    std::invalid_argument, prefix << "SourcePids.size() = "
-    << SourcePids.size ()
-    << "!= SourceMatrix.getColMap()->getNodeNumElements() = "
-    << SourceMatrix.getColMap ()->getNodeNumElements () << ".");
-
-  // This tells the caller that different rows may have different
-  // numbers of entries.  That is, the number of packets per LID might
-  // not be a constant.
-  constantNumPackets = 0;
-
-  // Compute the number of bytes ("packets") per row to pack.  While
-  // we're at it, compute the total number of matrix entries to send,
-  // and the max number of entries in any of the rows we're sending.
-  size_t totalNumBytes = 0;
-  size_t totalNumEntries = 0;
-  size_t maxRowLength = 0;
-  for (size_type i = 0; i < numExportLIDs; ++i) {
-    const LO lclRow = exportLIDs[i];
-    const size_t numEnt = SourceMatrix.getNumEntriesInLocalRow (lclRow);
-
-    // The 'if' branch implicitly assumes that packRowCount() returns
-    // zero if numEnt == 0.
-    size_t numBytesPerValue = 0;
-    if (numEnt > 0) {
-      // Get a locally indexed view of the current row's data.  If the
-      // current row has > 0 entries, we need an entry in order to
-      // figure out the byte count of the packed row.  (We really only
-      // need it if ST's size is determined at run time.)
-      ArrayView<const Scalar> valsView;
-      ArrayView<const LO> lidsView;
-      SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
-      const ST* valsViewRaw = reinterpret_cast<const ST*> (valsView.getRawPtr ());
-      View<const ST*, Kokkos::HostSpace, MemoryUnmanaged> valsViewK (valsViewRaw, valsView.size ());
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (valsViewK.dimension_0 ()) != numEnt,
-        std::logic_error, prefix << "Local row " << i << " claims to have "
-        << numEnt << "entry/ies, but the View returned by getLocalRowView() "
-        "has " << valsViewK.dimension_0 () << " entry/ies.  This should never "
-        "happen.  Please report this bug to the Tpetra developers.");
-
-      // NOTE (mfh 07 Feb 2015) Since we're using the host memory
-      // space here for now, this doesn't assume UVM.  That may change
-      // in the future, if we ever start packing on the device.
-      //
-      // FIXME (mfh 28 Apr 2016) For now, we assume that the value
-      // returned by packValueCount is independent of the memory
-      // space.  This assumption helps with #227.
-      numBytesPerValue = PackTraits<ST, Kokkos::HostSpace>::packValueCount (valsViewK(0));
-    }
-
-    // FIXME (mfh 28 Apr 2016) For now, we assume that the value
-    // returned by packRowCount is independent of the memory space.
-    // This assumption helps with #227.
-    const size_t numBytes =
-      packRowCount<LO, GO, Kokkos::HostSpace> (numEnt, numBytesPerValue);
-    numPacketsPerLID[i] = numBytes;
-    totalNumBytes += numBytes;
-    totalNumEntries += numEnt;
-    maxRowLength = std::max (maxRowLength, numEnt);
-  }
-
-  // We use a "struct of arrays" approach to packing each row's
-  // entries.  All the column indices (as global indices) go first,
-  // then all their owning process ranks, and then the values.
-  if (totalNumEntries > 0) {
-    if (static_cast<size_t> (exports.dimension_0 ()) !=
-        static_cast<size_t> (totalNumBytes)) {
-      // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-      // temporarily needed for #227 debugging.  Should be able to
-      // remove them after that's fixed.
-      execution_space::fence ();
-      exports = Kokkos::DualView<char*, device_type> ("exports", totalNumBytes);
-      execution_space::fence ();
-    }
-
-    // mfh 26 Apr 2016: The code below currently fills on host.  We
-    // may change this in the future.
-    exports.template modify<Kokkos::HostSpace> ();
-
-    // FIXME (mfh 28 Apr 2016) We take subviews in a loop, so it might
-    // pay to use an unmanaged View to reduce reference count update
-    // overhead.  On the other hand, with CudaUVMSpace, it's not
-    // obvious what the type of "the unmanaged version of exportsK"
-    // should be.  It's memory space is not Kokkos::HostSpace, for
-    // example!  What we really need is a "create_unmanaged_view"
-    // function that works like Kokkos::Compat::create_const_view.
-    // For now, I'll just use the managed View.
-
-    //auto exportsK_managed = exports.template view<Kokkos::HostSpace> ();
-    //View<char*, Kokkos::HostSpace, MemoryUnmanaged> exportsK = exportsK_managed;
-
-    auto exports_h = exports.template view<Kokkos::HostSpace> ();
-
-    // Current position (in bytes) in the 'exports' output array.
-    size_t offset = 0;
-
-    // For each row of the matrix owned by the calling process, pack
-    // that row's column indices and values into the exports array.
-
-    // Locally indexed matrices always have a column Map.
-    const map_type& colMap = * (SourceMatrix.getColMap ());
-
-    // Temporary buffers for a copy of the column gids/pids
-    typename View<GO*, device_type>::HostMirror gids;
-    typename View<int*, device_type>::HostMirror pids;
-    {
-      GO gid;
-      int pid;
-      gids = PackTraits<GO, HDS>::allocateArray (gid, maxRowLength, "gids");
-      pids = PackTraits<int, HDS>::allocateArray (pid, maxRowLength, "pids");
-    }
-
-    for (size_type i = 0; i < numExportLIDs; i++) {
-      const LO lclRow = exportLIDs[i];
-
-      // Get a locally indexed view of the current row's data.
-      ArrayView<const Scalar> valsView;
-      ArrayView<const LO> lidsView;
-      SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
-      const ST* valsViewRaw = reinterpret_cast<const ST*> (valsView.getRawPtr ());
-
-      // This is just a shallow copy if not CUDA, else a deep copy
-      // (into HDS, namely Device<Cuda, CudaUVMSpace>) if CUDA.
-      //
-      // FIXME (mfh 28 Apr 2016) This is slow for the CUDA case, but
-      // it should be correct.
-      auto valsViewK = get1DConstViewOfUnmanagedHostArray<ST, HDS> ("valsViewK", valsViewRaw, static_cast<size_t> (valsView.size ()));
-      const size_t numEnt = static_cast<size_t> (valsViewK.dimension_0 ());
-
-      // NOTE (mfh 07 Feb 2015) Since we're using the host memory
-      // space here for now, this doesn't assume UVM.  That may change
-      // in the future, if we ever start packing on the device.
-      //
-      // FIXME (mfh 28 Apr 2016) For now, we assume that the value
-      // returned by packValueCount is independent of the memory
-      // space.  This assumption helps with #227.
-      const size_t numBytesPerValue = numEnt == 0 ?
-        static_cast<size_t> (0) :
-        PackTraits<ST, Kokkos::HostSpace>::packValueCount (valsViewK(0));
-
-      // Convert column indices as LIDs to column indices as GIDs.
-      auto gidsView = subview (gids, pair_type (0, numEnt));
-      auto pidsView = subview (pids, pair_type (0, numEnt));
-      for (size_t k = 0; k < numEnt; ++k) {
-        gidsView(k) = colMap.getGlobalElement (lidsView[k]);
-        pidsView(k) = SourcePids[lidsView[k]];
-      }
-
-      // Copy the row's data into the current spot in the exports array.
-      const size_t numBytes =
-        packRow<ST, LO, GO, HDS> (exports_h, offset, numEnt,
-                                  gidsView, pidsView, valsViewK,
-                                  numBytesPerValue);
-      // Keep track of how many bytes we packed.
-      offset += numBytes;
-    }
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      offset != totalNumBytes, std::logic_error, prefix << "At end of method, "
-      "the final offset (in bytes) " << offset << " does not equal the total "
-      "number of bytes packed " << totalNumBytes << ".  Please report this bug "
-      "to the Tpetra developers.");
-#endif //  HAVE_TPETRA_DEBUG
-  }
-}
-
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-size_t
-unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
-                                     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                                     const Teuchos::ArrayView<const char> &imports,
-                                     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                                     size_t constantNumPackets,
-                                     Distributor &distor,
-                                     CombineMode combineMode,
-                                     size_t numSameIDs,
-                                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
-{
-  using Kokkos::MemoryUnmanaged;
-  using Kokkos::View;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  typedef typename Node::execution_space execution_space;
-  typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
-  const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size () << " != "
-    "permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
-  // FIXME (mfh 26 Jan 2015) If there are no entries on the calling
-  // process, then the matrix is neither locally nor globally indexed.
-  const bool locallyIndexed = SourceMatrix.isLocallyIndexed ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! locallyIndexed, std::invalid_argument, prefix << "The input CrsMatrix "
-    "'SourceMatrix' must be locally indexed.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    importLIDs.size () != numPacketsPerLID.size (), std::invalid_argument,
-    prefix << "importLIDs.size() = " << importLIDs.size () << " != "
-    "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
-
-  View<const char*, HES, MemoryUnmanaged> importsK (imports.getRawPtr (),
-                                                    imports.size ());
-
-  // Number of matrix entries to unpack (returned by this function).
-  size_t nnz = 0;
-
-  // Count entries copied directly from the source matrix without permuting.
-  for (size_t sourceLID = 0; sourceLID < numSameIDs; ++sourceLID) {
-    const LO srcLID = static_cast<LO> (sourceLID);
-    nnz += SourceMatrix.getNumEntriesInLocalRow (srcLID);
-  }
-
-  // Count entries copied directly from the source matrix with permuting.
-  const size_type numPermuteToLIDs = permuteToLIDs.size ();
-  for (size_type p = 0; p < numPermuteToLIDs; ++p) {
-    nnz += SourceMatrix.getNumEntriesInLocalRow (permuteFromLIDs[p]);
-  }
-
-  // Count entries received from other MPI processes.
-  size_t offset = 0;
-  const size_type numImportLIDs = importLIDs.size ();
-  for (size_type i = 0; i < numImportLIDs; ++i) {
-    const size_t numBytes = numPacketsPerLID[i];
-    // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
-    // values, if it has one) for the (possibly run-time-depenendent)
-    // number of bytes of one of its entries.
-    const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset,
-                                                   numBytes, sizeof (ST));
-    nnz += numEnt;
-    offset += numBytes;
-  }
-  return nnz;
-}
-
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
-unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
-                               const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                               const Teuchos::ArrayView<const char>& imports,
-                               const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                               const size_t constantNumPackets,
-                               Distributor& distor,
-                               const CombineMode combineMode,
-                               const size_t numSameIDs,
-                               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                               const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-                               size_t TargetNumRows,
-                               size_t TargetNumNonzeros,
-                               const int MyTargetPID,
-                               const Teuchos::ArrayView<size_t>& CSR_rowptr,
-                               const Teuchos::ArrayView<GlobalOrdinal>& CSR_colind,
-                               const Teuchos::ArrayView<Scalar>& CSR_vals,
-                               const Teuchos::ArrayView<const int>& SourcePids,
-                               Teuchos::Array<int>& TargetPids)
-{
-  using Tpetra::Details::PackTraits;
-  using Kokkos::MemoryUnmanaged;
-  using Kokkos::subview;
-  using Kokkos::View;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::av_reinterpret_cast;
-  using Teuchos::outArg;
-  using Teuchos::REDUCE_MAX;
-  using Teuchos::reduceAll;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef typename Node::execution_space execution_space;
-  typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type ST;
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef typename ArrayView<const LO>::size_type size_type;
-  //typedef std::pair<typename Kokkos::View<int*, HES>::size_type,
-  //                  typename Kokkos::View<int*, HES>::size_type> pair_type;
-  const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
-
-  const size_t N = TargetNumRows;
-  const size_t mynnz = TargetNumNonzeros;
-  // In the case of reduced communicators, the SourceMatrix won't have
-  // the right "MyPID", so thus we have to supply it.
-  const int MyPID = MyTargetPID;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    TargetNumRows + 1 != static_cast<size_t> (CSR_rowptr.size ()),
-    std::invalid_argument, prefix << "CSR_rowptr.size() = " <<
-    CSR_rowptr.size () << "!= TargetNumRows+1 = " << TargetNumRows+1 << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
-  const size_type numImportLIDs = importLIDs.size ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
-    prefix << "importLIDs.size() = " << numImportLIDs << " != "
-    "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
-
-  // Kokkos::View of the input buffer of bytes to unpack.
-  View<const char*, HES, MemoryUnmanaged> importsK (imports.getRawPtr (),
-                                                    imports.size ());
-  // Zero the rowptr
-  for (size_t i = 0; i< N+1; ++i) {
-    CSR_rowptr[i] = 0;
-  }
-
-  // SameIDs: Always first, always in the same place
-  for (size_t i = 0; i < numSameIDs; ++i) {
-    CSR_rowptr[i] = SourceMatrix.getNumEntriesInLocalRow (static_cast<LO> (i));
-  }
-
-  // PermuteIDs: Still local, but reordered
-  size_t numPermuteIDs = permuteToLIDs.size ();
-  for (size_t i = 0; i < numPermuteIDs; ++i) {
-    CSR_rowptr[permuteToLIDs[i]] =
-      SourceMatrix.getNumEntriesInLocalRow (permuteFromLIDs[i]);
-  }
-
-  // Setup CSR_rowptr for remotes
-  {
-    size_t offset = 0;
-    for (size_type k = 0; k < numImportLIDs; ++k) {
-      const size_t numBytes = numPacketsPerLID[k];
-      // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
-      // values, if it has one) for the (possibly run-time -
-      // depenendent) number of bytes of one of its entries.
-      const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset,
-                                                     numBytes, sizeof (ST));
-      CSR_rowptr[importLIDs[k]] += numEnt;
-      offset += numBytes;
-    }
-  }
-
-  // If multiple processes contribute to the same row, we may need to
-  // update row offsets.  This tracks that.
-  Teuchos::Array<size_t> NewStartRow (N + 1);
-
-  // Turn row length into a real CSR_rowptr
-  size_t last_len = CSR_rowptr[0];
-  CSR_rowptr[0] = 0;
-  for (size_t i = 1; i < N+1; ++i) {
-    size_t new_len = CSR_rowptr[i];
-    CSR_rowptr[i]  = last_len + CSR_rowptr[i-1];
-    NewStartRow[i] = CSR_rowptr[i];
-    last_len       = new_len;
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    CSR_rowptr[N] != mynnz, std::invalid_argument, prefix << "CSR_rowptr[last]"
-    " = " << CSR_rowptr[N] << "!= mynnz = " << mynnz << ".");
-
-  // Preseed TargetPids with -1 for local
-  if (static_cast<size_t> (TargetPids.size ()) != mynnz) {
-    TargetPids.resize (mynnz);
-  }
-  TargetPids.assign (mynnz, -1);
-
-  // Grab pointers for SourceMatrix
-  ArrayRCP<const size_t> Source_rowptr_RCP;
-  ArrayRCP<const LO>     Source_colind_RCP;
-  ArrayRCP<const Scalar> Source_vals_RCP;
-  SourceMatrix.getAllValues (Source_rowptr_RCP, Source_colind_RCP, Source_vals_RCP);
-  ArrayView<const size_t> Source_rowptr = Source_rowptr_RCP ();
-  ArrayView<const LO>     Source_colind = Source_colind_RCP ();
-  ArrayView<const Scalar> Source_vals = Source_vals_RCP ();
-
-  const map_type& sourceColMap = * (SourceMatrix.getColMap());
-  ArrayView<const GO> globalColElts = sourceColMap.getNodeElementList();
-
-  // SameIDs: Copy the data over
-  for (size_t i = 0; i < numSameIDs; ++i) {
-    size_t FromRow = Source_rowptr[i];
-    size_t ToRow   = CSR_rowptr[i];
-    NewStartRow[i] += Source_rowptr[i+1] - Source_rowptr[i];
-
-    for (size_t j = Source_rowptr[i]; j < Source_rowptr[i+1]; ++j) {
-      CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
-      CSR_colind[ToRow + j - FromRow] = globalColElts[Source_colind[j]];
-      TargetPids[ToRow + j - FromRow] =
-        (SourcePids[Source_colind[j]] != MyPID) ?
-        SourcePids[Source_colind[j]] : -1;
-    }
-  }
-
-  size_t numBytesPerValue = 0;
-  if (PackTraits<ST, HES>::compileTimeSize) {
-    ST val; // assume that ST is default constructible
-    numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
-  }
-  else {
-    // Since the packed data come from the source matrix, we can use
-    // the source matrix to get the number of bytes per Scalar value
-    // stored in the matrix.  This assumes that all Scalar values in
-    // the source matrix require the same number of bytes.  If the
-    // source matrix has no entries on the calling process, then we
-    // have to ask the target matrix (via the output CSR arrays).  If
-    // the target matrix has no entries on input on the calling
-    // process, then hope that some process does have some idea how
-    // big a Scalar value is.  Of course, if no processes have any
-    // entries, then no values should be packed (though this does
-    // assume that in our packing scheme, rows with zero entries take
-    // zero bytes).
-    if (Source_rowptr.size () == 0 || Source_rowptr[Source_rowptr.size () - 1] == 0) {
-      numBytesPerValue = PackTraits<ST, HES>::packValueCount (CSR_vals[0]);
-    }
-    else {
-      numBytesPerValue = PackTraits<ST, HES>::packValueCount (Source_vals[0]);
-    }
-    size_t lclNumBytesPerValue = numBytesPerValue;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = SourceMatrix.getComm ();
-    reduceAll<int, size_t> (*comm, REDUCE_MAX, lclNumBytesPerValue,
-                            outArg (numBytesPerValue));
-  }
-
-  // PermuteIDs: Copy the data over
-  for (size_t i = 0; i < numPermuteIDs; ++i) {
-    LO FromLID     = permuteFromLIDs[i];
-    size_t FromRow = Source_rowptr[FromLID];
-    size_t ToRow   = CSR_rowptr[permuteToLIDs[i]];
-
-    NewStartRow[permuteToLIDs[i]] += Source_rowptr[FromLID+1]-Source_rowptr[FromLID];
-
-    for (size_t j = Source_rowptr[FromLID]; j < Source_rowptr[FromLID+1]; ++j) {
-      CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
-      CSR_colind[ToRow + j - FromRow] = globalColElts[Source_colind[j]];
-      TargetPids[ToRow + j - FromRow] =
-        (SourcePids[Source_colind[j]] != MyPID) ?
-        SourcePids[Source_colind[j]] : -1;
-    }
-  }
-
-  // RemoteIDs: Loop structure following UnpackAndCombine
-  if (imports.size () > 0) {
-    size_t offset = 0;
-#ifdef HAVE_TPETRA_DEBUG
-    int lclErr = 0;
-#endif
-
-    for (size_t i = 0; i < static_cast<size_t> (numImportLIDs); ++i) {
-      const size_t numBytes = numPacketsPerLID[i];
-      if (numBytes == 0) {
-        // Empty buffer for that row means that the row is empty.
-        continue;
-      }
-      // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
-      // values, if it has one) for the (possibly run-time -
-      // depenendent) number of bytes of one of its entries.
-      const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset, numBytes,
-                                                     numBytesPerValue);
-      const LO lclRow = importLIDs[i];
-      const size_t StartRow = NewStartRow[lclRow];
-      NewStartRow[lclRow] += numEnt;
-
-      View<GO*, HES, MemoryUnmanaged> gidsOut =
-        getNonconstView<GO, HES> (CSR_colind (StartRow, numEnt));
-      View<int*, HES, MemoryUnmanaged> pidsOut =
-        getNonconstView<int, HES> (TargetPids (StartRow, numEnt));
-      ArrayView<Scalar> valsOutS = CSR_vals (StartRow, numEnt);
-      View<ST*, HES, MemoryUnmanaged> valsOut =
-        getNonconstView<ST, HES> (av_reinterpret_cast<ST> (valsOutS));
-
-      const size_t numBytesOut =
-        unpackRow<ST, LO, GO, HES> (gidsOut, pidsOut, valsOut, importsK,
-                                    offset, numBytes, numEnt, numBytesPerValue);
-      if (numBytesOut != numBytes) {
-#ifdef HAVE_TPETRA_DEBUG
-        lclErr = 1;
-#endif
-        break;
-      }
-
-      // Correct target PIDs.
-      for (size_t j = 0; j < numEnt; ++j) {
-        const int pid = pidsOut[j];
-        pidsOut[j] = (pid != MyPID) ? pid : -1;
-      }
-      offset += numBytes;
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      offset != static_cast<size_t> (imports.size ()), std::logic_error, prefix
-      << "After unpacking and counting all the import packets, the final offset"
-      " in bytes " << offset << " != imports.size() = " << imports.size () <<
-      ".  Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclErr != 0, std::logic_error, prefix << "numBytes != numBytesOut "
-      "somewhere in unpack loop.  This should never happen.  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-  }
-}
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
@@ -1100,16 +173,22 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t NumRows = CRS_rowptr.size()-1;
   size_t nnz = CRS_colind.size();
 
+  const bool permute_values_array = CRS_vals.size() > 0;
+
   for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
     if(start >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
-    Ordinal* locIndices = &CRS_colind[start];
+    Teuchos::ArrayRCP<Scalar> locValues;
+    if (permute_values_array)
+      locValues = Teuchos::arcp<Scalar>(&CRS_vals[start], 0, NumEntries, false);
+    Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[start], 0, NumEntries, false);
 
     Ordinal n = NumEntries;
-    Ordinal m = n/2;
+    Ordinal m = 1;
+    while (m<n) m = m*3+1;
+    m /= 3;
 
     while(m > 0) {
       Ordinal max = n - m;
@@ -1117,17 +196,143 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          Scalar dtemp = locValues[k+m];
-          locValues[k+m] = locValues[k];
-          locValues[k] = dtemp;
+          if (permute_values_array) {
+            Scalar dtemp = locValues[k+m];
+            locValues[k+m] = locValues[k];
+            locValues[k] = dtemp;
+          }
           Ordinal itemp = locIndices[k+m];
           locIndices[k+m] = locIndices[k];
           locIndices[k] = itemp;
         }
       }
-      m = m/2;
+      m = m/3;
     }
   }
+}
+
+template<typename Ordinal>
+void
+sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+                const Teuchos::ArrayView<Ordinal> & CRS_colind)
+{
+  // Generate dummy values array
+  Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
+  sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
+}
+
+namespace Impl {
+
+template<class RowOffsetsType, class ColumnIndicesType, class ValuesType>
+class SortCrsEntries {
+private:
+  typedef typename ColumnIndicesType::non_const_value_type ordinal_type;
+  typedef typename ValuesType::non_const_value_type scalar_type;
+
+public:
+  SortCrsEntries (const RowOffsetsType& ptr,
+                  const ColumnIndicesType& ind,
+                  const ValuesType& val) :
+    ptr_ (ptr),
+    ind_ (ind),
+    val_ (val)
+  {
+    static_assert (std::is_signed<ordinal_type>::value, "The type of each "
+                   "column index -- that is, the type of each entry of ind "
+                   "-- must be signed in order for this functor to work.");
+  }
+
+  KOKKOS_FUNCTION void operator() (const size_t i) const
+  {
+    const size_t nnz = ind_.extent (0);
+    const size_t start = ptr_(i);
+    const bool permute_values_array = val_.extent(0) > 0;
+
+    if (start < nnz) {
+      const size_t NumEntries = ptr_(i+1) - start;
+
+      const ordinal_type n = static_cast<ordinal_type> (NumEntries);
+      ordinal_type m = 1;
+      while (m<n) m = m*3+1;
+      m /= 3;
+
+      while (m > 0) {
+        ordinal_type max = n - m;
+        for (ordinal_type j = 0; j < max; j++) {
+          for (ordinal_type k = j; k >= 0; k -= m) {
+            const size_t sk = start+k;
+            if (ind_(sk+m) >= ind_(sk)) {
+              break;
+            }
+            if (permute_values_array) {
+              const scalar_type dtemp = val_(sk+m);
+              val_(sk+m)   = val_(sk);
+              val_(sk)     = dtemp;
+            }
+            const ordinal_type itemp = ind_(sk+m);
+            ind_(sk+m) = ind_(sk);
+            ind_(sk)   = itemp;
+          }
+        }
+        m = m/3;
+      }
+    }
+  }
+
+  static void
+  sortCrsEntries (const RowOffsetsType& ptr,
+                  const ColumnIndicesType& ind,
+                  const ValuesType& val)
+  {
+    // For each row, sort column entries from smallest to largest.
+    // Use shell sort. Stable sort so it is fast if indices are already sorted.
+    // Code copied from  Epetra_CrsMatrix::SortEntries()
+    // NOTE: This should not be taken as a particularly efficient way to sort
+    // rows of matrices in parallel.  But it is correct, so that's something.
+    if (ptr.extent (0) == 0) {
+      return; // no rows, so nothing to sort
+    }
+    const size_t NumRows = ptr.extent (0) - 1;
+
+    typedef size_t index_type; // what this function was using; not my choice
+    typedef typename ValuesType::execution_space execution_space;
+    // Specify RangePolicy explicitly, in order to use correct execution
+    // space.  See #1345.
+    typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
+    Kokkos::parallel_for ("sortCrsEntries", range_type (0, NumRows),
+      SortCrsEntries (ptr, ind, val));
+  }
+
+private:
+  RowOffsetsType ptr_;
+  ColumnIndicesType ind_;
+  ValuesType val_;
+};
+
+} // namespace Impl
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind,
+                const vals_array_type& CRS_vals)
+{
+  Impl::SortCrsEntries<rowptr_array_type, colind_array_type,
+    vals_array_type>::sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
+}
+
+template<typename rowptr_array_type, typename colind_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+                const colind_array_type& CRS_colind)
+{
+  // Generate dummy values array
+  typedef typename colind_array_type::execution_space execution_space;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_type;
+  typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
+  scalar_view_type CRS_vals;
+  sortCrsEntries<rowptr_array_type, colind_array_type,
+    scalar_view_type>(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
@@ -1142,17 +347,26 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   // sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from Epetra_CrsMatrix::SortEntries()
 
-  size_t NumRows = CRS_rowptr.size()-1;
-  size_t nnz = CRS_colind.size();
-  size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+  if (CRS_rowptr.size () == 0) {
+    return; // no rows, so nothing to sort
+  }
+  const size_t NumRows = CRS_rowptr.size () - 1;
+  const size_t nnz = CRS_colind.size ();
+  size_t new_curr = CRS_rowptr[0];
+  size_t old_curr = CRS_rowptr[0];
+
+  const bool permute_values_array = CRS_vals.size() > 0;
 
   for(size_t i = 0; i < NumRows; i++){
-    size_t start=CRS_rowptr[i];
-    if(start >= nnz) continue;
+    const size_t old_rowptr_i=CRS_rowptr[i];
+    CRS_rowptr[i] = old_curr;
+    if(old_rowptr_i >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[start];
-    size_t NumEntries   = CRS_rowptr[i+1] - start;
-    Ordinal* locIndices = &CRS_colind[start];
+    size_t NumEntries   = CRS_rowptr[i+1] - old_rowptr_i;
+    Teuchos::ArrayRCP<Scalar> locValues;
+    if (permute_values_array)
+      locValues = Teuchos::arcp<Scalar>(&CRS_vals[old_rowptr_i], 0, NumEntries, false);
+    Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[old_rowptr_i], 0, NumEntries, false);
 
     // Sort phase
     Ordinal n = NumEntries;
@@ -1164,9 +378,11 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          Scalar dtemp = locValues[k+m];
-          locValues[k+m] = locValues[k];
-          locValues[k] = dtemp;
+          if (permute_values_array) {
+            Scalar dtemp = locValues[k+m];
+            locValues[k+m] = locValues[k];
+            locValues[k] = dtemp;
+          }
           Ordinal itemp = locIndices[k+m];
           locIndices[k+m] = locIndices[k];
           locIndices[k] = itemp;
@@ -1176,32 +392,40 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     }
 
     // Merge & shrink
-    for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
-      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
-        CRS_vals[new_curr-1] += CRS_vals[j];
+    for(size_t j=old_rowptr_i; j < CRS_rowptr[i+1]; j++) {
+      if(j > old_rowptr_i && CRS_colind[j]==CRS_colind[new_curr-1]) {
+        if (permute_values_array) CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
         new_curr++;
       }
       else {
         CRS_colind[new_curr] = CRS_colind[j];
-        CRS_vals[new_curr]   = CRS_vals[j];
+        if (permute_values_array) CRS_vals[new_curr]   = CRS_vals[j];
         new_curr++;
       }
     }
-
-    CRS_rowptr[i] = old_curr;
     old_curr=new_curr;
   }
 
   CRS_rowptr[NumRows] = new_curr;
 }
 
+template<typename Ordinal>
+void
+sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+                        const Teuchos::ArrayView<Ordinal> & CRS_colind)
+{
+  Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
+  return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+}
+
+
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
-                                      const ArrayView<LocalOrdinal> &colind_LID,
-                                      const ArrayView<GlobalOrdinal> &colind_GID,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
+                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
+                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
                                       const Teuchos::ArrayView<const int> &owningPIDs,
                                       Teuchos::Array<int> &remotePIDs,
@@ -1331,7 +555,7 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
 
   // Sort External column indices so that all columns coming from a
   // given remote processor are contiguous.  This is a sort with two
-  // auxillary arrays: RemoteColIndices and RemotePermuteIDs.
+  // auxilary arrays: RemoteColIndices and RemotePermuteIDs.
   Tpetra::sort3 (PIDList.begin (), PIDList.end (),
                  ColIndices.begin () + NumLocalColGIDs,
                  RemotePermuteIDs.begin ());
@@ -1432,12 +656,72 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
   }
 }
 
+
+
+
+// Generates an list of owning PIDs based on two transfer (aka import/export objects)
+// Let:
+//   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+//   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+//   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+//   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+// Precondition:
+//  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
+//  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
+//  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
+//  --- Precondition 3 is only checked in DEBUG mode ---
+// Postcondition:
+//   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
+                                   bool useReverseModeForOwnership,
+                                   const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesMigration,
+                                   bool useReverseModeForMigration,
+                                   Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs) {
+  typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+  typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!MapAo->isSameAs(*MapAm),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch between transfers");
+  TEUCHOS_TEST_FOR_EXCEPTION(!VectorMap->isSameAs(*owningPIDs.getMap()),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch transfer and vector");
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(!OwningMap->isOneToOne(),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");
+#endif
+
+  int rank = OwningMap->getComm()->getRank();
+  // Generate "A" vector and fill it with owning information.  We can read this from transferThatDefinesOwnership w/o communication
+  // Note:  Due to the 1-to-1 requirement, several of these options throw
+  Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> temp(MapAo);
+  const import_type* ownAsImport = dynamic_cast<const import_type*> (&transferThatDefinesOwnership);
+  const export_type* ownAsExport = dynamic_cast<const export_type*> (&transferThatDefinesOwnership);
+
+  Teuchos::ArrayRCP<int> pids    = temp.getDataNonConst();
+  Teuchos::ArrayView<int> v_pids = pids();
+  if(ownAsImport && useReverseModeForOwnership)       {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
+  else if(ownAsImport && !useReverseModeForOwnership) getPids(*ownAsImport,v_pids,false);
+  else if(ownAsExport && useReverseModeForMigration)  {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector this option not yet implemented");}
+  else                                                {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
+
+  const import_type* xferAsImport = dynamic_cast<const import_type*> (&transferThatDefinesMigration);
+  const export_type* xferAsExport = dynamic_cast<const export_type*> (&transferThatDefinesMigration);
+  TEUCHOS_TEST_FOR_EXCEPTION(!xferAsImport && !xferAsExport,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector transfer undefined");
+
+  // Migrate from "A" vector to output vector
+  owningPIDs.putScalar(rank);
+  if(xferAsImport && useReverseModeForMigration)        owningPIDs.doExport(temp,*xferAsImport,Tpetra::REPLACE);
+  else if(xferAsImport && !useReverseModeForMigration)  owningPIDs.doImport(temp,*xferAsImport,Tpetra::REPLACE);
+  else if(xferAsExport && useReverseModeForMigration)   owningPIDs.doImport(temp,*xferAsExport,Tpetra::REPLACE);
+  else                                                  owningPIDs.doExport(temp,*xferAsExport,Tpetra::REPLACE);
+
+}
+
+
+
 } // namespace Import_Util
 } // namespace Tpetra
-
-// We can include the definitions for Tpetra::CrsMatrix now that the above
-// functions have been defined.  For ETI, this isn't necessary, so we just
-// including the generated hpp
-#include "Tpetra_CrsMatrix.hpp"
 
 #endif // TPETRA_IMPORT_UTIL_HPP

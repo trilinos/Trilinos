@@ -38,8 +38,6 @@
 #include "Shards_Array.hpp"             // for ArrayDimTag::size_type, etc
 
 
-
-
 namespace stk {
 namespace mesh {
 
@@ -68,8 +66,7 @@ const char * get_string( const char * const func ,
                          const unsigned size ,
                          const unsigned index )
 {
-  ThrowErrorMsgIf( size < number_names || size <= index,
-                   func << ", size = " << size << " index = " << index );
+  ThrowErrorMsgIf( size < number_names || size <= index, func << ", size = " << size << " index = " << index );
 
   return names[index];
 }
@@ -98,14 +95,12 @@ const char * const * Cartesian2d_label() {
 }
 std::string Cartesian2d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( Cartesian2d::tag().name() ,
-                                  2 , Cartesian2d_label() , size , index ) );
+  return std::string( get_string( Cartesian2d::tag().name(), 2, Cartesian2d_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type Cartesian2d::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( Cartesian2d::tag().name() ,
-                    2 , Cartesian2d_label() , size , arg.c_str() );
+  return get_index( Cartesian2d::tag().name(), 2, Cartesian2d_label(), size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -127,14 +122,12 @@ const char * const * Cartesian3d_label() {
 }
 std::string Cartesian3d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( Cartesian3d::tag().name() ,
-                                  3 , Cartesian3d_label() , size , index ) );
+  return std::string( get_string( Cartesian3d::tag().name(), 3, Cartesian3d_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type Cartesian::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( Cartesian3d::tag().name() ,
-                    3 , Cartesian3d_label() , size , arg.c_str() );
+  return get_index( Cartesian3d::tag().name(), 3, Cartesian3d_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -156,14 +149,12 @@ const char * const * Cylindrical_label() {
 }
 std::string Cylindrical::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( Cylindrical::tag().name() ,
-                                  3 , Cylindrical_label() , size , index ) );
+  return std::string( get_string( Cylindrical::tag().name(), 3, Cylindrical_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type Cylindrical::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( Cylindrical::tag().name() ,
-                    3 , Cylindrical_label() , size , arg.c_str() );
+  return get_index( Cylindrical::tag().name(), 3, Cylindrical_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -193,14 +184,12 @@ const char * const * FullTensor36_label() {
 }
 std::string FullTensor36::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( FullTensor36::tag().name() ,
-                                  9 , FullTensor36_label() , size , index ) );
+  return std::string( get_string( FullTensor36::tag().name(), 9, FullTensor36_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type FullTensor::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( FullTensor36::tag().name() ,
-                    9 , FullTensor36_label() , size , arg.c_str() );
+  return get_index( FullTensor36::tag().name(), 9, FullTensor36_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -223,14 +212,12 @@ const char * const * FullTensor22_label() {
 }
 std::string FullTensor22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( FullTensor22::tag().name() ,
-                                  4 , FullTensor22_label() , size , index ) );
+  return std::string( get_string( FullTensor22::tag().name(), 4, FullTensor22_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type FullTensor22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( FullTensor22::tag().name() ,
-                    4 , FullTensor22_label() , size , arg.c_str() );
+  return get_index( FullTensor22::tag().name(), 4, FullTensor22_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -255,14 +242,12 @@ const char * const * SymmetricTensor33_label() {
 }
 std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( SymmetricTensor33::tag().name() ,
-                                  6 , SymmetricTensor33_label() , size , index ) );
+  return std::string( get_string( SymmetricTensor33::tag().name(), 6, SymmetricTensor33_label(), size , index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( SymmetricTensor33::tag().name() ,
-                    6 , SymmetricTensor33_label() , size , arg.c_str() );
+  return get_index( SymmetricTensor33::tag().name(), 6, SymmetricTensor33_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -285,14 +270,12 @@ const char * const * SymmetricTensor31_label() {
 }
 std::string SymmetricTensor31::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( SymmetricTensor31::tag().name() ,
-                                  4 , SymmetricTensor31_label() , size , index ) );
+  return std::string( get_string( SymmetricTensor31::tag().name(), 4, SymmetricTensor31_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor31::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( SymmetricTensor31::tag().name() ,
-                    4 , SymmetricTensor31_label() , size , arg.c_str() );
+  return get_index( SymmetricTensor31::tag().name(), 4, SymmetricTensor31_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -314,14 +297,12 @@ const char * const * SymmetricTensor21_label() {
 }
 std::string SymmetricTensor21::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( SymmetricTensor21::tag().name() ,
-                                  3 , SymmetricTensor21_label() , size , index ) );
+  return std::string( get_string( SymmetricTensor21::tag().name(), 3, SymmetricTensor21_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor21::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( SymmetricTensor21::tag().name() ,
-                    3 , SymmetricTensor21_label() , size , arg.c_str() );
+  return get_index( SymmetricTensor21::tag().name(), 3, SymmetricTensor21_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -343,14 +324,12 @@ const char * const * AsymmetricTensor03_label() {
 }
 std::string AsymmetricTensor03::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( AsymmetricTensor03::tag().name() ,
-                                  3 , AsymmetricTensor03_label() , size , index ) );
+  return std::string( get_string( AsymmetricTensor03::tag().name(), 3, AsymmetricTensor03_label(), size , index ) );
 }
 
 shards::ArrayDimTag::size_type AsymmetricTensor03::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( AsymmetricTensor03::tag().name() ,
-                    3 , AsymmetricTensor03_label() , size , arg.c_str() );
+  return get_index( AsymmetricTensor03::tag().name(), 3, AsymmetricTensor03_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -373,14 +352,12 @@ const char * const * Matrix22_label() {
 }
 std::string Matrix22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( Matrix22::tag().name() ,
-                                  4 , Matrix22_label() , size , index ) );
+  return std::string( get_string( Matrix22::tag().name(), 4, Matrix22_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type Matrix22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( Matrix22::tag().name() ,
-                    4 , Matrix22_label() , size , arg.c_str() );
+  return get_index( Matrix22::tag().name(), 4, Matrix22_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -406,16 +383,15 @@ const char * const * Matrix33_label() {
   return label;
 }
 }
+
 std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  return std::string( get_string( Matrix33::tag().name() ,
-                                  9 , Matrix33_label() , size , index ) );
+  return std::string( get_string( Matrix33::tag().name(), 9, Matrix33_label(), size, index ) );
 }
 
 shards::ArrayDimTag::size_type Matrix33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  return get_index( Matrix33::tag().name() ,
-                    9 , Matrix33_label() , size , arg.c_str() );
+  return get_index( Matrix33::tag().name(), 9, Matrix33_label(), size, arg.c_str() );
 }
 
 //----------------------------------------------------------------------

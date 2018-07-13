@@ -807,7 +807,8 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  *
  * \relates ParameterList
  */
-TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2,
+    bool verbose = false);
 
 
 // /////////////////////////////////////////////////////

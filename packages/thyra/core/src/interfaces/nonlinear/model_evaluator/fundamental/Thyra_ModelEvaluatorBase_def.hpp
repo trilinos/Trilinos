@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -94,7 +94,7 @@ condCloneVec_mp(
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>::InArgs()
-  :modelEvalDescription_("WARNING!  THIS INARGS OBJECT IS UNINITALIZED!")
+  :modelEvalDescription_("WARNING!  THIS INARGS OBJECT IS UNINITIALIZED!")
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::ScalarTraits<typename ST::magnitudeType> SMT;
@@ -102,6 +102,8 @@ ModelEvaluatorBase::InArgs<Scalar>::InArgs()
   t_     = SMT::zero();
   alpha_ = ST::zero();
   beta_  = ST::zero();
+  step_size_ = ST::zero();
+  stage_number_ = ST::one();
 }
 
 
@@ -126,6 +128,17 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgs_p_mp arg, int l) const
   assert_l(l);
   return supports_p_mp_[l];
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_dot(
+  const RCP<const VectorBase<Scalar> > &x_dot_dot
+  )
+{ assert_supports(IN_ARG_x_dot_dot); x_dot_dot_ = x_dot_dot; }
+
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_dot_dot() const
+{ assert_supports(IN_ARG_x_dot_dot); return x_dot_dot_; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot(
@@ -264,6 +277,32 @@ template<class Scalar>
 Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_W_x_dot_dot_coeff( Scalar W_x_dot_dot_coeff )
+{ assert_supports(IN_ARG_W_x_dot_dot_coeff); W_x_dot_dot_coeff_ = W_x_dot_dot_coeff; }
+
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_W_x_dot_dot_coeff() const
+{ assert_supports(IN_ARG_W_x_dot_dot_coeff); return W_x_dot_dot_coeff_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_step_size( Scalar step_size)
+{ assert_supports(IN_ARG_step_size); step_size_ = step_size; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_step_size() const
+{ assert_supports(IN_ARG_step_size); return step_size_; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_stage_number() const
+{ assert_supports(IN_ARG_stage_number); return stage_number_; }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_stage_number( Scalar stage_number)
+{ assert_supports(IN_ARG_stage_number); stage_number_ = stage_number; }
+
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
@@ -272,6 +311,10 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
 {
   using ModelEvaluatorHelperPack::condCloneVec;
   using ModelEvaluatorHelperPack::condCloneVec_mp;
+  if( inArgs.supports(IN_ARG_x_dot_dot) && nonnull(inArgs.get_x_dot_dot()) ) {
+    if(supports(IN_ARG_x_dot_dot) || !ignoreUnsupported)
+      set_x_dot_dot(condCloneVec(inArgs.get_x_dot_dot(),cloneObjects));
+  }
   if( inArgs.supports(IN_ARG_x_dot) && nonnull(inArgs.get_x_dot()) ) {
     if(supports(IN_ARG_x_dot) || !ignoreUnsupported)
       set_x_dot(condCloneVec(inArgs.get_x_dot(),cloneObjects));
@@ -327,6 +370,24 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_beta) || !ignoreUnsupported)
       set_beta(inArgs.get_beta());
   }
+  if (inArgs.supports(IN_ARG_W_x_dot_dot_coeff)) {
+    if(supports(IN_ARG_W_x_dot_dot_coeff) || !ignoreUnsupported)
+      set_W_x_dot_dot_coeff(inArgs.get_W_x_dot_dot_coeff());
+  }
+  if (inArgs.supports(IN_ARG_step_size)) {
+    if(supports(IN_ARG_step_size) || !ignoreUnsupported)
+      set_step_size(inArgs.get_step_size());
+  }
+  if (inArgs.supports(IN_ARG_stage_number)) {
+    if(supports(IN_ARG_stage_number) || !ignoreUnsupported)
+      set_stage_number(inArgs.get_stage_number());
+  }
+  // Extended inArgs
+  if (extended_inargs_.size() > 0)
+    TEUCHOS_TEST_FOR_EXCEPTION(cloneObjects,
+                               std::runtime_error,
+                               "Extended InArgs does not support cloning!");
+  this->extended_inargs_ = inArgs.extended_inargs_;
 }
 
 
@@ -408,6 +469,13 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
   *out <<"model = " << modelEvalDescription_ << "\n";
   *out <<"Np = " << Np() << "\n";
 
+  CV_ptr x_dot_dot;
+  if ( this->supports(IN_ARG_x_dot_dot) && !is_null(x_dot_dot=get_x_dot_dot()) ) {
+    *out << "x_dot_dot = " << Teuchos::describe(*x_dot_dot,x_verbLevel);
+    if (print_x_nrm)
+      *out << "||x_dot_dot|| = " << norm(*x_dot_dot) << endl;
+  }
+
   CV_ptr x_dot;
   if ( this->supports(IN_ARG_x_dot) && !is_null(x_dot=get_x_dot()) ) {
     *out << "x_dot = " << Teuchos::describe(*x_dot,x_verbLevel);
@@ -421,7 +489,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     if (print_x_nrm)
       *out << "||x|| = " << norm(*x) << endl;
   }
-  
+
   if (print_x_nrm) {
     for( int l = 0; l < Np(); ++l ) {
       CV_ptr p_l;
@@ -432,7 +500,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
       }
     }
   }
-  
+
   if (includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
     if (this->supports(IN_ARG_t)) {
       *out << "t = " << t_ << endl;
@@ -443,8 +511,17 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     if (this->supports(IN_ARG_beta)) {
       *out << "beta = " << beta_ << endl;
     }
+    if (this->supports(IN_ARG_W_x_dot_dot_coeff)) {
+      *out << "W_x_dot_dot_coeff = " << W_x_dot_dot_coeff_ << endl;
+    }
+    if (this->supports(IN_ARG_step_size)) {
+      *out << "step_size = " << step_size_ << endl;
+    }
+    if (this->supports(IN_ARG_stage_number)) {
+      *out << "stage_number = " << stage_number_ << endl;
+    }
   }
-  
+
 }
 
 
@@ -507,10 +584,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
 {
   switch(arg) {
     case IN_ARG_x: {
+      this->_setSupports(IN_ARG_x_dot_dot,false);
       this->_setSupports(IN_ARG_x_dot,false);
       this->_setSupports(IN_ARG_x_dot_poly,false);
       this->_setSupports(IN_ARG_alpha,false);
       this->_setSupports(IN_ARG_beta,false);
+      this->_setSupports(IN_ARG_W_x_dot_dot_coeff,false);
+      this->_setSupports(IN_ARG_step_size,false);
+      this->_setSupports(IN_ARG_stage_number,false);
       break;
     }
     default:
@@ -518,7 +599,6 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
-      break;
   }
   this->_setSupports(arg,false);
 }
@@ -643,7 +723,7 @@ ModelEvaluatorBase::Derivative<Scalar>::description() const
 
 
 template<class Scalar>
-void ModelEvaluatorBase::Derivative<Scalar>::describe( 
+void ModelEvaluatorBase::Derivative<Scalar>::describe(
   Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
@@ -675,7 +755,7 @@ void ModelEvaluatorBase::Derivative<Scalar>::describe(
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
-  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITIALIZED!"),
    isFailed_(false)
 { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
@@ -750,7 +830,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 
 
 template<class Scalar>
-bool 
+bool
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
   EOutArgs_g_mp arg, int j
   ) const
@@ -806,7 +886,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f( 
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f(
   const Evaluation<VectorBase<Scalar> > &f
   )
 {
@@ -837,14 +917,14 @@ void ModelEvaluatorBase::OutArgs<Scalar>::set_g(
 template<class Scalar>
 ModelEvaluatorBase::Evaluation<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
-{ 
+{
   assert_j(j);
   return g_[j];
 }
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f_mp( 
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f_mp(
   const RCP<Stokhos::ProductEpetraVector > &f_mp
   )
 {
@@ -875,7 +955,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::set_g_mp(
 template<class Scalar>
 RCP<Stokhos::ProductEpetraVector>
 ModelEvaluatorBase::OutArgs<Scalar>::get_g_mp(int j) const
-{ 
+{
   assert_supports(OUT_ARG_g_mp,j);
   return g_mp_[j];
 }
@@ -1325,7 +1405,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
   for ( int l = 0; l < min_Np; ++l ) {
     for ( int j = 0; j < min_Ng; ++j ) {
       MEB::Derivative<Scalar> DgDp_j_l;
-      if ( !inputOutArgs.supports(OUT_ARG_DgDp,j,l).none() 
+      if ( !inputOutArgs.supports(OUT_ARG_DgDp,j,l).none()
         && !(DgDp_j_l=inputOutArgs.get_DgDp(j,l)).isEmpty() )
       {
         if ( DgDp_j_l.isSupportedBy(supports(OUT_ARG_DgDp,j,l)) || !ignoreUnsupported )
@@ -1336,7 +1416,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
   for ( int l = 0; l < min_Np; ++l ) {
     for ( int j = 0; j < min_Ng; ++j ) {
       MEB::MPDerivative DgDp_mp_j_l;
-      if ( !inputOutArgs.supports(OUT_ARG_DgDp_mp,j,l).none() 
+      if ( !inputOutArgs.supports(OUT_ARG_DgDp_mp,j,l).none()
         && !(DgDp_mp_j_l=inputOutArgs.get_DgDp_mp(j,l)).isEmpty() )
       {
         if ( DgDp_mp_j_l.isSupportedBy(supports(OUT_ARG_DgDp_mp,j,l)) || !ignoreUnsupported )
@@ -1344,6 +1424,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
       }
     }
   }
+  // Extended outArgs
+  this->extended_outargs_ = inputOutArgs.extended_outargs_;
+
   // ToDo: Add more args as needed!
 }
 
@@ -1534,23 +1617,23 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   if (this->supports(OUT_ARG_f) && !is_null(f=get_f()) ) {
     *out << "f = " << Teuchos::describe(*f,verbLevel);
   }
-  
+
   for( int j = 0; j < Ng(); ++j ) {
     CV_ptr g_j;
     if (!is_null(g_j=this->get_g(j)))
       *out << "g("<<j<<") = " << Teuchos::describe(*g_j,verbLevel);
   }
-  
+
   CLOWS_ptr W;
   if ( this->supports(OUT_ARG_W) && !is_null(W=get_W()) ) {
     *out << "W = " << Teuchos::describe(*W,verbLevel);
   }
-  
+
   CLO_ptr W_op;
   if ( this->supports(OUT_ARG_W_op) && !is_null(W_op=get_W_op()) ) {
     *out << "W_op = " << Teuchos::describe(*W_op,verbLevel);
   }
-  
+
   for( int l = 0; l < Np(); ++l ) {
     Deriv DfDp_l;
     if (
@@ -1562,9 +1645,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
       DfDp_l.describe(*out,verbLevel);
     }
   }
-  
+
   for( int j = 0; j < Ng(); ++j ) {
-    
+
     Deriv DgDx_dot_j;
     if (
       !this->supports(OUT_ARG_DgDx_dot,j).none()
@@ -1574,7 +1657,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
       *out << "DgDx_dot("<<j<<") = ";
       DgDx_dot_j.describe(*out,verbLevel);
     }
-    
+
     Deriv DgDx_j;
     if (
       !this->supports(OUT_ARG_DgDx,j).none()
@@ -1584,9 +1667,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
       *out << "DgDx("<<j<<") = ";
       DgDx_j.describe(*out,verbLevel);
     }
-    
+
     for( int l = 0; l < Np(); ++l ) {
-      
+
       Deriv DgDp_j_l;
       if (
         !this->supports(OUT_ARG_DgDp,j,l).none()
@@ -1597,9 +1680,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         DgDp_j_l.describe(*out,verbLevel);
       }
     }
-    
+
   }
-  
+
   // ToDo: Add output for more objects?
 
 }
@@ -1768,7 +1851,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( 
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties(
   const DerivativeProperties &properties
   )
 {
@@ -1862,8 +1945,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   )
 {
   typedef ModelEvaluatorBase MEB;
-  const int l_Np = TEUCHOS_MIN(this->Np(),inputOutArgs.Np()); 
-  const int l_Ng = TEUCHOS_MIN(this->Ng(),inputOutArgs.Ng()); 
+  const int l_Np = TEUCHOS_MIN(this->Np(),inputOutArgs.Np());
+  const int l_Ng = TEUCHOS_MIN(this->Ng(),inputOutArgs.Ng());
   std::copy(
     &inputOutArgs.supports_[0],
     &inputOutArgs.supports_[0] + NUM_E_OUT_ARGS_MEMBERS, &supports_[0] );
@@ -1915,6 +1998,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
     this->_set_W_properties(inputOutArgs.get_W_properties());
   if(this->supports(OUT_ARG_W_mp))
     this->_set_W_properties(inputOutArgs.get_W_properties());  //JF should this be W_mp_properties?
+
+  extended_outargs_ = inputOutArgs.extended_outargs_;
 }
 
 
@@ -1945,7 +2030,6 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
-      break;
   }
 }
 
@@ -1979,7 +2063,6 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
         true ,std::logic_error,
         "Error, can not handle args other than OUT_ARG_f yet!"
         );
-      break;
   }
   this->_setSupports(arg,false);
 }
@@ -2280,7 +2363,7 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( 
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   EOutArgsDgDx_dot arg, int j, const DerivativeSupport& supports_in
   )
 { this->_setSupports(arg,j,supports_in); }
@@ -2315,7 +2398,7 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( 
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& supports_in
   )
 { this->_setSupports(arg,j,supports_in); }

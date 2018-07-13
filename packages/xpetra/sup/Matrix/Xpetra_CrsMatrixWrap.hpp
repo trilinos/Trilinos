@@ -95,7 +95,9 @@ class CrsMatrixWrap :
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 #endif
 
 public:
@@ -145,6 +147,7 @@ public:
   }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying fixed number of entries for each row and column map
   CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null)
     : finalDefaultView_(false)
@@ -155,6 +158,23 @@ public:
     // Default view
     CreateDefaultView();
   }
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const local_matrix_type& lclMatrix, const RCP<const Map> &rowMap, const RCP<const Map>& colMap,
+                const RCP<const Map>& domainMap = Teuchos::null, const RCP<const Map>& rangeMap = Teuchos::null,
+                const Teuchos::RCP<Teuchos::ParameterList>& params = null)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(lclMatrix, rowMap, colMap, domainMap, rangeMap, params);
+
+    // Default view
+    CreateDefaultView();
+  }
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
 
   CrsMatrixWrap(RCP<CrsMatrix> matrix)
@@ -333,20 +353,6 @@ public:
     return matrixData_->getNumEntriesInLocalRow(localRow);
   }
 
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  global_size_t getGlobalNumDiags() const {
-    return matrixData_->getGlobalNumDiags();
-  }
-
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  size_t getNodeNumDiags() const {
-    return matrixData_->getNodeNumDiags();
-  }
-
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */
@@ -457,6 +463,11 @@ public:
     matrixData_->rightScale(x);
   }
 
+  //! Returns true if globalConstants have been computed; false otherwise
+  bool haveGlobalConstants() const {
+    return matrixData_->haveGlobalConstants();
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods
@@ -486,7 +497,7 @@ public:
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+  virtual void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                    Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    Scalar alpha = ScalarTraits<Scalar>::one(),
@@ -588,13 +599,21 @@ public:
   }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the underlying local Kokkos::CrsMatrix object
   local_matrix_type getLocalMatrix () const {
     return matrixData_->getLocalMatrix();
   }
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
 
   // JG: Added:
+
+  bool hasCrsGraph() const {return true;}
 
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }

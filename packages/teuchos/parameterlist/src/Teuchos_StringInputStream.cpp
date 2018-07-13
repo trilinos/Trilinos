@@ -49,7 +49,7 @@ unsigned int StringInputStream::readBytes(unsigned char* const toFill,
 {
 	if (pos_ == text_.length()) return 0;
 	
-	int toRead = text_.length() - pos_;
+	int toRead = static_cast<int>(text_.length() - pos_);
 	if ((int) maxToRead < toRead) toRead = maxToRead;
 
   std::strncpy((char*) toFill, text_.c_str()+pos_, toRead);

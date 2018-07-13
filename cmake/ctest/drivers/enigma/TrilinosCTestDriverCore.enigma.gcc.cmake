@@ -57,12 +57,19 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for typhon using gcc
+# Platform/compiler specific options for enigma using gcc
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+
+  IF(COMM_TYPE STREQUAL MPI)
+    string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
+    SET(BUILD_DIR_NAME ${UC_MPI_NAME}-$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_${BUILD_NAME_DETAILS})
+  ELSE()
+    SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
+  ENDIF()
 
   SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
@@ -83,32 +90,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_AR=/usr/bin/ar"
 
-    "-DMPI_BASE_DIR=/usr/lib64/openmpi"
-    "-D MPI_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
-    "-D MPI_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc"
-    "-D MPI_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort"
-    "-D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
-    "-D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc"
-    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort"
-    "-D MPI_EXEC:FILEPATH=/usr/lib64/openmpi/bin/mpirun"
-
-    "-DTPL_ENABLE_MPI:BOOL=ON"
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DAmesos2_ENABLE_KLU2:BOOL=OFF"
-
-    "-DMueLu_ENABLE_BROKEN_TESTS:BOOL=ON"
-    "-DXpetra_ENABLE_BROKEN_TESTS:BOOL=ON"
-
-    "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
-    "-DTPL_SuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
-    "-DTPL_SuperLU_LIBRARIES=/home/tawiesn/software/SuperLU_4.3/lib/libsuperlu_4.3.a"
+    "-DSuperLU_INCLUDE_DIRS=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+    "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+    "-DSuperLU_LIBRARY_NAMES=superlu"
   )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.3")
-
-  # paramters not accepted?
-  #  "-DTPL_SuperLU_LIBRARIES=/home/tawiesn/software/SuperLU_4.3/lib/libsuperlu_4.3.a"
-  #  "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
+  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
 
   # no CUDA on this machine, yet...
   #  "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.5.14"
@@ -118,11 +105,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
+         "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
+         "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
      )
-  #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
-  #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
-  #       "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
-  #       "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()

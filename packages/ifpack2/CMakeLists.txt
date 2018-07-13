@@ -70,9 +70,12 @@ TRIBITS_ADD_ETI_SUPPORT()
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 
-#Adding a define for when MPI is enabled.
-#This replaces an option that was reusing an existing name.
-SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
+#Adding an option and define when MPI is enabled.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_MPI
+  HAVE_IFPACK2_MPI
+  "Enable MPI build of Ifpack2."
+  ${TPL_ENABLE_MPI} )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Lemon)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -87,18 +90,33 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental Ifpack2 features."
   NO )
 
-IF(TpetraKernels_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental)
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Experimental
-  HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
-  "Enable building and installation of experimental Ifpack2 and TpetraKernels features."
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_IFPACK2_DEPRECATED_CODE
+  "Enable building and installation of long deprecated Ifpack2 code.  This is OFF by default.  DO NOT ENABLE THIS UNLESS YOU INSIST ON BUILDING DEPRECATED CODE.  You may see lots of deprecated warnings if you enable this.  That's your problem; you wanted to use the code."
   NO )
-ENDIF()
+
+# mfh 04 Jan 2017: Per #288, we want to enable this code by default.
+SET (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT ON)
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features
+  HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+  "Enable building and installation of some Ifpack2 features that use new KokkosKernels features."
+  "${${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT}"
+  )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_IFPACK2_TIMER_BARRIER
   HAVE_IFPACK2_TIMER_BARRIER
   "Enables a barrier in Ifpack2 Additive Schwarz so that timing information is useful"
+  NO )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_BlockTriDiContainer_Timers
+  HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+  "Turn on timers in Ifpack2::BlockTriDiContainer."
   NO )
 
 #

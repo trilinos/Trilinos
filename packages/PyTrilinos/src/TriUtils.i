@@ -73,12 +73,12 @@ example subdirectory of the PyTrilinos package:
 	docstring = %triutils_docstring) TriUtils
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -87,48 +87,20 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
-// Trilinos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_DefaultComm.hpp"
+// Trilinos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "Epetra_MapColoring.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #endif
 
-// Trilinos utility includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "Trilinos_Util_Version.h"
+// Trilinos utility include files
+#include "PyTrilinos_TriUtils_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -147,7 +119,7 @@ example subdirectory of the PyTrilinos package:
 #pragma SWIG nowarn=503
 %ignore *::operator<< ;
 
-// Epetra interface includes
+// Epetra interface include files
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

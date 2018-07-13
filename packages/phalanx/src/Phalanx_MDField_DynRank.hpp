@@ -50,16 +50,17 @@
 #include "Sacado.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
-#include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
 
 namespace PHX {
+
+  class DataLayout;
+  class FieldTag;
   
   // *************************************
   // Runtime time checked MDField
@@ -78,26 +79,38 @@ namespace PHX {
     typedef DataT value_type;
     typedef DataT& reference_type;
  
-    // typedef typename Kokkos::Experimental::DynRankView <DataT,PHX::Device,Kokkos::MemoryUnmanaged> array_type;
-    typedef typename Kokkos::Experimental::DynRankView <DataT,PHX::Device> array_type;
+    typedef typename Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> array_type;
       
     typedef typename PHX::Device::size_type size_type;
 
     typedef typename array_type::execution_space execution_space;
 
-    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
-    KOKKOS_FORCEINLINE_FUNCTION
-    MDField(const PHX::Tag<DataT>& v);
+    MDField(const PHX::FieldTag& v);
+
+    MDField(const Teuchos::RCP<const PHX::FieldTag>& v);
     
-    KOKKOS_FORCEINLINE_FUNCTION
     MDField();
+
+    template<typename CopyDataT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
     
-    KOKKOS_FORCEINLINE_FUNCTION
     ~MDField();
     
     const PHX::FieldTag& fieldTag() const;
+
+    Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const;
+
+    template<typename CopyDataT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    PHX::MDField<DataT,void,void,void,void,void,void,void,void>&
+    operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
     
     // template<typename iType0, typename iType1, typename iType2, typename iType3,
     // 	     typename iType4, typename iType5, typename iType6, typename iType7>
@@ -179,13 +192,14 @@ namespace PHX {
      void dimensions(std::vector<size_type>& dims);
     */
     template<typename iType>
-    KOKKOS_FORCEINLINE_FUNCTION
     void dimensions(std::vector<iType>& dims);
 
     KOKKOS_FORCEINLINE_FUNCTION
     size_type size() const;
 
-    void setFieldTag(const PHX::Tag<DataT>& t);
+    void setFieldTag(const PHX::FieldTag& t);
+
+    void setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t);
     
     void setFieldData(const PHX::any& a);
     
@@ -200,7 +214,7 @@ namespace PHX {
     struct V_MultiplyFunctor{
       V_MultiplyFunctor(const MDFieldTypeA &base, const MDFieldTypeB &source) :base_(base), source_(source){}
       KOKKOS_INLINE_FUNCTION
-      void operator()(const int & i) const;
+      void operator()(const PHX::index_t& i) const;
       MDFieldTypeA base_;
       MDFieldTypeB source_;
     };
@@ -226,16 +240,21 @@ namespace PHX {
    
   private:
    
-    PHX::Tag<DataT> m_tag;  
+    Teuchos::RCP<const PHX::FieldTag> m_tag;  
     PHX::any m_any; //! Store RCP to Kokkos::View
     array_type m_field_data;
 
 #ifdef PHX_DEBUG
-    bool m_tag_set;
     bool m_data_set;
     static const std::string m_field_tag_error_msg;
     static const std::string m_field_data_error_msg;
 #endif
+    
+    template<typename ScalarT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    friend class PHX::MDField;
 
   };
   

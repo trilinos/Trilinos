@@ -334,7 +334,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
       stk::mesh::PartVector add;
       add.push_back( &owned_part );
       const stk::mesh::EntityId c_entity_id = 1;
-      stk::mesh::Entity c = bulk_data.declare_entity( constraint_rank, c_entity_id, add );
+      stk::mesh::Entity c = bulk_data.declare_constraint(c_entity_id, add );
       bulk_data.declare_relation( c , n10 , 0 );
       bulk_data.declare_relation( c , n11 , 1 );
       bulk_data.declare_relation( c , n12 , 2 );

@@ -48,6 +48,12 @@ namespace stk
 #define STK_LAMBDA KOKKOS_LAMBDA
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
 
+#ifdef KOKKOS_ENABLE_CUDA
+using DeviceSpace = Kokkos::CudaSpace;
+#else
+using DeviceSpace = Kokkos::HostSpace;
+#endif
+
 class NgpVector
 {
 public:
@@ -75,7 +81,7 @@ public:
         Kokkos::deep_copy(hostVector, vector);
     }
 private:
-    typedef Kokkos::View<double*> KokkosVector;
+  typedef Kokkos::View<double *, DeviceSpace> KokkosVector;
     KokkosVector vector;
     KokkosVector::HostMirror hostVector;
 };
@@ -117,7 +123,7 @@ public:
         Kokkos::deep_copy(hostMatrix, matrix);
     }
 private:
-    typedef Kokkos::View<double**> KokkosMatrix;
+  typedef Kokkos::View<double **, DeviceSpace> KokkosMatrix;
     KokkosMatrix matrix;
     KokkosMatrix::HostMirror hostMatrix;
 };
@@ -172,8 +178,8 @@ void report_bandwidth(double numDoubles, double time)
 class EncapsulateKokkos : public MTK_Kokkos {};
 TEST_F(EncapsulateKokkos, MatrixVectorMultiply)
 {
-    const size_t numRows = 30000;
-    const size_t numCols = 2000;
+    const size_t numRows = 3000;
+    const size_t numCols = 200;
     stk::NgpMatrix matrix(numRows, numCols);
     stk::NgpVector vecIn(numCols, 1);
     stk::NgpVector vecOut(numRows);

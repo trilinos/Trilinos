@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -65,8 +65,9 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
     nsets_real = divide_set->span[0] * divide_set->span[1] * divide_set->span[2];
     nsets_real = min(1 << ndims, nsets_real);
     ndims_real = ndims;
-    while (1 << ndims_real > nsets_real)
+    while (1 << ndims_real > nsets_real) {
       --ndims_real;
+    }
 
     ndim_poss = 0;
     idims     = 0;
@@ -75,10 +76,12 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
         ndim_poss++;
         idims++;
       }
-      if (divide_set->span[i] >= 4)
+      if (divide_set->span[i] >= 4) {
         ndim_poss++;
-      if (divide_set->span[i] >= 8)
+      }
+      if (divide_set->span[i] >= 8) {
         ndim_poss++;
+      }
     }
     ndims_real = min(ndim_poss, ndims_real);
 
@@ -100,8 +103,9 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
     flag = define_subcubes(nsets_real, ndims_tot, ndims_real, divide_set, info_set, subsets, inert,
                            &striping, hops_special);
 
-    if (striping)
+    if (striping) {
       ndims_real = 1;
+    }
   }
 
   *pndims_real = ndims_real;

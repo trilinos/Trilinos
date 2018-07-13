@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -30,49 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_Bar2.h>
-#include <Ioss_Bar3.h>
-#include <Ioss_Edge2.h>
-#include <Ioss_Edge3.h>
-#include <Ioss_Hex20.h>
-#include <Ioss_Hex27.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_Initializer.h>
-#include <Ioss_Node.h>
-#include <Ioss_Pyramid13.h>
-#include <Ioss_Pyramid14.h>
-#include <Ioss_Pyramid5.h>
-#include <Ioss_Quad4.h>
-#include <Ioss_Quad8.h>
-#include <Ioss_Quad9.h>
-#include <Ioss_Shell4.h>
-#include <Ioss_Shell8.h>
-#include <Ioss_Shell9.h>
-#include <Ioss_ShellLine2D2.h>
-#include <Ioss_ShellLine2D3.h>
-#include <Ioss_Sphere.h>
-#include <Ioss_Super.h>
-#include <Ioss_Tet10.h>
-#include <Ioss_Tet11.h>
-#include <Ioss_Tet14.h>
-#include <Ioss_Tet15.h>
-#include <Ioss_Tet4.h>
-#include <Ioss_Tet8.h>
-#include <Ioss_Tri3.h>
-#include <Ioss_Tri4.h>
-#include <Ioss_Tri6.h>
-#include <Ioss_Tri7.h>
-#include <Ioss_TriShell3.h>
-#include <Ioss_TriShell4.h>
-#include <Ioss_TriShell6.h>
-#include <Ioss_TriShell7.h>
-#include <Ioss_Unknown.h>
-#include <Ioss_Wedge15.h>
-#include <Ioss_Wedge16.h>
-#include <Ioss_Wedge18.h>
-#include <Ioss_Wedge20.h>
-#include <Ioss_Wedge21.h>
-#include <Ioss_Wedge6.h>
+#include <Ioss_CodeTypes.h>
+#include <Ioss_StandardElementTypes.h>
+#if defined IOSS_THREADSAFE
+#include <mutex>
+#endif
 
 Ioss::Initializer::Initializer()
 {
@@ -97,6 +59,8 @@ Ioss::Initializer::Initializer()
   Ioss::Pyramid5::factory();
   Ioss::Pyramid13::factory();
   Ioss::Pyramid14::factory();
+  Ioss::Pyramid18::factory();
+  Ioss::Pyramid19::factory();
 
   Ioss::Quad4::factory();
   Ioss::Quad8::factory();

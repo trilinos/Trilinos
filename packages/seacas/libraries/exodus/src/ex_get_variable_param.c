@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -49,13 +49,14 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 
 /*!
+\ingroup ResultsData
 
 The function ex_get_variable_param() reads the number of global,
 nodal, or element variables stored in the database.
@@ -71,31 +72,31 @@ ex_create() or ex_open().
 \param[in]  obj_type  Variable indicating the type of variable which is
 described. Use one
                       of the options in the table below.
-\param[out] num_vars  Returned number of \c var_type variables that are stored
+\param[out] num_vars  Returned number of  var_type variables that are stored
 in the database.
 
-<table>
-<tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
-<tr><td> \c EX_NODAL}     </td><td>  Nodal entity type        </td></tr>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-</table>
+| ex_entity_type|  description              |
+|---------------|---------------------------|
+| EX_GLOBAL     |  Global entity type       |
+| EX_NODAL      |  Nodal entity type        |
+| EX_NODE_SET   |  Node Set entity type     |
+| EX_EDGE_BLOCK |  Edge Block entity type   |
+| EX_EDGE_SET   |  Edge Set entity type     |
+| EX_FACE_BLOCK |  Face Block entity type   |
+| EX_FACE_SET   |  Face Set entity type     |
+| EX_ELEM_BLOCK |  Element Block entity type|
+| EX_ELEM_SET   |  Element Set entity type  |
+| EX_SIDE_SET   |  Side Set entity type     |
 
 As an example, the following coding will determine the number of
 global variables stored in the data file:
 
-\code
+~~~{.c}
 int num_glo_vars, error, exoid;
 
 \comment{read global variables parameters}
 error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
-\endcode
+~~~
 
 */
 
@@ -107,7 +108,9 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
   const char *dnumvar;
   int         status;
 
-  exerrval  = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
+
   *num_vars = 0;
 
   switch (obj_type) {
@@ -122,35 +125,31 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
   case EX_SIDE_SET: dnumvar   = DIM_NUM_SSET_VAR; break;
   case EX_ELEM_SET: dnumvar   = DIM_NUM_ELSET_VAR; break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_param", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_variable_param", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
     *num_vars = 0;
     if (status == NC_EBADDIM) {
-      return (EX_NOERR); /* no global variables defined */
+      EX_FUNC_LEAVE(EX_NOERR); /* no global variables defined */
     }
-    else {
-      exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
-               ex_name_of_object(obj_type), exoid);
-      ex_err("ex_get_variable_param", errmsg, exerrval);
-      return (EX_FATAL);
-    }
+
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
+             ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_variable_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s variables in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_param", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_variable_param", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
   *num_vars = dimlen;
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

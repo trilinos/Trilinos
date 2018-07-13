@@ -56,14 +56,14 @@ template<class Real>
 class BackTracking : public LineSearch<Real> {
 private:
   Real rho_;
-  Teuchos::RCP<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
 public:
 
   virtual ~BackTracking() {}
 
   // Constructor
-  BackTracking( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+  BackTracking( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real half(0.5);
     rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",half);
   }

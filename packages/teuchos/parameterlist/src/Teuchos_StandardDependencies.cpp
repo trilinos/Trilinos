@@ -350,9 +350,12 @@ void StringValidatorDependency::validateDep() const{
     "have at least one entry!" << std::endl << std::endl);
   ValueToValidatorMap::const_iterator it = valuesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstVali = (it->second);
+  //using the raw pointer avoids a Clang warning about side effects in typeid
+  const ParameterEntryValidator* rawFirstValidatorPtr = firstVali.get();
   ++it;
   for(; it != valuesAndValidators_.end(); ++it){
-    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*firstVali) != typeid(*(it->second)),
+    const ParameterEntryValidator* rawValidatorPtr = it->second.get();
+    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*rawFirstValidatorPtr) != typeid(*rawValidatorPtr),
       InvalidDependencyException,
       "Ay no! All of the validators in a StringValidatorDependency "
       "must have the same type.");
@@ -439,7 +442,10 @@ void BoolValidatorDependency::validateDep() const{
     std::endl << std::endl);
 
   if(!falseValidator_.is_null() && !trueValidator_.is_null()){
-    TEUCHOS_TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
+    //avoid Clang warnings about side effects in typeid
+    const ParameterEntryValidator* rawFalseValidatorPtr = falseValidator_.get();
+    const ParameterEntryValidator* rawTrueValidatorPtr = trueValidator_.get();
+    TEUCHOS_TEST_FOR_EXCEPTION(typeid(*rawFalseValidatorPtr) != typeid(*rawTrueValidatorPtr),
       InvalidDependencyException,
       "Ay no! The true and false validators of a Bool Validator Dependency "
       "must be the same type! " <<std::endl << std::endl);

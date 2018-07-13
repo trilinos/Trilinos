@@ -66,9 +66,10 @@ SET(BUILD_DIR_NAME SERIAL_OPT_DEV)
 SET(COMPILER_VERSION "GCC-4.7.2")
 SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/lib:/home/trilinos/compilers/gcc/support_libs/mpfr-3.1.2/lib:/home/trilinos/compilers/gcc/support_libs/gmp-5.1.1/lib:/home/trilinos/compilers/gcc/4.7.2/lib64:$ENV{LD_LIBRARY_PATH}")
 SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK Clean)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
 SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance Zoltan2 Panzer PyTrilinos STK)

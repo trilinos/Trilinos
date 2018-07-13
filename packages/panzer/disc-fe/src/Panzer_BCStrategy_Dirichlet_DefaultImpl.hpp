@@ -136,7 +136,7 @@ namespace panzer {
     void addDOF(const std::string & dofName);
 
     /** Alert the panzer library that the DOF should be evaluated using a coefficient residual
-      * as opposed to evaluating the basis and forcing the value to be qual at some point in
+      * as opposed to evaluating the basis and forcing the value to be equal at some point in
       * the element.
       *
       * \param[in] targetName (Required) Name of field that corresponds to the evaluated

@@ -23,6 +23,6 @@ TRIBITS_ADD_LIBRARY(pws_a
 TRIBITS_ADD_TEST_DIRECTORIES(tests)
 
 #
-# D) Do standard postprocessing
+# D) Do standard post processing
 #
 TRIBITS_SUBPACKAGE_POSTPROCESS()

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -99,7 +99,7 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
@@ -147,7 +147,7 @@ double dot( const size_t n ,
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           class L , class D ,

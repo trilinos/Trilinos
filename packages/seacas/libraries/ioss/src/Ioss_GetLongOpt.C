@@ -1,6 +1,38 @@
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <Ioss_GetLongOpt.h>
-#include <string.h>
+#include <cstring>
 
 namespace Ioss {
   /** \brief Create an empty options database.
@@ -69,7 +101,7 @@ namespace Ioss {
       return 0;
     }
 
-    Cell *c        = new Cell;
+    auto *c        = new Cell;
     c->option      = opt;
     c->type        = t;
     c->description = desc != nullptr ? desc : "no description available";
@@ -141,7 +173,7 @@ namespace Ioss {
         tmptoken = ++token;
       }
 
-      while (((*tmptoken != 0) != 0) && *tmptoken != '=') {
+      while ((static_cast<int>(*tmptoken != 0) != 0) && *tmptoken != '=') {
         ++tmptoken;
       }
       /* (tmptoken - token) is now equal to the command line option
@@ -153,13 +185,13 @@ namespace Ioss {
       Cell *pc = nullptr; // pointer to the partially-matched cell
       for (t = table; t != nullptr; t = t->next) {
         if (strncmp(t->option, token, (tmptoken - token)) == 0) {
-          if ((int)strlen(t->option) == (tmptoken - token)) {
+          if (static_cast<int>(strlen(t->option)) == (tmptoken - token)) {
             /* an exact match found */
             int stat = setcell(t, tmptoken, *(argv + 1), pname);
             if (stat == -1) {
               return -1;
             }
-            else if (stat == 1) {
+            if (stat == 1) {
               ++argv;
               --argc;
               ++my_optind;
@@ -194,7 +226,7 @@ namespace Ioss {
         if (stat == -1) {
           return -1;
         }
-        else if (stat == 1) {
+        if (stat == 1) {
           ++argv;
           --argc;
           ++my_optind;
@@ -238,7 +270,7 @@ namespace Ioss {
 
       char *ladtoken = nullptr; /* lookahead token */
       char *tmptoken = ++token;
-      while (((*tmptoken != 0) != 0) && *tmptoken != '=') {
+      while ((static_cast<int>(*tmptoken != 0) != 0) && *tmptoken != '=') {
         ++tmptoken;
       }
       /* (tmptoken - token) is now equal to the command line option
@@ -249,14 +281,14 @@ namespace Ioss {
       Cell *pc = nullptr; // pointer to the partially-matched cell
       for (t = table; t != nullptr; t = t->next) {
         if (strncmp(t->option, token, (tmptoken - token)) == 0) {
-          if ((int)strlen(t->option) == (tmptoken - token)) {
+          if (static_cast<int>(strlen(t->option)) == (tmptoken - token)) {
             /* an exact match found */
             ladtoken = strtok(nullptr, " \t");
             int stat = setcell(t, tmptoken, ladtoken, name);
             if (stat == -1) {
               return -1;
             }
-            else if (stat == 1) {
+            if (stat == 1) {
               ladtoken = nullptr;
             }
             matchStatus = ExactMatch;
@@ -276,7 +308,7 @@ namespace Ioss {
         if (stat == -1) {
           return -1;
         }
-        else if (stat == 1) {
+        if (stat == 1) {
           ladtoken = nullptr;
         }
       }
@@ -369,4 +401,4 @@ namespace Ioss {
     }
     outfile.flush();
   }
-}
+} // namespace Ioss

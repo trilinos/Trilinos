@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -39,10 +39,10 @@
 #include <vector>              // for vector
 namespace Ioss {
   class Field;
-}
+} // namespace Ioss
 
 namespace Ioss {
-}
+} // namespace Ioss
 
 namespace Iotr {
 
@@ -53,7 +53,7 @@ namespace Iotr {
 
   private:
     Offset3D_Factory();
-    Ioss::Transform *make(const std::string & /*unused*/ /*unused*/) const;
+    Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
   class Offset3D : public Ioss::Transform
@@ -61,21 +61,21 @@ namespace Iotr {
     friend class Offset3D_Factory;
 
   public:
-    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-    int output_count(int in) const;
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
+    int output_count(int in) const override;
 
-    void set_properties(const std::string &name, const std::vector<int> &values);
-    void set_properties(const std::string &name, const std::vector<double> &values);
+    void set_properties(const std::string &name, const std::vector<int> &values) override;
+    void set_properties(const std::string &name, const std::vector<double> &values) override;
 
   protected:
     Offset3D();
 
-    bool internal_execute(const Ioss::Field &field, void *data);
+    bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
-    int    intOffset[3];
-    double realOffset[3];
+    int    intOffset[3]{};
+    double realOffset[3]{};
   };
-}
+} // namespace Iotr
 
 #endif // IOSS_Iotr_Offset3D_h

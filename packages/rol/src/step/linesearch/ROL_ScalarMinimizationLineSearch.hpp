@@ -61,11 +61,11 @@ namespace ROL {
 template<class Real>
 class ScalarMinimizationLineSearch : public LineSearch<Real> {
 private:
-  Teuchos::RCP<Vector<Real> >             xnew_; 
-  Teuchos::RCP<Vector<Real> >             g_;
-  Teuchos::RCP<ScalarMinimization<Real> > sm_;
-  Teuchos::RCP<Bracketing<Real> >         br_;
-  Teuchos::RCP<ScalarFunction<Real> >     sf_;
+  ROL::Ptr<Vector<Real> >             xnew_; 
+  ROL::Ptr<Vector<Real> >             g_;
+  ROL::Ptr<ScalarMinimization<Real> > sm_;
+  ROL::Ptr<Bracketing<Real> >         br_;
+  ROL::Ptr<ScalarFunction<Real> >     sf_;
 
   ECurvatureCondition econd_;
   Real c1_;
@@ -75,12 +75,12 @@ private:
 
   class Phi : public ScalarFunction<Real> {
   private:
-    const Teuchos::RCP<Vector<Real> > xnew_;
-    const Teuchos::RCP<Vector<Real> > g_;
-    const Teuchos::RCP<const Vector<Real> > x_;
-    const Teuchos::RCP<const Vector<Real> > s_;
-    const Teuchos::RCP<Objective<Real> > obj_;
-    const Teuchos::RCP<BoundConstraint<Real> > con_;
+    const ROL::Ptr<Vector<Real> > xnew_;
+    const ROL::Ptr<Vector<Real> > g_;
+    const ROL::Ptr<const Vector<Real> > x_;
+    const ROL::Ptr<const Vector<Real> > s_;
+    const ROL::Ptr<Objective<Real> > obj_;
+    const ROL::Ptr<BoundConstraint<Real> > con_;
     Real ftol_;
     void updateIterate(Real alpha) {
       xnew_->set(*x_);
@@ -90,12 +90,12 @@ private:
       }
     }
   public:
-    Phi(const Teuchos::RCP<Vector<Real> > &xnew,
-        const Teuchos::RCP<Vector<Real> > &g,
-        const Teuchos::RCP<const Vector<Real> > &x,
-        const Teuchos::RCP<const Vector<Real> > &s,
-        const Teuchos::RCP<Objective<Real> > &obj,
-        const Teuchos::RCP<BoundConstraint<Real> > &con)
+    Phi(const ROL::Ptr<Vector<Real> > &xnew,
+        const ROL::Ptr<Vector<Real> > &g,
+        const ROL::Ptr<const Vector<Real> > &x,
+        const ROL::Ptr<const Vector<Real> > &s,
+        const ROL::Ptr<Objective<Real> > &obj,
+        const ROL::Ptr<BoundConstraint<Real> > &con)
      : xnew_(xnew), g_(g), x_(x), s_(s), obj_(obj), con_(con),
        ftol_(std::sqrt(ROL_EPSILON<Real>())) {}
     Real value(const Real alpha) {
@@ -113,7 +113,7 @@ private:
 
   class LineSearchStatusTest : public ScalarMinimizationStatusTest<Real> {
   private:
-    Teuchos::RCP<ScalarFunction<Real> > phi_;
+    ROL::Ptr<ScalarFunction<Real> > phi_;
 
     const Real f0_;
     const Real g0_;
@@ -129,7 +129,7 @@ private:
     LineSearchStatusTest(const Real f0, const Real g0,
                          const Real c1, const Real c2, const Real c3,
                          const int max_nfval, ECurvatureCondition econd,
-                         const Teuchos::RCP<ScalarFunction<Real> > &phi)
+                         const ROL::Ptr<ScalarFunction<Real> > &phi)
       : phi_(phi), f0_(f0), g0_(g0), c1_(c1), c2_(c2), c3_(c3),
         max_nfval_(max_nfval), econd_(econd) {}
 
@@ -172,17 +172,17 @@ private:
 
 public:
   // Constructor
-  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
-    const Teuchos::RCP<ScalarMinimization<Real> > &sm = Teuchos::null,
-    const Teuchos::RCP<Bracketing<Real> > &br = Teuchos::null,
-    const Teuchos::RCP<ScalarFunction<Real> > &sf  = Teuchos::null )
+  ScalarMinimizationLineSearch( ROL::ParameterList &parlist, 
+    const ROL::Ptr<ScalarMinimization<Real> > &sm = ROL::nullPtr,
+    const ROL::Ptr<Bracketing<Real> > &br = ROL::nullPtr,
+    const ROL::Ptr<ScalarFunction<Real> > &sf  = ROL::nullPtr )
     : LineSearch<Real>(parlist) {
     Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
-    Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList &list  = list0.sublist("Line-Search Method");
+    ROL::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
+    ROL::ParameterList &list  = list0.sublist("Line-Search Method");
     // Get Bracketing Method
-    if( br == Teuchos::null ) {
-      br_ = Teuchos::rcp(new Bracketing<Real>());
+    if( br == ROL::nullPtr ) {
+      br_ = ROL::makePtr<Bracketing<Real>>();
     }
     else {
       br_ = br;
@@ -191,24 +191,24 @@ public:
     std::string type = list.get("Type","Brent's");
     Real tol         = list.sublist(type).get("Tolerance",oem10);
     int niter        = list.sublist(type).get("Iteration Limit",1000);
-    Teuchos::ParameterList plist;
+    ROL::ParameterList plist;
     plist.sublist("Scalar Minimization").set("Type",type);
     plist.sublist("Scalar Minimization").sublist(type).set("Tolerance",tol);
     plist.sublist("Scalar Minimization").sublist(type).set("Iteration Limit",niter);
 
-    if( sm == Teuchos::null ) { // No user-provided ScalarMinimization object
+    if( sm == ROL::nullPtr ) { // No user-provided ScalarMinimization object
 
       if ( type == "Brent's" ) {
-        sm_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(plist));
+        sm_ = ROL::makePtr<BrentsScalarMinimization<Real>>(plist);
       }
       else if ( type == "Bisection" ) {
-        sm_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(plist));
+        sm_ = ROL::makePtr<BisectionScalarMinimization<Real>>(plist);
       }
       else if ( type == "Golden Section" ) {
-        sm_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(plist));
+        sm_ = ROL::makePtr<GoldenSectionScalarMinimization<Real>>(plist);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
           ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
       }
     }
@@ -257,23 +257,23 @@ public:
     alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con);
 
     // Build ScalarFunction and ScalarMinimizationStatusTest
-    Teuchos::RCP<const Vector<Real> > x_ptr = Teuchos::rcpFromRef(x);
-    Teuchos::RCP<const Vector<Real> > s_ptr = Teuchos::rcpFromRef(s);
-    Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
-    Teuchos::RCP<BoundConstraint<Real> > bnd_ptr = Teuchos::rcpFromRef(con);
+    ROL::Ptr<const Vector<Real> > x_ptr = ROL::makePtrFromRef(x);
+    ROL::Ptr<const Vector<Real> > s_ptr = ROL::makePtrFromRef(s);
+    ROL::Ptr<Objective<Real> > obj_ptr = ROL::makePtrFromRef(obj);
+    ROL::Ptr<BoundConstraint<Real> > bnd_ptr = ROL::makePtrFromRef(con);
 
 
-    Teuchos::RCP<ScalarFunction<Real> > phi;
+    ROL::Ptr<ScalarFunction<Real> > phi;
 
-    if( sf_ == Teuchos::null ) {
-      phi = Teuchos::rcp(new Phi(xnew_,g_,x_ptr,s_ptr,obj_ptr,bnd_ptr));
+    if( sf_ == ROL::nullPtr ) {
+      phi = ROL::makePtr<Phi>(xnew_,g_,x_ptr,s_ptr,obj_ptr,bnd_ptr);
     }
     else {
       phi = sf_;
     }
 
-    Teuchos::RCP<ScalarMinimizationStatusTest<Real> > test
-      = Teuchos::rcp(new LineSearchStatusTest(fval,gs,c1_,c2_,c3_,max_nfval_,econd_,phi));
+    ROL::Ptr<ScalarMinimizationStatusTest<Real> > test
+      = ROL::makePtr<LineSearchStatusTest>(fval,gs,c1_,c2_,c3_,max_nfval_,econd_,phi);
 
     // Run Bracketing
     int nfval = 0, ngrad = 0;

@@ -50,10 +50,7 @@
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Vector.hpp>
-#include <Xpetra_Import.hpp>
 #include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 
 #include "MueLu_DropNegativeEntriesFactory_decl.hpp"

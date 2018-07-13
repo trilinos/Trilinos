@@ -50,6 +50,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include <fstream>
 
 // Flatten the namespaces of certain classes
 using std::string;
@@ -83,9 +84,9 @@ int main(int argc, char* argv[])
   CommandLineProcessor clp(false);  //don't throw exceptions
   clp.recogniseAllOptions(true);
   clp.setOption("add-xsl-header",
-		"suppress-xsl-header",
-		&xsl_header_flag, 
-		"XSL header flag");
+                "suppress-xsl-header",
+                &xsl_header_flag,
+                "XSL header flag");
 
   //
   // Parse the command line and quit if not successful
@@ -102,14 +103,14 @@ int main(int argc, char* argv[])
   // is referenced in the Doxygen documentation.
   //
   RCP< FancyOStream > out =
-    rcp(new FancyOStream(rcp(new std::ofstream("Domi.xml"))));
+    rcp(new FancyOStream(rcp(new std::ofstream("domi.xml"))));
 
   //
   // Print the XSL header line if requested
   //
   if (xsl_header_flag )
     *out << "<?xml-stylesheet type=\"text/xsl\" "
-         << "href=\"common/paramList/paramList.xsl\"?>\n";
+         << "href=\"common/parameterList/parameterList.xsl\"?>\n";
 
   //
   // Obtain the validated ParameterList and write it to the fancy

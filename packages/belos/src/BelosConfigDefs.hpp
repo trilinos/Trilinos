@@ -130,4 +130,7 @@
 
 namespace Belos { std::string Belos_Version(); }
 
+// This include file defines macros to avoid warnings under CUDA.  See github issue #1133.
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+
 #endif /* BELOS_CONFIGDEFS_HPP */

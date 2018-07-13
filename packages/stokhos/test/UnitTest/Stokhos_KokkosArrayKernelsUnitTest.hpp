@@ -74,8 +74,9 @@
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
-#include "Kokkos_Sparse.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosBlas1_update.hpp"
 #endif
 
 namespace KokkosKernelsUnitTest {
@@ -996,7 +997,7 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
@@ -1143,7 +1144,7 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {

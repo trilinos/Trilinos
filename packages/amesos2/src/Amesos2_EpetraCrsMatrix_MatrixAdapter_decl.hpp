@@ -102,7 +102,7 @@ namespace Amesos2 {
     
     ConcreteMatrixAdapter(RCP<matrix_t> m);
     
-    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
+    RCP<const MatrixAdapter<matrix_t> > get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
     
   };
 

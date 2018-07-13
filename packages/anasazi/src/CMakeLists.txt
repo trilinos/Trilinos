@@ -60,52 +60,54 @@ APPEND_SET(HEADERS
   AnasaziBlockKrylovSchurSolMgr.hpp
   AnasaziConfigDefs.hpp
   AnasaziEigenproblem.hpp
-  AnasaziEigensolver.hpp
   AnasaziEigensolverDecl.hpp
-  AnasaziLOBPCG.hpp
-  AnasaziLOBPCGSolMgr.hpp
+  AnasaziEigensolver.hpp
+  AnasaziFactory.hpp
   AnasaziGeneralizedDavidson.hpp
   AnasaziGeneralizedDavidsonSolMgr.hpp
   AnasaziGenOrthoManager.hpp
   AnasaziHelperTraits.hpp
   AnasaziICGSOrthoManager.hpp
   AnasaziIRTR.hpp
+  AnasaziLOBPCG.hpp
+  AnasaziLOBPCGSolMgr.hpp
   AnasaziMatOrthoManager.hpp
+  AnasaziMinres.hpp
   AnasaziMultiVec.hpp
   AnasaziMultiVecTraits.hpp
   AnasaziOperator.hpp
   AnasaziOperatorTraits.hpp
   AnasaziOrthoManager.hpp
   AnasaziOutputManager.hpp
+  AnasaziOutputStreamTraits.hpp
   AnasaziRTRBase.hpp
   AnasaziRTRSolMgr.hpp
+  AnasaziSaddleContainer.hpp
+  AnasaziSaddleOperator.hpp
   AnasaziSimpleLOBPCGSolMgr.hpp
   AnasaziSIRTR.hpp
   AnasaziSolverManager.hpp
-  AnasaziSortManager.hpp
   AnasaziSolverUtils.hpp
-  AnasaziStatusTest.hpp
-  AnasaziStatusTestDecl.hpp
+  AnasaziSortManager.hpp
   AnasaziStatusTestCombo.hpp
+  AnasaziStatusTestDecl.hpp
+  AnasaziStatusTest.hpp
   AnasaziStatusTestMaxIters.hpp
-  AnasaziStatusTestWithOrdering.hpp
   AnasaziStatusTestOutput.hpp
   AnasaziStatusTestResNorm.hpp
+  AnasaziStatusTestSpecTrans.hpp
+  AnasaziStatusTestWithOrdering.hpp
   AnasaziStubTsqrAdapter.hpp
   AnasaziSVQBOrthoManager.hpp
-  AnasaziTypes.hpp
   AnasaziTraceMinBase.hpp
-  AnasaziTraceMin.hpp
-  AnasaziTraceMinDavidson.hpp
   AnasaziTraceMinBaseSolMgr.hpp
-  AnasaziTraceMinSolMgr.hpp
+  AnasaziTraceMinDavidson.hpp
   AnasaziTraceMinDavidsonSolMgr.hpp
-  AnasaziMinres.hpp
-  AnasaziSaddleContainer.hpp
-  AnasaziSaddleOperator.hpp
+  AnasaziTraceMin.hpp
   AnasaziTraceMinRitzOp.hpp
+  AnasaziTraceMinSolMgr.hpp
   AnasaziTraceMinTypes.hpp
-  AnasaziStatusTestSpecTrans.hpp
+  AnasaziTypes.hpp
   )
 
 APPEND_SET(SOURCES

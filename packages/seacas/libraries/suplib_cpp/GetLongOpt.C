@@ -1,7 +1,7 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <GetLongOpt.h>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 
 GetLongOption::GetLongOption(const char optmark)
     : table(nullptr), ustring(nullptr), pname(nullptr), last(nullptr), enroll_done(0),
@@ -14,7 +14,7 @@ GetLongOption::~GetLongOption()
 {
   Cell *t = table;
 
-  while (t) {
+  while (t != nullptr) {
     Cell *tmp = t;
     t         = t->next;
     delete tmp;
@@ -26,10 +26,11 @@ char *GetLongOption::basename(char *const pathname)
   char *s;
 
   s = strrchr(pathname, '/');
-  if (s == 0)
+  if (s == 0) {
     s = pathname;
-  else
+  } else {
     ++s;
+}
 
   return s;
 }
@@ -37,13 +38,14 @@ char *GetLongOption::basename(char *const pathname)
 int GetLongOption::enroll(const char *const opt, const OptType t, const char *const desc,
                           const char *const val, const char *const optval)
 {
-  if (enroll_done)
+  if (enroll_done != 0) {
     return 0;
+}
 
   Cell *c        = new Cell;
   c->option      = opt;
   c->type        = t;
-  c->description = desc ? desc : "no description available";
+  c->description = desc != nullptr ? desc : "no description available";
   c->value       = val;
   c->opt_value   = optval;
   c->next        = 0;
@@ -63,8 +65,9 @@ const char *GetLongOption::retrieve(const char *const opt) const
 {
   Cell *t;
   for (t = table; t != 0; t = t->next) {
-    if (strcmp(opt, t->option) == 0)
+    if (strcmp(opt, t->option) == 0) {
       return t->value;
+}
   }
   std::cerr << "GetLongOption::retrieve - unenrolled option ";
   std::cerr << optmarker << opt << "\n";
@@ -77,24 +80,28 @@ int GetLongOption::parse(int argc, char *const *argv)
 
   pname       = basename(*argv);
   enroll_done = 1;
-  if (argc-- <= 1)
+  if (argc-- <= 1) {
     return my_optind;
+}
 
   while (argc >= 1) {
     char *token = *++argv;
     --argc;
 
     // '--' signifies end of options if followed by space
-    if (token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2))
+    if (token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
       break; /* end of options */
+}
 
     ++my_optind;
     char *tmptoken = ++token;
-    if (token[0] == optmarker) // Handle a double '--'
+    if (token[0] == optmarker) { // Handle a double '--'
       tmptoken = ++token;
+}
 
-    while (*tmptoken && *tmptoken != '=')
+    while ((*tmptoken != 0) && *tmptoken != '=') {
       ++tmptoken;
+}
     /* (tmptoken - token) is now equal to the command line option
        length. */
 
@@ -105,12 +112,12 @@ int GetLongOption::parse(int argc, char *const *argv)
     Cell *             pc = 0; // pointer to the partially-matched cell
     for (t = table; t != 0; t = t->next) {
       if (strncmp(t->option, token, (tmptoken - token)) == 0) {
-        if ((int)strlen(t->option) == (tmptoken - token)) {
+        if (static_cast<int>(strlen(t->option)) == (tmptoken - token)) {
           /* an exact match found */
           int stat = setcell(t, tmptoken, *(argv + 1), pname);
-          if (stat == -1)
+          if (stat == -1) {
             return -1;
-          else if (stat == 1) {
+          } if (stat == 1) {
             ++argv;
             --argc;
             ++my_optind;
@@ -142,9 +149,9 @@ int GetLongOption::parse(int argc, char *const *argv)
 
     if (matchStatus == PartialMatch) {
       int stat = setcell(pc, tmptoken, *(argv + 1), pname);
-      if (stat == -1)
+      if (stat == -1) {
         return -1;
-      else if (stat == 1) {
+      } if (stat == 1) {
         ++argv;
         --argc;
         ++my_optind;
@@ -169,9 +176,9 @@ int GetLongOption::parse(char *const str, char *const p)
 {
   enroll_done       = 1;
   char *      token = strtok(str, " \t");
-  const char *name  = p ? p : "GetLongOption";
+  const char *name  = p != nullptr ? p : "GetLongOption";
 
-  while (token) {
+  while (token != nullptr) {
     if (token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
       std::cerr << name << ": nonoptions not allowed\n";
       return -1; /* end of options */
@@ -179,8 +186,9 @@ int GetLongOption::parse(char *const str, char *const p)
 
     char *ladtoken = 0; /* lookahead token */
     char *tmptoken = ++token;
-    while (*tmptoken && *tmptoken != '=')
+    while ((*tmptoken != 0) && *tmptoken != '=') {
       ++tmptoken;
+}
     /* (tmptoken - token) is now equal to the command line option
        length. */
 
@@ -189,13 +197,13 @@ int GetLongOption::parse(char *const str, char *const p)
     Cell *pc = 0; // pointer to the partially-matched cell
     for (t = table; t != 0; t = t->next) {
       if (strncmp(t->option, token, (tmptoken - token)) == 0) {
-        if ((int)strlen(t->option) == (tmptoken - token)) {
+        if (static_cast<int>(strlen(t->option)) == (tmptoken - token)) {
           /* an exact match found */
           ladtoken = strtok(0, " \t");
           int stat = setcell(t, tmptoken, ladtoken, name);
-          if (stat == -1)
+          if (stat == -1) {
             return -1;
-          else if (stat == 1) {
+	  } if (stat == 1) {
             ladtoken = 0;
           }
           matchStatus = ExactMatch;
@@ -212,9 +220,9 @@ int GetLongOption::parse(char *const str, char *const p)
     if (matchStatus == PartialMatch) {
       ladtoken = strtok(0, " \t");
       int stat = setcell(pc, tmptoken, ladtoken, name);
-      if (stat == -1)
+      if (stat == -1) {
         return -1;
-      else if (stat == 1) {
+      } if (stat == 1) {
         ladtoken = 0;
       }
     }
@@ -224,7 +232,7 @@ int GetLongOption::parse(char *const str, char *const p)
       return -1; /* no match */
     }
 
-    token = ladtoken ? ladtoken : strtok(0, " \t");
+    token = ladtoken != nullptr ? ladtoken : strtok(0, " \t");
   } /* end while */
 
   return 1;
@@ -239,8 +247,9 @@ GetLongOption::setcell returns
 
 int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 {
-  if (c == 0)
+  if (c == 0) {
     return -1;
+}
 
   switch (c->type) {
   case GetLongOption::NoValue:
@@ -263,10 +272,10 @@ int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char 
         c->value = nexttoken;
         return 1;
       }
-      else {
+      
         c->value = c->opt_value;
         return 0;
-      }
+      
     }
   case GetLongOption::MandatoryValue:
     if (*valtoken == '=') {
@@ -280,11 +289,11 @@ int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char 
         c->value = nexttoken;
         return 1;
       }
-      else {
+      
         std::cerr << name << ": mandatory value for ";
         std::cerr << optmarker << c->option << " not specified\n";
         return -1; /* mandatory value not specified */
-      }
+      
     }
   default: break;
   }
@@ -298,11 +307,12 @@ void GetLongOption::usage(std::ostream &outfile) const
   outfile << "\nusage: " << pname << " " << ustring << "\n";
   for (t = table; t != 0; t = t->next) {
     outfile << "\t" << optmarker << t->option;
-    if (t->type == GetLongOption::MandatoryValue)
+    if (t->type == GetLongOption::MandatoryValue) {
       outfile << " <$val>";
-    else if (t->type == GetLongOption::OptionalValue)
+    } else if (t->type == GetLongOption::OptionalValue) {
       outfile << " [$val]";
-    outfile << " (" << t->description << ")\n";
+    
+}outfile << " (" << t->description << ")\n";
   }
   outfile.flush();
 }

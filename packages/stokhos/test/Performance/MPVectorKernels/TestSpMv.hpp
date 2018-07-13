@@ -42,7 +42,8 @@
 
 // MP::Vector and Matrix
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 // Compile-time loops
@@ -101,7 +102,7 @@ std::vector<double>
 test_mpvector_spmv(const int ensemble_length,
                    const int nGrid,
                    const int iterCount,
-                   Kokkos::DeviceConfig dev_config,
+                   KokkosSparse::DeviceConfig dev_config,
                    MultiplyTag tag)
 {
   typedef StorageType storage_type;
@@ -111,7 +112,7 @@ test_mpvector_spmv(const int ensemble_length,
   typedef Sacado::MP::Vector<StorageType> VectorType;
   typedef Kokkos::LayoutRight Layout;
   typedef Kokkos::View< VectorType*, Layout, execution_space > vector_type;
-  typedef Kokkos::CrsMatrix< VectorType, ordinal_type, execution_space > matrix_type;
+  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, execution_space > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -185,13 +186,13 @@ std::vector<double>
 test_scalar_spmv(const int ensemble_length,
                  const int nGrid,
                  const int iterCount,
-                 Kokkos::DeviceConfig dev_config)
+                 KokkosSparse::DeviceConfig dev_config)
 {
   typedef ScalarType value_type;
   typedef OrdinalType ordinal_type;
   typedef Device execution_space;
   typedef Kokkos::View< value_type*, execution_space > vector_type;
-  typedef Kokkos::CrsMatrix< value_type, ordinal_type, execution_space > matrix_type;
+  typedef KokkosSparse::CrsMatrix< value_type, ordinal_type, execution_space > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -265,10 +266,10 @@ struct PerformanceDriverOp {
   typedef typename Storage::ordinal_type Ordinal;
   typedef typename Storage::execution_space Device;
   const int nGrid, nIter;
-  Kokkos::DeviceConfig dev_config;
+  KokkosSparse::DeviceConfig dev_config;
 
   PerformanceDriverOp(const int nGrid_, const int nIter_,
-                      Kokkos::DeviceConfig dev_config_) :
+                      KokkosSparse::DeviceConfig dev_config_) :
     nGrid(nGrid_), nIter(nIter_), dev_config(dev_config_) {}
 
   template <typename ArgT>
@@ -301,7 +302,7 @@ struct PerformanceDriverOp {
 template <class Storage, int entry_min, int entry_max, int entry_step>
 void performance_test_driver( const int nGrid,
                               const int nIter,
-                              Kokkos::DeviceConfig dev_config)
+                              KokkosSparse::DeviceConfig dev_config)
 {
   std::cout.precision(8);
   std::cout << std::endl

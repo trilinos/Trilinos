@@ -60,7 +60,6 @@
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
-#include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor.hpp>

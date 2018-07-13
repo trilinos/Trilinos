@@ -58,7 +58,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 
   if( Nlocal != Nrows ) {
     fprintf( stderr,
-	     "*ML*ERR* number of rows and lenght of graph_decomposition\n"
+	     "*ML*ERR* number of rows and length of graph_decomposition\n"
 	     "*ML*ERR* differs (%d - %d)\n"
 	     "*ML*ERR* (file %s, line %d)\n",
 	     Nrows,

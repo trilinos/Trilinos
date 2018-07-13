@@ -100,53 +100,5 @@ RCP<const Epetra_Comm> getEpetraComm()
 }
 
 
-void createEpetraVsAndMap(const Thyra::Ordinal localDim_in,
-  const Ptr<RCP<const Thyra::VectorSpaceBase<double> > > &vs,
-  const Ptr<RCP<const Epetra_Map> > &epetra_map,
-  const int emptyProcRootRank = -1
-  )
-{
-  const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
-  const int procRank = epetra_comm->MyPID();
-  const Thyra::Ordinal localDim = (procRank == emptyProcRootRank ? 0 : localDim_in);
-  *epetra_map = rcp(new Epetra_Map(-1, as<int>(localDim), 0, *epetra_comm));
-  *vs =  Thyra::create_VectorSpace(*epetra_map);
-}
-
-
-RCP<Epetra_CrsMatrix> getEpetraMatrix(int numRows, int numCols, double shift=0.0) 
-{
-
-  const RCP<const Epetra_Comm> comm = getEpetraComm();
-
-  const Epetra_Map rowMap(numRows, 0, *comm);
-  const Epetra_Map domainMap(numCols, numCols, 0, *comm);
- 
-  const RCP<Epetra_CrsMatrix> epetraCrsM =
-    rcp(new Epetra_CrsMatrix(Copy, rowMap, numCols));
-
-  Array<double> rowEntries(numCols);
-  Array<int> columnIndices(numCols);
-  for (int j = 0; j < numCols; ++j) {
-    columnIndices[j] = j;
-  }
-
-  const int numLocalRows = rowMap.NumMyElements();
-
-  for (int i = 0; i < numLocalRows; ++i) {
-    
-    for (int j = 0; j < numCols; ++j) {
-      rowEntries[j] = as<double>(i+1) + as<double>(j+1) / 10 + shift;
-    }
-
-    epetraCrsM->InsertMyValues( i, numCols, &rowEntries[0], &columnIndices[0] );
-
-  }
-
-  epetraCrsM->FillComplete(domainMap, rowMap);
-
-  return epetraCrsM;
-}
-
 
 } // namespace

@@ -66,15 +66,15 @@ public:
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
      globalIndexer_(indexer) {}
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                        const Teuchos::ParameterList& p) {}
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* indexer */,
+                        const Teuchos::ParameterList& /* p */) {}
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm) {}
+  void postRegistrationSetup(typename TRAITS::SetupData /* d */,
+                             PHX::FieldManager<TRAITS>& /* vm */) {}
 
-  void preEvaluate(typename TRAITS::PreEvalData d) {}
+  void preEvaluate(typename TRAITS::PreEvalData /* d */) {}
 
-  void evaluateFields(typename TRAITS::EvalData d) {}
+  void evaluateFields(typename TRAITS::EvalData /* d */) {}
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }

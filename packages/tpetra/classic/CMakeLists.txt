@@ -23,11 +23,11 @@ ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_OpenMPNode
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable the KokkosClassic::DoNotUse::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  DO NOT SET THIS!  This Node type was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set Trilinos_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest."
+  "Enable the KokkosClassic::DoNotUse::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  DO NOT SET THIS!  This Node type was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest."
   OFF
   )
 IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set Trilinos_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE( 

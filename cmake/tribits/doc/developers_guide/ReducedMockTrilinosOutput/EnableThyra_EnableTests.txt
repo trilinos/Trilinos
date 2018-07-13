@@ -30,7 +30,8 @@ Enabling all tests and/or examples that have not been explicitly disabled becaus
 -- Setting Thyra_ENABLE_EXAMPLES=ON
 
 Enabling all required (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON) \
- upstream SE packages for current set of enabled packages ...
+ upstream SE packages for current set of enabled packages \
+ (Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF) ...
 
 -- WARNING: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra \
  has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF

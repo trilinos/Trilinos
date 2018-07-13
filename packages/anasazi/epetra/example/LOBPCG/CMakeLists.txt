@@ -45,6 +45,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
   )
 
+IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+
+  TRIBITS_ADD_EXECUTABLE(
+    Epetra_LOBPCG_File_Ifpack_example
+    SOURCES LOBPCGEpetraExFilePrecIfpack.cpp
+    COMM serial mpi
+  )
+
+ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
+
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
 ENDIF(${PACKAGE_NAME}_ENABLE_EpetraExt)
 

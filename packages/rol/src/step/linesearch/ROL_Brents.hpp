@@ -60,23 +60,23 @@ private:
   int niter_;
   bool test_;
 
-  Teuchos::RCP<Vector<Real> > xnew_; 
-//  Teuchos::RCP<LineSearch<Real> > btls_;
+  ROL::Ptr<Vector<Real> > xnew_; 
+//  ROL::Ptr<LineSearch<Real> > btls_;
 
 public:
 
   virtual ~Brents() {}
 
   // Constructor
-  Brents( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+  Brents( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real oem10(1.e-10);
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
     tol_ = list.get("Tolerance",oem10);
     niter_ = list.get("Iteration Limit",1000);
     test_ = list.get("Run Test Upon Initialization",true);
 //    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
-//    btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
+//    btls_ = ROL::makePtr<BackTracking<Real>>(parlist);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
@@ -107,8 +107,8 @@ public:
     // TODO: Bracketing
 
     // Run Brents
-    Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
-      = Teuchos::rcp(new typename LineSearch<Real>::Phi(*xnew_,x,s,obj,con));
+    ROL::Ptr<typename LineSearch<Real>::ScalarFunction> phi
+      = ROL::makePtr<typename LineSearch<Real>::Phi>(*xnew_,x,s,obj,con);
     int neval = 0;
     Real A(0), B = alpha;
     run_brents(neval, fval, alpha, *phi, A, B);
@@ -209,8 +209,8 @@ private:
   };
 
   bool test_brents(void) const {
-    Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
-       = Teuchos::rcp(new testFunction());
+    ROL::Ptr<typename LineSearch<Real>::ScalarFunction> phi
+       = ROL::makePtr<testFunction>();
     Real A(0), B(0), alpha(0), fval(0);
     Real error(0), error_i(0);
     Real zero(0), two(2), three(3);

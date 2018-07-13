@@ -1,7 +1,9 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
 \begin_document
 \begin_header
+\save_transient_properties true
+\origin unavailable
 \textclass article
 \use_default_options true
 \maintain_unincluded_children false
@@ -9,16 +11,16 @@
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
-
+\font_sf_scale 100 100
+\font_tt_scale 100 100
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -29,15 +31,24 @@
 \use_hyperref false
 \papersize default
 \use_geometry false
-\use_amsmath 1
-\use_esint 1
-\use_mhchem 1
-\use_mathdots 1
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
 \cite_engine basic
+\cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 1
 \index Index
 \shortcut idx
@@ -60,8 +71,39 @@
 
 \begin_body
 
+\begin_layout Standard
+\begin_inset Newpage cleardoublepage
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Introduction
+\end_layout
+
+\begin_layout Quote
+
+\series bold
+Notice:
+\series default
+ Once again before beginning this report, we would like to bring the readers
+ attention to the fact that this document has been released in an 
+\begin_inset Quotes eld
+\end_inset
+
+
+\series bold
+as-is
+\series default
+
+\begin_inset Quotes erd
+\end_inset
+
+ condition, and therefore is in an incomplete state and has many readability
+ issues.
+ However it is hoped that the information contained in this document will
+ still be helpful to users in their application development.
 \end_layout
 
 \begin_layout Standard
@@ -69,6 +111,13 @@ Here we design and describe a set of C++ interfaces and concrete implementations
  for the solution of a broad class of transient ordinary differential equations
  (ODEs) and differential algebraic equations (DAEs) in a consistent manner.
  
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage cleardoublepage
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -89,7 +138,7 @@ Here we describe the basic mathematical form of a general nonlinear DAE
  of fully implicit DAEs of the form 
 \begin_inset Formula 
 \begin{eqnarray}
-f(\dot{x},x,t) & = & 0,\;\mbox{for}\; t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
+f(\dot{x},x,t) & = & 0,\;\mbox{for}\;t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
 x(t_{0}) & = & x_{0}\label{rythmos:eq:dae:ic}
 \end{eqnarray}
 
@@ -420,8 +469,8 @@ Another formulation we will consider is the semi-explicit DAE formulation:
 \begin_inset Formula 
 \begin{equation}
 \begin{array}{rcl}
-\dot{y} & = & f(y,z,t)\;\mbox{for}\; t\in[t_{0},t_{f}],\\
-0 & = & g(y,z,t)\;\mbox{where}\; x=[y,z],\\
+\dot{y} & = & f(y,z,t)\;\mbox{for}\;t\in[t_{0},t_{f}],\\
+0 & = & g(y,z,t)\;\mbox{where}\;x=[y,z],\\
 x(t_{0}) & = & x_{0}.
 \end{array}\label{rythmos:eq:dae:semiexplicit}
 \end{equation}
@@ -440,7 +489,7 @@ reference "rythmos:eq:dae"
 
 \end_inset
 
-)--(
+)–(
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "rythmos:eq:dae:ic"

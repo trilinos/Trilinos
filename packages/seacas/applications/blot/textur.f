@@ -1,7 +1,7 @@
-C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software.
-C         
+C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
+C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
@@ -13,7 +13,7 @@ C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -46,7 +46,7 @@ C ... Saturation is used to pass in the minimum hue for some maps.
       end if
 
       ratio = (1.0 / huemin) ** (1.0 / (ncolors-1))
-      do 10 x = 0, ncolors-1
+      do x = 0, ncolors-1
         hue  = float(x) / float(ncolors)
         ihue = int(ncolors*hue)
 C ... Linear hue map
@@ -64,6 +64,8 @@ C ... Logarithmic hue map
         if (map .eq. RAINBW) THEN
           huetmp = 1.0 - hue
           call rainbow(huetmp, sat, 1., red, green, blue)
+        else if (map .eq. VIRDIS) THEN
+          call viridis(x, ncolors, red, green, blue)
         else if (map .eq. TERRAIN) THEN
           h = 3*hue
           if(h .LT. 0.25) THEN
@@ -112,7 +114,7 @@ C ... Logarithmic hue map
         green = max(0.0, min(green, 1.0))
         blue  = max(0.0, min(blue,  1.0))
         CALL PLTCOL (8+x, red, green, blue)
- 10   continue
+      end do
       return
       end
       

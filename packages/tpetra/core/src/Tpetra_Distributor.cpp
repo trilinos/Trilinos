@@ -42,6 +42,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include <numeric>
 
 namespace Tpetra {
   namespace Details {
@@ -86,10 +87,10 @@ namespace Tpetra {
     }
   } // namespace Details
 
-  Array<std::string>
+  Teuchos::Array<std::string>
   distributorSendTypes ()
   {
-    Array<std::string> sendTypes;
+    Teuchos::Array<std::string> sendTypes;
     sendTypes.push_back ("Isend");
     sendTypes.push_back ("Rsend");
     sendTypes.push_back ("Send");
@@ -144,6 +145,7 @@ namespace Tpetra {
                      const Teuchos::RCP<Teuchos::FancyOStream>& out,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
     this->out_ = out.is_null () ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out;
     if (! plist.is_null ()) {
@@ -154,11 +156,13 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
+    }
+    if (verbose) {
       Teuchos::OSTab tab (out_);
       std::ostringstream os;
       os << comm_->getRank ()
@@ -288,12 +292,15 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
       Teuchos::OSTab tab (out_);
+    }
+    if (verbose) {
       std::ostringstream os;
       os << comm_->getRank ()
          << ": Distributor copy ctor done" << std::endl;
@@ -350,13 +357,21 @@ namespace Tpetra {
 
   Distributor::~Distributor()
   {
-    // We shouldn't have any outstanding communication requests at
-    // this point.
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      "Tpetra::Distributor: Destructor called with " << requests_.size()
-      << " outstanding posts (unfulfilled communication requests).  There "
-      "should be none at this point.  Please report this bug to the Tpetra "
-      "developers.");
+    // mfh 10 May 2017: We shouldn't have any outstanding
+    // communication requests at this point.  It would be legitimate
+    // to check here, and report an error if requests_.size() != 0.
+    // However, throwing in a destructor is bad form.  See #1303:
+    //
+    // https://github.com/trilinos/Trilinos/issues/1303
+    //
+    // If someone wants to restore the error check, please don't
+    // throw; instead, use MPI_Abort (or exit() in a non-MPI build).
+
+    // TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    //   "Tpetra::Distributor: Destructor called with " << requests_.size()
+    //   << " outstanding posts (unfulfilled communication requests).  There "
+    //   "should be none at this point.  Please report this bug to the Tpetra "
+    //   "developers.");
   }
 
   void
@@ -605,8 +620,9 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     const int myRank = comm_->getRank ();
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": doWaits: # reqs = "
          << requests_.size () << endl;
@@ -647,7 +663,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": doWaits done" << endl;
       *out_ << os.str ();
@@ -818,6 +834,7 @@ namespace Tpetra {
   Distributor::computeReceives ()
   {
     using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::CommStatus;
     using Teuchos::CommRequest;
@@ -839,8 +856,9 @@ namespace Tpetra {
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = 2;
     const int tag = this->getTag (pathTag);
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: "
         "{selfMessage_: " << (selfMessage_ ? "true" : "false")
@@ -874,7 +892,7 @@ namespace Tpetra {
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << myRank << ": computeReceives: Calling reduce and scatter" << endl;
         *out_ << os.str ();
@@ -984,7 +1002,7 @@ namespace Tpetra {
     const int anySourceProc = -1;
 #endif
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: Posting "
          << actualNumReceives << " irecvs" << endl;
@@ -1000,7 +1018,7 @@ namespace Tpetra {
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
       requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << myRank << ": computeReceives: "
           "Posted any-proc irecv w/ specified tag " << tag << endl;
@@ -1008,7 +1026,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: "
         "posting " << numSends_ << " sends" << endl;
@@ -1029,7 +1047,7 @@ namespace Tpetra {
         // lengthsTo_[i] blocks of packets.
         const size_t* const lengthsTo_i = &lengthsTo_[i];
         send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << myRank << ": computeReceives: "
             "Posted send to Proc " << procsTo_[i] << " w/ specified tag "
@@ -1049,7 +1067,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: waitAll on "
          << requests.size () << " requests" << endl;
@@ -1091,7 +1109,7 @@ namespace Tpetra {
       --numReceives_;
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: done" << endl;
       *out_ << os.str ();
@@ -1110,7 +1128,8 @@ namespace Tpetra {
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
-    if (debug_) {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    if (verbose) {
       std::ostringstream os;
       os << myProcID << ": createFromSends" << endl;
       *out_ << os.str ();
@@ -1414,7 +1433,7 @@ namespace Tpetra {
     // Invert map to see what msgs are received and what length
     computeReceives();
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myProcID << ": createFromSends: done" << endl;
       *out_ << os.str ();
@@ -1426,21 +1445,21 @@ namespace Tpetra {
 
     return totalReceiveLength_;
   }
-  //  template <class Ordinal>
-  void 
-  Distributor::createFromSendsAndRecvs(
-				       const ArrayView<const int> &exportProcIDs,  
-				       const ArrayView<const int> &remoteProcIDs )
+
+  void
+  Distributor::
+  createFromSendsAndRecvs (const Teuchos::ArrayView<const int>& exportProcIDs,
+                           const Teuchos::ArrayView<const int>& remoteProcIDs)
   {
-    // note the exportProcIDs and remoteProcIDs _must_ be a list that has 
-    // an entry for each GID. If the export/remoteProcIDs is taken from 
+    // note the exportProcIDs and remoteProcIDs _must_ be a list that has
+    // an entry for each GID. If the export/remoteProcIDs is taken from
     // the getProcs{From|To} lists that are extracted from a previous distributor,
     // it will generate a wrong answer, because those lists have a unique entry
     // for each processor id. A version of this with lengthsTo and lengthsFrom
-    // should be made.  
+    // should be made.
 
     howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
-    
+
 
     int myProcID = comm_->getRank ();
     int numProcs = comm_->getSize();
@@ -1453,13 +1472,13 @@ namespace Tpetra {
 
     for(size_t i = 0; i < numExportIDs; i++ )
       {
-	if( needSendBuff==0 && i && (exportProcIDs[i] < exportProcIDs[i-1]) )
-	  needSendBuff = 1;
-	if( exportProcIDs[i] >= 0 )
-	  {
-	    ++starts[ exportProcIDs[i] ];
-	    ++numActive;
-	  }
+        if( needSendBuff==0 && i && (exportProcIDs[i] < exportProcIDs[i-1]) )
+          needSendBuff = 1;
+        if( exportProcIDs[i] >= 0 )
+          {
+            ++starts[ exportProcIDs[i] ];
+            ++numActive;
+          }
       }
 
     selfMessage_ = ( starts[myProcID] != 0 ) ? 1 : 0;
@@ -1468,65 +1487,65 @@ namespace Tpetra {
 
     if( needSendBuff ) //grouped by processor, no send buffer or indicesTo_ needed
       {
-	if (starts[0] == 0 ) {
-	  numSends_ = 0;
-	}
-	else {
-	  numSends_ = 1;
-	}
-	for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
-	       im1=starts.begin();
-	     i != starts.end(); ++i)
-	  {
-	    if (*i != 0) ++numSends_;
-	    *i += *im1;
-	    im1 = i;
-	  }
-	// starts[i] now contains the number of exports to procs 0 through i
+        if (starts[0] == 0 ) {
+          numSends_ = 0;
+        }
+        else {
+          numSends_ = 1;
+        }
+        for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
+               im1=starts.begin();
+             i != starts.end(); ++i)
+          {
+            if (*i != 0) ++numSends_;
+            *i += *im1;
+            im1 = i;
+          }
+        // starts[i] now contains the number of exports to procs 0 through i
 
-	for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
-	       i=starts.rbegin()+1;
-	     i != starts.rend(); ++i)
-	  {
-	    *ip1 = *i;
-	    ip1 = i;
-	  }
-	starts[0] = 0;
-	// starts[i] now contains the number of exports to procs 0 through
-	// i-1, i.e., all procs before proc i
+        for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
+               i=starts.rbegin()+1;
+             i != starts.rend(); ++i)
+          {
+            *ip1 = *i;
+            ip1 = i;
+          }
+        starts[0] = 0;
+        // starts[i] now contains the number of exports to procs 0 through
+        // i-1, i.e., all procs before proc i
 
-	indicesTo_.resize(numActive);
+        indicesTo_.resize(numActive);
 
-	for (size_t i = 0; i < numExportIDs; ++i) {
-	  if (exportProcIDs[i] >= 0) {
-	    // record the offset to the sendBuffer for this export
-	    indicesTo_[starts[exportProcIDs[i]]] = i;
-	    // now increment the offset for this proc
-	    ++starts[exportProcIDs[i]];
-	  }
-	}
-	for (int proc = numProcs-1; proc != 0; --proc) {
-	  starts[proc] = starts[proc-1];
-	}
-	starts.front() = 0;
-	starts[numProcs] = numActive;
-	procsTo_.resize(numSends_);
-	startsTo_.resize(numSends_);
-	lengthsTo_.resize(numSends_);
-	maxSendLength_ = 0;
-	size_t snd = 0;
-	for (int proc = 0; proc < numProcs; ++proc ) {
-	  if (starts[proc+1] != starts[proc]) {
-	    lengthsTo_[snd] = starts[proc+1] - starts[proc];
-	    startsTo_[snd] = starts[proc];
-	    // record max length for all off-proc sends
-	    if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
-	      maxSendLength_ = lengthsTo_[snd];
-	    }
-	    procsTo_[snd] = proc;
-	    ++snd;
-	  }
-	}
+        for (size_t i = 0; i < numExportIDs; ++i) {
+          if (exportProcIDs[i] >= 0) {
+            // record the offset to the sendBuffer for this export
+            indicesTo_[starts[exportProcIDs[i]]] = i;
+            // now increment the offset for this proc
+            ++starts[exportProcIDs[i]];
+          }
+        }
+        for (int proc = numProcs-1; proc != 0; --proc) {
+          starts[proc] = starts[proc-1];
+        }
+        starts.front() = 0;
+        starts[numProcs] = numActive;
+        procsTo_.resize(numSends_);
+        startsTo_.resize(numSends_);
+        lengthsTo_.resize(numSends_);
+        maxSendLength_ = 0;
+        size_t snd = 0;
+        for (int proc = 0; proc < numProcs; ++proc ) {
+          if (starts[proc+1] != starts[proc]) {
+            lengthsTo_[snd] = starts[proc+1] - starts[proc];
+            startsTo_[snd] = starts[proc];
+            // record max length for all off-proc sends
+            if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
+              maxSendLength_ = lengthsTo_[snd];
+            }
+            procsTo_[snd] = proc;
+            ++snd;
+          }
+        }
       }
     else {
       // grouped by proc, no send buffer or indicesTo_ needed
@@ -1606,8 +1625,8 @@ namespace Tpetra {
       int jlast=j;
       procsFrom_[i]  = recv_list[i];
       startsFrom_[i] = j;
-      for( ; j<(size_t)remoteProcIDs.size() && 
-	     remoteProcIDs[jlast]==remoteProcIDs[j]  ; j++){;}
+      for( ; j<(size_t)remoteProcIDs.size() &&
+             remoteProcIDs[jlast]==remoteProcIDs[j]  ; j++){;}
       lengthsFrom_[i] = j-jlast;
     }
     totalReceiveLength_ = remoteProcIDs.size();
@@ -1619,5 +1638,5 @@ namespace Tpetra {
 
     numReceives_-=selfMessage_;
   }
-  
+
 } // namespace Tpetra

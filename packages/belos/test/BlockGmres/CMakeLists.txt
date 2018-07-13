@@ -11,6 +11,18 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     TRIBITS_INCLUDE_DIRECTORIES(../MVOPTester)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      bl_gmres_complex_diag
+      SOURCES test_bl_gmres_complex_diag.cpp 
+      COMM serial 
+      ARGS
+        "--verbose --ortho-type=DGKS"
+        "--verbose --ortho-type=ICGS"
+        "--verbose --ortho-type=IMGS"
+      STANDARD_PASS_OUTPUT 
+      XHOST KALLIKRATES
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_gmres_complex_hb
       SOURCES test_bl_gmres_complex_hb.cpp 
       COMM serial mpi

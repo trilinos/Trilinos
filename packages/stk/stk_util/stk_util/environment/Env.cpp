@@ -39,7 +39,7 @@
 #include <limits.h>                     // for PATH_MAX
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for getcwd, sleep
-#include <cstdlib>                      // for exit, EXIT_FAILURE, NULL
+#include <cstdlib>                      // for exit, EXIT_FAILURE
 #include <cstring>                      // for strlen, strcpy
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for cerr, cout
@@ -64,20 +64,16 @@
 
 namespace boost { namespace program_options { class options_description; } }
 
-
-
-
-
 using namespace std;
 
 namespace sierra {
 
 std::string
 format_time(
-  double	t,
-  const char *	format)
+  double t,
+  const char *format)
 {
-  time_t	time = static_cast<time_t>(t);
+  time_t time = static_cast<time_t>(t);
   char s[128];
 
   ::strftime(s, sizeof(s), format, ::localtime(&time));
@@ -87,26 +83,11 @@ format_time(
 
 namespace Env {
 
-  //
-  //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
-  //
-  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
-    if(ver != GEMINI_SCI_UNKNOWN) {
-      GeminiSCIVersionValue = ver;
-    }
-    ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
-    return GeminiSCIVersionValue;
-  }
-    
-
-
 const std::string &
 product_name()
 {
   return stk::EnvData::instance().m_productName;
 }
-
 
 const std::string &
 executable_file()
@@ -114,18 +95,17 @@ executable_file()
   return stk::EnvData::instance().m_executablePath;
 }
 
-
 const std::string &
 startup_date()
 {
   static std::string startup_date;
 
-  if (startup_date.empty())
+  if (startup_date.empty()) {
     startup_date = format_time(stk::EnvData::instance().m_startTime).c_str();
+  }
 
   return startup_date;
 }
-
 
 double
 start_time()
@@ -133,46 +113,19 @@ start_time()
   return stk::EnvData::instance().m_startTime;
 }
 
-
 bool
 developer_mode()
 {
   return !get_param("developer-mode").empty();
 }
 
-
-// Similar to Platform.cpp's get_heap_info, but no 'largest_free' and no log output.
-void get_heap_used(size_t &heap_size)
+void setInputFileName(std::string name) 
 {
-  heap_size = 0;
-
-#if defined(SIERRA_HEAP_INFO)
-
-# if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
-  heap_size = malloc_used();
-  
-# elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
-  static struct mallinfo minfo;
-  minfo = mallinfo();
-  heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
-
-# elif defined(__sun)
-  pstatus_t proc_status;
-
-  std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
-  if (proc) {
-    proc.read(reinterpret_cast<char *>(&proc_status), sizeof(proc_status));
-    heap_size = proc_status.pr_brksize;
-  }
-# endif
-#endif // defined(SIERRA_HEAP_INFO)
-}
-
-void setInputFileName(std::string name) {
   stk::EnvData::instance().m_inputFile = name;
 }
 
-std::string getInputFileName() {
+std::string getInputFileName() 
+{
   return stk::EnvData::instance().m_inputFile;
 }
 
@@ -187,35 +140,23 @@ void set_sm_preprocessing(bool value)
     stk::EnvData::instance().m_checkSmRegion = value;
 }
 
-void set_zapotec(bool value)
-{
-    stk::EnvData::instance().m_isZapotec = value;
-}
-
-bool is_zapotec()
-{
-    return stk::EnvData::instance().m_isZapotec;
-}
-
-
 const std::string &
 architecture()
 {
   return get_param("architecture");
 }
 
-
 const std::string
-working_directory() {
+working_directory() 
+{
   char cwd[PATH_MAX];
   std::string directory = get_param("directory");
-  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != NULL) {
+  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != nullptr) {
     directory = cwd;
     directory += '/';
   }
   return directory;
 }
-
 
 std::ostream &
 output()
@@ -223,19 +164,17 @@ output()
   return stk::EnvData::instance().m_output;
 }
 
-
 std::ostream &
 outputP0()
 {
   return *stk::EnvData::instance().m_outputP0;
 }
 
-
 std::ostream &
-outputNull() {
+outputNull() 
+{
   return stk::EnvData::instance().m_outputNull;
 }
-
 
 const char *
 section_separator()
@@ -268,15 +207,7 @@ wall_now()
 double
 cpu_now()
 {
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
-
-#elif ! defined(__PGI)
+#if ! defined(__PGI)
   struct rusage my_rusage;
 
   getrusage(RUSAGE_SELF, &my_rusage);
@@ -288,10 +219,9 @@ cpu_now()
 #endif
 }
 
-
 std::string
 section_title(
-  const std::string &	title)
+  const std::string &title)
 {
   static size_t s_sectionSeparatorLength = std::strlen(section_separator());
 
@@ -301,12 +231,13 @@ section_title(
   return strout.str();
 }
 
-
-int parallel_size() {
+int parallel_size() 
+{
   return stk::EnvData::instance().m_parallelSize;
 }
 
-int parallel_rank() {
+int parallel_rank() 
+{
   return stk::EnvData::instance().m_parallelRank;
 }
 
@@ -328,15 +259,8 @@ parallel_world_comm()
   return stk::EnvData::instance().m_worldComm;
 }
 
-int parallel_lag_master() {
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_LAG].m_master;
-}
-
-int parallel_fluid_master() {
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_FLUID].m_master;
-}
-
-int peer_group() {
+int peer_group() 
+{
   return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
 }
 
@@ -346,9 +270,8 @@ is_comm_valid()
   stk::EnvData &env_data = stk::EnvData::instance();
   if (env_data.m_parallelComm == MPI_COMM_NULL) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 void
@@ -369,7 +292,6 @@ request_shutdown(bool shutdown)
   stk::EnvData::instance().m_shutdownRequested = shutdown;
 }
 
-
 bool
 is_shutdown_requested()
 {
@@ -385,8 +307,8 @@ is_shutdown_requested()
   return shutdown_requested != 0;
 }
 
-
-void abort() {
+void abort() 
+{
   stk::EnvData &env_data = stk::EnvData::instance();
 
   // Cannot be sure of parallel synchronization status; therefore, no communications can
@@ -407,18 +329,17 @@ void abort() {
   std::cerr.flush();
   std::cout.flush();
 
-  ::sleep(1);					// Give the other processors a chance at
-						// catching up, seems to help hanging problems.
+  ::sleep(1); // Give the other processors a chance at
+              // catching up, seems to help hanging problems.
 #if defined(STK_HAS_MPI)
-  MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER);	// First try to die
+  MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER); // First try to die
 #endif
-  std::exit( EXIT_FAILURE );                    // Second try to die
+  std::exit( EXIT_FAILURE );                         // Second try to die
 }
-
 
 const std::string &
 get_param(
-  const char * const	option)
+  const char * const option)
 {
   if (stk::EnvData::instance().m_vm.count(option)) {
     if (stk::EnvData::instance().m_vm[option].as<std::string>().empty())
@@ -430,12 +351,10 @@ get_param(
     return stk::EnvData::instance().m_emptyString;
 }
 
-
 void
 set_param(
   const char *          option,
   const std::string &   value) {
-
 
   namespace opt = boost::program_options;
 

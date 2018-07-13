@@ -61,8 +61,6 @@ public:
    *
    */
   DiagWriterParser() {
-    /* %TRACE[NONE]% */  /* %TRACE% */
-
     mask("resources", (Diag::PrintMask) (LOG_RESOURCE), "Display resource assignments");
     mask("plugins", (Diag::PrintMask) (LOG_PLUGIN), "Display plugin information");
     mask("global-variables", (Diag::PrintMask) (LOG_GLOBAL_VARIABLE), "Display global variable operations");
@@ -81,9 +79,7 @@ theDiagWriterParser()
 stk::diag::Writer &
 theDiagWriter()
 {
-  /* %TRACE[NONE]% */  /* %TRACE% */
   static stk::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), theDiagWriterParser().parse(std::getenv("SIERRA_SLIBOUT")));
-
   return s_diagWriter;
 }
 

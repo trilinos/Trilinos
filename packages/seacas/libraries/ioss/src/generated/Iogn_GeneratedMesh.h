@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -35,15 +35,16 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
+#include <array>
+#include <cstddef>           // for size_t
+#include <cstdint>           // for int64_t
 #include <map>               // for map, etc
-#include <stddef.h>          // for size_t
-#include <stdint.h>          // for int64_t
 #include <string>            // for string
 #include <utility>           // for pair
 #include <vector>            // for vector
 
 namespace Iogn {
-  typedef std::vector<int64_t> MapVector;
+  using MapVector = std::vector<int64_t>;
 
   class GeneratedMesh
   {
@@ -490,7 +491,7 @@ namespace Iogn {
     std::vector<ShellLocation> shellBlocks;
     std::vector<ShellLocation> nodesets;
     std::vector<ShellLocation> sidesets;
-    double                     rotmat[3][3];
+    std::array<std::array<double, 3>, 3> rotmat;
     size_t                     numX, numY, numZ;
     size_t                     myNumZ, myStartZ;
 
@@ -508,5 +509,5 @@ namespace Iogn {
     bool doRotation;
     bool createTets;
   };
-}
+} // namespace Iogn
 #endif

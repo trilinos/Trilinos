@@ -408,7 +408,7 @@ namespace stk_classic {
         clp.setOption("dout",         &dout_opt,        "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path");
         clp.setOption("dw",           &dw_opt,          dw_option_mask.describe().c_str());
         clp.setOption("timer",        &timer_opt,       timer_option_mask.describe().c_str());
-        clp.setOption("runtest",      &runtest_opt,     "runtest pid file");;
+        clp.setOption("runtest",      &runtest_opt,     "runtest pid file");
         //("exit", "do nothing and then exit");
 
     }

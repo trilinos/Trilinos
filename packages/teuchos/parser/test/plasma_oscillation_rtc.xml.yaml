@@ -1,0 +1,279 @@
+%YAML 1.1
+---
+ANONYMOUS:
+  Mesh: 
+    Source: Inline Mesh
+    Exodus File: 
+      File Name: plasma_oscillation_rtc.exo
+    Inline Mesh: 
+      Mesh Dimension: 3
+      Mesh Factory Parameter List: 
+        X Blocks: 1
+        Y Blocks: 1
+        Z Blocks: 1
+        X Elements: 50
+        Y Elements: 2
+        Z Elements: 2
+        X0: 0.00000000000000000e+00
+        Y0: 0.00000000000000000e+00
+        Z0: 0.00000000000000000e+00
+        Xf: 1.00000000000000002e-02
+        Yf: 4.00000000000000019e-04
+        Zf: 4.00000000000000019e-04
+        Periodic BCs: 
+          Count: 9
+          Periodic Condition 1: 'xy-coord 1e-8: back;front'
+          Periodic Condition 2: 'xz-coord 1e-8: top;bottom'
+          Periodic Condition 3: 'yz-coord 1e-8: left;right'
+          Periodic Condition 4: 'xy-edge 1e-8: back;front'
+          Periodic Condition 5: 'xz-edge 1e-8: top;bottom'
+          Periodic Condition 6: 'yz-edge 1e-8: left;right'
+          Periodic Condition 7: 'xy-face 1e-8: back;front'
+          Periodic Condition 8: 'xz-face 1e-8: top;bottom'
+          Periodic Condition 9: 'yz-face 1e-8: left;right'
+  Block ID to Physics ID Mapping: 
+    eblock-0_0_0: Plasma
+  Assembly: 
+    Workset Size: 100
+  Physics Blocks: 
+    Plasma: 
+      child0: 
+        Type: CFD
+        Formulation: Conservative Variable
+        Momentum Basis Type: HGrad
+        Momentum Basis Order: 1
+        Continuity Basis Type: HGrad
+        Continuity Basis Order: 1
+        Integration Order: 2
+        Model ID: electron fluid model
+        Prefix: ELECTRON_
+        USE SOURCE TERM: OFF
+        ADD LORENTZ FORCE TERM: SOURCE
+      child1: 
+        Type: EB Formulation
+        Magnetic Basis Type: HDiv
+        Magnetic Basis Order: 1
+        Electric Basis Type: HCurl
+        Electric Basis Order: 1
+        Integration Order: 2
+        Model ID: magnetics model
+        Prefix: ''
+        Use Displacement Current: true
+        Current Definition: MULTIFLUID
+        Compute Errors: false
+        Fluid Prefix List: ELECTRON_
+  Closure Models: 
+    electron fluid model: 
+      ELECTRON_PRESSURE: 
+        Value: 0.00000000000000000e+00
+      ELECTRON_LORENTZ_FORCE: 
+        Value: MULTIFLUID LORENTZ FORCE SOURCE
+        Species charge: -1.60217656999999993e-19
+        Species mass: 9.10938290999999993e-31
+        Prefix: ELECTRON_
+      ELECTRON_STRESS_TENSOR: 
+        Value: NEWTONIAN
+      ELECTRON_VISCOSITY: 
+        Value: 0.00000000000000000e+00
+      Global Statistics: 
+        Value: 'ELECTRON_RHO_UX,ELECTRON_RHO_UY,ELECTRON_RHO_UZ,ELECTRON_DENSITY,ELECTRON_PRESSURE'
+    magnetics model: 
+      PERMITTIVITY: 
+        Value: 8.85418782000000038e-12
+      PERMEABILITY: 
+        Value: 1.25663705999999993e-06
+      Global Statistics: 
+        Value: 'E0X,E0Y,E0Z,BX,BY,BZ'
+  Boundary Conditions: { }
+  Initial Conditions: 
+    eblock-0_0_0: 
+      ELECTRON_DENSITY: 
+        Type: RTC
+        Basis Field: ELECTRON_DENSITY
+        Body: |2-
+                             float N = 1.0e18;
+                              float m = 9.10938291e-31;
+                              float k = 200.0;
+                              float delta = 0.01;
+                              float pi = acos(-1.0);
+                              ELECTRON_DENSITY = N*m*( 1.0 + delta*sin(pi*k*xin) );
+      E_edge_Vector: 
+        Type: RTC
+        Basis Field: E_edge
+        Vector Field: true
+        Body: |-
+          
+                              float N = 1.0e18;
+                              float q = -1.60217657e-19;
+                              float k = 200.0;
+                              float delta = 0.01;
+                              float pi = acos(-1.0);
+                              float epsilon = 8.85418782e-12;
+                              E_edge_Vector[0] = -delta*q*N/pi/k/epsilon*cos(pi*k*xin);
+                              E_edge_Vector[1] = 0.0;
+                              E_edge_Vector[2] = 0.0;
+        Project To Edges: true
+        Edge DOF Name: E_edge
+      B_face: 
+        Value: 0.00000000000000000e+00
+      ELECTRON_RHO_UX: 
+        Value: 0.00000000000000000e+00
+      ELECTRON_RHO_UY: 
+        Value: 0.00000000000000000e+00
+      ELECTRON_RHO_UZ: 
+        Value: 0.00000000000000000e+00
+  Output: 
+    File Name: plasma_oscillation_rtc.exo
+    Cell Average Quantities: 
+      eblock-0_0_0: 'ELECTRON_UX,ELECTRON_UY,ELECTRON_UZ,ELECTRON_PRESSURE'
+  Options: 
+    Build Discrete Gradient: false
+    Edge Basis Name: E_edge
+    Nodal Basis Name: ELECTRON_DENSITY
+    Write Volume Assembly Graphs: false
+    Volume Assembly Graph Prefix: total-energy-cavity-
+  Solution Control: 
+    Piro Solver: Rythmos
+    Compute Sensitivities: false
+    Jacobian Operator: Have Jacobian
+    LOCA: 
+      Bifurcation: { }
+      Constraints: { }
+      Predictor: 
+        Method: Constant
+      Stepper: 
+        Continuation Method: Natural
+        Initial Value: 1.00000000000000000e+00
+        Continuation Parameter: Parameter 0
+        Max Steps: 6
+        Max Value: 1.22500000000000000e+01
+        Min Value: 5.00000000000000000e-01
+        Compute Eigenvalues: true
+        Eigensolver: 
+          Method: Anasazi
+          Operator: Shift-Invert
+          Num Blocks: 3
+          Num Eigenvalues: 1
+          Block Size: 1
+          Maximum Restarts: 0
+          Shift: 1.00000000000000000e+00
+      Step Size: 
+        Initial Step Size: 5.00000000000000000e-01
+        Aggressiveness: 2.00000000000000000e+00
+    NOX: 
+      Direction: 
+        Method: Newton
+        Newton: 
+          Forcing Term Method: Constant
+          Rescue Bad Newton Solve: true
+          Linear Solver: 
+            Tolerance: 1.00000000000000002e-08
+          Stratimikos Linear Solver: 
+            NOX Stratimikos Options: { }
+            Stratimikos: 
+              Linear Solver Type: AztecOO
+              Linear Solver Types: 
+                AztecOO: 
+                  Forward Solve: 
+                    AztecOO Settings: 
+                      Aztec Solver: GMRES
+                      Convergence Test: r0
+                      Size of Krylov Subspace: 100
+                      Output Frequency: 10
+                    Max Iterations: 200
+              Preconditioner Type: ML
+              Preconditioner Types: 
+                Ifpack: 
+                  Overlap: 1
+                  Prec Type: ILU
+                  Ifpack Settings: 
+                    'fact: drop tolerance': 0.00000000000000000e+00
+                    'fact: ilut level-of-fill': 1.00000000000000000e+00
+                    'fact: level-of-fill': 1
+                    'schwarz: reordering type': rcm
+                ML: 
+                  Base Method Defaults: SA
+                  ML Settings: 
+                    ML output: 10
+                    prec type: MGW
+                    print unused: 0
+                    PDE equations: 1
+                    max levels: 10
+                    cycle applications: 1
+                    'aggregation: threshold': 0.00000000000000000e+00
+                    'aggregation: type': Uncoupled
+                    'aggregation: damping factor': 0.00000000000000000e+00
+                    'aggregation: block scaling': false
+                    'energy minimization: enable': false
+                    'energy minimization: type': 2
+                    'smoother: type': IFPACK
+                    'smoother: ifpack type': ILU
+                    'smoother: ifpack overlap': 0
+                    'smoother: ifpack list': 
+                      'fact: level-of-fill': 3
+                      'schwarz: reordering type': rcm
+                    'smoother: damping factor': 1.00000000000000000e+00
+                    'smoother: pre or post': both
+                    'smoother: sweeps': 1
+                    'coarse: max size': 500
+                    'coarse: type': Amesos-KLU
+      Line Search: 
+        Full Step: 
+          Full Step: 1.00000000000000000e+00
+        Method: Full Step
+      Nonlinear Solver: Line Search Based
+      Printing: 
+        Output Precision: 3
+        Output Processor: 0
+        Output Information: 
+          Error: true
+          Warning: true
+          Inner Iteration: true
+          Outer Iteration: true
+          Outer Iteration StatusTest: true
+          Test Details: true
+          Parameters: true
+          Details: true
+          Linear Solver Details: true
+          Stepper Iteration: true
+          Stepper Details: true
+          Stepper Parameters: true
+      Solver Options: 
+        Status Test Check Type: Complete
+      Thyra Group Options: 
+        Function Scaling: Row Sum
+      Status Tests: 
+        Test Type: Combo
+        Combo Type: OR
+        Number of Tests: 3
+        Test 0: 
+          Test Type: Combo
+          Combo Type: AND
+          Number of Tests: 2
+          Test 0: 
+            Test Type: NormF
+            Tolerance: 1.00000000000000002e-08
+          Test 1: 
+            Test Type: RelativeNormF
+            Tolerance: 1.00000000000000002e-08
+        Test 1: 
+          Test Type: MaxIters
+          Maximum Iterations: 20
+        Test 2: 
+          Test Type: FiniteValue
+    Rythmos: 
+      Nonlinear Solver Type: NOX
+      Final Time: 3.34125479999999989e-10
+      Stepper Type: Implicit RK
+      Rythmos Stepper: 
+        Type: SDIRK
+        Stage Count: 2
+        Order: 2
+      Stratimikos: { }
+      Rythmos Integration Control: 
+        Take Variable Steps: false
+        Fixed dt: 6.96094750000000031e-12
+      Rythmos Integrator: 
+        VerboseObject: 
+          Verbosity Level: medium
+...

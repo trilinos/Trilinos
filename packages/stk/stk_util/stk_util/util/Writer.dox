@@ -68,7 +68,6 @@
 ///       mask("utility",         (unsigned long) (LOG_UTILITY),         "Display equation system utility information");
 ///       mask("pre_assembly",    (unsigned long) (LOG_PREASSEMBLY),     "Display pre-assembly diagnostic information");
 ///       mask("expression_dump", (unsigned long) (LOG_EXPRESSION_DUMP), "Display the values for every expression and its sensitivities");
-///       mask("calore",          (unsigned long) (LOG_CALORE),          "Display additional calore output (hack)");
 ///       mask("ccfvm",           (unsigned long) (LOG_CCFVM),           "Display additional ccfvm output (hack)");
 ///       mask("user-sub",        (unsigned long) (LOG_USER_SUB),        "Print user subroutine execution diagnostics");
 ///     }

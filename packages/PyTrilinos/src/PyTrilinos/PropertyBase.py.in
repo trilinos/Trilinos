@@ -74,7 +74,7 @@ class PropertyBase(object):
       ... 
       >>> bookProps = BookProperties(name='A Tale of Two Cities')
       >>> bookProps.author = 'Charles Dickens'
-      >>> print bookProps
+      >>> print(bookProps)
       price = 9.9900000000000002
       pages = None
       name = 'A Tale of Two Cities'
@@ -84,12 +84,12 @@ class PropertyBase(object):
     def __init__(self, **kwargs):
         # Check for existence of self.props
         if not hasattr(self, 'props'):
-            raise AttributeError, \
-                  "\n'%s', derived from PropertyBase does not have a props\n" \
-                  "attribute, which should be implimented as a static member\n" \
-                  "of '%s', whose keys are attribute names and\n" \
+            raise AttributeError(
+                  "\n'%s', derived from PropertyBase does not have a props\n"
+                  "attribute, which should be implimented as a static member\n"
+                  "of '%s', whose keys are attribute names and\n"
                   "whose values are types." % (self.__class__.__name__,
-                                               self.__class__.__name__)
+                                               self.__class__.__name__))
         # Initialize the props values
         self.initializePropValues()
         # Fill properties with intitial values of None
@@ -118,8 +118,7 @@ class PropertyBase(object):
     def __setattr__(self, name, value):
         # For illegal property names, raise an exception
         if name not in self.props:
-            raise AttributeError, \
-                  "'%s' is not a valid attribute name" % name
+            raise AttributeError("'%s' is not a valid attribute name" % name)
         # For legal value types, assign the property value to the named class
         # attribute
         propSpecs = self.props[name]
@@ -134,20 +133,19 @@ class PropertyBase(object):
         # For illegal value types, raise an exception
         else:
             if len(propSpecs) == 1 and isinstance(propSpecs[0], type):
-                raise TypeError, \
-                      "For attribute '%s', value should be of %s.\n" \
-                      "Got attribute of %s" % (name, propSpecs[0], type(value))
+                raise TypeError(
+                      "For attribute '%s', value should be of %s.\n"
+                      "Got attribute of %s" % (name, propSpecs[0], type(value)))
             else:
-                raise ValueError, \
-                      "For attribute '%s', value '%s'\n" \
-                      "and type %s is not among the enumerated values:\n" \
-                      "%s" % (name, str(value), type(value), str(propSpecs))
+                raise ValueError(
+                      "For attribute '%s', value '%s'\n"
+                      "and type %s is not among the enumerated values:\n"
+                      "%s" % (name, str(value), type(value), str(propSpecs)))
 
     def __getattr__(self, name):
         # For illegal property names, raise an exception
         if name not in self.props:
-            raise AttributeError, \
-                  "'%s' is not a valid attribute name" % name
+            raise AttributeError("'%s' is not a valid attribute name" % name)
         # Return the named property value
         return self.__dict__[name]
 

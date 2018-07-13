@@ -57,6 +57,7 @@
 
 #
 # System imports
+from __future__ import print_function
 from optparse import *
 
 #
@@ -102,7 +103,7 @@ def main():
   X1.Random()
   X2 = Epetra.Vector(Map2)
   X2.Import(X1, Importer, Epetra.Insert)
-  print X2
+  print(X2)
 
   # We now do exactly the same thing, but using an export element,
   # and X1_bis should be equivalent to X1. The printed norm should
@@ -114,12 +115,12 @@ def main():
   X1_bis.Update(-1.0, X1, 1.0)
   Norm = X1_bis.Norm2()
   if Comm.MyPID() == 0:
-    print '||X1 - X1_bis||_2 = ', Norm
+    print('||X1 - X1_bis||_2 = ', Norm)
 
   # synchronize processors
   Comm.Barrier()
 
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 if __name__ == "__main__":
   main()

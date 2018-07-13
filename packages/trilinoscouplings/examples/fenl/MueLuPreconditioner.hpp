@@ -43,7 +43,6 @@
 #define STOKHOS_MUELU_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "SGPreconditioner.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
@@ -52,44 +51,19 @@ namespace Kokkos {
 namespace Example {
 
   template<class S, class LO, class GO, class N>
-  class MueLuPreconditioner :
-    public SGPreconditioner<S, LO, GO, N> {
-
-  public:
-
-    //! Constructor
-    MueLuPreconditioner() {}
-
-    //! Destructor
-    virtual ~MueLuPreconditioner() {}
-
-    //! Setup preconditioner
-    virtual
-    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
-    setupPreconditioner(
-      const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-      const Teuchos::RCP<Teuchos::ParameterList>& mueluParams,
-      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
-    {
-      typedef Tpetra::Operator<S,LO,GO,N> OperatorType;
-      typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
-      Teuchos::RCP<OperatorType> A_op = A;
-      Teuchos::RCP<PreconditionerType> mueluPreconditioner;
-      mueluPreconditioner =
-        MueLu::CreateTpetraPreconditioner(A_op,*mueluParams,coords);
-      return mueluPreconditioner;
-    }
-
-  private:
-
-    //! Private to prohibit copying
-    MueLuPreconditioner(const MueLuPreconditioner&);
-
-    //! Private to prohibit copying
-    MueLuPreconditioner& operator=(const MueLuPreconditioner&);
-
-
-  }; // class MeanBasedPreconditioner
+  Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
+  build_muelu_preconditioner(
+    const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
+    const Teuchos::RCP<Teuchos::ParameterList>& mueluParams,
+    const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
+  {
+    typedef Tpetra::Operator<S,LO,GO,N> OperatorType;
+    typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
+    Teuchos::RCP<OperatorType> A_op = A;
+    Teuchos::RCP<PreconditionerType> mueluPreconditioner =
+      MueLu::CreateTpetraPreconditioner(A_op,*mueluParams,coords);
+    return mueluPreconditioner;
+  }
 
 }
 }

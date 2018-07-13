@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STK_IO_ProcessSetsOrBlocks_h
 #define STK_IO_ProcessSetsOrBlocks_h
 
@@ -31,8 +63,6 @@
 #include "stk_mesh/base/FEMHelpers.hpp"
 
 namespace stk { namespace io {
-
-stk::mesh::EntityId get_side_entity_id(int64_t elem_id, int side_ordinal);
 
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 
@@ -125,11 +155,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
-      if (topo == stk::topology::INVALID_TOPOLOGY) {
-        std::ostringstream msg ;
-        msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
-        throw std::runtime_error( msg.str() );
-      }
+      ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
       std::vector<INT> elem_ids ;
       std::vector<INT> connectivity ;
@@ -176,11 +202,10 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
       std::vector<INT> node_ids ;
       size_t node_count = entity->get_field_data("ids", node_ids);
 
-      stk::mesh::EntityRank n_rank = stk::topology::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
-        stk::mesh::Entity node = bulk.get_entity(n_rank, node_ids[i] );
+        stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, node_ids[i] );
         if (!bulk.is_valid(node)) {
-          node = bulk.declare_entity(n_rank, node_ids[i], add_parts );
+          node = bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
         }
         else {
           bulk.change_entity_parts(node, add_parts);

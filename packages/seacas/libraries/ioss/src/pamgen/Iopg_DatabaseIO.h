@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,57 +46,27 @@
 
 namespace Ioss {
   class CommSet;
-}
-namespace Ioss {
   class EdgeBlock;
-}
-namespace Ioss {
   class EdgeSet;
-}
-namespace Ioss {
   class ElementBlock;
-}
-namespace Ioss {
   class ElementSet;
-}
-namespace Ioss {
-  class FaceBlock;
-}
-namespace Ioss {
-  class FaceSet;
-}
-namespace Ioss {
-  class Field;
-}
-namespace Ioss {
-  class NodeBlock;
-}
-namespace Ioss {
-  class NodeSet;
-}
-namespace Ioss {
-  class PropertyManager;
-}
-namespace Ioss {
-  class Region;
-}
-namespace Ioss {
-  class SideBlock;
-}
-namespace Ioss {
-  class SideSet;
-}
-
-namespace Ioss {
-  class GroupingEntity;
   class EntityBlock;
+  class FaceBlock;
+  class FaceSet;
+  class Field;
+  class GroupingEntity;
+  class NodeBlock;
+  class NodeSet;
+  class PropertyManager;
+  class Region;
+  class SideBlock;
+  class SideSet;
+  class StructuredBlock;
 }
 
 /** \brief A namespace for the pamgen database format.
  */
 namespace Iopg {
-  typedef std::vector<int> IntVector;
-
   class IOFactory : public Ioss::IOFactory
   {
   public:
@@ -117,37 +87,17 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const { return 0; }
-    int64_t element_global_to_local(int64_t /* global */) const { return 0; }
-
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
-    unsigned entity_field_support() const { return 0; }
-
-    // Eliminate as much memory as possible, but still retain meta data information
-    // Typically, eliminate the maps...
-    void release_memory();
-
-    void read_meta_data();
-
-    bool begin(Ioss::State state);
-    bool end(Ioss::State state);
-
-    bool begin_state(Ioss::Region *region, int state, double time);
-    bool end_state(Ioss::Region *region, int state, double time);
+    unsigned entity_field_support() const override
+    {
+      return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::NODESET | Ioss::SIDESET | Ioss::REGION;
+    }
 
     std::string title() const { return databaseTitle; }
-    int         spatial_dimension() const { return spatialDimension; }
-    int         node_count() const { return nodeCount; }
-    int         side_count() const { return 0; }
-    int         element_count() const { return elementCount; }
-    int         node_block_count() const { return nodeBlockCount; }
-    int         element_block_count() const { return elementBlockCount; }
-    int         sideset_count() const { return sidesetCount; }
-    int         nodeset_count() const { return nodesetCount; }
-    int         maximum_symbol_length() const { return 32; }
+    int         maximum_symbol_length() const override { return 32; }
 
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                std::vector<std::string> &block_adjacency) const;
@@ -156,6 +106,28 @@ namespace Iopg {
                                   std::vector<std::string> &block_membership) const;
 
   private:
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
+    int64_t element_global_to_local__(int64_t global) const override
+    {
+      return elemMap.global_to_local(global);
+    }
+
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory__() override;
+
+    void read_meta_data__() override;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(Ioss::Region *region, int state, double time) override;
+    bool end_state__(Ioss::Region *region, int state, double time) override;
+
     void read_region();
     void read_communication_metadata();
 
@@ -215,6 +187,12 @@ namespace Iopg {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
 
+    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -254,6 +232,11 @@ namespace Iopg {
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
 
     std::string databaseTitle;
 
@@ -267,12 +250,12 @@ namespace Iopg {
     int sidesetCount;
 
     // Communication Set Data
-    IntVector nodeCmapIds;
-    IntVector nodeCmapNodeCnts;
-    IntVector elemCmapIds;
-    IntVector elemCmapElemCnts;
-    int       commsetNodeCount;
-    int       commsetElemCount;
+    Ioss::IntVector nodeCmapIds;
+    Ioss::IntVector nodeCmapNodeCnts;
+    Ioss::IntVector elemCmapIds;
+    Ioss::IntVector elemCmapElemCnts;
+    int             commsetNodeCount;
+    int             commsetElemCount;
 
     // MAPS -- Used to convert from local exodusII ids/names to Sierra
     // database global ids/names

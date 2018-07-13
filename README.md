@@ -34,3 +34,9 @@ unique design feature of Trilinos is its focus on packages.
 Trilinos is licensed on a per-package basis. Most packages are now under a BSD
 license, some are published under the (L)GPL. Details can be taken from the
 documentation of each package.
+
+### Contributing
+
+We appreciate your willingness to contribute to the Trilinos project.  Please
+familiarize yourself with our [contributing
+guidelines](https://github.com/trilinos/Trilinos/blob/master/CONTRIBUTING.md).

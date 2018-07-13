@@ -70,7 +70,7 @@ BCStrategy_Neumann_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::Glo
 template <typename EvalT>
 void Example::BCStrategy_Neumann_Constant<EvalT>::
 setup(const panzer::PhysicsBlock& side_pb,
-      const Teuchos::ParameterList& user_data)
+      const Teuchos::ParameterList& /* user_data */)
 {
   using Teuchos::RCP;
   using std::vector;
@@ -101,9 +101,9 @@ template <typename EvalT>
 void Example::BCStrategy_Neumann_Constant<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 			   const panzer::PhysicsBlock& pb,
-			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-			   const Teuchos::ParameterList& models,
-			   const Teuchos::ParameterList& user_data) const
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
+			   const Teuchos::ParameterList& /* models */,
+			   const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -136,16 +136,14 @@ using std::string;
 
   // add contribution to the residual 
   {
-    ParameterList p("Constant Neumann Residual");
-    p.set("Residual Name", residual_name);
-    p.set("Value Name", flux_name);
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+    using panzer::EvaluatorStyle;
+    using panzer::Integrator_BasisTimesScalar;
+    using panzer::Traits;
+    using PHX::Evaluator;
+    double multiplier(1);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+      residual_name, flux_name, *basis, *ir, multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 }
@@ -173,8 +171,8 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 // ***********************************************************************
 template <typename EvalT>
 void Example::BCStrategy_Neumann_Constant<EvalT>::
-postRegistrationSetup(typename panzer::Traits::SetupData d,
-		      PHX::FieldManager<panzer::Traits>& vm)
+postRegistrationSetup(typename panzer::Traits::SetupData /* d */,
+		      PHX::FieldManager<panzer::Traits>& /* vm */)
 {
   
 }
@@ -183,7 +181,7 @@ postRegistrationSetup(typename panzer::Traits::SetupData d,
 // ***********************************************************************
 template <typename EvalT>
 void Example::BCStrategy_Neumann_Constant<EvalT>::
-evaluateFields(typename panzer::Traits::EvalData d)
+evaluateFields(typename panzer::Traits::EvalData /* d */)
 {
   
 }

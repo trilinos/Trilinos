@@ -70,6 +70,8 @@
 
 // SG Model Evaluators
 #include "Stokhos_SGModelEvaluator.hpp"
+#include "Stokhos_SGModelEvaluator_Interlaced.hpp"
+#include "Stokhos_SGModelEvaluator_Adaptive.hpp"
 #include "Stokhos_SGQuadModelEvaluator.hpp"
 #include "Stokhos_SGInverseModelEvaluator.hpp"
 #include "Stokhos_ResponseStatisticModelEvaluator.hpp"

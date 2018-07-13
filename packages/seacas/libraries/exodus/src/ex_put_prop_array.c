@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
 #include "netcdf.h"       // for NC_NOERR, nc_set_fill, etc
 #include <stddef.h>       // for size_t
@@ -43,7 +43,7 @@
 /*!
 
 The function ex_put_prop_array() stores an array of ({num_elem_blk},
-\c num_node_sets, or \c num_side_sets) integer property values for all
+num_node_sets, or num_side_sets) integer property values for all
 element blocks, node sets, or side sets. The order of the values in
 the array must correspond to the order in which the element blocks,
 node sets, or side sets were introduced into the file. For instance,
@@ -80,20 +80,21 @@ stored. Maximum
                       length of this string is \p MAX_STR_LENGTH .
 \param[in] values     An array of property values.
 
-<table>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_MAP   </td><td>  Element Map entity type  </td></tr>
-<tr><td> \c EX_NODE_MAP   </td><td>  Node Map entity type     </td></tr>
-<tr><td> \c EX_EDGE_MAP   </td><td>  Edge Map entity type     </td></tr>
-<tr><td> \c EX_FACE_MAP   </td><td>  Face Map entity type     </td></tr>
-</table>
+| ex_entity_type | description               |
+| -------------- | ------------------------- |
+|  EX_NODE_SET   |  Node Set entity type     |
+|  EX_EDGE_BLOCK |  Edge Block entity type   |
+|  EX_EDGE_SET   |  Edge Set entity type     |
+|  EX_FACE_BLOCK |  Face Block entity type   |
+|  EX_FACE_SET   |  Face Set entity type     |
+|  EX_ELEM_BLOCK |  Element Block entity type|
+|  EX_ELEM_SET   |  Element Set entity type  |
+|  EX_SIDE_SET   |  Side Set entity type     |
+|  EX_ELEM_MAP   |  Element Map entity type  |
+|  EX_NODE_MAP   |  Node Map entity type     |
+|  EX_EDGE_MAP   |  Edge Map entity type     |
+|  EX_FACE_MAP   |  Face Map entity type     |
+
 
 For an example of code to write an array of object properties, refer
 to the description for ex_put_prop_names().
@@ -113,7 +114,8 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* check if property has already been created */
 
@@ -123,7 +125,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   status = ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                             &num_obj, &dimid, "ex_put_prop_array");
   if (status != NC_NOERR) {
-    return status;
+    EX_FUNC_LEAVE(status);
   }
 
   for (i = 1; i <= num_props; i++) {
@@ -141,28 +143,25 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
     case EX_EDGE_MAP: name   = VAR_EDM_PROP(i); break;
     case EX_NODE_MAP: name   = VAR_NM_PROP(i); break;
     default:
-      exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
                exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_prop_array", errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property array id in file id %d",
                exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_prop_array", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* compare stored attribute name with passed property name   */
     memset(tmpstr, 0, MAX_STR_LENGTH + 1);
     if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_prop_array", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (strcmp(tmpstr, prop_name) == 0) {
@@ -176,10 +175,9 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
     /* put netcdf file into define mode  */
     if ((status = nc_redef(exoid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_prop_array", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /*   create a variable with a name xx_prop#, where # is the new number   */
@@ -198,10 +196,9 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
     case EX_EDGE_MAP: name   = VAR_EDM_PROP(num_props + 1); break;
     case EX_NODE_MAP: name   = VAR_NM_PROP(num_props + 1); break;
     default:
-      exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
                exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
+      ex_err("ex_put_prop_array", errmsg, EX_BADPARAM);
       goto error_ret; /* Exit define mode and return */
     }
 
@@ -214,10 +211,9 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
     }
 
     if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to create property array variable in file id %d", exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
+      ex_err("ex_put_prop_array", errmsg, status);
       goto error_ret; /* Exit define mode and return */
     }
     nc_set_fill(exoid, oldfill, &temp); /* default: nofill */
@@ -225,20 +221,18 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME, strlen(prop_name) + 1,
                                   prop_name)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property name %s in file id %d",
                prop_name, exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
+      ex_err("ex_put_prop_array", errmsg, status);
       goto error_ret; /* Exit define mode and return */
     }
 
     /* leave define mode  */
 
     if ((status = nc_enddef(exoid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to leave define mode in file id %d", exoid);
-      ex_err("ex_put_prop_array", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_prop_array", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -251,20 +245,19 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property values in file id %d", exoid);
-    ex_err("ex_put_prop_array", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_prop_array", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  nc_set_fill(exoid, oldfill, &temp); /* default: nofill */
-  if (nc_enddef(exoid) != NC_NOERR) { /* exit define mode */
+  nc_set_fill(exoid, oldfill, &temp);            /* default: nofill */
+  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_put_prop_array", errmsg, exerrval);
+    ex_err("ex_put_prop_array", errmsg, status);
   }
-  return (EX_FATAL);
+  EX_FUNC_LEAVE(EX_FATAL);
 }

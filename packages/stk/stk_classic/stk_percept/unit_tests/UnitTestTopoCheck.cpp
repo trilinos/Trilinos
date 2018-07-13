@@ -309,7 +309,7 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   {
     double th = M_PI*((double)ith)/((double)ntheta);
     boost::array<double, 3> pt1 = {{0, rad*cos(th), rad*sin(th)}};
-    boost::array<double, 3> dr1 = {{0, -sin(th), cos(th)}};;
+    boost::array<double, 3> dr1 = {{0, -sin(th), cos(th)}};
     path3.push_back(pt1);
     dir3.push_back(dr1);
   }

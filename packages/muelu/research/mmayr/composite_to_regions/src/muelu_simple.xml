@@ -1,0 +1,32 @@
+<ParameterList name="MueLu">
+
+    <Parameter name="verbosity" type="string" value="extreme"/>
+    <Parameter name="coarse: max size" type="int" value="2"/>
+    <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+    <Parameter name="max levels" type="int" value="2"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop scheme" type="string" value="classical"/>
+    <Parameter name="aggregation: export visualization data" type="bool" value="false"/>
+    
+    <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+
+<!--
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{0,1}"/>
+      <Parameter name="Nullspace" type="string" value="{0,1,2}"/>
+      <Parameter name="Aggregates" type="string" value="{0,1}"/>
+    </ParameterList>
+-->
+
+    <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="chebyshev: degree" type="int" value="2"/>>
+      <Parameter name="chebyshev: ratio eigenvalue" type="double" value="7"/>
+      <Parameter name="chebyshev: min eigenvalue" type="double" value="1.0"/>
+      <Parameter name="chebyshev: zero starting solution" type="bool" value="true"/>
+    </ParameterList>
+
+</ParameterList>
+

@@ -40,7 +40,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <string>                       // for string, operator==
 #include <vector>                       // for vector
-#include "Shards_CellTopologyData.h"    // for CellTopologyData
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
@@ -53,6 +52,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include "stk_io/FillMesh.hpp"
 
 
 namespace stk { namespace mesh { class Part; } }
@@ -182,12 +182,12 @@ TEST( UnitTestMetaData, testEntityRepository )
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
+    node = bulk.declare_node(new_id+1, add_part);
     nodes.push_back(node);
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , elem_parts );
+  stk::mesh::Entity elem  = bulk.declare_element(new_id+1, elem_parts);
 
   for (unsigned ord = 0; ord < 8; ++ord)
   {
@@ -238,7 +238,7 @@ TEST( UnitTestMetaData, declare_part_with_rank )
 TEST( UnitTestMetaData, declare_attribute_no_delete )
 {
   //Coverage of declare_attribute_no_delete in MetaData.hpp
-  const CellTopologyData * singleton = NULL;
+  const int * singleton = NULL;
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
   Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );

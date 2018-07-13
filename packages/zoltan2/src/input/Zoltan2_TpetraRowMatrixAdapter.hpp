@@ -47,8 +47,8 @@
     \brief Defines the TpetraRowMatrixAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRAROWMATRIXADAPTER_HPP_
-#define _ZOLTAN2_XPETRAROWMATRIXADAPTER_HPP_
+#ifndef _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_
+#define _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_
 
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -78,6 +78,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -167,13 +168,13 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
   {
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gno_t *&colIds,
+  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
                     const scalar_t *&values) const
   {
     offsets = offset_.getRawPtr();
@@ -187,9 +188,15 @@ public:
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__,
-      "invalid weight index",
-      idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerRow_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
+
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -206,13 +213,10 @@ public:
 
 private:
 
-  RCP<Environment> env_;    // for error messages, etc.
-
   RCP<const User> matrix_;
   RCP<const Tpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Tpetra::Map<lno_t, gno_t, node_t> > colMap_;
-  lno_t base_;
-  ArrayRCP<lno_t> offset_;
+  ArrayRCP<offset_t> offset_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
 
@@ -233,8 +237,7 @@ private:
 template <typename User, typename UserCoord>
   TpetraRowMatrixAdapter<User,UserCoord>::TpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
-      env_(rcp(new Environment)),
-      matrix_(inmatrix), rowMap_(), colMap_(), base_(),
+      matrix_(inmatrix), rowMap_(), colMap_(), 
       offset_(), columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
@@ -243,7 +246,6 @@ template <typename User, typename UserCoord>
 
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
-  base_ = rowMap_->getIndexBase();
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
@@ -257,7 +259,7 @@ template <typename User, typename UserCoord>
   ArrayRCP<scalar_t> nzs(maxnumentries);  // Diff from CrsMatrix
   lno_t next = 0;
   for (size_t i=0; i < nrows; i++){
-    lno_t row = i + base_;
+    lno_t row = i;
     matrix_->getLocalRowCopy(row, indices(), nzs(), nnz); // Diff from CrsMatrix
     for (size_t j=0; j < nnz; j++){
       values_[next] = nzs[j];
@@ -300,9 +302,14 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nvtx = getLocalNumRows();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
@@ -330,9 +337,14 @@ template <typename User, typename UserCoord>
   void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
     int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
 
   numNzWeight_[idx] = true;
 }
@@ -390,15 +402,32 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   const gno_t *myNewRows
 ) const
 {
-  // Since cannot create a Tpetra::RowMatrix, do the migration into 
-  // a Tpetra::CrsMatrix object.
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsmatrix_t;
-  lno_t base = 0;
+
+  // We cannot create a Tpetra::RowMatrix, unless the underlying type is 
+  // something we know (like Tpetra::CrsMatrix).
+  // If the underlying type is something different, the user probably doesn't 
+  // want a Tpetra::CrsMatrix back, so we throw an error.
+
+  // Try to cast "from" matrix to a TPetra::CrsMatrix
+  // If that fails we throw an error.
+  // We could cast as a ref which will throw std::bad_cast but with ptr
+  // approach it might be clearer what's going on here
+  const tcrsmatrix_t *pCrsMatrix = dynamic_cast<const tcrsmatrix_t *>(&from);
+
+  if(!pCrsMatrix) {
+    throw std::logic_error("TpetraRowMatrixAdapter cannot migrate data for "
+                           "your RowMatrix; it can migrate data only for "
+                           "Tpetra::CrsMatrix.  "
+                           "You can inherit from TpetraRowMatrixAdapter and "
+                           "implement migration for your RowMatrix.");
+  }
 
   // source map
   const RCP<const map_t> &smap = from.getRowMap();
   gno_t numGlobalRows = smap->getGlobalNumElements();
+  gno_t base = smap->getMinAllGlobalIndex();
 
   // target map
   ArrayView<const gno_t> rowList(myNewRows, numLocalRows);

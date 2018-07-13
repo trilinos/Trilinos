@@ -118,7 +118,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double>> basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
@@ -172,7 +172,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
@@ -325,7 +325,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
@@ -345,7 +345,7 @@ namespace {
     std::vector<int> myog;
 
     my_DOFManager->getOwnedIndices(myo);
-    my_DOFManager->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedAndGhostedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;
@@ -374,7 +374,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
@@ -426,7 +426,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
@@ -503,8 +503,8 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
@@ -523,7 +523,7 @@ namespace {
     std::vector<int> myog;
 
     my_DOFManager->getOwnedIndices(myo);
-    my_DOFManager->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedAndGhostedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;
@@ -553,8 +553,8 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
@@ -608,8 +608,8 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
@@ -683,7 +683,7 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 

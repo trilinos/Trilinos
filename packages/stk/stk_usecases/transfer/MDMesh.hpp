@@ -30,8 +30,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_MD_MESH_H
+#define STK_MD_MESH_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
@@ -39,11 +41,9 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
-
 
 namespace stk {
 namespace transfer {
@@ -150,10 +150,13 @@ private :
   MDArray                      &m_values_field;
   const ParallelMachine                       m_comm;
 
-  typedef boost::shared_ptr<Record>         RecordPtr;
+  typedef std::shared_ptr<Record>           RecordPtr;
   typedef std::map<EntityKey,RecordPtr>     RecordMap;
   RecordMap                                 m_record_map;
 };
 
 } // transfer
 } // stk
+
+#endif
+

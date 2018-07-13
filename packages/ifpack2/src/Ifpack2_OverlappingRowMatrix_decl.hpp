@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,8 +43,7 @@
 #ifndef IFPACK2_OVERLAPPINGROWMATRIX_DECL_HPP
 #define IFPACK2_OVERLAPPINGROWMATRIX_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
+#include "Ifpack2_Details_RowMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp" // only need the declaration here
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
@@ -57,10 +56,7 @@ namespace Ifpack2 {
 /// \tparam MatrixType Tpetra::RowMatrix specialization.
 template<class MatrixType>
 class OverlappingRowMatrix :
-    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                     typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> {
+    virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 public:
   //! \name Typedefs
   //@{
@@ -177,12 +173,6 @@ public:
   ///   of entries in that row that are owned by the calling process.
   virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
-  //! The global number of diagonal entries.
-  virtual global_size_t getGlobalNumDiags () const;
-
-  //! The number of diagonal entries owned by the calling process.
-  virtual size_t getNodeNumDiags () const;
-
   //! The maximum number of entries in any row on any process.
   virtual size_t getGlobalMaxNumRowEntries () const;
 
@@ -191,12 +181,6 @@ public:
 
   //! Whether this matrix has a column Map.
   virtual bool hasColMap() const;
-
-  //! Whether this matrix is lower triangular.
-  virtual bool isLowerTriangular() const;
-
-  //! Whether this matrix is upper triangular.
-  virtual bool isUpperTriangular() const;
 
   //! Whether this matrix is locally indexed.
   virtual bool isLocallyIndexed () const;
@@ -360,6 +344,7 @@ private:
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
 
   //! The input matrix to the constructor.
   Teuchos::RCP<const row_matrix_type> A_;

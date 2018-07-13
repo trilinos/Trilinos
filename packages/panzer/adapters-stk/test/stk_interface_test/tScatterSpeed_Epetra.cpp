@@ -101,7 +101,7 @@ int main(int argc,char * argv[])
 //                          Standard Usage Functions
 //******************************************************************************
 
-void newAssembly(Teuchos::FancyOStream &out)
+void newAssembly(Teuchos::FancyOStream& /* out */)
 {
   RCP<panzer::DOFManager<int,int> > my_dofM;
   RCP<Map> rowmap;
@@ -163,7 +163,7 @@ size_t setUp1(RCP<Map> &rowmap,
 
   conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
 
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+  RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));
 
   my_dofM = Teuchos::rcp(new panzer::DOFManager<int,int>());
@@ -178,18 +178,18 @@ size_t setUp1(RCP<Map> &rowmap,
   my_dofM->buildGlobalUnknowns();
 
   std::vector<int> owned; 
-  std::vector<int> ownedAndShared; 
+  std::vector<int> ownedAndGhosted; 
 
   my_dofM->getOwnedIndices(owned);
-  my_dofM->getOwnedAndSharedIndices(ownedAndShared);
+  my_dofM->getOwnedAndGhostedIndices(ownedAndGhosted);
 
-  size_t sz = ownedAndShared.size();
+  size_t sz = ownedAndGhosted.size();
 
   Epetra_MpiComm mpiComm(MPI_COMM_WORLD);
   //This is taken from Tpetra_Map_def.hpp
   //I could probably use a non-member constructor.
-  rowmap = rcp(new Map(-1,ownedAndShared.size(),&ownedAndShared[0],0,mpiComm));
-  colmap = rcp(new Map(-1,ownedAndShared.size(),&ownedAndShared[0],0,mpiComm));
+  rowmap = rcp(new Map(-1,ownedAndGhosted.size(),&ownedAndGhosted[0],0,mpiComm));
+  colmap = rcp(new Map(-1,ownedAndGhosted.size(),&ownedAndGhosted[0],0,mpiComm));
   return sz;
 }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
-for i in `ls *.C *.h`; do
+for i in `ls *.[cCh]`; do
     echo $i
-    clang-format-mp-3.9 -style=file $i > tmp
+    clang-format -style=file $i > tmp
     mv tmp $i
 done
 

@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_GatherSolution_BlockedEpetra.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -67,8 +68,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
-
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -125,7 +124,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -252,12 +252,12 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(ped);
 
     // run tests
@@ -333,7 +333,8 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+                                                                                            physicsBlock->getWorksetNeeds()); 
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -461,12 +462,12 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests

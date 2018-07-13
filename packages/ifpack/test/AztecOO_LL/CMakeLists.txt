@@ -23,7 +23,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(IfpackAztecOOCopyFiles_LL
 )
 
 TRIBITS_ADD_TEST(
-  ifp_aztecoo_LL IfpackAztecOOCopyFiles
+  ifp_aztecoo_LL
   NAME small_gmres_az
   ARGS "--xml_file=test_gmres_small_sym_mm.xml"
   COMM serial mpi
@@ -32,7 +32,7 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_TEST(
-  ifp_aztecoo_LL IfpackAztecOOCopyFiles
+  ifp_aztecoo_LL
   NAME small_ILUT_tfqmr
   ARGS "--xml_file=test_ILUT_tfqmr_small_sym_mm.xml"
   COMM serial mpi
@@ -41,7 +41,7 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_TEST(
-  ifp_aztecoo_LL IfpackAztecOOCopyFiles
+  ifp_aztecoo_LL
   NAME small_az_ILUT_tfqmr
   ARGS "--xml_file=test_az_ILUT_tfqmr_small_sym_mm.xml"
   COMM serial mpi
@@ -50,7 +50,7 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_TEST(
-  ifp_aztecoo_LL IfpackAztecOOCopyFiles
+  ifp_aztecoo_LL
   NAME small_az_ILUT_tfqmr_p3
   ARGS "--xml_file=test_az_ILUT_tfqmr_small_sym_mm.xml"
   COMM mpi
@@ -59,7 +59,7 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_TEST(
-  ifp_aztecoo_LL IfpackAztecOOCopyFiles
+  ifp_aztecoo_LL
   NAME ILUT_nos1_hb
   ARGS "--xml_file=test_2_ILUT_nos1_hb.xml"
   COMM serial mpi

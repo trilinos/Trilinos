@@ -100,6 +100,10 @@ namespace LOCA {
       virtual NOX::Abstract::Group&
       operator=(const NOX::Thyra::Group& source);
 
+      //! Assignment operator.
+      virtual LOCA::Thyra::Group&
+      operator=(const LOCA::Thyra::Group& source);
+
       //! Cloning function
       virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;

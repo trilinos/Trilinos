@@ -73,7 +73,7 @@ the file:
 
   <projectDir>/"""+g_extraRerposFileDefault+r"""
 
-(other repo types can be selected usng --extra-repos-type).
+(other repo types can be selected using --extra-repos-type).
 
 The list of which repos to clone can be "white-list" selected with the option
 --extra-repos (see options below for details).  Extra repos can in addition be
@@ -94,7 +94,7 @@ That will print out a table like:
 
 If the git repo server is using gitolite, one can set
 --gitolite-root=<gitolite-root> and that will result in git repos being
-selected only if the selcted repos are listed in 'ssh <gitolite-root> info'.
+selected only if the selected repos are listed in 'ssh <gitolite-root> info'.
 This allows one to automatically exclude repos from being cloned that the user
 has no permissions to clone.  NOTE: See warning about the --gitolite-root option below!
 
@@ -154,7 +154,7 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     "--extra-repos-type", "extraReposType",
     g_extraReposTypes , g_extraReposTypesDefaulIdx,
     "Type of extra repositories <extra-repos-type> to select from " \
-      "<extra-repos-file>.  When --extra-repos is set, then this arugment" \
+      "<extra-repos-file>.  When --extra-repos is set, then this argument" \
       " is ignored.",
     clp )
   
@@ -164,7 +164,7 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
       "  If specified, then any git repos with the <gitolite-root> listed as their" \
       " root will only be selected if they are listed with 'R' permissions returned" \
       " from 'ssh <gitolite-root> info'.  WARNING: Make sure that you have your" \
-      " gitoliote SSH registred correctly before using this option by typing" \
+      " gitoliote SSH registered correctly before using this option by typing" \
       " the command 'ssh <gitlite-root> info' and make sure that it does *not*"
       " ask for a password! (Default = '"+gitoliteRootDefault+"')" )
 

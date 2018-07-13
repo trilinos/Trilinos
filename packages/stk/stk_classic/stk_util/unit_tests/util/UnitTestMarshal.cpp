@@ -106,7 +106,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
   // Marshal/Unmarshal more than one POD in a single message
   {
-    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);;
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);
     std::string s_out("this is a test");
     int i_out = 7;
       
@@ -160,7 +160,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
   // Marshal/Unmarshal error from type mismatch
   {
     
-    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);;
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);
     std::string s_out("this is a test");
     int i_out = 7;
       

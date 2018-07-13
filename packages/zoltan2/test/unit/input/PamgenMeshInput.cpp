@@ -46,6 +46,7 @@
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_componentMetrics.hpp>
 
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -61,7 +62,7 @@ using Teuchos::RCP;
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
+typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
 
 
 
@@ -92,7 +93,7 @@ int main(int narg, char *arg[]) {
   cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
-  ParameterList inputMeshList;
+  Teuchos::ParameterList inputMeshList;
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
@@ -135,13 +136,27 @@ int main(int narg, char *arg[]) {
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<basic_user_t> inputAdapter_t;
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
-  inputAdapter_t::lno_t const *offsets=NULL;
+  inputAdapter_t::offset_t const *offsets=NULL;
   ia.print(me);
+
+  // Exercise the componentMetrics on the input; make sure the adapter works
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia, *CommT);
+    std::cout << me << " Region-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Region-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Region-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Region-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
+  }
+
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
 
@@ -210,7 +225,7 @@ int main(int narg, char *arg[]) {
 	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
 	  ssize_t in_list = -1;
 
-	  for(inputAdapter_t::lno_t k=offsets[telct];k<offsets[telct+1];k++) {
+	  for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++) {
 	    if(adjacencyIds[k] ==
 	       node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
 	      in_list = k;
@@ -236,6 +251,19 @@ int main(int narg, char *arg[]) {
   else{
     std::cout << "Adjacencies not available" << std::endl;
     return 1;
+  }
+
+  ia2.print(me);
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia2, *CommT);
+    std::cout << me << " Vertex-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Vertex-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
   }
 
   primaryEType = ia2.getPrimaryEntityType();

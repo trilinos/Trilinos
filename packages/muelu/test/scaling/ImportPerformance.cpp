@@ -73,15 +73,17 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
 #include <EpetraExt_MMHelpers.h>
 #include <EpetraExt_RowMatrixOut.h>
 #endif
 
+
+#ifdef HAVE_MUELU_TPETRA
+#include <TpetraExt_MatrixMatrix.hpp>
+#endif
+
+#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -100,73 +102,6 @@ inline void resize_doubles(int nold,int nnew,double*& d){
     d=tmp;
   }
 }
-// =========================================================================
-// =========================================================================
-// =========================================================================
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coords = Teuchos::null) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif // HAVE_MUELU_TPETRA
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-// =========================================================================
-// =========================================================================
-// =========================================================================
-#ifdef HAVE_MUELU_EPETRA
-template<>
-Teuchos::RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > coords) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > opMat(tA);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(opMat, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA)
-    RCP<Epetra_CrsMatrix>      eA = Utilities::Op2NonConstEpetraCrs(A);
-    RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, paramList, Utilities::MV2NonConstEpetraMV(coords));
-    return eH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif // HAVE_MUELU_EPETRA
 
 // =========================================================================
 // =========================================================================
@@ -288,10 +223,10 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
 
 #endif
 
-
 // =========================================================================
 // =========================================================================
 // =========================================================================
+#if defined(HAVE_MUELU_EPETRA)
 bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Import & B) {
   int MyPID = A.SourceMap().Comm().MyPID();
   bool is_correct=true;
@@ -410,6 +345,8 @@ bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Imp
 
   return is_correct;
 }
+#endif //if defined(HAVE_MUELU_EPETRA)
+
 
 // =========================================================================
 // =========================================================================
@@ -422,8 +359,34 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 
   if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA)
-    printf("This test is not yet implemented for Tpetra.");
-#endif
+    typedef Tpetra::CrsMatrixStruct<SC,LO,GO,NO>  crs_matrix_struct_type;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO>        crs_matrix_type;
+    typedef Tpetra::Import<LO,GO,NO>              import_type;
+
+    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(A);
+    RCP<const crs_matrix_type> Pu = Utilities::Op2TpetraCrs(P);
+    if(Au->getComm()->getSize()==1) return;
+
+    // ==================
+    // Optimized Transfer
+    // ==================
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("OptimizedTransfer: Import")));
+    crs_matrix_struct_type Pview;
+    Tpetra::MMdetails::import_and_extract_views(*Pu,Au->getColMap(), Pview, Au->getGraph()->getImporter(), false,"ImportPerf: ");
+
+    tm=Teuchos::null;
+    Au->getComm()->barrier();
+
+    // ==================
+    // Naive Transfer
+    // ==================
+    // Use the columnmap from Aopt and build an importer ex nihilo
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
+    import_type NaiveImport(Pview.importMatrix->getColMap(),Pu->getDomainMap());
+    tm=Teuchos::null;
+    Au->getComm()->barrier();
+#endif // defined(HAVE_MUELU_TPETRA)
   }
   else if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA)
@@ -459,6 +422,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Naive Transfer
     // ==================
     // Use the columnmap from Aopt and build an importer ex nihilo
+
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
     const Epetra_Map &NaiveColMap = Aopt->ColMap();
     Epetra_Import NaiveImport(NaiveColMap,Pu->DomainMap());
@@ -477,8 +441,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 
     // Cleanup
     delete Aopt;
-#else
-    printf("This test requires Epetra.");
 #endif // defined(HAVE_MUELU_EPETRA)
   }
 }
@@ -487,7 +449,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 // =========================================================================
 // =========================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -497,14 +459,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // =========================================================================
   // Convenient definitions
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
+  SC one = STS::one();
 
   // =========================================================================
   // Parameters initialization
@@ -524,7 +485,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
-  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   ParameterList paramList;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
@@ -554,7 +514,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   RCP<Matrix>      A;
   RCP<const Map>   map;
-  RCP<MultiVector> coordinates;
+  RCP<RealValuedMultiVector> coordinates;
+  typedef typename RealValuedMultiVector::scalar_type Real;
   RCP<MultiVector> nullspace;
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -574,16 +535,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
@@ -662,7 +623,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           GO GID = domainMap->getGlobalElement(j) - indexBase;
 
           if ((GID-i) % blkSize == 0)
-            nsData[j] = Teuchos::ScalarTraits<SC>::one();
+            nsData[j] = one;
         }
       }
     }
@@ -699,21 +660,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-      bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
 
       RCP<Hierarchy> H;
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-      RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
-#endif
-      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      A->SetMaxEigenvalueEstimate(-one);
 
-      if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-        aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
-#endif
-      } else {
-        H = CreateHierarchy(A, mueluList, coordinates);
-      }
+      H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       comm->barrier();
       tm = Teuchos::null;
 
@@ -791,123 +742,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
-int main(int argc, char* argv[]) {
-  bool success = false;
-  bool verbose = true;
 
-  try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
-    Xpetra::Parameters xpetraParameters(clp);
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
-
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-    }
-
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#  else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#  endif
-#endif
-      } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
-#endif
-      } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
-#endif
-      } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
-
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-        return main_<double,int,int,Node> (clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        return main_<double,int,long,Node>(clp, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        return main_<double,int,long long,Node>(clp, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
-#endif
-      } else {
-        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
-      }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

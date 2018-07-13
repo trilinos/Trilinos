@@ -50,7 +50,6 @@
 #include "Panzer_BCStrategy.hpp"
 
 #include "Sacado_mpl_placeholders.hpp"
-using namespace Sacado::mpl::placeholders;
 
 namespace panzer {
 

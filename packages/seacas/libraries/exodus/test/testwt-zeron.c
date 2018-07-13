@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -163,15 +163,15 @@ int main(int argc, char **argv)
 
   var_names[0] = "glo_vars";
 
-  error = ex_put_var_param(exoid, "g", num_glo_vars);
-  printf("after ex_put_var_param, error = %d\n", error);
+  error = ex_put_variable_param(exoid, EX_GLOBAL, num_glo_vars);
+  printf("after ex_put_variable_param, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
   }
 
-  error = ex_put_var_names(exoid, "g", num_glo_vars, var_names);
-  printf("after ex_put_var_names, error = %d\n", error);
+  error = ex_put_variable_names(exoid, EX_GLOBAL, num_glo_vars, var_names);
+  printf("after ex_put_variable_names, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
       glob_var_vals[j] = (float)(j + 2) * time_value;
     }
 
-    error = ex_put_glob_vars(exoid, whole_time_step, num_glo_vars, glob_var_vals);
+    error = ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, glob_var_vals);
     printf("after ex_put_glob_vars, error = %d\n", error);
 
     if (error) {

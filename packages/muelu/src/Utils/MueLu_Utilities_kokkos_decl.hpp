@@ -245,12 +245,6 @@ namespace MueLu {
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os)       { return Utilities::MakeFancy(os); }
 
-    /*! @brief Squared distance between two rows in a multivector
-
-       Used for coordinate vectors.
-    */
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) { return Utilities::Distance2(v, i0, i1); }
-
     /*! @brief Detect Dirichlet rows
 
         @param[in] A matrix
@@ -258,7 +252,28 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+
+    /*! @brief Detect Dirichlet columns based on Dirichlet rows
+
+        The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
+        as returned by DetectDirichletRows.
+
+        @param[in] A matrix
+        @param[in] dirichletRows array of Dirichlet rows.
+
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
+    */
+    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
+
+
+    static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
     /*! @brief Set seed for random number generator.
 
@@ -382,15 +397,22 @@ namespace MueLu {
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       return UtilitiesBase::MakeFancy(os);
     }
-    static typename Teuchos::ScalarTraits<SC>::magnitudeType Distance2(const MultiVector& v, LO i0, LO i1) {
-      return UtilitiesBase::Distance2(v,i0,i1);
-    }
     static void SetRandomSeed(const Teuchos::Comm<int> &comm) {
       UtilitiesBase::SetRandomSeed(comm);
     }
 
     // todo: move this to UtilitiesBase::kokkos
-    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+
+    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
+    static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
@@ -419,7 +441,9 @@ namespace MueLu {
 
       default:
         throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be scaled.");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
     }
 
@@ -498,16 +522,16 @@ namespace MueLu {
       } catch(...) {
         throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
       }
-  #else
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
-  #endif
-  #else
+#endif
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-  #endif
+#endif
     }
 
     static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
-  #ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA
       try {
         //const Epetra_CrsMatrix& epOp = Utilities<double,int,int>::Op2NonConstEpetraCrs(Op);
         const Epetra_CrsMatrix& epOp = Op2NonConstEpetraCrs(Op);
@@ -526,9 +550,9 @@ namespace MueLu {
       } catch (...){
         throw Exceptions::RuntimeError("Only Epetra_CrsMatrix types can be scaled");
       }
-  #else
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Epetra has not been enabled.");
-  #endif // HAVE_MUELU_EPETRA
+#endif // HAVE_MUELU_EPETRA
     }
 
     /*! @brief Transpose a Xpetra::Matrix
@@ -536,19 +560,19 @@ namespace MueLu {
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
      */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string()) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
-  #ifdef HAVE_MUELU_TPETRA
-  #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
         try {
           const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities::Op2TpetraCrs(Op);
 
           // Compute the transpose A of the Tpetra matrix tpetraOp.
           RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
           Tpetra::RowMatrixTransposer<SC,LO,GO,NO> transposer(rcpFromRef(tpetraOp),label);
-          A = transposer.createTranspose();
+          A = transposer.createTranspose(params);
           RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>(A));
           RCP<CrsMatrix>                             AAA  = rcp_implicit_cast<CrsMatrix>(AA);
           RCP<CrsMatrixWrap>                         AAAA = rcp(new CrsMatrixWrap(AAA));
@@ -559,17 +583,19 @@ namespace MueLu {
           std::cout << "threw exception '" << e.what() << "'" << std::endl;
           throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
         }
-  #else
+#else
         throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
-  #endif
-  #else
+#endif
+#else
         throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled!");
-  #endif
+#endif
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
       case Xpetra::UseEpetra:
       {
-  #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
         // Epetra case
         Epetra_CrsMatrix& epetraOp = Utilities::Op2NonConstEpetraCrs(Op);
@@ -584,17 +610,23 @@ namespace MueLu {
         AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
 
         return AAAA;
-  #else
+#else
         throw Exceptions::RuntimeError("Epetra (Err. 2)");
-  #endif
+#endif
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
       default:
         throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be transposed.");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
 
+#ifndef __NVCC__ //prevent nvcc warning
       return Teuchos::null;
+#endif
     }
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector
@@ -606,17 +638,17 @@ namespace MueLu {
       if(paramList.isParameter ("Coordinates") == false)
         return coordinates;
 
-  #if defined(HAVE_MUELU_TPETRA)
-  #if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
+#if defined(HAVE_MUELU_TPETRA)
+#if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
       (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))
 
       // define Tpetra::MultiVector type with Scalar=float only if
       // * ETI is turned off, since then the compiler will instantiate it automatically OR
       // * Tpetra is instantiated on Scalar=float
-  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
       typedef Tpetra::MultiVector<float, LO,GO,NO> tfMV;
       RCP<tfMV> floatCoords = Teuchos::null;
-  #endif
+#endif
 
       // define Tpetra::MultiVector type with Scalar=double only if
       // * ETI is turned off, since then the compiler will instantiate it automatically OR
@@ -628,7 +660,7 @@ namespace MueLu {
         doubleCoords = paramList.get<RCP<tdMV> >("Coordinates");
         paramList.remove("Coordinates");
       }
-  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
       else if (paramList.isType<RCP<tfMV> >("Coordinates")) {
         // check if coordinates are stored as a float vector
         floatCoords = paramList.get<RCP<tfMV> >("Coordinates");
@@ -636,16 +668,16 @@ namespace MueLu {
         doubleCoords = rcp(new tdMV(floatCoords->getMap(), floatCoords->getNumVectors()));
         deep_copy(*doubleCoords, *floatCoords);
       }
-  #endif
+#endif
       // We have the coordinates in a Tpetra double vector
       if(doubleCoords != Teuchos::null) {
         coordinates = Teuchos::rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(doubleCoords));
         TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
       }
-  #endif // Tpetra instantiated on GO=int and EpetraNode
-  #endif // endif HAVE_TPETRA
+#endif // Tpetra instantiated on GO=int and EpetraNode
+#endif // endif HAVE_TPETRA
 
-  #if defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA)
       RCP<Epetra_MultiVector> doubleEpCoords;
       if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
         doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
@@ -654,7 +686,7 @@ namespace MueLu {
         coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LO,GO,NO> >(epCoordinates);
         TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
       }
-  #endif
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       return coordinates;
     }

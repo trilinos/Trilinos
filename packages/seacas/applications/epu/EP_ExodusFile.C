@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -38,11 +38,11 @@
 #include "EP_ParallelDisks.h"
 #include "EP_SystemInterface.h"
 #include "smart_assert.h"
-#include <limits.h>
-#include <stdlib.h>
+#include <climits>
+#include <cstdlib>
 
+#include <cstddef>
 #include <iostream>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
@@ -63,7 +63,7 @@ int                      Excn::ExodusFile::maximumNameLength_ = 32;
 
 namespace {
   int get_free_descriptor_count();
-}
+} // namespace
 
 Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
 {
@@ -116,11 +116,15 @@ Excn::ExodusFile::~ExodusFile()
 void Excn::ExodusFile::close_all()
 {
   for (int p = 0; p < partCount_; p++) {
-    ex_close(fileids_[p]);
-    fileids_[p] = -1;
+    if (fileids_[p] >= 0) {
+      ex_close(fileids_[p]);
+      fileids_[p] = -1;
+    }
   }
-  ex_close(outputId_);
-  outputId_ = -1;
+  if (outputId_ >= 0) {
+    ex_close(outputId_);
+    outputId_ = -1;
+  }
 }
 
 bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int part_count)
@@ -143,8 +147,9 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   int max_files = get_free_descriptor_count();
   if (partCount_ <= max_files) {
     keepOpen_ = true;
-    if (si.debug() & 1)
+    if ((si.debug() & 1) != 0) {
       std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
+    }
   }
   else {
     keepOpen_ = false;
@@ -191,7 +196,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       }
 
       int int64db = ex_int64_status(exoid) & EX_ALL_INT64_DB;
-      if (int64db) {
+      if (int64db != 0) {
         // If anything stored on input db as 64-bit int, then output db will have
         // everything stored as 64-bit ints and all API functions will use 64-bit
         mode64bit_ |= EX_ALL_INT64_API;
@@ -199,13 +204,15 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       }
 
       int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      if (max_name_length > maximumNameLength_)
+      if (max_name_length > maximumNameLength_) {
         maximumNameLength_ = max_name_length;
+      }
 
       ex_close(exoid);
 
-      if (io_word_size_var < (int)sizeof(float))
+      if (io_word_size_var < static_cast<int>(sizeof(float))) {
         io_word_size_var = sizeof(float);
+      }
 
       ioWordSize_  = io_word_size_var;
       cpuWordSize_ = io_word_size_var;
@@ -226,14 +233,15 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       SMART_ASSERT(ioWordSize_ == io_word_size_var)(ioWordSize_)(io_word_size_var);
     }
 
-    if (si.debug() & 64 || p == 0 || p == partCount_ - 1) {
+    if (((si.debug() & 64) != 0) || p == 0 || p == partCount_ - 1) {
       std::cout << "Input(" << p << "): '" << name.c_str() << "'" << '\n';
-      if (!(si.debug() & 64) && p == 0)
+      if (((si.debug() & 64) == 0) && p == 0) {
         std::cout << "..." << '\n';
+      }
     }
   }
 
-  if (mode64bit_ & EX_ALL_INT64_DB) {
+  if ((mode64bit_ & EX_ALL_INT64_DB) != 0) {
     std::cout << "Input files contain 8-byte integers.\n";
     si.set_int64();
   }
@@ -253,7 +261,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputFilename_ += "." + output_suffix;
   }
 
-  if (curdir.length() && !Excn::is_path_absolute(outputFilename_)) {
+  if ((curdir.length() != 0u) && !Excn::is_path_absolute(outputFilename_)) {
     outputFilename_ = curdir + "/" + outputFilename_;
   }
 
@@ -265,7 +273,11 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // Did user specify it via -netcdf4 or -large_model argument...
   int mode = 0;
 
-  if (si.use_netcdf4()) {
+  if (si.compress_data() > 0) {
+    // Force netcdf-4 if compression is specified...
+    mode |= EX_NETCDF4;
+  }
+  else if (si.use_netcdf4()) {
     mode |= EX_NETCDF4;
   }
   else if (ex_large_model(fileids_[0]) == 1) {
@@ -287,10 +299,6 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   }
   else {
     mode |= EX_CLOBBER;
-    if (si.compress_data() > 0) {
-      // Force netcdf-4 if compression is specified...
-      mode |= EX_NETCDF4;
-    }
     std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
     outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   }
@@ -307,8 +315,9 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // EPU Can add a name of "processor_id_epu" which is 16 characters long.
   // Make sure maximumNameLength_ is at least that long...
 
-  if (maximumNameLength_ < 16)
+  if (maximumNameLength_ < 16) {
     maximumNameLength_ = 16;
+  }
   ex_set_option(outputId_, EX_OPT_MAX_NAME_LENGTH, maximumNameLength_);
 
   int int_size = si.int64() ? 8 : 4;
@@ -356,4 +365,4 @@ namespace {
     // returned -- take that as 1 more than the current count of open files.
     //
   }
-}
+} // namespace

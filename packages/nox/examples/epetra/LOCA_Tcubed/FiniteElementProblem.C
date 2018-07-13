@@ -52,6 +52,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_Assert.hpp"
 #include "Basis.H"
 
 #include "FiniteElementProblem.H"
@@ -279,7 +280,7 @@ bool FiniteElementProblem::evaluate(FillType f,
          3.0*factor*basis.uu*basis.uu*basis.phi[j]*basis.phi[i]) +
         mass_coeff*basis.wt*basis.dx*basis.phi[j]*basis.phi[i];
           ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
-          assert(ierr == 0);
+          TEUCHOS_ASSERT(ierr == 0);
         }
       }
     }

@@ -72,6 +72,7 @@ Superlu<Matrix,Vector>::Superlu(
   , nzvals_()                   // initialize to empty arrays
   , rowind_()
   , colptr_()
+  , is_contiguous_(true)
 {
   // ilu_set_default_options is called later in set parameter list if required.
   // This is not the ideal way, but the other option to always call
@@ -99,7 +100,7 @@ Superlu<Matrix,Vector>::Superlu(
   data_.U.Store = NULL;
   data_.X.Store = NULL;
   data_.B.Store = NULL;
-  
+
   ILU_Flag_=false; // default: turn off ILU
 }
 
@@ -120,7 +121,7 @@ Superlu<Matrix,Vector>::~Superlu( )
   }
 
   // only root allocated these SuperMatrices.
-  if ( data_.L.Store != NULL ){	// will only be true for this->root_
+  if ( data_.L.Store != NULL ){ // will only be true for this->root_
     SLU::Destroy_SuperNode_Matrix( &(data_.L) );
     SLU::Destroy_CompCol_Matrix( &(data_.U) );
   }
@@ -265,9 +266,33 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
                           data_.C.getRawPtr(), &rowcnd, &colcnd,
                           &amax, &info2);
-      TEUCHOS_TEST_FOR_EXCEPTION( info2 != 0,
-                          std::runtime_error,
-                          "SuperLU gsequ returned with status " << info2 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info2 < 0, std::runtime_error,
+         "SuperLU's gsequ function returned with status " << info2 << " < 0."
+         "  This means that argument " << (-info2) << " given to the function"
+         " had an illegal value.");
+      if (info2 > 0) {
+        if (info2 <= data_.A.nrow) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned with "
+             "info = " << info2 << " > 0, and info <= A.nrow = " << data_.A.nrow
+             << ".  This means that row " << info2 << " of A is exactly zero.");
+        }
+        else if (info2 > data_.A.ncol) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned with "
+             "info = " << info2 << " > 0, and info > A.ncol = " << data_.A.ncol
+             << ".  This means that column " << (info2 - data_.A.nrow) << " of "
+             "A is exactly zero.");
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned "
+             "with info = " << info2 << " > 0, but its value is not in the "
+             "range permitted by the documentation.  This should never happen "
+             "(it appears to be SuperLU's fault).");
+        }
+      }
 
       // apply row and column scalings if necessary
       function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
@@ -300,13 +325,21 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
         function_map::gstrf(&(data_.options), &(data_.AC),
             data_.relax, data_.panel_size, data_.etree.getRawPtr(),
             NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-            &(data_.L), &(data_.U), &(data_.stat), &info);
+            &(data_.L), &(data_.U), 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+            &(data_.lu), 
+#endif
+            &(data_.stat), &info);
       }
       else {
         function_map::gsitrf(&(data_.options), &(data_.AC),
             data_.relax, data_.panel_size, data_.etree.getRawPtr(),
             NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-            &(data_.L), &(data_.U), &(data_.stat), &info);
+            &(data_.L), &(data_.U), 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+            &(data_.lu), 
+#endif
+            &(data_.stat), &info);
       }
 
     }
@@ -355,10 +388,18 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             slu_type>::do_get(B, bValues(),
-                                               as<size_t>(ld_rhs),
-                                               ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
   int ierr = 0; // returned error code
@@ -396,14 +437,22 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
           data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
           data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
           &(data_.X), &rpg, &rcond, data_.ferr.getRawPtr(),
-          data_.berr.getRawPtr(), &(data_.mem_usage), &(data_.stat), &ierr);
+          data_.berr.getRawPtr(), 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          &(data_.lu), 
+#endif
+          &(data_.mem_usage), &(data_.stat), &ierr);
     }
     else {
       function_map::gsisx(&(data_.options), &(data_.A),
           data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
           data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
           data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
-          &(data_.X), &rpg, &rcond, &(data_.mem_usage), &(data_.stat), &ierr);
+          &(data_.X), &rpg, &rcond, 
+#ifdef HAVE_AMESOS2_SUPERLU5_API
+          &(data_.lu), 
+#endif
+          &(data_.mem_usage), &(data_.stat), &ierr);
     }
 
     }
@@ -436,10 +485,18 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
 
@@ -537,6 +594,9 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 
   data_.options.ILU_FillTol = parameterList->get<double>("ILU_FillTol", 0.01);
 
+  if( parameterList->isParameter("IsContiguous") ){
+    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  }
 }
 
 
@@ -657,6 +717,8 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("ILU_Flag", false, "ILU flag: if true, run ILU routines");
 
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
     valid_params = pl;
   }
 
@@ -699,12 +761,23 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                    nzvals_(), rowind_(),
-                                                    colptr_(), nnz_ret, ROOTED,
-                                                    ARBITRARY,
-                                                    this->rowIndexBase_);
+
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
+    else {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
   }
 
   // Get the SLU data type for this type of matrix
@@ -730,7 +803,7 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template<class Matrix, class Vector>
 const char* Superlu<Matrix,Vector>::name = "SuperLU";
-  
+
 
 } // end namespace Amesos2
 

@@ -238,27 +238,77 @@ public:
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const = 0;
 
-   /** Get set of indices owned by this processor
-     */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices owned by
+    *              this processor.
+    */
+   virtual void
+   getOwnedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
-     */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices ghosted for
+    *              this processor.
+    */
+   virtual void
+   getGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the owned and ghosted
+    *              indices for this processor.
+    */
+   virtual void
+   getOwnedAndGhostedIndices(
+     std::vector<GlobalOrdinalT>& indices) const = 0;
+
+   /**
+    *  \brief Get the number of indices owned by this processor.
+    *
+    *  \returns The number of indices owned by this processor.
+    */
+   virtual int
+   getNumOwned() const = 0;
+
+   /**
+    *  \brief Get the number of indices ghosted for this processor.
+    *
+    *  \returns The number of indices ghosted for this processor.
+    */
+   virtual int
+   getNumGhosted() const = 0;
+
+   /**
+    *  \brief Get the number of owned and ghosted indices for this processor.
+    *
+    *  \returns The number of owned and ghosted indices for this processor.
+    */
+   virtual int
+   getNumOwnedAndGhosted() const = 0;
 
    /** Get a yes/no on ownership for each index in a vector
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const = 0;
 
    /** Access the local IDs for an element. The local ordering is according to
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
-   { return localIDs_[localElmtId]; }
+  const Kokkos::View<const LocalOrdinalT*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
+    { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
+
+  /** Return all the element LIDS for a given indexer
+   */
+  const Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
+    {return localIDs_k_;}
 
    /** Access the local IDs for an element. The local ordering is according to
-     * the <code>getOwnedAndSharedIndices</code> method. Note
+     * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
    void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
                        Kokkos::View<LocalOrdinalT**,PHX::Device> lids) const
@@ -268,7 +318,7 @@ public:
      functor.global_lids = localIDs_k_;
      functor.local_lids = lids; // we assume this array is sized correctly!
 
-     Kokkos::parallel_for(cellIds.dimension_0(),functor);
+     Kokkos::parallel_for(cellIds.extent(0),functor);
    }
 
    /** \brief How many GIDs are associate with a particular element block
@@ -294,13 +344,13 @@ public:
      typedef typename PHX::Device execution_space;
 
      Kokkos::View<const int*,PHX::Device> cellIds;
-     Kokkos::View<const LocalOrdinalT**,PHX::Device> global_lids;
+     Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> global_lids;
      Kokkos::View<LocalOrdinalT**,PHX::Device> local_lids;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      
@@ -309,7 +359,7 @@ public:
 protected:
 
    /** This method is used by derived classes to the construct the local IDs from 
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIds()
    { 
@@ -324,7 +374,7 @@ protected:
    }
 
    /** This method is used by derived classes to the construct the local IDs from 
-     * the <code>getOwnedAndSharedIndices</code> method.
+     * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const ; 
 
@@ -333,16 +383,15 @@ protected:
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
-   { localIDs_ = localIDs; 
- 
+   {  
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
      for(std::size_t i=0;i<localIDs.size();i++)
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<LocalOrdinalT**,PHX::Device> localIDs_k 
-         = Kokkos::View<LocalOrdinalT**,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+       = Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
          localIDs_k(i,j) = localIDs[i][j];
@@ -359,13 +408,11 @@ protected:
      */
    void shareLocalIDs(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & src)
    {
-     localIDs_   = src.localIDs_;
      localIDs_k_ = src.localIDs_k_;
    }
 
 private:
-   std::vector<std::vector<LocalOrdinalT> > localIDs_; 
-   Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
+  Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
 };
 
 // prevents a warning because a destructor does not exist
@@ -379,13 +426,13 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const
 {
-  std::vector<GlobalOrdinalT> ownedAndShared;
-  this->getOwnedAndSharedIndices(ownedAndShared);
+  std::vector<GlobalOrdinalT> ownedAndGhosted;
+  this->getOwnedAndGhostedIndices(ownedAndGhosted);
    
   // build global to local hash map (temporary and used only once)
   std::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
-  for(std::size_t i=0;i<ownedAndShared.size();i++)
-    hashMap[ownedAndShared[i]] = i;
+  for(std::size_t i=0;i<ownedAndGhosted.size();i++)
+    hashMap[ownedAndGhosted[i]] = i;
 
   std::vector<std::string> elementBlocks;
   this->getElementBlockIds(elementBlocks);

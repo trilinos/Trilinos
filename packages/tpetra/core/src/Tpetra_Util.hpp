@@ -265,7 +265,7 @@ namespace Tpetra {
   template<class IT1>
   bool isAlreadySorted(const IT1& first, const IT1& last){
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT myit =OrdinalTraits<DT>::one();
+    DT myit = Teuchos::OrdinalTraits<DT>::one();
     const DT sz  = last - first;
     for(;myit < sz; ++myit){
       if(first[myit] < first[myit-1]){
@@ -393,7 +393,7 @@ namespace Tpetra {
     const IT2& last2)
   {
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT DT1 = OrdinalTraits<DT>::one();
+    DT DT1 = Teuchos::OrdinalTraits<DT>::one();
     if(last1-first1 > DT1){
       IT1 pivot = getPivot(first1, last1);
       pivot = partition2(first1, last1, first2, last2, pivot);
@@ -424,7 +424,7 @@ namespace Tpetra {
     const IT3& last3)
   {
     typedef typename std::iterator_traits<IT1>::difference_type DT;
-    DT DT1 = OrdinalTraits<DT>::one();
+    DT DT1 = Teuchos::OrdinalTraits<DT>::one();
     if(last1-first1 > DT1){
       IT1 pivot = getPivot(first1, last1);
       pivot = partition3(first1, last1, first2, last2, first3, last3, pivot);
@@ -451,7 +451,7 @@ namespace Tpetra {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
         DT m = n / 2;
-        DT z = OrdinalTraits<DT>::zero();
+        DT z = Teuchos::OrdinalTraits<DT>::zero();
         while (m > z)
         {
             DT max = n - m;
@@ -486,7 +486,7 @@ namespace Tpetra {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
         DT m = n / 2;
-        DT z = OrdinalTraits<DT>::zero();
+        DT z = Teuchos::OrdinalTraits<DT>::zero();
         while (m > z)
         {
             DT max = n - m;
@@ -884,8 +884,8 @@ namespace Tpetra {
 
       auto x_host = x.template view<Kokkos::HostSpace> ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                             x_host.dimension_0 ());
+      return Teuchos::ArrayView<value_type> (x_host.data (),
+                                             x_host.extent (0));
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
@@ -926,6 +926,25 @@ namespace Tpetra {
         Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
       }
       return x_out;
+    }
+
+    /// \brief Return the status of the given Kokkos::DualView, as a
+    ///   human-readable string.
+    ///
+    /// This is meant for Tpetra developers as a debugging aid.
+    ///
+    /// \param dv [in] Kokkos::DualView
+    /// \param name [in] Human-readable name of the Kokkos::DualView
+    template<class DualViewType>
+    std::string dualViewStatusToString (const DualViewType& dv, const char name[])
+    {
+      const auto host = dv.modified_host ();
+      const auto dev = dv.modified_host ();
+
+      std::ostringstream os;
+      os << name << ": {size: " << dv.extent (0)
+         << ", sync: {host: " << host << ", dev: " << dev << "}";
+      return os.str ();
     }
 
   } // namespace Details

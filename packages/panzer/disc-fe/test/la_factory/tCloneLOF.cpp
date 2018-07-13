@@ -48,10 +48,7 @@
 #include <string>
 #include <iostream>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
@@ -89,7 +86,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -112,7 +109,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::DOFManager<int,int> > indexer = rcp(new panzer::DOFManager<int,int>());
    indexer->setConnManager(connManager,MPI_COMM_WORLD);
@@ -126,13 +123,13 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    control_indexer->buildGlobalUnknowns();
  
    // setup factory
-   RCP<EpetraLinearObjFactory<Traits,int> > ep_lof
-         = Teuchos::rcp(new EpetraLinearObjFactory<Traits,int>(tComm.getConst(),indexer));
+   RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
+         = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm.getConst(),indexer));
    
    // this is the member we are testing!
    RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
-   RCP<const EpetraLinearObjFactory<Traits,int> > ep_control_lof 
-       = rcp_dynamic_cast<const EpetraLinearObjFactory<Traits,int> >(control_lof);
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+       = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
    std::vector<int> control_owned;
    control_indexer->getOwnedIndices(control_owned);
@@ -162,9 +159,9 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const FieldPattern> patternC2
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
    {
@@ -258,9 +255,9 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const FieldPattern> patternC2
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
    {

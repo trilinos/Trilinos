@@ -1,2 +1,0 @@
-../configure  --enable-mpi --with-mpi-libs=-lmpich \
---with-mpi=/opt/local/mpich-1.2.0

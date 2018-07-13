@@ -45,12 +45,13 @@
 
 #
 # System imports
+from   __future__ import print_function
+from   optparse import *
 import sys
 import unittest
 
 #
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -103,7 +104,7 @@ class MLSpaceTestCase(unittest.TestCase):
         "Test ML.Space (int,int) constructor"
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space = ML.Space(numGlobalEl, numMyEl)
         self.assertEqual(space.GetLabel()[:4], "obj_")
         self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
@@ -140,7 +141,7 @@ class MLSpaceTestCase(unittest.TestCase):
         "Test ML.Space copy constructor"
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space1 = ML.Space(numGlobalEl, numMyEl)
         space2 = ML.Space(space1)
         self.assertEqual(space1.GetNumGlobalElements(), space2.GetNumGlobalElements())
@@ -230,7 +231,7 @@ class MLSpaceTestCase(unittest.TestCase):
         self.assertEqual(space.IsLinear(), False)
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space.Reshape(numGlobalEl, numMyEl)
         self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
         self.assertEqual(space.GetNumMyElements(), numMyEl)
@@ -316,14 +317,15 @@ if __name__ == "__main__":
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-          "\n****************\nTesting ML.Space\n****************\n"
+    if iAmRoot:
+        print("\n****************\nTesting ML.Space\n****************\n",
+              file=sys.stderr)
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

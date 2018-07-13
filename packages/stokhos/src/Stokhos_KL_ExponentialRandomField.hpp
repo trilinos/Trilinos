@@ -149,12 +149,14 @@ namespace Stokhos {
       //! Evaluate standard deviation of random field at a point
       template <typename point_type>
       KOKKOS_INLINE_FUNCTION
-      value_type evaluate_standard_deviation(const point_type& point) const;
+      typename Teuchos::PromotionTraits<typename point_type::value_type,
+                                        value_type>::promote
+      evaluate_standard_deviation(const point_type& point) const;
 
       //! Evaluate given eigenfunction at a point
       template <typename point_type>
-      value_type
       KOKKOS_INLINE_FUNCTION
+      typename Teuchos::PromotionTraits<typename point_type::value_type, value_type>::promote
       evaluate_eigenfunction(const point_type& point, int i) const;
 
       //! Return eigenvalue

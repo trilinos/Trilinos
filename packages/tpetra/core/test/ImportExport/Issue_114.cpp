@@ -65,11 +65,14 @@ main (int argc, char *argv[])
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef int LO;
-  typedef int GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO> map_type;
   typedef Tpetra::Import<LO, GO> import_type;
+  // mfh 09 Aug 2017: Tpetra instantiates Vector with Scalar=int even
+  // if GO=int is disabled, because users (e.g., in MueLu and Zoltan2)
+  // want to be able to communicate MPI process ranks.
   typedef Tpetra::Vector<int, LO, GO> IntVector;
 
   Teuchos::oblackholestream blackhole;

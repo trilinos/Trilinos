@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+
+
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -61,4 +61,4 @@ INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(MUELU_INST_S_LO_GO_N)
 
 #endif
 
-#endif
+

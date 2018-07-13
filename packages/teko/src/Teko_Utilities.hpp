@@ -740,7 +740,9 @@ const LinearOp explicitTranspose(const LinearOp & op);
 
 /** Rturn the frobenius norm of a linear operator
   */
-const double frobeniusNorm(const LinearOp & op);
+double frobeniusNorm(const LinearOp & op);
+double oneNorm(const LinearOp & op);
+double infNorm(const LinearOp & op);
 
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator
@@ -891,6 +893,14 @@ void columnAverages(const MultiVector & v,std::vector<double> & averages);
 /** Compute the average of the solution.
   */
 double average(const MultiVector & v);
+
+/** Is this operator a physically blocked linear op?
+  */
+bool isPhysicallyBlockedLinearOp(const LinearOp & op);
+
+/** Return a physically blocked linear op and whether it is scaled or transpose in its wrapper
+  */
+Teuchos::RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyBlockedLinearOp(const LinearOp & op, ST *scalar, bool *transp);
 
 } // end namespace Teko
 

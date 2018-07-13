@@ -77,12 +77,6 @@ size_t get_memory_usage_now()
   }
   memory = t_info.resident_size;
 
-#elif defined(__LIBCATAMOUNT__) && defined(REDSTORM_HEAP_INFO)
-  size_t frags;
-  unsigned long total_free, largest_free, total_used;
-  heap_info( &frags, &total_free, &largest_free, &total_used );
-  memory = total_used * 1024;
-
 #elif defined(BGQ_LWK)
   uint64_t heap;
   Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);

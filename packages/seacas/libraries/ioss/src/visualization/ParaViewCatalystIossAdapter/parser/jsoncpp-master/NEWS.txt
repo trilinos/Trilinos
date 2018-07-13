@@ -1,0 +1,118 @@
+# Copyright(C) 1999-2010 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+# 
+#     * Neither the name of NTESS nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%{
+#include <stdio.h>
+#include "catalyst.tab.hpp"
+
+void count();
+%}
+
+%%
+
+ /* MultiCamera8 */;
+
+(?i:look\ +at\ +absolute\ +point)                                    { count(); return(TOKLOOKATABSOLUTEPOINT); }
+(?i:multicamera8)                                                    { count(); return(TOKMULTICAMERA8); }
+
+ /* MultiCamera8 */;
+
+ /* Representation */;
+
+(?i:image\ +name\ +addon)                                            { count(); return(TOKIMAGENAMEADDON); }
+(?i:show\ +orientation\ +axes)                                       { count(); return(TOKSHOWORIENTATIONAXES); }
+(?i:show\ +z\ +axis\ +tic\ +mark\ +labels)                           { count(); return(TOKSHOWZAXISTICMARKLABELS); }
+(?i:show\ +y\ +axis\ +tic\ +mark\ +labels)                           { count(); return(TOKSHOWYAXISTICMARKLABELS); }
+(?i:show\ +x\ +axis\ +tic\ +mark\ +labels)                           { count(); return(TOKSHOWXAXISTICMARKLABELS); }
+(?i:show\ +z\ +axis\ +minor\ +tic\ +marks)                           { count(); return(TOKSHOWZAXISMINORTICMARKS); }
+(?i:show\ +y\ +axis\ +minor\ +tic\ +marks)                           { count(); return(TOKSHOWYAXISMINORTICMARKS); }
+(?i:show\ +x\ +axis\ +minor\ +tic\ +marks)                           { count(); return(TOKSHOWXAXISMINORTICMARKS); }
+(?i:show\ +z\ +axis\ +tic\ +marks)                                   { count(); return(TOKSHOWZAXISTICMARKS); }
+(?i:show\ +y\ +axis\ +tic\ +marks)                                   { count(); return(TOKSHOWYAXISTICMARKS); }
+(?i:show\ +x\ +axis\ +tic\ +marks)                                   { count(); return(TOKSHOWXAXISTICMARKS); }
+(?i:z\ +axis\ +label\ +name)                                         { count(); return(TOKZAXISLABELNAME); }
+(?i:y\ +axis\ +label\ +name)                                         { count(); return(TOKYAXISLABELNAME); }
+(?i:x\ +axis\ +label\ +name)                                         { count(); return(TOKXAXISLABELNAME); }
+(?i:show\ +z\ +axis\ +label)                                         { count(); return(TOKSHOWZAXISLABEL); }
+(?i:show\ +y\ +axis\ +label)                                         { count(); return(TOKSHOWYAXISLABEL); }
+(?i:show\ +x\ +axis\ +label)                                         { count(); return(TOKSHOWXAXISLABEL); }
+(?i:show\ +axes)                                                     { count(); return(TOKSHOWAXES); }
+(?i:time\ +annotation\ +position)                                    { count(); return(TOKTIMEANNOTATIONPOSITION); }
+(?i:show\ +time\ +annotation)                                        { count(); return(TOKSHOWTIMEANNOTATION); }
+(?i:invert\ +color\ +scale)                                          { count(); return(TOKINVERTCOLORSCALE); }
+(?i:preset\ +color\ +scale)                                          { count(); return(TOKPRESETCOLORSCALE); }
+(?i:color\ +legend\ +position)                                       { count(); return(TOKCOLORLEGENDPOSITION); }
+(?i:color\ +legend\ +maximum\ +range)                                { count(); return(TOKCOLORLEGENDMAXIMUMRANGE); }
+(?i:color\ +legend\ +minimum\ +range)                                { count(); return(TOKCOLORLEGENDMINIMUMRANGE); }
+(?i:color\ +legend\ +use\ +cumulative\ +data\ +range)                { count(); return(TOKCOLORLEGENDUSECUMULATIVEDATARANGE); }
+(?i:color\ +legend\ +use\ +current\ +data\ +range)                   { count(); return(TOKCOLORLEGENDUSECURRENTDATARANGE); }
+(?i:color\ +legend\ +range)                                          { count(); return(TOKCOLORLEGENDRANGE); }
+(?i:show\ +color\ +legend)                                           { count(); return(TOKSHOWCOLORLEGEND); }
+(?i:color\ +by\ +blockid)                                            { count(); return(TOKCOLORBYBLOCKID); }
+(?i:color\ +by\ +solid\ +color)                                      { count(); return(TOKCOLORBYSOLIDCOLOR); }
+(?i:color\ +by\ +tensor\ +component)                                 { count(); return(TOKCOLORBYTENSORCOMPONENT); }
+(?i:color\ +by\ +vector\ +component)                                 { count(); return(TOKCOLORBYVECTORCOMPONENT); }
+(?i:color\ +by\ +vector\ +magnitude)                                 { count(); return(TOKCOLORBYVECTORMAGNITUDE); }
+(?i:color\ +by\ +scalar)                                             { count(); return(TOKCOLORBYSCALAR); }
+(?i:show\ +bounding\ +box)                                           { count(); return(TOKSHOWBOUNDINGBOX); }
+(?i:show\ +edges)                                                    { count(); return(TOKSHOWEDGES); }
+(?i:show\ +surfaces)                                                 { count(); return(TOKSHOWSURFACES); }
+(?i:top)                                                             { yylval.string=strdup(yytext); count(); return(TOKTOP); }
+(?i:left)                                                            { yylval.string=strdup(yytext); count(); return(TOKLEFT); }
+(?i:bottom)                                                          { yylval.string=strdup(yytext); count(); return(TOKBOTTOM); }
+(?i:right)                                                           { yylval.string=strdup(yytext); count(); return(TOKRIGHT); }
+(?i:top\ +left)                                                      { yylval.string=strdup(yytext); count(); return(TOKTOPLEFT); }
+(?i:top\ +right)                                                     { yylval.string=strdup(yytext); count(); return(TOKTOPRIGHT); }
+(?i:bottom\ +left)                                                   { yylval.string=strdup(yytext); count(); return(TOKBOTTOMLEFT); }
+(?i:bottom\ +right)                                                  { yylval.string=strdup(yytext); count(); return(TOKBOTTOMRIGHT); }
+(?i:representation)                                                  { count(); return(TOKREPRESENTATION); }
+
+ /* Representation */;
+
+ /* Catalyst */;
+
+(?i:catalyst)                                                        { count(); return(TOKCATALYST); }
+(?i:begin)                                                           { count(); return(TOKBEGIN); }
+(?i:end)                                                             { count(); return(TOKEND); }
+
+ /* Catalyst */;
+
+"="                                                                  { count(); return(TOKEQUAL); }
+(?i:false)                                                           { yylval.integer=0; count(); return(TOKFALSE); }
+(?i:true)                                                            { yylval.integer=1; count(); return(TOKTRUE); }
+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?                               { yylval.floating=atof(yytext); count(); return(TOKVALUE); }
+[a-zA-Z][a-zA-Z0-9_]*                                                { yylval.string=strdup(yytext); count(); return(TOKIDENTIFIER); }
+["].*["]                                                             { yylval.string=strdup(yytext); count(); return(TOKSTRING); }
+["#"|"$"].*                                                          { count(); }
+[ \t\v\f\n]+                                                         { count(); }
+%%
+
+int column 

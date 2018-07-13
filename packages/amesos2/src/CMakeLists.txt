@@ -80,12 +80,12 @@ APPEND_SET(HEADERS
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/AMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/COLAMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/BTF/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/UFconfig)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Source)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp
@@ -131,6 +131,7 @@ APPEND_SET(HEADERS
   Amesos2_TypeMap.hpp
   Amesos2_TypeDecl.hpp
   Amesos2_Util.hpp
+  Amesos2_VectorTraits.hpp
   Amesos2_Version.hpp
   )
 
@@ -191,30 +192,30 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
 
 
    SET(KLU_HEADERS
-        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
-        SuiteSparse/KLU2/Source/klu2_analyze.hpp
-        SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
-        SuiteSparse/KLU2/Source/klu2_dump.hpp
-        SuiteSparse/KLU2/Source/klu2_extract.hpp
-        SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
-        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2.hpp
-        SuiteSparse/KLU2/Source/klu2_kernel.hpp
-        SuiteSparse/KLU2/Source/klu2_memory.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2_scale.hpp
-        SuiteSparse/KLU2/Source/klu2_solve.hpp
-        SuiteSparse/KLU2/Source/klu2_sort.hpp
-        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
-        SuiteSparse/KLU2/Include/klu2_ext.hpp
-        SuiteSparse/KLU2/Include/klu2.h
-        SuiteSparse/KLU2/Include/klu2_internal.h
-        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
-        SuiteSparse/KLU2/Include/klu2_scalartraits.h
-        SuiteSparse/KLU2/Include/klu2_version.h
+        KLU2/Source/klu2_analyze_given.hpp
+        KLU2/Source/klu2_analyze.hpp
+        KLU2/Source/klu2_defaults.hpp
+        KLU2/Source/klu2_diagnostics.hpp
+        KLU2/Source/klu2_dump.hpp
+        KLU2/Source/klu2_extract.hpp
+        KLU2/Source/klu2_factor.hpp
+        KLU2/Source/klu2_free_numeric.hpp
+        KLU2/Source/klu2_free_symbolic.hpp
+        KLU2/Source/klu2_refactor.hpp
+        KLU2/Source/klu2.hpp
+        KLU2/Source/klu2_kernel.hpp
+        KLU2/Source/klu2_memory.hpp
+        KLU2/Source/klu2_refactor.hpp
+        KLU2/Source/klu2_scale.hpp
+        KLU2/Source/klu2_solve.hpp
+        KLU2/Source/klu2_sort.hpp
+        KLU2/Source/klu2_tsolve.hpp
+        KLU2/Include/klu2_ext.hpp
+        KLU2/Include/klu2.h
+        KLU2/Include/klu2_internal.h
+        KLU2/Include/klu2_ordinaltraits.h
+        KLU2/Include/klu2_scalartraits.h
+        KLU2/Include/klu2_version.h
      )
 
      #IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
@@ -224,36 +225,12 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
 
 
     APPEND_SET(HEADERS
-        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
-        SuiteSparse/KLU2/Source/klu2_analyze.hpp
-        SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
-        SuiteSparse/KLU2/Source/klu2_dump.hpp
-        SuiteSparse/KLU2/Source/klu2_extract.hpp
-        SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
-        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2.hpp
-        SuiteSparse/KLU2/Source/klu2_kernel.hpp
-        SuiteSparse/KLU2/Source/klu2_memory.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2_scale.hpp
-        SuiteSparse/KLU2/Source/klu2_solve.hpp
-        SuiteSparse/KLU2/Source/klu2_sort.hpp
-        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
-        SuiteSparse/KLU2/Include/klu2_ext.hpp
-        SuiteSparse/KLU2/Include/klu2.h
-        SuiteSparse/KLU2/Include/klu2_internal.h
-        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
-        SuiteSparse/KLU2/Include/klu2_scalartraits.h
-        SuiteSparse/KLU2/Include/klu2_version.h
+        ${KLU_HEADERS}
      )
 
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Basker)
-
 
   APPEND_SET(HEADERS
     Amesos2_Basker.hpp
@@ -271,16 +248,66 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Amesos2_Basker.cpp
       )
 
-      IF(NOT Trilinos_ENABLE_ShyLUBasker)      
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
-    APPEND_SET(HEADERS				
-        basker/basker.hpp
-        basker/basker_decl.hpp
-        basker/basker_def.hpp
-        basker/basker_scalartraits.hpp
-        basker/basker_types.hpp
-     )
-     ENDIF()
+   	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
+   	APPEND_SET(HEADERS				
+      basker/basker.hpp
+      basker/basker_decl.hpp
+      basker/basker_def.hpp
+      basker/basker_scalartraits.hpp
+      basker/basker_types.hpp
+   	  )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
+  ASSERT_DEFINED(Trilinos_ENABLE_ShyLU_NodeBasker)
+
+  APPEND_SET(HEADERS
+    Amesos2_ShyLUBasker.hpp
+    Amesos2_ShyLUBasker_decl.hpp
+    Amesos2_ShyLUBasker_def.hpp
+    Amesos2_ShyLUBasker_FunctionMap.hpp
+    Amesos2_ShyLUBasker_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    #    Amesos2_ShyLUBasker_TypeMap.cpp
+    Amesos2_ShyLUBasker.cpp
+    )
+
+ENDIF()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
+IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
+
+  APPEND_SET(HEADERS
+    Amesos2_Umfpack.hpp
+    Amesos2_Umfpack_decl.hpp
+    Amesos2_Umfpack_def.hpp
+    Amesos2_Umfpack_FunctionMap.hpp
+    Amesos2_Umfpack_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Umfpack.cpp
+    )
+
+ENDIF()
+
+#ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+
+  APPEND_SET(HEADERS
+    Amesos2_Tacho.hpp
+    Amesos2_Tacho_decl.hpp
+    Amesos2_Tacho_def.hpp
+    Amesos2_Tacho_FunctionMap.hpp
+    Amesos2_Tacho_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Tacho.cpp
+    )
 
 ENDIF()
 
@@ -388,8 +415,8 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 ENDIF()
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
-    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+IF (${PACKAGE_NAME}_ENABLE_TrilinosSS)
+    ADD_SUBDIRECTORY(KLU2/Source)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
@@ -407,7 +434,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
         )
 ENDIF()
 ENDIF()
-
 
 
 #

@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -45,6 +45,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <exodus/Ioex_DatabaseIO.h>
 #include <exodus/Ioex_Utils.h>
 #include <exodusII.h>
@@ -54,7 +55,6 @@
 #include <set>
 #include <string>
 #include <sys/select.h>
-#include <time.h>
 #include <utility>
 #include <vector>
 
@@ -102,7 +102,7 @@ namespace {
 
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities,
-                             const char suffix_separator);
+                             char suffix_separator);
 
   template <typename T>
   void generate_block_truth_table(Ioex::VariableNameMap &variables, Ioss::IntVector &truth_table,
@@ -131,7 +131,8 @@ namespace Ioex {
       isParallel = false;
     }
 
-    dbState = Ioss::STATE_UNKNOWN;
+    timeLastFlush = time(nullptr);
+    dbState       = Ioss::STATE_UNKNOWN;
 
     // Set exodusII warning level.
     if (util().get_environment("EX_DEBUG", isParallel)) {
@@ -141,15 +142,6 @@ namespace Ioex {
     }
 
     if (!is_input()) {
-      // Check whether appending to existing file...
-      if (open_create_behavior() == Ioss::DB_APPEND ||
-          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
-        // Append to file if it already exists -- See if the file exists.
-        std::string    decoded_filename = util().decode_filename(get_filename(), isParallel);
-        Ioss::FileInfo file             = Ioss::FileInfo(decoded_filename);
-        fileExists                      = file.exists();
-      }
-
       if (util().get_environment("EX_MINIMIZE_OPEN_FILES", isParallel)) {
         std::cerr << "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment "
                      "variable is set.\n";
@@ -254,7 +246,7 @@ namespace Ioex {
   }
 
   // common
-  void DatabaseIO::release_memory()
+  void DatabaseIO::release_memory__()
   {
     nodeMap.release_memory();
     edgeMap.release_memory();
@@ -274,14 +266,28 @@ namespace Ioex {
   int DatabaseIO::free_file_pointer() const
   {
     if (exodusFilePtr != -1) {
+      bool do_timer = false;
+      if (isParallel) {
+        Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      }
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
       ex_close(exodusFilePtr);
+
+      if (do_timer && isParallel) {
+        double t_end    = Ioss::Utils::timer();
+        double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
+        if (myProcessor == 0) {
+          std::cerr << "File Close Time = " << duration << "\n";
+        }
+      }
     }
     exodusFilePtr = -1;
 
     return exodusFilePtr;
   }
 
-  bool DatabaseIO::open_group(const std::string &group_name)
+  bool DatabaseIO::open_group__(const std::string &group_name)
   {
     // Get existing file pointer...
     bool success = false;
@@ -303,7 +309,7 @@ namespace Ioex {
     return success;
   }
 
-  bool DatabaseIO::create_subgroup(const std::string &group_name)
+  bool DatabaseIO::create_subgroup__(const std::string &group_name)
   {
     bool success = false;
     if (!is_input()) {
@@ -359,6 +365,10 @@ namespace Ioex {
         std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
         std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
         std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+        qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
       }
     }
 
@@ -418,8 +428,8 @@ namespace Ioex {
 
     size_t total_lines = in_lines + qa_lines + info_rec_size;
 
-    char **info =
-        get_exodus_names(total_lines, max_line_length); // 'total_lines' pointers to char buffers
+    char **info = Ioss::Utils::get_name_array(
+        total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
     int i = 0;
     std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
@@ -443,7 +453,7 @@ namespace Ioex {
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
 
-    delete_exodus_names(info, total_lines);
+    Ioss::Utils::delete_name_array(info, total_lines);
   }
 
   // common
@@ -493,8 +503,8 @@ namespace Ioex {
   }
 
   // common
-  void DatabaseIO::get_block_adjacencies(const Ioss::ElementBlock *eb,
-                                         std::vector<std::string> &block_adjacency) const
+  void DatabaseIO::get_block_adjacencies__(const Ioss::ElementBlock *eb,
+                                           std::vector<std::string> &block_adjacency) const
   {
     if (!blockAdjacenciesCalculated) {
       compute_block_adjacencies();
@@ -518,8 +528,8 @@ namespace Ioex {
   }
 
   // common
-  void DatabaseIO::compute_block_membership(Ioss::SideBlock *         efblock,
-                                            std::vector<std::string> &block_membership) const
+  void DatabaseIO::compute_block_membership__(Ioss::SideBlock *         efblock,
+                                              std::vector<std::string> &block_membership) const
   {
     Ioss::Int64Vector block_ids(m_groupCount[EX_ELEM_BLOCK]);
     if (m_groupCount[EX_ELEM_BLOCK] == 1) {
@@ -826,14 +836,14 @@ namespace Ioex {
   }
 
   // common
-  bool DatabaseIO::begin(Ioss::State state)
+  bool DatabaseIO::begin__(Ioss::State state)
   {
     dbState = state;
     return true;
   }
 
   // common
-  bool DatabaseIO::end(Ioss::State state)
+  bool DatabaseIO::end__(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -870,7 +880,7 @@ namespace Ioex {
   // Default versions do nothing at this time...
   // Will be used for global variables...
   // common
-  bool DatabaseIO::begin_state(Ioss::Region * /* region */, int state, double time)
+  bool DatabaseIO::begin_state__(Ioss::Region * /* region */, int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -894,7 +904,7 @@ namespace Ioex {
   }
 
   // common
-  bool DatabaseIO::end_state(Ioss::Region * /*region*/, int /*state*/, double time)
+  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int /*state*/, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -975,7 +985,7 @@ namespace Ioex {
       // Get the variable names and add as fields. Need to decode these
       // into vector/tensor/... eventually, for now store all as
       // scalars.
-      char **names = get_exodus_names(nvar, maximumNameLength);
+      char **names = Ioss::Utils::get_name_array(nvar, maximumNameLength);
 
       // Read the names...
       // (Currently, names are read for every block.  We could save them...)
@@ -1004,8 +1014,8 @@ namespace Ioex {
 
         std::vector<Ioss::Field> fields;
         int64_t                  count = entity->get_property("entity_count").get_int();
-        Ioex::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, get_field_separator(),
-                         local_truth, fields);
+        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, get_field_separator(),
+                                local_truth, fields);
 
         for (const auto &field : fields) {
           entity->field_add(field);
@@ -1068,7 +1078,7 @@ namespace Ioex {
       generate_sideset_truth_table();
     }
 
-    ex_var_params exo_params;
+    ex_var_params exo_params{};
     exo_params.num_glob  = m_variables[EX_GLOBAL].size();
     exo_params.num_node  = m_variables[EX_NODE_BLOCK].size();
     exo_params.num_edge  = m_variables[EX_EDGE_BLOCK].size();
@@ -1333,6 +1343,13 @@ namespace Ioex {
   }
 
   // common
+  void DatabaseIO::flush_database__() const
+  {
+    if (!is_input()) {
+      ex_update(get_file_pointer());
+    }
+  }
+
   void DatabaseIO::finalize_write(double sim_time)
   {
     // Attempt to ensure that all data written up to this point has
@@ -1378,7 +1395,7 @@ namespace Ioex {
       }
     }
     if (do_flush) {
-      ex_update(get_file_pointer());
+      flush_database__();
     }
   }
 
@@ -1419,7 +1436,7 @@ namespace Ioex {
       size_t      my_element_count = block->get_property("entity_count").get_int();
 
       // Get the attribute names. May not exist or may be blank...
-      char ** names = get_exodus_names(attribute_count, maximumNameLength);
+      char ** names = Ioss::Utils::get_name_array(attribute_count, maximumNameLength);
       int64_t id    = block->get_property("id").get_int();
 
       // Some older applications do not want to used named
@@ -1481,8 +1498,8 @@ namespace Ioex {
 
       if (attributes_named) {
         std::vector<Ioss::Field> attributes;
-        Ioex::get_fields(my_element_count, names, attribute_count, Ioss::Field::ATTRIBUTE,
-                         field_suffix_separator, nullptr, attributes);
+        Ioss::Utils::get_fields(my_element_count, names, attribute_count, Ioss::Field::ATTRIBUTE,
+                                field_suffix_separator, nullptr, attributes);
         int offset = 1;
         for (const auto &field : attributes) {
           if (block->field_exists(field.get_name())) {
@@ -1508,7 +1525,7 @@ namespace Ioex {
             att_name = "nodal_thickness";
 
             std::string storage = "Real[";
-            storage += Ioss::Utils::to_string(attribute_count);
+            storage += std::to_string(attribute_count);
             storage += "]";
 
             block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
@@ -1612,9 +1629,9 @@ namespace Ioex {
 
         if (unknown_attributes > 0) {
           att_name = "extra_attribute_";
-          att_name += Ioss::Utils::to_string(unknown_attributes);
+          att_name += std::to_string(unknown_attributes);
           std::string storage = "Real[";
-          storage += Ioss::Utils::to_string(unknown_attributes);
+          storage += std::to_string(unknown_attributes);
           storage += "]";
           size_t index = attribute_count - unknown_attributes + 1;
           block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
@@ -1626,14 +1643,14 @@ namespace Ioex {
       // for all attributes on the mesh
       std::string att_name = "attribute"; // Default
       std::string storage  = "Real[";
-      storage += Ioss::Utils::to_string(attribute_count);
+      storage += std::to_string(attribute_count);
       storage += "]";
 
       block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
                                    my_element_count, 1));
 
       // Release memory...
-      delete_exodus_names(names, attribute_count);
+      Ioss::Utils::delete_name_array(names, attribute_count);
     }
   }
 
@@ -1896,7 +1913,6 @@ namespace {
       offset += comp_count;
     }
     assert((int)offset == attribute_count + 1);
-    return;
   }
 
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,

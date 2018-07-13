@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -43,6 +43,7 @@
 #include <cstdlib> // for free, exit, malloc
 #include <cstring> // for strcmp
 #include <iostream>
+#include <stdexcept>
 
 #include "add_to_log.h" // for add_to_log
 #include "elb.h"        // for LB_Description<INT>, get_time, etc
@@ -66,9 +67,10 @@
 
 namespace {
   template <typename INT>
-  void print_input(Machine_Description *, LB_Description<INT> *, Problem_Description *,
-                   Solver_Description *, Weight_Description<INT> *);
-}
+  void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,
+                   Problem_Description * /*prob*/, Solver_Description * /*solver*/,
+                   Weight_Description<INT> * /*weight*/);
+} // namespace
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -124,6 +126,7 @@ int main(int argc, char *argv[])
 
   /* check if the user just wants to know the version (or forcing 64-bit mode)*/
   bool int64com = false;
+  bool int32com = false;
   int  int64db  = 0;
 
   for (int cnt = 0; cnt < argc; cnt++) {
@@ -133,6 +136,10 @@ int main(int argc, char *argv[])
     }
     if (strcmp(argv[cnt], "-64") == 0) {
       int64com = true;
+    }
+
+    if (strcmp(argv[cnt], "-32") == 0) {
+      int32com = true;
     }
   }
 
@@ -150,7 +157,7 @@ int main(int argc, char *argv[])
     if (exoid < 0) {
       std::string error("fatal: unable to open input ExodusII file ");
       error += mesh_file_name;
-      Gen_Error(0, error.c_str());
+      Gen_Error(0, error);
       return 0;
     }
 
@@ -161,8 +168,14 @@ int main(int argc, char *argv[])
   }
 
   int status;
-  if (int64db || int64com) {
-    std::cerr << "Using 64-bit integer mode for decomposition...\n";
+  if (int32com && (int64db != 0)) {
+    std::cerr << "Forcing 32-bit integer mode for decomposition even though database is 64-bit.\n";
+    status = internal_main(argc, argv, int(0));
+  }
+  else if ((int64db != 0) || int64com) {
+    std::cerr << "Using 64-bit integer mode for decomposition...\n"
+              << "NOTE: Only 'linear' and 'scattered' methods are supported for 64-bit models\n";
+
     status = internal_main(argc, argv, int64_t(0));
   }
   else {
@@ -229,8 +242,9 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   /* make sure that this type is set */
-  if (weight.type < 0)
+  if (weight.type < 0) {
     weight.type = NO_WEIGHT;
+  }
 
   /*
    * Perform at least some rudimentary error checks on the user
@@ -294,40 +308,50 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   /* Initialize various parameters */
   if (lb.type == INERTIAL || lb.type == ZPINCH || lb.type == BRICK || lb.type == ZOLTAN_RCB ||
       lb.type == ZOLTAN_RIB || lb.type == ZOLTAN_HSFC || problem.vis_out == 1 ||
-      problem.vis_out == 2)
+      problem.vis_out == 2) {
     problem.read_coords = ELB_TRUE;
-  else
+  }
+  else {
     problem.read_coords = ELB_FALSE;
+  }
 
-  if (lb.type != SPECTRAL)
+  if (lb.type != SPECTRAL) {
     problem.coarse_flag = ELB_FALSE;
-  else
+  }
+  else {
     problem.coarse_flag = ELB_TRUE;
+  }
 
-  if (lb.refine == KL_REFINE)
+  if (lb.refine == KL_REFINE) {
     problem.alloc_graph = ELB_TRUE;
-  else if (lb.type == SPECTRAL)
+  }
+  else if (lb.type == SPECTRAL) {
     problem.alloc_graph = ELB_TRUE;
-  else
+  }
+  else {
     problem.alloc_graph = ELB_FALSE;
+  }
 
   /* Allocate necessary memory */
-  if (problem.type == NODAL)
+  if (problem.type == NODAL) {
     problem.num_vertices = mesh.num_nodes;
-  else if (problem.type == ELEMENTAL)
+  }
+  else if (problem.type == ELEMENTAL) {
     problem.num_vertices = (mesh.num_elems - sphere.num);
+  }
 
   if (problem.read_coords == ELB_TRUE) {
     size_t mem_req = (size_t)(mesh.num_dims) * (mesh.num_nodes) * sizeof(float);
-    mesh.coords    = (float *)malloc(mem_req);
+    mesh.coords    = reinterpret_cast<float *>(malloc(mem_req));
     if (!(mesh.coords)) {
       Gen_Error(0, "fatal: insufficient memory for coordinates");
       error_report();
       exit(1);
     }
   }
-  else
+  else {
     mesh.coords = nullptr;
+  }
 
   mesh.elem_type = (E_Type *)array_alloc(1, mesh.num_elems, sizeof(E_Type));
   mesh.connect   = (INT **)array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT));
@@ -363,19 +387,25 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   printf("Time to generate graph: %fs\n", time2 - time1);
 
   /* Generate load balance */
-  time1 = get_time();
-  if (!generate_loadbal(&machine, &problem, &mesh, &lb, &solver, &graph, &weight, &sphere, argc,
-                        argv)) {
-    Gen_Error(0, "fatal: could not generate load balance");
-    error_report();
-    exit(1);
+  try {
+    time1 = get_time();
+    if (!generate_loadbal(&machine, &problem, &mesh, &lb, &solver, &graph, &weight, &sphere, argc,
+                          argv)) {
+      Gen_Error(0, "fatal: could not generate load balance");
+      error_report();
+      exit(1);
+    }
+    time2 = get_time();
+    printf("Time to generate load balance: %fs\n", time2 - time1);
   }
-  time2 = get_time();
-  printf("Time to generate load balance: %fs\n", time2 - time1);
+  catch (const std::exception &e) {
+    std::cerr << "NEM_SLICE: Exception in generate_loadbal: " << e.what();
+  }
 
   /* free up memory */
-  if (sphere.adjust)
+  if (sphere.adjust) {
     free(sphere.adjust);
+  }
 
 #ifdef PRINT_VERT
   for (size_t cnt = 0; cnt < problem.num_vertices; cnt++)
@@ -422,15 +452,17 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   /* Free up memory no longer needed */
-  if (problem.read_coords == ELB_TRUE)
+  if (problem.read_coords == ELB_TRUE) {
     free(mesh.coords);
+  }
 
   free(mesh.elem_type);
   free(mesh.connect);
 
   if (!graph.sur_elem.empty()) {
-    for (size_t cnt = 0; cnt < mesh.num_nodes; cnt++)
+    for (size_t cnt = 0; cnt < mesh.num_nodes; cnt++) {
       vec_free(graph.sur_elem[cnt]);
+    }
     vec_free(graph.sur_elem);
   }
 
@@ -454,8 +486,9 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     }
 
     vec_free(lb.int_elems[cnt]);
-    if (problem.type == ELEMENTAL)
+    if (problem.type == ELEMENTAL) {
       vec_free(lb.bor_elems[cnt]);
+    }
   }
 
   vec_free(lb.int_nodes);
@@ -470,11 +503,13 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   if (problem.type == ELEMENTAL) {
     vec_free(lb.bor_elems);
     for (int cnt = 0; cnt < machine.num_procs; cnt++) {
-      for (size_t cnt1 = 0; cnt1 < lb.bor_nodes[cnt].size(); cnt1++)
+      for (size_t cnt1 = 0; cnt1 < lb.bor_nodes[cnt].size(); cnt1++) {
         vec_free(lb.born_procs[cnt][cnt1]);
+      }
 
-      if (!lb.born_procs[cnt].empty())
+      if (!lb.born_procs[cnt].empty()) {
         vec_free(lb.born_procs[cnt]);
+      }
       vec_free(lb.ext_procs[cnt]);
       vec_free(lb.e_cmap_elems[cnt]);
       vec_free(lb.e_cmap_sides[cnt]);
@@ -526,23 +561,27 @@ namespace {
       printf("\tCluster of %d boxes\n", machine->num_boxes);
       printf("\tarchitecture of each box: ");
     }
-    else
+    else {
       printf("\tarchitecture: ");
+    }
     switch (machine->type) {
     case HCUBE: printf("hypercube\n"); break;
 
     case MESH: printf("mesh\n"); break;
     }
-    if (machine->num_boxes > 1)
+    if (machine->num_boxes > 1) {
       printf("\tdimension(s) of each box: ");
-    else
+    }
+    else {
       printf("\tdimension(s): ");
+    }
     switch (machine->type) {
     case HCUBE: printf("%d\n", machine->dim[0]); break;
 
     case MESH:
-      for (int cnt = 0; cnt < (machine->num_dims) - 1; cnt++)
+      for (int cnt = 0; cnt < (machine->num_dims) - 1; cnt++) {
         printf("%dx", machine->dim[cnt]);
+      }
 
       printf("%d\n", machine->dim[(machine->num_dims) - 1]);
       break;
@@ -617,8 +656,9 @@ namespace {
     /*                          WEIGHTING PARAMETERS                             */
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
     printf("Weighting Parameters\n");
-    if (weight->type == NO_WEIGHT)
+    if (weight->type == NO_WEIGHT) {
       printf("\tno weighting\n");
+    }
     else if (weight->type & READ_EXO) {
       printf("\tweights from: ExodusII file\n");
       printf("\ttime index: %d\n", weight->exo_tindx);
@@ -627,37 +667,47 @@ namespace {
     }
     else if (weight->type & EL_BLK) {
       printf("\tElement Block weights specified\n");
-      for (size_t cnt = 0; cnt < weight->elemblk.size(); cnt++)
+      for (size_t cnt = 0; cnt < weight->elemblk.size(); cnt++) {
         printf("\telement block: " ST_ZU ", weight: " ST_ZU "\n", (size_t)weight->elemblk[cnt],
                (size_t)weight->elemblk_wgt[cnt]);
+      }
     }
-    else if (weight->type & EDGE_WGT)
+    else if (weight->type & EDGE_WGT) {
       printf("\tedge weights turned on\n");
+    }
 
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
     /*                          WEIGHTING PARAMETERS                             */
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
     printf("Miscellaneous Options\n");
-    if (prob->face_adj == 1)
+    if (prob->face_adj == 1) {
       printf("\tusing face definition of adjacency\n");
-    if (prob->global_mech == 1)
+    }
+    if (prob->global_mech == 1) {
       printf("\tlooking for global mechanisms\n");
-    if (prob->local_mech == 1)
+    }
+    if (prob->local_mech == 1) {
       printf("\tlooking for local mechanisms\n");
-    if (prob->find_cnt_domains == 1)
+    }
+    if (prob->find_cnt_domains == 1) {
       printf("\tidentifying the number of disconnected element blocks on a subdomain\n");
-    if (prob->mech_add_procs == 1)
+    }
+    if (prob->mech_add_procs == 1) {
       printf("\tincreasing the number of processors if mechanisms are found\n");
-    if (prob->dsd_add_procs == 1)
+    }
+    if (prob->dsd_add_procs == 1) {
       printf("\tincreasing the number of processors if disconnected sudomains are found\n");
-    if (prob->no_sph == 1)
+    }
+    if (prob->no_sph == 1) {
       printf("\tSPHERES are being treated as concentrated mass - connectivity exists\n");
-    if (prob->skip_checks == 1)
+    }
+    if (prob->skip_checks == 1) {
       printf("\tWARNING: side id error checks turned off\n");
+    }
     if (prob->groups != nullptr) {
       printf("\telement block groups defined\n");
       printf("\tgroup string: \"%s\"\n", prob->groups);
     }
     return;
   }
-}
+} // namespace

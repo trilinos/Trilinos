@@ -106,8 +106,10 @@ LO numSequentialGlobalIds (const GO numGlobalCoords,
 }
 
 template <typename T>
-void roundRobinGlobalIds (const T numGlobalCoords, const int nprocs,
-                          const int rank, T*& gids)
+Teuchos::ArrayRCP<T>
+roundRobinGlobalIds (const T numGlobalCoords,
+                     const int nprocs,
+                     const int rank)
 {
   // Local number of coordinates does not change.
   T share = numGlobalCoords / nprocs;
@@ -117,20 +119,21 @@ void roundRobinGlobalIds (const T numGlobalCoords, const int nprocs,
     numLocalCoords++;
   }
 
-  gids = new T [numLocalCoords];
-  if (gids == NULL) {
-    throw std::bad_alloc ();
-  }
+  Teuchos::ArrayRCP<T> gids (numLocalCoords);
 
   T next = 0;
   for (T i=rank; i < numGlobalCoords; i+=nprocs) {
     gids[next++] = i;
   }
+
+  return gids;
 }
 
 template <typename T>
-void subGroupGloballyIncreasingIds (const T numGlobalCoords, const int nprocs,
-                                    const int rank, T*& gids)
+Teuchos::ArrayRCP<T>
+subGroupGloballyIncreasingIds (const T numGlobalCoords,
+                               const int nprocs,
+                               const int rank)
 {
   const int numProcsLeftHalf = nprocs / 2;
   T share = numGlobalCoords / nprocs;
@@ -190,10 +193,7 @@ void subGroupGloballyIncreasingIds (const T numGlobalCoords, const int nprocs,
   // in increasing order.
 
   T numLocalCoords = endIdx - firstIdx;
-  gids = new T [numLocalCoords];
-  if (gids == NULL) {
-    throw std::bad_alloc ();
-  }
+  Teuchos::ArrayRCP<T> gids (numLocalCoords);
 
   T firstRow = firstIdx / numProcsInMyHalf;
   T firstCol = (firstIdx % numProcsInMyHalf) + firstProc;
@@ -206,6 +206,8 @@ void subGroupGloballyIncreasingIds (const T numGlobalCoords, const int nprocs,
     }
     firstCol = firstProc;
   }
+
+  return gids;
 }
 
 void
@@ -335,12 +337,8 @@ timeTpetra (const GO numGlobalCoords,
     cerr << "Step 2: Migrate the MultiVector" << endl;
   }
 
-  ArrayRCP<const GO> newGidArray;
-  {
-    GO *newGids = NULL;
-    roundRobinGlobalIds<GO> (numGlobalCoords, nprocs, rank, newGids);
-    newGidArray = arcp<const GO> (newGids, 0, numLocalCoords, true);
-  }
+  ArrayRCP<const GO> newGidArray =
+    roundRobinGlobalIds<GO> (numGlobalCoords, nprocs, rank);
 
   RCP<const map_type> newTmap;
   RCP<Tpetra::Import<LO, GO> > importer;
@@ -435,11 +433,8 @@ timeTpetra (const GO numGlobalCoords,
   // Each subgroup migrates the sub-multivector so the
   // global Ids are increasing with process rank.
 
-  GO *increasingGids = NULL;
-  subGroupGloballyIncreasingIds<GO> (numGlobalCoords, nprocs,
-                                     rank, increasingGids);
-
-  ArrayRCP<const GO> incrGidArray (increasingGids, 0, numLocalCoords, true);
+  ArrayRCP<const GO> incrGidArray =
+    subGroupGloballyIncreasingIds<GO> (numGlobalCoords, nprocs, rank);
 
   RCP<const map_type> newSubMap;
   RCP<Tpetra::Import<LO, GO> > subImporter;

@@ -77,7 +77,7 @@ struct topology
     , QUAD_8, QUADRILATERAL_8 = QUAD_8
     , QUAD_9, QUADRILATERAL_9 = QUAD_9
     //ELEMENT_RANK
-    , PARTICLE
+    , PARTICLE, BEGIN_ELEMENT_RANK = PARTICLE
     , LINE_2_1D
     , LINE_3_1D
     , BEAM_2
@@ -177,7 +177,7 @@ struct topology
   topology edge_topology() const;
 
   /// what is the topology of the given face
-  topology face_topology(unsigned face_ordinal = 0) const;
+  topology face_topology(unsigned face_ordinal) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>

@@ -1,4 +1,4 @@
-./doc/html/*
-./browser/doc/html/*
-./src/amesos2.tag
+/doc/html/*
+/browser/doc/html/*
+/src/amesos2.tag
 

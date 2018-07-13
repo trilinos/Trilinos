@@ -78,104 +78,29 @@ exAmesos_Factory.py.
 	docstring = %amesos_docstring) Amesos
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 #include "Amesos_ConfigDefs.h"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_Object.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_DataAccess.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDistributor.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// Teuchos includes
-//#include "Teuchos_RefCountPtrDecl.hpp"
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Amesos includes
-#include "Amesos.h"
-#include "Amesos_BaseSolver.h"
-#ifdef HAVE_AMESOS_LAPACK
-#include "Amesos_Lapack.h"
-#endif
-#ifdef HAVE_AMESOS_KLU
-#include "Amesos_Klu.h"
-#endif
-#ifdef HAVE_AMESOS_UMFPACK
-#include "Amesos_Umfpack.h"
-#endif
-#ifdef HAVE_AMESOS_SCALAPACK
-#include "Amesos_Scalapack.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLU
-#include "Amesos_Superlu.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLUDIST
-#include "Amesos_Superludist.h"
-#endif
-#ifdef HAVE_AMESOS_TAUCS
-#include "Amesos_Taucs.h"
-#endif
-#ifdef HAVE_AMESOS_PARDISO
-#include "Amesos_Pardiso.h"
-#endif
-#ifdef HAVE_AMESOS_DSCPACK
-#include "Amesos_Dscpack.h"
-#endif
-#ifdef HAVE_AMESOS_MUMPS
-#include "Amesos_Mumps.h"
-#endif
+// Amesos include files
+#include "PyTrilinos_Amesos_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
-
 %}
 
 // Include PyTrilinos configuration
@@ -190,7 +115,7 @@ exAmesos_Factory.py.
 // Include Amesos documentation
 %include "Amesos_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // External Trilinos packages

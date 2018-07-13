@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,24 +33,19 @@
  *
  */
 #include "EP_SystemInterface.h"
-
-#include "GetLongOpt.h" // for GetLongOption, etc
-
-#include <algorithm>
-#include <ctype.h> // for tolower
-#include <iostream>
-#include <stddef.h> // for size_t
-#include <string>   // for string, basic_string, etc
-#include <utility>  // for pair, make_pair
-#include <vector>
-
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <limits.h>
-
-#include "EP_Version.h"
-#include "SL_tokenize.h"
+#include "EP_Version.h"  // for qainfo
+#include "GetLongOpt.h"  // for GetLongOption, etc
+#include "SL_tokenize.h" // for tokenize
+#include <algorithm>     // for sort, transform
+#include <cctype>        // for tolower
+#include <climits>       // for INT_MAX
+#include <cstddef>       // for size_t
+#include <cstdlib>       // for strtol, abs, exit, strtoul, etc
+#include <cstring>       // for strchr, strlen
+#include <iostream>      // for operator<<, basic_ostream, etc
+#include <string>        // for string, char_traits, etc
+#include <utility>       // for pair, make_pair
+#include <vector>        // for vector
 
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)
@@ -58,14 +53,16 @@ namespace {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
     for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2))
+      if (std::tolower(*c1) != std::tolower(*c2)) {
         return (std::tolower(*c1) - std::tolower(*c2));
-      if (*c1 == '\0')
+      }
+      if (*c1 == '\0') {
         return 0;
+      }
     }
   }
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
-}
+} // namespace
 
 Excn::SystemInterface::SystemInterface()
     : inExtension_(""), outExtension_(""), cwd_(""), rootDirectory_(), subDirectory_(""),
@@ -237,10 +234,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
               << "\tWrites: current_directory/basename.suf\n"
@@ -250,7 +248,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
@@ -371,27 +369,27 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("add_processor_id")) {
+  if (options_.retrieve("add_processor_id") != nullptr) {
     addProcessorId_ = true;
   }
   else {
     addProcessorId_ = false;
   }
 
-  if (options_.retrieve("large_model")) {
+  if (options_.retrieve("large_model") != nullptr) {
     useNetcdf4_ = true;
     std::cerr << "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n";
   }
 
-  if (options_.retrieve("netcdf4")) {
+  if (options_.retrieve("netcdf4") != nullptr) {
     useNetcdf4_ = true;
   }
 
-  if (options_.retrieve("append")) {
+  if (options_.retrieve("append") != nullptr) {
     append_ = true;
   }
 
-  if (options_.retrieve("64")) {
+  if (options_.retrieve("64") != nullptr) {
     intIs64Bit_ = true;
   }
 
@@ -402,11 +400,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("sum_shared_nodes")) {
+  if (options_.retrieve("sum_shared_nodes") != nullptr) {
     sumSharedNodes_ = true;
   }
 
-  if (options_.retrieve("append")) {
+  if (options_.retrieve("append") != nullptr) {
     append_ = true;
   }
 
@@ -424,69 +422,70 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("join_subcycles")) {
+  if (options_.retrieve("join_subcycles") != nullptr) {
     subcycleJoin_ = true;
   }
 
-  if (options_.retrieve("map")) {
+  if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;
   }
 
-  if (options_.retrieve("nomap")) {
+  if (options_.retrieve("nomap") != nullptr) {
     mapIds_ = false;
   }
 
-  if (options_.retrieve("omit_nodesets")) {
+  if (options_.retrieve("omit_nodesets") != nullptr) {
     omitNodesets_ = true;
   }
   else {
     omitNodesets_ = false;
   }
 
-  if (options_.retrieve("omit_sidesets")) {
+  if (options_.retrieve("omit_sidesets") != nullptr) {
     omitSidesets_ = true;
   }
   else {
     omitSidesets_ = false;
   }
 
-  if (options_.retrieve("output_shared_nodes")) {
+  if (options_.retrieve("output_shared_nodes") != nullptr) {
     outputSharedNodes_ = true;
   }
 
-  if (options_.retrieve("copyright")) {
-    std::cout << "\n"
-              << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
-              << "certain rights in this software\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
-              << "    * Neither the name of Sandia Corporation nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+  if (options_.retrieve("copyright") != nullptr) {
+    std::cout
+        << "\n"
+        << "Copyright(C) 2010 National Technology & Engineering Solutions of Sandia, LLC (NTESS).\n"
+        << "Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government\n"
+        << "retains certain rights in this software\n."
+        << "\n"
+        << "Redistribution and use in source and binary forms, with or without\n"
+        << "modification, are permitted provided that the following conditions are\n"
+        << "met:\n"
+        << "\n"
+        << "    * Redistributions of source code must retain the above copyright\n"
+        << "      notice, this list of conditions and the following disclaimer.\n"
+        << "\n"
+        << "    * Redistributions in binary form must reproduce the above\n"
+        << "      copyright notice, this list of conditions and the following\n"
+        << "      disclaimer in the documentation and/or other materials provided\n"
+        << "      with the distribution.\n"
+        << "\n"
+        << "    * Neither the name of NTESS nor the names of its\n"
+        << "      contributors may be used to endorse or promote products derived\n"
+        << "      from this software without specific prior written permission.\n"
+        << "\n"
+        << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+        << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+        << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+        << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+        << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+        << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+        << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+        << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
     exit(EXIT_SUCCESS);
   }
 
@@ -494,7 +493,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   if (option_index < argc) {
     basename_ = argv[option_index];
 
-    if (options_.retrieve("auto")) {
+    if (options_.retrieve("auto") != nullptr) {
       // Determine Root, Proc, Extension, and Basename automatically
       // by parsing the basename_ entered by the user.  Assumed to be
       // in the form: "/directory/sub/basename.ext.#proc.34"
@@ -515,16 +514,15 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   return true;
 }
 
-void Excn::SystemInterface::dump(std::ostream &) const {}
+void Excn::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 std::string Excn::SystemInterface::output_suffix() const
 {
   if (outExtension_ == "") {
     return inExtension_;
   }
-  else {
-    return outExtension_;
-  }
+
+  return outExtension_;
 }
 
 void Excn::SystemInterface::show_version()
@@ -573,8 +571,9 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
         }
 
         tmp_str[k] = '\0';
-        if (strlen(tmp_str) > 0)
+        if (strlen(tmp_str) > 0) {
           val = strtoul(tmp_str, nullptr, 0);
+        }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
@@ -607,15 +606,17 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // to handle leading and embedded '..' which tokenize threw away...
 
   // Get rid of the 'nn' which is not used at this time...
-  size_t ind = s.find_last_of(".", std::string::npos); // last '.'
-  if (ind == std::string::npos)
+  size_t ind = s.find_last_of('.', std::string::npos); // last '.'
+  if (ind == std::string::npos) {
     return false;
+  }
   s.erase(ind);
 
   // Now find the processor count...
-  ind = s.find_last_of(".", std::string::npos);
-  if (ind == std::string::npos)
+  ind = s.find_last_of('.', std::string::npos);
+  if (ind == std::string::npos) {
     return false;
+  }
 
   std::string tmp = s.substr(ind + 1); // Skip the '.'
   processorCount_ = strtol(tmp.c_str(), nullptr, 10);
@@ -627,7 +628,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   s.erase(ind);
 
   // Should now be an extension...
-  ind = s.find_last_of(".", std::string::npos);
+  ind = s.find_last_of('.', std::string::npos);
   if (ind == std::string::npos) {
     inExtension_ = "";
   }
@@ -640,7 +641,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // If there is no '/', then it is all basename_; otherwise the
   // basename_ is the portion following the '/' and the rootDirectory_
   // is the portion preceding the '/'
-  ind = s.find_last_of("/", std::string::npos);
+  ind = s.find_last_of('/', std::string::npos);
   if (ind != std::string::npos) {
     basename_      = s.substr(ind + 1, std::string::npos);
     rootDirectory_ = s.substr(0, ind);
@@ -668,7 +669,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
@@ -710,4 +711,4 @@ namespace {
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
-}
+} // namespace

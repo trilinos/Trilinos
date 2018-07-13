@@ -686,7 +686,7 @@ bool StartupSierra(int *			  argc,
         if (dout_path.size() && dout_path[0] != '/')
           s << working_directory() << dout_path << "." << parallel_size() << "." << parallel_rank();
         else
-          s << dout_path << parallel_size() << "." << parallel_rank();;
+          s << dout_path << parallel_size() << "." << parallel_rank();
         dout_path = s.str();
         output_description << " doutfile=\"" << dout_path << "\"";
         dout_ostream = "doutfile";

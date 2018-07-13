@@ -226,13 +226,22 @@ long long Inline_Mesh_Desc::DecomposeSequential(std::set <long long> & global_el
 
 
 
+long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids){
+  long long local_ijk[3];
+  long long global_ijk[6];
+  long long return_value;
+  return_value = Inline_Mesh_Desc::Decompose(global_el_ids,local_ijk,global_ijk);
+  return return_value;
+}
+
 //! Partitions all elements by a recursive bisection into 
 //! rectangular chunks. Alternative decompositions are possible.
 //! This one is simple to implement and easy to run on all processors.
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
-long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids)
+  long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids, long long* local_ijk,
+                                        long long* global_ijk)
 /****************************************************************************/
 {
   //Recursive Bisection decomposition
@@ -316,7 +325,6 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     info_stream << "Number of mesh segments in directions I/X/R \t\t" << remaining_cuts[0] << "\n";
     info_stream << "Number of mesh segments in directions J/Y/THETA \t" << remaining_cuts[1] << "\n";
     info_stream << "Number of mesh segments in directions K/Z/PHI \t" << remaining_cuts[2] << "\n";
-
 
     while(sorted_partition_list.size() < num_processors){
       //  get first entry in list and the partition object it points to
@@ -421,6 +429,19 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     if(proc_cnt == my_rank)my_part = (*citer);
   }
 
+
+  // Get local ijk
+  local_ijk[0] = my_part->highs[0] - my_part->lows[0] + 1;
+  local_ijk[1] = my_part->highs[1] - my_part->lows[1] + 1;
+  local_ijk[2] = my_part->highs[2] - my_part->lows[2] + 1;
+  global_ijk[0] = my_part->lows[0];
+  global_ijk[1] = my_part->highs[0];
+  global_ijk[2] = my_part->lows[1];
+  global_ijk[3] = my_part->highs[1];
+  global_ijk[4] = my_part->lows[2];
+  global_ijk[5] = my_part->highs[2];
+  //
+  
   //Then loop over the elements for the current processor and push them into
   //the global el_ids list
   for(long long k = my_part->lows[2]; k < my_part->highs[2]; k++){
@@ -2209,5 +2230,7 @@ long long Inline_Mesh_Desc::Calc_Coord_Vectors()
 
   return 0;
 }
+
+
 
 }//end namespace PAMGEN_NEVADA

@@ -116,7 +116,7 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const int sz, const int i, const T & x) :
-        Storage(sz, x) {
+        Storage(sz, x, InitDerivArray) {
         this->fastAccessDx(i)=1.;
       }
 
@@ -133,7 +133,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
-        Storage(x.size(), T(0.)) {
+        Storage(x.size(), T(0.), NoInitDerivArray) {
         x.cache();
 
         const int sz = x.size();

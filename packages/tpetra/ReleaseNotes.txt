@@ -2,8 +2,138 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.7)
---------------------------
+Development version (12.??)
+---------------------------
+
+* Fix #1683
+
+Tpetra now enables GO = long long by default, regardless of whether
+this is a CUDA build.
+
+* Fix #1088
+
+* Add CMake option for whether Tpetra should assume that MPI
+  is CUDA aware (#1571)
+
+Add a CMake option Tpetra_ASSUME_CUDA_AWARE_MPI, with associated macro
+TPETRA_ASSUME_CUDA_AWARE_MPI defined in TpetraCore_config.h.  If the
+CMake option is ON, Tpetra may assume that the MPI implementation it
+uses is CUDA aware.  See #1571 for discussion, and #1088 for an
+application.
+
+Tpetra's CMake logic attempts to detect whether the MPI implementation
+is CUDA aware.  If automatic detection does not succeed, Tpetra just
+makes the safe assumption that MPI is not CUDA aware.
+
+Currently, automatic detection requires OpenMPI.  If not using
+OpenMPI, Tpetra conservatively assumes lack of CUDA awareness.  It
+would be wise for us to extend detection to support other MPI
+implementations, but for now, this covers a common use case for
+Trilinos testing.
+
+Automatic detection depends on running an executable.  This is
+relevant for cross compilation, so I have added two measures to
+protect against misleading results in that case:
+
+  1. If CMAKE_CROSSCOMPILING is ON, Tpetra skips detection and prints
+     a configure-time message telling users that they may set
+     Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+
+  2. If users set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly, Tpetra
+     skips detection and assumes the user's value as the default.
+
+* Tpetra now enforces CUDA >= 7.5 (see #1278)
+
+Tpetra has required CUDA >= 7.5 for a while, if building with CUDA
+enabled.  Now, Tpetra's CMake logic enforces CUDA_VERSION >= 7.5 at
+configure time.  See #1278 for discussion.
+
+Development version (12.10)
+---------------------------
+
+* Build time and size improvements (fix #700)
+
+KokkosKernels now only pre-builds the sparse matrix-vector multiply
+kernels that Tpetra needs.  Also, for integer Scalar types,
+KokkosKernels no longer optimizes sparse matrix-vector multiply for
+multiple right-hand sides.  It does so only for non-integer (e.g.,
+floating-point) Scalar types.  This reduces build time and size.  (See
+Github Issue #700.)  Furthermore, KokkosKernels now only pre-builds
+sparse matrix-vector multiply for the default offset type.
+
+* Removed "using Teuchos::*" declarations from Tpetra_ConfigDefs.hpp
+
+Tpetra no longer imports Teuchos classes like Comm and RCP (among
+others) into the Tpetra namespace.  This will help us eventually
+remove all the Teuchos_*.hpp header file includes from
+Tpetra_ConfigDefs.hpp, thus improving build time.
+
+* MultiVector: Add new two-argument randomize(min,max)
+
+* MultiVector: Get rid of old-interface DistObject methods
+
+Tpetra::MultiVector implements the new DistObject interface.  Thus, it
+no longer needs to provide implementations for the following three
+old-interface DistObject methods:
+
+  - createViews
+  - createViewsNonConst
+  - releaseViews
+
+* Optimize Map::replaceCommWithSubset for MPI_COMM_SELF (#673)
+
+* Fixed many other issues
+
+Issues fixed include (but are not limited to) #699, #680, #638, #617,
+#607, #603, #601, #597, #561, and #46.
+
+
+Trilinos 12.8
+-------------
+
+* Stop creating Node instances explicitly!
+
+Hi users!  Please don't create Node instances explicitly any more.
+Tpetra::Map creates one for you, if you really need one.  You really
+don't need Node instances: Map's constructors and nonmember
+"constructors" don't need them any more, nor do Tpetra's Matrix Market
+readers.
+
+Creating Node instances explicitly causes issues with Kokkos
+initialization.  Node will go away eventually, in favor of Kokkos
+execution spaces and memory spaces.
+
+* Lots of bug fixes, especially for CUDA
+
+* Computing offsets in CrsGraph and CrsMatrix is now thread parallel
+
+CrsGraph's and CrsMatrix's fillComplete method computes row offsets,
+if they have not yet been computed.  This is now thread parallel.  It
+uses Kokkos::parallel_scan.
+
+* More BlockCrsMatrix kernels are thread parallel
+
+* Interface changes to KokkosSparse::CrsMatrix (the "local" matrix)
+
+The replaceValues and sumIntoValues methods now take "is_sorted" and
+"force_atomic" arguments.  These methods now use binary search
+(falling back to linear search for short rows) for the sorted case.
+
+Row views in KokkosSparse::CrsMatrix are no longer templated.  They
+now use the ordinal type, rather than the offset type, for indexing.
+This suffices as long as there are not enough duplicate entries in a
+row to exceed ordinal_type.  This has the beneficial side effect of
+reducing the number of local sparse matrix-vector multiply kernel
+instantiations.
+
+* Got rid of LittleBlock and LittleVector (for Block* classes)
+
+Instead, use the little_block_type, const_little_block_type,
+little_vec_type, and const_little_vec_type typedefs in BlockCrsMatrix
+and other related classes.  Underlying data layout has NOT changed
+(yet), but constructors HAVE changed.  This is technically a
+non-backwards-compatible interface change, but all these classes are
+in an Experimental namespace anyway.
 
 * Got rid of KokkosClassic::DefaultArithmetic
 

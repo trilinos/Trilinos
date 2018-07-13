@@ -40,7 +40,7 @@
 #include <exception>                    // for uncaught_exception
 #include <map>                          // for map, map<>::value_compare
 #include <ostream>                      // for ostream
-#include <stk_util/util/Writer_fwd.hpp>  // for LogMask::LOG_TRACE, etc
+#include <stk_util/util/Writer_fwd.hpp> // for LogMask::LOG_TRACE, etc
 #include <string>                       // for string
 #include <vector>                       // for vector, vector<>::iterator
 namespace stk { namespace diag { class Writer; } }
@@ -92,34 +92,6 @@ public:
    */
   std::string getFunctionName() const;
 
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionShortName() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionClass() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionNamespace() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionShortClass() const;
-
 protected:
   const char *      m_functionSpec;    ///< The member function specification
 };
@@ -143,7 +115,6 @@ public:
    * <LI>RUNNING - No throws are in progress.
    * <LI>THROWING - A throw is in progress.
    * </UL>
-   *
    */
   enum TracebackState{RUNNING, THROWING};
 
@@ -158,7 +129,6 @@ public:
    * NOTE: This does really want to use const char * as the key.  I know, things could
    * move, but the definition of a function spec is that it is a string literal only.  So,
    * let it go.
-   *
    */
   struct StringLiteralLess
   {
@@ -172,7 +142,6 @@ public:
   /**
    * @brief Class <b>Traceback::Preserve</b> serves as a sentry for traceback
    * stack preservation during additional extension and unwinding.
-   *
    */
   class Preserve
   {
@@ -180,7 +149,6 @@ public:
     /**
      * @brief Creates a new <b>Traceback::Preserve</b> sentry.  When the sentry
      * is in place, the traceback stack is preserved from extension and clearing.
-     *
      */
     Preserve() {
       Traceback::preserveStack();
@@ -188,7 +156,6 @@ public:
 
     /**
      * @brief Destroys a <b>Preserve</b> sentry which allows traceback stack
-     *
      */
     ~Preserve() {
       Traceback::releaseStack();
@@ -204,7 +171,7 @@ public:
   explicit Traceback(const char *function_spec)
     : Tracespec(function_spec)
   {
-    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == 0)
+    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == nullptr)
       s_top = s_stack;
     *s_top++ = function_spec;
 
@@ -217,11 +184,9 @@ public:
 #endif
   }
 
-
   /**
    * @brief Destroys a <b>Traceback</b> instance, resulting in the pushing of
    * the function specification if unwinding the stack.
-   *
    */
   ~Traceback() {
     if (!s_tracebackPreserve && std::uncaught_exception() && s_tracebackState == RUNNING) {
@@ -238,7 +203,6 @@ public:
   /**
    * @brief Member function <b>enableTracebackDisplay</b> enables the display of the
    * traceback.
-   *
    */
   inline static void enableTracebackDisplay() {
     --s_tracebackDisplay;
@@ -247,7 +211,6 @@ public:
   /**
    * @brief Member function <b>disableTracebackDisplay</b> disables the display of the
    * traceback.
-   *
    */
   inline static void disableTracebackDisplay() {
     ++s_tracebackDisplay;
@@ -267,7 +230,6 @@ public:
   /**
    * @brief Member function <b>preserveStack</b> increments the traceback stack
    * preservation counter.
-   *
    */
   inline static void preserveStack() {
     ++s_tracebackPreserve;
@@ -276,7 +238,6 @@ public:
   /**
    * @brief Member function <b>releaseStack</b> decrements the traceback stack
    * preservation counter.
-   *
    */
   inline static void releaseStack() {
     --s_tracebackPreserve;
@@ -289,7 +250,6 @@ public:
    *
    * @param coverage_enabled	a <b>bool</b> value to set the coverage enabled
    *				flag.
-   *
    */
   inline static void enableCoverage(bool coverage_enabled = true) {
     s_coverageEnabled = coverage_enabled;
@@ -309,8 +269,6 @@ public:
   /**
    * @brief Member function <b>getTracebackState</b> returns the value of the
    * traceback state.
-   *
-   * @return an <b>int</b> ...
    */
   inline static TracebackState getTracebackState() {
     return s_tracebackState;
@@ -318,7 +276,6 @@ public:
 
   /**
    * @brief Class <b>PrintCoverage</b> is a type holder class for printing the stack.
-   *
    */
   struct PrintCoverage
   {};
@@ -365,7 +322,7 @@ private:
 
 /**
  * @brief Class <b>Trace</b> serves as a sentry for entering routines.  Creating a
- * trace object prints the specified member function name to the specfied diag_writer and
+ * trace object prints the specified member function name to the specified diag_writer and
  * pushes the diag_writer depth.  On destruction, it prints the member function name again
  * and pops the depth.
  *
@@ -380,13 +337,11 @@ public:
   /**
    * @brief Typedef <b>ExtraFuncPtr</b> declares the extra function pointer
    * signature.
-   *
    */
   typedef Writer & (*ExtraFuncPtr)(Writer &);
 
   /**
    * @brief Typedef <b>TraceList</b> declares the trace list data type.
-   *
    */
   struct TraceList : public std::vector<const char *> {
   public:
@@ -404,7 +359,6 @@ public:
 
   /**
    * @brief Enumeration to describe the trace back flags.
-   *
    */
   enum {
     IN_TRACE_LIST  = 0x01    ///< Tracing enabled by this function
@@ -425,14 +379,12 @@ public:
    *
    * @param do_trace            a <b>bool</b> that provide an extra dynamic means of
    *                            turning off tracing.
-   *
    */
   Trace(Writer &dout, const char *function_name, int print_mask = LOG_TRACE, bool do_trace = true);
 
   /**
    * @brief Destroys a <b>Trace</b> instance, resulting in the printing of the
    * member function name and popping the diag_writer depth.
-   *
    */
   ~Trace();
 
@@ -467,11 +419,11 @@ public:
   /**
    * @brief Member function <b>clearTraceFunctions</b> removes all function prefixes
    * from the function signature prefix list.
-   *
    */
   inline static void clearTraceFunctions() {
-    for (std::vector<const char *>::iterator it = s_traceList.begin(); it != s_traceList.end(); ++it)
+    for (auto it = s_traceList.begin(); it != s_traceList.end(); ++it) {
       delete[] (*it);
+    }
 
     s_traceList.clear();
   }
@@ -487,16 +439,15 @@ public:
   Writer &verbose_print(Writer &dout) const;
 
 private:
-  Writer &      m_diagWriter;    ///< The diagnostic writer to write to.
-  double      m_startCpuTime;    ///< Cpu time at trace start
-  size_t      m_startMemAlloc;  ///< Memory allocated at trace start
-  PrintMask      m_lineMask;    ///< Line mask of trace
-  bool                          m_do_trace;             ///< Force trace off
-  int        m_flags;    ///< flags if trace enabled
+  Writer &   m_diagWriter;    ///< The diagnostic writer to write to.
+  double     m_startCpuTime;  ///< Cpu time at trace start
+  PrintMask  m_lineMask;      ///< Line mask of trace
+  bool       m_do_trace;      ///< Force trace off
+  int        m_flags;         ///< flags if trace enabled
 
-  static ExtraFuncPtr    s_extra;    ///< Extra output on trace
-  static TraceList    s_traceList;    ///< List of functions to trace
-  static bool                   s_traceListExists;      ///< Flag indicating that the tracelist has been constructed and not destructed
+  static ExtraFuncPtr    s_extra;   ///< Extra output on trace
+  static TraceList    s_traceList;  ///< List of functions to trace
+  static bool   s_traceListExists;  ///< Flag indicating that the tracelist has been constructed and not destructed
 };
 
 /**
@@ -530,7 +481,6 @@ inline std::ostream &operator<<(std::ostream &os, const Traceback::PrintCoverage
   return Traceback::printCoverage(os);
 }
 
-
 } // namespace diag
 } // namespace stk
 
@@ -541,8 +491,8 @@ typedef stk::diag::Tracespec Tracespec;
 typedef stk::diag::Traceback Traceback;
 typedef stk::diag::Trace Trace;
 
-} // namespace sierra 
 } // namespace Diag 
+} // namespace sierra 
 
 
 ///

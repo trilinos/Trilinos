@@ -62,86 +62,26 @@ other Trilinos solver technologies.
         docstring = %domi_docstring) Domi
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Domi_ConfigDefs.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_CommHelpers.hpp"
-
+// Epetra include files
 #ifdef HAVE_EPETRA
-// Epetra includes
-#include "Epetra_LAPACK.h"
-#include "Epetra_Time.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
+// Tpetra include files
 #ifdef HAVE_TPETRA
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+#include "PyTrilinos_Tpetra_Headers.hpp"
 #endif
 
-// Domi includes
-#include "Domi_Utils.hpp"
-#include "Domi_Version.hpp"
-#include "Domi_getValidParameters.hpp"
-#include "Domi_Slice.hpp"
-#include "Domi_MDArrayView.hpp"
-#include "Domi_MDArray.hpp"
-#include "Domi_MDArrayRCP.hpp"
-#include "Domi_MDComm.hpp"
-#include "Domi_MDMap.hpp"
-#include "Domi_MDVector.hpp"
-
-// PyTrilinos includes
-#include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+// Domi include files
+#include "PyTrilinos_Domi_Headers.hpp"
 
 %}
 
@@ -167,7 +107,7 @@ other Trilinos solver technologies.
 // Include Domi documentation
 %include "Domi_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Include the NumPy typemaps
@@ -588,8 +528,8 @@ MDMap = MDMap_default
 }
 %ignore Domi::MDVector::operator=;
 %ignore Domi::MDVector::operator[];
-%ignore Domi::MDVector::getDataNonConst;
-%ignore Domi::MDVector::getData;
+%ignore Domi::MDVector::getDataNonConst(bool includePadding = true);
+%ignore Domi::MDVector::getData(bool includePadding = true) const;
 %include "Domi_MDVector.hpp"
 %teuchos_rcp(Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >)

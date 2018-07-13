@@ -70,7 +70,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -184,7 +183,7 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
         if (prank==2)
         {
             stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-            stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, 1);
+            stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(1);
             stkMeshBulkData.declare_relation(constraint,node1,0);
         }
         stk::mesh::fixup_ghosted_to_shared_nodes(stkMeshBulkData);

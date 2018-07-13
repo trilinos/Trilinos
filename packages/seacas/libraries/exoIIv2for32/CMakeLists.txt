@@ -14,7 +14,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_ADD_LIBRARY(
   exoIIv2for32
   HEADERS ""
-  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/exo_jack.c
+  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/exo_jack_32.c
   )
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
@@ -22,7 +22,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
     ADD_LIBRARY(
       exoIIv2for32_static
       STATIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/exo_jack.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/exo_jack_32.c
     )
     set_target_properties(exoIIv2for32_static PROPERTIES OUTPUT_NAME exoIIv2for32)
     INSTALL(TARGETS exoIIv2for32_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

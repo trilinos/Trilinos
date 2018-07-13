@@ -380,6 +380,29 @@ void Selector::get_parts(PartVector& parts) const
   gather_parts_impl(parts, &m_expr.back());
 }
 
+stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData &differentMeta) const
+{
+    stk::mesh::Selector newSelector(*this);
+    for(SelectorNode &selectorNode : newSelector.m_expr)
+    {
+        if(selectorNode.m_type == SelectorNodeType::PART)
+        {
+            const std::string& oldPartName = selectorNode.m_value.part_ptr->name();
+            selectorNode.m_value.part_ptr = differentMeta.get_part(oldPartName);
+            ThrowRequireMsg(selectorNode.m_value.part_ptr != nullptr,
+                            "Attepting to clone selector into mesh with different parts");
+        }
+        else if(selectorNode.m_type == SelectorNodeType::FIELD)
+        {
+            unsigned ord = selectorNode.m_value.field_ptr->mesh_meta_data_ordinal();
+            ThrowRequireMsg(selectorNode.m_value.field_ptr->name() == differentMeta.get_fields()[ord]->name(),
+                            "Attepting to clone selector into mesh with different parts");
+            selectorNode.m_value.field_ptr = differentMeta.get_fields()[ord];
+        }
+    }
+    return newSelector;
+}
+
 BulkData* Selector::find_mesh() const
 {
     for (unsigned i = 0; i < m_expr.size(); ++i) {

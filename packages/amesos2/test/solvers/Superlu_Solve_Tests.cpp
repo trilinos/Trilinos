@@ -61,7 +61,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -90,9 +90,6 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::MultiVector;
   using Tpetra::Map;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Platform::NodeType Node;
 
   bool testMpi = false;
 
@@ -123,24 +120,22 @@ namespace {
   // with a reasonably small tolerance.  While this could also produce
   // a false-positive, it is less likely.
 #define TEST_WITH_MATRIX(MATNAME, transpose)                            \
-  typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;                             \
-  typedef MultiVector<SCALAR,LO,GO,Node> MV;                            \
+  typedef CrsMatrix<SCALAR,LO,GO> MAT;                                  \
+  typedef MultiVector<SCALAR,LO,GO> MV;                                 \
   typedef ScalarTraits<SCALAR> ST;                                      \
   typedef typename ST::magnitudeType Mag;                               \
   typedef ScalarTraits<Mag> MT;                                         \
   const size_t numVecs = 5;                                             \
   ETransp trans = ((transpose) ? CONJ_TRANS : NO_TRANS);                \
                                                                         \
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();   \
-  RCP<const Comm<int> > comm = platform.getComm();                      \
-  RCP<Node>             node = platform.getNode();                      \
+  RCP<const Comm<int> > comm = Tpetra.getDefaultComm();                 \
                                                                         \
   string path = string("../matrices/") + (MATNAME);                     \
   RCP<MAT> AMat =                                                       \
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path,comm,node);  \
+    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path,comm);       \
                                                                         \
-  RCP<const Map<LO,GO,Node> > dmnmap = AMat->getDomainMap();            \
-  RCP<const Map<LO,GO,Node> > rngmap = AMat->getRangeMap();             \
+  RCP<const Map<LO,GO> > dmnmap = AMat->getDomainMap();                 \
+  RCP<const Map<LO,GO> > rngmap = AMat->getRangeMap();                  \
                                                                         \
   RCP<MV> X, B, Xhat;                                                   \
   if( transpose ){                                                      \

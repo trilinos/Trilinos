@@ -32,10 +32,8 @@
 #include "TraitsTests.hpp"
 
 #include "Sacado_Fad_SimpleFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_CacheFad_SFad.hpp"
-#include "Sacado_CacheFad_SLFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
+
 #ifdef HAVE_SACADO_STOKHOS
 #include "Sacado_PCE_OrthogPoly.hpp"
 #endif

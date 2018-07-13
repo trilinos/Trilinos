@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -184,7 +184,7 @@ void Diagonal<MatrixType>::initialize ()
     }
     else {
       const size_t lclNumRows = A_crs->getNodeNumRows ();
-      if (offsets_.dimension_0 () < lclNumRows) {
+      if (offsets_.extent (0) < lclNumRows) {
         offsets_ = offsets_type (); // clear first to save memory
         offsets_ = offsets_type ("offsets", lclNumRows);
       }

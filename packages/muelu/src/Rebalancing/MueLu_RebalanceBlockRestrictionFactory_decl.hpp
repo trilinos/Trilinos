@@ -46,15 +46,14 @@
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
-#include "Xpetra_Vector_fwd.hpp"
-#include "Xpetra_VectorFactory_fwd.hpp"
+#include <Xpetra_MapExtractorFactory_fwd.hpp>
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include "Xpetra_Vector_fwd.hpp"
+#include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_Import_fwd.hpp"
 #include "Xpetra_ImportFactory_fwd.hpp"
 
@@ -85,7 +84,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    RebalanceBlockRestrictionFactory() { }
+    RebalanceBlockRestrictionFactory():UseSingleSourceImporters_(false) { }
 
     //! Destructor.
     virtual ~RebalanceBlockRestrictionFactory() { }
@@ -107,6 +106,9 @@ namespace MueLu {
     //! Add a factory manager
     void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
 
+    //! Get the importers from a single source
+    void SetSingleSourceImporters(bool value){UseSingleSourceImporters_=value;}
+
     //@}
 
     //! @name Build methods.
@@ -117,14 +119,17 @@ namespace MueLu {
 
     //@}
 
+  
   private:
+
     //! Input factories
     std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
+    
+    bool UseSingleSourceImporters_;
 
   }; // class RebalanceBlockTransferFactory
 
 } // namespace MueLu
 
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_ */

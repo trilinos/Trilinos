@@ -77,8 +77,8 @@ public:
    GlobalEvaluationData_Default(const GlobalEvaluationData_Default & s) 
    { requiresDirichletAdjustment_ = s.requiresDirichletAdjustment(); }
 
-   virtual void ghostToGlobal(int mem) {}
-   virtual void globalToGhost(int mem) {}
+   virtual void ghostToGlobal(int /* mem */) {}
+   virtual void globalToGhost(int /* mem */) {}
    virtual void initializeData() {}
 
    void setRequiresDirichletAdjustment(bool b) { requiresDirichletAdjustment_ = b; }

@@ -48,6 +48,7 @@
 
 namespace MueLu {
 
+  bool Factory::timerSync_ = false;
 #ifdef HAVE_MUELU_DEBUG
   Factory::multipleCallCheckEnum Factory::multipleCallCheckGlobal_ = ENABLED;
 #endif

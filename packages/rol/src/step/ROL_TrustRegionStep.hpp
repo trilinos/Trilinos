@@ -129,39 +129,92 @@ template <class Real>
 class TrustRegionStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >       secant_;      ///< Container for secant approximation.
-  Teuchos::RCP<TrustRegion<Real> >  trustRegion_; ///< Container for trust-region object.
+  // ADDITIONAL VECTOR STORAGE
+  Ptr<Vector<Real>> xnew_; ///< Container for updated iteration vector.
+  Ptr<Vector<Real>> xold_; ///< Container for previous iteration vector.
+  Ptr<Vector<Real>> gp_;   ///< Container for previous gradient vector.
 
-  Teuchos::RCP<Vector<Real> >       xnew_;        ///< Container for updated iteration vector.
-  Teuchos::RCP<Vector<Real> >       xold_;        ///< Container for previous iteration vector.
-  Teuchos::RCP<Vector<Real> >       gp_;          ///< Container for previous gradient vector.
+  // TRUST REGION INFORMATION
+  Ptr<TrustRegion<Real>>                trustRegion_; ///< Container for trust-region solver object.
+  Ptr<TrustRegionModel<Real>>           model_;       ///< Container for trust-region model.
+  ETrustRegion                          etr_;         ///< Trust-region subproblem solver type.
+  ETrustRegionModel                     TRmodel_;     ///< Trust-region subproblem model type.
+  Real                                  delMax_;      ///< Maximum trust-region radius.
+  ETrustRegionFlag                      TRflag_;      ///< Trust-region exit flag.
+  int                                   SPflag_;      ///< Subproblem solver termination flag.
+  int                                   SPiter_;      ///< Subproblem solver iteration count.
+  bool                                  bndActive_;   ///< Flag whether bound is activated.
 
-  ETrustRegion      etr_;        ///< Trust-region subproblem solver type.
-  ESecant           esec_;       ///< Secant type.
+  // SECANT INFORMATION
+  Ptr<Secant<Real>> secant_;                     ///< Container for secant approximation.
+  ESecant                     esec_;             ///< Secant type.
+  bool                        useSecantHessVec_; ///< Flag whether to use a secant Hessian.
+  bool                        useSecantPrecond_; ///< Flag whether to use a secant preconditioner. 
 
-  bool useSecantHessVec_;        ///< Flag whether to use a secant Hessian.
-  bool useSecantPrecond_;        ///< Flag whether to use a secant preconditioner. 
+  // BOUND CONSTRAINED PARAMETERS
+  Real scaleEps_;         ///< Scaling for epsilon-active sets.
+  bool useProjectedGrad_; ///< Flag whether to use the projected gradient criticality measure.
 
-  bool useProjectedGrad_;        ///< Flag whether to use the projected gradient criticality measure.
+  // POST SMOOTHING PARAMETERS
+  Real alpha_init_; ///< Initial line-search parameter for projected methods.
+  int  max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
+  Real mu_;         ///< Post-Smoothing tolerance for projected methods.
+  Real beta_;       ///< Post-Smoothing rate for projected methods.
 
-  std::vector<bool> useInexact_; ///< Contains flags for inexact (0) objective function, (1) gradient, (2) Hessian.
-  ETrustRegionFlag  TRflag_  ;   ///< Trust-region exit flag.
-  int               TR_nfval_;   ///< Trust-region function evaluation counter.
-  int               TR_ngrad_;   ///< Trust-region gradient evaluation counter.
-  int               CGflag_;     ///< Truncated CG termination flag.
-  int               CGiter_;     ///< Truncated CG iteration count.
+  // COLEMAN-LI PARAMETERS
+  Real stepBackMax_;
+  Real stepBackScale_;
+  bool singleReflect_;
 
-  Real              delMax_;     ///< Maximum trust-region radius.
+  // INEXACT COMPUTATION PARAMETERS
+  std::vector<bool> useInexact_; ///< Flags for inexact (0) objective function, (1) gradient, (2) Hessian.
+  Real              scale0_;     ///< Scale for inexact gradient computation.
+  Real              scale1_;     ///< Scale for inexact gradient computation.
 
-  Real              alpha_init_; ///< Initial line-search parameter for projected methods.
-  int               max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
+  // VERBOSITY SETTING
+  int verbosity_; ///< Print additional information to screen if > 0.
 
-  Real              scale0_; ///< Scale for inexact gradient computation.
-  Real              scale1_; ///< Scale for inexact gradient computation.
+  /** \brief Parse input ParameterList.
 
-  Real              scaleEps_;
-
-  int               verbosity_;
+      This function sets trust region specific parameters specified in the user
+      supplied ParameterList.
+      @param[in]  parlist   is the user-supplied ParameterList.
+  */
+  void parseParameterList(ROL::ParameterList &parlist) {
+    ROL::Ptr<StepState<Real>> step_state = Step<Real>::getState();
+    // Trust-Region Parameters
+    ROL::ParameterList &slist = parlist.sublist("Step");
+    ROL::ParameterList &list  = slist.sublist("Trust Region");
+    step_state->searchSize = list.get("Initial Radius", static_cast<Real>(-1));
+    delMax_                = list.get("Maximum Radius", static_cast<Real>(1.e8));
+    // Inexactness Information
+    ROL::ParameterList &glist = parlist.sublist("General");
+    useInexact_.clear();
+    useInexact_.push_back(glist.get("Inexact Objective Function",     false));
+    useInexact_.push_back(glist.get("Inexact Gradient",               false));
+    useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+    // Trust-Region Inexactness Parameters
+    ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Gradient");
+    scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
+    scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
+    // Initialize Trust Region Subproblem Solver Object
+    etr_              = StringToETrustRegion(list.get("Subproblem Solver", "Dogleg"));  
+    TRmodel_          = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
+    useProjectedGrad_ = glist.get("Projected Gradient Criticality Measure", false);
+    trustRegion_      = TrustRegionFactory<Real>(parlist);
+    // Scale for epsilon active sets
+    scaleEps_  = glist.get("Scale for Epsilon Active Sets", static_cast<Real>(1));
+    verbosity_ = glist.get("Print Verbosity",               0);
+    // Post-smoothing parameters
+    max_fval_    = list.sublist("Post-Smoothing").get("Function Evaluation Limit", 20);
+    alpha_init_  = list.sublist("Post-Smoothing").get("Initial Step Size", static_cast<Real>(1));
+    mu_          = list.sublist("Post-Smoothing").get("Tolerance",         static_cast<Real>(0.9999));
+    beta_        = list.sublist("Post-Smoothing").get("Rate",              static_cast<Real>(0.01));
+    // Coleman-Li parameters
+    stepBackMax_   = list.sublist("Coleman-Li").get("Maximum Step Back",  static_cast<Real>(0.9999));
+    stepBackScale_ = list.sublist("Coleman-Li").get("Maximum Step Scale", static_cast<Real>(1));
+    singleReflect_ = list.sublist("Coleman-Li").get("Single Reflection",  true);
+  }
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
 
@@ -174,23 +227,33 @@ private:
       parameter.  
       @param[in]      x          is the current optimization variable.
       @param[in]      obj        is the objective function.
-      @param[in]      con        is the bound constraint.
+      @param[in]      bnd        is the bound constraint.
       @param[in,out]  algo_state is the algorithm state.
   */
-  void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                        AlgorithmState<Real> &algo_state ) {
-    Real oem2(1.e-2), one(1), oe4(1.e4);
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    Ptr<StepState<Real>> state = Step<Real>::getState();
     if ( useInexact_[1] ) {
-      Real c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
-      Real gtol1  = c*(state->searchSize);
-      Real gtol0  = scale1_*gtol1 + one;
-      while ( gtol0 > gtol1*scale1_ ) {
+      const Real one(1);
+      //const Real oem2(1.e-2), oe4(1.e4);
+      //Real c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
+      //Real gtol1  = c*std::min(algo_state.gnorm,state->searchSize);
+      //Real gtol0  = scale1_*gtol1 + one;
+      //while ( gtol0 > gtol1*scale1_ ) {
+      //  obj.gradient(*(state->gradientVec),x,gtol1);
+      //  algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,bnd);
+      //  gtol0 = gtol1;
+      //  c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
+      //  gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
+      //}
+      //algo_state.ngrad++;
+      Real gtol1  = scale0_*std::min(algo_state.gnorm,state->searchSize);
+      Real gtol0  = gtol1 + one;
+      while ( gtol0 > gtol1 ) {
         obj.gradient(*(state->gradientVec),x,gtol1);
-        algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,con);
+        algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,bnd);
         gtol0 = gtol1;
-        c = scale0_*std::max(oem2,std::min(one,oe4*algo_state.gnorm));
-        gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
+        gtol1 = scale0_*std::min(algo_state.gnorm,state->searchSize);
       }
       algo_state.ngrad++;
     }
@@ -198,7 +261,7 @@ private:
       Real gtol = std::sqrt(ROL_EPSILON<Real>());
       obj.gradient(*(state->gradientVec),x,gtol);
       algo_state.ngrad++;
-      algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,con);
+      algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,bnd);
     }
   }
 
@@ -208,20 +271,20 @@ private:
       the norm of \f$x_k - P_{[a,b]}(x_k-g_k)\f$.
        @param[in]       g     is the current gradient.
        @param[in]       x     is the current iterate.
-       @param[in]       con   is the bound constraint.
+       @param[in]       bnd   is the bound constraint.
   */
-  Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, BoundConstraint<Real> &con ) {
-    if ( con.isActivated() ) {
+  Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, BoundConstraint<Real> &bnd ) {
+    if ( bnd.isActivated() ) {
       if ( useProjectedGrad_ ) {
         gp_->set(g);
-        con.computeProjectedGradient( *gp_, x );
+        bnd.computeProjectedGradient( *gp_, x );
         return gp_->norm();
       }
       else {
         Real one(1);
         xnew_->set(x);
         xnew_->axpy(-one,g.dual());
-        con.project(*xnew_);
+        bnd.project(*xnew_);
         xnew_->axpy(-one,x);
         return xnew_->norm();
       }
@@ -242,104 +305,69 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a TrustRegionStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( Teuchos::ParameterList & parlist )
+  TrustRegionStep( ROL::ParameterList & parlist )
     : Step<Real>(),
-      secant_(Teuchos::null), trustRegion_(Teuchos::null),
-      xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
-      etr_(TRUSTREGION_DOGLEG), esec_(SECANT_LBFGS),
+      xnew_(nullPtr), xold_(nullPtr), gp_(nullPtr),
+      trustRegion_(nullPtr), model_(nullPtr),
+      etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
+      delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
+      SPflag_(0), SPiter_(0), bndActive_(false),
+      secant_(nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false),
-      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
-      CGflag_(0), CGiter_(0),
-      delMax_(1.e4),
-      alpha_init_(1.), max_fval_(20),
-      scale0_(1.), scale1_(1.),
-      scaleEps_(1.), verbosity_(0) {
-    Real one(1), two(2), p1(1.e-1), oe3(1.e3);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    // Trust-Region Parameters
-    step_state->searchSize = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius", -one);
-    delMax_                = parlist.sublist("Step").sublist("Trust Region").get("Maximum Radius", oe3);
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Objective Function", false));
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
-    // Trust-Region Inexactness Parameters
-    scale0_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Tolerance Scaling",p1);
-    scale1_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Relative Tolerance",two); 
-    // Initialize Trust Region Subproblem Solver Object
-    etr_  = StringToETrustRegion(parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver","Dogleg"));  
-    useProjectedGrad_ = parlist.sublist("General").get("Projected Gradient Criticality Measure", false);
-    max_fval_         = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit", 20);
-    alpha_init_       = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size", one);
-    trustRegion_ = TrustRegionFactory<Real>(parlist);
-    // Secant Object
-    esec_ = StringToESecant(parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
-    useSecantPrecond_ = parlist.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
-    useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false);
-    secant_ = SecantFactory<Real>(parlist);
-    // Scale for epsilon active sets
-    scaleEps_ = parlist.sublist("General").get("Scale for Epsilon Active Sets",one);
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
+      scaleEps_(1), useProjectedGrad_(false),
+      alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
+      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
+      scale0_(1), scale1_(1),
+      verbosity_(0) {
+    // Parse input parameterlist
+    parseParameterList(parlist);
+    // Create secant object
+    ROL::ParameterList &glist = parlist.sublist("General");
+    esec_             = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
+    useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
+    secant_           = SecantFactory<Real>(parlist);
   }
 
   /** \brief Constructor.
 
       Constructor to build a TrustRegionStep object with a user-defined 
       secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
+  TrustRegionStep( ROL::Ptr<Secant<Real> > &secant, ROL::ParameterList &parlist ) 
     : Step<Real>(),
-      secant_(secant), trustRegion_(Teuchos::null),
-      xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
-      etr_(TRUSTREGION_DOGLEG), esec_(SECANT_USERDEFINED),
+      xnew_(nullPtr), xold_(nullPtr), gp_(nullPtr),
+      trustRegion_(nullPtr), model_(nullPtr),
+      etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
+      delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
+      SPflag_(0), SPiter_(0), bndActive_(false),
+      secant_(nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false),
-      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
-      CGflag_(0), CGiter_(0),
-      delMax_(1.e4),
-      alpha_init_(1.), max_fval_(20),
-      scale0_(1.), scale1_(1.),
-      scaleEps_(1.) {
-    Real one(1), two(2), p1(1.e-1), oe3(1.e3);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    // Trust-Region Parameters
-    step_state->searchSize = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius", -one);
-    delMax_                = parlist.sublist("Step").sublist("Trust Region").get("Maximum Radius", oe3);
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Objective Function", false));
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
-    useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
-    // Trust-Region Inexactness Parameters
-    scale0_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Tolerance Scaling",p1);
-    scale1_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Relative Tolerance",two); 
-    // Initialize Trust Region Subproblem Solver Object
-    etr_  = StringToETrustRegion(parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver","Dogleg"));  
-    useProjectedGrad_ = parlist.sublist("General").get("Projected Gradient Criticality Measure", false);
-    max_fval_         = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit", 20);
-    alpha_init_       = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size", one);
-    trustRegion_ = TrustRegionFactory<Real>(parlist);
-    // Secant Object
-    useSecantPrecond_ = parlist.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
-    useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false);
-    if ( secant_ == Teuchos::null ) {
-      Teuchos::ParameterList Slist;
+      scaleEps_(1), useProjectedGrad_(false),
+      alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
+      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
+      scale0_(1), scale1_(1),
+      verbosity_(0) {
+    // Parse input parameterlist
+    parseParameterList(parlist);
+    // Create secant object
+    ROL::ParameterList &glist = parlist.sublist("General");
+    useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
+    useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
+    if ( ROL::is_nullPtr(secant_) ) {
+      ROL::ParameterList Slist;
       Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
       secant_ = SecantFactory<Real>(Slist);
     }
-    // Scale for epsilon active sets
-    scaleEps_ = parlist.sublist("General").get("Scale for Epsilon Active Sets",one);
   }
 
   /** \brief Initialize step.
@@ -347,14 +375,18 @@ public:
       This function initializes the information necessary to run the trust-region algorithm.
       @param[in]     x           is the initial guess for the optimization vector.
       @param[in]     obj         is the objective function.
-      @param[in]     con         is the bound constraint.
+      @param[in]     bnd         is the bound constraint.
       @param[in]     algo_state  is the algorithm state.
   */
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
-                   Objective<Real> &obj, BoundConstraint<Real> &con, 
+                   Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
+    if (!isValidTrustRegionSubproblem(etr_,TRmodel_,bnd.isActivated())) {
+      throw Exception::NotImplemented(">>> ROL::TrustRegionStep : Invalid Trust Region Solver and Model pair!");
+    }
     Real p1(0.1), oe10(1.e10), zero(0), one(1), half(0.5), three(3), two(2), six(6);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Ptr<StepState<Real>> step_state = Step<Real>::getState();
+    bndActive_ = bnd.isActivated();
 
     trustRegion_->initialize(x,s,g);
 
@@ -364,8 +396,14 @@ public:
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
 
-    if ( con.isActivated() ) {
-      con.project(x);
+    if ( bnd.isActivated() ) {
+      // Make initial guess feasible
+      if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        bnd.projectInterior(x);
+      }
+      else {
+        bnd.project(x);
+      }
       xnew_ = x.clone();
       xold_ = x.clone();
     }
@@ -373,7 +411,7 @@ public:
 
     // Update approximate gradient and approximate objective function.
     obj.update(x,true,algo_state.iter);    
-    updateGradient(x,obj,con,algo_state);
+    updateGradient(x,obj,bnd,algo_state);
     algo_state.snorm = oe10;
     algo_state.value = obj.value(x,ftol); 
     algo_state.nfval++;
@@ -382,8 +420,8 @@ public:
     if ( !useSecantHessVec_ &&
         (etr_ == TRUSTREGION_DOGLEG || etr_ == TRUSTREGION_DOUBLEDOGLEG) ) {
       try {
-        Teuchos::RCP<Vector<Real> > v  = g.clone();
-        Teuchos::RCP<Vector<Real> > hv = x.clone();
+        Ptr<Vector<Real>> v  = g.clone();
+        Ptr<Vector<Real>> hv = x.clone();
         obj.invHessVec(*hv,*v,x,htol);
       }
       catch (std::exception &e) {
@@ -392,8 +430,10 @@ public:
     }
 
     // Evaluate Objective Function at Cauchy Point
+    bool autoRad = false;
     if ( step_state->searchSize <= zero ) {
-      Teuchos::RCP<Vector<Real> > Bg = g.clone();
+      autoRad = true;
+      Ptr<Vector<Real>> Bg = g.clone();
       if ( useSecantHessVec_ ) {
         secant_->applyB(*Bg,(step_state->gradientVec)->dual());
       }
@@ -406,14 +446,14 @@ public:
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
       // Evaluate the objective function at the Cauchy point
-      Teuchos::RCP<Vector<Real> > cp = s.clone();
+      Ptr<Vector<Real>> cp = s.clone();
       cp->set((step_state->gradientVec)->dual()); 
       cp->scale(-alpha);
-      Teuchos::RCP<Vector<Real> > xcp = x.clone();
+      Ptr<Vector<Real>> xcp = x.clone();
       xcp->set(x);
       xcp->plus(*cp);
-      if ( con.isActivated() ) {
-        con.project(*xcp);
+      if ( bnd.isActivated() ) {
+        bnd.project(*xcp);
       }
       obj.update(*xcp);
       Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
@@ -445,6 +485,55 @@ public:
           step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
         }
       }
+      if (step_state->searchSize <= ROL_EPSILON<Real>()*algo_state.gnorm && autoRad) {
+        step_state->searchSize = one;
+      }
+    }
+    // Build trust-region model
+    if (bnd.isActivated()) { 
+      if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+        model_ = makePtr<KelleySachsModel<Real>>(obj,
+                                                 bnd,
+                                                 x,
+                                                 *(step_state->gradientVec),
+                                                 secant_,
+                                                 useSecantPrecond_,
+                                                 useSecantHessVec_);
+      }
+      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        model_ = makePtr<ColemanLiModel<Real>>(obj,
+                                               bnd,
+                                               x,
+                                               *(step_state->gradientVec),
+                                               stepBackMax_,
+                                               stepBackScale_,
+                                               singleReflect_,
+                                               secant_,
+                                               useSecantPrecond_,
+                                               useSecantHessVec_);
+      } 
+      else if ( TRmodel_ == TRUSTREGION_MODEL_LINMORE ) {
+        model_ = makePtr<LinMoreModel<Real>>(obj,
+                                             bnd,
+                                             x,
+                                             *(step_state->gradientVec),
+                                             secant_,
+                                             useSecantPrecond_,
+                                             useSecantHessVec_);
+      }
+      else {
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+          ">>> ERROR (TrustRegionStep): Invalid trust-region model!");
+      }
+    }
+    else {
+      model_ = makePtr<TrustRegionModel<Real>>(obj,
+                                               bnd,
+                                               x,
+                                               *(step_state->gradientVec),
+                                               secant_,
+                                               useSecantPrecond_,
+                                               useSecantHessVec_);
     }
   }
 
@@ -455,31 +544,30 @@ public:
       @param[out]      s          is the computed trial step
       @param[in]       x          is the current iterate
       @param[in]       obj        is the objective function
-      @param[in]       con        are the bound constraints
+      @param[in]       bnd        are the bound constraints
       @param[in]       algo_state contains the current state of the algorithm
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void compute( Vector<Real> &s, const Vector<Real> &x,
+                Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-
-    Real eps(0), one(1);
-    if ( con.isActivated() ) {
-      eps = scaleEps_*algo_state.gnorm;
+    // Get step state
+    Ptr<StepState<Real>> step_state = Step<Real>::getState();
+    // Build trust-region model
+    model_->update(obj,bnd,x,*step_state->gradientVec,secant_);
+    if (bnd.isActivated()) {
+      if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+//      Real eps = scaleEps_*algo_state.gnorm;
+        Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
+                                        static_cast<Real>(0.001));
+        dynamicPtrCast<KelleySachsModel<Real>>(model_)->setEpsilon(eps);
+      }
+      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        dynamicPtrCast<ColemanLiModel<Real>>(model_)->setRadius(step_state->searchSize);
+      }
     }
-    ProjectedObjective<Real> pObj(obj,con,secant_,useSecantPrecond_,useSecantHessVec_,eps);
-
-    CGflag_ = 0;
-    CGiter_ = 0;
-    trustRegion_->run(s,algo_state.snorm,step_state->searchSize,CGflag_,CGiter_,
-                            x,*(step_state->gradientVec),algo_state.gnorm,pObj);
-
-    if ( con.isActivated() ) {
-      xnew_->set(x);
-      xnew_->plus(s);
-      con.project(*xnew_);
-      s.set(*xnew_);
-      s.axpy(-one,x);
-    }
+    // Minimize trust-region model over trust-region constraint
+    SPflag_ = 0; SPiter_ = 0;
+    trustRegion_->run(s,algo_state.snorm,SPflag_,SPiter_,step_state->searchSize,*model_);
   }
 
   /** \brief Update step, if successful.
@@ -490,103 +578,103 @@ public:
       @param[in,out]   x          is the updated iterate
       @param[in]       s          is the computed trial step
       @param[in]       obj        is the objective function
-      @param[in]       con        are the bound constraints
+      @param[in]       bnd        are the bound constraints
       @param[in]       algo_state contains the current state of the algorithm
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con, 
-               AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
-
-    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
-
-    Real eps(0);
-    if ( con.isActivated() ) {
-      eps = algo_state.gnorm;
-    }
-    ProjectedObjective<Real> pObj(obj,con,secant_,useSecantPrecond_,useSecantHessVec_,eps);
-
+  void update( Vector<Real>          &x,
+               const Vector<Real>    &s,
+               Objective<Real>       &obj,
+               BoundConstraint<Real> &bnd,
+               AlgorithmState<Real>  &algo_state ) {
+    // Get step state
+    Ptr<StepState<Real>> state = Step<Real>::getState();
     // Store previous step for constraint computations
-    if ( con.isActivated() ) {
+    if ( bnd.isActivated() ) {
       xold_->set(x);
     }
-
     // Update trust-region information;
     // Performs a hard update on the objective function
-    TRflag_   = TRUSTREGION_FLAG_SUCCESS;
-    TR_nfval_ = 0;
-    TR_ngrad_ = 0;
+    TRflag_ = TRUSTREGION_FLAG_SUCCESS;
+    state->nfval = 0;
+    state->ngrad = 0;
     Real fold = algo_state.value;
     Real fnew(0);
     algo_state.iter++;
-    trustRegion_->update(x,fnew,state->searchSize,TR_nfval_,TR_ngrad_,TRflag_,
-                         s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
-    algo_state.nfval += TR_nfval_;
-    algo_state.ngrad += TR_ngrad_;
-    algo_state.value  = fnew;
-
+    trustRegion_->update(x,fnew,state->searchSize,state->nfval,state->ngrad,TRflag_,
+                         s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,
+                         obj,bnd,*model_);
+    algo_state.nfval += state->nfval;
+    algo_state.ngrad += state->ngrad;
+    state->flag   = static_cast<int>(TRflag_);
+    state->SPiter = SPiter_;
+    state->SPflag = SPflag_;
     // If step is accepted ...
     // Compute new gradient and update secant storage
     if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
          TRflag_ == TRUSTREGION_FLAG_POSPREDNEG ) {  
       // Perform line search (smoothing) to ensure decrease 
-      if ( con.isActivated() ) {
+      if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Compute new gradient
         obj.gradient(*gp_,x,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.ngrad++;
         // Compute smoothed step
-        Real alpha(1), oem4(1.e-4), half(0.5);
+        Real alpha(1);
         xnew_->set(x);
         xnew_->axpy(-alpha*alpha_init_,gp_->dual());
-        con.project(*xnew_);
+        bnd.project(*xnew_);
         // Compute new objective value
         obj.update(*xnew_,true,algo_state.iter);
         Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
         int cnt = 0;
-        alpha = one/alpha_init_;
-        while ( (fnew-ftmp) <= oem4*(fnew-fold) ) { 
+        alpha = static_cast<Real>(1)/alpha_init_;
+        while ( (fnew-ftmp) <= mu_*(fnew-fold) ) { 
           xnew_->set(x);
           xnew_->axpy(-alpha*alpha_init_,gp_->dual());
-          con.project(*xnew_);
+          bnd.project(*xnew_);
           obj.update(*xnew_,true,algo_state.iter);
           ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= max_fval_ ) {
             break;
           }
-          alpha *= half;
+          alpha *= beta_;
           cnt++;
         }
         // Store objective function and iteration information
         fnew = ftmp;
         x.set(*xnew_);
       }
-
       // Store previous gradient for secant update
       if ( useSecantHessVec_ || useSecantPrecond_ ) {
         gp_->set(*(state->gradientVec));
       }
-
       // Update objective function and approximate model
-      updateGradient(x,obj,con,algo_state);
-
+      updateGradient(x,obj,bnd,algo_state);
       // Update secant information
       if ( useSecantHessVec_ || useSecantPrecond_ ) {
-        if ( con.isActivated() ) { // Compute new constrained step
+        if ( bnd.isActivated() ) { // Compute new constrained step
           xnew_->set(x);
-          xnew_->axpy(-one,*xold_);
+          xnew_->axpy(-static_cast<Real>(1),*xold_);
           secant_->updateStorage(x,*(state->gradientVec),*gp_,*xnew_,algo_state.snorm,algo_state.iter+1);
         }
         else {
           secant_->updateStorage(x,*(state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
         }
       }
-
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
     }
-
+    else {
+      if ( useInexact_[1] ) {
+        // Update objective function and approximate model
+        updateGradient(x,obj,bnd,algo_state);
+      }
+    }
+    // Update algorithm state
+    algo_state.value = fnew;
   }
 
   /** \brief Print iterate header.
@@ -641,7 +729,7 @@ public:
     hist << std::setw(10) << std::left << "#fval";
     hist << std::setw(10) << std::left << "#grad";
     hist << std::setw(10) << std::left << "tr_flag";
-    if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+    if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_LINMORE ) {
       hist << std::setw(10) << std::left << "iterCG";
       hist << std::setw(10) << std::left << "flagCG";
     }
@@ -655,20 +743,23 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << ETrustRegionToString(etr_) << " Trust-Region solver";
+    hist << "\n" << ETrustRegionToString(etr_) << " Trust-Region Solver";
     if ( useSecantPrecond_ || useSecantHessVec_ ) {
       if ( useSecantPrecond_ && !useSecantHessVec_ ) {
-        hist << " with " << ESecantToString(esec_) << " preconditioning\n";
+        hist << " with " << ESecantToString(esec_) << " Preconditioning\n";
       }
       else if ( !useSecantPrecond_ && useSecantHessVec_ ) {
-        hist << " with " << ESecantToString(esec_) << " Hessian approximation\n";
+        hist << " with " << ESecantToString(esec_) << " Hessian Approximation\n";
       }
       else {
-        hist << " with " << ESecantToString(esec_) << " preconditioning and Hessian approximation\n";
+        hist << " with " << ESecantToString(esec_) << " Preconditioning and Hessian Approximation\n";
       }
     }
     else {
       hist << "\n";
+    }
+    if ( bndActive_ ) {
+      hist << "Trust-Region Model: " << ETrustRegionModelToString(TRmodel_) << "\n";
     }
     return hist.str();
   }
@@ -681,7 +772,7 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
-    const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getStepState();
+    const Ptr<const StepState<Real>>& step_state = Step<Real>::getStepState();
 
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
@@ -710,9 +801,9 @@ public:
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << TRflag_;              
-      if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
-        hist << std::setw(10) << std::left << CGiter_;
-        hist << std::setw(10) << std::left << CGflag_;
+      if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_LINMORE ) {
+        hist << std::setw(10) << std::left << SPiter_;
+        hist << std::setw(10) << std::left << SPflag_;
       }
       hist << "\n";
     }

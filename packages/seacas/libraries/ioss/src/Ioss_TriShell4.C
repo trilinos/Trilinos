@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_TriShell4 registerThis; }
 
   protected:
-    St_TriShell4() : ElementVariableType("trishell4", 4) {}
+    St_TriShell4() : ElementVariableType(Ioss::TriShell4::name, 4) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -91,10 +91,10 @@ void Ioss::TriShell4::factory()
   Ioss::St_TriShell4::factory();
 }
 
-Ioss::TriShell4::TriShell4() : Ioss::ElementTopology("trishell4", "ShellTriangle_4")
+Ioss::TriShell4::TriShell4() : Ioss::ElementTopology(Ioss::TriShell4::name, "ShellTriangle_4")
 {
-  Ioss::ElementTopology::alias("trishell4", "Shell_Tri_4_3D");
-  Ioss::ElementTopology::alias("trishell4", "SHELL_TRIANGLE_4");
+  Ioss::ElementTopology::alias(Ioss::TriShell4::name, "Shell_Tri_4_3D");
+  Ioss::ElementTopology::alias(Ioss::TriShell4::name, "SHELL_TRIANGLE_4");
 }
 
 Ioss::TriShell4::~TriShell4() = default;

@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
@@ -88,13 +89,13 @@ def main():
     # map.                                                 #
     # ==================================================== #
 
-    if iAmRoot: print "I/O for Map ... ",
+    if iAmRoot: print("I/O for Map ... ", end="")
     EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
     (ierr, map2) = EpetraExt.MatrixMarketFileToMap("map.mm", comm)
     if map2.SameAs(map):
-        if iAmRoot: print "ok"
+        if iAmRoot: print("ok")
     else:
-        if iAmRoot: print "FAILED"
+        if iAmRoot: print("FAILED")
         failures += 1
 
     # ===================================================== #
@@ -102,16 +103,16 @@ def main():
     # read "x.mm" into y, then check that y equals x        #
     # ===================================================== #
 
-    if iAmRoot: print "I/O for MultiVector ... ",
+    if iAmRoot: print("I/O for MultiVector ... ", end="")
     EpetraExt.MultiVectorToMatrixMarketFile("x.mm", x)
     (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map2)
     y.Update(1.0, x, -1.0)
     norm = y.Norm2()
 
     if abs(norm) < tolerance:
-        if iAmRoot: print "ok"
+        if iAmRoot: print("ok")
     else:
-        if iAmRoot: print "FAILED"
+        if iAmRoot: print("FAILED")
         failures += 1
 
     # ===================================================== #
@@ -120,7 +121,7 @@ def main():
     # read "A.mm" into B, then check that B equals A        #
     # ===================================================== #
 
-    if iAmRoot: print "I/O for CrsMatrix ... ",
+    if iAmRoot: print("I/O for CrsMatrix ... ", end="")
     A       = Epetra.CrsMatrix(Epetra.Copy, map2, 0)
     for lrid in range(A.NumMyRows()):
         grid = A.GRID(lrid)
@@ -132,9 +133,9 @@ def main():
     norm = B.NormInf()
 
     if abs(norm) < tolerance:
-        if iAmRoot: print "ok"
+        if iAmRoot: print("ok")
     else:
-        if iAmRoot: print "FAILED"
+        if iAmRoot: print("FAILED")
         failures += 1
 
     return failures
@@ -147,5 +148,5 @@ if __name__ == "__main__":
     else:
         failures = 0    # Not all I/O works in parallel
     failures = comm.SumAll(failures)
-    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(failures)

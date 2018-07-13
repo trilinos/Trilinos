@@ -80,6 +80,17 @@ namespace MueLu {
     */
     Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
 
+    /*! @brief Register new facade class
+     *
+     * Register new externally provided facade class in FacadeClassFactory
+     *
+     * @param[in] name: name that is used to access Facade class
+     * @param[in] facadeclass: RCP pointer to facade class instance
+     */
+    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > facadeclass) {
+      facadeClasses_[name] = facadeclass;
+    }
+
   private:
 
     std::map<std::string, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > facadeClasses_;

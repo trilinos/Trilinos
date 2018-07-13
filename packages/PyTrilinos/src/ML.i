@@ -84,89 +84,37 @@ example subdirectory of the PyTrilinos package:
 	docstring = %ml_docstring) ML
 
 %{
-//  PyTrilinos includes
+//  PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_FILEstream.hpp"
 
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #endif
 
-// IFPACK includes
+// IFPACK include files
 #ifdef HAVE_IFPACK
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
+#include "PyTrilinos_IFPACK_Headers.hpp"
 #endif
 
-// ML includes
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "ml_MultiLevelPreconditioner.h"
-#include "MLAPI.h"
-#include "PyTrilinos_ML_Util.hpp"
-
+// ML include files
+#include "PyTrilinos_ML_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -195,10 +143,10 @@ example subdirectory of the PyTrilinos package:
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
-#if SWIG_VERSION >= 0x030000
+#if PY_VERSION_HEX >= 0x030000
 %pythoncode
 %{
-import Epetra
+Epetra = PyTrilinos.Epetra
 %}
 #endif
 
@@ -298,23 +246,12 @@ BaseObject::__str__;
     }
     else
     {
-      if (!PyFile_Check(ostream))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-	goto fail;
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(ostream);
-	PyTrilinos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os, verbose);
-	os.flush();
-      }
+      std::ostringstream s;
+      self->Print(s, verbose);
+      if (PyFile_WriteString(s.str().c_str(), ostream))
+        throw PyTrilinos::PythonException();
     }
     return Py_BuildValue("");
-  fail:
-    return NULL;
   }
   // Define the __str__() method, used by the python str() operator
   // on any object given to the python print command.

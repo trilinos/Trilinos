@@ -51,9 +51,9 @@
 #include "ROL_StatusTestFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
-
+#include "ROL_Constraint.hpp"
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_ValidParameters.hpp"
 
 /** \class ROL::Algorithm
     \brief Provides an interface to run optimization algorithms.
@@ -71,9 +71,9 @@ class StatusTestFactory;
 template <class Real>
 class Algorithm {
 private:
-  Teuchos::RCP<Step<Real> >           step_;
-  Teuchos::RCP<StatusTest<Real> >     status_;
-  Teuchos::RCP<AlgorithmState<Real> > state_;
+  ROL::Ptr<Step<Real> >           step_;
+  ROL::Ptr<StatusTest<Real> >     status_;
+  ROL::Ptr<AlgorithmState<Real> > state_;
 
   bool printHeader_;
 
@@ -83,21 +83,21 @@ public:
 
   /** \brief Constructor, given a step and a status test.
   */
-  Algorithm( const Teuchos::RCP<Step<Real> > & step,
-             const Teuchos::RCP<StatusTest<Real> > & status,
+  Algorithm( const ROL::Ptr<Step<Real> > & step,
+             const ROL::Ptr<StatusTest<Real> > & status,
              bool printHeader = false ) {
     step_ = step;
     status_ = status;
-    state_ = Teuchos::rcp(new AlgorithmState<Real>);
+    state_ = ROL::makePtr<AlgorithmState<Real>>();
     printHeader_ = printHeader;
   }
 
   /** \brief Constructor, given a step, a status test, and a
              previously defined algorithm state.
   */
-  Algorithm( const Teuchos::RCP<Step<Real> > & step,
-             const Teuchos::RCP<StatusTest<Real> > & status,
-             const Teuchos::RCP<AlgorithmState<Real> > & state,
+  Algorithm( const ROL::Ptr<Step<Real> > & step,
+             const ROL::Ptr<StatusTest<Real> > & status,
+             const ROL::Ptr<AlgorithmState<Real> > & state,
              bool printHeader = false ) {
     step_ = step;
     status_ = status;
@@ -110,17 +110,22 @@ public:
              test is determined based on the step string.
   */
   Algorithm( const std::string &stepname,
-             Teuchos::ParameterList &parlist,
+             ROL::ParameterList &parlist,
              bool printHeader = false) {
+
+// Uncomment to test for parameter inconsistencies
+//    ROL::Ptr<const ROL::ParameterList> validParlist = getValidROLParameters();
+//    parlist.validateParametersAndSetDefaults(*validParlist);
+
     EStep els = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
+    ROL_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
                                 "Invalid step name in algorithm constructor!");
     StepFactory<Real> stepFactory;
     StatusTestFactory<Real> statusTestFactory;
     step_   = stepFactory.getStep(stepname,parlist);
     status_ = statusTestFactory.getStatusTest(stepname,parlist);
-    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+    state_  = ROL::makePtr<AlgorithmState<Real>>();
     printHeader_ = printHeader;
   }
 
@@ -130,10 +135,12 @@ public:
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
                                         bool              print = false,
-                                        std::ostream      &outStream = std::cout ) {
-    BoundConstraint<Real> con;
-    con.deactivate();
-    return run(x,x.dual(),obj,con,print,outStream);
+                                        std::ostream      &outStream = std::cout,
+                                        bool              printVectors = false,
+                                        std::ostream      &vectorStream = std::cout ) {
+    BoundConstraint<Real> bnd;
+    bnd.deactivate();
+    return run(x,x.dual(),obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
@@ -144,10 +151,12 @@ public:
                                         const Vector<Real> &g, 
                                         Objective<Real>    &obj,
                                         bool               print = false,
-                                        std::ostream       &outStream = std::cout ) {
-    BoundConstraint<Real> con;
-    con.deactivate();
-    return run(x,g,obj,con,print,outStream);
+                                        std::ostream       &outStream = std::cout,
+                                        bool               printVectors = false,
+                                        std::ostream       &vectorStream = std::cout ) {
+    BoundConstraint<Real> bnd;
+    bnd.deactivate();
+    return run(x,g,obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -155,10 +164,12 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         Objective<Real>       &obj,
-                                        BoundConstraint<Real> &con,
+                                        BoundConstraint<Real> &bnd,
                                         bool                  print = false,
-                                        std::ostream          &outStream = std::cout ) {
-    return run(x,x.dual(),obj,con,print,outStream);
+                                        std::ostream          &outStream = std::cout,
+                                        bool                  printVectors = false,
+                                        std::ostream          &vectorStream = std::cout ) {
+    return run(x,x.dual(),obj,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -168,29 +179,35 @@ public:
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         const Vector<Real>    &g, 
                                         Objective<Real>       &obj,
-                                        BoundConstraint<Real> &con,
+                                        BoundConstraint<Real> &bnd,
                                         bool                  print = false,
-                                        std::ostream          &outStream = std::cout ) {
+                                        std::ostream          &outStream = std::cout,
+                                        bool                  printVectors = false,
+                                        std::ostream          &vectorStream = std::cout ) {
+    if(printVectors) {
+      x.print(vectorStream);
+    }
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPtr ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::Ptr<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    step_->initialize(x, g, obj, con, *state_);
+    step_->initialize(x, g, obj, bnd, *state_);
     output.push_back(step_->print(*state_,true));
     if ( print ) {
       outStream << step_->print(*state_,true);
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPtr ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -199,8 +216,13 @@ public:
 
     // Run Algorithm
     while (status_->check(*state_)) {
-      step_->compute(*s, x, obj, con, *state_);
-      step_->update(x, *s, obj, con, *state_);
+      step_->compute(*s, x, obj, bnd, *state_);
+      step_->update(x, *s, obj, bnd, *state_);
+
+      if( printVectors ) {
+        x.print(vectorStream);
+      }
+
       // Store Minimal Value and Vector
       if ( state_->minValue > state_->value ) {
         state_->minIterVec->set(*(state_->iterateVec));
@@ -213,6 +235,14 @@ public:
         outStream << step_->print(*state_,printHeader_);
       }
     }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
+    }
     return output;
   }
 
@@ -223,11 +253,13 @@ public:
   virtual std::vector<std::string> run( Vector<Real>             &x,
                                         Vector<Real>             &l, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
 
-    return run(x, x.dual(), l, l.dual(), obj, con, print, outStream);
+    return run(x, x.dual(), l, l.dual(), obj, con, print, outStream, printVectors, vectorStream);
 
   }
 
@@ -241,25 +273,31 @@ public:
                                         Vector<Real>             &l, 
                                         const Vector<Real>       &c, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
+    if( printVectors ) {
+      x.print(vectorStream);
+    } 
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPtr ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
-    if ( state_->lagmultVec == Teuchos::null ) {
+    if ( state_->lagmultVec == ROL::nullPtr ) {
       state_->lagmultVec = l.clone();
     }
     state_->lagmultVec->set(l);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::Ptr<Vector<Real> > s = x.clone();
 
     // Initialize Step
     step_->initialize(x, g, l, c, obj, con, *state_);
@@ -269,7 +307,7 @@ public:
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPtr ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -280,10 +318,23 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, l, obj, con, *state_);
       step_->update(x, l, *s, obj, con, *state_);
+
+      if( printVectors ) { 
+        x.print(vectorStream);
+      } 
+
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
       }
+    }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
     }
     return output;
   }
@@ -294,11 +345,13 @@ public:
   virtual std::vector<std::string> run( Vector<Real>             &x,
                                         Vector<Real>             &l, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
-    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream);
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout) {
+    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream,printVectors,vectorStream);
   }
 
   /** \brief Run algorithm on equality and bound constrained problems (Type-EB).
@@ -310,26 +363,32 @@ public:
                                         Vector<Real>             &l, 
                                         const Vector<Real>       &c, 
                                         Objective<Real>          &obj,
-                                        EqualityConstraint<Real> &con,
+                                        Constraint<Real>         &con,
                                         BoundConstraint<Real>    &bnd,
                                         bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        std::ostream             &outStream = std::cout,
+                                        bool                     printVectors = false,
+                                        std::ostream             &vectorStream = std::cout ) {
+    if(printVectors) {
+      x.print(vectorStream); 
+    } 
+
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPtr ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
-    if ( state_->lagmultVec == Teuchos::null ) {
+    if ( state_->lagmultVec == ROL::nullPtr ) {
       state_->lagmultVec = l.clone();
     }
     state_->lagmultVec->set(l);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::Ptr<Vector<Real> > s = x.clone();
 
     // Initialize Step
     step_->initialize(x, g, l, c, obj, con, bnd, *state_);
@@ -339,7 +398,7 @@ public:
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPtr ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -350,10 +409,21 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, l, obj, con, bnd, *state_);
       step_->update(x, l, *s, obj, con, bnd, *state_);
+      if( printVectors ) {
+        x.print(vectorStream);
+      }
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
       }
+    }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
     }
     return output;
   }
@@ -361,17 +431,18 @@ public:
   /** \brief Run algorithm using a ROL::OptimizationProblem.
   */
   virtual std::vector<std::string> run( OptimizationProblem<Real> &opt,
-                                        bool                     print = false,
-                                        std::ostream             &outStream = std::cout ) {
+                                        bool                       print = false,
+                                        std::ostream              &outStream = std::cout ) {
     // Get components of optimization problem
-    Teuchos::RCP<Objective<Real> >          obj = opt.getObjective();
-    Teuchos::RCP<Vector<Real> >             x   = opt.getSolutionVector();
-    Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    Teuchos::RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
-    Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
+
     // Call appropriate run function
-    if ( con == Teuchos::null ) {
-      if ( bnd == Teuchos::null ) {
+    if ( con == ROL::nullPtr ) {
+      if ( bnd == ROL::nullPtr ) {
         return run(*x,*obj,print,outStream);
       }
       else {
@@ -379,7 +450,7 @@ public:
       }
     }
     else {
-      if ( bnd == Teuchos::null ) {
+      if ( bnd == ROL::nullPtr ) {
         return run(*x,*l,*obj,*con,print,outStream);
       }
       else {
@@ -396,13 +467,18 @@ public:
     return step_->print(*state_,withHeader);
   }
 
-  Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {
+  ROL::Ptr<const AlgorithmState<Real> > getState(void) const {
     return state_;
   }
 
   void reset(void) {
-    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+    state_->reset();
   }
+
+
+
+
+
 
 }; // class Algorithm
 

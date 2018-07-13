@@ -1,6 +1,6 @@
-// Copyright (c) 2014, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,7 +29,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
 #include "Ioss_DatabaseIO.h"   // for DatabaseIO
 #include "Ioss_ElementBlock.h" // for ElementBlock
@@ -39,28 +38,12 @@
 #include <iomanip>             // for operator<<, setw
 #include <iostream>            // for operator<<, basic_ostream, etc
 #include <string>              // for char_traits, operator<<
-#include <sys/time.h>          // for timeval, gettimeofday
 #include <sys/types.h>         // for int64_t
 #include <vector>              // for vector
 
 #define OUTPUT std::cerr
 
 namespace {
-  size_t timer()
-  {
-#if 0
-    timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 0;
-    clock_settime(CLOCK_REALTIME, &ts);
-    return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_nsec / 1000LL;
-#else
-    timeval ts;
-    gettimeofday(&ts, nullptr);
-    return static_cast<size_t>(ts.tv_sec) * 1000000LL + static_cast<size_t>(ts.tv_usec);
-#endif
-  }
-
   void comp_grad12x(double *const grad_ptr, const double *const x, const double *const y,
                     const double *const z)
   {
@@ -208,7 +191,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
   double              x[8], y[8], z[8];
   std::vector<double> volume(nelem);
 
-  size_t t1 = timer();
+  size_t t1 = Ioss::Utils::timer();
 
   size_t count = 0;
   for (size_t ielem = 0; ielem < nelem; ++ielem) {
@@ -227,7 +210,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
     const double volume12x = dot8(x, &gradop12x[0]);
     volume[ielem]          = volume12x * one12th;
   }
-  size_t t2 = timer();
+  size_t t2 = Ioss::Utils::timer();
 
   if (nelem > 0) {
     OUTPUT << "\n"

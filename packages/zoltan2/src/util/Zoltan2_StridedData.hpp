@@ -171,10 +171,15 @@ template<typename lno_t, typename scalar_t>
   }
   else {
     // Create an unstrided copy
-    Environment env;           // a default environment for error reporting
     size_t n = vec_.size() / stride_;
     T *tmp = new T [n];
-    env.localMemoryAssertion(__FILE__, __LINE__, n, tmp);
+
+    if (!tmp){
+      std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+      std::cerr << n << " objects" << std::endl;
+      throw std::bad_alloc();
+    }
+
     for (size_t i=0,j=0; i < n; i++,j+=stride_){
       tmp[i] = static_cast<T>(vec_[j]);
     }

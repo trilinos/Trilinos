@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# This script expects testbed (not SEMS!) modules to be loaded already.
+
+#Set path to Trilinos:
+TRILINOS_PATH=${HOME}/Trilinos
+
+# You could load a devpack here, but for now assume it was loaded.
+# module load devpack
+
+# Set up backends for Trilinos
+export CUDA=OFF
+export OPENMP=ON
+export PTHREAD=OFF
+export SERIAL=OFF
+export COMPLEX=OFF
+
+# Set up Architecture
+
+# If you want Intel Sandy Bridge or Ivy Bridge, uncomment the lines
+# below (up to but not including "Intel Haswell"), if they are not
+# already uncommented.  (This one has not yet been tested.  All the
+# others have been tested.)
+
+#Intel SandyBridge / IvyBridge
+export ARCH="SNB"
+export ARCH_CXX_FLAG="-mavx"
+export ARCH_C_FLAG="-mavx"
+export BLAS_LIBRARIES="-lblas"
+export LAPACK_LIBRARIES="-llapack" 
+
+# If you want Intel Haswell, uncomment the lines below (up to but not
+# including "Intel KNL"), if they are not already uncommented.
+
+#Intel Haswell
+#export ARCH="HSW"
+#export ARCH_CXX_FLAG="-xCORE-AVX2 -mkl"
+#export ARCH_C_FLAG="-xCORE-AVX2 -mkl"
+#export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+#export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+# If you want KNL, uncomment the lines below (up to but not including
+# "IBM Power8"), if they are not already uncommented.
+
+#Intel KNL
+#export ARCH="KNL"
+#export ARCH_CXX_FLAG="-xMIC-AVX512 -mkl"
+#export ARCH_C_FLAG="-xMIC-AVX512 -mkl"
+#export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
+#export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+# If you want IBM Power8 withOUT GPUs, uncomment the lines below (up
+# to but not including "IBM Power8 + NVIDIA K80"), if they are not
+# already uncommented.
+
+#IBM Power8:
+#export ARCH="Power8"
+#export ARCH_CXX_FLAG="-mcpu=power8"
+#export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+
+# If you want IBM Power8 with K80 GPUs, uncomment the lines below (up
+# to but not including "IBM Power8 + NVIDIA P100"), if they are not
+# already uncommented.
+
+#IBM Power8 + NVIDIA K80
+#export ARCH="Power8;Kepler37"
+#export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
+#export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37"
+#export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+
+# If you want IBM Power8 with P100 GPUs, uncomment the lines below (up
+# to but not including "Set up Tests/Examples"), if they are not
+# already uncommented.
+
+#IBM Power8 + NVIDIA P100
+#export ARCH="Power8;Pascal60"
+#export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
+#export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_60"
+#export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+
+
+# Set up Tests/Examples
+
+export TESTS=ON
+export EXAMPLES=ON
+
+
+# Set up number of OpenMP Threads:
+
+export OMP_NUM_THREADS=8
+
+
+
+###############################################
+###############################################
+# Don't change things below
+###############################################
+###############################################
+
+# This sets Jenkins-related environment variables.  It's for the
+# script below, which expects those environment variables to be set,
+# even if not running Jenkins.
+
+export JENKINS_DO_CUDA=${CUDA}
+export JENKINS_DO_OPENMP=${OPENMP}
+export JENKINS_DO_PTHREAD=${PTHREAD}
+export JENKINS_DO_SERIAL=${SERIAL}
+export JENKINS_DO_COMPLEX=${COMPLEX}
+
+export JENKINS_ARCH=${ARCH}
+export JENKINS_ARCH_CXX_FLAG=${ARCH_CXX_FLAG}
+export JENKINS_ARCH_C_FLAG=${ARCH_C_FLAG}
+
+export JENKINS_DO_TESTS=${TESTS}
+export JENKINS_DO_EXAMPLES=${EXAMPLES}
+
+# This actually runs CMake.
+
+source ${TRILINOS_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-jenkins
+

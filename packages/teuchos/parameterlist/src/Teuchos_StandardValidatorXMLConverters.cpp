@@ -48,6 +48,31 @@
 
 namespace Teuchos {
 
+RCP<ParameterEntryValidator> BoolValidatorXMLConverter::convertXML(
+  const XMLObject& xmlObj,
+  const IDtoValidatorMap& /*validatorIDsMap*/) const
+{
+  return boolParameterEntryValidator();
+}
+
+
+void BoolValidatorXMLConverter::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const ValidatortoIDMap& /*validatorIDsMap*/) const
+{
+  //RCP<const AnyNumberParameterEntryValidator> castedValidator =
+  //  rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator, true);
+
+  // currently no action
+}
+
+#ifdef HAVE_TEUCHOS_DEBUG
+RCP<const ParameterEntryValidator>
+BoolValidatorXMLConverter::getDummyValidator() const{
+  return DummyObjectGetter<BoolParameterEntryValidator>::getDummyObject();
+}
+#endif
 
 RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
   const XMLObject& xmlObj,

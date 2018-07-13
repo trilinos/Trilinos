@@ -54,8 +54,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -69,7 +67,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -100,9 +98,8 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
-   PHX::InitializeKokkosDevice();
-
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+   Kokkos::initialize(argc,argv);
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
@@ -203,7 +200,11 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+      = Teuchos::rcp(new panzer::WorksetContainer);
+   wkstContainer->setFactory(wkstFactory);
+   for(size_t i=0;i<physicsBlocks.size();i++) 
+     wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+   wkstContainer->setWorksetSize(workset_size);
 
    std::vector<std::string> elementBlockNames;
    mesh->getElementBlockNames(elementBlockNames);
@@ -227,8 +228,8 @@ int main(int argc,char * argv[])
 
    // construct some linear algebra object, build object to pass to evaluators
    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+   Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
    // setup field manager build
@@ -325,8 +326,6 @@ int main(int argc,char * argv[])
 
    panzer_stk::write_solution_data(*dofManager,*mesh,*ghostCont->get_x());
    mesh->writeToExodus("output.exo");
-
-   PHX::FinalizeKokkosDevice();
 
    return 0;
 }

@@ -214,12 +214,6 @@ ObjectBuilder<ObjectType>::ObjectBuilder()
 template<class ObjectType>
 ObjectBuilder<ObjectType>::~ObjectBuilder()
 {
-#ifdef TEUCHOS_DEBUG
-  // Validate that we read the parameters correctly!
-  if(!is_null(paramList_)) {
-    paramList_->validateParameters(*this->getValidParameters());
-  }
-#endif
 }
 
 

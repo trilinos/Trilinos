@@ -44,9 +44,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+#include "Moertel_ExplicitTemplateInstantiation.hpp"
+
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
+
+#ifdef HAVE_MOERTEL_TPETRA
+#include "Moertel_InterfaceT.hpp"
+#endif
+
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -72,6 +79,15 @@ stype_(MOERTEL::Segment::seg_none)
 {
   nodeId_.resize(nnode);
   for (int i=0; i<nnode; ++i) nodeId_[i] = nodeId[i];
+  nodeptr_.resize(0);
+}
+
+MOERTEL::Segment::Segment(int id, const std::vector<int>& nodev, int outlevel) :
+Id_(id),
+outputlevel_(outlevel),
+stype_(MOERTEL::Segment::seg_none),
+nodeId_(nodev)
+{
   nodeptr_.resize(0);
 }
 
@@ -327,6 +343,37 @@ bool MOERTEL::Segment::GetPtrstoNodes(MOERTEL::Interface& interface)
   return true;
 }
 
+#ifdef HAVE_MOERTEL_TPETRA
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+bool MOERTEL::Segment::GetPtrstoNodes(MoertelT::InterfaceT<ST, LO, GO, N>& interface)
+{ 
+  if (!interface.IsComplete()) return false;
+  if (interface.lComm() == Teuchos::null) return true;
+  if (!nodeId_.size()) return false;
+  
+  // vector nodeptr_ might already exist, recreate it
+  nodeptr_.clear();
+  nodeptr_.resize(nodeId_.size());
+  
+  for (int i=0; i<(int)nodeId_.size(); ++i)
+  {
+    nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
+    if (!nodeptr_[i])
+    {
+		std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
+           << "***ERR*** interface " << interface.Id() << " GetNodeView failed\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	  throw ReportError(oss);
+    }
+  }
+  return true;
+}
+#endif
+
 /*----------------------------------------------------------------------*
  |                                                           mwgee 10/05|
  | construct ptrs to nodes from vector                                  |
@@ -389,4 +436,18 @@ MOERTEL::Function* MOERTEL::Segment::GetFunction(int id)
   else
     return curr->second;
 }
+#endif
+
+// ETI
+#ifdef HAVE_MOERTEL_TPETRA
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
+template
+bool MOERTEL::Segment::GetPtrstoNodes<double, int, int, KokkosNode>
+      (MoertelT::InterfaceT<double, int, int, KokkosNode>& interface);
+#endif
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
+template
+bool MOERTEL::Segment::GetPtrstoNodes<double, int, long long, KokkosNode>
+      (MoertelT::InterfaceT<double, int, long long, KokkosNode>& interface);
+#endif
 #endif

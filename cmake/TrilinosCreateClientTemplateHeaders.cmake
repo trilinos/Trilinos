@@ -1,4 +1,5 @@
 INCLUDE(TribitsCreateClientTemplateHeaders)
+INCLUDE(CMakeParseArguments)
 
 #
 # Function that creates a set of template code client headers that either
@@ -28,25 +29,30 @@ INCLUDE(TribitsCreateClientTemplateHeaders)
 
 FUNCTION(TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS  BASE_DIR)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
     #prefix
     PARSE
-    #lists
-    ""
     #options
     "NOSIERRABJAM"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    ""
     ${ARGN}
     )
 
   IF (NOT PARSE_NOSIERRABJAM)
-    SET(ADDITIONIAL_OUTPUT_DIRS_ARG
-      ADDITIONIAL_OUTPUT_DIRS
-      "${${PROJECT_NAME}_SOURCE_DIR}/SIERRA/bjam/config_headers")
+    # NOTE: The SIERRA integration system no longer uses this functionality to
+    # install configured headers into a SIERRA/ directory.  Therefore, I am
+    # commenting this out.
+    #SET(ADDITIONAL_OUTPUT_DIRS_ARG
+    #  ADDITIONAL_OUTPUT_DIRS
+    #  "${${PROJECT_NAME}_SOURCE_DIR}/SIERRA/bjam/config_headers")
   ELSE()
-    SET(ADDITIONIAL_OUTPUT_DIRS_ARG)
+    SET(ADDITIONAL_OUTPUT_DIRS_ARG)
   ENDIF()
 
-  TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${BASE_DIR} ${ADDITIONIAL_OUTPUT_DIRS_ARG})
+  TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${BASE_DIR} ${ADDITIONAL_OUTPUT_DIRS_ARG})
 
 ENDFUNCTION()
 

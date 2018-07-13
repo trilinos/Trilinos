@@ -79,7 +79,7 @@ SET(Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/Trilino
 
 SET(Trilinos_BRANCH "trilinos-release-11-4-branch")
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 
 SET(EXTRA_EXCLUDE_PACKAGES Mesquite RBGen TriBITS)
 

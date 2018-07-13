@@ -134,10 +134,8 @@ static PARAM_VARS PHG_params[] = {
     /* Memory allocation parameter for Patoh. */
   {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
   /* Memory allocation parameter for Patoh. */
-#ifdef CEDRIC_2D_PARTITIONS
   {"PHG_KEEP_TREE",                   NULL,  "INT",    0},
-  /* Keep dissection tree */
-#endif /* CEDRIC_2D_PARTITIONS */
+  /* Keep bisection tree */
   {NULL,                              NULL,  NULL,     0}     
 };
 

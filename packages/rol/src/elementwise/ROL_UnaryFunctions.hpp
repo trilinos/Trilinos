@@ -66,6 +66,18 @@ private:
   Real value_;
 }; // class Fill
 
+// Used to shift every element in a vector by a specific value
+template<class Real>
+class Shift : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Shift( const Real &value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return x+value_;
+  }
+}; // class Shift
+
 
 // Get the elementwise reciprocal of a vector
 template<class Real> 
@@ -86,6 +98,23 @@ public:
 
 };
 
+template<class Real>
+class Sign : public Elementwise::UnaryFunction<Real> {
+private:
+  Real zero_;
+  Real one_;
+public:
+  Sign() : zero_(0), one_(1) {}
+  Real apply(const Real &x) const {
+    if(x==zero_) {
+      return zero_;
+    }
+    else {
+      return x>zero_ ? one_ : -one_;
+    }
+   }
+};
+
 
 // Compute the elementwise power of a vector
 template<class Real> 
@@ -100,6 +129,17 @@ public:
   } 
 }; // class Power
 
+
+// Compute the elementwise square root of a vector
+template<class Real> 
+class SquareRoot : public UnaryFunction<Real> {
+public:
+  SquareRoot( void ) {}
+
+  Real apply( const Real &x ) const {
+    return std::sqrt(x);
+  } 
+}; // class Power
 
 // Generate a uniformly distributed random number
 // between lower and upper
@@ -118,6 +158,26 @@ public:
     return (static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_;
   }
 }; // class UniformlyRandom
+
+// Multiply element by a uniformly distributed random number
+// between lower and upper
+template<class Real> 
+class UniformlyRandomMultiply : public UnaryFunction<Real> {
+private:
+  const Real lower_;
+  const Real upper_;
+
+public:
+  UniformlyRandomMultiply( const Real &lower = 0.0, const Real &upper = 1.0) : 
+    lower_(lower), upper_(upper) {
+  }
+
+  Real apply( const Real &x ) const {
+    return x*((static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_);
+  }
+}; // class UniformlyRandom
+
+
 
 // Returns max(x,s) where s is the given scalar
 template<class Real>
@@ -172,7 +232,7 @@ public:
 
   Real apply( const Real &x ) const {
     // To avoid circular dependency
-    Real NINF = -0.1*std::abs(Teuchos::ScalarTraits<Real>::rmax()); 
+    Real NINF = -0.1*std::abs(ROL::ScalarTraits<Real>::rmax()); 
     return (x>0) ? std::log(x) : NINF;
   }
 
@@ -206,12 +266,12 @@ class UnaryComposition : public UnaryFunction<Real> {
 
 private:
   
-  Teuchos::RCP<UnaryFunction<Real> > f_;
-  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  ROL::Ptr<UnaryFunction<Real> > f_;
+  ROL::Ptr<UnaryFunction<Real> > g_; 
   
 public:
-  UnaryComposition( Teuchos::RCP<UnaryFunction<Real> > &f,
-                    Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  UnaryComposition( ROL::Ptr<UnaryFunction<Real> > &f,
+                    ROL::Ptr<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
   Real apply( const Real &x ) const {
     return g_->apply(f_->apply(x));
   }

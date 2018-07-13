@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -37,9 +37,9 @@
 #include <Ioss_Utils.h>    // for IOSS_ERROR, Utils
 
 #include <cassert>  // for assert
+#include <cstddef>  // for size_t, nullptr
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <netcdf.h> // for NC_NOERR, nc_close, etc
-#include <stddef.h> // for size_t, nullptr
 #include <string>   // for char_traits, operator<<, etc
 
 #include <Ioss_FieldManager.h>    // for FieldManager
@@ -78,15 +78,12 @@ namespace {
       }
       errmsg << "ERROR: Failed to locate number of " << label << " in superelement file.";
       IOSS_ERROR(errmsg);
-
-      return -1;
     }
 
     status = nc_inq_dimlen(ncid, dimid, count);
     if (status != NC_NOERR) {
       errmsg << "ERROR: failed to get number of " << label << " in superelement file.";
       IOSS_ERROR(errmsg);
-      return -1;
     }
     return status;
   }
@@ -96,7 +93,7 @@ namespace {
 
 Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_name)
     : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename)), numDOF(0),
-      num_nodes(0), numEIG(0), num_dim(0), filePtr(-1)
+      num_nodes(0), numEIG(0), numRBM(0), num_dim(0), filePtr(-1)
 {
 
   // For now, we will open the raw netcdf file here and parse the
@@ -123,6 +120,8 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
 
   nc_get_dimension(filePtr, "NumEig", "number of eigenvalues", &numEIG);
 
+  nc_get_dimension(filePtr, "NumRbm", "number of rigid body modes", &numRBM);
+
   nc_get_dimension(filePtr, "num_dim", "number of dimensions", &num_dim);
 
   size_t num_constraints = 0;
@@ -135,6 +134,8 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
     properties.add(Ioss::Property(this, "num_nodes", Ioss::Property::INTEGER));
   }
   properties.add(Ioss::Property(this, "numEIG", Ioss::Property::INTEGER));
+
+  properties.add(Ioss::Property(this, "numRBM", Ioss::Property::INTEGER));
 
   properties.add(Ioss::Property(this, "numDIM", Ioss::Property::INTEGER));
 
@@ -155,8 +156,15 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
 
   fields.add(Ioss::Field("Mr", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, numDOF * numDOF));
 
+  if (numRBM > 0) {
+    fields.add(Ioss::Field("InertiaTensor", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
+                           numDOF * numRBM));
+    fields.add(Ioss::Field("MassInertia", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
+                           numDOF * numRBM));
+  }
+
   // There are additional properties and fields on the netcdf file,
-  // but for now we only need "Kr" and "Mr"
+  // but for now we only need "Kr", "Mr", and "InertiaTensor"
 }
 
 int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, void *data,
@@ -233,6 +241,26 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
       IOSS_ERROR(errmsg);
     }
   }
+  else if (field.get_name() == "InertiaTensor") {
+    assert(num_to_get == numDOF * numRBM);
+    int status = nc_get_array(filePtr, "InertiaTensor", reinterpret_cast<double *>(data));
+    if (status != 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not load inertia matrix field 'InertiaTensor' from file '" << fileName
+             << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+  else if (field.get_name() == "MassInertia") {
+    assert(num_to_get == numDOF * numRBM);
+    int status = nc_get_array(filePtr, "MassInertia", reinterpret_cast<double *>(data));
+    if (status != 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not load mass inertia matrix field 'MassInertia' from file '" << fileName
+             << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
   else {
     std::cerr << "WARNING: " << type() << " '" << name() << "'. Unknown input field '"
               << field.get_name() << "'";
@@ -265,13 +293,12 @@ Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string &the_
   if (Ioss::Utils::case_strcmp(the_name, "numEIG") == 0) {
     return Ioss::Property(the_name, static_cast<int>(numEIG));
   }
-  else if (Ioss::Utils::case_strcmp(the_name, "num_dim") == 0) {
+  if (Ioss::Utils::case_strcmp(the_name, "num_dim") == 0) {
     return Ioss::Property(the_name, static_cast<int>(num_dim));
   }
-  else if (Ioss::Utils::case_strcmp(the_name, "numConstraints") == 0) {
+  if (Ioss::Utils::case_strcmp(the_name, "numConstraints") == 0) {
     return Ioss::Property(the_name, static_cast<int>(numDOF) - static_cast<int>(numEIG));
   }
-  else {
-    return Ioss::GroupingEntity::get_implicit_property(the_name);
-  }
+
+  return Ioss::GroupingEntity::get_implicit_property(the_name);
 }

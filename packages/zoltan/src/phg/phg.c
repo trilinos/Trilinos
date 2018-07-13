@@ -368,8 +368,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
       ZOLTAN_TIMER_STOP(zz->ZTime, timer->patoh, zz->Communicator);
   }      
   else { /* it must be PHG  */
-    /* Create tree structure */
-    Zoltan_PHG_Tree_create(p, zz);
+
+    if (hgp.keep_tree) {
+      /* Create tree structure */
+      Zoltan_PHG_Tree_create(p, zz);
+    }
 
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
@@ -434,10 +437,12 @@ int **exp_to_part )         /* list of partitions to which exported objs
 #endif
     }
 
-#ifdef CEDRIC_2D_PARTITIONS
     if (hgp.keep_tree) {
       /* Build a centralized tree */
       Zoltan_PHG_Tree_centralize(zz);
+    }
+#ifdef CEDRIC_2D_PARTITIONS
+    if (hgp.keep_tree) {
       if (zoltan_hg->ddHedge != NULL) {
 	Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz), zoltan_hg->ddHedge,
 					      &ddPartEdge, &numParts, &sizeParts);
@@ -450,10 +455,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
       else
 	data = NULL;
     }
-    else
-#endif /* CEDRIC_2D_PARTITIONS */
-      Zoltan_PHG_LB_Data_free_tree(zz);
-
+#endif
   }
 
   if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
@@ -683,9 +685,7 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "HYBRID_REDUCTION_FACTOR", &hgp->geometric_red);
   Zoltan_Bind_Param(PHG_params, "HYBRID_REDUCTION_LEVELS",
                                  &hgp->geometric_levels); 
-#ifdef CEDRIC_2D_PARTITIONS
   Zoltan_Bind_Param(PHG_params, "PHG_KEEP_TREE", &hgp->keep_tree);
-#endif /* CEDRIC_2D_PARTITIONS */
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_LOOP_LIMIT", 
                                 &hgp->fm_loop_limit);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_MAX_NEG_MOVE", 

@@ -54,8 +54,8 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME (once we have kokkos version)
-#include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME (once we have kokkos version)
+#include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME_KOKKOS (once we have kokkos version)
+#include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME_KOKKOS (once we have kokkos version)
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
@@ -107,10 +107,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
   public:
-    typedef LocalOrdinal                                        local_ordinal_type;
-    typedef GlobalOrdinal                                       global_ordinal_type;
-    typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef LocalOrdinal                                             local_ordinal_type;
+    typedef GlobalOrdinal                                            global_ordinal_type;
+    typedef typename DeviceType::execution_space                     execution_space;
+    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
 
   private:
     // For compatibility
@@ -146,22 +147,22 @@ namespace MueLu {
 
     //@}
 
-    // CUDA 7.5 places a restriction on the placement of __device__ lambdas:
+    // CUDA 7.5 and 8.0 place a restriction on the placement of __device__ lambdas:
     //
     //     An explicit __device__ lambda cannot be defined in a member function
     //     that has private or protected access within its class.
     //
-    // Therefore, we expose BuildPuncoupled for now. An alternative solution
+    // Therefore, we expose BuildPuncoupled and isGoodMap for now. An alternative solution
     // could be writing an out of class implementation, and then calling it in
     // a member function.
-    void BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
+    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   private:
 
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
-    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   };
 

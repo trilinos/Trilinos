@@ -50,7 +50,7 @@
 
 namespace user_app {
 
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Energy 1", user_app::EquationSet_Energy,
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(user_app::EquationSet_Energy,
 					EquationSet_Energy)
 
   class MyFactory1 : public panzer::EquationSetFactory {
@@ -73,8 +73,7 @@ namespace user_app {
       
       bool found = false;
       
-      PANZER_BUILD_EQSET_OBJECTS("Energy 1", my_app::EquationSet_Energy,
-				 EquationSet_Energy)
+      PANZER_BUILD_EQSET_OBJECTS("Energy 1", EquationSet_Energy)
       
       if (!found && m_throw_on_failure) {
 	std::string msg = "Error - the \"Equation Set\" with \"Type\"= \"" + params->get<std::string>("Type") +

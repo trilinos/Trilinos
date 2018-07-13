@@ -1,7 +1,7 @@
-C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software.
-C         
+C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
+C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
@@ -13,7 +13,7 @@ C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -97,11 +97,8 @@ C   --   Uses IS3DIM, NNPSUR of /D3NUMS/
 C   --   Uses MAXMIN, MAXMAX of /CNTR/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /CNTR/   CINTOK, LINCON, NCNTR, CMIN, CMAX, DELC,
-     &   CINTV(256), NOCMIN, NOCMAX, LABINC, MAXMIN, MAXMAX
-      LOGICAL CINTOK, LINCON, NOCMIN, NOCMAX
+      include 'd3nums.blk'
+      include 'cntr.blk'
 
       REAL F(*)
       LOGICAL HIDEF(*)

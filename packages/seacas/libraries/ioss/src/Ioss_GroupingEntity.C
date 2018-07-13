@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -37,8 +37,8 @@
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
@@ -48,12 +48,6 @@
 #include "Ioss_FieldManager.h"
 #include "Ioss_PropertyManager.h"
 #include "Ioss_State.h"
-
-Ioss::GroupingEntity::GroupingEntity()
-    : entityCount(0), entityName("invalid"), database_(nullptr), entityState(STATE_CLOSED),
-      attributeCount(0), hash_(0)
-{
-}
 
 /** \brief Base class constructor adds "name" and "entity_count" properties to the entity.
  *
@@ -65,7 +59,7 @@ Ioss::GroupingEntity::GroupingEntity()
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
                                      int64_t entity_count)
     : entityCount(entity_count), entityName(my_name), database_(io_database),
-      entityState(STATE_CLOSED), attributeCount(0), hash_(Ioss::Utils::hash(my_name))
+      hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
 
@@ -183,7 +177,6 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
   errmsg << "\nERROR: Property '" << my_name << "' does not exist on " << type_string() << " "
          << name() << "\n\n";
   IOSS_ERROR(errmsg);
-  return Ioss::Property();
 }
 
 /** \brief Add a field to the entity's field manager.
@@ -222,6 +215,7 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
+  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field  = get_field(field_name);
@@ -246,242 +240,12 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *da
 int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
+  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.transform(data);
   return internal_put_field_data(field, data, data_size);
-}
-
-/** \brief Read type double field data from the database file into memory using a std::vector.
- *
- *  \param[in] field_name The name of the field to read.
- *  \param[out] data The data.
- *  \returns The number of values read.
- *
- */
-int Ioss::GroupingEntity::get_field_data(const std::string &  field_name,
-                                         std::vector<double> &data) const
-{
-  verify_field_exists(field_name, "input");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::REAL);
-
-  data.resize(field.raw_count() * field.raw_storage()->component_count());
-  size_t data_size = data.size() * sizeof(double);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
-
-  // At this point, transform the field if specified...
-  if (retval >= 0) {
-    field.transform(TOPTR(data));
-  }
-
-  return retval;
-}
-
-/** \brief Read type int field data from the database file into memory using a std::vector.
- *
- *  \param[in] field_name The name of the field to read.
- *  \param[out] data The data.
- *  \returns The number of values read.
- *
- */
-int Ioss::GroupingEntity::get_field_data(const std::string &field_name,
-                                         std::vector<int> & data) const
-{
-  verify_field_exists(field_name, "input");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::INTEGER);
-
-  data.resize(field.raw_count() * field.raw_storage()->component_count());
-  size_t data_size = data.size() * sizeof(int);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
-
-  // At this point, transform the field if specified...
-  if (retval >= 0) {
-    field.transform(TOPTR(data));
-  }
-
-  return retval;
-}
-
-/** \brief Read type int64_t field data from the database file into memory using a std::vector.
- *
- *  \param[in] field_name The name of the field to read.
- *  \param[out] data The data.
- *  \returns The number of values read.
- *
- */
-int Ioss::GroupingEntity::get_field_data(const std::string &   field_name,
-                                         std::vector<int64_t> &data) const
-{
-  verify_field_exists(field_name, "input");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::INT64);
-
-  data.resize(field.raw_count() * field.raw_storage()->component_count());
-  size_t data_size = data.size() * sizeof(int64_t);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
-
-  // At this point, transform the field if specified...
-  if (retval >= 0) {
-    field.transform(TOPTR(data));
-  }
-
-  return retval;
-}
-
-/** \brief Read type char field data from the database file into memory using a std::vector.
- *
- *  \param[in] field_name The name of the field to read.
- *  \param[out] data The data.
- *  \returns The number of values read.
- *
- */
-int Ioss::GroupingEntity::get_field_data(const std::string &field_name,
-                                         std::vector<char> &data) const
-{
-  verify_field_exists(field_name, "input");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::CHARACTER);
-
-  data.resize(field.raw_count() * field.raw_storage()->component_count());
-  size_t data_size = data.size() * sizeof(char);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
-
-  // At this point, transform the field if specified...
-  if (retval >= 0) {
-    field.transform(TOPTR(data));
-  }
-
-  return retval;
-}
-
-/** \brief Read type complex field data from the database file into memory using a std::vector.
- *
- *  \param[in] field_name The name of the field to read.
- *  \param[out] data The data.
- *  \returns The number of values read.
- *
- */
-int Ioss::GroupingEntity::get_field_data(const std::string &   field_name,
-                                         std::vector<Complex> &data) const
-
-{
-  verify_field_exists(field_name, "input");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::COMPLEX);
-
-  data.resize(field.raw_count() * field.raw_storage()->component_count());
-  size_t data_size = data.size() * sizeof(Complex);
-  int    retval    = internal_get_field_data(field, TOPTR(data), data_size);
-
-  // At this point, transform the field if specified...
-  if (retval >= 0) {
-    field.transform(TOPTR(data));
-  }
-
-  return retval;
-}
-
-/** \brief Write type double field data from memory into the database file using a std::vector.
- *
- *  \param[in] field_name The name of the field to write.
- *  \param[in] data The data.
- *  \returns The number of values written.
- *
- */
-int Ioss::GroupingEntity::put_field_data(const std::string &  field_name,
-                                         std::vector<double> &data) const
-{
-  verify_field_exists(field_name, "output");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::REAL);
-  size_t data_size = data.size() * sizeof(double);
-  field.transform(TOPTR(data));
-  return internal_put_field_data(field, TOPTR(data), data_size);
-}
-
-/** \brief Write type int field data from memory into the database file using a std::vector.
- *
- *  \param[in] field_name The name of the field to write.
- *  \param[in] data The data.
- *  \returns The number of values written.
- *
- */
-int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
-                                         std::vector<int> & data) const
-{
-  verify_field_exists(field_name, "output");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::INTEGER);
-  size_t data_size = data.size() * sizeof(int);
-  field.transform(TOPTR(data));
-  return internal_put_field_data(field, TOPTR(data), data_size);
-}
-
-/** \brief Write type int64_t field data from memory into the database file using a std::vector.
- *
- *  \param[in] field_name The name of the field to write.
- *  \param[in] data The data.
- *  \returns The number of values written.
- *
- */
-int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
-                                         std::vector<int64_t> &data) const
-{
-  verify_field_exists(field_name, "output");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::INT64);
-  size_t data_size = data.size() * sizeof(int64_t);
-  field.transform(TOPTR(data));
-  return internal_put_field_data(field, TOPTR(data), data_size);
-}
-
-/** \brief Write type char field data from memory into the database file using a std::vector.
- *
- *  \param[in] field_name The name of the field to write.
- *  \param[in] data The data.
- *  \returns The number of values written.
- *
- */
-int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
-                                         std::vector<char> &data) const
-{
-  verify_field_exists(field_name, "output");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::CHARACTER);
-  size_t data_size = data.size() * sizeof(char);
-  field.transform(TOPTR(data));
-  return internal_put_field_data(field, TOPTR(data), data_size);
-}
-
-/** \brief Write type complex field data from memory into the database file using a std::vector.
- *
- *  \param[in] field_name The name of the field to write.
- *  \param[in] data The data.
- *  \returns The number of values written.
- *
- */
-int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
-                                         std::vector<Complex> &data) const
-{
-  verify_field_exists(field_name, "output");
-
-  Ioss::Field field = get_field(field_name);
-  field.check_type(Ioss::Field::COMPLEX);
-  size_t data_size = data.size() * sizeof(Complex);
-  field.transform(TOPTR(data));
-  return internal_put_field_data(field, TOPTR(data), data_size);
 }
 
 /** \brief Get the number of fields with the given role (MESH, ATTRIBUTE, TRANSIENT, REDUCTION,
@@ -492,6 +256,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
  */
 size_t Ioss::GroupingEntity::field_count(Ioss::Field::RoleType role) const
 {
+  IOSS_FUNC_ENTER(m_);
   Ioss::NameList names;
   fields.describe(role, &names);
   return names.size();
@@ -509,13 +274,15 @@ void Ioss::GroupingEntity::count_attributes() const
   field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
 
   Ioss::NameList::const_iterator IF;
+  int64_t                        attribute_count = 0;
   for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
     std::string field_name = *IF;
     if (field_name != "attribute" || (field_name == "attribute" && results_fields.size() == 1)) {
       Ioss::Field field = get_field(field_name);
-      attributeCount += field.raw_storage()->component_count();
+      attribute_count += field.raw_storage()->component_count();
     }
   }
+  attributeCount = attribute_count;
 }
 
 void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
@@ -528,5 +295,20 @@ void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
            << "' does not exist for " << inout << " on " << type_string() << " " << name()
            << "\n\n";
     IOSS_ERROR(errmsg);
+  }
+}
+
+void Ioss::GroupingEntity::property_update(const std::string &property, int64_t value) const
+{
+  if (property_exists(property)) {
+    if (get_property(property).get_int() != value) {
+      auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+      nge->property_erase(property);
+      nge->property_add(Ioss::Property(property, value));
+    }
+  }
+  else {
+    auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+    nge->property_add(Ioss::Property(property, value));
   }
 }

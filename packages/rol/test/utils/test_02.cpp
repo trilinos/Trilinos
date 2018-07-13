@@ -45,6 +45,9 @@
     \brief Test creating a LineSearch using an externally provided 
            scalar minimization function. 
 */
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BisectionScalarMinimization.hpp"
@@ -60,7 +63,7 @@ int main(int argc, char *argv[] ) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
   using namespace ROL;
 
   typedef std::vector<RealT> vector;
@@ -69,15 +72,15 @@ int main(int argc, char *argv[] ) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -87,30 +90,30 @@ int main(int argc, char *argv[] ) {
 
     int dim = 10;
    
-    RCP<vector> x_rcp = rcp( new vector( dim, 0.0 ) );
-    RCP<vector> k_rcp = rcp( new vector( dim, 0.0 ) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>( dim, 0.0 );
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>( dim, 0.0 );
 
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i]   = 2;
-      (*k_rcp)[i]   = i+1.0;
+      (*x_ptr)[i]   = 2;
+      (*k_ptr)[i]   = i+1.0;
     }
 
-    RCP<V> k = rcp(new SV(k_rcp) );
-    SV x(x_rcp);
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);
+    SV x(x_ptr);
 
     ZOO::Objective_Zakharov<RealT> obj(k);
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     parlist.sublist("Scalar Minimization").set("Type","Bisection");
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
 
-    RCP<ScalarMinimization<RealT> > sm = rcp( new BisectionScalarMinimization<RealT>(parlist) );
-    RCP<LineSearch<RealT> > ls = rcp( new ScalarMinimizationLineSearch<RealT>(parlist, sm) );
-    RCP<Step<RealT> > step = rcp( new LineSearchStep<RealT>( parlist, ls ) );
+    ROL::Ptr<ScalarMinimization<RealT> > sm = ROL::makePtr<BisectionScalarMinimization<RealT>>(parlist);
+    ROL::Ptr<LineSearch<RealT> > ls = ROL::makePtr<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
+    ROL::Ptr<Step<RealT> > step = ROL::makePtr<LineSearchStep<RealT>>( parlist, ls );
    
-    RCP<StatusTest<RealT> > status = rcp( new StatusTest<RealT>(parlist) );
+    ROL::Ptr<StatusTest<RealT> > status = ROL::makePtr<StatusTest<RealT>>(parlist);
 
     Algorithm<RealT> algo( step, status, false );
  

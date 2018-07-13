@@ -54,7 +54,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_Integrator_DivBasisTimesScalar.hpp"
 #include "Panzer_ScalarToVector.hpp"
@@ -80,13 +79,16 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
     
     valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
+    valid_parameters.set("HGrad Basis Order",-1,"Polynomial order of hgrad basis");
+    valid_parameters.set("HDiv Basis Order",-1,"Polynomial order of hdiv basis");
     
     params->validateParametersAndSetDefaults(valid_parameters);
   }
   
   std::string basis_type = "HGrad";
   std::string grad_basis_type = "HDiv";
-  int basis_order = 1;
+  int basis_order = params->get<int>("HGrad Basis Order");
+  int grad_basis_order = params->get<int>("HDiv Basis Order");
   int integration_order = params->get<int>("Integration Order");
   std::string model_id = params->get<std::string>("Model ID");
 
@@ -113,7 +115,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   this->addDOF("PHI",basis_type,basis_order,integration_order);
   this->addDOFGrad("PHI");
 
-  this->addDOF("GRADPHI_FIELD",grad_basis_type,basis_order,integration_order);
+  this->addDOF("GRADPHI_FIELD",grad_basis_type,grad_basis_order,integration_order);
   this->addDOFDiv("GRADPHI_FIELD");
 
    // ********************
@@ -129,8 +131,8 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
 template <typename EvalT>
 void Example::MixedPoissonEquationSet<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const panzer::FieldLibrary& fl,
-				      const Teuchos::ParameterList& user_data) const
+				      const panzer::FieldLibrary& /* fl */,
+				      const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -221,7 +223,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_MASS_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"GRADPHI_FIELD",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"GRADPHI_FIELD",sum_names);
   }
 
   // Use a sum operator to form the overall residual for the equation
@@ -232,7 +234,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     sum_names.push_back("RESIDUAL_PHI_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_PHI_MASS_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"PHI",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"PHI",sum_names);
   }
 
 }

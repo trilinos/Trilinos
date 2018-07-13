@@ -51,7 +51,6 @@
  *         parameters are specified by an input XML file.
  */
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestingHelpers.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -63,7 +62,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Comm.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -74,7 +73,7 @@
 
 
 // #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 #ifdef HAVE_MPI
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
@@ -146,7 +145,7 @@ bool test_mat_with_solver(const string& mm_file,
                           ParameterList solve_params);
 
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 /*
  * Tests a matrix solve with the given solver on the matrix found in
  * the named file.  EPETRA_RUNS is a parameter list that describes the
@@ -192,18 +191,15 @@ bool test_tpetra(const string& mm_file,
                  ParameterList solve_params);
 
 
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Platform::NodeType DefaultNode;
+typedef Tpetra::Map<>::node_type DefaultNode;
 
 int main(int argc, char*argv[])
 {
-  Teuchos::GlobalMPISession mpisession(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   TimeMonitor TotalTimer(*total_timer);
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform
-    = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int root = 0;
 
@@ -390,7 +386,7 @@ test_mat_with_solver (const string& mm_file,
           *fos << "    Testing Epetra objects" << endl;
         }
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
         const ParameterList epetra_runs = Teuchos::getValue<ParameterList> (test_params.entry (object_it));
         const bool epetraSuccess = test_epetra (mm_file, solver_name, epetra_runs, solve_params);
         success &= epetraSuccess;
@@ -472,7 +468,7 @@ struct solution_checker<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,No
   }
 };
 
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 template <>
 struct solution_checker<Epetra_MultiVector> {
   bool operator() (RCP<Epetra_MultiVector> true_solution, RCP<Epetra_MultiVector> given_solution)
@@ -700,7 +696,7 @@ do_solve_routine(const string& solver_name,
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 
 //////////////////////////
 //     Epetra Tests     //
@@ -897,16 +893,14 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   bool transpose = solve_params.get<bool>("Transpose", false);
 
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Comm<int> > comm = platform.getComm();
-  RCP<Node>             node = platform.getNode();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   if (verbosity > 2) {
     *fos << endl << "      Reading matrix from " << mm_file << " ... " << flush;
   }
   std::string path = filedir + mm_file;
   RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm, node);
+    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
 
   if (verbosity > 2) {
     *fos << "done" << endl;
@@ -972,11 +966,13 @@ bool do_tpetra_test_with_types(const string& mm_file,
     }
 
     // Make a deep copy of the entire CrsMatrix.
-    A2 = A->template clone<Node> (A->getNode ());
+    // originalNode can be null; only needed for type deduction.
+    Teuchos::RCP<Node> originalNode;
+    A2 = A->template clone<Node> (originalNode);
 
     // // There isn't a really nice way to get a deep copy of an entire
     // // CrsMatrix, so we just read the file again.
-    // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm, node);
+    // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm);
 
     // perturb the values just a bit (element-wise square of first row)
     size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);

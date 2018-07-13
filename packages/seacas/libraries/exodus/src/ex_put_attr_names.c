@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -73,23 +73,26 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
   int  status;
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
+  if (blk_id_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
 
-  /* Determine index of blk_id in blk_id_ndx array */
-  if (exerrval != 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
-               ex_name_of_object(blk_type), blk_id, exoid);
-      ex_err("ex_put_attr_names", errmsg, EX_NULLENTITY);
-      return (EX_WARN); /* no attributes for this block */
+    if (status != 0) {
+      if (status == EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
+                 ex_name_of_object(blk_type), blk_id, exoid);
+        ex_err("ex_put_attr_names", errmsg, EX_NULLENTITY);
+        EX_FUNC_LEAVE(EX_WARN); /* no attributes for this block */
+      }
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in %s array in file id %d",
+               ex_name_of_object(blk_type), blk_id, VAR_ID_EL_BLK, exoid);
+      ex_err("ex_put_attr_names", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in %s array in file id %d",
-             ex_name_of_object(blk_type), blk_id, VAR_ID_EL_BLK, exoid);
-    ex_err("ex_put_attr_names", errmsg, exerrval);
-    return (EX_FATAL);
   }
 
   /* inquire id's of previously defined dimensions  */
@@ -112,30 +115,27 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     status = nc_inq_dimid(exoid, DIM_NUM_ATT_IN_BLK(blk_id_ndx), &numattrdim);
     break;
   default:
-    exerrval = 1005;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_attr_names", errmsg, EX_MSG);
-    return (EX_FATAL); /* number of attributes not defined */
+    ex_err("ex_put_attr_names", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: number of attributes not defined for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_put_attr_names", errmsg, EX_MSG);
-    return (EX_FATAL); /* number of attributes not defined */
+    EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_attr_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_attr_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   switch (blk_type) {
@@ -149,26 +149,24 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
   case EX_FACE_BLOCK: status = nc_inq_varid(exoid, VAR_NAME_FATTRIB(blk_id_ndx), &varid); break;
   case EX_ELEM_BLOCK: status = nc_inq_varid(exoid, VAR_NAME_ATTRIB(blk_id_ndx), &varid); break;
   default:
-    exerrval = 1005;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_attr_names", errmsg, EX_MSG);
-    return (EX_FATAL); /* number of attributes not defined */
+    ex_err("ex_put_attr_names", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate %s attribute names for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_attr_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_attr_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out the attributes  */
   status = ex_put_names_internal(exoid, varid, num_attr, names, blk_type, "attribute",
                                  "ex_put_attr_names");
 
-  return (status);
+  EX_FUNC_LEAVE(status);
 }

@@ -62,6 +62,8 @@
 # define TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
 #endif
 
+#include <typeinfo>
+
 namespace  Teuchos {
 
 

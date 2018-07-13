@@ -51,8 +51,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -134,9 +132,11 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
-        *mesh, *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-        *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)), sideset);
+          *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
      
       if(myRank==0) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor
@@ -186,9 +186,11 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
+      Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
-        *mesh, *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-        *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)), sideset);
+          *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
+                 pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
      
       if(myRank==1) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor
@@ -311,8 +313,8 @@ namespace panzer {
 #define TED01(m) TEST_EQUALITY(d0.m, d1.m)
     TED01(int_rules.size());
     for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
-      const std::size_t num_ip = d0.int_rules[iri]->cub_points.dimension(0),
-        num_dim = d0.int_rules[iri]->cub_points.dimension(1);
+      const std::size_t num_ip = d0.int_rules[iri]->cub_points.extent(0),
+        num_dim = d0.int_rules[iri]->cub_points.extent(1);
       for (index_t cell = 0; cell < num_cells; ++cell)
         for (std::size_t ip = 0; ip < num_ip; ++ip)
           for (std::size_t dim = 0; dim < num_dim; ++dim)

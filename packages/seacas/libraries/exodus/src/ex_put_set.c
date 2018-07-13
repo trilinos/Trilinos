@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -52,11 +52,10 @@
 *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>
-#include <stdlib.h> // for NULL
+#include <stdio.h>        // for snprintf, NULL
 
 /*!
  * writes the set entry list and set extra list for a single set
@@ -78,32 +77,37 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   char *entryptr = NULL;
   char *extraptr = NULL;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+
+  ex_check_valid_file_id(exoid);
 
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_put_set", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_set", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Lookup index of set id in VAR_*S_IDS array */
   set_id_ndx = ex_id_lkup(exoid, set_type, set_id);
-  if (exerrval != 0) {
-    if (exerrval == EX_NULLENTITY) {
+  if (set_id_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
+
+    if (status != 0) {
+      if (status == EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "Warning: no data allowed for NULL %s %" PRId64 " in file id %d",
+                 ex_name_of_object(set_type), set_id, exoid);
+        ex_err("ex_put_set", errmsg, EX_NULLENTITY);
+        EX_FUNC_LEAVE(EX_WARN);
+      }
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "Warning: no data allowed for NULL %s %" PRId64 " in file id %d",
+               "ERROR: failed to locate %s id %" PRId64 " in VAR_*S_IDS array in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_put_set", errmsg, EX_NULLENTITY);
-      return (EX_WARN);
+      ex_err("ex_put_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate %s id %" PRId64 " in VAR_*S_IDS array in file id %d",
-             ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_put_set", errmsg, exerrval);
-    return (EX_FATAL);
   }
 
   /* setup more pointers based on set_type */
@@ -130,23 +134,21 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
 
   /* inquire id's of previously defined variables  */
   if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entry list for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_put_set", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_set", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* only do for edge, face and side sets */
   if (extraptr) {
     if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_put_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -161,12 +163,11 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store entry list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_put_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -181,12 +182,11 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_put_set", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_put_set", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -195,9 +195,9 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: extra list was ignored for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_put_set", errmsg, EX_MSG);
-    return (EX_WARN);
+    ex_err("ex_put_set", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

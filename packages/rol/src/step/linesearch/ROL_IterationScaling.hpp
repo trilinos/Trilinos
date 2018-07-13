@@ -56,14 +56,14 @@ template<class Real>
 class IterationScaling : public LineSearch<Real> {
 private:
   int algo_iter_;
-  Teuchos::RCP<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
 public:
 
   virtual ~IterationScaling() {}
 
   // Constructor
-  IterationScaling( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist), algo_iter_(0) {}
+  IterationScaling( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist), algo_iter_(0) {}
 
   void initialize(const ROL::Vector<Real> &x, const ROL::Vector<Real> &s, const ROL::Vector<Real> &g, 
                   Objective<Real> &obj, BoundConstraint<Real> &con) {

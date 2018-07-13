@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -94,16 +94,19 @@ void movevtxs(struct vtx_data **graph,               /* data structure with vert
       }
     }
   }
-  if (largest + smallest <= vwgt_max)
+  if (largest + smallest <= vwgt_max) {
     balanced = TRUE;
-  else
+  }
+  else {
     balanced = FALSE;
+  }
 
   /* If not balanced, change distances to move vertices between sets. */
   while (!balanced) {
     /* npass++; */
-    for (i         = 0; i < nsets; i++)
-      active[i]    = FALSE;
+    for (i = 0; i < nsets; i++) {
+      active[i] = FALSE;
+    }
     active[badset] = TRUE;
 
     done = FALSE;
@@ -114,10 +117,11 @@ void movevtxs(struct vtx_data **graph,               /* data structure with vert
       weight = graph[vtx]->vwgt;
 
       /* Now adjust all active dists to reflect this move so far. */
-      for (i = 0; i < nsets; i++)
-        if (active[i])
+      for (i = 0; i < nsets; i++) {
+        if (active[i]) {
           dist[i] -= toobig * delta;
-
+        }
+      }
       if (toobig > 0) {
         if (size[to] + weight - goal[to] < largest) {
           done = TRUE;
@@ -166,10 +170,12 @@ void movevtxs(struct vtx_data **graph,               /* data structure with vert
         }
       }
     }
-    if (largest + smallest <= vwgt_max)
+    if (largest + smallest <= vwgt_max) {
       balanced = TRUE;
-    else
+    }
+    else {
       balanced = FALSE;
+    }
   }
 }
 
@@ -205,26 +211,26 @@ static void nextmove(int     nvtxs,               /* number of vertices in graph
   bestdelta = 0;
   first     = TRUE;
   while (first) {
-    for (i = 0; i < nsets; i++)
+    for (i = 0; i < nsets; i++) {
       if (active[i]) {
-        for (j = 0; j < nsets; j++)
+        for (j = 0; j < nsets; j++) {
           if (!active[j]) {
             /* Look for next move from active set i to inactive set j. */
             if (toobig > 0) {
-              from = (int)i;
-              to   = (int)j;
+              from = i;
+              to   = j;
             }
             else {
-              from = (int)j;
-              to   = (int)i;
+              from = j;
+              to   = i;
             }
             minset = min(to, from);
             maxset = max(to, from);
 
             index = startvtx[minset][maxset];
-            if (index >= nvtxs || index < 0)
+            if (index >= nvtxs || index < 0) {
               good = FALSE;
-
+            }
             else {
               if (j > i) {
                 dir = -1;
@@ -247,7 +253,9 @@ static void nextmove(int     nvtxs,               /* number of vertices in graph
               bestvtx   = indices[minset][maxset][index] + 1;
             }
           }
+        }
       }
+    }
 
     /* Only accept a vertex if it's from the right set. */
     if (sets[bestvtx] != bestfrom || (toobig > 0 && !active[bestfrom]) ||
@@ -287,8 +295,9 @@ static void couple(int nsets,        /* number of sets being divided into */
   }
 
   coupled_vtxs[ncoupled] = vtx;
-  for (i                       = 0; i < nsets; i++)
-    coupled_sets[ncoupled][i]  = 0;
+  for (i = 0; i < nsets; i++) {
+    coupled_sets[ncoupled][i] = 0;
+  }
   coupled_sets[ncoupled][from] = -1;
   coupled_sets[ncoupled][to]   = 1;
   ++ncoupled;
@@ -308,13 +317,15 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
   int vtx;   /* vertex being moved between sets */
   int i, j;  /* loop counter */
 
-  if (ncoupled == 0)
+  if (ncoupled == 0) {
     return;
+  }
 
   if (toobig > 0) {
     done = FALSE;
-    if (from == badset)
+    if (from == badset) {
       done = TRUE;
+    }
     while (!done) {
       found = FALSE;
       to    = from;
@@ -323,8 +334,9 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
           found = TRUE;
           /* And find other end of edge. */
           for (j = 0; j < nsets; j++) {
-            if (coupled_sets[i][j] == -1)
-              from = (int)j;
+            if (coupled_sets[i][j] == -1) {
+              from = j;
+            }
           }
 
           /* Switch the set for this vertex. */
@@ -334,16 +346,18 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
           sets[vtx]             = to;
           coupled_sets[i][from] = 0;
 
-          if (from == badset)
+          if (from == badset) {
             done = TRUE;
+          }
         }
       }
     }
   }
   else {
     done = FALSE;
-    if (to == badset)
+    if (to == badset) {
       done = TRUE;
+    }
     while (!done) {
       found = FALSE;
       from  = to;
@@ -352,8 +366,9 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
           found = TRUE;
           /* And find other end of edge. */
           for (j = 0; j < nsets; j++) {
-            if (coupled_sets[i][j] == 1)
-              to = (int)j;
+            if (coupled_sets[i][j] == 1) {
+              to = j;
+            }
           }
 
           /* Switch the set for this vertex. */
@@ -363,8 +378,9 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
           sets[vtx]           = to;
           coupled_sets[i][to] = 0;
 
-          if (to == badset)
+          if (to == badset) {
             done = TRUE;
+          }
         }
       }
     }

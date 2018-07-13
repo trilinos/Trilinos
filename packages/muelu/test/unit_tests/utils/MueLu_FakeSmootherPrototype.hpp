@@ -97,6 +97,9 @@ namespace MueLu {
                    int GetNumOfSetup() const { return numOfSetup_; }
                    int GetNumOfSetupCall() const { return numOfSetupCall_; }
 
+    size_t getNodeSmootherComplexity() const {return Teuchos::OrdinalTraits<size_t>::invalid();}
+
+    
                  private:
                    int param_;
 

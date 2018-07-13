@@ -75,11 +75,12 @@ namespace MueLu {
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
-    typedef LocalOrdinal                                        local_ordinal_type;
-    typedef GlobalOrdinal                                       global_ordinal_type;
-    typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-    typedef size_t                                              size_type;
+    typedef LocalOrdinal                                             local_ordinal_type;
+    typedef GlobalOrdinal                                            global_ordinal_type;
+    typedef typename DeviceType::execution_space                     execution_space;
+    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef size_t                                                   size_type;
 
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
     typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
@@ -96,9 +97,16 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
+
+    //! LWGraph constructor
+    //
+    // @param[in] graph: local graph of type Kokkos::CsrStaticGraph containing CSR data
+    // @param[in] domainMap: non-overlapping (domain) map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] importMap: overlapping map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] objectLabel: label string
     LWGraph_kokkos(const local_graph_type&    graph,
                    const RCP<const map_type>& domainMap,
-                   const RCP<const map_type>& rangeMap,
+                   const RCP<const map_type>& importMap,
                    const std::string&         objectLabel = "");
 
     ~LWGraph_kokkos() { }
@@ -125,7 +133,15 @@ namespace MueLu {
     }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    KOKKOS_INLINE_FUNCTION row_type getNeighborVertices(LO i) const;
+    // Unfortunately, C++11 does not support the following:
+    //    auto getNeighborVertices(LO i) const -> decltype(rowView)
+    // auto return with decltype was only introduced in C++14
+    KOKKOS_INLINE_FUNCTION
+    Kokkos::GraphRowViewConst<local_graph_type> getNeighborVertices(LO i) const {
+      auto rowView = graph_.rowConst(i);
+
+      return rowView;
+    }
 
     //! Return true if vertex with local id 'v' is on current process.
     KOKKOS_INLINE_FUNCTION bool isLocalNeighborVertex(LO i) const {
@@ -148,7 +164,7 @@ namespace MueLu {
     }
 
     /// Return a simple one-line description of the Graph.
-    KOKKOS_INLINE_FUNCTION std::string description() const {
+    std::string description() const {
       return "LWGraph (" + objectLabel_ + ")";
     }
 

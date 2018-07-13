@@ -164,14 +164,13 @@ int main(int argc, char *argv[]){
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
     typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
-    typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
-    zoltan2_parameters.set("compute_metrics", "true");
-    zoltan2_parameters.set("imbalance_tolerance", "1.0");
+    zoltan2_parameters.set("compute_metrics", true); // bool parameter
+    zoltan2_parameters.set("imbalance_tolerance", 1.0);
     zoltan2_parameters.set("num_global_parts", tcomm->getSize());
     zoltan2_parameters.set("algorithm", "multijagged");
-    zoltan2_parameters.set("mj_keep_part_boxes", "0");
-    zoltan2_parameters.set("mj_recursion_depth", "3");
+    zoltan2_parameters.set("mj_keep_part_boxes", false); // bool parameter
+    zoltan2_parameters.set("mj_recursion_depth", 3);
     RCP<xcrsGraph_problem_t> partition_problem;
     partition_problem  = RCP<xcrsGraph_problem_t> (new xcrsGraph_problem_t(ia.getRawPtr(),&zoltan2_parameters,tcomm));
 
@@ -294,7 +293,7 @@ int main(int argc, char *argv[]){
           zgno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
-          double distance2 = 0;
+          zscalar_t distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
           for (int k = 0 ; k < mach_coord_dim ; ++k){
@@ -357,9 +356,6 @@ int main(int argc, char *argv[]){
   }
 
   catch(char * s){
-    cerr << s << endl;
-  }
-  catch(char const * s){
     cerr << s << endl;
   }
 }

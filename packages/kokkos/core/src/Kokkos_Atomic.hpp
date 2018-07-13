@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -73,36 +73,47 @@
 
 //----------------------------------------------------------------------------
 #if defined(_WIN32)
-#define KOKKOS_ATOMICS_USE_WINDOWS
+#define KOKKOS_ENABLE_WINDOWS_ATOMICS
 #else
-#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 
 // Compiling NVIDIA device code, must use Cuda atomics:
 
-#define KOKKOS_ATOMICS_USE_CUDA
+#define KOKKOS_ENABLE_CUDA_ATOMICS
 
-#elif ! defined( KOKKOS_ATOMICS_USE_GCC ) && \
-      ! defined( KOKKOS_ATOMICS_USE_INTEL ) && \
-      ! defined( KOKKOS_ATOMICS_USE_OMP31 )
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_ROCM_GPU)
+
+#define KOKKOS_ENABLE_ROCM_ATOMICS
+
+#endif
+
+#if ! defined( KOKKOS_ENABLE_GNU_ATOMICS ) && \
+    ! defined( KOKKOS_ENABLE_INTEL_ATOMICS ) && \
+    ! defined( KOKKOS_ENABLE_OPENMP_ATOMICS ) && \
+    ! defined( KOKKOS_ENABLE_SERIAL_ATOMICS )
 
 // Compiling for non-Cuda atomic implementation has not been pre-selected.
 // Choose the best implementation for the detected compiler.
 // Preference: GCC, INTEL, OMP31
 
-#if defined( KOKKOS_COMPILER_GNU ) || \
-    defined( KOKKOS_COMPILER_CLANG ) || \
-    ( defined ( KOKKOS_COMPILER_NVCC ) && defined ( __GNUC__ ) )
+#if defined( KOKKOS_INTERNAL_NOT_PARALLEL )
 
-#define KOKKOS_ATOMICS_USE_GCC
+#define KOKKOS_ENABLE_SERIAL_ATOMICS
+
+#elif defined( KOKKOS_COMPILER_GNU ) || \
+    defined( KOKKOS_COMPILER_CLANG ) || \
+    ( defined ( KOKKOS_COMPILER_NVCC ) )
+
+#define KOKKOS_ENABLE_GNU_ATOMICS
 
 #elif defined( KOKKOS_COMPILER_INTEL ) || \
       defined( KOKKOS_COMPILER_CRAYC )
 
-#define KOKKOS_ATOMICS_USE_INTEL
+#define KOKKOS_ENABLE_INTEL_ATOMICS
 
 #elif defined( _OPENMP ) && ( 201107 <= _OPENMP )
 
-#define KOKKOS_ATOMICS_USE_OMP31
+#define KOKKOS_ENABLE_OPENMP_ATOMICS
 
 #else
 
@@ -113,34 +124,9 @@
 #endif /* Not pre-selected atomic implementation */
 #endif
 
-//----------------------------------------------------------------------------
-
-// Forward decalaration of functions supporting arbitrary sized atomics
-// This is necessary since Kokkos_Atomic.hpp is internally included very early
-// through Kokkos_HostSpace.hpp as well as the allocation tracker.
-#ifdef KOKKOS_HAVE_CUDA
-namespace Kokkos {
-namespace Impl {
-/// \brief Aquire a lock for the address
-///
-/// This function tries to aquire the lock for the hash value derived
-/// from the provided ptr. If the lock is successfully aquired the
-/// function returns true. Otherwise it returns false.
-__device__ inline
-bool lock_address_cuda_space(void* ptr);
-
-/// \brief Release lock for the address
-///
-/// This function releases the lock for the hash value derived
-/// from the provided ptr. This function should only be called
-/// after previously successfully aquiring a lock with
-/// lock_address.
-__device__ inline
-void unlock_address_cuda_space(void* ptr);
-}
-}
+#ifdef KOKKOS_ENABLE_CUDA
+#include <Cuda/Kokkos_Cuda_Locks.hpp>
 #endif
-
 
 namespace Kokkos {
 template <typename T>
@@ -163,20 +149,37 @@ namespace Kokkos {
 inline
 const char * atomic_query_version()
 {
-#if defined( KOKKOS_ATOMICS_USE_CUDA )
-  return "KOKKOS_ATOMICS_USE_CUDA" ;
-#elif defined( KOKKOS_ATOMICS_USE_GCC )
-  return "KOKKOS_ATOMICS_USE_GCC" ;
-#elif defined( KOKKOS_ATOMICS_USE_INTEL )
-  return "KOKKOS_ATOMICS_USE_INTEL" ;
-#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
-  return "KOKKOS_ATOMICS_USE_OMP31" ;
-#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
-  return "KOKKOS_ATOMICS_USE_WINDOWS";
+#if defined( KOKKOS_ENABLE_CUDA_ATOMICS )
+  return "KOKKOS_ENABLE_CUDA_ATOMICS" ;
+#elif defined( KOKKOS_ENABLE_GNU_ATOMICS )
+  return "KOKKOS_ENABLE_GNU_ATOMICS" ;
+#elif defined( KOKKOS_ENABLE_INTEL_ATOMICS )
+  return "KOKKOS_ENABLE_INTEL_ATOMICS" ;
+#elif defined( KOKKOS_ENABLE_OPENMP_ATOMICS )
+  return "KOKKOS_ENABLE_OPENMP_ATOMICS" ;
+#elif defined( KOKKOS_ENABLE_WINDOWS_ATOMICS )
+  return "KOKKOS_ENABLE_WINDOWS_ATOMICS";
+#elif defined( KOKKOS_ENABLE_SERIAL_ATOMICS )
+  return "KOKKOS_ENABLE_SERIAL_ATOMICS";
+#else
+#error "No valid response for atomic_query_version!"
 #endif
 }
 
 } // namespace Kokkos
+
+#if defined( KOKKOS_ENABLE_ROCM )
+namespace Kokkos {
+namespace Impl {
+extern KOKKOS_INLINE_FUNCTION
+bool lock_address_rocm_space(void* ptr);
+
+extern KOKKOS_INLINE_FUNCTION
+void unlock_address_rocm_space(void* ptr);
+}
+}
+#include <ROCm/Kokkos_ROCm_Atomic.hpp>
+#endif
 
 #ifdef _WIN32
 #include "impl/Kokkos_Atomic_Windows.hpp"
@@ -287,7 +290,7 @@ const char * atomic_query_version()
 //----------------------------------------------------------------------------
 // This atomic-style macro should be an inlined function, not a macro
 
-#if defined( KOKKOS_COMPILER_GNU ) && !defined(__PGIC__)
+#if defined( KOKKOS_COMPILER_GNU ) && !defined(__PGIC__) && !defined(__CUDA_ARCH__)
 
   #define KOKKOS_NONTEMPORAL_PREFETCH_LOAD(addr) __builtin_prefetch(addr,0,0)
   #define KOKKOS_NONTEMPORAL_PREFETCH_STORE(addr) __builtin_prefetch(addr,1,0)

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>                // for TEST
-#include <mpi.h>                        // for MPI_COMM_WORLD, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/ModificationSummary.hpp>
 #include <string>                       // for string
@@ -40,10 +40,12 @@ TEST(ModificationSummary, testString)
         writer.track_destroy_entity(node1);
 
         const stk::mesh::PartVector &addParts = stkMeshBulkData.bucket(node1).supersets();
-        const stk::mesh::PartVector &rmParts = stkMeshBulkData.bucket(node2).supersets();
+        stk::mesh::OrdinalVector addPartsOrdinals, rmPartsOrdinals;
+        stkMeshBulkData.bucket(node1).supersets(addPartsOrdinals);
+        stkMeshBulkData.bucket(node2).supersets(rmPartsOrdinals);
 
-        writer.track_change_entity_parts(node2, addParts, rmParts);
-        writer.track_change_entity_parts(node1, addParts, rmParts);
+        writer.track_change_entity_parts(node2, addPartsOrdinals, rmPartsOrdinals);
+        writer.track_change_entity_parts(node1, addPartsOrdinals, rmPartsOrdinals);
 
         std::vector<stk::mesh::EntityProc> changes;
         changes.push_back(std::make_pair(node1, 2));

@@ -71,6 +71,14 @@
 
 namespace Belos {
 
+  /// \brief "Default" parameters for robustness and accuracy.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSDefaultParameters ();
+
+  /// \brief "Fast" but possibly unsafe or less accurate parameters.
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSFastParameters();
+
   template<class ScalarType, class MV, class OP>
   class IMGSOrthoManager :
     public MatOrthoManager<ScalarType,MV,OP>,
@@ -90,32 +98,29 @@ namespace Belos {
     //! Constructor specifying re-orthogonalization tolerance.
     IMGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
-                      const int max_ortho_steps = 1,
-                      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
-                      const MagnitudeType sing_tol = 10*MGT::eps() )
+                      const int max_ortho_steps = max_ortho_steps_default_,
+                      const MagnitudeType blk_tol = blk_tol_default_,
+                      const MagnitudeType sing_tol = sing_tol_default_ )
       : MatOrthoManager<ScalarType,MV,OP>(Op),
         max_ortho_steps_( max_ortho_steps ),
         blk_tol_( blk_tol ),
         sing_tol_( sing_tol ),
         label_( label )
     {
-        std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::stringstream ss;
+        ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+
+        std::string orthoLabel = ss.str() + ": Orthogonalization";
         timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
 
-        std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string updateLabel = ss.str() + ": Ortho (Update)";
         timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
 
-        std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string normLabel = ss.str() + ": Ortho (Norm)";
         timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
 
-        std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
         timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
@@ -125,27 +130,27 @@ namespace Belos {
                       const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null) :
       MatOrthoManager<ScalarType,MV,OP>(Op),
-      max_ortho_steps_ (2),
-      blk_tol_ (10 * MGT::squareroot (MGT::eps())),
-      sing_tol_ (10 * MGT::eps()),
+      max_ortho_steps_ (max_ortho_steps_default_),
+      blk_tol_ (blk_tol_default_),
+      sing_tol_ (sing_tol_default_),
       label_ (label)
     {
       setParameterList (plist);
 
-      std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::stringstream ss;
+      ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+
+      std::string orthoLabel = ss.str() + ": Orthogonalization";
       timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
-      std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+
+      std::string updateLabel = ss.str() + ": Ortho (Update)";
       timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
-      std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+
+      std::string normLabel = ss.str() + ": Ortho (Norm)";
       timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
-      std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+
+      std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
       timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
@@ -231,62 +236,14 @@ namespace Belos {
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      using Teuchos::as;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
       if (defaultParams_.is_null()) {
-        RCP<ParameterList> params = parameterList ("IMGS");
-
-        // Default parameter values for IMGS orthogonalization.
-        // Documentation will be embedded in the parameter list.
-        const int defaultMaxNumOrthogPasses = 2;
-        const MagnitudeType eps = MGT::eps();
-        const MagnitudeType defaultBlkTol =
-          as<MagnitudeType> (10) * MGT::squareroot (eps);
-        const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
-
-        params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
-                     "Maximum number of orthogonalization passes (includes the "
-                     "first).  Default is 2, since \"twice is enough\" for Krylov "
-                     "methods.");
-        params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
-                     "threshhold.");
-        params->set ("singTol", defaultSingTol, "Singular block detection "
-                     "threshold.");
-        defaultParams_ = params;
+        defaultParams_ = Belos::getIMGSDefaultParameters<ScalarType, MV, OP>();
       }
+
       return defaultParams_;
     }
+
     //@}
-
-    /// \brief "Fast" but possibly unsafe or less accurate parameters.
-    ///
-    /// Use this parameter list when you care more about speed than
-    /// accuracy of the orthogonalization.
-    Teuchos::RCP<const Teuchos::ParameterList>
-    getFastParameters () const
-    {
-      using Teuchos::as;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<const ParameterList> defaultParams = getValidParameters ();
-      // Start with a clone of the default parameters.
-      RCP<ParameterList> params = parameterList (*defaultParams);
-
-      const int maxBlkOrtho = 1; // No block reorthogonalization
-      const MagnitudeType blkTol = MGT::zero();
-      const MagnitudeType singTol = MGT::zero();
-
-      params->set ("maxNumOrthogPasses", maxBlkOrtho);
-      params->set ("blkTol", blkTol);
-      params->set ("singTol", singTol);
-
-      return params;
-    }
 
     //! @name Accessor routines
     //@{
@@ -484,7 +441,27 @@ namespace Belos {
 
     //@}
 
+    //! @name Default orthogonalization constants
+    //@{
+
+    //! Max number of (re)orthogonalization steps, including the first (default).
+    static const int max_ortho_steps_default_;
+    //! Block reorthogonalization threshold (default).
+    static const MagnitudeType blk_tol_default_;
+    //! Singular block detection threshold (default).
+    static const MagnitudeType sing_tol_default_;
+
+    //! Max number of (re)orthogonalization steps, including the first (fast).
+    static const int max_ortho_steps_fast_;
+    //! Block reorthogonalization threshold (fast).
+    static const MagnitudeType blk_tol_fast_;
+    //! Singular block detection threshold (fast).
+    static const MagnitudeType sing_tol_fast_;
+
+    //@}
+
   private:
+
     //! Max number of (re)orthogonalization steps, including the first.
     int max_ortho_steps_;
     //! Block reorthogonalization tolerance.
@@ -495,8 +472,7 @@ namespace Belos {
     //! Label for timers.
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_,
-      timerNorm_, timerScale_, timerInnerProd_;
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, timerNorm_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     //! Default parameter list.
@@ -536,6 +512,34 @@ namespace Belos {
                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;
   };
 
+  // Set static variables.
+  template<class ScalarType, class MV, class OP>
+  const int IMGSOrthoManager<ScalarType,MV,OP>::max_ortho_steps_default_ = 1;
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::blk_tol_default_
+    = 10*Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot(
+      Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps() );
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::sing_tol_default_
+    = 10*Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps();
+
+  template<class ScalarType, class MV, class OP>
+  const int IMGSOrthoManager<ScalarType,MV,OP>::max_ortho_steps_fast_ = 1;
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::blk_tol_fast_
+    = Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+
+  template<class ScalarType, class MV, class OP>
+  const typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType
+  IMGSOrthoManager<ScalarType,MV,OP>::sing_tol_fast_
+    = Teuchos::ScalarTraits<typename IMGSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
   template<class ScalarType, class MV, class OP>
@@ -543,23 +547,20 @@ namespace Belos {
   {
     if (label != label_) {
       label_ = label;
-      std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::stringstream ss;
+      ss << label_ + ": IMGS[" << max_ortho_steps_ << "]";
+
+      std::string orthoLabel = ss.str() + ": Orthogonalization";
       timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
 
-      std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::string updateLabel = ss.str() + ": Ortho (Update)";
       timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
 
-      std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::string normLabel = ss.str() + ": Ortho (Norm)";
       timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
 
-      std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::string ipLabel = ss.str() + ": Ortho (Inner Product)";
       timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
@@ -617,7 +618,7 @@ namespace Belos {
 #endif
 
     ScalarType    ONE  = SCT::one();
-    //ScalarType    ZERO  = SCT::zero();
+    const MagnitudeType ZERO = MGT::zero();
 
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
@@ -710,16 +711,19 @@ namespace Belos {
       dep_flg = blkOrtho1( X, MX, C, Q );
 
       // Normalize the new block X
+      if ( B == Teuchos::null ) {
+        B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+      }
+      std::vector<ScalarType> diag(xc);
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor normTimer( *timerNorm_ );
 #endif
-        if ( B == Teuchos::null ) {
-          B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
-        }
-        std::vector<ScalarType> diag(xc);
         MVT::MvDot( X, *MX, diag );
-        (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
+      }
+      (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
+
+      if (SCT::magnitude((*B)(0,0)) > ZERO) {
         rank = 1;
         MVT::MvScale( X, ONE/(*B)(0,0) );
         if (this->_hasOp) {
@@ -727,7 +731,6 @@ namespace Belos {
           MVT::MvScale( *MX, ONE/(*B)(0,0) );
         }
       }
-
     }
     else {
 
@@ -902,10 +905,6 @@ namespace Belos {
     //
     //
 
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor normTimer( *timerNorm_ );
-#endif
-
     const ScalarType ONE  = SCT::one();
     const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
 
@@ -979,6 +978,11 @@ namespace Belos {
         MXj = Xj;
       }
 
+      Teuchos::RCP<MV> oldMXj; 
+      if (numX > 0) {
+        oldMXj = MVT::CloneCopy( *MXj );
+      }
+ 
       // Make storage for these Gram-Schmidt iterations.
       Teuchos::SerialDenseVector<int,ScalarType> product(numX);
       Teuchos::SerialDenseVector<int,ScalarType> P2(1);
@@ -988,8 +992,12 @@ namespace Belos {
       //
       // Save old MXj vector and compute Op-norm
       //
-      Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj );
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
       MVT::MvDot( *Xj, *MXj, oldDot );
+      }
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
       TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError,
                           "Belos::IMGSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
@@ -1043,8 +1051,16 @@ namespace Belos {
 
       } // for (int ii=0; ii<numX; ++ii)
 
-        // Compute Op-norm with old MXj
-      MVT::MvDot( *Xj, *oldMXj, newDot );
+      // Compute Op-norm with old MXj
+      if (numX > 0) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+        MVT::MvDot( *Xj, *oldMXj, newDot );
+      }
+      else {
+        newDot[0] = oldDot[0];
+      }
 
       // Check to see if the new vector is dependent.
       if (completeBasis) {
@@ -1069,7 +1085,12 @@ namespace Belos {
           else {
             tempMXj = tempXj;
           }
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
           MVT::MvDot( *tempXj, *tempMXj, oldDot );
+          }
           //
           // Perform MGS one vector at a time
           for (int ii=0; ii<numX; ii++) {
@@ -1109,7 +1130,12 @@ namespace Belos {
           }
 
           // Compute new Op-norm
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+          Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
           MVT::MvDot( *tempXj, *tempMXj, newDot );
+          }
           //
           if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
             // Copy vector into current column of _basisvecs
@@ -1298,7 +1324,12 @@ namespace Belos {
 
     // Compute the initial Op-norms
     std::vector<ScalarType> oldDot( xc );
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
     MVT::MvDot( X, *MX, oldDot );
+    }
 
     std::vector<int> index(1);
     Teuchos::Array<Teuchos::RCP<MV> > MQ(nq);
@@ -1390,7 +1421,12 @@ namespace Belos {
 
     // Compute new Op-norms
     std::vector<ScalarType> newDot(xc);
+    {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
     MVT::MvDot( X, *MX, newDot );
+    }
 
     // Check to make sure the new block of vectors are not dependent on previous vectors
     for (int i=0; i<xc; i++){
@@ -1460,7 +1496,12 @@ namespace Belos {
       }
 
       // Compute the initial Op-norms
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
       MVT::MvDot( *Xj, *MXj, oldDot );
+      }
 
       Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.size());
       Teuchos::RCP<const MV> tempQ;
@@ -1566,7 +1607,12 @@ namespace Belos {
         else {
           tempMXj = tempXj;
         }
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *tempXj, *tempMXj, oldDot );
+        }
         //
         for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++) {
 
@@ -1601,7 +1647,12 @@ namespace Belos {
         } // for (int num_orth=0; num_orth<max_orth_steps_; num_orth++)
 
         // Compute the Op-norms after the correction step.
+        {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         MVT::MvDot( *tempXj, *tempMXj, newDot );
+        }
 
         // Copy vector into current column of Xj
         if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
@@ -1631,6 +1682,47 @@ namespace Belos {
     } // for (int j=0; j<xc; j++)
 
     return xc;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSDefaultParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = parameterList ("IMGS");
+
+    // Default parameter values for IMGS orthogonalization.
+    // Documentation will be embedded in the parameter list.
+    params->set ("maxNumOrthogPasses", IMGSOrthoManager<ScalarType, MV, OP>::max_ortho_steps_default_,
+                 "Maximum number of orthogonalization passes (includes the "
+                 "first).  Default is 2, since \"twice is enough\" for Krylov "
+                 "methods.");
+    params->set ("blkTol", IMGSOrthoManager<ScalarType, MV, OP>::blk_tol_default_,
+                 "Block reorthogonalization threshold.");
+    params->set ("singTol", IMGSOrthoManager<ScalarType, MV, OP>::sing_tol_default_,
+                 "Singular block detection threshold.");
+
+    return params;
+  }
+
+  template<class ScalarType, class MV, class OP>
+  Teuchos::RCP<Teuchos::ParameterList> getIMGSFastParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> params = getIMGSDefaultParameters<ScalarType, MV, OP>();
+
+    params->set ("maxNumOrthogPasses",
+                 IMGSOrthoManager<ScalarType, MV, OP>::max_ortho_steps_fast_);
+    params->set ("blkTol",
+                 IMGSOrthoManager<ScalarType, MV, OP>::blk_tol_fast_);
+    params->set ("singTol",
+                 IMGSOrthoManager<ScalarType, MV, OP>::sing_tol_fast_);
+
+    return params;
   }
 
 } // namespace Belos

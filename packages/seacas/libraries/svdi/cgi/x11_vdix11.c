@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -452,20 +452,12 @@ void vbstmp(void);
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef VMS
-#include <decw$include/Xatom.h>
-#include <decw$include/Xlib.h>
-#include <decw$include/Xresource.h>
-#include <decw$include/Xutil.h>
-#include <decw$include/keysym.h>
-#else
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xos.h>
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#endif
 
 /* svdi state */
 /* attributes
@@ -660,12 +652,14 @@ int *justif;
 
   /* check for user specified options */
   if ((bufferpic = XGetDefault(display, "svdi", "BufferPic"))) {
-    if (strcmp(bufferpic, "on") == 0)
+    if (strcmp(bufferpic, "on") == 0) {
       buf_pic = 1;
+    }
   }
   if ((allcolors = XGetDefault(display, "svdi", "AllColors"))) {
-    if (strcmp(allcolors, "on") == 0)
+    if (strcmp(allcolors, "on") == 0) {
       all_colors = 1;
+    }
   }
 
   /* get display dimensions */
@@ -689,8 +683,9 @@ int *justif;
   ypos     = 0.3 * d_height;
   /* use user-supplied default geometry if available */
   geometry = XGetDefault(display, "svdi", "Geometry");
-  if (geometry)
+  if (geometry) {
     XParseGeometry(geometry, &xpos, &ypos, &x_width, &x_height);
+  }
 
   /* setup colors */
   /* first try for a 24 bit visual */
@@ -780,8 +775,9 @@ int *justif;
   XSetLineAttributes(display, gc, line_width, line_type, CapButt, JoinMiter);
 
   ncolors = DisplayCells(display, screen); /* get size of color map */
-  if (ncolors > MAX_COLORS)
+  if (ncolors > MAX_COLORS) {
     ncolors = MAX_COLORS;
+  }
 
   if (visual->class == TrueColor || visual->class == DirectColor ||
       (visual->class == PseudoColor && ncolors >= 8)) {
@@ -801,8 +797,9 @@ int *justif;
          are preserved (unless all_colors option has been selected).
       */
       /* query default colors */
-      for (i              = 0; i < ncolors; i++)
+      for (i = 0; i < ncolors; i++) {
         def_cmap[i].pixel = (unsigned long)i;
+      }
       XQueryColors(display, cmap, def_cmap, ncolors);
       /* setup a virtual colormap */
       cmap = XCreateColormap(display, window_id, visual, AllocAll);
@@ -832,10 +829,11 @@ int *justif;
     def_bc_index = 0;       /* remember defaults */
     def_fc_index = 7;
     /* setup default SVDI colors */
-    for (i     = 0; i < 8; i++)
+    for (i = 0; i < 8; i++) {
       index[i] = i;
-    i          = 8;
-    j          = 0;
+    }
+    i = 8;
+    j = 0;
     vdstco(&i, index, default_color_table, &j); /* color table */
     i = 0;
     vdstbc(&i); /* background color */
@@ -874,15 +872,10 @@ int *justif;
     XSetFont(display, gc, font_id);
   }
   font_height = font_info->max_bounds.ascent + font_info->max_bounds.descent;
-  font_width  = font_info->max_bounds.rbearing -
-#if defined(VMS)
-               font_info->max_bounds.lbearing;
-#else
-               font_info->min_bounds.lbearing;
-/* this gives bounding box width, which seems like what
-   we want ... but for whatever reason, this computation
-   doesn't seem to give correct results on VMS */
-#endif
+  font_width  = font_info->max_bounds.rbearing - font_info->min_bounds.lbearing;
+  /* this gives bounding box width, which seems like what
+     we want ... but for whatever reason, this computation
+     doesn't seem to give correct results on VMS */
 
   /* setup input event stuff */
   /* specify what kinds of input events to accept */
@@ -893,12 +886,14 @@ int *justif;
   XMapWindow(display, window_id);
 
   /* if no backing store, wait for first expose event before drawing */
-  if (!backing_store)
+  if (!backing_store) {
     XWindowEvent(display, window_id, ExposureMask, &x_event);
+  }
 
   /* if buffer picture mode is on, clear the pixmap */
-  if (buf_pic)
+  if (buf_pic) {
     x_clear_pixmap();
+  }
 
   /* setup parameters which are affected by dynamics */
   x_dynamics(1);
@@ -926,8 +921,9 @@ void x_dynamics(int init)
   XGetWindowAttributes(display, window_id, &win_info);
 
   /* if not initializing and window size hasn't changed, just return */
-  if ((!init) && (x_width == win_info.width) && (x_height == win_info.height))
+  if ((!init) && (x_width == win_info.width) && (x_height == win_info.height)) {
     return;
+  }
 
   /* remember size */
   x_width  = win_info.width;
@@ -976,27 +972,34 @@ void x_dynamics(int init)
   yused = (int)(scale * ndc_ymax);
 
   /* handle justification */
-  if (just1 == 0)
+  if (just1 == 0) {
     just1 = 5;
+  }
   /* y offset */
-  if (just1 < 4)
+  if (just1 < 4) {
     ypad = 0;
-  else if (just1 < 7)
+  }
+  else if (just1 < 7) {
     ypad = (x_height - yused) / 2;
-  else
+  }
+  else {
     ypad = x_height - yused;
+  }
   /* x offset */
-  if (just1 == 1 || just1 == 4 || just1 == 7)
+  if (just1 == 1 || just1 == 4 || just1 == 7) {
     xpad = 0;
-  else if (just1 == 2 || just1 == 5 || just1 == 8)
+  }
+  else if (just1 == 2 || just1 == 5 || just1 == 8) {
     xpad = (x_width - xused) / 2;
-  else
+  }
+  else {
     xpad = x_width - xused;
+  }
 
   /* spatial attributes */
-  vector[4] = (float)(ndc_units((line_width == 0) ? 1 : line_width) * 100);
-  vector[5] = (float)(ndc_units(font_height));
-  vector[6] = (float)(ndc_units(font_width));
+  vector[4] = (ndc_units((line_width == 0) ? 1 : line_width) * 100);
+  vector[5] = (ndc_units(font_height));
+  vector[6] = (ndc_units(font_width));
 }
 
 void vifram(type) int *type;
@@ -1018,8 +1021,9 @@ float *value;
   if (*index < 1 || *index > MAX_DEV_CAP) {
     fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 726, 5);
   }
-  else
+  else {
     *value = dev_cap[*index - 1];
+  }
 }
 
 void vinwpg()
@@ -1076,8 +1080,9 @@ float color_array[][3];
   int    i;
   XColor tcolor;
 
-  if (color_type == MONO)
+  if (color_type == MONO) {
     return;
+  }
 
   /* check valid number of colors */
   if (*num < 1) {
@@ -1105,8 +1110,9 @@ float color_array[][3];
     else if (*color_mod == 0) {
       /* check rgb values */
       if (color_array[i][0] < 0. || color_array[i][0] > 1. || color_array[i][1] < 0. ||
-          color_array[i][1] > 1. || color_array[i][2] < 0. || color_array[i][2] > 1.)
+          color_array[i][1] > 1. || color_array[i][2] < 0. || color_array[i][2] > 1.) {
         fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 727, 5);
+      }
       else /* set colors */
       {
         color_table[index_array[i]][0] = color_array[i][0];
@@ -1122,8 +1128,9 @@ float color_array[][3];
           x_colors[index_array[i]] = tcolor.pixel;
         }
         else { /* FULL */
-          if (XAllocColor(display, cmap, &tcolor) == 0)
+          if (XAllocColor(display, cmap, &tcolor) == 0) {
             fprintf(stderr, "svdi_x: problem doing XAllocColor\n");
+          }
           x_colors[index_array[i]] = tcolor.pixel;
         }
       }
@@ -1238,8 +1245,9 @@ void vimova(x, y) float *x, *y;
 void vilina(x, y) float *x, *y;
 {
   /* if polyline buffer full, flush it */
-  if (x11_nvert >= VBUF_SIZE)
+  if (x11_nvert >= VBUF_SIZE) {
     x11_vflush();
+  }
 
   /* if vertex buffer empty, then start a polyline at the previous
      current position */
@@ -1254,8 +1262,9 @@ void vilina(x, y) float *x, *y;
   vlist[x11_nvert].y = (short)map_y(*y);
   /* add point only if it's not the same as the previous point */
   if ((vlist[x11_nvert].x != vlist[x11_nvert - 1].x) ||
-      (vlist[x11_nvert].y != vlist[x11_nvert - 1].y))
+      (vlist[x11_nvert].y != vlist[x11_nvert - 1].y)) {
     x11_nvert++;
+  }
 
   /* update current position */
   xcp = *x;
@@ -1348,8 +1357,9 @@ int *npts;
   x11_vflush(); /* flush polyline buffer */
 
   /* check size of polygon ??? */
-  if (np > VBUF_SIZE)
+  if (np > VBUF_SIZE) {
     np = VBUF_SIZE;
+  }
 
   /* set up vertex list in X format */
   for (i = 0; i < np; i++) {
@@ -1375,8 +1385,9 @@ void vdiqcp(x, y) float *x, *y;
 void vdiqos(attr_array) float attr_array[];
 {
   int i;
-  for (i          = 0; i < MAX_VECTOR; i++)
+  for (i = 0; i < MAX_VECTOR; i++) {
     attr_array[i] = vector[i];
+  }
 }
 
 void vdstfc(int *color_index)
@@ -1392,8 +1403,9 @@ void vdstfc(int *color_index)
     loc_index = def_fc_index;
   }
 
-  if (loc_index > ncolors - 1)
+  if (loc_index > ncolors - 1) {
     loc_index = def_fc_index;
+  }
 
   f_color = x_colors[loc_index];
   XSetForeground(display, gc, f_color);
@@ -1410,8 +1422,9 @@ void vdstbc(color_index) int *color_index;
     loc_index = def_bc_index;
   }
 
-  if (loc_index > ncolors - 1)
+  if (loc_index > ncolors - 1) {
     loc_index = def_bc_index;
+  }
 
   b_color = x_colors[loc_index];
   XSetWindowBackground(display, window_id, b_color);
@@ -1458,8 +1471,9 @@ void vdstls(line_style) int *line_style;
     nd        = 2;
   }
   XSetLineAttributes(display, gc, line_width, line_type, CapButt, JoinMiter);
-  if (line_type != LineSolid)
+  if (line_type != LineSolid) {
     XSetDashes(display, gc, 0, dlist, nd);
+  }
 
   vector[3] = *line_style; /* update state list */
 }
@@ -1476,8 +1490,9 @@ void vdstlw(line_wid) float *line_wid;
 
   slw        = (*line_wid) / 100; /* svdi wants line widths scaled by 100 */
   line_width = x_units(slw);
-  if (line_width < 1)
+  if (line_width < 1) {
     line_width = 1;
+  }
   XSetLineAttributes(display, gc, line_width, line_type, CapButt, JoinMiter);
   vector[4] = *line_wid;
 }

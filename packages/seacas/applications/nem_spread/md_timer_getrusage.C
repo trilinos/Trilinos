@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -32,25 +32,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <sys/resource.h>
-#include <sys/time.h>
 
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
+#include <chrono> // for duration, etc
+#include <ratio>  // for ratio
 double second()
-
 {
-  double time; /* elapsed time in seconds */
-
-  struct rusage rusage;
-
-  getrusage(RUSAGE_SELF, &rusage);
-
-  time = ((rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) +
-          1.0e-6 * (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec));
-
-  return time;
-
-} /* second */
+  static auto                   start = std::chrono::high_resolution_clock::now();
+  auto                          now   = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> diff  = now - start;
+  return diff.count();
+}

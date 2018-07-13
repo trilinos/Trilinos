@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -47,7 +47,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Piro_Epetra_StokhosNOXObserver.hpp"
 
-#include "Stokhos_SGModelEvaluator.hpp"
+#include "Stokhos_SGModelEvaluatorBase.hpp"
 #include "Stokhos_SGInverseModelEvaluator.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Quadrature.hpp"
@@ -59,7 +59,7 @@
 namespace Piro {
 namespace Epetra {
 
-  class StokhosSolverFactory : 
+  class StokhosSolverFactory :
     public Teuchos::VerboseObject<StokhosSolverFactory> {
   public:
 
@@ -71,9 +71,16 @@ namespace Epetra {
       SG_MPNI
     };
 
+    //! SG ModelEvaluator method
+    enum SG_ME_METHOD {
+      SG_ME_DEFAULT,
+      SG_ME_INTERLACED,
+      SG_ME_ADAPTIVE
+    };
+
     //! Constructor
     StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
-			 const Teuchos::RCP<const Epetra_Comm>& globalComm);
+                         const Teuchos::RCP<const Epetra_Comm>& globalComm);
 
     //! Reset Stokhos solver parameters
     void resetSolverParameters(const Teuchos::ParameterList& new_solver_params);
@@ -82,7 +89,7 @@ namespace Epetra {
     //@{
 
     //! Create stochastic model evaluator
-    Teuchos::RCP<Stokhos::SGModelEvaluator> createSGModel(
+    Teuchos::RCP<Stokhos::SGModelEvaluatorBase> createSGModel(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& model);
 
     //! Create stochastic observer
@@ -109,7 +116,7 @@ namespace Epetra {
 
     //! Get spatial comm
     Teuchos::RCP<const Epetra_Comm> getSpatialComm() const;
-    
+
     //! Get stochastic comm
     Teuchos::RCP<const Epetra_Comm> getStochasticComm() const;
 
@@ -127,32 +134,36 @@ namespace Epetra {
     //! Get SG method
     SG_METHOD getSGMethod() const { return sg_method; }
 
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > 
+    //! Get SG ME method
+    SG_ME_METHOD getSGMEMethod() const { return sg_me_method; }
+
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >
     getExpansion() const { return expansion; }
 
     Teuchos::RCP<Stokhos::ParallelData> getParallelData() const
     { return sg_parallel_data; }
 
     //@}
-    
+
   private:
 
     //! Get valid parameters
     Teuchos::RCP<const Teuchos::ParameterList>
      getValidSGParameters() const;
-    
+
   private:
 
-    enum SG_SOLVER { 
-      SG_KRYLOV, 
-      SG_GS, 
-      SG_JACOBI 
+    enum SG_SOLVER {
+      SG_KRYLOV,
+      SG_GS,
+      SG_JACOBI
     };
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams;
     Teuchos::RCP<Teuchos::ParameterList> sgSolverParams;
 
     SG_METHOD sg_method;
+    SG_ME_METHOD sg_me_method;
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion;
@@ -161,10 +172,10 @@ namespace Epetra {
     Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data;
 
     Teuchos::RCP<EpetraExt::ModelEvaluator> model;
-    Teuchos::RCP<Stokhos::SGModelEvaluator> sg_nonlin_model;
-    
+    Teuchos::RCP<Stokhos::SGModelEvaluatorBase> sg_nonlin_model;
+
   };
-  
+
 }
 }
 #endif

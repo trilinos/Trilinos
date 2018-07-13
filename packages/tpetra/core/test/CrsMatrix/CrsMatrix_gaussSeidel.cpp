@@ -160,6 +160,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // Vector specialization corresponding to crs_matrix_type.
   typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
 
+  // This controls whether to print to std::cerr instead of out.
+  // Printing to std::cerr ensures that output appears before Kokkos
+  // gets the chance to raise errors.
+  constexpr bool debug = true;
 
   ////////////////////////////////////////////////////////////////////
   // HERE BEGINS THE TEST.
@@ -172,8 +176,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const int numProcs = comm->getSize ();
   const int myRank = comm->getRank ();
 
-  if (myRank == 0) {
-    out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Test Tpetra's Gauss-Seidel with " << numProcs << " process"
+           << (numProcs != 1 ? "es" : "") << endl;
+    }
+  }
+  else {
+    out << "Test Tpetra's Gauss-Seidel with " << numProcs << " process"
+        << (numProcs != 1 ? "es" : "") << endl;
   }
 
 #if 0
@@ -204,12 +215,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // (It's not really "variable" if it's const, but oh well.)
   //(void) numGlobalCols;
 
-  if (myRank == 0) {
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Creating contiguous row Map" << endl;
+    }
+  }
+  else {
     out << "Creating contiguous row Map" << endl;
   }
 
   // Create a contiguous row Map, with numLocalRows rows per process.
-  RCP<const map_type> rowMap = createContigMapWithNode<LO, GO, NT> (INVALID, numLocalRows, comm);
+  RCP<const map_type> rowMap =
+    createContigMapWithNode<LO, GO, NT> (INVALID, numLocalRows, comm);
 
   // The Gauss-Seidel kernel requires that the row, domain, and range
   // Maps all be the same.
@@ -222,7 +239,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const GO globalMinAllRow = rowMap->getMinAllGlobalIndex ();
   const GO globalMaxAllRow = rowMap->getMaxAllGlobalIndex ();
 
-  if (myRank == 0) {
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Creating graph" << endl;
+    }
+  }
+  else {
     out << "Creating graph" << endl;
   }
 
@@ -257,7 +279,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     graph = rcp_const_cast<const crs_graph_type> (nonconstGraph);
   }
 
-  if (myRank == 0) {
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Creating matrix" << endl;
+    }
+  }
+  else {
     out << "Creating matrix" << endl;
   }
 
@@ -288,7 +315,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
       matrix->replaceGlobalValues (globalRow, indices (), values ());
     }
 
-    if (myRank == 0) {
+    if (debug) {
+      if (myRank == 0) {
+        cerr << "Calling fillComplete on the matrix" << endl;
+      }
+    }
+    else {
       out << "Calling fillComplete on the matrix" << endl;
     }
     matrix->fillComplete (domainMap, rangeMap);
@@ -300,10 +332,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     const std::string scalarType = Teuchos::TypeNameTraits<ST>::name ();
     const std::string matName = "A-" + scalarType;
     typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-    writer_type::writeSparseFile (filename, matrix, matName, "Gauss-Seidel test matrix");
+    writer_type::writeSparseFile (filename, matrix, matName,
+                                  "Gauss-Seidel test matrix");
   }
 
-  if (myRank == 0) {
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Extracting inverse diagonal" << endl;
+    }
+  }
+  else {
     out << "Extracting inverse diagonal" << endl;
   }
   RCP<vector_type> D = rcp (new vector_type (rowMap));
@@ -330,7 +368,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     //   << zeroDiagEltIndex << ", possibly among others, is zero.");
   }
 
-  if (myRank == 0) {
+  if (debug) {
+    if (myRank == 0) {
+      cerr << "Making vectors" << endl;
+    }
+  }
+  else {
     out << "Making vectors" << endl;
   }
 
@@ -350,18 +393,52 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   RCP<multivector_type> B = B_colMap->offsetViewNonConst (rangeMap, 0);
   RCP<multivector_type> R = R_colMap->offsetViewNonConst (rangeMap, 0);
 
-  // Set the exact solution and right-hand side.
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Set (random) exact solution X_exact"
+       << endl;
+    cerr << os.str ();
+  }
+  else {
+    out << "Set (random) exact solution X_exact" << endl;
+  }
   X_exact->randomize ();
+
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Compute right-hand side B" << endl;
+    cerr << os.str ();
+  }
+  else {
+    out << "Compute right-hand side B" << endl;
+  }
   matrix->apply (*X_exact, *B);
 
   const int maxNumIters = 10;
   Array<magnitude_type> residNorms (maxNumIters+1);
 
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Compute initial residual" << endl;
+    cerr << os.str ();
+  }
+  else {
+    out << "Compute initial residual" << endl;
+  }
 
   // Compute initial residual R = B - A * X and ||R||_2.
   matrix->apply (*X, *R); // R = A * X
   R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
   residNorms[0] = norm2 (*R);
+
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Compute norms of X, D, and B" << endl;
+    cerr << os.str ();
+  }
+  else {
+    out << "Compute norms of X, D, and B" << endl;
+  }
 
   // Compute norms of X, D, and B.
   // The norms of D and B must not change.
@@ -369,11 +446,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const magnitude_type D_norm_orig = norm2 (*D);
   const magnitude_type B_norm_orig = norm2 (*B);
   if (myRank == 0) {
-    out << "Before iterating:" << endl
-         << "- ||R||_2 = " << residNorms[0] << endl
-         << "- ||X||_2 = " << X_norm_orig << endl
-         << "- ||B||_2 = " << B_norm_orig << endl
-         << "- ||D||_2 = " << D_norm_orig << endl;
+    std::ostream& os = debug ? cerr : out;
+    os << "Before iterating:" << endl
+       << "- ||R||_2 = " << residNorms[0] << endl
+       << "- ||X||_2 = " << X_norm_orig << endl
+       << "- ||B||_2 = " << B_norm_orig << endl
+       << "- ||D||_2 = " << D_norm_orig << endl;
   }
 
   // Monitor the norms of (X,) D, and B.  If the norms of D or B
@@ -382,6 +460,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   magnitude_type X_norm = X_norm_orig;
   magnitude_type D_norm = D_norm_orig;
   magnitude_type B_norm = B_norm_orig;
+
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Test CrsMatrix::gaussSeidel" << endl;
+    cerr << os.str ();
+  }
+  else {
+    out << "Test CrsMatrix::gaussSeidel" << endl;
+  }
 
   int localSuccess = 1;
   int globalSuccess = 1;
@@ -472,6 +559,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     "Gauss-Seidel failed to reduce the residual norm after " << maxNumIters
     << " iterations!  Original ||R||_2 = " << residNorms[0] << "; final "
     "||R||_2 = " << residNorms[maxNumIters] << ".");
+
+  {
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      std::ostream& out2 = debug ? cerr : out;
+      out2 << "Test failed on at least one process!" << endl;
+    }
+  }
 }
 
 

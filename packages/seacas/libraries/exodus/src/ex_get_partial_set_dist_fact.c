@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -34,12 +34,12 @@
  */
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
+#include "exodusII_int.h" // for ex_check_valid_file_id, etc
 #include "netcdf.h"       // for NC_NOERR, etc
 #include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stddef.h>       // for size_t, NULL
+#include <stdint.h>       // for int64_t
+#include <stdio.h>        // for snprintf
 
 /*!
  * reads the distribution factors for a single set
@@ -55,31 +55,35 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   char   errmsg[MAX_ERR_LENGTH];
   char * factptr = NULL;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s sets stored in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* Lookup index of set id in VAR_*S_IDS array */
   set_id_ndx = ex_id_lkup(exoid, set_type, set_id);
-  if (exerrval != 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s set %" PRId64 " is NULL in file id %d",
+  if (set_id_ndx <= 0) {
+    ex_get_err(NULL, NULL, &status);
+
+    if (status != 0) {
+      if (status == EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s set %" PRId64 " is NULL in file id %d",
+                 ex_name_of_object(set_type), set_id, exoid);
+        ex_err("ex_get_partial_set_dist_fact", errmsg, EX_NULLENTITY);
+        EX_FUNC_LEAVE(EX_WARN);
+      }
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to locate %s set %" PRId64 " in VAR_*S_IDS array in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_partial_set_dist_fact", errmsg, EX_NULLENTITY);
-      return (EX_WARN);
+      ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate %s set %" PRId64 " in VAR_*S_IDS array in file id %d",
-             ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, exerrval);
-    return (EX_FATAL);
   }
 
   /* setup more pointers based on set_type */
@@ -101,23 +105,22 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
 
   /* inquire id's of previously defined dimensions and variables */
   if ((status = nc_inq_varid(exoid, factptr, &dist_id)) != NC_NOERR) {
-    exerrval = status;
     /* not an error for node sets because this is how we check that df's exist
      */
     if (set_type == EX_NODE_SET) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "Warning: dist factors not stored for %s set %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_partial_set_dist_fact", errmsg, exerrval);
-      return (EX_WARN); /* complain - but not too loud */
+      ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+      EX_FUNC_LEAVE(EX_WARN); /* complain - but not too loud */
     }
     /* is an error for other sets */
 
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate dist factors list for %s set %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* read in the distribution factors array */
@@ -131,12 +134,11 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get dist factors list for %s set %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

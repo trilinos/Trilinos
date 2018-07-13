@@ -49,8 +49,6 @@
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Integrator_CurlBasisDotVector.hpp"
-#include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Sum.hpp"
@@ -72,10 +70,10 @@ buildClosureModels(const std::string& model_id,
                  const Teuchos::ParameterList& models,  
                  const panzer::FieldLayoutLibrary& fl,
                  const Teuchos::RCP<panzer::IntegrationRule>& ir,
-                 const Teuchos::ParameterList& default_params,
-                 const Teuchos::ParameterList& user_data,
-                 const Teuchos::RCP<panzer::GlobalData>& global_data,
-                 PHX::FieldManager<panzer::Traits>& fm) const
+                 const Teuchos::ParameterList& /* default_params */,
+                 const Teuchos::ParameterList& /* user_data */,
+                 const Teuchos::RCP<panzer::GlobalData>& /* global_data */,
+                 PHX::FieldManager<panzer::Traits>& /* fm */) const
 {
   using std::string;
   using std::vector;

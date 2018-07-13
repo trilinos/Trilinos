@@ -169,6 +169,15 @@ public:
   //! @name Static functions
   //@{
 
+  /// \brief abort the program
+  ///
+  /// Calls MPI_Abort for HAVE_MPI
+  /// Otherwise calls std::abort
+  static void abort();
+
+  //! @name Static functions
+  //@{
+
   /// \brief Return whether MPI was initialized.
   ///
   /// This is always true if the constructor returned.  If the

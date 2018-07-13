@@ -1,0 +1,94 @@
+<ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Solution Method" type="string" value="ATO Problem" />
+    <Parameter name="Number of Subproblems" type="int" value="3" />
+    <Parameter name="Number of Homogenization Problems" type="int" value="2" />
+    <Parameter name="Verbose Output" type="bool" value="1" />
+    <Parameter name="Mesh Filename" type="string" value="../meshes/cube.exo" />
+
+    <ParameterList name="Objective Aggregator">
+      <Parameter name="Output Value Name" type="string" value="F" />
+      <Parameter name="Output Derivative Name" type="string" value="dFdTopo" />
+      <Parameter name="Values" type="Array(string)" value="{R0,R1,R2}"/>
+      <Parameter name="Derivatives" type="Array(string)" value="{dR0dTopo,dR1dTopo,dR2dTopo}"/>
+      <Parameter name="Weighting" type="string" value="Scaled"/>
+      <Parameter name="Weights" type="Array(double)" value="{0.5,0.375,0.125}"/>
+      <Parameter name="Spatial Filter" type="int" value="0" />
+    </ParameterList>
+
+    <ParameterList name="Spatial Filters">
+      <Parameter name="Number of Filters" type="int" value="1" />
+      <ParameterList name="Filter 0">
+        <Parameter name="Iterations" type="int" value="2" />
+        <Parameter name="Filter Radius" type="double" value="0.012" />
+        <Parameter name="Blocks" type="Array(string)" value="{block_1}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Topological Optimization">
+      <Parameter name="Package" type="string" value="OC" />
+      <Parameter name="Stabilization Parameter" type="double" value="0.5" />
+      <Parameter name="Move Limiter" type="double" value="1.0" />
+      <ParameterList name="Convergence Tests">
+        <Parameter name="Maximum Iterations" type="int" value="4" />
+        <Parameter name="Combo Type" type="string" value="OR"/>
+        <Parameter name="Relative Topology Change" type="double" value="5e-5" />
+        <Parameter name="Relative Objective Change" type="double" value="1e-6" />
+      </ParameterList>
+      <ParameterList name="Measure Enforcement">
+        <Parameter name="Measure" type="string" value="Mass" />
+        <Parameter name="Maximum Iterations" type="int" value="120" />
+        <Parameter name="Convergence Tolerance" type="double" value="1e-6" />
+        <!--
+            block 1 volume:  1.31822e-04 m3
+            block 2 volume:  3.10614e-06 m3
+            Density (Ti-6-4):  4430.0 kg/m3
+            Filled mass:  0.59773 kg
+        -->
+        <Parameter name="Target" type="double" value="0.075" />
+      </ParameterList>
+      <Parameter name="Objective" type="string" value="Aggregator" />
+      <Parameter name="Constraint" type="string" value="Measure" />
+    </ParameterList>
+    <ParameterList name="Configuration">
+      <ParameterList name="Element Blocks">
+        <Parameter name="Number of Element Blocks" type="int" value="2"/>
+
+        <ParameterList name="Element Block 0">
+          <Parameter name="Name" type="string" value="block_1"/>
+          <ParameterList name="Mixture">
+            <Parameter name="Number of Materials" type="int" value="2"/>
+
+            <!-- constituent materials -->
+            <ParameterList name="Material 0">
+              <Parameter name="Elastic Modulus" type="double" value="113.8e9"/>
+              <Parameter name="Poissons Ratio" type="double" value="0.342"/>
+              <Parameter name="Isotropic Modulus" type="double" value="6.7"/>
+              <Parameter name="Density" type="double" value="4430.0"/>
+            </ParameterList>
+            <ParameterList name="Material 1">
+              <ParameterList name="Homogenized Constants">
+                <Parameter name="Stiffness Name" type="string" value="Stiffness Tensor" />
+                <Parameter name="Conduction Name" type="string" value="Conduction Tensor" />
+              </ParameterList>
+              <Parameter name="Density" type="double" value="886.0"/>
+            </ParameterList>
+
+            <ParameterList name="Mixed Parameters">
+              <Parameter name="Number of Mixed Parameters" type="int" value="1"/>
+              <ParameterList name="Mixed Parameter 0">
+                <Parameter name="Parameter Name" type="string" value="Density"/>
+                <Parameter name="Rule Type" type="string" value="Voigt"/>
+                <ParameterList name="Voigt">
+                  <Parameter name="Material Indices" type="Array(int)" value="{0, 1}"/>
+                  <Parameter name="Topology Indices" type="Array(int)" value="{1}"/>
+                  <Parameter name="Function Indices" type="Array(int)" value="{1}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

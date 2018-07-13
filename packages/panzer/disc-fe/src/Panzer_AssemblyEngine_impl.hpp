@@ -46,6 +46,8 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include <sstream>
 
 //===========================================================================
 //===========================================================================
@@ -62,7 +64,7 @@ AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 //===========================================================================
 template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
-evaluate(const panzer::AssemblyEngineInArgs& in)
+evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 {
   typedef LinearObjContainer LOC;
 
@@ -70,7 +72,8 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
-  {
+
+  if ( flags.getValue() & EvaluationFlags::Initialize ) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
 
     in.fillGlobalEvaluationDataContainer(gedc);
@@ -85,7 +88,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // *********************
   // Volumetric fill
   // *********************
-  {
+  if ( flags.getValue() & EvaluationFlags::VolumetricFill) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
     this->evaluateVolume(in);
   }
@@ -97,23 +100,25 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateNeumannBCs(in);
+  if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateNeumannBCs(in);
+    }
+
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateInterfaceBCs(in);
+    }
+
+    // Dirchlet conditions require a global matrix
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateDirichletBCs(in);
+    }
   }
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateInterfaceBCs(in);
-  }
-
-  // Dirchlet conditions require a global matrix
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateDirichletBCs(in);
-  }
-
-  {
+  if ( flags.getValue() & EvaluationFlags::Scatter) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
@@ -173,12 +178,12 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::Traits::PreEvalData ped;
-  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  panzer::Traits::PED ped;
+  ped.gedc->addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc->addDataObject("Residual Scatter Container",in.ghostedContainer_);
   ped.first_sensitivities_name  = in.first_sensitivities_name;
   ped.second_sensitivities_name = in.second_sensitivities_name;
-  in.fillGlobalEvaluationDataContainer(ped.gedc);
+  in.fillGlobalEvaluationDataContainer(*(ped.gedc));
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
@@ -195,8 +200,11 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
       workset.alpha = in.alpha;
       workset.beta = in.beta;
       workset.time = in.time;
+      workset.step_size = in.step_size;
+      workset.stage_number = in.stage_number;
       workset.gather_seeds = in.gather_seeds;
       workset.evaluate_transient_terms = in.evaluate_transient_terms;
+
 
       fm->template evaluateFields<EvalT>(workset);
     }
@@ -238,36 +246,31 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   if(!countersInitialized_) {
     localCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
-    // globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     globalCounter_ = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
     summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     countersInitialized_ = true;
+ 
+    m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*localCounter_); // store counter in F
+    m_lin_obj_factory->initializeContainer(       LinearObjContainer::F,*globalCounter_); // store counter in X
+    m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*summedGhostedCounter_); // store counter in X
   }
 
-  // allocate a counter to keep track of where this processor set dirichlet boundary conditions
-  Teuchos::RCP<LinearObjContainer> localCounter = localCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*localCounter); // store counter in F
-  localCounter->initialize();
-     // this has only an X vector. The evaluate BCs will add a one to each row
-     // that has been set as a dirichlet condition on this processor
+  {
+    localCounter_->initialize();
+    summedGhostedCounter_->initialize();
+    globalCounter_->initialize();
+  }
 
   // apply dirichlet conditions, make sure to keep track of the local counter
-  this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
-
-  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = summedGhostedCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*summedGhostedCounter); // store counter in X
-  summedGhostedCounter->initialize();
+  this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter_);
 
   // do communication to build summed ghosted counter for dirichlet conditions
-  Teuchos::RCP<LinearObjContainer> globalCounter = globalCounter_;
   {
-     m_lin_obj_factory->initializeContainer(LinearObjContainer::F,*globalCounter); // store counter in X
-     globalCounter->initialize();
-     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::F);
+     m_lin_obj_factory->ghostToGlobalContainer(*localCounter_,*globalCounter_,LOC::F);
         // Here we do the reduction across all processors so that the number of times
         // a dirichlet condition is applied is summed into the global counter
 
-     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::F);
+     m_lin_obj_factory->globalToGhostContainer(*globalCounter_,*summedGhostedCounter_,LOC::F);
         // finally we move the summed global vector into a local ghosted vector
         // so that the dirichlet conditions can be applied to both the ghosted
         // right hand side and the ghosted matrix
@@ -279,20 +282,21 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   // adjust ghosted system for boundary conditions
   for(GlobalEvaluationDataContainer::iterator itr=gedc.begin();itr!=gedc.end();itr++) {
+
     if(itr->second->requiresDirichletAdjustment()) {
       Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LinearObjContainer>(itr->second);
       if(loc!=Teuchos::null) {
-        m_lin_obj_factory->adjustForDirichletConditions(*localCounter,*summedGhostedCounter,*loc);
+        m_lin_obj_factory->adjustForDirichletConditions(*localCounter_,*summedGhostedCounter_,*loc);
       }
       else {
         // it was not a linear object container, so if you want an adjustment it better be a GED_BCAdjustment object
         Teuchos::RCP<GlobalEvaluationData_BCAdjustment> bc_adjust = Teuchos::rcp_dynamic_cast<GlobalEvaluationData_BCAdjustment>(itr->second,true);
-        bc_adjust->adjustForDirichletConditions(*localCounter,*summedGhostedCounter);
+        bc_adjust->adjustForDirichletConditions(*localCounter_,*summedGhostedCounter_);
       }
     }
   }
 
-  return globalCounter;
+  return globalCounter_;
 }
 
 //===========================================================================
@@ -305,13 +309,13 @@ evaluateBCs(const panzer::BCType bc_type,
 {
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::Traits::PreEvalData ped;
-  ped.gedc.addDataObject("Dirichlet Counter",preEval_loc);
-  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  panzer::Traits::PED ped;
+  ped.gedc->addDataObject("Dirichlet Counter",preEval_loc);
+  ped.gedc->addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc->addDataObject("Residual Scatter Container",in.ghostedContainer_);
   ped.first_sensitivities_name  = in.first_sensitivities_name;
   ped.second_sensitivities_name = in.second_sensitivities_name;
-  in.fillGlobalEvaluationDataContainer(ped.gedc);
+  in.fillGlobalEvaluationDataContainer(*(ped.gedc));
 
   // this helps work around issues when constructing a mass
   // matrix using an evaluation of only the transient terms.
@@ -342,16 +346,23 @@ evaluateBCs(const panzer::BCType bc_type,
       const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
         bcfm_it->second;
    
-      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(bc);
+      panzer::WorksetDescriptor desc = panzer::bcDescriptor(bc);
+      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(desc);
       TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
                          "Failed to find corresponding bc workset!");
       const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {
+        std::ostringstream timerName;
+        timerName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier();
+        PANZER_FUNC_TIME_MONITOR(timerName.str());
 
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
+          std::ostringstream timerSideName;
+          timerSideName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier() << ", side=" << side->first;
+          PANZER_FUNC_TIME_MONITOR(timerSideName.str());
 
           // extract field manager for this side  
           unsigned local_side_index = side->first;

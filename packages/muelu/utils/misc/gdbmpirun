@@ -1,0 +1,9 @@
+#!/bin/sh
+PROCS=$1
+shift
+if [ $PROCS == "-np" ]; then
+ PROCS=$1
+ shift
+fi
+
+mpirun -np $PROCS xterm -hold -e _gdbmpirunwrapper /usr/local/bin/gdb -x ~/bin/gdb-cmd --args $*

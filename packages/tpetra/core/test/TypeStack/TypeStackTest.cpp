@@ -136,8 +136,8 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack1 ) {
 
 struct TestDBInit {
   template <class T>
-  RCP<ParameterList> initDB(ParameterList &params) {
-    RCP<ParameterList> db = Teuchos::parameterList();
+  Teuchos::RCP<Teuchos::ParameterList> initDB(Teuchos::ParameterList &params) {
+    Teuchos::RCP<Teuchos::ParameterList> db = Teuchos::parameterList();
     db->set<std::string>("type",Teuchos::TypeNameTraits<T>::name());
     return db;
   }
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST( StackBuilder, DBBuilder ) {
 
   TPETRAEXT_TYPESTACK3( TestStack, double, float, int );
   TestDBInit testInit;
-  RCP<ParameterList> stackDB = Tpetra::Ext::initStackDB<TestStack>(stackPL,testInit);
+  Teuchos::RCP<Teuchos::ParameterList> stackDB = Tpetra::Ext::initStackDB<TestStack>(stackPL,testInit);
   TEST_EQUALITY_CONST( stackDB == Teuchos::null, false );
   out << *stackDB << std::endl;
 }

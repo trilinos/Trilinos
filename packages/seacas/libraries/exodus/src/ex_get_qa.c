@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_trim_internal, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_vara_text, etc
 #include <stddef.h>       // for size_t
@@ -41,7 +41,7 @@
 
 /*!
 The function ex_get_qa() reads the QA records from the database. Each
-QA record contains four \c MAX_STR_LENGTH-byte character
+QA record contains four MAX_STR_LENGTH-byte character
 strings. The character strings are:
  -  the analysis code name
  -  the analysis code QA descriptor
@@ -65,7 +65,7 @@ ex_create() or ex_open().
 The following will determine the number of QA records and
 read them from the open exodus file:
 
-\code
+~~~{.c}
 int num_qa_rec, error, exoid
 char *qa_record[MAX_QA_REC][4];
 
@@ -77,7 +77,7 @@ for (i=0; i<num_qa_rec; i++) {
     qa_record[i][j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 }
 error = ex_get_qa (exoid, qa_record);
-\endcode
+~~~
 
  */
 
@@ -92,32 +92,30 @@ int ex_get_qa(int exoid, char *qa_record[][4])
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* inquire previously defined dimensions and variables  */
   if ((status = nc_inq_dimid(rootid, DIM_NUM_QA, &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no qa records stored in file id %d", rootid);
-    ex_err("ex_get_qa", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_qa", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if ((status = nc_inq_dimlen(rootid, dimid, &num_qa_records)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of qa records in file id %d",
              rootid);
-    ex_err("ex_get_qa", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_qa", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* do this only if there are any QA records */
   if (num_qa_records > 0) {
     if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate qa record data in file id %d",
                rootid);
-      ex_err("ex_get_qa", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_qa", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* read the QA records */
@@ -130,16 +128,15 @@ int ex_get_qa(int exoid, char *qa_record[][4])
         start[2] = 0;
         count[2] = MAX_STR_LENGTH + 1;
         if ((status = nc_get_vara_text(rootid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get qa record data in file id %d",
                    rootid);
-          ex_err("ex_get_qa", errmsg, exerrval);
-          return (EX_FATAL);
+          ex_err("ex_get_qa", errmsg, status);
+          EX_FUNC_LEAVE(EX_FATAL);
         }
         qa_record[i][j][MAX_STR_LENGTH] = '\0';
         ex_trim_internal(qa_record[i][j]);
       }
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

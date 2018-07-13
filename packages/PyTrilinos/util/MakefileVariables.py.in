@@ -100,17 +100,22 @@ Available functions:
         Normalize a path, even if it starts with -I, -L, etc.
 """
 
-__version__ = "1.2"
+from __future__ import print_function
+
+__version__ = "1.3"
 __author__  = "Bill Spotz"
-__date__    = "Sep 10 2005"
+__date__    = "Feb 4 2016"
 
 # Import python modules for command-line options, the operating system, regular
 # expressions, and system functions
-import commands
 from   getopt import *
 import os
 import re
 import sys
+if sys.version_info.major == 2:
+    from commands import getstatusoutput
+if sys.version_info.major == 3:
+    from subprocess import getstatusoutput
 
 # Define regular expressions for Makefile assignments, blank line, continuation
 # lines, include statements and variable references
@@ -197,11 +202,11 @@ def findBlock(text, pos=0):
                     delimeter == quote2Delimeter   ):
                     stack.append(delimeter)  # Add the delimeter to the stack
                 else:
-                    raise RuntimeError, "findBlock: mismatched delimeters: " + \
-                          stack[-1] + " " + delimeter
+                    raise RuntimeError("findBlock: mismatched delimeters: " +
+                                       stack[-1] + " " + delimeter)
 
     # We made it through all of text without finding the end of the block
-    raise RuntimeError, "findBlock: open block: " + join(stack)
+    raise RuntimeError("findBlock: open block: " + join(stack))
 
 #############################################################################
 
@@ -243,7 +248,7 @@ def parseMakefile(filename):
     called recursively.
     """
     absFilename = os.path.abspath(filename)
-    if parsedMakefileVariables.has_key(absFilename):
+    if absFilename in parsedMakefileVariables:
         return parsedMakefileVariables[absFilename]
     lines = open(absFilename,"r").readlines()  # Read in the lines of the Makefile
     lines = [s.split("#")[0] for s in lines]   # Remove all comments
@@ -311,10 +316,10 @@ def evaluate(value, dict):
             while newShellCmd != shellCmd:
                 shellCmd    = newShellCmd
                 newShellCmd = evaluate(shellCmd,dict)
-            (status,subValue) = commands.getstatusoutput(shellCmd)
+            (status,subValue) = getstatusoutput(shellCmd)
             if status:
-                print >>sys.stderr, "WARNING: %s gives\n%s" % (shellCmd,
-                                                               subValue)
+                print("WARNING: %s gives\n%s" % (shellCmd, subValue),
+                      file=sys.stderr)
                 subValue = ""
             value  = value[:start] + subValue + value[end:]
             change = True
@@ -437,18 +442,18 @@ def main():
     # Loop over options and implement
     for flag in opts:
         if flag[0] in ("-h","--help"):
-            print __doc__
+            print(__doc__)
             sys.exit()
         elif flag[0] in ("-m", "--make"):
             outStyle = "make"
         elif flag[0] in ("-p", "--python"):
             outStyle = "python"
         elif flag[0] in ("-v", "--version"):
-            print progName, __version__, __date__
+            print(progName, __version__, __date__)
             sys.exit()
         else:
-            print "Unrecognized flag:", flag[0]
-            print __doc__
+            print("Unrecognized flag:", flag[0])
+            print(__doc__)
             sys.exit()
 
     # Process the filename
@@ -459,9 +464,9 @@ def main():
         keys = dict.keys()
         keys.sort()
         for key in keys:
-            print key, "=", dict[key]
+            print(key, "=", dict[key])
     elif outStyle == "python":
-        print dict
+        print(dict)
 
 #############################################################################
 # If called from the command line, call main()

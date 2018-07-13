@@ -1,40 +1,72 @@
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 /*--------------------------------------------------------------------*/
-/*    Copyright 2010 Sandia Corporation.                              */
+/*    Copyright 2010 NTESS.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include "Ioss_DBUsage.h"                  // for DatabaseUsage
+#include "Ioss_IOFactory.h"                // for IOFactory
+#include <cstddef>                         // for nullptr
+#include <string>                          // for string
+#include <visualization/Iovs_DatabaseIO.h> // for DatabaseIO
 #include <visualization/Iovs_IOFactory.h>
-#include <stddef.h>                     // for nullptr
-#include <visualization/Iovs_DatabaseIO.h>  // for DatabaseIO
-#include <string>                       // for string
-#include "Ioss_DBUsage.h"               // for DatabaseUsage
-#include "Ioss_IOFactory.h"             // for IOFactory
-namespace Ioss { class PropertyManager; }
+namespace Ioss {
+  class PropertyManager;
+} // namespace Ioss
 // #include <visualization/Iovs_Internals.h>
 
 namespace Iovs {
 
-  const IOFactory* IOFactory::factory()
+  const IOFactory *IOFactory::factory()
   {
     static IOFactory registerThis;
     return &registerThis;
   }
 
-  IOFactory::IOFactory()
-    : Ioss::IOFactory("catalyst")
+  IOFactory::IOFactory() : Ioss::IOFactory("catalyst")
   {
     // Tell the database to register itself with sierra's product registry.
     // XXX exodus doesn't do this, do we need to?
     // register_library_versions();
   }
 
-  Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
-				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator,
-				       const Ioss::PropertyManager &properties) const
+  Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                                       MPI_Comm                     communicator,
+                                       const Ioss::PropertyManager &properties) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
@@ -46,5 +78,4 @@ namespace Iovs {
   {
     // Internals::register_library_versions();
   }
-
-}
+} // namespace Iovs

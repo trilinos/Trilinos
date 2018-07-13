@@ -55,14 +55,10 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 /** \brief  Local count selected entities of each type.
- *
- * \param selector
- * \param mesh
- * \param count
  */
 void count_entities( const Selector & selector ,
                      const BulkData & mesh ,
-                     std::vector<unsigned> & count );
+                     std::vector<size_t> & count );
 
 /** \brief Get all entities of the specified type, sorted by ID.  */
 void get_entities( const BulkData & mesh , EntityRank entity_rank,

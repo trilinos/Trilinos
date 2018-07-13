@@ -128,7 +128,7 @@ private:
 
 
   /**
-   * \brief Basker specific numeric factorization
+   * \brief MUMPS specific numeric factorization
    *
    * \throw std::runtime_error MUMPS is not able to factor the matrix
    */
@@ -220,6 +220,8 @@ private:
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
 
   mutable MUMPS_STRUC_C mumps_par;
+
+  bool is_contiguous_;
 
 };                              // End class MUMPS
 
@@ -340,6 +342,7 @@ private:
   MPI_Comm MUMPSComm;
 #endif
 
+    bool is_contiguous_;
 
 };
 

@@ -115,7 +115,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   int defineResForm(  NormType TypeOfNorm) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,
           "StatusTestGenResSubNorm::defineResForm(): StatusTestGenResSubNorm only available for blocked operators (e.g., Thyra).");
-    return(0);
+    TEUCHOS_UNREACHABLE_RETURN(0);
   }
 
   //! Define form of the scaling, its norm, its optional weighting std::vector, or, alternatively, define an explicit value.
@@ -142,7 +142,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   int defineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,
           "StatusTestGenResSubNorm::defineScaleForm(): StatusTestGenResSubNorm only available for blocked operators (e.g., Thyra).");
-    return(0);
+    TEUCHOS_UNREACHABLE_RETURN(0);
   }
 
   //! Set the value of the tolerance

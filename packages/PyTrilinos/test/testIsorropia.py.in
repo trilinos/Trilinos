@@ -45,9 +45,10 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
-from   types    import *
+from   types      import *
 import unittest
 
 from testutil import fromPyTrilinosImport
@@ -70,7 +71,7 @@ class PartitionerTestCase(unittest.TestCase):
         
         
         self.part = Isorropia.Epetra.Partitioner(self.crsg, self.pList)
-	self.costs = Isorropia.Epetra.CostDescriber()
+        self.costs = Isorropia.Epetra.CostDescriber()
 #        self.pv = LOCA.ParameterVector()
 #        self.pv.addParameter("Zero"     )
 #        self.pv.addParameter("One", 1.0 )
@@ -118,7 +119,7 @@ class PartitionerTestCase(unittest.TestCase):
         self.failUnless(newMap.IsOneToOne())
         myElems = newMap.MyGlobalElements()
         for elem in myElems:
-            self.failUnless(elem / 10 == comm.MyPID())
+            self.failUnless(elem // 10 == comm.MyPID())
 
     def testCyclicPartition(self):
         """Test Cyclic 1D Partitioning, relies on createNewMap()"""
@@ -189,15 +190,15 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite( PartitionerTestCase ))
     
     # Run the test suite
-    #if comm.MyPID() == 0:
-    print >>sys.stderr, "\n****************************", \
-          "\nTesting Isorropia.Partitioner\n****************************\n"
-    verbosity = 2 #* int(comm.MyPID() == 0)
+    if iAmRoot:
+        print("\n****************************\nTesting Isorropia.Partitioner\n"
+              "****************************\n", file=sys.stderr)
+    verbosity = 2 * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = len(result.errors) + len(result.failures)
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

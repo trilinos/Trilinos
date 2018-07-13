@@ -171,9 +171,10 @@ namespace Tpetra {
     /// Map) for a different Kokkos Node type, for example if creating
     /// a host (CPU) copy of a device (GPU) object.
     template <class Node2>
-    RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
     clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& clone_map) const
     {
+      using Teuchos::RCP;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 

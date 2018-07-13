@@ -298,7 +298,7 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh,
   const unsigned expected_num_faces = 0;
 
   bool result = true;
-  std::vector<unsigned> entity_counts;
+  std::vector<size_t> entity_counts;
 
   // Create a 'Selector' to select mesh entities
   // (nodes, edges, faces, elements)

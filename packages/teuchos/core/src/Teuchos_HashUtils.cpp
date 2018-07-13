@@ -41,6 +41,7 @@
 
 #include "Teuchos_HashUtils.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 using namespace Teuchos;
 
@@ -71,7 +72,7 @@ int HashUtils::nextPrime(int newCapacity)
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                      std::logic_error,
                      "unexpected case in HashUtils::nextPrime()");
-	return 0;
+	TEUCHOS_UNREACHABLE_RETURN(0);
 }
 
 /** helper to hash values larger than int to an int.

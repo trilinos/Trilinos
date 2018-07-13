@@ -104,6 +104,8 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
       { return invOpsStrategy_; }
 
    protected: 
+      using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;
 

@@ -41,7 +41,7 @@
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-
+#include <fstream>
 
 namespace {
 

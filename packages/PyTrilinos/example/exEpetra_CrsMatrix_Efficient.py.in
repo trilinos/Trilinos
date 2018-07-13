@@ -47,11 +47,12 @@
 
 #
 # System imports
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -76,7 +77,7 @@ def main():
     A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
     NumMyRows = Map.NumMyElements()
     # Loop over all local rows to create a tridiagonal matrix
-    for ii in xrange(NumMyRows):
+    for ii in range(NumMyRows):
       # `i' is the global ID of local ID `ii'
       i = Map.GID(ii)
       if i != NumGlobalRows - 1:
@@ -91,15 +92,15 @@ def main():
     # modified.
     ierr = A.FillComplete()
 
-    print A
+    print(A)
     NormInf = A.NormInf()
     if Comm.MyPID() == 0:
-      print "inf norm of A =", NormInf
+      print("inf norm of A =", NormInf)
  
     # synchronize processors
     Comm.Barrier()
 
-    if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+    if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

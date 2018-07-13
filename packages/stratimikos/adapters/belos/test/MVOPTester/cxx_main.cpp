@@ -74,6 +74,9 @@ int main(int argc, char *argv[])
 
   int i, ierr, gerr;
   gerr = 0;
+#ifdef NDEBUG
+  (void)ierr;  // Eliminate unused warning
+#endif
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator

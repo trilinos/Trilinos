@@ -55,9 +55,7 @@
 // Forward Declarations
 namespace panzer {
   struct Traits;
-  struct Workset;
-  template <typename LO, typename GO> class ConnManager;
-  template <typename LO, typename GO> class DOFManager;
+  class Workset;
   struct EquationSetFactory;
   struct BCStrategyFactory;
   class PhysicsBlock;
@@ -76,7 +74,7 @@ namespace panzer {
 
   class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
   public:
-    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const WorksetDescriptor & wd, const PhysicsBlock & pb) const 
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & /* fm */, const WorksetDescriptor & /* wd */, const PhysicsBlock & /* pb */) const 
     { return false; }
   };
 

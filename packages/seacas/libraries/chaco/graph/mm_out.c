@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -52,37 +52,46 @@ void mm_out(struct vtx_data **graph,       /* graph data structure */
 
   DIAG = TRUE;
 
-  if (file_name != NULL)
+  if (file_name != NULL) {
     file = fopen(file_name, "w");
-  else
+  }
+  else {
     file = stdout;
+  }
 
   /* Determine all the appropriate parameters. */
   nedges = 0;
   for (i = 1; i <= nvtxs; i++) {
     nedges += graph[i]->nedges - 1;
   }
-  if (DIAG)
+  if (DIAG) {
     nedges += nvtxs;
+  }
 
-  if (tag != NULL)
+  if (tag != NULL) {
     fprintf(file, "%% graph_out: %s\n", tag);
+  }
   fprintf(file, " %d %d %d\n", nvtxs, nvtxs, nedges);
   for (i = 1; i <= nvtxs; i++) {
     if (DIAG) {
-      if (!using_ewgts)
+      if (!using_ewgts) {
         fprintf(file, "%d %d\n", i, i);
-      else
+      }
+      else {
         fprintf(file, "%d %d %.9f\n", i, i, 1.0);
+      }
     }
     for (j = 1; j < graph[i]->nedges; j++) {
-      if (!using_ewgts)
+      if (!using_ewgts) {
         fprintf(file, "%d %d\n", i, graph[i]->edges[j]);
-      else
+      }
+      else {
         fprintf(file, "%d %d %.9f\n", i, graph[i]->edges[j], graph[i]->ewgts[j]);
+      }
     }
   }
 
-  if (file_name != NULL)
+  if (file_name != NULL) {
     fclose(file);
+  }
 }

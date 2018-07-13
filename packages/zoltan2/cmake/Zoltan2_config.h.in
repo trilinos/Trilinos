@@ -67,4 +67,6 @@
 /* define if we have TopoManager installed*/
 #cmakedefine HAVE_ZOLTAN2_TOPOMANAGER
 
+/* define if we have RCALIB installed*/
+#cmakedefine HAVE_ZOLTAN2_RCALIB
 

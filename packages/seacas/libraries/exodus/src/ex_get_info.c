@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_trim_internal, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_vara_text, etc
 #include <stddef.h>       // for size_t
@@ -42,7 +42,7 @@
 /*!
 
 The function ex_get_info() reads information records from the
-database. The records are \c MAX_LINE_LENGTH-character
+database. The records are MAX_LINE_LENGTH-character
 strings. Memory must be allocated for the information records before
 this call is made. The number of records can be determined by invoking
 ex_inquire() or ex_inquire_int().
@@ -60,7 +60,7 @@ or ex_open().
 The following code segment will determine the number of information
 records and read them from an open exodus file :
 
-\code
+~~~{.c}
 int error, exoid, num_info;
 char *info[MAXINFO];
 
@@ -70,7 +70,7 @@ for (i=0; i < num_info; i++) {
    info[i] = (char *) calloc ((MAX_LINE_LENGTH+1), sizeof(char));
 }
 error = ex_get_info (exoid, info);
-\endcode
+~~~
 
  */
 
@@ -84,33 +84,31 @@ int ex_get_info(int exoid, char **info)
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* inquire previously defined dimensions and variables  */
   if ((status = nc_inq_dimid(rootid, DIM_NUM_INFO, &dimid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: failed to locate number of info records in file id %d", rootid);
-    ex_err("ex_get_info", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_info", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of info records in file id %d",
              rootid);
-    ex_err("ex_get_info", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_info", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* do this only if there are any information records */
   if (num_info > 0) {
     if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate info record data in file id %d",
                rootid);
-      ex_err("ex_get_info", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_info", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* read the information records */
@@ -121,15 +119,14 @@ int ex_get_info(int exoid, char **info)
       count[1] = MAX_LINE_LENGTH + 1;
 
       if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get info record data in file id %d",
                  rootid);
-        ex_err("ex_get_info", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_get_info", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
       info[i][MAX_LINE_LENGTH] = '\0';
       ex_trim_internal(info[i]);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

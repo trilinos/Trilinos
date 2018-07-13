@@ -41,13 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-// mfh 08 Mar 2013: This include isn't being used here, so I'm
-// commenting it out to speed up compilation time.
-//#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -96,7 +93,6 @@ namespace {
       testingTol();
   }
 
-  using Tpetra::TestingUtilities::getNode;
   using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
@@ -104,7 +100,6 @@ namespace {
 
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;
@@ -153,12 +148,8 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-  // mfh 08 Mar 2013: This isn't being used here, so I'm commenting it
-  // out to save compilation time.
-  //using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -167,7 +158,6 @@ namespace {
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
-
 
   double errorTolSlack = 1e+1;
   string filedir;
@@ -224,10 +214,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonSquare, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Map<LO,GO,Node> map_type;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -269,8 +259,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     //
     //
     const int numVecs  = 3;
-    RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
-    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
+    RCP<const map_type> rowmap (new map_type (INVALID, M, 0, comm));
+    RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
@@ -307,13 +297,23 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
     }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "NonSquare test failed on some process!" << endl;
+    }
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, DomainRange, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -360,11 +360,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // domain map will be equal to the row map
     // range  map will be [0,np] [1,np+1] [2,np+2]
     const int numVecs  = 5;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm,node) );
-    RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm,node) );
+    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm) );
+    RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm) );
     RCP<RowMatrix<Scalar,LO,GO,Node> > tri;
+    RCP<MAT> tri_crs;
     {
-      RCP<MAT> tri_crs = rcp(new MAT(rowmap,3) );
+      tri_crs = rcp(new MAT(rowmap,3) );
       Array<Scalar>  vals(3,ST::one());
       if (myImageID == 0) {
         Array<GO> cols( tuple<GO>(2*myImageID,2*myImageID+1,2*myImageID+2) );
@@ -391,8 +392,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getNodeNumRows()          , 2);
     TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri->getGlobalNumDiags() , static_cast<size_t>(2*numImages));
-    TEST_EQUALITY(tri->getNodeNumDiags()     , 2);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*tri), static_cast<GO> (2*numImages));
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*tri), static_cast<LO> (2) );
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
     TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
@@ -430,13 +431,45 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
     }
+
+    // test the constructors based on 4 maps + local matri_crsx
+    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getLocalMatrix(), tri_crs->getRowMap(),
+                                     tri_crs->getColMap(), tri_crs->getDomainMap(), tri_crs->getRangeMap()));
+    TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
+    auto exporter = tri_crs_2->getGraph()->getExporter();
+    auto importer = tri_crs_2->getGraph()->getImporter();
+    TEST_EQUALITY(importer.is_null() || tri_crs->getDomainMap()->isSameAs(*(importer->getSourceMap())), true);
+    TEST_EQUALITY(importer.is_null() || tri_crs->getColMap()   ->isSameAs(*(importer->getTargetMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRowMap()   ->isSameAs(*(exporter->getSourceMap())), true);
+    TEST_EQUALITY(exporter.is_null() || tri_crs->getRangeMap() ->isSameAs(*(exporter->getTargetMap())), true);
+
+    // test the action
+    mvout.randomize();
+    tri_crs_2->apply(mvin,mvout);
+    mvout.update(-ST::one(),mvexp,ST::one());
+    mvout.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "DomainRange test failed on some process!" << endl;
+    }
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, FullMatrixTriDiag, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     // do a FEM-type communication, then apply to a MultiVector containing the identity
     // this will check non-trivial communication and test multivector apply
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -452,7 +485,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
+    RCP<const Map<LO,GO,Node> > map =
+      createContigMapWithNode<LO,GO,Node> (INVALID, ONE, comm);
 
     // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
 
@@ -504,8 +538,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
-    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
+    TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
@@ -523,16 +557,28 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       const Mag tol = TestingTolGuts<Mag, ! MT::isOrdinal>::testingTol ();
       TEST_COMPARE_FLOATING_ARRAYS( norms, zeros, tol );
     }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "FullMatrixTriDiag test failed on some process!" << endl;
+    }
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, BadGID, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     // what happens when we call CrsMatrix::insertGlobalValues() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Map<LO,GO,Node> map_type;
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -540,7 +586,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const size_t numImages = comm->getSize();
     // create a Map
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const map_type> map (new map_type (INVALID, numLocal, 0, comm));
     {
       // create the matrix
       MAT A(map,1);
@@ -558,6 +604,17 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         A.insertGlobalValues(map->getMaxAllGlobalIndex()+1,tuple<GO>(map->getIndexBase()),tuple<Scalar>(ST::one()));
       }
       TEST_THROW(A.fillComplete(), std::runtime_error);
+    }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "BadGID test failed on some process!" << endl;
     }
   }
 

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -46,8 +46,8 @@
 
 #include <string>
 #include <iosfwd>
-#include <KokkosCore_config.h>
-#ifdef KOKKOS_HAVE_CUDA
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_CUDA
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 #endif
 
@@ -68,12 +68,20 @@ std::string human_memory_size(size_t arg_bytes);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+
 namespace Kokkos {
-inline
-void abort( const char * const message ) { Kokkos::Impl::host_abort(message); }
+KOKKOS_INLINE_FUNCTION
+void abort( const char * const message ) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+  Kokkos::Impl::cuda_abort(message);
+#else
+  #if !defined(KOKKOS_ENABLE_OPENMPTARGET) && !defined(__HCC_ACCELERATOR__)
+    Kokkos::Impl::host_abort(message);
+  #endif
+#endif
 }
-#endif /* defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA ) */
+
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

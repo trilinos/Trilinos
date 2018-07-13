@@ -48,6 +48,8 @@
 
 #include "MueLu_config.hpp"
 
+#include <Teuchos_ConfigDefs.hpp>
+
 // Kokkos
 #include <Kokkos_DefaultNode.hpp> // default template parameter of many MueLu classes
 
@@ -62,6 +64,17 @@
 
 // Misc
 #include <Teuchos_ParameterList.hpp>
+
+// Special macro for exception testing
+// MUELU_TEST_FOR_EXCEPTION is only active if MueLu is configured with MueLu_ENABLE_DEBUG:BOOL=ON
+// If you want an exception test both in the release and debug version of MueLu you still can use directly
+// TEUCHOS_TEST_FOR_EXCEPTION
+#ifdef HAVE_MUELU_DEBUG
+#define MUELU_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg);
+#else
+#define MUELU_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
+#endif
 
 //! Namespace for MueLu classes and methods
 namespace MueLu {
@@ -93,5 +106,8 @@ namespace MueLu {
   using Teuchos::VERB_EXTREME;
 
 }
+
+// This include file defines macros to avoid warnings under CUDA.  See github issue #1133.
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 #endif /* MUELU_CONFIGDEFS_H */

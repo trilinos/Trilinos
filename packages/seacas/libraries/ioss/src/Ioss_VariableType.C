@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -37,12 +37,12 @@
 #include <Ioss_VariableType.h>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <map>
 #include <sstream>
-#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -121,8 +121,8 @@ bool Ioss::VariableType::add_field_type_mapping(const std::string &raw_field,
   return registry().customFieldTypes.insert(std::make_pair(field, type)).second;
 }
 
-bool Ioss::VariableType::create_named_suffix_field_type(const std::string &       type_name,
-                                                        std::vector<std::string> &suffices)
+bool Ioss::VariableType::create_named_suffix_field_type(const std::string &             type_name,
+                                                        const std::vector<std::string> &suffices)
 {
   size_t count = suffices.size();
   if (count < 1) {
@@ -240,7 +240,7 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
 
     for (size_t i = 0; i < size; i++) {
       std::sprintf(digits, format, i + 1);
-      if (std::strcmp(&suffices[i].data[0], &digits[0]) != 0) {
+      if (std::strcmp(&suffices[i].m_data[0], &digits[0]) != 0) {
         match = false;
         break;
       }
@@ -280,13 +280,11 @@ bool Ioss::VariableType::match(const std::vector<Ioss::Suffix> &suffices) const
 std::string Ioss::VariableType::label_name(const std::string &base, int which,
                                            const char suffix_sep) const
 {
-  static char tmp_sep[2];
   std::string my_name = base;
   std::string suffix  = label(which, suffix_sep);
   if (!suffix.empty()) {
     if (suffix_sep != 0) {
-      tmp_sep[0] = suffix_sep;
-      my_name += tmp_sep;
+      my_name += suffix_sep;
     }
     my_name += suffix;
   }

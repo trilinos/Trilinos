@@ -56,9 +56,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-class Tpetra_Vector;
-class Tpetra_CrsMatrix;
-
 namespace panzer {
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

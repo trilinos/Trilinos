@@ -98,6 +98,9 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
+// Intrepid2 Includes
+#include "Kokkos_DynRankView.hpp"
+
 // Tpetra includes
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
@@ -130,6 +133,7 @@
 #  include "MueLu_Utilities.hpp"
 #  include "MueLu_HierarchyManager.hpp"
 #  include "MueLu_FactoryManagerBase.hpp"
+#  include "MueLu_CreateTpetraPreconditioner.hpp"
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
@@ -184,6 +188,10 @@ typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,NO>            driver
 Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 Tpetra::global_size_t INVALID_LO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
+
+typedef Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_crs_matrix_type;
+typedef Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_multivector_type;
+
 typedef Belos::LinearProblem<scalar_type, multivector_type, operator_type> linear_problem_type;
 
 typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,NO> muelu_tpetra_operator;
@@ -222,8 +230,6 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, RCP<driver_map_type> & P1_map, RCP<driver_map_type> & Pn_map,RCP<crs_matrix_type>& P);
-
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & P2_elemToNode,
                       //const FieldContainer<int> & P1_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &P2_map,
@@ -254,8 +260,6 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & AMGList,
                                  RCP<crs_matrix_type>   const & A,
-                                 RCP<crs_matrix_type>   const & P,
-                                 RCP<crs_matrix_type>   const & R,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -350,6 +354,17 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
 template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints);
+
+
+
+// Copy field containers
+template<class FC1, class FC2>
+void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
+  Kokkos::resize(c2,c1.dimension(0),c1.dimension(1));
+  for(size_t i=0; i<(size_t)c1.dimension(0); i++)
+    for(size_t j=0; j<(size_t)c1.dimension(1); j++)
+      c2(i,j) = c1(i,j);
+}
 
 
 
@@ -495,6 +510,7 @@ int main(int argc, char *argv[]) {
   TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   string msg("Poisson: ");
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Mesh queries")));
 
   // Get mesh size info
@@ -626,6 +642,7 @@ int main(int argc, char *argv[]) {
     delete [] elem_cmap_elem_cnts;
   }
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global Node Nums")));
 
   //Calculate global node ids
@@ -641,6 +658,7 @@ int main(int argc, char *argv[]) {
                        comm_node_ids,
                        rank);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Boundary Conds")));
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
@@ -671,6 +689,7 @@ int main(int argc, char *argv[]) {
   }
   delete [] sideSetIds;
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
   // Enumerate edges 
@@ -691,11 +710,10 @@ int main(int argc, char *argv[]) {
   std::vector<int> Pn_edgeNodes;
   std::vector<int> Pn_cellNodes;
 
-  printf("Pn_numNodes = %d Pn_numNodesperElem = %d\n",Pn_numNodes,Pn_numNodesperElem);
 
-  printf("Running p=%d Kirby\n",degree);
   PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,
                        P1_nodeOnBoundary, elemToNode, nodeCoord, nodeOnBoundary, Pn_edgeNodes, Pn_cellNodes);
+
 
   long long numElems_aux = numElems*degree*degree;  //degree^2 P1 elements per Pn element in auxiliary mesh
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
@@ -744,6 +762,7 @@ int main(int argc, char *argv[]) {
 
   myCub->getCubature(cubPoints, cubWeights);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
   /**********************************************************************************/
@@ -827,6 +846,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Build global maps")));
 
   /**********************************************************************************/
@@ -891,14 +911,21 @@ int main(int argc, char *argv[]) {
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
   // Genetrate Pn-to-P1 coarsening.
+  Kokkos::DynRankView<local_ordinal_type,typename NO::device_type>  elemToNodeI2;
+
+  CopyFieldContainer2D(elemToNode,elemToNodeI2);
+  
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
-  RCP<crs_matrix_type> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
-    printf("Generating Linear Pn-to-P1 coarsening...\n");
-    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode, myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
+    printf("Activating Linear scheduled p-coarsening...\n");
+    Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
+    Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
+    level0.set("pcoarsen: element to node map",rcp(&elemToNodeI2,false));
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
+
+
 
   // Global arrays in Tpetra format
   crs_matrix_type StiffMatrix(globalMapG, 20*numFieldsG);
@@ -945,6 +972,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Get Dirichlet boundary values")));
 
   int numBCNodes = 0;
@@ -975,6 +1003,7 @@ int main(int argc, char *argv[]) {
     }
   }
     
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly")));
   
   /**********************************************************************************/
@@ -1015,7 +1044,13 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   StiffMatrix.fillComplete();
+  printf("Example: StiffMatrix (ra,ro,co,do) = (%d,%d,%d,%d)\n",
+	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getRowMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getColMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements());
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature for auxiliary P1 mesh")));
 
   /////////////////////////////////////////////////////////////////////
@@ -1035,6 +1070,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> cubWeights_aux(numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting basis for auxiliary P1 mesh")));
 
   //Basis
@@ -1048,6 +1084,7 @@ int main(int argc, char *argv[]) {
   myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
   myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly (auxiliary system)")));
 
   crs_matrix_type StiffMatrix_aux(globalMapG, 20*numFieldsG_aux);
@@ -1077,6 +1114,7 @@ int main(int argc, char *argv[]) {
 
   StiffMatrix_aux.fillComplete();
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs")));
 
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
@@ -1126,10 +1164,10 @@ int main(int argc, char *argv[]) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
     ParameterList &sl = amgList.sublist(lev0List);
     std::string smooType = sl.get<std::string>("smoother: type");
-    if (smooType == "BLOCK RELAXATION" && sl.isParameter("smoother: params")) {
+    if ( (smooType == "SPARSE BLOCK RELAXATION" || smooType == "BLOCK RELAXATION") && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
       std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-      int numLocalParts;
+      int numLocalParts = -1;
       std::cout << "setting \"partitioner: map\"" << std::endl;
       if (seedType == "node") {
         ssl.set("partitioner: map", nodeSeeds);
@@ -1141,9 +1179,35 @@ int main(int argc, char *argv[]) {
         ssl.set("partitioner: map", cellSeeds);
         numLocalParts = numCellSeeds;
       }
-      std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-      ssl.set("partitioner: local parts", numLocalParts);
+      if(numLocalParts!=-1){
+	std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	ssl.set("partitioner: local parts", numLocalParts);
+      }
     }
+    if(sl.isParameter("coarse: type")) {
+	std::string coarseType = sl.get<std::string>("coarse: type");
+	if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
+	  ParameterList &ssl = sl.sublist("coarse: params");
+	  std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
+	  int numLocalParts=-1;
+	  std::cout << "setting \"partitioner: map\"" << std::endl;
+	  if (seedType == "node") {
+	    ssl.set("partitioner: map", nodeSeeds);
+	    numLocalParts = numNodeSeeds;
+	  } else if (seedType == "edge") {
+	    ssl.set("partitioner: map", edgeSeeds);
+	    numLocalParts = numEdgeSeeds;
+	  } else if (seedType == "cell") {
+	    ssl.set("partitioner: map", cellSeeds);
+	    numLocalParts = numCellSeeds;
+	  }
+	  if(numLocalParts!=-1){
+	    std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	    ssl.set("partitioner: local parts", numLocalParts);
+	  }
+	}
+    }
+
   }
 
   // /////////////////////////////////////////////////////////////////////// //
@@ -1191,18 +1255,24 @@ int main(int argc, char *argv[]) {
 
   RCP<crs_matrix_type> interpolationMatrix, restrictionMatrix;
   if (P_identity != Teuchos::null) {
-    amgList.set("user coarse matrix",(crs_matrix_type*)&StiffMatrix_aux);
-    interpolationMatrix = P_identity;
-    //restrictionMatrix = R_identity;
-    restrictionMatrix = P_identity;
-  }
-  if (P_linear != Teuchos::null) {
-    interpolationMatrix = P_linear;
+    Teuchos::ParameterList & level1 = amgList.sublist("level 1");
+    RCP<xpetra_crs_matrix_type> xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(StiffMatrix_aux));
+    RCP<xpetra_crs_matrix_type> xP = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P_identity);
+    level1.set("A",xA1);
+    level1.set("P",xP);
+    amgList.set("transpose: use implicit",true);
+    // create nullspace for Level 1 (first coarse AMG level)
+    RCP<multivector_type> nullspace = rcp(new multivector_type(exactNodalVals->getMap(),1));
+    ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
+    for (int i=0; i<data.size(); ++i)
+      data[i] = 1.0;
+    RCP<xpetra_multivector_type> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+    level1.set("Nullspace",xnullspace);
   }
 
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
-                                      interpolationMatrix, restrictionMatrix, exactNodalVals,
+				      exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
                                       amgType);
@@ -1211,6 +1281,7 @@ int main(int argc, char *argv[]) {
   /**************************** CALCULATE ERROR *************************************/
   /**********************************************************************************/
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate error")));
 
   double L2err = 0.0;
@@ -1395,6 +1466,7 @@ int main(int argc, char *argv[]) {
   const bool ignoreZeroTimers = true;
   const std::string filter    = "";
   if (optPrintTimings) {
+    tm.reset();
     TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
                            writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
   }
@@ -1623,14 +1695,10 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 /******************************* TEST ML ******************************************/
 /**********************************************************************************/
 
-#include "ml_LevelWrap.h"
-
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & amgList,
                                  RCP<crs_matrix_type> const &A0,
-                                 RCP<crs_matrix_type> const &P0,
-                                 RCP<crs_matrix_type> const &R0,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -1638,7 +1706,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol,
                                  std::string &amgType)
 {
-  int mypid = A0->getComm()->getRank();
+
+  //  int mypid = A0->getComm()->getRank();
   int maxIts = 100;
   double tol =1e-10;
   RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
@@ -1670,56 +1739,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   if (amgType == "ML") {
     throw std::runtime_error("Error: ML does not support Tpetra objects");
   } else if (amgType == "MueLu") {
-    // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
-    // Multigrid Hierarchy
-    crs_matrix_type * A1;
-    RCP<Xpetra::Matrix <scalar_type> > xA1;
-    bool userCoarseA = false;
-    if (amgList.isParameter("user coarse matrix")) {
-      A1=amgList.get<crs_matrix_type*>("user coarse matrix");
-      xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(*A1));
-      amgList.remove("user coarse matrix");
-      userCoarseA = true;
-    }
-    MueLu::ParameterListInterpreter<scalar_type> mueLuFactory(amgList);
-    RCP<MueLu::Hierarchy<scalar_type> > H = mueLuFactory.CreateHierarchy();
-    H->setVerbLevel(Teuchos::VERB_HIGH);
-    H->GetLevel(0)->Set("A", mueluA);
-    MueLu::FactoryManager<scalar_type,local_ordinal_type,global_ordinal_type,NO> M1, M2;
-    if (P0 != Teuchos::null) {
-      H->AddNewLevel();
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P0);
-      H->GetLevel(1)->AddKeepFlag("P",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("P", xP0);
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(R0);
-      H->GetLevel(1)->AddKeepFlag("R",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("R", xR0);
-      if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
-         << "adding P0 to AMG hierarchy" << std::endl;
-    }
-    RCP<multivector_type> nullspace;
-    if (userCoarseA) {
-      H->GetLevel(1)->AddKeepFlag("A",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->AddKeepFlag("Nullspace",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("A", xA1);
-      if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
-         << "adding coarse auxiliary matrix to AMG hierarchy" << std::endl;
-      // create nullspace for Level 1 (first coarse AMG level)
-      nullspace = rcp(new multivector_type(xexact->getMap(),1));
-      ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
-      for (int i=0; i<data.size(); ++i)
-        data[i] = 1.0;
-      data = Teuchos::null;
-      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
-      H->GetLevel(1)->Set("Nullspace", xnullspace);
-    }
-    // Multigrid setup phase
-    mueLuFactory.SetupHierarchy(*H);
 
-    H->IsPreconditioner(true);
-    RCP<muelu_tpetra_operator> M = rcp(new muelu_tpetra_operator(H));
-
+    // Multigrid Hierarchy, the easy way  
+    RCP<operator_type> A0op = A0;
+    Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
     Problem.setRightPrec(M);
 
     bool set = Problem.setProblem();
@@ -1741,13 +1764,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
     solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    /*
-    if (solveType == "cg") {
-      solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    } else if (solveType == "gmres") {
-      solver = rcp(new Belos::BlockGmresSolMgr<scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    }
-    */
 
     // Perform solve
     solver->solve();
@@ -2241,6 +2257,7 @@ void CreateLinearSystem(int numWorksets,
     FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate Jacobians")));
 
     /**********************************************************************************/
@@ -2280,6 +2297,7 @@ void CreateLinearSystem(int numWorksets,
     /*          Cubature Points to Physical Frame and Compute Data                    */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Map to physical frame and get source term")));
 
     // map cubature points to physical frame
@@ -2295,6 +2313,7 @@ void CreateLinearSystem(int numWorksets,
     /*                         Compute Stiffness Matrix                               */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute stiffness matrix")));
 
     // Transform basis gradients to physical frame:
@@ -2325,6 +2344,7 @@ void CreateLinearSystem(int numWorksets,
     /*                                   Compute RHS                                  */
     /**********************************************************************************/
 
+    tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute right-hand side")));
 
     // Transform basis values to physical frame:
@@ -2425,7 +2445,7 @@ void CreateLinearSystem(int numWorksets,
           cols1[0] = globalCol;
           vals1[0] = operatorMatrixContribution;
           StiffMatrix.insertGlobalValues(globalRow, cols1(), vals1());
-
+	  //	  printf("Inserting A(%d,%d) = %6.4e\n",(int)globalCol,(int)cols1[0],vals1[0]);
         }// *** cell col loop ***
       }// *** cell row loop ***
     }// *** workset cell loop **
@@ -2433,55 +2453,6 @@ void CreateLinearSystem(int numWorksets,
   }// *** workset loop ***
 
 } //CreateLinearSystem
-
-/*********************************************************************************************************/
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, RCP<driver_map_type> & P1_map, RCP<driver_map_type> & Pn_map,RCP<crs_matrix_type>& P) {
-
-  // Sanity checks
-  assert(Pn_elemToNode.dimension(1) == PnBasis_rcp->getCardinality());
-  assert(P1Basis_rcp->getCardinality() == 4);
-
-  // Generate a P matrix that uses the linear coarsening from pn to p1 on the base mesh.
-  // This presumes that the Pn element is number according to the Kirby convention (aka straight across, bottom to top)
-  // Resulting matrix is #Pnnodes x #P1nodes
-  //  int edge_node0_id[4]={0,1,2,3};
-  //  int edge_node1_id[4]={1,2,3,0};
-  int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
-
-  // Get the reference coordinates for the Pn element  
-  int numFieldsPn = PnBasis_rcp->getCardinality();
-  int spaceDim    = PnBasis_rcp->getBaseCellTopology().getDimension();
-  FieldContainer<double> PnDofCoords(numFieldsPn,spaceDim);
-  PnBasis_rcp->getDofCoords(PnDofCoords);
-
-  // Evaluate the linear basis functions at the Pn nodes
-  int numFieldsP1 = P1Basis_rcp->getCardinality();
-  FieldContainer<double> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
-  P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, OPERATOR_VALUE);
-
-  // Generate P
-  int Nelem=Pn_elemToNode.dimension(0);  
-  P = rcp(new crs_matrix_type(Pn_map,0));
-
-  Array<global_ordinal_type> cols1(1);
-  Array<scalar_type> vals1(1);
-  // Assemble
-  for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<numFieldsPn; j++) {
-      int row = Pn_elemToNode(i,j);
-      for(int k=0; k<numFieldsP1; k++) {
-        //int col = Pn_elemToNode(i,p1_node_in_pn[k]);
-        //double val = P1Values_at_PnDofs(k,j);
-        //P->InsertGlobalValues(row,1,&val,&col);
-        cols1[0] = Pn_elemToNode(i,p1_node_in_pn[k]);
-        vals1[0] = P1Values_at_PnDofs(k,j);
-        P->insertGlobalValues(row,cols1(),vals1());
-      }
-    }
-  }
-  P->fillComplete(P1_map,Pn_map);
-
-}
 
 /*********************************************************************************************************/
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,

@@ -53,7 +53,7 @@
 #include "Zoltan2_AlgAMD.hpp"
 #include <Zoltan2_AlgScotch.hpp> // BDD
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #include <Zoltan2_AlgND.hpp>
 #endif
 

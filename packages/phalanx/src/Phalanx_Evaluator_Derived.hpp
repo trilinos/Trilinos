@@ -42,8 +42,8 @@
 // @HEADER
 
 
-#ifndef PHX_FIELD_EVALUATOR_DERIVED_H
-#define PHX_FIELD_EVALUATOR_DERIVED_H
+#ifndef PHX_FIELD_EVALUATOR_DERIVED_HPP
+#define PHX_FIELD_EVALUATOR_DERIVED_HPP
 
 #include <vector>
 
@@ -53,8 +53,7 @@
 namespace PHX {
 
   template<typename EvalT, typename Traits>
-  class EvaluatorDerived : 
-    public PHX::EvaluatorBase<Traits> {
+  class EvaluatorDerived : public PHX::EvaluatorBase<Traits> {
     
   public:
     

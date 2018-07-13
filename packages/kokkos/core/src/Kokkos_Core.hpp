@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,34 +49,50 @@
 
 #include <Kokkos_Core_fwd.hpp>
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
 #include <Kokkos_Serial.hpp>
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #include <Kokkos_OpenMP.hpp>
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+//#if defined( KOKKOS_ENABLE_OPENMPTARGET )
+#include <Kokkos_OpenMPTarget.hpp>
+#include <Kokkos_OpenMPTargetSpace.hpp>
+//#endif
+
+#if defined( KOKKOS_ENABLE_QTHREADS )
+#include <Kokkos_Qthreads.hpp>
+#endif
+
+#if defined( KOKKOS_ENABLE_THREADS )
 #include <Kokkos_Threads.hpp>
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include <Kokkos_Cuda.hpp>
 #endif
 
-#include <Kokkos_MemoryPool.hpp>
+#if defined( KOKKOS_ENABLE_ROCM )
+#include <Kokkos_ROCm.hpp>
+#endif
+
+#include <Kokkos_AnonymousSpace.hpp>
 #include <Kokkos_Pair.hpp>
+#include <Kokkos_MemoryPool.hpp>
 #include <Kokkos_Array.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_Vectorization.hpp>
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_hwloc.hpp>
+#include <Kokkos_Timer.hpp>
 
-#ifdef KOKKOS_HAVE_CXX11
 #include <Kokkos_Complex.hpp>
-#endif
 
+#include <Kokkos_CopyViews.hpp>
+#include <functional>
+#include <iosfwd>
 
 //----------------------------------------------------------------------------
 
@@ -86,25 +102,64 @@ struct InitArguments {
   int num_threads;
   int num_numa;
   int device_id;
+  int ndevices;
+  int skip_device;
+  bool disable_warnings;
 
-  InitArguments() {
-    num_threads = -1;
-    num_numa = -1;
-    device_id = -1;
-  }
+  InitArguments( int nt = -1
+               , int nn = -1
+               , int dv = -1
+               , bool dw = false
+               )
+    : num_threads{ nt }
+    , num_numa{ nn }
+    , device_id{ dv }
+    , ndevices{ -1 }
+    , skip_device{ 9999 }
+    , disable_warnings{ dw }
+  {}
 };
 
 void initialize(int& narg, char* arg[]);
 
 void initialize(const InitArguments& args = InitArguments());
 
+bool is_initialized() noexcept;
+
+bool show_warnings() noexcept;
+
 /** \brief  Finalize the spaces that were initialized via Kokkos::initialize */
 void finalize();
+
+/**
+ * \brief Push a user-defined function to be called in
+ *   Kokkos::finalize, before any Kokkos state is finalized.
+ *
+ * \warning Only call this after Kokkos::initialize, but before
+ *   Kokkos::finalize.
+ *
+ * This function is the Kokkos analog to std::atexit.  If you call
+ * this with a function f, then your function will get called when
+ * Kokkos::finalize is called.  Specifically, it will be called BEFORE
+ * Kokkos does any finalization.  This means that all execution
+ * spaces, memory spaces, etc. that were initialized will still be
+ * initialized when your function is called.
+ *
+ * Just like std::atexit, if you call push_finalize_hook in sequence
+ * with multiple functions (f, g, h), Kokkos::finalize will call them
+ * in reverse order (h, g, f), as if popping a stack.  Furthermore,
+ * just like std::atexit, if any of your functions throws but does not
+ * catch an exception, Kokkos::finalize will call std::terminate.
+ */
+void push_finalize_hook(std::function<void()> f);
 
 /** \brief  Finalize all known execution spaces */
 void finalize_all();
 
 void fence();
+
+/** \brief Print "Bill of Materials" */
+void print_configuration( std::ostream & , const bool detail = false );
 
 } // namespace Kokkos
 
@@ -112,7 +167,6 @@ void fence();
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 
 /* Allocate memory from a memory space.
  * The allocation is tracked in Kokkos memory tracking system, so
@@ -155,89 +209,58 @@ void * kokkos_realloc( void * arg_alloc , const size_t arg_alloc_size )
     reallocate_tracked( arg_alloc , arg_alloc_size );
 }
 
-} // namespace Experimental
 } // namespace Kokkos
 
-
-#if KOKKOS_USING_EXP_VIEW
-
 namespace Kokkos {
 
-using Kokkos::Experimental::kokkos_malloc ;
-using Kokkos::Experimental::kokkos_realloc ;
-using Kokkos::Experimental::kokkos_free ;
+/** \brief  ScopeGuard
+ *  Some user scope issues have been identified with some Kokkos::finalize calls;
+ *  ScopeGuard aims to correct these issues.
+ *
+ *  Two requirements for ScopeGuard: 
+ *     if Kokkos::is_initialized() in the constructor, don't call Kokkos::initialize or Kokkos::finalize
+ *     it is not copyable or assignable
+ */
 
-}
-
-#else
-
-namespace Kokkos {
-
-namespace Impl {
-// should only by used by kokkos_malloc and kokkos_free
-struct MallocHelper
-{
-  static void increment_ref_count( AllocationTracker const & tracker )
+class ScopeGuard {
+public:
+  ScopeGuard ( int& narg, char* arg[] )
   {
-    tracker.increment_ref_count();
+    sg_init = false; 
+    if ( ! Kokkos::is_initialized() ) { 
+      initialize( narg, arg );
+      sg_init = true;
+    }
   }
 
-  static void decrement_ref_count( AllocationTracker const & tracker )
+  ScopeGuard ( const InitArguments& args = InitArguments() )
   {
-    tracker.decrement_ref_count();
+    sg_init = false; 
+    if ( ! Kokkos::is_initialized() ) { 
+      initialize( args );
+      sg_init = true;
+    }
   }
+
+  ~ScopeGuard( )
+  {
+    if ( Kokkos::is_initialized() && sg_init) { 
+      finalize(); 
+    }
+  }
+
+//private:
+  bool sg_init;    
+
+  ScopeGuard& operator=( const ScopeGuard& ) = delete;
+  ScopeGuard( const ScopeGuard& ) = delete;
+
 };
-} // namespace Impl
-
-/* Allocate memory from a memory space.
- * The allocation is tracked in Kokkos memory tracking system, so
- * leaked memory can be identified.
- */
-template< class Arg = DefaultExecutionSpace>
-void* kokkos_malloc(const std::string label, size_t count) {
-  if(count == 0) return NULL;
-  typedef typename Arg::memory_space MemorySpace;
-  Impl::AllocationTracker tracker = MemorySpace::allocate_and_track(label,count);;
-  Impl::MallocHelper::increment_ref_count( tracker );
-  return tracker.alloc_ptr();
-}
-
-template< class Arg = DefaultExecutionSpace>
-void* kokkos_malloc(const size_t& count) {
-  return kokkos_malloc<Arg>("DefaultLabel",count);
-}
-
-
-/* Free memory from a memory space.
- */
-template< class Arg = DefaultExecutionSpace>
-void kokkos_free(const void* ptr) {
-  typedef typename Arg::memory_space MemorySpace;
-  typedef typename MemorySpace::allocator allocator;
-  Impl::AllocationTracker tracker = Impl::AllocationTracker::find<allocator>(ptr);
-  if (tracker.is_valid()) {
-    Impl::MallocHelper::decrement_ref_count( tracker );
-  }
-}
-
-
-template< class Arg = DefaultExecutionSpace>
-void* kokkos_realloc(const void* old_ptr, size_t size) {
-  if(old_ptr == NULL)
-    return kokkos_malloc<Arg>(size);
-
-  typedef typename Arg::memory_space MemorySpace;
-  typedef typename MemorySpace::allocator allocator;
-  Impl::AllocationTracker tracker = Impl::AllocationTracker::find<allocator>(old_ptr);
-
-  tracker.reallocate(size);
-
-  return tracker.alloc_ptr();
-}
 
 } // namespace Kokkos
 
-#endif
+#include <Kokkos_Crs.hpp>
+#include <Kokkos_WorkGraphPolicy.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

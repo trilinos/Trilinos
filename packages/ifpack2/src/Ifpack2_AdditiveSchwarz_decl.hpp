@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -94,9 +94,9 @@ preconditioner to a multivector.
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
 One-level overlapping domain decomposition preconditioners use local
-solvers of Dirichlet type. This means that the inverse of the local
-matrix (possibly with overlap) is applied to the residual to be
-preconditioned.
+solvers of Dirichlet type. This means that the solver effectively 
+applies the inverse of the local matrix (possibly with overlap) 
+to the residual to be preconditioned.
 
 The preconditioner can be written as:
 \f[

@@ -183,7 +183,7 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "EpetraOperatorWrapper::ApplyInverse not implemented");
-  return 1;
+  TEUCHOS_UNREACHABLE_RETURN(1);
 }
 
 
@@ -191,7 +191,7 @@ double EpetraOperatorWrapper::NormInf() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "EpetraOperatorWrapper::NormInf not implemated");
-  return 1.0;
+  TEUCHOS_UNREACHABLE_RETURN(1.0);
 }
 
 

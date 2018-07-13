@@ -60,7 +60,6 @@
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"

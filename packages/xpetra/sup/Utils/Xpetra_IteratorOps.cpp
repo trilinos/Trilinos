@@ -57,7 +57,8 @@ namespace Xpetra {
                                          Xpetra::Matrix<double,int,int,EpetraNode> &C,
                                          bool call_FillComplete_on_result,
                                          bool doOptimizeStorage,
-                                         const std::string & label) {
+                                         const std::string & label,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& params) {
     typedef double        SC;
     typedef int           LO;
     typedef int           GO;
@@ -110,7 +111,7 @@ namespace Xpetra {
       const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<SC,LO,GO,NO>          & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
       const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
-      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label);
+      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
@@ -118,9 +119,9 @@ namespace Xpetra {
     }
 
     if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-      params->set("Optimize Storage", doOptimizeStorage);
-      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+      RCP<Teuchos::ParameterList> ppp = rcp(new Teuchos::ParameterList());
+      ppp->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), ppp);
     }
 
     // transfer striding information
@@ -139,7 +140,8 @@ namespace Xpetra {
                                                Xpetra::Matrix<double,int,long long,EpetraNode> &C,
                                                bool call_FillComplete_on_result,
                                                bool doOptimizeStorage,
-                                               const std::string & label) {
+                                               const std::string & label,
+                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
     typedef double        SC;
     typedef int           LO;
     typedef long long     GO;
@@ -192,7 +194,7 @@ namespace Xpetra {
       const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<SC,LO,GO,NO>          & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
       const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
-      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label);
+      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
@@ -200,9 +202,9 @@ namespace Xpetra {
     }
 
     if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-      params->set("Optimize Storage", doOptimizeStorage);
-      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+      RCP<Teuchos::ParameterList> ppp = rcp(new Teuchos::ParameterList());
+      ppp->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), ppp);
     }
 
     // transfer striding information

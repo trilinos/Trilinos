@@ -46,7 +46,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_as.hpp"
-
+#include <deque>
 
 namespace Teuchos {
 
@@ -353,7 +353,17 @@ private:
  * character type.
  *
  * Indentation of the stream is accomplished through creating
- * <tt>basic_OSTab</tt> objects.
+ * <tt>basic_OSTab</tt> objects (i.e. typedef <tt>OSTab</tt>).  For example,
+ * when accepting a <tt>FancyOStream</tt> object, one might indent it like:
+ *
+   \code
+   void someFunc(FancyOStream &out)
+   {
+     OSTab(out);
+     out << "This is indented!\n";
+     ...
+   }
+   \endcode
  *
  * In addition to indenting output, this stream object can also print various
  * types of information at the beginning of each line. The type of information

@@ -156,13 +156,13 @@ void StridedDataTest(const Teuchos::SerialComm<int> &comm)
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > mpicomm = 
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = 
     Teuchos::DefaultComm<int>::getComm();
 
   // Run the test on only one rank. 
   // There's no parallelism involved in StridedData, 
   // and the output is neater on only one proc.
-  if (mpicomm->getRank() > 0)
+  if (tcomm->getRank() > 0)
     return 0;
 
   Teuchos::SerialComm<int> comm;

@@ -187,12 +187,6 @@ public:
   //! Returns the current number of allocated entries on this node in the specified local row.
   size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
-  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-  global_size_t getGlobalNumDiags() const { return 0; }
-
-  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-  size_t getNodeNumDiags() const { return 0; }
-
   //! Maximum number of entries in all rows over all processes.
   size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -201,12 +195,6 @@ public:
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { return false; }
-
-  //! Whether the graph is locally lower triangular.
-  bool isLowerTriangular() const { return false; }
-
-  //! Whether the graph is locally upper triangular.
-  bool isUpperTriangular() const { return false; }
 
   //! Whether column indices are stored using local indices on the calling process.
   bool isLocallyIndexed() const { return false; }
@@ -225,6 +213,11 @@ public:
 
   //! Return a const, nonpersisting view of local indices in the given row.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
+
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -426,12 +419,6 @@ public:
   //! Returns the current number of allocated entries on this node in the specified local row.
   size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInLocalRow"); return graph_->NumAllocatedMyIndices(localRow); }
 
-  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumDiags"); return graph_->NumGlobalDiagonals64(); }
-
-  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
-
   //! Maximum number of entries in all rows over all processes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
 
@@ -440,12 +427,6 @@ public:
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
-
-  //! Whether the graph is locally lower triangular.
-  bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isLowerTriangular"); return graph_->LowerTriangular(); }
-
-  //! Whether the graph is locally upper triangular.
-  bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isUpperTriangular"); return graph_->UpperTriangular(); }
 
   //! Whether column indices are stored using local indices on the calling process.
   bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
@@ -484,7 +465,14 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants(){ }
+
+
   //@}
+
+
 
   //! @name Overridden from Teuchos::Describable
   //@{
@@ -734,12 +722,6 @@ public:
   //! Returns the current number of allocated entries on this node in the specified local row.
   size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInLocalRow"); return graph_->NumAllocatedMyIndices(localRow); }
 
-  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumDiags"); return graph_->NumGlobalDiagonals64(); }
-
-  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
-
   //! Maximum number of entries in all rows over all processes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
 
@@ -748,12 +730,6 @@ public:
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
-
-  //! Whether the graph is locally lower triangular.
-  bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isLowerTriangular"); return graph_->LowerTriangular(); }
-
-  //! Whether the graph is locally upper triangular.
-  bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isUpperTriangular"); return graph_->UpperTriangular(); }
 
   //! Whether column indices are stored using local indices on the calling process.
   bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
@@ -792,6 +768,11 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
+
   //@}
 
   //! @name Overridden from Teuchos::Describable

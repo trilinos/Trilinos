@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -112,12 +112,14 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   }
 
   if (global_method != 7) { /* Not read from file. */
-    for (i          = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       assignment[i] = 0;
+    }
   }
 
-  if (nvtxs <= 1)
+  if (nvtxs <= 1) {
     return;
+  }
 
   /* Compute some simple parameters. */
   save_term_wgts = NULL;
@@ -126,16 +128,18 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   subsets[2]     = 2; /* Needed for vertex separators */
 
   nsets_tot = 0;
-  if (architecture > 0)
+  if (architecture > 0) {
     nsets_tot = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
-  else if (architecture == 0)
+  }
+  else if (architecture == 0) {
     nsets_tot = 1 << ndims_tot;
+  }
 
   /* Construct data structures for keeping track of processor sets. */
   set_buckets = smalloc((nsets_tot + 1) * sizeof(struct set_info *));
   set_info    = smalloc(nsets_tot * sizeof(struct set_info));
   for (i = 0; i < nsets_tot; i++) {
-    set_info[i].setnum  = (int)i;
+    set_info[i].setnum  = i;
     set_info[i].ndims   = -1;
     set_info[i].span[0] = -1;
     set_info[i].next    = NULL;
@@ -150,7 +154,7 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
     set_info[0].span[2]                                          = mesh_dims[2];
   }
   else if (architecture == 0) {
-    set_info[0].ndims = (int)ndims_tot;
+    set_info[0].ndims = ndims_tot;
   }
 
   done_dir[0] = done_dir[1] = done_dir[2] = FALSE;
@@ -178,12 +182,14 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
     /* If new cut direction, turn off terminal propagation. */
     new_dir = FALSE;
     if (architecture == 0) {
-      if (old_max_proc_size != max_proc_size)
+      if (old_max_proc_size != max_proc_size) {
         new_dir = TRUE;
+      }
     }
     else if (architecture > 0) {
-      if (!done_dir[cut_dirs[0]])
-        new_dir             = TRUE;
+      if (!done_dir[cut_dirs[0]]) {
+        new_dir = TRUE;
+      }
       done_dir[cut_dirs[0]] = TRUE;
     }
     old_max_proc_size = max_proc_size;
@@ -213,12 +219,14 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
       subassign        = assignment;
       all_term_wgts[1] = NULL;
 
-      if (!using_vwgts)
+      if (!using_vwgts) {
         sub_vwgt_sum = subnvtxs;
+      }
       else {
         sub_vwgt_sum = 0;
-        for (i = 1; i <= subnvtxs; i++)
+        for (i = 1; i <= subnvtxs; i++) {
           sub_vwgt_sum += subgraph[i]->vwgt;
+        }
       }
       merge_goals(goal, merged_goal, set_info, subsets, nsets_real, ndims_tot, architecture,
                   mesh_dims, sub_vwgt_sum);
@@ -250,13 +258,16 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
           subcoords    = smalloc(3 * sizeof(float *));
           subcoords[1] = subcoords[2] = NULL;
           subcoords[0]                = smalloc((maxsize + 1) * sizeof(float));
-          if (igeom > 1)
+          if (igeom > 1) {
             subcoords[1] = smalloc((maxsize + 1) * sizeof(float));
-          if (igeom > 2)
+          }
+          if (igeom > 2) {
             subcoords[2] = smalloc((maxsize + 1) * sizeof(float));
+          }
         }
-        else
+        else {
           subcoords = NULL;
+        }
         if (TERM_PROP && graph != NULL) {
           term_wgts      = smalloc((nsets - 1) * (maxsize + 1) * sizeof(float));
           save_term_wgts = term_wgts;
@@ -276,30 +287,35 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
                         set_info, set->setnum, nsets_real, nsets_tot, subsets, all_term_wgts,
                         using_ewgts);
       }
-      else
+      else {
         all_term_wgts[1] = NULL;
+      }
 
       /* Form the subgraph in our graph format. */
       if (graph != NULL) {
         make_subgraph(graph, subgraph, subnvtxs, &subnedges, assignment, set->setnum, glob2loc,
                       loc2glob, degree, using_ewgts);
       }
-      else
+      else {
         subnedges = 0; /* Otherwise some output is garbage */
+      }
 
-      if (!using_vwgts)
+      if (!using_vwgts) {
         sub_vwgt_sum = subnvtxs;
+      }
       else {
         sub_vwgt_sum = 0;
-        for (i = 1; i <= subnvtxs; i++)
+        for (i = 1; i <= subnvtxs; i++) {
           sub_vwgt_sum += subgraph[i]->vwgt;
+        }
       }
       merge_goals(goal, merged_goal, set_info, subsets, nsets_real, ndims_tot, architecture,
                   mesh_dims, sub_vwgt_sum);
 
       /* Condense the relevant vertex weight array. */
-      if (using_vwgts && vwsqrt != NULL)
+      if (using_vwgts && vwsqrt != NULL) {
         make_subvector(vwsqrt, subvwsqrt, subnvtxs, loc2glob);
+      }
 
       if (global_method == 3 ||
           (MATCH_TYPE == 5 && (global_method == 1 || (global_method == 2 && rqi_flag)))) {
@@ -309,14 +325,18 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
 
     if (DEBUG_TRACE > 1) {
       printf("About to call divide with nvtxs = %d, nedges = %d, ", subnvtxs, subnedges);
-      if (!architecture)
+      if (!architecture) {
         printf("ndims = %d\n", set->ndims);
-      else if (architecture == 1)
+      }
+      else if (architecture == 1) {
         printf("mesh = %d\n", set->span[0]);
-      else if (architecture == 2)
+      }
+      else if (architecture == 2) {
         printf("mesh = %dx%d\n", set->span[0], set->span[1]);
-      else if (architecture == 3)
+      }
+      else if (architecture == 3) {
         printf("mesh = %dx%dx%d\n", set->span[0], set->span[1], set->span[2]);
+      }
     }
 
     /* Perform a single division step. */
@@ -331,8 +351,9 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
     }
 
     /* Prepare for next division */
-    while (max_proc_size > 1 && set_buckets[max_proc_size] == NULL)
+    while (max_proc_size > 1 && set_buckets[max_proc_size] == NULL) {
       --max_proc_size;
+    }
 
     /* Merge the subgraph partitioning with the graph partitioning. */
     if (pass == 1) {
@@ -343,14 +364,17 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
 
       /* Find size of largest subgraph for recursing. */
       if (max_proc_size > 1) {
-        for (i       = 0; i < nsets; i++)
+        for (i = 0; i < nsets; i++) {
           setsize[i] = 0;
-        for (i = 1; i <= nvtxs; i++)
+        }
+        for (i = 1; i <= nvtxs; i++) {
           ++setsize[assignment[i]];
+        }
         maxsize = 0;
         for (i = 0; i < nsets; i++) {
-          if (setsize[i] > maxsize)
+          if (setsize[i] > maxsize) {
             maxsize = setsize[i];
+          }
         }
       }
 
@@ -384,19 +408,25 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   sfree(subassign);
   sfree(loc2glob);
   sfree(glob2loc);
-  if (graph != NULL)
+  if (graph != NULL) {
     sfree(degree);
-  if (subgraph != NULL)
+  }
+  if (subgraph != NULL) {
     sfree(subgraph);
-  if (subvwsqrt != NULL)
+  }
+  if (subvwsqrt != NULL) {
     sfree(subvwsqrt);
+  }
   if (subcoords != NULL) {
-    if (subcoords[0] != NULL)
+    if (subcoords[0] != NULL) {
       sfree(subcoords[0]);
-    if (subcoords[1] != NULL)
+    }
+    if (subcoords[1] != NULL) {
       sfree(subcoords[1]);
-    if (subcoords[2] != NULL)
+    }
+    if (subcoords[2] != NULL) {
       sfree(subcoords[2]);
+    }
     sfree(subcoords);
   }
   sfree(set_info);

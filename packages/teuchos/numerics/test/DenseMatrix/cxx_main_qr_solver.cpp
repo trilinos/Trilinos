@@ -329,6 +329,9 @@ int main(int argc, char* argv[])
   solver2.setMatrix( A2 );
   solver2.setVectors( Teuchos::rcp( &xhat, false ), Teuchos::rcp( &b, false ) );
 
+  Teuchos::RCP<DMatrix> A2bak = Teuchos::rcp( new DMatrix( Teuchos::Copy, *A2 ) );
+  Teuchos::RCP<DVector> b2bak = Teuchos::rcp( new DVector( Teuchos::Copy, b ) );
+
   // Factor and solve with matrix equilibration.
   returnCode = solver2.factor();
   testName = "Solve with matrix equilibration: factor() random A:";
@@ -362,6 +365,16 @@ int main(int argc, char* argv[])
     numberFailedTests += CompareVectors( *x2t, xhatt, tol );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 #endif
+
+  // Non-transpose solve without call to factor.
+  xhat.putScalar( ScalarTraits<STYPE>::zero() );
+  solver2.setMatrix( A2bak );
+  solver2.setVectors( Teuchos::rcp( &xhat, false ), b2bak );
+  solver2.solveWithTransposeFlag( Teuchos::NO_TRANS );
+  returnCode = solver2.solve();
+  testName = "Solve with matrix equilibration: solve() without factor() random A (NO_TRANS):";
+  numberFailedTests += CompareVectors( *x2, xhat, tol );
+  numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   //
   // If a test failed output the number of failed tests.

@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -224,13 +224,13 @@ bool test_element(const std::string &type)
       }
       else if (face != nullptr) {
         unsigned int nnfi = element->number_nodes_face(i);
-        if (nnfi != (unsigned int)face->number_nodes()) {
+        if (nnfi != static_cast<unsigned int>(face->number_nodes())) {
           OUTPUT << "\n\tNode count mismatch on face " << i;
           result = false;
         }
         if (i != 0) {
           std::vector<int> conn = element->face_connectivity(i);
-          if ((unsigned int)nnfi != conn.size()) {
+          if (nnfi != conn.size()) {
             OUTPUT << "\n\tNode count and face connectivity size "
                       "mismatch on face "
                    << i;
@@ -254,13 +254,13 @@ bool test_element(const std::string &type)
       }
       else if (edge != nullptr) {
         unsigned int nnei = element->number_nodes_edge(i);
-        if (nnei != (unsigned int)edge->number_nodes()) {
+        if (nnei != static_cast<unsigned int>(edge->number_nodes())) {
           OUTPUT << "\n\tNode count mismatch on edge " << i;
           result = false;
         }
         if (i != 0) {
           std::vector<int> conn = element->edge_connectivity(i);
-          if ((unsigned int)nnei != conn.size()) {
+          if (nnei != conn.size()) {
             OUTPUT << "\n\tNode count and edge connectivity size "
                       "mismatch on edge "
                    << i;
@@ -323,7 +323,7 @@ bool test_element(const std::string &type)
 
       // Edges defining face...
       std::vector<int> face_edge_conn = element->face_edge_connectivity(i);
-      if ((unsigned int)num_edges_face != face_edge_conn.size()) {
+      if (num_edges_face != face_edge_conn.size()) {
         OUTPUT << "\n\tEdges per face mismatch for face " << i;
         result = false;
       }
@@ -346,7 +346,7 @@ bool test_element(const std::string &type)
               OUTPUT << "\n\tInvalid edge connectivity count.";
               result = false;
             }
-            if (face_conn.size() < (unsigned int)fncn + num_edges_face) {
+            if (face_conn.size() < fncn + num_edges_face) {
               OUTPUT << "\n\tInvalid face connectivity count.";
               result = false;
             }

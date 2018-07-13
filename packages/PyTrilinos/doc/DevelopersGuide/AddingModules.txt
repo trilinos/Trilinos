@@ -4,9 +4,10 @@ Adding New Modules to PyTrilinos
 If you want to add a Trilinos package as a new module in PyTrilinos,
 here are the necessary steps.
 
-#. Add the package name to the ``cmake/Dependencies.cmake`` file, where
-   variable ``LIB_OPTIONAL_DEP_PACKAGES`` is set.  It is important
-   that packages be listed in build order.
+#. In file ``cmake/dependencies/TrilinosPackagesDependencies.xml``,
+   search for XML element ``<Package name="PyTrilinos" ...>`` and add
+   the package name to attribute ``LIB_OPTIONAL_DEP_PACKAGES``.  It is
+   important that packages be listed in build order.
 
 #. If your package uses nested namespaces, then the python interface
    should use corresponding nested modules.  To partially facilitate
@@ -37,7 +38,7 @@ here are the necessary steps.
    namespaces (sub-modules).
 
 #. If your package will require compiled code that will be archived in
-   the pytrilinos shared library, add the headers and sources to
+   the ``pytrilinos`` shared library, add the headers and sources to
    ``src/CMakeLists.txt``, using the existing if-blocks as a guide.
 
 #. If your package supports nested namespaces (sub-modules), then in
@@ -46,8 +47,14 @@ here are the necessary steps.
       # Loop over the PyTrilinos-enabled Trilinos modules and define the
       # swig-generated PyTrilinos extension modules
 
-   Use the existing if-blocks to add logic to support your
-   sub-modules.
+   Within this loop, find the section that begins::
+
+      # Choosing the Trilinos libraries to link against, the python module
+      # to byte-compile and the installation rules requires a little bit
+      # of logic.
+
+   Use the existing if-blocks below this comment to provide a template
+   to add logic to support your sub-modules.
 
 #. Add your package by writing the required SWIG interface files.  For
    a standard PACKAGE, it will be in the file

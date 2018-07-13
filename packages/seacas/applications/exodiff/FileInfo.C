@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,22 +29,22 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
 #include "FileInfo.h"
-
-#include <string>
-
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <algorithm>   // for move
+#include <cstddef>     // for size_t
+#include <cstdio>      // for remove
+#include <cstdlib>     // for free, realpath
+#include <string>      // for string
+#include <sys/stat.h>  // for stat, lstat, S_ISDIR, etc
+#include <sys/types.h> // for off_t
+#include <unistd.h>    // for F_OK, R_OK, access, W_OK, etc
 
 namespace {
   bool internal_access(const std::string &name, int mode);
-  bool do_stat(const std::string &my_filename, struct stat *s);
-}
+  bool do_stat(const std::string &filename, struct stat *s);
+} // namespace
 
 FileInfo::FileInfo() : filename_(""), exists_(false), readable_(false) {}
 
@@ -70,8 +70,9 @@ FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename) :
 
   if (!dirpath.empty()) {
     filename_ = dirpath;
-    if (filename_.at(filename_.size() - 1) != '/')
+    if (filename_.at(filename_.size() - 1) != '/') {
       filename_ += SLASH;
+    }
   }
   filename_ += my_filename;
   readable_ = internal_access(filename_, R_OK);
@@ -96,72 +97,93 @@ bool FileInfo::is_executable() const { return internal_access(filename_, X_OK); 
 //: a file.
 bool FileInfo::is_file() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return S_ISREG(s.st_mode);
-  else
-    return false;
+  }
+
+  return false;
 }
 
 //: Returns TRUE if we are pointing to a directory or a symbolic link to
 //: a directory.
 bool FileInfo::is_dir() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return S_ISDIR(s.st_mode);
-  else
-    return false;
+  }
+
+  return false;
 }
 
 //: Returns TRUE if we are pointing to a symbolic link
 bool FileInfo::is_symlink() const
 {
-  struct stat s;
-  if (lstat(filename_.c_str(), &s) == 0)
+  struct stat s
+  {
+  };
+  if (lstat(filename_.c_str(), &s) == 0) {
     return S_ISLNK(s.st_mode);
-  else
-    return false;
+  }
+
+  return false;
 }
 
 //: Time of last data modification. See 'man stat(2)'
 time_t FileInfo::modified() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return s.st_mtime;
-  else
-    return 0;
+  }
+
+  return 0;
 }
 
 //: Time of last access
 time_t FileInfo::accessed() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return s.st_atime;
-  else
-    return 0;
+  }
+
+  return 0;
 }
 
 //: Time of last status change. (creation, chmod, ...)
 time_t FileInfo::created() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return s.st_ctime;
-  else
-    return 0;
+  }
+
+  return 0;
 }
 
 //: File size in bytes. Only if is_file() == true
 off_t FileInfo::size() const
 {
-  struct stat s;
-  if (do_stat(filename_.c_str(), &s))
+  struct stat s
+  {
+  };
+  if (do_stat(filename_, &s)) {
     return s.st_size;
-  else
-    return 0;
+  }
+
+  return 0;
 }
 
 //: Returns the filename
@@ -188,32 +210,35 @@ void FileInfo::set_filename(const char *name)
 //: last period.
 const std::string FileInfo::extension() const
 {
-  size_t ind  = filename_.find_last_of(".", std::string::npos);
-  size_t inds = filename_.find_last_of("/", std::string::npos);
+  size_t ind  = filename_.find_last_of('.', std::string::npos);
+  size_t inds = filename_.find_last_of('/', std::string::npos);
 
   // Protect against './filename' returning /filename as extension
-  if (ind != std::string::npos && (inds == std::string::npos || inds < ind))
+  if (ind != std::string::npos && (inds == std::string::npos || inds < ind)) {
     return filename_.substr(ind + 1, filename_.size());
-  else
-    return std::string();
+  }
+
+  return std::string();
 }
 
 const std::string FileInfo::pathname() const
 {
-  size_t ind = filename_.find_last_of("/", filename_.size());
-  if (ind != std::string::npos)
+  size_t ind = filename_.find_last_of('/', filename_.size());
+  if (ind != std::string::npos) {
     return filename_.substr(0, ind);
-  else
-    return std::string();
+  }
+
+  return std::string();
 }
 
 const std::string FileInfo::tailname() const
 {
-  size_t ind = filename_.find_last_of("/", filename_.size());
-  if (ind != std::string::npos)
+  size_t ind = filename_.find_last_of('/', filename_.size());
+  if (ind != std::string::npos) {
     return filename_.substr(ind + 1, filename_.size());
-  else
-    return filename_; // No path, just return the filename
+  }
+
+  return filename_; // No path, just return the filename
 }
 
 const std::string FileInfo::basename() const
@@ -222,22 +247,24 @@ const std::string FileInfo::basename() const
 
   // Strip off the extension
   size_t ind = tail.find_last_of('.', tail.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     return tail.substr(0, ind);
-  else
-    return tail;
+  }
+
+  return tail;
 }
 
 const std::string FileInfo::realpath() const
 {
   char *path = ::realpath(filename_.c_str(), nullptr);
-  if (path) {
+  if (path != nullptr) {
     std::string temp(path);
     free(path);
     return temp;
   }
-  else
+  {
     return filename_;
+  }
 }
 
 bool FileInfo::remove_file()
@@ -249,10 +276,12 @@ bool FileInfo::remove_file()
 namespace {
   bool internal_access(const std::string &name, int mode)
   {
-    if (name.empty())
+    if (name.empty()) {
       return false;
-    if (::access(name.c_str(), mode) != 0)
+    }
+    if (::access(name.c_str(), mode) != 0) {
       return false;
+    }
     return true;
   }
 
@@ -266,4 +295,4 @@ namespace {
     return (stat(filename.c_str(), s) == 0);
 #endif
   }
-}
+} // namespace

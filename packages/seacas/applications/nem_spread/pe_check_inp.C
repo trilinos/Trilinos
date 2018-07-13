@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -96,32 +96,40 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 
   /* check to see if there is a seperate restart file */
   if (Restart_Info.Flag > 0) {
-    if (strlen(Exo_Res_File) <= 0)
+    if (strlen(Exo_Res_File) <= 0) {
       strcpy(Exo_Res_File, ExoFile); /* if not use the input FEM file */
+    }
   }
 
   /* check if space is to be reserved for variables in the parallel files */
-  if (Num_Glob_Var < 0)
+  if (Num_Glob_Var < 0) {
     Num_Glob_Var = 0;
-  if (Num_Nod_Var < 0)
+  }
+  if (Num_Nod_Var < 0) {
     Num_Nod_Var = 0;
-  if (Num_Elem_Var < 0)
+  }
+  if (Num_Elem_Var < 0) {
     Num_Elem_Var = 0;
-  if (Num_Nset_Var < 0)
+  }
+  if (Num_Nset_Var < 0) {
     Num_Nset_Var = 0;
-  if (Num_Sset_Var < 0)
+  }
+  if (Num_Sset_Var < 0) {
     Num_Sset_Var = 0;
+  }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                 Check the parallel IO specifications                      */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
   /* default is not to have preceeding 0's in the disk names */
-  if (PIO_Info.Zeros < 0)
+  if (PIO_Info.Zeros < 0) {
     PIO_Info.Zeros = 0;
+  }
   /* most systems that we deal with start their files systems with 1 not 0 */
-  if (PIO_Info.PDsk_Add_Fact < 0)
+  if (PIO_Info.PDsk_Add_Fact < 0) {
     PIO_Info.PDsk_Add_Fact = 1;
+  }
 
   /* check that there is a list of disks, or a number of raids */
   if ((PIO_Info.Dsk_List_Cnt <= 0) && (PIO_Info.Num_Dsk_Ctrlrs <= 0)) {
@@ -132,8 +140,9 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
   }
 
   /* default for nem_spread is to stage the writes */
-  if (strlen(PIO_Info.Staged_Writes) <= 0)
+  if (strlen(PIO_Info.Staged_Writes) <= 0) {
     strcpy(PIO_Info.Staged_Writes, "yes");
+  }
 
   if (strlen(PIO_Info.Par_Dsk_Root) <= 0) {
     fprintf(stderr, "%s: Error - Root directory for parallel files must"

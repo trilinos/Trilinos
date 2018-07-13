@@ -31,16 +31,16 @@
 
 #include "basker_types.hpp"
 
-namespace Basker{
+namespace BaskerClassicNS{
 
   template <class Int, class Entry>
-  class Basker
+  class BaskerClassic
   {
 
   public:
-    Basker();
-    Basker(Int nnzL, Int nnzU);
-    ~Basker();
+    BaskerClassic();
+    BaskerClassic(Int nnzL, Int nnzU);
+    ~BaskerClassic();
     int preorder(Int *row_perm, Int *col_perm);
     int factor(Int nrow, Int ncol , Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
     int returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);
@@ -48,6 +48,10 @@ namespace Basker{
     int returnP(Int **p);
     int solve( Entry* b, Entry* x);
     int solveMultiple(Int nrhs, Entry *b, Entry *x);
+
+    Int get_NnzL();
+    Int get_NnzU();
+    Int get_NnzLU();
     //int solve();
 
   private:
@@ -77,6 +81,8 @@ namespace Basker{
     basker_matrix<Int, Entry> *U;
     Int *in_perm;
     Int *pinv;
+    Int actual_lnnz;
+    Int actual_unnz;
     bool been_fact;
     bool perm_flag;
 

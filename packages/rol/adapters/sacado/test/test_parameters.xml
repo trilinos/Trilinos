@@ -1,0 +1,8 @@
+<ParameterList name = "Inputs">
+
+  <Parameter name = "Type-U Step"  type = "string"  value = "Trust Region"         />
+  <Parameter name = "Type-B Step"  type = "string"  value = "Trust Region"         />
+  <Parameter name = "Type-E Step"  type = "string"  value = "Composite Step"       />
+  <Parameter name = "Type-EB Step" type = "string"  value = "Moreau-Yosida Penalty" />
+
+</ParameterList>

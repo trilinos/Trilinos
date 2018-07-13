@@ -63,19 +63,19 @@ TEST(StkVectorTest, pushTwoValues_getTwoValues)
 TEST(StkVectorTest, createWithName_getName)
 {
     stk::Vector<double> vec("vec");
-    EXPECT_EQ("vec", vec.name());
+    EXPECT_EQ("vec", vec.name().substr(0,3));
 }
 TEST(StkVectorTest, createSizedWithName_getName)
 {
     stk::Vector<double> vec("vec", 1);
-    EXPECT_EQ("vec", vec.name());
+    EXPECT_EQ("vec", vec.name().substr(0,3));
     EXPECT_EQ(1u, vec.size());
     EXPECT_EQ(0.0, vec[0]);
 }
 TEST(StkVectorTest, createSizedAndInitWithName_getName)
 {
     stk::Vector<double> vec("vec", 1, 2.0);
-    EXPECT_EQ("vec", vec.name());
+    EXPECT_EQ("vec", vec.name().substr(0,3));
     EXPECT_EQ(1u, vec.size());
     EXPECT_EQ(2.0, vec[0]);
 }
@@ -83,7 +83,7 @@ TEST(StkVectorTest, createNamedPushBack_getName)
 {
     stk::Vector<double> vec("vec");
     vec.push_back(3.0);
-    EXPECT_EQ("vec", vec.name());
+    EXPECT_EQ("vec", vec.name().substr(0,3));
     EXPECT_EQ(1u, vec.size());
     EXPECT_EQ(3.0, vec[0]);
 }
@@ -96,7 +96,7 @@ public:
     }
     size_t num_allocations() const { return numAllocations; }
 protected:
-    virtual Kokkos::View<double*>::HostMirror get_new_vals_of_size(size_t s)
+    virtual DeviceType get_new_vals_of_size(size_t s)
     {
         numAllocations++;
         return stk::Vector<double>::get_new_vals_of_size(s);

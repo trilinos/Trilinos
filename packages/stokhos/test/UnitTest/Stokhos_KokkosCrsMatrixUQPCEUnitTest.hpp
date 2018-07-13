@@ -43,7 +43,8 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"
@@ -178,8 +179,8 @@ bool compare_rank_2_views(const array_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -215,7 +216,7 @@ bool compareRank1(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
+  size_type num_rows = y.extent(0);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<Kokkos::dimension_scalar(y); ++j) {
@@ -250,8 +251,8 @@ bool compareRank2(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
 
  for (size_type col = 0; col < num_cols; ++col){
@@ -544,7 +545,7 @@ template <typename PCEType, typename Multiply>
 bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
                        const typename PCEType::ordinal_type stoch_dim,
                        const typename PCEType::ordinal_type poly_ord,
-                       Kokkos::DeviceConfig dev_config,
+                       KokkosSparse::DeviceConfig dev_config,
                        Multiply multiply_op,
                        Teuchos::FancyOStream& out)
 {
@@ -707,7 +708,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   const Ordinal nGrid = 5;
   const Ordinal stoch_dim = 2;
   const Ordinal poly_ord = 3;
-  Kokkos::DeviceConfig dev_config;
+  KokkosSparse::DeviceConfig dev_config;
 
   success = test_embedded_pce<Scalar>(
     nGrid, stoch_dim, poly_ord, dev_config, MultiplyOp(), out);
@@ -743,7 +744,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const Ordinal nGrid = 5;
   const Ordinal stoch_dim = 5;
   const Ordinal poly_ord = 3;
-  Kokkos::DeviceConfig dev_config;
+  KokkosSparse::DeviceConfig dev_config;
 
   typedef typename Scalar::ordinal_type ordinal_type;
   typedef typename Scalar::value_type scalar_type;
@@ -758,6 +759,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  cijk_type mean_cijk =
+    Stokhos::create_mean_based_product_tensor<execution_space, ordinal_type, scalar_type>();
   const ordinal_type stoch_length = cijk.dimension();
   const ordinal_type align = 8;
   const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
@@ -806,7 +809,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
-      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), mean_cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -902,10 +905,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const ordinal_type nGrid = 5;
   const ordinal_type stoch_dim = 2;
   const ordinal_type poly_ord = 3;
-  Kokkos::DeviceConfig dev_config;
+  KokkosSparse::DeviceConfig dev_config;
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  cijk_type mean_cijk =
+    Stokhos::create_mean_based_product_tensor<execution_space, ordinal_type, scalar_type>();
   const ordinal_type stoch_length = cijk.dimension();
   const ordinal_type align = 8;
   const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
@@ -950,7 +955,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
-      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1));
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), mean_cijk, fem_graph_length, ordinal_type(1));
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;

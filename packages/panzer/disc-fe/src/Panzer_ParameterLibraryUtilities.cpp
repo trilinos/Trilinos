@@ -65,6 +65,9 @@ void registerScalarParameter(const std::string name,panzer::ParamLib& pl,double 
   rsp.apply<panzer::Traits::Residual>();
   rsp.apply<panzer::Traits::Jacobian>();
   rsp.apply<panzer::Traits::Tangent>();
+#ifdef    Panzer_BUILD_HESSIAN_SUPPORT
+  rsp.apply<panzer::Traits::Hessian>();
+#endif // Panzer_BUILD_HESSIAN_SUPPORT
 
   pl.setRealValueForAllTypes(name,realValue);
 }

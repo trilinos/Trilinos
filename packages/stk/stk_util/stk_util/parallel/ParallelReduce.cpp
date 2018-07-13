@@ -63,7 +63,7 @@ void all_write_string( ParallelMachine arg_comm ,
 
   std::vector<int> recv_count( p_size , i_zero );
 
-  int * const recv_count_ptr = & recv_count[0] ;
+  int * const recv_count_ptr = recv_count.data() ;
 
   result = MPI_Gather( & send_count , 1 , MPI_INT ,
                        recv_count_ptr , 1 , MPI_INT ,
@@ -89,8 +89,8 @@ void all_write_string( ParallelMachine arg_comm ,
 
   {
     const char * const send_ptr = arg_msg.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
-    int * const recv_displ_ptr = & recv_displ[0] ;
+    char * const recv_ptr = recv_size ? buffer.data() : nullptr ;
+    int * const recv_displ_ptr = recv_displ.data() ;
 
     result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
@@ -129,14 +129,6 @@ void all_reduce( ParallelMachine  arg_comm ,
 
   MPI_Op_create( arg_op , 0 , & mpi_op );
 
-  // The SUN was buggy when combining an
-  // MPI_Allreduce with a user defined operator,
-  // use reduce/broadcast instead.
-/*
-  const int result =
-    MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
-*/
-
   const int result_reduce =
     MPI_Reduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,0,arg_comm);
 
@@ -160,7 +152,12 @@ void all_reduce_impl( ParallelMachine comm ,
 {
   size_t * tmp = const_cast<size_t*>( local );
 
-  if ( sizeof(size_t) == sizeof(unsigned) ) {
+  if(comm == stk::parallel_machine_null())
+  {
+      for(unsigned i=0;i<count;++i)
+          global[i] = local[i];
+  }
+  else if ( sizeof(size_t) == sizeof(unsigned) ) {
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , op , comm );
 
   }

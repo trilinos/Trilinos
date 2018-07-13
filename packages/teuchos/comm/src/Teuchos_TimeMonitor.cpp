@@ -46,8 +46,13 @@
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include <functional>
+#include "Teuchos_StackedTimer.hpp"
 
+#include <functional>
+#include <iomanip>
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include <sstream>
+#endif
 
 namespace Teuchos {
   /**
@@ -245,14 +250,48 @@ namespace Teuchos {
   // that timer, total number of calls to that timer).
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
+  // static initialization
+  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::rcp(new Teuchos::StackedTimer("Teuchos::StackedTimer"));
+  
   TimeMonitor::TimeMonitor (Time& timer, bool reset)
     : PerformanceMonitorBase<Time>(timer, reset)
   {
-    if (!isRecursiveCall()) counter().start(reset);
+    if (!isRecursiveCall()) {
+      counter().start(reset);
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      if (nonnull(stackedTimer_))
+        stackedTimer_->start(counter().name());
+#endif
+    }
   }
 
   TimeMonitor::~TimeMonitor() {
-    if (!isRecursiveCall()) counter().stop();
+    if (!isRecursiveCall()) {
+      counter().stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      try {
+        if (nonnull(stackedTimer_))
+          stackedTimer_->stop(counter().name());
+      }
+      catch (std::runtime_error) {
+        std::ostringstream warning;
+        warning <<
+          "\n*********************************************************************\n"
+          "WARNING: Overlapping timers detected!\n"
+          "A TimeMonitor timer was stopped before a nested subtimer was\n"
+          "stopped. This is not allowed by the StackedTimer. This corner case\n"
+          "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
+          "assigned to a new timer. To disable this warning, either fix the\n"
+          "ordering of timer creation and destuction or disable the StackedTimer\n"
+          "support in the TimeMonitor by setting the StackedTimer to null\n"
+          "with:\n"
+          "Teuchos::TimeMonitor::setStackedTimer(Teuchos::null)\n"
+          "*********************************************************************\n";
+        std::cout << warning.str() << std::endl;
+        Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+      }
+#endif
+    }
   }
 
   void
@@ -928,6 +967,7 @@ namespace Teuchos {
 
     // Precision of floating-point numbers in the table.
     const int precision = format().precision();
+    const std::ios_base::fmtflags& flags = out.flags();
 
     // All columns of the table, in order.
     Array<TableColumn> tableColumns;
@@ -976,7 +1016,7 @@ namespace Teuchos {
         localTimings.push_back (it->second.first);
         localNumCalls.push_back (static_cast<double> (it->second.second));
       }
-      TableColumn timeAndCalls (localTimings, localNumCalls, precision, true);
+      TableColumn timeAndCalls (localTimings, localNumCalls, precision, flags, true);
       tableColumns.append (timeAndCalls);
       columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
     }
@@ -997,7 +1037,7 @@ namespace Teuchos {
         }
         // Print the table column.
         titles.append ("Global time (num calls)");
-        TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
+        TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, flags, true);
         tableColumns.append (timeAndCalls);
         columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
       }
@@ -1021,7 +1061,7 @@ namespace Teuchos {
           const std::string& statisticName = statNames[statInd];
           const std::string titleString = statisticName;
           titles.append (titleString);
-          TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
+          TableColumn timeAndCalls (statTimings, statCallCounts, precision, flags, true);
           tableColumns.append (timeAndCalls);
           columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
         }
@@ -1367,7 +1407,7 @@ namespace Teuchos {
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
-
+  
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
   {
@@ -1437,6 +1477,18 @@ namespace Teuchos {
     setStringToIntegralParameter<ECounterSetOp> (name, defaultValue, docString,
                                                  strings (), docs (), values (),
                                                  &plist);
+  }
+
+  void
+  TimeMonitor::setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t)
+  {
+    stackedTimer_ = t;
+  }
+
+  const Teuchos::RCP<Teuchos::StackedTimer>&
+  TimeMonitor::getStackedTimer()
+  {
+    return stackedTimer_;
   }
 
   RCP<const ParameterList>

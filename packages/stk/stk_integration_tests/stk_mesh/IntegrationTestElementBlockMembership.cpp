@@ -38,7 +38,7 @@ public:
 protected:
     void input_from_file(const std::string &meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        initialize_mesh();
+        reset_mesh();
         setup_empty_mesh(auraOption);
 
 #if defined(VERBOSE_OUTPUT)

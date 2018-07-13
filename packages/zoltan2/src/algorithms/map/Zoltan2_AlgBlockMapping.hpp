@@ -51,7 +51,7 @@
 #include <Zoltan2_Util.hpp>
 #include <Tpetra_Map.hpp>
 #include <set>
-
+#include <cmath>
 
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgBlockMapping.hpp
@@ -219,7 +219,7 @@ private:
 
   inline part_t firstPart(int rank) {
     // For contiguous part assignments, the first part assigned to rank
-    return (rank * nParts_Div_nRanks + min(rank, nParts_Mod_nRanks));
+    return (rank * nParts_Div_nRanks + std::min(rank, nParts_Mod_nRanks));
   }
 
   const int nRanks;            // Global number of ranks

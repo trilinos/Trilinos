@@ -130,6 +130,12 @@ namespace Sacado {
     static const bool value = S::is_static;
   };
 
+  //! Specialization of %StaticSize to Vector types
+  template <typename S>
+  struct StaticSize< MP::Vector<S> > {
+    static const unsigned value = S::static_size;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes

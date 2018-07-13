@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -36,29 +36,22 @@
 #include "Ioss_NodeBlock.h"      // for NodeBlock
 #include "Ioss_Property.h"       // for Property
 #include "Ioss_Region.h"         // for Region, etc
-#include <algorithm>             // for sort, remove, etc
-#include <iostream>              // for operator<<, cerr, etc
+#include <algorithm>             // for sort, unique
+#include <cstddef>               // for size_t
+#include <iostream>              // for operator<<, basic_ostream, etc
 #include <smart_assert.h>        // for SMART_ASSERT
-#include <stddef.h>              // for size_t
-#include <utility>               // for pair, make_pair
+#include <utility>               // for make_pair, pair
 
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
   {
     bool omitted = false;
-    if (block->property_exists("omitted"))
+    if (block->property_exists("omitted")) {
       omitted = (block->get_property("omitted").get_int() == 1);
+    }
     return omitted;
   }
-
-  template <typename T> void uniqify(std::vector<T> &map)
-  {
-    std::sort(map.begin(), map.end());
-    map.erase(std::unique(map.begin(), map.end()), map.end());
-    // shrink-to-fit...
-    std::vector<T>(map).swap(map);
-  }
-}
+} // namespace
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
@@ -106,7 +99,7 @@ template void eliminate_omitted_nodes(RegionVector &        part_mesh,
                                       std::vector<int64_t> &local_node_map);
 
 template <typename INT>
-void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
+void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
                             std::vector<INT> &global_node_map, std::vector<INT> &local_node_map)
 {
   // Instead of using <set> and <map>, consider using a sorted vector...
@@ -156,7 +149,7 @@ void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
   }
 
   // Now, sort the global_node_map array and remove duplicates...
-  uniqify(global_node_map);
+  Ioss::Utils::uniquify(global_node_map);
 
   // If any omitted nodes, remove them from the global_node_map.
   // The id will be 0
@@ -308,8 +301,9 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
 
         for (INT j = 0; j < num_elem; j++) {
           INT gpos = local_element_map[offset + j];
-          if (gpos >= 0)
+          if (gpos >= 0) {
             global_element_map[gpos] = part_ids[j];
+          }
         }
       }
       offset += num_elem;

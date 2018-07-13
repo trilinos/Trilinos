@@ -41,33 +41,31 @@
 // @HEADER
 */
 
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+// This test came about because of differences between openmpi and mpich
+// implementations. Tpetra had hard coded an openmpi specific flag, causing
+// crashes with mpich in some specific situations. See
+// https://software.sandia.gov/bugzilla/show_bug.cgi?id=6069
 
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_TestingUtilities.hpp>
 
-typedef double scalar_type;
-typedef int local_ordinal_type;
-//typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
-typedef int global_ordinal_type;     //<<<<<<<<   valgrind complains
+// typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
+// typedef int global_ordinal_type;   //<<<<<<<<   valgrind complains
 
+namespace { // anonymous
+
+template <class GO>
 void
-GetNeighboursCartesian2d (const global_ordinal_type i,
-                          const global_ordinal_type nx,
-                          const global_ordinal_type ny,
-                          global_ordinal_type& left,
-                          global_ordinal_type& right,
-                          global_ordinal_type& lower,
-                          global_ordinal_type& upper)
+GetNeighboursCartesian2d (const GO i, const GO nx, const GO ny,
+                          GO& left, GO& right, GO& lower, GO& upper)
 {
-  global_ordinal_type ix, iy;
+  GO ix, iy;
   ix = i % nx;
   iy = (i - ix) / nx;
 
@@ -81,30 +79,43 @@ GetNeighboursCartesian2d (const global_ordinal_type i,
   else              upper = i + nx;
 }
 
-int
-main (int argc, char *argv[])
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_2, SC, LO, GO, NT)
 {
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
-  // global_size_t: Tpetra defines this unsigned integer type big
-  // enough to hold any global dimension or amount of data.
-  typedef Tpetra::global_size_t GST;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Comm;
+  using Teuchos::FancyOStream;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> MatrixType;
+  typedef Tpetra::Map<LO, GO, NT> MapType;
+
+  // global_size_t: Tpetra defines this unsigned integer type big
+  // enough to hold any global dimension or amount of data.
+  typedef Tpetra::global_size_t GST;
+
+  RCP<const Comm<int> > comm = getDefaultComm();
   const size_t myRank = comm->getRank ();
+  const size_t numProc = comm->getSize ();
 
-  // global_ordinal_type nx=10, ny=10;
-  // scalar_type a=4,b=-1,c=-1,d=-1,e=-1;
+  if (numProc != 2) {
+    out << "This test must be run with exactly 2 MPI processes, but you ran "
+        << "it with " << numProc << " process" << (numProc != 1 ? "es" : "")
+        << "." << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "This test must be run with exactly "
+                               "2 MPI processes, but you ran it with "
+                               << numProc << " process"
+                               << (numProc != 1 ? "es" : "") << ".");
+  }
 
-  Array<global_ordinal_type> myElts;
+  // GO nx=10, ny=10;
+  // SC a=4,b=-1,c=-1,d=-1,e=-1;
+
+  Array<GO> myElts;
 
   switch (myRank) {
   case 0:
@@ -118,12 +129,10 @@ main (int argc, char *argv[])
   }
 
   const GST GST_INV = Teuchos::OrdinalTraits<GST>::invalid ();
-  const global_ordinal_type indexBase = 0;
-  RCP<const map_type> map =
-    rcp (new map_type (GST_INV, myElts (), indexBase, comm));
+  const GO indexBase = 0;
+  RCP<const MapType> map = rcp (new MapType (GST_INV, myElts (), indexBase, comm));
 
-  RCP<Teuchos::FancyOStream> fos =
-    Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  RCP<FancyOStream> fos = Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
   fos->setOutputToRootOnly (-1);
   map->describe (*fos, Teuchos::VERB_EXTREME);
 
@@ -142,16 +151,16 @@ main (int argc, char *argv[])
   fos->setOutputToRootOnly (0);
   *fos << std::endl << "Creating the sparse matrix" << std::endl;
 
-  const local_ordinal_type nnz = 4;
-  RCP<mat_type> A = rcp (new mat_type (map, nnz));
+  const LO nnz = 4;
+  RCP<MatrixType> A = rcp (new MatrixType (map, nnz));
 
-  ArrayView<const global_ordinal_type> myGlobalElements =
+  ArrayView<const GO> myGlobalElements =
     map->getNodeElementList ();
 
-  // global_ordinal_type center, left, right, lower, upper;
+  // GO center, left, right, lower, upper;
 
-  Teuchos::Array<scalar_type> vals (nnz);
-  Teuchos::Array<global_ordinal_type> inds (nnz);
+  Teuchos::Array<SC> vals (nnz);
+  Teuchos::Array<GO> inds (nnz);
   for (int i = 0; i < nnz; ++i) {
     inds[i] = i;
     vals[i] = 1.0;
@@ -184,10 +193,13 @@ main (int argc, char *argv[])
   // Make sure that all processes finished fillComplete, before
   // reporting success.
   comm->barrier ();
-  if (comm->getRank () == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
-    return EXIT_SUCCESS;
-  }
 }
 
+#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, Bug6069_2, SC, LO, GO, NT)
 
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_SC_LO_GO_NO)
+
+} // anonymous

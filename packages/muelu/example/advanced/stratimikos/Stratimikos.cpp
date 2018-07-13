@@ -63,7 +63,9 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra includes
+#ifdef HAVE_MUELU_EPETRA
 #include <Epetra_Vector.h>
+#endif
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
@@ -84,8 +86,25 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
+
+// Main wrappers struct
+// Because C++ doesn't support partial template specialization of functions.
+// By default, return success
+template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+struct MainWrappers {
+static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
+};
+
+
+// Partial template specialization on SC=std::complex<double>
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+struct MainWrappers<std::complex<double>,LocalOrdinal,GlobalOrdinal,Node> {
+  static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
+};
+
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;
@@ -180,125 +199,114 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 }
 
 
-int main(int argc, char* argv[]) {
+// Partial template specialization on SC=std::complex<double>
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+int MainWrappers<std::complex<double>,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+  typedef std::complex<double> Scalar;
+#include <MueLu_UseShortNames.hpp>
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  //
+  // MPI initialization
+  //
+
   bool success = false;
   bool verbose = true;
-
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
-    Xpetra::Parameters xpetraParameters(clp);
+    //
+    // Parameters
+    //
 
-    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+    Galeri::Xpetra::Parameters<GlobalOrdinal> matrixParameters(clp, 256); // manage parameters of the test case
 
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    std::string xmlFileName = "stratimikos_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'stratimikos_ParameterList.xml'.");
+
+    switch (clp.parse(argc,argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+    // Read in parameter list
+    Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
+    //
+    // Construct the problem
+    //
+    RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<CrsMatrixWrap> A = Pr->BuildMatrix();
+
+    RCP<Vector> X = VectorFactory::Build(map);
+    RCP<Vector> B = VectorFactory::Build(map);
+
+    {
+      // we set seed for reproducibility
+      Utilities::SetRandomSeed(*comm);
+      X->randomize();
+      A->apply(*X, *B, Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::zero());
+
+      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
+      B->norm2(norms);
+      B->scale(Teuchos::ScalarTraits<Scalar>::one()/norms[0]);
+      X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
     }
 
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    //
+    // Build Thyra linear algebra objects
+    //
 
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#  else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#  endif
-#endif
-      } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(A->getCrsMatrix());
 
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
-#endif
-      } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+    RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(X));
+    RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B);
 
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  else
-#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
-#endif
-      } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+    //
+    // Build Stratimikos solver
+    //
 
-#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  else
-#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_INT)
-        return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG)
-        return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#    else
-        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
-#    endif
-#  endif
-#else
-        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
-#endif
-      } else {
-        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
-      }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
+    // Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
+    // Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    // linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
+
+    // // Build a new "solver factory" according to the previously specified parameter list.
+    // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+
+    // // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
+    // Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+
+    // //
+    // // Solve Ax = b.
+    // //
+
+    // Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+    // std::cout << status << std::endl;
+
+    // success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+    success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
+
+template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+  return MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(clp, lib, argc, argv);
+}
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

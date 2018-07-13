@@ -108,7 +108,7 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     of the initial residual.  The least costly form of the 2-norm depends on the chosen iterative
     method.  Most Krylov methods produce the preconditioned residual std::vector in a form that would be
     exact in infinite precision arithmetic.  This std::vector may be different from the true residual
-    either because left scaling or preconditioning was used, or because round-off error has
+    either because left preconditioning was used, or because round-off error has
     introduced significant error, or both.
 
     You can also state the number of vectors that must pass the convergence criteria before the

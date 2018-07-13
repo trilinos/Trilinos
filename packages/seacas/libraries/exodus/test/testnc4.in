@@ -1,6 +1,6 @@
-# Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-# retains certain rights in this software.
+# Copyright (c) 2005 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.  
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
+#     * Neither the name of NTESS nor the names of its
 #       contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
 # 
@@ -44,14 +44,9 @@ SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
 DIFF="diff -w"
 
-echo "************************************************************************"
-echo "************************************************************************"
 rm -f test.output
 echo "testwt-compress - verify can create compressed netcdf-4 files..."
 echo "begin testwt-compress" >> test.output
 ${PREFIX} ${BINDIR}/testwt-compress${SUFFIX} >> test.output
 echo "end testwt-compress" >> test.output
 ${NCDUMP} -h -s test-compress.exo | grep Deflate | ${DIFF} - ${SRCDIR}/test-compress.dmp | tee test-compress.res
-
-echo "************************************************************************"
-echo "************************************************************************"

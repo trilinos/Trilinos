@@ -67,14 +67,14 @@ private:
   const int dimension_;
 
 public:
-  AtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
-             const Teuchos::RCP<BatchManager<Real> > &bman,
+  AtomVector(const ROL::Ptr<std::vector<Real> > &vec,
+             const ROL::Ptr<BatchManager<Real> > &bman,
              const int numMySamples, const int dimension)
     : BatchStdVector<Real>(vec,bman),
       numMySamples_(numMySamples), dimension_(dimension) {}
 
-  Teuchos::RCP<const std::vector<Real> > getAtom(const int i) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+  ROL::Ptr<const std::vector<Real> > getAtom(const int i) const {
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
       ">>> ERROR (ROL::AtomVector): index out of bounds in getAtom!");
     uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
     std::vector<Real> pt(dim,0);
@@ -82,11 +82,11 @@ public:
     for (uint j = 0; j < dim; ++j) {
       pt[j] = yval[I*dim + j];
     }
-    return Teuchos::rcp(new std::vector<Real>(pt));
+    return ROL::makePtr<std::vector<Real>>(pt);
   }
 
   void setAtom(const int i, const std::vector<Real> &pt) {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
       ">>> ERROR (ROL::AtomVector): index out of bounds in setAtom!");
     uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
     std::vector<Real> &yval = *(StdVector<Real>::getVector());
@@ -108,23 +108,23 @@ template<class Real>
 class PrimalAtomVector : public AtomVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const Teuchos::RCP<std::vector<Real> > scale_;
-  mutable Teuchos::RCP<DualAtomVector<Real> > dual_vec_;
+  const ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<DualAtomVector<Real> > dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  PrimalAtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                   const Teuchos::RCP<BatchManager<Real> > &bman,
+  PrimalAtomVector(const ROL::Ptr<std::vector<Real> > &vec,
+                   const ROL::Ptr<BatchManager<Real> > &bman,
                    const int numMySamples, const int dimension,
-                   const Teuchos::RCP<std::vector<Real> > &scale)
+                   const ROL::Ptr<std::vector<Real> > &scale)
     : AtomVector<Real>(vec,bman,numMySamples,dimension),
       scale_(scale), isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
+    const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint ysize = yval.size();
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     uint index        = 0;
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
@@ -141,23 +141,23 @@ public:
     return sum_val;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
     uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
-    return Teuchos::rcp(new PrimalAtomVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+    return ROL::makePtr<PrimalAtomVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples*dimension),
                         BatchStdVector<Real>::getBatchManager(),
-                        numMySamples,dimension,scale_));
+                        numMySamples,dimension,scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
     uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
     if ( !isDualInitialized_ ) {
-      dual_vec_ = Teuchos::rcp(new DualAtomVector<Real>(
-                  Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+      dual_vec_ = ROL::makePtr<DualAtomVector<Real>>(
+                  ROL::makePtr<std::vector<Real>>(numMySamples*dimension),
                                BatchStdVector<Real>::getBatchManager(),
-                               numMySamples,dimension,scale_));
+                               numMySamples,dimension,scale_);
       isDualInitialized_ = true;
     }
     uint index = 0;
@@ -176,23 +176,23 @@ template<class Real>
 class DualAtomVector : public AtomVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const Teuchos::RCP<std::vector<Real> > scale_;
-  mutable Teuchos::RCP<PrimalAtomVector<Real> > primal_vec_;
+  const ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<PrimalAtomVector<Real> > primal_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  DualAtomVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                 const Teuchos::RCP<BatchManager<Real> > &bman,
+  DualAtomVector(const ROL::Ptr<std::vector<Real> > &vec,
+                 const ROL::Ptr<BatchManager<Real> > &bman,
                  const int numMySamples, const int dimension,
-                 const Teuchos::RCP<std::vector<Real> > &scale)
+                 const ROL::Ptr<std::vector<Real> > &scale)
     : AtomVector<Real>(vec,bman,numMySamples,dimension),
       scale_(scale), isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
+    const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint ysize = yval.size();
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     uint index        = 0;
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
@@ -209,23 +209,23 @@ public:
     return sum_val;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
     uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
-    return Teuchos::rcp(new DualAtomVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+    return ROL::makePtr<DualAtomVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples*dimension),
                         BatchStdVector<Real>::getBatchManager(),
-                        numMySamples,dimension,scale_));
+                        numMySamples,dimension,scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
     uint dimension    = static_cast<uint>(AtomVector<Real>::getDimension());
     if ( !isDualInitialized_ ) {
-      primal_vec_ = Teuchos::rcp(new PrimalAtomVector<Real>(
-                    Teuchos::rcp(new std::vector<Real>(numMySamples*dimension)),
+      primal_vec_ = ROL::makePtr<PrimalAtomVector<Real>>(
+                    ROL::makePtr<std::vector<Real>>(numMySamples*dimension),
                                BatchStdVector<Real>::getBatchManager(),
-                               numMySamples,dimension,scale_));
+                               numMySamples,dimension,scale_);
       isDualInitialized_ = true;
     }
     uint index = 0;

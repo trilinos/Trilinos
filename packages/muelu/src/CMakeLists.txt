@@ -23,6 +23,10 @@ SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${DIR})
 INCLUDE_DIRECTORIES(${DIR}/Graph)
 INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
@@ -33,20 +37,21 @@ INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
-ENDIF()
+INCLUDE_DIRECTORIES(${DIR}/Transfers/BlackBox)
+INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
 if (${PACKAGE_NAME}_ENABLE_Epetra)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
 ENDIF()
@@ -57,7 +62,9 @@ if (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 
-
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
+ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
@@ -335,10 +342,8 @@ APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
 
-# Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(HEADERS_INTERFACE "")
-APPEND_GLOB(HEADERS_INTERFACE Interface//*.hpp)
+APPEND_GLOB(HEADERS_INTERFACE Interface/*.hpp)
 APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
 LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
@@ -353,9 +358,11 @@ APPEND_GLOB(SOURCES */*.cpp)
 #APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
+APPEND_GLOB(SOURCES Transfers/BlackBox/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
+APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
@@ -373,6 +380,10 @@ APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 # TODO: make a loop
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/HybridAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/coupled NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/uncoupled NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
@@ -383,22 +394,25 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Rebalancing NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers/BlockedSmoothers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BaseClass NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlackBox NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlockedTransfers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Generic NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/GeneralGeometric NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Geometric-Interpolation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Petrov-Galerkin-SA NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/xpetra NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 ENDIF()
-
-INCLUDE_DIRECTORIES(${BDIR}/)
-APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
+ENDIF()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
@@ -406,10 +420,12 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
+INCLUDE_DIRECTORIES(${BDIR}/)
+APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
+
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(SOURCES_INTERFACE "")
-APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
+APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
@@ -444,6 +460,14 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

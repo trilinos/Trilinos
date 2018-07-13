@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -42,11 +42,11 @@
 
 namespace Ioss {
   class VariableType;
-}
+} // namespace Ioss
 
 namespace Ioss {
-  typedef std::map<std::string, VariableType *, std::less<std::string>> VariableTypeMap;
-  typedef VariableTypeMap::value_type VTM_ValuePair;
+  using VariableTypeMap = std::map<std::string, VariableType *, std::less<std::string>>;
+  using VTM_ValuePair   = VariableTypeMap::value_type;
 
   class Registry
   {
@@ -67,25 +67,25 @@ namespace Ioss {
 #define MAX_SUFFIX 8
   struct Suffix
   {
-    Suffix(const char new_data[MAX_SUFFIX])
+    explicit Suffix(const char new_data[MAX_SUFFIX])
     {
-      std::strncpy(data, new_data, MAX_SUFFIX);
-      data[MAX_SUFFIX] = '\0';
+      std::strncpy(m_data, new_data, MAX_SUFFIX);
+      m_data[MAX_SUFFIX] = '\0';
     }
-    Suffix(const std::string &new_data)
+    explicit Suffix(const std::string &new_data)
     {
-      std::strncpy(data, new_data.c_str(), MAX_SUFFIX);
-      data[MAX_SUFFIX] = '\0';
+      std::strncpy(m_data, new_data.c_str(), MAX_SUFFIX);
+      m_data[MAX_SUFFIX] = '\0';
     }
     bool operator==(const std::string &str) const
     {
-      return std::strncmp(data, str.c_str(), MAX_SUFFIX) == 0;
+      return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) == 0;
     }
     bool operator!=(const std::string &str) const
     {
-      return std::strncmp(data, str.c_str(), MAX_SUFFIX) != 0;
+      return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) != 0;
     }
-    char data[MAX_SUFFIX + 1];
+    char m_data[MAX_SUFFIX + 1]{};
   };
 
   /** \brief A generic variable type
@@ -95,8 +95,8 @@ namespace Ioss {
   public:
     static void alias(const std::string &base, const std::string &syn);
     static int describe(NameList *names);
-    static bool create_named_suffix_field_type(const std::string &       type_name,
-                                               std::vector<std::string> &suffices);
+    static bool create_named_suffix_field_type(const std::string &             type_name,
+                                               const std::vector<std::string> &suffices);
     static bool get_field_type_mapping(const std::string &field, std::string *type);
     static bool add_field_type_mapping(const std::string &raw_field, const std::string &raw_type);
 
@@ -110,9 +110,8 @@ namespace Ioss {
     std::string name() const;
 
     static std::string numeric_label(int which, int ncomp, const std::string &name);
-    virtual std::string label(int which, const char suffix_sep = '_') const = 0;
-    virtual std::string label_name(const std::string &base, int which,
-                                   const char suffix_sep = '_') const;
+    virtual std::string label(int which, char suffix_sep = '_') const = 0;
+    virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_') const;
     virtual bool match(const std::vector<Suffix> &suffices) const;
 
     static const VariableType *factory(const std::string &raw_name, int copies = 1);
@@ -131,7 +130,7 @@ namespace Ioss {
 
     static bool build_variable_type(const std::string &raw_type);
   };
-}
+} // namespace Ioss
 inline std::string Ioss::VariableType::name() const { return name_; }
 
 inline int Ioss::VariableType::component_count() const { return componentCount; }

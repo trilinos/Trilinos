@@ -48,6 +48,7 @@
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_Factory_Defines.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
 
@@ -86,8 +87,62 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
 
     // build the setup data using passed in information
-    Traits::SetupData setupData;
-    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
+    Traits::SD setupData;
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    setupData.worksets_ = wkstContainer.getWorksets(wd);
+    setupData.orientations_ = wkstContainer.getOrientations();
+
+    fm->postRegistrationSetup(setupData);
+    phx_ic_field_managers[blockId] = fm;
+    
+    if (write_graphviz_file)
+      fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
+  }
+}
+
+void 
+setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
+                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                                   const Teuchos::ParameterList& closure_models,
+                                   const Teuchos::ParameterList& ic_block_closure_models,
+                                   const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
+                                   const Teuchos::ParameterList& user_data,
+                                   const bool write_graphviz_file,
+                                   const std::string& graphviz_file_prefix,
+                                   std::map< std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
+{
+  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
+  for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
+    Teuchos::RCP<panzer::PhysicsBlock> pb = *blkItr;
+    std::string blockId = pb->elementBlockID();
+
+    // build a field manager object
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+          = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
+    
+    // Choose model sublist for this element block
+    std::string closure_model_name = "";
+    if (ic_block_closure_models.isSublist(blockId))
+      closure_model_name = blockId;
+    else if (ic_block_closure_models.isSublist("Default"))
+      closure_model_name = "Default";
+    else 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId 
+                                                      << "\".  You must provide an initial condition for each element block or set a default!" 
+                                                      << ic_block_closure_models);
+
+    // build and register all closure models
+    pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+     
+    // use the physics block to register evaluators
+    pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
+
+    // build the setup data using passed in information
+    Traits::SD setupData;
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    setupData.worksets_ = wkstContainer.getWorksets(wd);
+    setupData.orientations_ = wkstContainer.getOrientations();
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -105,7 +160,7 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
                          const double time_stamp)
 {
   typedef LinearObjContainer LOC;
-  panzer::Traits::PreEvalData ped;
+  panzer::Traits::PED ped;
 
   // allocate a ghosted container for the initial condition
   Teuchos::RCP<LOC> ghostedloc = lo_factory.buildGhostedLinearObjContainer();
@@ -119,8 +174,8 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
   lo_factory.initializeGhostedContainer(LOC::F,*localCounter); // store counter in F
   localCounter->initialize();
 
-  ped.gedc.addDataObject("Residual Scatter Container",ghostedloc);
-  ped.gedc.addDataObject("Dirichlet Counter",localCounter);
+  ped.gedc->addDataObject("Residual Scatter Container",ghostedloc);
+  ped.gedc->addDataObject("Dirichlet Counter",localCounter);
   ped.first_sensitivities_name = "";
 
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
@@ -131,7 +186,8 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
     fm->preEvaluate<panzer::Traits::Residual>(ped);
 
     // Loop over worksets in this element block
-    std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);
+    const WorksetDescriptor wd = blockDescriptor(blockId);
+    std::vector<panzer::Workset>& w = *wkstContainer.getWorksets(wd);
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
       
@@ -196,9 +252,9 @@ public:
     
    /** The specific evaluators are registered with the field manager argument.
      */
-   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<Traits>& fm,
-                                              const FieldLibrary& field_library,
-                                              const Teuchos::ParameterList& user_data) const {}
+   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<Traits>& /* fm */,
+                                              const FieldLibrary& /* field_library */,
+                                              const Teuchos::ParameterList& /* user_data */) const {}
 
 };
 
@@ -241,7 +297,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
   this->setupDOFs();
 }
 
-PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("IC", EquationSet_IC, EquationSet_IC)
+PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(EquationSet_IC, EquationSet_IC)
 
 // A user written factory that creates each equation set.  The key member here
 // is buildEquationSet
@@ -261,7 +317,7 @@ public:
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
          
       // macro checks if(ies.name=="Poisson") then an EquationSet_Energy object is constructed
-      PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC, EquationSet_IC)
+      PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC)
          
       // make sure your equation set has been found
       if(!found) {

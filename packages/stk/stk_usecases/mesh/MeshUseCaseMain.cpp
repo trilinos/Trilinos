@@ -34,8 +34,8 @@
 #include <iostream>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 #include <mesh/MeshUseCase_1.hpp>
 #include <mesh/MeshUseCase_2.hpp>
@@ -72,9 +72,7 @@ main(
 
   stk::get_options_description().add(desc);
 
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-
-  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+  stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
 
   bool status = true;
 
@@ -197,6 +195,7 @@ main(
 
   }
 
-  bool collective_result = use_case::print_status(parallel_machine, status);
+  bool collective_result = stk::is_true_on_all_procs(parallel_machine, status);
+  stk::parallel_machine_finalize();
   return collective_result ? 0 : -1;
 }

@@ -47,8 +47,10 @@
 
 #define USE_HESSVEC 0
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_Step.hpp"
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 
 #include <iostream>
 
@@ -60,18 +62,20 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-  Teuchos::RCP<ROL::Vector<RealT> > x0, x;
-  Teuchos::RCP<ROL::Objective<RealT> > obj;
-  Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd;
-  ROL::getTestObjectives<RealT>(obj,bnd,x0,x,ROL::TESTOPTPROBLEM_HS1);
+  ROL::Ptr<ROL::Vector<RealT> > x0;
+  std::vector<ROL::Ptr<ROL::Vector<RealT> > > x;
+  ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+  ROL::GetTestProblem<RealT>(problem,x0,x,ROL::TESTOPTPROBLEM_HS1);
+  ROL::Ptr<ROL::Objective<RealT> > obj = problem->getObjective();
+  ROL::Ptr<ROL::BoundConstraint<RealT> > bnd = problem->getBoundConstraint();
   ROL::AlgorithmState<RealT> algo_state;
 
   // *** Test body.
@@ -79,14 +83,14 @@ int main(int argc, char *argv[]) {
   int thrown = 0;
   try {
     try {
-      step.compute(*x0,*x,*obj,*bnd,algo_state);
+      step.compute(*x0,*x[0],*obj,*bnd,algo_state);
     }
     catch (ROL::Exception::NotImplemented exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
-      step.update(*x0,*x,*obj,*bnd,algo_state);
+      step.update(*x0,*x[0],*obj,*bnd,algo_state);
     }
     catch (ROL::Exception::NotImplemented exc) {
       *outStream << exc.what() << std::endl;

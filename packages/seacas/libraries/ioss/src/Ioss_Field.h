@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,19 +33,14 @@
 #ifndef IOSS_Ioss_Field_h
 #define IOSS_Ioss_Field_h
 
-#include <stddef.h> // for size_t
-#include <string>   // for string
-#include <vector>   // for vector
+#include <Ioss_CodeTypes.h>
+#include <cstddef> // for size_t
+#include <string>  // for string
+#include <vector>  // for vector
 namespace Ioss {
-  class Transform;
-}
-namespace Ioss {
-  class VariableType;
-}
-
-namespace Ioss {
-
   class GroupingEntity;
+  class Transform;
+  class VariableType;
 
   /** \brief Holds metadata for bulk data associated with a GroupingEntity.
    */
@@ -65,6 +60,13 @@ namespace Ioss {
       STRING,
       CHARACTER
     };
+
+    static Ioss::Field::BasicType get_field_type(char /*dummy*/) { return CHARACTER; }
+    static Ioss::Field::BasicType get_field_type(double /*dummy*/) { return DOUBLE; }
+    static Ioss::Field::BasicType get_field_type(int /*dummy*/) { return INTEGER; }
+    static Ioss::Field::BasicType get_field_type(int64_t /*dummy*/) { return INT64; }
+    static Ioss::Field::BasicType get_field_type(Complex /*dummy*/) { return COMPLEX; }
+    static Ioss::Field::BasicType get_field_type(std::string /*dummy*/) { return STRING; }
 
     /* \brief Categorizes the type of information held in the field.
      */
@@ -97,13 +99,13 @@ namespace Ioss {
     // Create a field named 'name' that contains values of type 'type'
     // in a storage format of type 'storage'.  There are 'value_count'
     // items in the field.
-    Field(std::string name, const BasicType type, const std::string &storage, const RoleType role,
+    Field(std::string name, BasicType type, const std::string &storage, RoleType role,
           size_t value_count, size_t index = 0);
 
-    Field(std::string name, const BasicType type, const std::string &storage, int copies,
-          const RoleType role, size_t value_count, size_t index = 0);
+    Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
+          size_t value_count, size_t index = 0);
 
-    Field(std::string name, const BasicType type, const VariableType *storage, const RoleType role,
+    Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count, size_t index = 0);
 
     // Create a field from another field.
@@ -159,22 +161,23 @@ namespace Ioss {
 
     bool add_transform(Transform *my_transform);
     bool transform(void *data);
+    bool has_transform() const { return !transforms_.empty(); }
 
   private:
     std::string name_;
 
-    size_t         rawCount_;   // Count of items in field before transformation
-    size_t         transCount_; // Count of items in field after transformed
-    size_t         size_;       // maximum data size (in bytes) required to hold entire field
-    mutable size_t index_; // Optional flag that can be used by a client to indicate an ordering.
-                           // Unused by field itself.
+    size_t         rawCount_{};   // Count of items in field before transformation
+    size_t         transCount_{}; // Count of items in field after transformed
+    size_t         size_{};       // maximum data size (in bytes) required to hold entire field
+    mutable size_t index_{}; // Optional flag that can be used by a client to indicate an ordering.
+                             // Unused by field itself.
     BasicType type_;
     RoleType  role_;
 
-    const VariableType *rawStorage_;   // Storage type of raw field
-    const VariableType *transStorage_; // Storage type after transformation
+    const VariableType *rawStorage_{};   // Storage type of raw field
+    const VariableType *transStorage_{}; // Storage type after transformation
 
     std::vector<Transform *> transforms_;
   };
-}
+} // namespace Ioss
 #endif

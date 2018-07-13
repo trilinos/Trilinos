@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -32,15 +32,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "exodusII.h"     // for ex_get_block_param, etc
-#include "exodusII_int.h" // for EX_NOERR
-#include <stddef.h>       // for size_t
+#include "exodusII.h" // for EX_NOERR, etc
+#include "exodusII_int.h"
+#include <stddef.h> // for size_t
 
 /*!
  * Reads the parameters describing element/face/edge blocks
  * \param   exoid                   exodus file id
  * \param   block_count             number of blocks being queried
- * \param   block                   array of ex_block structures describing
+ * \param   blocks                  array of ex_block structures describing
  * block counts
  *
  * the id and type fields of the block(s) must be defined to specify which
@@ -51,11 +51,12 @@
 int ex_get_block_params(int exoid, size_t block_count, struct ex_block **blocks)
 {
   size_t i;
+  EX_FUNC_ENTER();
   for (i = 0; i < block_count; i++) {
     int status = ex_get_block_param(exoid, blocks[i]);
     if (status != EX_NOERR) {
-      return status;
+      EX_FUNC_LEAVE(status);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

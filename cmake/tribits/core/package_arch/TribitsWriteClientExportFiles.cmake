@@ -124,7 +124,7 @@ ENDFUNCTION()
 # Usage::
 #
 #   TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
-#     PACKAGE_NAME <pakageName>
+#     PACKAGE_NAME <packageName>
 #     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
 #     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
 #     [WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>]
@@ -134,7 +134,7 @@ ENDFUNCTION()
 #
 # The arguments are:
 #
-#   ``PACKAGE_NAME <pakageName>``
+#   ``PACKAGE_NAME <packageName>``
 #
 #     Gives the name of the TriBITS package for which the export files should
 #     be created.
@@ -143,7 +143,7 @@ ENDFUNCTION()
 #
 #     If specified, then all of the variables in the generated export files
 #     will be prefixed with ``<exportFileVarPrefix>_`` instead of
-#     ``<pakageName>_``.
+#     ``<packageName>_``.
 #
 #   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
 #
@@ -195,15 +195,19 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
   # A) Process the command-line arguments
   #
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "PACKAGE_NAME;WRITE_CMAKE_CONFIG_FILE;WRITE_EXPORT_MAKEFILE;EXPORT_FILE_VAR_PREFIX"
      #options
      "WRITE_INSTALL_CMAKE_CONFIG_FILE;WRITE_INSTALL_EXPORT_MAKEFILE"
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "PACKAGE_NAME;WRITE_CMAKE_CONFIG_FILE;WRITE_EXPORT_MAKEFILE;EXPORT_FILE_VAR_PREFIX"
      ${ARGN}
      )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES)
     MESSAGE(SEND_ERROR "Error: Can't generate export depenency files because"
@@ -658,6 +662,9 @@ ENDFUNCTION()
 #
 # Write the outer TriBITS project configure and/or export makefiles
 #
+# If ${PROJECT_NAME}_VERSION is not set or is '' on input, then it will be set
+# to 0.0.0 in order to create the ${PROJECT_NAME}ConfigVersion.cmake file.
+#
 # ToDo: Finish documentation!
 #
 
@@ -669,8 +676,9 @@ FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES)
   # Reversing the package list so that libraries will be produced in order of
   # most dependent to least dependent.
   SET(PACKAGE_LIST ${${PROJECT_NAME}_SE_PACKAGES})
-  LIST(REVERSE PACKAGE_LIST)
-
+  IF (PACKAGE_LIST)
+    LIST(REVERSE PACKAGE_LIST)
+  ENDIF()
 
   # Loop over all packages to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
@@ -691,8 +699,10 @@ FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES)
 
   # Reversing the tpl list so that the list of tpls will be produced in
   # order of most dependent to least dependent.
-  SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
-  LIST(REVERSE TPL_LIST)
+  IF (${PROJECT_NAME}_TPLS)
+    SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
+    LIST(REVERSE TPL_LIST)
+  ENDIF()
 
   # Loop over all TPLs to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
@@ -908,6 +918,9 @@ include(\"\${CMAKE_CURRENT_LIST_DIR}/../${TRIBITS_PACKAGE}/${TRIBITS_PACKAGE}Con
   # Configure the version file for ${PROJECT_NAME}
   #
   INCLUDE(CMakePackageConfigHelpers)
+  IF ("${${PROJECT_NAME}_VERSION}"  STREQUAL  "")
+    SET(${PROJECT_NAME}_VERSION  0.0.0)
+  ENDIF()
   WRITE_BASIC_PACKAGE_VERSION_FILE(
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${${PROJECT_NAME}_VERSION}

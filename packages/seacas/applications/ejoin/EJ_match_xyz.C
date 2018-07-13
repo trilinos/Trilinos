@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,19 +29,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "EJ_index_sort.h" // for index_coord_sort
-#include "EJ_mapping.h"    // for eliminate_omitted_nodes
-#include "EJ_match_xyz.h"
+#include "EJ_CodeTypes.h"
+#include "EJ_index_sort.h"  // for index_coord_sort
+#include "EJ_mapping.h"     // for eliminate_omitted_nodes
 #include "EJ_vector3d.h"    // for vector3d
 #include "Ioss_NodeBlock.h" // for NodeBlock
 #include "Ioss_Property.h"  // for Property
 #include "Ioss_Region.h"    // for Region, NodeBlockContainer
 #include "smart_assert.h"   // for SMART_ASSERT
 #include <algorithm>        // for max, min
-#include <cmath>            // for fabs
-#include <float.h>          // for FLT_MAX
+#include <cfloat>           // for FLT_MAX
+#include <cstddef>          // for size_t
 #include <iostream>         // for operator<<, cout, ostream, etc
-#include <stddef.h>         // for size_t
 
 namespace {
   template <typename INT>
@@ -52,10 +51,12 @@ namespace {
   double max3(double x, double y, double z)
   {
     double max = x;
-    if (y > max)
+    if (y > max) {
       max = y;
-    if (z > max)
+    }
+    if (z > max) {
       max = z;
+    }
     return max;
   }
 
@@ -65,19 +66,25 @@ namespace {
       min.set(coord[0], coord[1], coord[2]);
       max = min;
       for (size_t i = 3; i < coord.size(); i += 3) {
-        if (min.x > coord[i + 0])
+        if (min.x > coord[i + 0]) {
           min.x = coord[i + 0];
-        if (min.y > coord[i + 1])
+        }
+        if (min.y > coord[i + 1]) {
           min.y = coord[i + 1];
-        if (min.z > coord[i + 2])
+        }
+        if (min.z > coord[i + 2]) {
           min.z = coord[i + 2];
+        }
 
-        if (max.x < coord[i + 0])
+        if (max.x < coord[i + 0]) {
           max.x = coord[i + 0];
-        if (max.y < coord[i + 1])
+        }
+        if (max.y < coord[i + 1]) {
           max.y = coord[i + 1];
-        if (max.z < coord[i + 2])
+        }
+        if (max.z < coord[i + 2]) {
           max.z = coord[i + 2];
+        }
       }
     }
     else {
@@ -99,7 +106,7 @@ namespace {
       }
     }
   }
-}
+} // namespace
 
 template <typename INT>
 void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> &global_node_map,
@@ -127,8 +134,9 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
     // call to 'eliminate_omitted_nodes'.  We need all non-omitted
     // nodes to have local_node_map[i] == i.
     for (size_t i = 0; i < local_node_map.size(); i++) {
-      if (local_node_map[i] >= 0)
+      if (local_node_map[i] >= 0) {
         local_node_map[i] = i;
+      }
     }
   }
 
@@ -170,11 +178,13 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
       int    XYZ = X;
       delta[XYZ] = max.x - min.x;
       delta[Y]   = max.y - min.y;
-      if (delta[Y] > delta[XYZ])
-        XYZ    = Y;
+      if (delta[Y] > delta[XYZ]) {
+        XYZ = Y;
+      }
       delta[Z] = max.z - min.z;
-      if (delta[Z] > delta[XYZ])
+      if (delta[Z] > delta[XYZ]) {
         XYZ = Z;
+      }
 
       double epsilon = (delta[X] + delta[Y] + delta[Z]) / 1.0e3;
       if (epsilon < 0.0) {
@@ -185,8 +195,9 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
       min -= epsilon;
       max += epsilon;
 
-      if (tolerance >= 0.0)
+      if (tolerance >= 0.0) {
         epsilon = tolerance;
+      }
 
       std::vector<INT> j_inrange;
       std::vector<INT> i_inrange;
@@ -244,8 +255,9 @@ namespace {
 
     for (auto ii : i_inrange) {
 
-      if (local_node_map[ii + i_offset] < 0)
+      if (local_node_map[ii + i_offset] < 0) {
         continue;
+      }
 
       double dismin    = FLT_MAX;
       double dmin      = FLT_MAX;
@@ -254,8 +266,9 @@ namespace {
       for (size_t j = j2beg; j < j_inrange.size(); j++) {
         compare++;
         INT jj = j_inrange[j];
-        if (jj < 0 || local_node_map[jj + j_offset] < 0)
+        if (jj < 0 || local_node_map[jj + j_offset] < 0) {
           continue;
+        }
 
         if (i_coord[3 * ii + XYZ] - epsilon > j_coord[3 * jj + XYZ]) {
           j2beg = j;
@@ -264,8 +277,9 @@ namespace {
 
         //... Since we are sorted on coordinate X|Y|Z,
         //    if set 'j' X|Y|Z greater than set 'i' X|Y|Z+eps, go to next 'i' X1|Y1|Z1 coord.
-        if (j_coord[3 * jj + XYZ] - epsilon > i_coord[3 * ii + XYZ])
+        if (j_coord[3 * jj + XYZ] - epsilon > i_coord[3 * ii + XYZ]) {
           break;
+        }
 
         double distance = max3(std::fabs(j_coord[3 * jj + 0] - i_coord[3 * ii + 0]),
                                std::fabs(j_coord[3 * jj + 1] - i_coord[3 * ii + 1]),
@@ -278,38 +292,46 @@ namespace {
           }
         }
         else {
-          if (distance < dismin)
+          if (distance < dismin) {
             dismin = distance;
+          }
         }
-        if (distance == 0.0)
+        if (distance == 0.0) {
           break;
+        }
       }
 
       if (dmin <= epsilon && node_dmin >= 0) {
         INT jnod = j_inrange[node_dmin] + j_offset;
         INT inod = ii + i_offset;
         match++;
-        if (dmin > dismax)
+        if (dmin > dismax) {
           dismax = dmin;
+        }
         j_inrange[node_dmin] *= -1;
         SMART_ASSERT(jnod < (INT)local_node_map.size());
-        if (inod < jnod)
+        if (inod < jnod) {
           local_node_map[jnod] = inod;
-        else
+        }
+        else {
           local_node_map[inod] = jnod;
+        }
       }
       else {
-        if (dismin < g_dismin)
+        if (dismin < g_dismin) {
           g_dismin = dismin;
+        }
       }
     }
     std::cout << "\nNumber of nodes matched                   = " << match << "\n";
     std::cout << "Number of comparisons                     = " << compare << "\n";
     std::cout << "Tolerance used for matching               = " << epsilon << "\n";
-    if (dismax > -FLT_MAX)
+    if (dismax > -FLT_MAX) {
       std::cout << "Maximum distance between matched nodes    = " << dismax << "\n";
-    if (g_dismin < FLT_MAX)
+    }
+    if (g_dismin < FLT_MAX) {
       std::cout << "Minimum distance between nonmatched nodes = " << g_dismin << "\n";
+    }
     std::cout << "\n";
   }
-}
+} // namespace

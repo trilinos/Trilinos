@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -94,8 +94,9 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
   }
 
   flag = 0;
-  if (assignment[0] > nvtxs)
+  if (assignment[0] > nvtxs) {
     flag = assignment[1];
+  }
   for (i = 1; i < nvtxs; i++) {
     j = fscanf(finassign, "%d", &(assignment[i]));
     if (j != 1) {
@@ -108,8 +109,9 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
       return (1);
     }
     if (assignment[i] > nvtxs) { /* warn since probably an error */
-      if (assignment[i] > flag)
+      if (assignment[i] > flag) {
         flag = assignment[i];
+      }
     }
   }
 
@@ -127,8 +129,9 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
   end_flag = 0;
   while (!flag && end_flag != -1) {
     read_int(finassign, &end_flag);
-    if (!end_flag)
+    if (!end_flag) {
       flag = TRUE;
+    }
   }
   if (flag && CHECK_INPUT) {
     printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
@@ -208,13 +211,13 @@ static int input_assign_inv(FILE *finassign,    /* input assignment file */
         return (1);
       }
 
-      if ((int)assignment[k - 1] != -1) {
+      if (assignment[k - 1] != -1) {
         printf("ERROR: In assignment file `%s'\n", inassignname);
         printf("       Vertex %d assigned to multiple sets\n", k);
         return (1);
       }
 
-      assignment[k - 1] = (int)set;
+      assignment[k - 1] = set;
     }
 
     total += size;
@@ -225,10 +228,9 @@ static int input_assign_inv(FILE *finassign,    /* input assignment file */
         printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
         return (1);
       }
-      else {
-        done = TRUE;
-        size = 0;
-      }
+
+      done = TRUE;
+      size = 0;
     }
 
     if (size < 0) {

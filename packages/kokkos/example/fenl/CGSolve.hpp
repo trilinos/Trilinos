@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -59,7 +59,11 @@ namespace Example {
 
 template< typename ValueType , class Space >
 struct CrsMatrix {
-  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , unsigned >  StaticCrsGraphType ;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , unsigned , void >  StaticCrsGraphType ;
+#else
+  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , void , unsigned >  StaticCrsGraphType ;
+#endif
   typedef View< ValueType * , Space > coeff_type ;
 
   StaticCrsGraphType  graph ;
@@ -69,7 +73,7 @@ struct CrsMatrix {
 
   CrsMatrix( const StaticCrsGraphType & arg_graph )
     : graph( arg_graph )
-    , coeff( "crs_matrix_coeff" , arg_graph.entries.dimension_0() )
+    , coeff( "crs_matrix_coeff" , arg_graph.entries.extent(0) )
     {}
 };
 
@@ -242,7 +246,7 @@ void cgsolve( const ImportType & import
 
   double old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , r ) , import.comm );
 
-  norm_res  = sqrt( old_rdot );
+  norm_res  = std::sqrt( old_rdot );
   iteration = 0 ;
 
   Kokkos::Timer wall_clock ;
@@ -269,7 +273,7 @@ void cgsolve( const ImportType & import
 
     /* p = r + beta * p ; */ waxpby( count_owned , p , 1.0 , r , beta , p );
 
-    norm_res = sqrt( old_rdot = r_dot );
+    norm_res = std::sqrt( old_rdot = r_dot );
 
     ++iteration ;
   }

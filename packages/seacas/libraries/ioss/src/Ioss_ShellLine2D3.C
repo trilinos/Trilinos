@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_ShellLine2D3 registerThis; }
 
   protected:
-    St_ShellLine2D3() : ElementVariableType("shellline2d3", 3) {}
+    St_ShellLine2D3() : ElementVariableType(Ioss::ShellLine2D3::name, 3) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,10 +68,10 @@ void Ioss::ShellLine2D3::factory()
   Ioss::St_ShellLine2D3::factory();
 }
 
-Ioss::ShellLine2D3::ShellLine2D3() : Ioss::ElementTopology("shellline2d3", "ShellLine_3")
+Ioss::ShellLine2D3::ShellLine2D3() : Ioss::ElementTopology(Ioss::ShellLine2D3::name, "ShellLine_3")
 {
-  Ioss::ElementTopology::alias("shellline2d3", "Shell_Line_3_2D");
-  Ioss::ElementTopology::alias("shellline2d3", "SHELL_LINE_3");
+  Ioss::ElementTopology::alias(Ioss::ShellLine2D3::name, "Shell_Line_3_2D");
+  Ioss::ElementTopology::alias(Ioss::ShellLine2D3::name, "SHELL_LINE_3");
 }
 
 Ioss::ShellLine2D3::~ShellLine2D3() = default;

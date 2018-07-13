@@ -43,10 +43,10 @@
 // @HEADER
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "Epetra_SerialComm.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -227,8 +227,12 @@
       (PyArrayObject*) PyArray_ContiguousFromObject(obj, NPY_DOUBLE, 0, 0);
     if (!array)
     {
-      PyObject * type = PyObject_Type(obj);
+      PyObject * type   = PyObject_Type(obj);
+%#if PY_VERSION_HEX >= 0x03000000
+      PyObject * string = PyUnicode_AsASCIIString(PyObject_Str(type));
+%#else
       PyObject * string = PyObject_Str(type);
+%#endif
       PyErr_Format(PyExc_TypeError,
                    "Epetra_MultiVector constructor expected an array-like "
                    "object as second argument, got %s",
@@ -278,8 +282,12 @@
       (PyArrayObject*) PyArray_ContiguousFromObject(obj, NPY_DOUBLE, 0, 0);
     if (!array)
     {
-      PyObject * type = PyObject_Type(obj);
+      PyObject * type   = PyObject_Type(obj);
+%#if PY_VERSION_HEX >= 0x03000000
+      PyObject * string = PyUnicode_AsASCIIString(PyObject_Str(type));
+%#else
       PyObject * string = PyObject_Str(type);
+%#endif
       PyErr_Format(PyExc_TypeError,
                    "Epetra_MultiVector constructor expected an array-like "
                    "object as first argument, got %s",
@@ -519,8 +527,12 @@
         (PyArrayObject*) PyArray_ContiguousFromObject(obj, NPY_DOUBLE, 0, 0);
       if (!array)
       {
-        PyObject * type = PyObject_Type(obj);
+        PyObject * type   = PyObject_Type(obj);
+%#if PY_VERSION_HEX >= 0x03000000
+        PyObject * string = PyUnicode_AsASCIIString(PyObject_Str(type));
+%#else
         PyObject * string = PyObject_Str(type);
+%#endif
         PyErr_Format(PyExc_TypeError,
                      "Epetra_Vector constructor expected an array-like object "
                      "as second argument, got %s",
@@ -559,8 +571,12 @@
       (PyArrayObject*) PyArray_ContiguousFromObject(obj, NPY_DOUBLE, 0, 0);
     if (!array)
     {
-      PyObject * type = PyObject_Type(obj);
+      PyObject * type   = PyObject_Type(obj);
+%#if PY_VERSION_HEX >= 0x03000000
+      PyObject * string = PyUnicode_AsASCIIString(PyObject_Str(type));
+%#else
       PyObject * string = PyObject_Str(type);
+%#endif
       PyErr_Format(PyExc_TypeError,
                    "Epetra_Vector constructor expected an array-like "
                    "object as first argument, got %s",
@@ -1070,3 +1086,20 @@
   class_array_add_math(FEVector)
   class_array_add_comp(FEVector)
 %}
+
+// Access RCP methods
+%inline
+{
+  int strong_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.strong_count();
+  }
+  int weak_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.weak_count();
+  }
+  int total_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.total_count();
+  }
+}

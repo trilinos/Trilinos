@@ -202,10 +202,10 @@ namespace MueLu {
       }
     }
     GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
-    Teuchos::RCP<LocalOrdinalVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
-    Teuchos::RCP<LocalOrdinalVector> procWinner_vector   = aggregates->GetProcWinner();
-    Teuchos::ArrayRCP<LocalOrdinal>  vertex2AggId        = aggregates->GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LocalOrdinal>  procWinner          = aggregates->GetProcWinner()->getDataNonConst(0);
+    Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
+    Teuchos::RCP<LocalOrdinalVector>      procWinner_vector   = aggregates->GetProcWinner();
+    Teuchos::ArrayRCP<LocalOrdinal>       vertex2AggId        = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal>       procWinner          = aggregates->GetProcWinner()->getDataNonConst(0);
 
     vertex2AggId_ = vertex2AggId;
 
@@ -303,7 +303,7 @@ namespace MueLu {
       {
         aggStyle = pL.get<string>("aggregation: output file: agg style"); //Let "Point Cloud" be the default style
       }
-      catch(exception& e) {}
+      catch(std::exception& e) {}
       vector<int> vertices;
       vector<int> geomSizes;
       string indent = "";
@@ -376,7 +376,7 @@ namespace MueLu {
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
     if(dims_ == 2)
-      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_, zCoords_);
+      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_);
     else
       this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_, zCoords_);
   }
@@ -950,7 +950,7 @@ namespace MueLu {
       color << "</ColorMap>" << endl;
       color.close();
     }
-    catch(exception& e)
+    catch(std::exception& e)
     {
       GetOStream(Warnings0) << "   Error while building colormap file: " << e.what() << endl;
     }

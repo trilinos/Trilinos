@@ -36,16 +36,26 @@
       <Parameter name="A"                              type="string" value="myRAPFact"/>
     </ParameterList>
 
+    <ParameterList name="myRepartitionHeuristicFact">
+      <Parameter name="factory"                        type="string" value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+      <Parameter name="repartition: min rows per proc"      type="int"    value="2000"/>
+      <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
+      <Parameter name="repartition: start level"            type="int"    value="1"/>    
+    </ParameterList>
+    
     <ParameterList name="myIsorropiaInterface">
       <Parameter name="factory"                        type="string" value="IsorropiaInterface"/>
       <Parameter name="A"                              type="string" value="myRAPFact"/>
       <Parameter name="UnAmalgamationInfo"             type="string" value="myRebAmalgFact"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
     </ParameterList>
 
     <ParameterList name="myRepartitionInterface">
       <Parameter name="factory"                        type="string" value="RepartitionInterface"/>
       <Parameter name="A"                              type="string" value="myRAPFact"/>
       <Parameter name="AmalgamatedPartition"           type="string" value="myIsorropiaInterface"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
     </ParameterList>
 
 
@@ -53,10 +63,8 @@
       <Parameter name="factory"                        type="string" value="RepartitionFactory"/>
       <Parameter name="A"                              type="string" value="myRAPFact"/>
       <Parameter name="Partition"                      type="string" value="myRepartitionInterface"/>
-      <Parameter name="repartition: min rows per proc" type="int"    value="2000"/>
-      <Parameter name="repartition: max imbalance"     type="double" value="1.1"/>
-      <Parameter name="repartition: start level"       type="int"    value="1"/>
       <Parameter name="repartition: remap parts"       type="bool"   value="false"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">

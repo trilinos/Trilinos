@@ -138,6 +138,9 @@ namespace stk {
 				const DBStepTimeInterval &sti,
 				bool ignore_missing_fields = false);
       
+      double restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                                        int step, bool ignore_missing_fields = false);
+
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
 	

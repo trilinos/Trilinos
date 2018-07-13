@@ -63,7 +63,7 @@ namespace { // (anonymous)
     // Kokkos lacks a global is_initialized function.  However,
     // Kokkos::initialize always initializes the default execution
     // space, so we can check that.
-    return Kokkos::DefaultExecutionSpace::is_initialized ();
+    return Kokkos::is_initialized ();
   }
 }
 

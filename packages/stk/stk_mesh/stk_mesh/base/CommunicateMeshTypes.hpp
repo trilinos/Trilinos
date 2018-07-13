@@ -1,3 +1,6 @@
+#ifndef STK_COMMUNICATE_MESH_TYPES_H
+#define STK_COMMUNICATE_MESH_TYPES_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -31,6 +34,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <cassert>
 #include <vector>
 
 #include <stk_mesh/base/Selector.hpp>
@@ -54,7 +58,7 @@ CommBuffer & CommBuffer::pack<stk::mesh::PartVector>( const stk::mesh::PartVecto
   }
 
   pack(num_parts);
-  pack(&part_ordinals[0], num_parts);
+  pack(part_ordinals.data(), num_parts);
 
   return *this;
 }
@@ -83,7 +87,7 @@ CommBuffer & CommBuffer::unpack< std::pair<const stk::mesh::MetaData *, stk::mes
   unsigned num_parts;
   unpack(num_parts);
   std::vector<unsigned> part_ordinals(num_parts);
-  unpack(&part_ordinals[0], num_parts);
+  unpack(part_ordinals.data(), num_parts);
 
   for(std::vector<unsigned>::const_iterator it = part_ordinals.begin(); it != part_ordinals.end(); ++it)
   {
@@ -111,3 +115,5 @@ CommBuffer & CommBuffer::unpack< std::pair<const stk::mesh::MetaData *, stk::mes
 }
 
 } // namespace stk
+
+#endif

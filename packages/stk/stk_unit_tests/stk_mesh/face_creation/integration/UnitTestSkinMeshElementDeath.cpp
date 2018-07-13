@@ -75,23 +75,7 @@ void compare_faces(const stk::mesh::BulkData& bulkData, const std::vector<size_t
 
     for(size_t i=0;i<skinned_faces.size();++i)
     {
-        if (bulkData.identifier(skinned_faces[i]) != bulkData.identifier(active_faces[i]))
-        {
-            std::cerr << "Skinned faces: ";
-            for(size_t j=0;j<skinned_faces.size();++j)
-            {
-                std::cerr << skinned_faces[j] << "\t";
-            }
-            std::cerr << std::endl;
-
-            std::cerr << "active faces: ";
-            for(size_t j=0;j<active_faces.size();++j)
-            {
-                std::cerr << active_faces[j] << "\t";
-            }
-            std::cerr << std::endl;
-            break;
-        }
+        EXPECT_EQ(bulkData.identifier(skinned_faces[i]), bulkData.identifier(active_faces[i]));
     }
 }
 
@@ -117,7 +101,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
          bulkData.set_sorting_by_face();
 
          stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+         stk::io::fill_mesh("generated:1x1x4", bulkData);
          stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
          ElemGraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});

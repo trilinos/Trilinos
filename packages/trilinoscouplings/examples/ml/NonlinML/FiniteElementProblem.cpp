@@ -148,7 +148,10 @@ bool FiniteElementProblem::evaluate(FillType f,
   u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i,j,ierr;
+  int i,j;
+  #ifndef NDEBUG
+     int ierr;
+  #endif
   int OverlapNumMyElements = OverlapMap->NumMyElements();
 
   int OverlapMinMyGID;
@@ -208,7 +211,11 @@ bool FiniteElementProblem::evaluate(FillType f,
 				     basis.dphide[j]*basis.dphide[i]
 				     +2.0*factor*basis.uu*basis.phi[j]*
 				     basis.phi[i]);  
-	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+              #ifndef NDEBUG
+	      ierr=
+              #endif
+                 A->SumIntoGlobalValues(row, 1, &jac, &column);
+              assert(ierr);
 	    }
 	  }
 	}
@@ -255,6 +262,14 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
   int OverlapMinMyGID;
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
+  
+  if (OverlapMinMyGID < 0)
+  {
+     // this is really just here to keep the compiler from complaining
+     // about the unused variable, but I do want it to be there so
+     // the example includes what this function will return.
+     std::cout << "broken" << std::endl ;
+  }
   
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {

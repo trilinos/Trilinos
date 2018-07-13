@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,7 +50,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <exodusII.h>     // for ex_err, exerrval, etc
+#include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_BOR_ELEMS, etc
 #include <netcdf.h>       // for NC_NOERR, nc_inq_varid, etc
 #include <stddef.h>       // for size_t
@@ -70,23 +70,24 @@ int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
+
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
-    exerrval = EX_MSG;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to find file type for file ID %d", exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, EX_BADPARAM);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Get the status of the internal element map */
   if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_INT_E_STAT, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (ftype[0] == 's') {
@@ -97,55 +98,50 @@ int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
   }
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_INT_E_STAT, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (nmstat == 1) {
     /* get the index */
     if (ex_get_idx(exoid, VAR_ELEM_MAP_INT_IDX, varidx, processor) == -1) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_ELEM_MAP_INT_IDX,
                exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (varidx[1] == -1) {
       /* Get the size of the internal element map */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_ELEMS, &dimid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_INT_ELEMS,
                  exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err(func_name, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_INT_ELEMS, exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err(func_name, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       varidx[1] = count[0];
     }
 
     if ((status = nc_inq_varid(exoid, VAR_ELEM_MAP_INT, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
                VAR_ELEM_MAP_INT, exoid);
-      ex_err(func_name, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(func_name, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* Output the map */
@@ -158,23 +154,21 @@ int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
       status = nc_put_vara_int(exoid, varid, start, count, elem_mapi);
     }
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_INT, exoid);
-      ex_err(func_name, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(func_name, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
   } /* End "if (nmstat == 1)" */
 
   /* Get the status of the border element map */
   if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_BOR_E_STAT, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (ftype[0] == 's') {
@@ -185,55 +179,50 @@ int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
   }
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file %d",
              VAR_BOR_E_STAT, exoid);
-    ex_err(func_name, errmsg, exerrval);
+    ex_err(func_name, errmsg, status);
 
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (nmstat == 1) {
     /* get the index */
     if (ex_get_idx(exoid, VAR_ELEM_MAP_BOR_IDX, varidx, processor) == -1) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_ELEM_MAP_BOR_IDX,
                exoid);
-      ex_err(func_name, errmsg, exerrval);
+      ex_err(func_name, errmsg, status);
 
-      return (EX_FATAL);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (varidx[1] == -1) {
       /* Get the size of the border element map */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_ELEMS, &dimid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_BOR_ELEMS,
                  exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err(func_name, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_BOR_ELEMS, exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err(func_name, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       varidx[1] = count[0];
     }
 
     if ((status = nc_inq_varid(exoid, VAR_ELEM_MAP_BOR, &varid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
                VAR_ELEM_MAP_BOR, exoid);
-      ex_err(func_name, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(func_name, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* Output the map */
@@ -246,12 +235,11 @@ int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
       status = nc_put_vara_int(exoid, varid, start, count, elem_mapb);
     }
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_BOR, exoid);
-      ex_err(func_name, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(func_name, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   } /* End "if (nmstat == 1)" */
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

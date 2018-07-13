@@ -35,8 +35,8 @@
 #include <gtest/gtest.h>
 #include <stk_util/environment/perf_util.hpp>
 
-#include <stk_mesh/fixtures/Gear.hpp>
-#include <stk_mesh/fixtures/GearsFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/Gear.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
 
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>

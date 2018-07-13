@@ -60,7 +60,6 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 int main (int argc, char *argv[])
 {
@@ -95,7 +94,7 @@ int main (int argc, char *argv[])
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<Node>             node;
 
     //
     // Get test parameters from command-line processor
@@ -139,7 +138,7 @@ int main (int argc, char *argv[])
     //
     RCP<Tpetra::CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-    RCP<const Tpetra::Map<int> > map = A->getDomainMap();
+    RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
     RCP<MV> B, X;

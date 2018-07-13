@@ -55,7 +55,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
@@ -71,8 +71,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STKConnManager.hpp"
-
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -170,7 +168,11 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -184,8 +186,8 @@ namespace panzer {
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
     // setup field manager build

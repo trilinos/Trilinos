@@ -177,7 +177,15 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
                   "Partition::move_to cannot move an entity that does not belong to it.");
 
   // If the last bucket is full, automatically create a new one.
-  Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
+  Bucket *dst_bucket = nullptr;
+  try {
+      dst_bucket = dst_partition.get_bucket_for_adds();
+  }
+  catch(std::exception& e) {
+      std::ostringstream os;
+      os << "Error adding "<<m_mesh.entity_key(entity)<< " to mesh: " << e.what();
+      throw std::runtime_error(os.str());
+  }
 
   ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
                   "Error: cannot change topology of entity (rank: "
@@ -369,7 +377,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   {
     Bucket &b = **b_i;
     size_t b_size = b.size();
-    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, &entities[0] + new_i);
+    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, entities.data() + new_i);
     new_i += b_size;
   }
 

@@ -71,7 +71,7 @@ namespace Details {
 /// configured with automatic registration turned off
 /// (<tt>Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION</tt> was
 /// set to <tt>OFF</tt>).  It never hurts to invoke this function
-/// manually, though.
+/// manually, though, since it is idempotent.
 ///
 /// If you need to register Belos's LinearSolverFactory for a set of
 /// template parameters that is <i>not</i> enabled, see

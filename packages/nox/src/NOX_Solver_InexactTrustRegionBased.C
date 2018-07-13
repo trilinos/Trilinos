@@ -71,8 +71,6 @@ NOX::Solver::InexactTrustRegionBased::
 InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
             const Teuchos::RCP<NOX::StatusTest::Generic>& t,
             const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utils(globalDataPtr->getUtils()),
   solnPtr(grp),        // pointer to grp
   oldSolnPtr(grp->clone(DeepCopy)), // create via clone
   newtonVecPtr(grp->getX().clone(ShapeCopy)), // create via clone
@@ -83,9 +81,7 @@ InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   bVecPtr(grp->getX().clone(ShapeCopy)), // create via clone
   testPtr(t),            // pointer to t
   paramsPtr(p),            // copy p
-  inNewtonUtils(globalDataPtr, paramsPtr->sublist("Direction")),
   radius(0.0),
-  meritFuncPtr(globalDataPtr->getMeritFunction()),
   useCauchyInNewtonDirection(false),
   writeOutputParamsToList(true),
   useCounters(true),
@@ -96,19 +92,21 @@ InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   sumDoglegFracCauchyToNewton(0.0),
   sumDoglegFracNewtonLength(0.0),
   useAredPredRatio(false),
-  useDoglegMinimization(false),
-  prePostOperator(utils, paramsPtr->sublist("Solver Options"))
+  useDoglegMinimization(false)
 {
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utils = globalDataPtr->getUtils();
+  inNewtonUtils.reset(globalDataPtr, paramsPtr->sublist("Direction"));
+  meritFuncPtr = globalDataPtr->getMeritFunction();
+  prePostOperator.reset(utils,p->sublist("Solver Options"));
   init();
 }
 
 //*************************************************************************
 //**** Destructor
 //*************************************************************************
-NOX::Solver::InexactTrustRegionBased::~InexactTrustRegionBased()
-{
-
-}
+NOX::Solver::InexactTrustRegionBased::~InexactTrustRegionBased() {}
 
 //*************************************************************************
 //**** init

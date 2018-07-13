@@ -89,9 +89,13 @@ INCLUDE(PrintVar)
 # than just grepping STDOUT (e.g. by running separate post-processing programs
 # to examine output files).
 #
-# Each atomic test case is either a package-built executable or just a basic
-# command.  An atomic test command block ``TEST_<idx>`` (i.e. ``TEST_0``,
-# ``TEST_1``, ..., up to ``TEST_19``) takes the form::
+# For more details on these arguments, see `TEST_<idx> EXEC/CMND Test Blocks
+# and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_.
+#
+# The most common type of an atomic test block ``TEST_<idx>`` runs a command
+# as either a package-built executable or just any command.  An atomic test
+# command block ``TEST_<idx>`` (i.e. ``TEST_0``, ``TEST_1``, ...) takes the
+# form::
 #
 #   TEST_<idx>
 #      (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
@@ -108,17 +112,62 @@ INCLUDE(PrintVar)
 #      [PASS_ANY
 #        | PASS_REGULAR_EXPRESSION "<regex>"
 #        | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
-#        | FAIL_REGULAR_EXPRESSION "<regex>"
-#        | STANDARD_PASS_OUTPUT
-#        ]
+#        | STANDARD_PASS_OUTPUT ]
+#      [FAIL_REGULAR_EXPRESSION "<regex>"]
+#      [ALWAYS_FAIL_ON_NONZERO_RETURN | ALWAYS_FAIL_ON_ZERO_RETURN]
+#      [WILL_FAIL]
 #
-# By default, each and every atomic test or command needs to pass (as defined below) in
-# order for the overall test to pass.
+# For more information on these arguments, see `TEST_<idx> EXEC/CMND Test
+# Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_.
+#
+# The other type of ``TEST_<idx>`` block supported is for copying files and
+# takes the form::
+#
+#   TEST_<idx>
+#     COPY_FILES_TO_TEST_DIR <file0> <file1> ... <filen>
+#     [SOURCE_DIR <srcDir>]
+#     [DEST_DIR <destDir>]
+#
+# This makes it easy to copy files from the source tree (or other location) to
+# inside of the test directory (usually created with ``OVERALL_WORKING_DIR
+# TEST_NAME``) so that tests can run in their own private working directory
+# (and so these files get deleted and recopied each time the test runs).  This
+# approach has several advantages:
+#
+# * One can modify the input files and then just run the test with ``ctest``
+#   in an iterative manner (and not have to configure again when using
+#   ``CONFIGURE_FILE( ... COPYONLY)`` or build again when using
+#   ``TRIBITS_COPY_FILES_TO_BINARY_DIR()`` in order to copy files).
+#
+# * When using ``OVERALL_WORKING_DIR TEST_NAME``, the test directory gets blow
+#   away every time before it runs and therefore any old files are deleted
+#   before the test gets run again (which avoids the problem of having a test
+#   pass looking for the old files that will not be there when someone
+#   configures and builds from scratch).
+#
+# For more information on these arguments, see `TEST_<idx>
+# COPY_FILES_TO_TEST_DIR Test Blocks and Arguments
+# (TRIBITS_ADD_ADVANCED_TEST())`_.
+# 
+# By default, each and every atomic ``TEST_<idx>`` block needs to pass (as
+# defined in `Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_) in order
+# for the overall test to pass.
+#
+# Finally, the test is only added if tests are enabled for the SE package
+# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_ ``= ON``) or the parent package (if
+# this is a subpackage) (i.e. ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS=ON``) or
+# if other criteria are met (see some of the arguments in `Overall Arguments
+# (TRIBITS_ADD_ADVANCED_TEST())`_ that can trigger a test to not be added).
+# (NOTE: A more efficient way to optionally enable tests is to put them in a
+# ``test/`` subdir and then include that subdir with
+# `TRIBITS_ADD_TEST_DIRECTORIES()`_.)
 #
 # *Sections:*
 #
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
-# * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `TEST_<idx> COPY_FILES_TO_TEST_DIR Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -126,6 +175,7 @@ INCLUDE(PrintVar)
 # * `Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Using TRIBITS_ADD_ADVANCED_TEST() in non-TriBITS CMake projects`_
 #
 # .. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -142,7 +192,11 @@ INCLUDE(PrintVar)
 #     The base name of the test (which will have ``${PACKAGE_NAME}_``
 #     prepended to the name, see <testName> below) that will be used to name
 #     the output CMake script file as well as the CTest test name passed into
-#     ``ADD_TEST()``.  This must be the first argument to this function.
+#     ``ADD_TEST()``.  This must be the first argument to this function.  The
+#     name is allowed to contain '/' chars but these will be replaced with
+#     '__' in the overall working directory name and the ctest -P script
+#     (`Debugging and Examining Test Generation
+#     (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 #   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 #
@@ -150,11 +204,11 @@ INCLUDE(PrintVar)
 #     (relative or absolute path) will be created and all of the test commands
 #     by default will be run from within this directory.  If the value
 #     ``<overallWorkingDir>=TEST_NAME`` is given, then the working directory
-#     will be given the name ``<testName>``.  By default, if the directory
-#     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
-#     and created again.  If one wants to preserve the contents of this
-#     directory between test runs then set
-#     ``SKIP_CLEAN_OVERALL_WORKING_DIRECTORY``.  Using a separate test
+#     will be given the name ``<testName>`` where any '/' chars are replaced
+#     with '__'.  By default, if the directory ``<overallWorkingDir>`` exists
+#     before the test runs, it will be deleted and created again.  If one
+#     wants to preserve the contents of this directory between test runs then
+#     set ``SKIP_CLEAN_OVERALL_WORKING_DIRECTORY``.  Using a separate test
 #     directory is a good option to use if the commands create intermediate
 #     files and one wants to make sure they get deleted before the test cases
 #     are run again.  It is also important to create a separate test directory
@@ -245,24 +299,26 @@ INCLUDE(PrintVar)
 #   ``TIMEOUT <maxSeconds>``
 #
 #     If passed in, gives maximum number of seconds the test will be allowed
-#     to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
-#     the full CTest test, not individual ``TEST_<idx>`` commands!
+#     to run before being timed-out and killed (see `Setting timeouts for
+#     tests (TRIBITS_ADD_TEST())`_).  This is for the full CTest test, not
+#     individual ``TEST_<idx>`` commands!
 #
 #   ``ADDED_TEST_NAME_OUT <testName>``
 #
 #     If specified, then on output the variable ``<testName>`` will be set
 #     with the name of the test passed to ``ADD_TEST()``.  Having this name
 #     allows the calling ``CMakeLists.txt`` file access and set additional
-#     test propeties (see `Setting additional test properties
+#     test properties (see `Setting additional test properties
 #     (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-# .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+# .. _TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
+# **TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# Each test command block ``TEST_<idx>`` runs either a package-built test
-# executable or some general command executable and is defined as either
-# ``EXEC <exeRootName>`` or ``CMND <cmndExec>`` with the arguments:
+# Each test general command block ``TEST_<idx>`` runs either a package-built
+# test executable or some general command executable and is defined as either
+# ``EXEC <exeRootName>`` or an arbitrary command ``CMND <cmndExec>`` with the
+# arguments:
 #
 #   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
 #   [DIRECTORY <dir>]``
@@ -385,9 +441,10 @@ INCLUDE(PrintVar)
 #     If specified, then the output for the test command will not be echoed to
 #     the output for the entire test command.
 #
-# By default, an atomic test line is assumed to pass if the executable or
-# commands returns a non-zero value to the shell.  However, a test case can
-# also be defined to pass based on:
+# By default, an individual test case ``TEST_<IDX>`` is assumed to pass if the
+# executable or commands returns a non-zero value to the shell.  However, a
+# test case can also be defined to pass or fail based on the arguments/options
+# (see `Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_):
 #
 #   ``PASS_ANY``
 #
@@ -400,7 +457,7 @@ INCLUDE(PrintVar)
 #
 #     If specified, the test command will be assumed to pass if it matches the
 #     given regular expression.  Otherwise, it is assumed to fail.  TIPS:
-#     Replace ';' with '[;]' or CMake will interpretet this as a array eleemnt
+#     Replace ';' with '[;]' or CMake will interpret this as an array elemnt
 #     boundary.  To match '.', use '[.]'.
 #
 #   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
@@ -409,18 +466,51 @@ INCLUDE(PrintVar)
 #     matches all of the provided regular expressions.  Note that this is not
 #     a capability of raw ctest and represents an extension provided by
 #     TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
-#     will interpretet this as a array eleemnt boundary.
-#
-#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
-#
-#     If specified, the test command will be assumed to fail if it matches the
-#     given regular expression.  Otherwise, it is assumed to pass.
+#     will interpret this as an array elemnt boundary.
 #
 #   ``STANDARD_PASS_OUTPUT``
 #
 #     If specified, the test command will be assumed to pass if the string
 #     expression "Final Result: PASSED" is found in the output for the test.
+#     This as the result of directly passing in ``PASS_REGULAR_EXPRESSION
+#     "Final Result: PASSED"``.
 #
+#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
+#
+#     If specified, the test command will be assumed to fail if it matches the
+#     given regular expression.  Otherwise, it is assumed to pass.  This will
+#     be applied and take precedence over other above pass criteria.  For
+#     example, if even if ``PASS_REGULAR_EXPRESSION`` or
+#     ``PASS_REGULAR_EXPRESSION_ALL`` match, then the test will be marked as
+#     failed if this fail regex matches the output.
+#
+#   ``ALWAYS_FAIL_ON_NONZERO_RETURN``
+#
+#     If specified, then the test case will be marked as failed if the test
+#     command returns nonzero, independent of the other pass/fail criteria.
+#     This option is used in cases where one wants to grep for strings in the
+#     output but still wants to require a zero return code.  This make for a
+#     stronger test by requiring that both the strings are found and that the
+#     command returns 0.
+#
+#   ``ALWAYS_FAIL_ON_ZERO_RETURN``
+#
+#     If specified, then the test case will be marked as failed if the test
+#     command returns zero '0', independent of the other pass/fail criteria.
+#     This option is used in cases where one wants to grep for strings in the
+#     output but still wants to require a nonzero return code.  This make for
+#     a stronger test by requiring that both the strings are found and that
+#     the command returns != 0.
+#
+#   ``WILL_FAIL``
+#
+#      If specified, invert the result from the other pass/fail criteria.  For
+#      example, if the regexes in ``PASS_REGULAR_EXPRESSION`` or
+#      ``PASS_REGULAR_EXPRESSION_ALL`` indicate that a test should pass, then
+#      setting ``WILL_FAIL`` will invert that and report the test as failing.
+#      But typically this is used to report a test that returns a nonzero code
+#      as passing.
+# 
 # All of the arguments for a test block ``TEST_<idx>`` must appear directly
 # below their ``TEST_<idx>`` argument and before the next test block (see
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
@@ -430,6 +520,83 @@ INCLUDE(PrintVar)
 # (e.g. ``TEST_20``), the current implementation can't detect that case and
 # the resulting behavior is undefined.  This restriction will be removed in a
 # future version of TriBITS.
+#
+# .. _TEST_<idx> COPY_FILES_TO_TEST_DIR Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **TEST_<idx> COPY_FILES_TO_TEST_DIR Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# The arguments for the ``TEST_<idx>`` ``COPY_FILES_TO_TEST_DIR`` block are:
+#
+#   ``COPY_FILES_TO_TEST_DIR <file0> <file1> ... <filen>``
+#
+#     Required list of 1 or more file names for files that will be copied from
+#     ``<srcDir>/`` to ``<destDir>/``.
+#
+#   ``SOURCE_DIR <srcDir>``
+#
+#     Optional source directory where the files will be copied from.  If
+#     ``<srcDir>`` is not given, then it is assumed to be
+#     ``${CMAKE_CURRENT_SOURCE_DIR}``.  If ``<srcDir>`` is given but is a
+#     relative path, then it is interpreted relative to
+#     ``${CMAKE_CURRENT_SOURCE_DIR}``.  If ``<srcDir>`` is an absolute path,
+#     then that path is used without modification.
+#
+#   ``DEST_DIR <destDir>``
+#
+#     Optional destination directory where the files will be copied to.  If
+#     ``<destDir>`` is not given, then it is assumed to be the working
+#     directory where the test is running (typically a new directory created
+#     under ``${CMAKE_CURRENT_BINARY_DIR}`` when ``OVERALL_WORKING_DIR
+#     TEST_NAME`` is given).  If ``<destDir>`` is given but is a relative
+#     path, then it is interpreted relative to the current test working
+#     directory.  If ``<destDir>`` is an absolute path, then that path is used
+#     without modification.  If ``<destDir>`` does not exist, then it will be
+#     created (including several directory levels deep if needed).
+#
+# .. _Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# The logic for how pass/fail for a ``TEST_<IDX>`` ``EXEC`` or ``CMND`` case
+# is applied is given by::
+#
+#   # A) Apply first set of pass/fail logic
+#   TEST_CASE_PASSED = FALSE
+#   If PASS_ANY specified:
+#     TEST_CASE_PASSED = TRUE
+#   Else If PASS_REGULAR_EXPRESSION specified and "<regex>" matches:
+#     TEST_CASE_PASSED = TRUE
+#   Else if PASS_REGULAR_EXPRESSION_ALL specified:
+#     TEST_CASE_PASSED = TRUE
+#     For each "<regexi>":
+#       If "<regixi>" does not match:
+#         TEST_CASE_PASSED = FALSE
+#   Else
+#     If command return code == 0:
+#       TEST_CASE_PASSED = TRUE
+#     Endif
+#   Endif
+#
+#   # B) Check for failing regex matching?
+#   If FAIL_REGULAR_EXPRESSION specified and "<regex>" matches:
+#     TEST_CASE_PASSED = FALSE
+#   Endif
+#
+#   # C) Check for return code always 0 or !=0?
+#   If ALWAYS_FAIL_ON_NONZERO_RETURN specified and return code != 0:
+#     TEST_CASE_PASSED = FALSE
+#   ElseIf ALWAYS_FAIL_ON_ZERO_RETURN specified and return code == 0:
+#     TEST_CASE_PASSED = FALSE
+#   Endif
+#
+#   # D) Invert pass/fail result?
+#   If WILL_FAIL specified:
+#     If TEST_CASE_PASSED:
+#       TEST_CASE_PASSED = FALSE
+#     Else
+#       TEST_CASE_PASSED = TRUE
+#     Endif
+#   Endif
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -456,15 +623,15 @@ INCLUDE(PrintVar)
 # **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The basic tool used for parsing the arguments to this function is the macro
-# `PARSE_ARGUMENTS()`_ which has a certain set of behaviors.  The parsing
-# using `PARSE_ARGUMENTS()`_ is actually done in two phases.  There is a
-# top-level parsing of the "overall" arguments listed in `Overall Arguments
-# (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test blocks.  Then
-# there is a second level of parsing using ``PARSE_ARGUMENTS()`` for each of
-# the ``TEST_<idx>`` blocks.  Because of this usage, there are a few
-# restrictions that one needs to be aware of when using
-# ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to explain the
-# behaviors and what is allowed and what is not allowed.
+# ``CMAKE_PARSE_ARGUMENTS()`` which has a certain set of behaviors.  The
+# parsing using ``CMAKE_PARSE_ARGUMENTS()`` is actually done in two phases.
+# There is a top-level parsing of the "overall" arguments listed in `Overall
+# Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test
+# blocks.  Then there is a second level of parsing using
+# ``CMAKE_PARSE_ARGUMENTS()`` for each of the ``TEST_<idx>`` blocks.  Because
+# of this usage, there are a few restrictions that one needs to be aware of
+# when using ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to
+# explain the behaviors and what is allowed and what is not allowed.
 #
 # For the most part, the "overall" arguments and the arguments inside of any
 # individual ``TEST_<idx>`` blocks can be listed in any order but there are
@@ -499,8 +666,8 @@ INCLUDE(PrintVar)
 #
 # Since raw CTest does not support the features provided by this function, the
 # way an advanced test is implemented is that a ``cmake -P`` script with the
-# name ``<testName>.cmake`` gets created in the current binary directory that
-# then gets added to CTest using::
+# name ``<testName>.cmake`` (with any '/' replaced with '__') gets created in
+# the current binary directory that then gets added to CTest using::
 #
 #   ADD_TEST(<testName> cmake [other options] -P <testName>.cmake)
 #
@@ -532,15 +699,48 @@ INCLUDE(PrintVar)
 # where the test writes a log file ``someTest.log`` that we want to submit to
 # CDash also.
 #
+# This approach will work no matter what TriBITS names the individual test(s)
+# or whether the test(s) are added or not (depending on other arguments like
+# ``COMM``, ``XHOST``, etc.).
+#
+# The following built-in CTest test properties are set through `Overall
+# Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ or are otherwise automatically set
+# by this function and should **NOT** be overridden by direct calls to
+# ``SET_TESTS_PROPERTIES()``: ``ENVIRONMENT``, ``FAIL_REGULAR_EXPRESSION``,
+# ``LABELS``, ``PASS_REGULAR_EXPRESSION``, ``RUN_SERIAL``, ``TIMEOUT``,
+# ``WILL_FAIL``, and ``WORKING_DIRECTORY``.
+#
+# However, generally, other built-in CTest test properties can be set after
+# the test is added like show above.  Examples of test properties that can be
+# set using direct calls to ``SET_TESTS_PROPERTIES()`` include
+# ``ATTACHED_FILES``, ``ATTACHED_FILES_ON_FAIL``, ``COST``, ``DEPENDS``,
+# ``MEASUREMENT``, and ``RESOURCE_LOCK``.
+#
+# For example, one can set a dependency between two tests using::
+#
+#   TRIBITS_ADD_ADVANCED_TEST_TEST( test_a [...]
+#      ADDED_TEST_NAME_OUT  test_a_TEST_NAME )
+#   
+#   TRIBITS_ADD_ADVANCED_TEST_TEST( test_b [...]
+#      ADDED_TEST_NAME_OUT  test_z_TEST_NAME )
+#   
+#   IF (test_a_TEST_NAME AND test_b_TEST_NAME)
+#     SET_TESTS_PROPERTIES(${test_b_TEST_NAME}
+#       PROPERTIES DEPENDS ${test_a_TEST_NAME})
+#   ENDIF()
+#
+# This ensures that test ``test_b`` will always be run after ``test_a`` if
+# both tests are run by CTest.
+#
 # .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
+# **Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Just as with `TRIBITS_ADD_TEST()`_, setting ``NUM_MPI_PROCS <numProcs>`` or
 # ``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` or ``NUM_TOTAL_CORES_USED
 # <numTotalCoresUsed>`` or ``OVERALL_NUM_TOTAL_CORES_USED
 # <overallNumTotalCoresUsed>`` will set the ``PROCESSORS`` CTest property to
-# allow CTest to schedule and run mutiple tests at the same time when ``'ctest
+# allow CTest to schedule and run multiple tests at the same time when ``'ctest
 # -j<N>'`` is used (see `Running multiple tests at the same time
 # (TRIBITS_ADD_TEST())`_).
 #
@@ -569,6 +769,39 @@ INCLUDE(PrintVar)
 # directory (see `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_) and
 # the generated ``CTestTestfile.cmake`` file that should list this test case.
 #
+# .. _Using TRIBITS_ADD_ADVANCED_TEST() in non-TriBITS CMake projects:
+#
+# **Using TRIBITS_ADD_ADVANCED_TEST() in non-TriBITS CMake projects**
+#
+# The function ``TRIBITS_ADD_ADVANCED_TEST()`` can be used to add tests in
+# non-TriBITS projects.  To do so, one just needs to set the variables
+# ``PROJECT_NAME``, ``PACKAGE_NAME`` (which could be the same as
+# ``PROJECT_NAME``), ``${PACKAGE_NAME}_ENABLE_TESTS=TRUE``, and
+# ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
+# a valid project can be a simple as::
+#
+#   CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+#   SET(PROJECT_NAME TAATDriver)
+#   PROJECT(${PROJECT_NAME} NONE)
+#   SET(${PROJECT_NAME}_TRACE_ADD_TEST TRUE)
+#   SET(${PROJECT_NAME}_TRIBITS_DIR ""  CACHE FILEPATH
+#     "Location of TriBITS to use." ) 
+#   SET(PACKAGE_NAME ${PROJECT_NAME})
+#   SET(${PACKAGE_NAME}_ENABLE_TESTS TRUE)
+#   SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+#     ${TRIBITS_DIR}/core/utils
+#     ${TRIBITS_DIR}/core/package_arch )
+#   INCLUDE(TribitsAddAdvancedTest)
+#   INCLUDE(CTest)
+#   ENABLE_TESTING()
+#   
+#   TRIBITS_ADD_ADVANCED_TEST(
+#     TAAT_COPY_FILES_TO_TEST_DIR_bad_file_name
+#     OVERALL_WORKING_DIRECTORY TEST_NAME
+#     TEST_0 CMND echo ARGS "Hello World!"
+#       PASS_REGULAR_EXPRESIOIN "Hello World"
+#     )
+#
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -578,6 +811,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
   GLOBAL_SET(MESSAGE_WRAPPER_INPUT)
 
+  # Set the full TEST_NAME
   IF (PACKAGE_NAME)
     SET(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME_IN})
   ELSE()
@@ -606,13 +840,15 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDFOREACH()
   #PRINT_VAR(TEST_IDX_LIST)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      #options
      "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
+     # one_value_keywords
+     ""
+     # multi_value_keywords
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      ${ARGN}
      )
 
@@ -620,9 +856,32 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     SET(${PARSE_ADDED_TEST_NAME_OUT} "" PARENT_SCOPE )
   ENDIF()
 
+  # Set the name of the cmake -P script.
+  STRING(REPLACE "/" "__" NORMALIZED_TEST_NAME "${TEST_NAME}")
+  SET(TEST_SCRIPT_FILE_NAME "${NORMALIZED_TEST_NAME}.cmake")
+
+  # Set the relative overall working directory and abs working directory
+  IF (PARSE_OVERALL_WORKING_DIRECTORY)
+    IF ("${PARSE_OVERALL_WORKING_DIRECTORY}" STREQUAL "TEST_NAME")
+      SET(PARSE_OVERALL_WORKING_DIRECTORY ${NORMALIZED_TEST_NAME})
+    ENDIF()
+   # Test will run in created working subdir
+   SET(ABS_OVERALL_WORKING_DIRECTORY
+     ${CMAKE_CURRENT_BINARY_DIR}/${PARSE_OVERALL_WORKING_DIRECTORY})
+  ELSE()
+    # Test runs in current binary directory (not a good idea!) 
+    SET(ABS_OVERALL_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  ENDIF()
+
   #
   # B) Add or don't add tests based on a number of criteria
   #
+
+  SET(ADD_THE_TEST FALSE)
+  TRIBITS_ADD_TEST_PROCESS_ENABLE_TESTS(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
 
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
@@ -717,17 +976,64 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     #PRINT_VAR(PARSE_TEST_${TEST_CMND_IDX})
 
-    PARSE_ARGUMENTS(
-       #prefix
-       PARSE
-       #lists
-       "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
-       #options
-       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
-       ${PARSE_TEST_${TEST_CMND_IDX}}
-       )
+    # Search to see if we are copying files or not for this TEST_<IDX> block ...
 
-    # Write the command
+    SET(PARSE_COPY_FILES_TO_TEST_DIR)
+    SET(COPY_FILES_TO_TEST_DIR_IDX FALSE)
+    FOREACH(PARSE_TEST_IDX_ARGS ${PARSE_TEST_${TEST_CMND_IDX}})
+      IF (PARSE_TEST_IDX_ARGS STREQUAL "COPY_FILES_TO_TEST_DIR")
+        SET(COPY_FILES_TO_TEST_DIR_IDX TRUE)
+      ENDIF()
+    ENDFOREACH()
+
+    IF (COPY_FILES_TO_TEST_DIR_IDX)
+
+      # Do a special parse just for TEST_<IDX> blocks of type
+      # COPY_FILES_TO_TEST_DIR
+
+      CMAKE_PARSE_ARGUMENTS(
+         #prefix
+         PARSE
+         #options
+         ""
+         # one_value_keywords
+         ""
+         # multi_value_keywords
+         "COPY_FILES_TO_TEST_DIR;SOURCE_DIR;DEST_DIR" 
+	 # Arguments to parse
+         ${PARSE_TEST_${TEST_CMND_IDX}}
+         )
+      TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+      TRIBITS_ASSERT_PARSE_ARG_ONE_OR_MORE_VALUES(PARSE COPY_FILES_TO_TEST_DIR)
+      TRIBITS_ASSERT_PARSE_ARG_ZERO_OR_ONE_VALUE(PARSE SOURCE_DIR)
+      TRIBITS_ASSERT_PARSE_ARG_ZERO_OR_ONE_VALUE(PARSE DEST_DIR)
+
+      SET(PARSE_EXEC)
+      SET(PARSE_CMND)
+
+    ELSE()
+
+      # Parse TEST_<IDX> block args for types EXEC and CMND
+
+      CMAKE_PARSE_ARGUMENTS(
+         #prefix
+         PARSE
+         #options
+          "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ALWAYS_FAIL_ON_NONZERO_RETURN;ALWAYS_FAIL_ON_ZERO_RETURN;WILL_FAIL;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
+         # one_value_keywords
+         ""
+         # multi_value_keywords
+         "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
+         ${PARSE_TEST_${TEST_CMND_IDX}}
+         )
+  
+      TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+
+    ENDIF()
+
+    #
+    # Set up the command that will be written into the cmake -P *.cmake file
+    #
 
     SET(ARGS_STR ${PARSE_ARGS})
     #PRINT_VAR(ARGS_STR)
@@ -736,6 +1042,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     #ENDIF()
 
     IF (PARSE_EXEC)
+
+      #
+      # This is an EXEC test block
+      #
 
       SET(HAS_AT_LEAST_ONE_EXEC TRUE)
 
@@ -746,7 +1056,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDIF()
 
       TRIBITS_ADD_TEST_GET_EXE_BINARY_NAME( "${PARSE_EXEC}"
-        ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
+        ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX}
+        ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
 
       TRIBITS_ADD_TEST_ADJUST_DIRECTORY( ${EXE_BINARY_NAME} "${PARSE_DIRECTORY}"
         EXECUTABLE_PATH)
@@ -797,6 +1108,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     ELSEIF (PARSE_CMND)
 
+      #
+      # This is a COMMAND test block
+      #
+
       LIST( LENGTH PARSE_CMND PARSE_CMND_LEN )
       IF (NOT PARSE_CMND_LEN EQUAL 1)
         MESSAGE(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
@@ -834,23 +1149,102 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
       SET( TEST_CMND_ARRAY ${PARSE_CMND} ${ARGS_STR} )
 
+    ELSEIF (PARSE_COPY_FILES_TO_TEST_DIR)
+
+      #
+      # This is a COPY_FLES_TO_TEST_DIR block
+      #
+
+      # FILES_TO_COPY_COMMA_SEP
+      SET(FILES_TO_COPY_COMMA_SEP "${PARSE_COPY_FILES_TO_TEST_DIR}")
+      string(REPLACE ";" "," FILES_TO_COPY_COMMA_SEP
+        "${FILES_TO_COPY_COMMA_SEP}" )
+      # NOTE: Above, we have to replace ';' with ',' or the lower commands
+      # APPEND_STRING_VAR() will replace ';' with ''.  This is *not* what we
+      # want.  In DriveAdvancedTest.cmake, we will replace the ',' with ';'
+      # again :-)  
+
+      # SOURCE_DIR
+      IF (PARSE_SOURCE_DIR)
+        IF (IS_ABSOLUTE "${PARSE_SOURCE_DIR}")
+          SET(COPY_FILES_TO_TEST_DIR_SOURCE_DIR
+            "${PARSE_SOURCE_DIR}")
+        ELSE()
+          SET(COPY_FILES_TO_TEST_DIR_SOURCE_DIR
+            "${CMAKE_CURRENT_SOURCE_DIR}/${PARSE_SOURCE_DIR}")
+        ENDIF()
+      ELSE()
+        SET(COPY_FILES_TO_TEST_DIR_SOURCE_DIR
+          "${CMAKE_CURRENT_SOURCE_DIR}")
+      ENDIF()
+
+      # DEST_DIR
+      IF (PARSE_DEST_DIR)
+        IF (IS_ABSOLUTE "${PARSE_DEST_DIR}")
+          SET(COPY_FILES_TO_TEST_DIR_DEST_DIR
+            "${PARSE_DEST_DIR}")
+        ELSE()
+          SET(COPY_FILES_TO_TEST_DIR_DEST_DIR
+            "${ABS_OVERALL_WORKING_DIRECTORY}/${PARSE_DEST_DIR}")
+        ENDIF()
+      ELSE()
+        SET(COPY_FILES_TO_TEST_DIR_DEST_DIR
+          "${ABS_OVERALL_WORKING_DIRECTORY}")
+      ENDIF()
+
     ELSE()
 
       MESSAGE( FATAL_ERROR
-        "Must have EXEC or CMND for TEST_${TEST_CMND_IDX}" )
+        "Must have EXEC, CMND, or COPY_FILES_TO_TEST_DIR for TEST_${TEST_CMND_IDX}" )
 
     ENDIF()
 
-    TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
-    #PRINT_VAR(TEST_CMND_STR)
+    #
+    # Write parts for this TEST_<IDX> block to TEST_SCRIPT_STR
+    #
 
-    APPEND_STRING_VAR( TEST_SCRIPT_STR
-      "\n"
-      "SET( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
-      )
-    IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
-      GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
-        "${TEST_CMND_STR}" )
+    IF (PARSE_COPY_FILES_TO_TEST_DIR)
+
+      # Write the vars for COPY_FILES_TO_TEST_DIR 
+  
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_COPY_FILES_TO_TEST_DIR"
+        " \"${FILES_TO_COPY_COMMA_SEP}\")\n"
+        )
+      IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+        GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+          "${TEST_CMND_STR}" )
+      ENDIF()
+  
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_SOURCE_DIR"
+        " \"${COPY_FILES_TO_TEST_DIR_SOURCE_DIR}\")\n"
+        )
+  
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_DEST_DIR"
+        " \"${COPY_FILES_TO_TEST_DIR_DEST_DIR}\")\n"
+        )
+
+    ELSE()
+
+      # Write the command to be run for EXEC and CMND blocks ...
+
+      TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
+      #PRINT_VAR(TEST_CMND_STR)
+  
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
+        )
+      IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+        GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+          "${TEST_CMND_STR}" )
+      ENDIF()
+
     ENDIF()
 
     IF (PARSE_MESSAGE)
@@ -920,6 +1314,34 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
         )
     ENDIF()
 
+    IF (PARSE_FAIL_REGULAR_EXPRESSION)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_FAIL_REGULAR_EXPRESSION \"${PARSE_FAIL_REGULAR_EXPRESSION}\" )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_ALWAYS_FAIL_ON_NONZERO_RETURN)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN TRUE )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_ALWAYS_FAIL_ON_ZERO_RETURN)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN TRUE )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_WILL_FAIL)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_WILL_FAIL TRUE )\n"
+        )
+    ENDIF()
+
   ENDFOREACH()
 
   # ToDo: Verify that TEST_${MAX_NUM_TEST_CMND_IDX}+1 does *not* exist!
@@ -934,7 +1356,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     # F.1) Call ADD_TEST() and set the test properties
     #
   
-    SET(TEST_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.cmake")
+    SET(TEST_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TEST_SCRIPT_FILE_NAME}")
 
     IF(NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
       # Tell CTest to run our script for this test.  Pass the test-type
@@ -993,12 +1415,6 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     #
     # F.2) Write the cmake -P script
     #
-
-    IF (PARSE_OVERALL_WORKING_DIRECTORY)
-      IF ("${PARSE_OVERALL_WORKING_DIRECTORY}" STREQUAL "TEST_NAME")
-        SET(PARSE_OVERALL_WORKING_DIRECTORY ${TEST_NAME})
-      ENDIF()
-    ENDIF()
   
     APPEND_STRING_VAR( TEST_SCRIPT_STR
       "\n"

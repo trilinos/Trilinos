@@ -119,6 +119,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
   typedef GraphAdapter<User, UserCoord> base_adapter_t;
@@ -161,7 +162,7 @@ public:
       \param adjIds on return will point to the array of adjacent vertices for
          for each vertex.
    */
-  virtual void getEdgesView(const lno_t *&offsets,
+  virtual void getEdgesView(const offset_t *&offsets,
                             const gno_t *&adjIds) const = 0;
 
   /*! \brief Returns the number (0 or greater) of weights per vertex

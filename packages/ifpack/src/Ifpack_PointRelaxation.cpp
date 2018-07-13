@@ -578,14 +578,13 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
           int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
           int NumEntries;
-          int col;
-          (void) col; // Forestall compiler warning for unused variable.
+          // int col; // unused
+          // (void) col; // Forestall compiler warning for unused variable.
           IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
                                                    &Values[0], &Indices[0]));
           double dtemp = 0.0;
           for (int k = 0 ; k < NumEntries ; ++k) {
-
-            col = Indices[k];
+            //col = Indices[k]; // unused
             dtemp += Values[k] * y20_ptr[i];
           }
 

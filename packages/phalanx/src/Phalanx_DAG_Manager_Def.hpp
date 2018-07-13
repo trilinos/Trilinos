@@ -61,10 +61,7 @@
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-// amt only works with pthread and qthreads
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #endif
 
 //=======================================================================
@@ -76,10 +73,11 @@ DagManager(const std::string& evaluation_type_name) :
   evaluation_type_name_(evaluation_type_name),
   sorting_called_(false),
 #ifdef PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
-  allow_multiple_evaluators_for_same_field_(true)
+  allow_multiple_evaluators_for_same_field_(true),
 #else
-  allow_multiple_evaluators_for_same_field_(false)
+  allow_multiple_evaluators_for_same_field_(false),
 #endif
+  build_device_dag_(false)
 { }
 
 //=======================================================================
@@ -109,14 +107,14 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   // Add counter to name so that all timers have unique names
   static int count=0;
   std::stringstream uniqueName;
-  uniqueName << "Phalanx: Evaluator " << count++ <<": ";
+  uniqueName << "Phalanx: Evaluator " << count++ <<": [" << evaluation_type_name_ << "] ";
   evalTimers.push_back(
      Teuchos::TimeMonitor::getNewTimer(uniqueName.str() + p->getName()));
 #endif
 
   // insert evaluated fields into map, check for multiple evaluators
   // that provide the same field.
-  nodes_.push_back(PHX::DagNode<Traits>(static_cast<const int>(nodes_.size()),p));
+  nodes_.push_back(PHX::DagNode<Traits>(static_cast<int>(nodes_.size()),p));
   const std::vector<Teuchos::RCP<PHX::FieldTag>>& evaluatedFields = 
     p->evaluatedFields();
   for (auto i=evaluatedFields.cbegin(); i != evaluatedFields.cend(); ++i) {
@@ -169,7 +167,7 @@ void PHX::DagManager<Traits>::
 sortAndOrderEvaluators()
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluatorsNew"));
+  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluators"));
 #endif
   
   // *************************
@@ -249,7 +247,7 @@ sortAndOrderEvaluators()
   for (std::size_t i = 0; i < topoSortEvalIndex.size(); i++) {
     const auto& contrib_fields = (nodes_[topoSortEvalIndex[i]]).get()->contributedFields();
     for (auto& cfield : contrib_fields) {
-      const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<PHX::FieldTag>& f)
+      const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<const PHX::FieldTag>& f)
                                           {
                                             if (*f == *cfield)
                                               return true;
@@ -260,7 +258,6 @@ sortAndOrderEvaluators()
         fields_.push_back(cfield);
     }
   }
-
 
   this->createEvalautorBindingFieldMap();
 
@@ -413,11 +410,19 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 template<typename Traits>
 void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& vm)
+		      PHX::FieldManager<Traits>& vm,
+                      const bool& buildDeviceDAG)
 {
-  // Call each providers' post registration setup
+  // Call each evaluators' post registration setup
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
     nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
+
+  build_device_dag_ = buildDeviceDAG;
+  if (build_device_dag_) {
+    device_evaluators_ = Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>("device_evaluators_",topoSortEvalIndex.size());
+    for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+      device_evaluators_(n).ptr = nodes_[topoSortEvalIndex[n]].getNonConst()->createDeviceEvaluator();
+  }
 }
 
 //=======================================================================
@@ -426,68 +431,123 @@ void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-
+    
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
-
+    
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
-
+      
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
-
+    
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
   }
+}
+
+//=======================================================================
+// Functor for Device DAG support
+namespace PHX {
+
+  template<typename Traits>
+  struct RunDeviceDag {
+
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> evaluators_;
+
+    // The EvalData may be pass by reference. Remove the reference so
+    // that we copy by value to device.
+    const typename std::remove_reference<typename Traits::EvalData>::type data_;
+    
+    RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>& evaluators,
+                 typename Traits::EvalData data) :
+      evaluators_(evaluators),
+      data_(data) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    {
+      const int num_evaluators = static_cast<int>(evaluators_.extent(0));
+      for (int e=0; e < num_evaluators; ++e) {
+        evaluators_(e).ptr->prepareForRecompute(team,data_);
+        evaluators_(e).ptr->evaluate(team,data_);
+	team.team_barrier();
+      }
+    }
+   
+  };
+  
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+                        typename Traits::EvalData d)
+{
+  TEUCHOS_ASSERT(build_device_dag_);
+  //! The parallel_for kernel launch below will not compile on CUDA
+  //! unless relocatable device code (RDC) is enabled for the nvcc
+  //! compiler. We also want to build and run phalanx without Device
+  //! DAG support on CUDA (i.e. RDC off), so this ifdef will hide the
+  //! RDC required code.
+#if defined(PHX_ENABLE_DEVICE_DAG)
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
+                       PHX::RunDeviceDag<Traits>(device_evaluators_,d));
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+    "ERROR: PHX::DagManger::evalauteFieldsDeviceDAG() is experimental and must be enabled at configure time with Phalanx_ENABLE_DEVICE_DAG=ON.");
+#endif
 }
 
 //=======================================================================
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
 void PHX::DagManager<Traits>::
-evaluateFieldsTaskParallel(const int& threads_per_task,
-			   const int& work_size,
+evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  using execution_space = PHX::Device::execution_space;
-  using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+  using execution_space = PHX::exec_space;
+  using memory_space = PHX::Device::memory_space;
+  using policy_type = Kokkos::TaskScheduler<execution_space>;
 
-  const unsigned task_max_count = static_cast<unsigned>(topoSortEvalIndex.size());
-  unsigned task_max_size = 0;
-  unsigned task_max_dependencies = 0;
+  // Requested the ability to query policy for required sizes of calls
+  // to spawn and wait_all. For now hard code to something
+  // reasonable!?!
+  const unsigned required_memory = 1000000; 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-    const auto& node = nodes_[topoSortEvalIndex[n]];
-    const auto& adjacencies = node.adjacencies();
-    task_max_dependencies = ::std::max(task_max_dependencies,static_cast<unsigned>(adjacencies.size()));
-    task_max_size = ::std::max(task_max_size,node.get()->taskSize());
+    // const auto& node = nodes_[topoSortEvalIndex[n]];
+    // const auto& adjacencies = node.adjacencies();
   }
-  //std::cout << "task_max_deps=" << task_max_dependencies << ", task_max_size=" << task_max_size << std::endl;
 
-  policy_type policy(task_max_count,
-		     task_max_size,
-		     task_max_dependencies,
-		     threads_per_task);
+  policy_type policy(memory_space(),required_memory);
 
   // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
-  std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
+  std::vector<Kokkos::Future<void,PHX::exec_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
-    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),work_size,d);
-    node_futures_[topoSortEvalIndex[n]] = future;
 
     // Since this is registered in the order of the topological sort,
     // we know all dependent futures of a node are already
     // constructed.
-    for (const auto& a : adjacencies)
-      policy.add_dependence(future,node_futures_[a]);
+    std::vector<Kokkos::Future<void,execution_space>> dependent_futures(adjacencies.size());
+    auto adj_iterator = adjacencies.cbegin();
+    for (std::size_t i=0; i < adjacencies.size(); ++i,++adj_iterator)
+      dependent_futures[i] = node_futures_[*adj_iterator];
 
-    policy.spawn(future);
+    auto future = node.getNonConst()->createTask(policy,work_size,dependent_futures,d);
+    TEUCHOS_TEST_FOR_EXCEPTION(future.is_null(), std::logic_error,
+                               "Error in PHX::DagManager<Traits>::evaluateFieldsTaskParallel():\n"
+                               << "The policy is out of memory. Increase the memory pool size!\n");
+    node_futures_[topoSortEvalIndex[n]] = future;
   }
 
-  Kokkos::Experimental::wait(policy);
+  Kokkos::wait(policy);
 }
 #endif
 
@@ -652,7 +712,6 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     }
     if (writeEvaluatedFields) {
       ofs << "\\n   Contributes:";
-      const auto& contrib_fields = node.get()->contributedFields(); 
       for (const auto& field : contrib_fields)
 	ofs << "\\n      " << field->identifier();
     }
@@ -691,7 +750,7 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 
 //=======================================================================
 template<typename Traits>
-const std::vector< Teuchos::RCP<PHX::FieldTag> >& 
+const std::vector<Teuchos::RCP<PHX::FieldTag>>& 
 PHX::DagManager<Traits>::getFieldTags()
 {
   return fields_;
@@ -814,6 +873,9 @@ void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
     Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();
 
     for (const auto& f : e->evaluatedFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+
+    for (const auto& f : e->contributedFields())
       field_to_evaluators_binding_[f->identifier()].push_back(e);
 
     for (const auto& f : e->dependentFields())

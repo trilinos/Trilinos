@@ -132,17 +132,17 @@ void Quadrature<Real>::update(Real alpha, Quadrature<Real> &rule) {
     typename std::map<std::vector<Real>,int>::iterator it2;
   
     // Get location of last point and weight 
-    int loc = this->points_.size();
+    int loc = points_.size();
  
     // Intersection of rule1 and rule2 and set difference rule2 \ rule1
-    for ( it2=rule.begin(); it2!=rule.end(); it2++ ) {
-      it = (this->points_).find(it2->first);
-      if ( it != (this->points_).end() ) {
-        (this->weights_)[it->second] += alpha*rule.getWeight(it2->second);
+    for ( it2=rule.begin(); it2!=rule.end(); ++it2 ) {
+      it = points_.find(it2->first);
+      if ( it != points_.end() ) {
+        weights_[it->second] += alpha*rule.getWeight(it2->second);
       } 
       else {
-        (this->points_).insert(std::pair<std::vector<Real>,int>(it2->first,loc));
-        (this->weights_).push_back(alpha*rule.getWeight(it2->second));
+        points_.insert(std::pair<std::vector<Real>, int>(it2->first,loc));
+        weights_.push_back(alpha*rule.getWeight(it2->second));
         loc++;
       }
     }

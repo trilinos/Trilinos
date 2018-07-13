@@ -146,10 +146,6 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int,Domi::DefaultNode::DefaultNodeType> >*");
   //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
-  //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
@@ -168,6 +164,18 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_IntVector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.IntVector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //
@@ -268,7 +276,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_IntVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 
@@ -283,10 +291,6 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
     SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
-  //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
   //
   // Result objects
   void *argp = 0;
@@ -306,6 +310,18 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.MultiVector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //
@@ -419,7 +435,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_MultiVector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   return NULL;
 }
 
@@ -434,10 +450,6 @@ convertPythonToEpetraVector(PyObject * pyobj,
     SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector >*");
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
-  //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
   //
   // Result objects
   void *argp = 0;
@@ -457,6 +469,18 @@ convertPythonToEpetraVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.Vector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //
@@ -557,7 +581,7 @@ convertPythonToEpetraVector(PyObject * pyobj,
   // work, so it is time to throw an exception.
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_Vector",
-               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+               convertPyStringToChar(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
 
@@ -1026,12 +1050,19 @@ convertToDimData(const Epetra_BlockMap & ebm,
     if (PyDict_SetItemString(dim_dict,
                              "dist_type",
                              PyString_FromString("b")) == -1) goto fail;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    long long minMyGID = (long long) ebm.MinMyGID();
+    long long maxMyGID = (long long) ebm.MaxMyGID();
+#else
+    long long minMyGID = ebm.MinMyGID64();
+    long long maxMyGID = ebm.MaxMyGID64();
+#endif
     if (PyDict_SetItemString(dim_dict,
                              "start",
-                             PyInt_FromLong(ebm.MinMyGID64())) == -1) goto fail;
+                             PyInt_FromLong(minMyGID)) == -1) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "stop",
-                             PyInt_FromLong(ebm.MaxMyGID64()+1)) == -1) goto fail;
+                             PyInt_FromLong(maxMyGID+1)) == -1) goto fail;
   }
   else
   {
@@ -1041,10 +1072,17 @@ convertToDimData(const Epetra_BlockMap & ebm,
                              "dist_type",
                              PyString_FromString("u")) == -1) goto fail;
     dims    = ebm.NumMyElements();
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     indices = PyArray_SimpleNewFromData(1,
                                         &dims,
                                         NPY_LONG,
                                         (void*)ebm.MyGlobalElements64());
+#else
+    indices = PyArray_SimpleNewFromData(1,
+                                        &dims,
+                                        NPY_INT,
+                                        (void*)ebm.MyGlobalElements());
+#endif
     if (!indices) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "indices",

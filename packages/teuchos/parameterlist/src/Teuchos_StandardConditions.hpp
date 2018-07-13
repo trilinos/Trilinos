@@ -251,7 +251,7 @@ public:
  * whether or not a number parameter is greater than 0 (or some other number
  * based on a given function).
  * If the parameter is  greater than 0 this is interperted as the condition
- * being "true". Otherwise the oncidiont is interperted as false.
+ * being "true". Otherwise the condition is interperted as false.
  *
  * Please see NumberConditionConverter for documenation
  * regarding the XML representation of this condition.

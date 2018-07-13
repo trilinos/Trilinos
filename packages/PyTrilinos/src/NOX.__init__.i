@@ -41,7 +41,6 @@
 //
 // ***********************************************************************
 // @HEADER
-
 %define %nox_docstring
 "
 PyTrilinos.NOX is the python interface to the Trilinos nonlinear
@@ -70,29 +69,31 @@ script in the example subdirectory of the PyTrilinos package:
 "
 %enddef
 
-%module(package   = "PyTrilinos.NOX",
-	autodoc   = "1",
-	docstring = %nox_docstring) __init__
+%define %nox_import_code
+"
+from . import ___init__
+"
+%enddef
+
+%module(package      = "PyTrilinos.NOX",
+	autodoc      = "1",
+        moduleimport = %nox_import_code,
+        docstring    = %nox_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
 // PyTrilinos configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos include
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// NOX includes
-#include "NOX_Version.H"
+// NOX include files
+#include "PyTrilinos_NOX_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -107,7 +108,7 @@ script in the example subdirectory of the PyTrilinos package:
 // Include NOX documentation
 %include "NOX_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import
@@ -146,9 +147,9 @@ import sys
 
 # Abstract, Solver, and StatusTest namespaces
 __all__ = ['Abstract', 'Solver', 'StatusTest']
-import Abstract
-import Solver
-import StatusTest
+from . import Abstract
+from . import Solver
+from . import StatusTest
 %}
 
 // NOX.Epetra namespace
@@ -159,8 +160,6 @@ import StatusTest
 # Epetra namespace
 __all__.append('Epetra')
 from . import Epetra
-sys.modules["PyTrilinos.NOX.Epetra.___init__"] = sys.modules["___init__"]
-del sys.modules["___init__"]
 %}
 #endif
 

@@ -169,7 +169,7 @@ FieldBase * FieldRepository::declare_field(
 
   // Check that the field of this name has not already been declared
 
-  FieldBase * f[ MaximumFieldStates ] ;
+  FieldBase * f[ MaximumFieldStates ] = {nullptr};
 
   f[0] = get_field(
                 arg_entity_rank ,

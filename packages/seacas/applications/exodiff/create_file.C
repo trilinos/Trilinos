@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -38,9 +38,9 @@
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for find_string, etc
 #include "util.h"         // for TOPTR
+#include <cstddef>        // for size_t
 #include <cstdio>         // for sprintf, nullptr
 #include <iostream>       // for operator<<, basic_ostream, etc
-#include <stddef.h>       // for size_t
 #include <string>         // for string, char_traits, etc
 #include <vector>         // for vector
 template <typename INT> class ExoII_Read;
@@ -62,11 +62,11 @@ namespace {
   void output_diff_names(const char *type, const std::vector<std::string> &names);
   void output_compare_names(const char *type, const std::vector<std::string> &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2);
-}
+} // namespace
 
 namespace {
   char buf[256];
-}
+} // namespace
 
 template <typename INT>
 void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *diff_found)
@@ -146,17 +146,17 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
                 interface.coord_tol.typestr(), interface.coord_tol.floor);
         std::cout << buf << '\n';
       }
-      else
+      else {
         std::cout << "Locations of nodes will not be considered.\n";
-
+      }
       if (interface.time_tol.type != IGNORE) {
         sprintf(buf, "Time step values:  tol: %8g %s, floor: %8g", interface.time_tol.value,
                 interface.time_tol.typestr(), interface.time_tol.floor);
         std::cout << buf << '\n';
       }
-      else
+      else {
         std::cout << "Time step time values will not be differenced.\n";
-
+      }
       output_diff_names("Global", interface.glob_var_names);
       output_diff_names("Nodal", interface.node_var_names);
       output_diff_names("Element", interface.elmt_var_names);
@@ -260,7 +260,7 @@ namespace {
     if (!names.empty()) {
       std::vector<char *> vars(names.size());
       for (unsigned i = 0; i < names.size(); ++i) {
-        vars[i] = (char *)(names[i].c_str());
+        vars[i] = const_cast<char *>(names[i].c_str());
         SMART_ASSERT(vars[i] != nullptr);
       }
       ex_put_variable_names(file_id, type, names.size(), TOPTR(vars));
@@ -273,12 +273,14 @@ namespace {
     if (!names.empty()) {
       std::cout << type << " variables to be compared:\n";
       for (unsigned v = 0; v < names.size(); ++v) {
-        if (v == 0)
+        if (v == 0) {
           sprintf(buf, "%-32s tol: %8g (%s), floor: %8g", names[v].c_str(), tol[v].value,
                   tol[v].typestr(), tol[v].floor);
-        else
+        }
+        else {
           sprintf(buf, "%-32s      %8g (%s),        %8g", names[v].c_str(), tol[v].value,
                   tol[v].typestr(), tol[v].floor);
+        }
         std::cout << "\t" << buf << '\n';
       }
     }
@@ -294,11 +296,13 @@ namespace {
   {
     if (!names.empty()) {
       std::cout << type << " variables to be differenced:\n";
-      for (auto &name : names)
+      for (auto &name : names) {
         std::cout << "\t" << name << '\n';
+      }
     }
-    else
+    else {
       std::cout << "No " << type << " variables will be differenced.\n";
+    }
   }
 
   void build_variable_names(const char *type, std::vector<std::string> &names,
@@ -310,8 +314,9 @@ namespace {
     for (auto name : names) {
       chop_whitespace(name);
       SMART_ASSERT(!name.empty());
-      if (name[0] == '!')
+      if (name[0] == '!') {
         x_list.push_back(extract_token(name, "!")); // remove "!" & add
+      }
     }
 
     if (do_all_flag) {
@@ -327,9 +332,10 @@ namespace {
             }
             else {
               *diff_found = true;
-              if (!interface.quiet_flag)
+              if (!interface.quiet_flag) {
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
                           << "\" is in the first file but not the second.\n";
+              }
               continue;
             }
           }
@@ -350,9 +356,10 @@ namespace {
               find_string(var_names1, name, interface.nocase_var_names) < 0) {
             if (find_string(x_list, name, interface.nocase_var_names) < 0) {
               *diff_found = true;
-              if (!interface.quiet_flag)
+              if (!interface.quiet_flag) {
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
                           << "\" is in the second file but not the first.\n";
+              }
               continue;
             }
           }
@@ -366,8 +373,9 @@ namespace {
     for (unsigned n = 0; n < names.size(); ++n) {
       std::string name = names[n];
       chop_whitespace(name);
-      if (name[0] == '!')
+      if (name[0] == '!') {
         continue;
+      }
 
       int idx = find_string(var_names1, name, interface.nocase_var_names);
       if (idx >= 0) {
@@ -378,16 +386,18 @@ namespace {
         }
         else {
           *diff_found = true;
-          if (!interface.quiet_flag)
+          if (!interface.quiet_flag) {
             std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
                       << "\" is not in the second file.\n";
+          }
         }
       }
       else {
         *diff_found = true;
-        if (!interface.quiet_flag)
+        if (!interface.quiet_flag) {
           std::cout << "exodiff: WARNING .. Specified " << type << " variable \"" << name
                     << "\" is not in the first file.\n";
+        }
       }
     }
     names = tmp_list;
@@ -404,16 +414,19 @@ namespace {
       int num_vars = names.size();
 
       truth_tab.resize(num_vars * num_entity);
-      for (int i     = num_vars * num_entity - 1; i >= 0; --i)
+      for (int i = num_vars * num_entity - 1; i >= 0; --i) {
         truth_tab[i] = 0;
+      }
 
       for (size_t b = 0; b < num_entity; ++b) {
         Exo_Entity *set1 = file1.Get_Entity_by_Index(type, b);
         Exo_Entity *set2 = nullptr;
-        if (interface.by_name)
+        if (interface.by_name) {
           set2 = file2.Get_Entity_by_Name(type, set1->Name());
-        else
+        }
+        else {
           set2 = file2.Get_Entity_by_Id(type, set1->Id());
+        }
 
         if (set2 == nullptr) {
           *diff_found = true;
@@ -432,8 +445,9 @@ namespace {
           }
 
           if (set1->is_valid_var(idx1)) {
-            if (set2->is_valid_var(idx2))
+            if (set2->is_valid_var(idx2)) {
               truth_tab[b * num_vars + out_idx] = 1;
+            }
             else if (!quiet_flag) {
               std::cerr << "exodiff: WARNING " << label << " variable \"" << name
                         << "\" is not saved for " << label << " id " << set1->Id()

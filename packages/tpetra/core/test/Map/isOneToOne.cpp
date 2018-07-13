@@ -41,6 +41,7 @@
 // @HEADER
 */
 
+#include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -58,22 +59,16 @@ namespace {
   using std::endl;
 
   typedef Tpetra::global_size_t GST;
-  typedef int LO;
-  typedef int GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
-  typedef Tpetra::Map<LO, GO, node_type> map_type;
   typedef Teuchos::Comm<int> comm_type;
-  typedef Teuchos::Array<GO>::size_type size_type;
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_contig_uniform_distributed )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_contig_uniform_distributed, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous uniform Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -90,7 +85,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::GloballyDistributed, node);
+      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::GloballyDistributed);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -128,14 +123,13 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_serial_contig_uniform_distributed )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_serial_contig_uniform_distributed, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous uniform Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -152,7 +146,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::GloballyDistributed, node);
+      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::GloballyDistributed);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -190,15 +184,14 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_contig_uniform_replicated )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_contig_uniform_replicated, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous uniform replicated Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -215,7 +208,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::LocallyReplicated, node);
+      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::LocallyReplicated);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -255,14 +248,13 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_serial_contig_uniform_replicated )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_serial_contig_uniform_replicated, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous uniform replicated Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -279,7 +271,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::LocallyReplicated, node);
+      map = map_type (numGlobalIndices, indexBase, comm, Tpetra::LocallyReplicated);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -321,15 +313,14 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_contig_nonuniform )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_contig_nonuniform, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous nonuniform Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -347,7 +338,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, numLocalIndices, indexBase, comm, node);
+      map = map_type (numGlobalIndices, numLocalIndices, indexBase, comm);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -386,14 +377,13 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_serial_contig_nonuniform )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_serial_contig_nonuniform, LO, GO)
   {
     out << "Testing Map::isOneToOne with a contiguous nonuniform Map over one process" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm = rcp (new Teuchos::SerialComm<int> ());
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -411,7 +401,7 @@ namespace {
     const GO indexBase = 1;
     map_type map;
     try {
-      map = map_type (numGlobalIndices, numLocalIndices, indexBase, comm, node);
+      map = map_type (numGlobalIndices, numLocalIndices, indexBase, comm);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -450,15 +440,14 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_noncontig_oneToOne )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_noncontig_oneToOne, LO, GO)
   {
     out << "Testing Map::isOneToOne with a noncontiguous, one-to-one Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -485,7 +474,7 @@ namespace {
 
     map_type map;
     try {
-      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm, node);
+      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -524,15 +513,14 @@ namespace {
   }
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_noncontig_replicated )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_noncontig_replicated, LO, GO)
   {
     out << "Testing Map::isOneToOne with a noncontiguous, replicated Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -557,7 +545,7 @@ namespace {
 
     map_type map;
     try {
-      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm, node);
+      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -598,15 +586,14 @@ namespace {
 
 
 
-  TEUCHOS_UNIT_TEST( Map, isOneToOne_noncontig_notOneToOne )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, isOneToOne_noncontig_notOneToOne, LO, GO)
   {
     out << "Testing Map::isOneToOne with a noncontiguous, not one-to-one Map" << endl;
     Teuchos::OSTab tab0 (out);
+    typedef Tpetra::Map<LO, GO> map_type;
 
     RCP<const comm_type> comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
@@ -634,7 +621,7 @@ namespace {
 
     map_type map;
     try {
-      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm, node);
+      map = map_type (numGlobalIndices, myGlobalIndices (), indexBase, comm);
       lclSuccess = 1;
     } catch (std::exception& e) {
       lclSuccess = 0;
@@ -673,6 +660,22 @@ namespace {
     TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
-}
+//
+// Instantiations of tests
+//
+#define UNIT_TEST_GROUP(LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_contig_uniform_distributed, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_serial_contig_uniform_distributed, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_contig_uniform_replicated, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_serial_contig_uniform_replicated, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_contig_nonuniform, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_serial_contig_nonuniform, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_noncontig_oneToOne, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_noncontig_replicated, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Map, isOneToOne_noncontig_notOneToOne, LO, GO)
 
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP )
+
+} // (anonymous)

@@ -55,7 +55,7 @@ namespace ROL {
 template<class Real>
 class PathBasedTargetLevel : public LineSearch<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
   Real min_value_;
   Real rec_value_;
@@ -69,7 +69,7 @@ public:
   virtual ~PathBasedTargetLevel() {}
 
   // Constructor
-  PathBasedTargetLevel( Teuchos::ParameterList &parlist ) 
+  PathBasedTargetLevel( ROL::ParameterList &parlist ) 
     : LineSearch<Real>(parlist), min_value_(ROL::ROL_OVERFLOW<Real>()),
       rec_value_(ROL::ROL_OVERFLOW<Real>()),  target_(0.0), sigma_(0.0) {
     Real p1(0.1), one(1);

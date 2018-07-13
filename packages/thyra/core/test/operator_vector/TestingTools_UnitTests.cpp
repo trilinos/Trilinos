@@ -108,12 +108,13 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, show_all_tests_fail)
   ECHO(std::ostringstream myOut);
   ECHO(std::ostringstream myOut2);
   {
-    TestResultsPrinter testResultsPrinter(fancyOStream(rcpFromRef(myOut)), show_all_tests);
+    TestResultsPrinter testResultsPrinter(
+      fancyOStream(rcpFromRef(myOut)), show_all_tests);
     const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
     ECHO(bool this_result = true);
     ECHO(int num = 5);
     TEUCHOS_TEST_EQUALITY_CONST(num, 4, *testOut, this_result);
-    (void)this_result;  // Dumb compiler things this_result is usnused!
+    TEST_EQUALITY_CONST(this_result, false);
     out << "*** Make sure test output is being directly pritned to myOut!\n";
     const std::string myOut_str = Utils::trimWhiteSpace(myOut.str());
     out << "myOut.str() = '" << myOut_str << "'\n";
@@ -196,7 +197,7 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass_throws)
     ECHO(bool this_result = true);
     ECHO(int num = 5);
     TEUCHOS_TEST_EQUALITY_CONST(num, 5, *testOut, this_result);
-    (void)this_result;  // Dumb compiler things this_result is usnused!
+    TEST_EQUALITY_CONST(this_result, true);
     out << "*** Make sure test output is *not* directly printing myOut!\n";
     TEST_EQUALITY_CONST(myOut.str(), std::string(""));
     out << "*** Throw before we can print the final test results!\n";

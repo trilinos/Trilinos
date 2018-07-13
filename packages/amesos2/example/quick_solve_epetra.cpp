@@ -58,10 +58,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
@@ -158,6 +155,14 @@ int main(int argc, char *argv[]) {
     *fos << e.what() << std::endl;
     return 0;
   }
+
+  #ifdef HAVE_AMESOS2_SHYLUBASKER
+  if( Amesos2::query("shylubasker") ) {
+    Teuchos::ParameterList amesos2_params("Amesos2");
+      amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+  }
+  #endif
 
   solver->solve();
 

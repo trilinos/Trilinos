@@ -91,7 +91,7 @@
 \hspace*{0.6in} Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator-Interpolator Selection})
     \index{Cubic Spline Interpolator} \\ 
   \end{tabular}
-\caption{Schematic of ParameterList heirarchy.} 
+\caption{Schematic of ParameterList hierarchy.} 
 \label{fig:ParameterList-schematic} 
 \end{figure} 
 \newpage 
@@ -512,7 +512,7 @@ Gives the max size of the variable time steps.  This is only read and used if
 Gives the number of fixed time steps.  The actual step size gets computed
 on the fly given the size of the time domain.
 This is only read and used if "Take Variable Steps" is set to false
-and "Fixed dt" is set to < 0.0.
+and "Fixed dt" is set to $<$ 0.0.
         \index{Simple Integration Control Strategy!Number of Time Steps}
         \index{Number of Time Steps}
       \item[Fixed dt = -1] 
@@ -864,7 +864,7 @@ The parameters for each Step Control Strategy Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    This Step Control Strategy starts with the initial step size, and simply increases or decreases the step size by the appropriate factor which is based on the change in the solution relative to the specified relative and absolute tolerances (|dx| < r*|x| + a) and if solution status from the solver passes.  Additionally the step size is bounded by the miminum and maximum step size, and the stepper will fail if the step size fails more than the specified value.
+    This Step Control Strategy starts with the initial step size, and simply increases or decreases the step size by the appropriate factor which is based on the change in the solution relative to the specified relative and absolute tolerances ($|$dx$|$ $<$ r*$|$x$|$ + a) and if solution status from the solver passes.  Additionally the step size is bounded by the minimum and maximum step size, and the stepper will fail if the step size fails more than the specified value.
   \item[Parent(s):]
     Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
       \index{Step Control Strategy Selection} 
@@ -972,7 +972,7 @@ The allowable absolute change in the error (the difference between the solution 
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    This Step Control Strategy is specifically for use with the `Implicit BDF' Stepper.  The parameters in this list and sublist are directly related to those available in SUNDAILS/IDA.  See Hindmarsh, `The PVODE and IDA Algorithms', 2000 for more details.
+    This Step Control Strategy is specifically for use with the `Implicit BDF' Stepper.  The parameters in this list and sublist are directly related to those available in SUNDIALS/IDA.  See Hindmarsh, `The PVODE and IDA Algorithms', 2000 for more details.
   \item[Parent(s):]
     Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
       \index{Step Control Strategy Selection} 
@@ -1036,7 +1036,7 @@ Safety factor on the initial step size for time-dependent DAEs.  Larger values w
         \index{magicNumbers!h0\_safety}
         \index{h0\_safety}
       \item[h0\_max\_factor = 0.001] 
-Factor multipler for the initial step size for non-time-dependent DAEs.
+Factor multiplier for the initial step size for non-time-dependent DAEs.
         \index{magicNumbers!h0\_max\_factor}
         \index{h0\_max\_factor}
       \item[h\_phase0\_incr = 2] 
@@ -1076,7 +1076,7 @@ Upper bound for time step ratio.
         \index{magicNumbers!r\_max}
         \index{r\_max}
       \item[r\_hincr\_test = 2] 
-Used in completeStep:  If time step ratio > this then set time step ratio to r\_hincr.
+Used in completeStep:  If time step ratio $>$ this then set time step ratio to r\_hincr.
         \index{magicNumbers!r\_hincr\_test}
         \index{r\_hincr\_test}
       \item[r\_hincr = 2] 
@@ -1158,7 +1158,7 @@ reltol value used in WRMS calculation.
         \index{Implicit BDF Stepper Ramping Step Control Strategy!Relative Error Tolerance}
         \index{Relative Error Tolerance}
       \item[Use LET To Determine Step Acceptance = FALSE] 
-If set to TRUE, then acceptance of step dependes on LET in addition to Nonlinear solver converging.
+If set to TRUE, then acceptance of step depends on LET in addition to Nonlinear solver converging.
 
   Valid std::string values:
 
@@ -1838,7 +1838,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
   \item[Parameters:]
     \begin{description}
       \item[theta = 0.5] 
-Valid values are 0 <= theta <= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies midpoint method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
+Valid values are 0 $<$= theta $<$= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies midpoint method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
         \index{IRK 1 Stage Theta Method!theta}
         \index{theta}
 \end{description}
@@ -1873,7 +1873,7 @@ Valid values are 0 <= theta <= 1, where theta = 0 implies Forward Euler, theta =
   \item[Parameters:]
     \begin{description}
       \item[theta = 0.5] 
-Valid values are 0 < theta <= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies trapezoidal method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
+Valid values are 0 $<$ theta $<$= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies trapezoidal method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
         \index{IRK 2 Stage Theta Method!theta}
         \index{theta}
 \end{description}

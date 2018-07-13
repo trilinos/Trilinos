@@ -61,10 +61,8 @@ namespace stk {
  * executable (assuming the executable is mapped into the same memory location for each process).
  * In order to remove the pointer-ness of the static memory location, the address is cast to a
  * pointer difference type which is an integral type by subtracting the zero pointer from it.
- *
  */
 typedef ptrdiff_t MessageId;
-// typedef std::vector<void *>::difference_type MessageId;
 
 /**
  * @brief Enumeration <b>MessageType</b> declares the global message types.
@@ -72,7 +70,6 @@ typedef ptrdiff_t MessageId;
  * Currently warning and doomed (error) message types are defined.  Additional type may be added
  * after MSG_DOOMED.  The MSG_SYMMETRIC bit indicates that the message was generated identically
  * across all processors.
- *
  */
 enum MessageType {
   MSG_WARNING           = 0,                    ///< Message is a warning
@@ -94,7 +91,6 @@ enum MessageType {
  * application run.  Some throttles defined for the application, while other may be reset at each
  * time step or other interval.  This allows warnings to be repeated at each time step rather than
  * cut off.
- *
  */
 enum ThrottleGroup {
   MSG_APPLICATION       = 0,
@@ -103,7 +99,6 @@ enum ThrottleGroup {
 
 /**
  * @brief Class <b>Throttle</b> describes the cutoff limits for a message throttle.
- *
  */
 struct Throttle
 {
@@ -115,7 +110,6 @@ struct Throttle
    *
    * @param group		an <b>int</b> value to identify the throttle group that this message
    *                            belongs to. 
-   *
    */
   Throttle(size_t cutoff, int group)
     : m_cutoff(cutoff),
@@ -143,7 +137,6 @@ struct Throttle
  * executable (assuming the executable is mapped into the same memory location for each process).
  * In order to remove the pointer-ness of the static memory location, the address is cast to a
  * pointer difference type which is an integral type by subtracting the zero pointer from it.
- *
  */
 struct MessageCode
 {
@@ -175,7 +168,6 @@ struct MessageCode
    *
    * @param throttle_group	an <b>int</b> value to identify the throttle group that this message
    *                            belongs to. 
-   *
    */
   MessageCode(MessageId message_id, size_t throttle_cutoff, int throttle_group)
     : m_id(message_id),
@@ -188,82 +180,18 @@ struct MessageCode
   Throttle              m_throttle;             ///< Throttle characteristics
 };
 
-/**
- * @brief Member function <b>get_message_count</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @return			an <b>unsigned int</b> ...
- */
 unsigned get_message_count(unsigned message_type);
 
-/**
- * @brief Member function <b>reset_message_count</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- */
 void reset_message_count(unsigned message_type);
 
-/**
- * @brief Member function <b>set_max_message_count</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @param max_count		an <b>unsigned int</b> ...
- *
- */
 void set_max_message_count(unsigned message_type, unsigned max_count);
 
-/**
- * @brief Member function <b>get_max_message_count</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @return			an <b>unsigned int</b> ...
- */
 unsigned get_max_message_count(unsigned message_type);
 
-/**
- * @brief Member function <b>get_message_name</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @return			a <b>std::string</b> ...
- */
 const std::string &get_message_name(unsigned message_type);
 
-/**
- * @brief Member function <b>set_message_name</b> ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @param max_count		an <b>unsigned int</b> ...
- *
- * @param name			a <b>std::string</b> const ...
- *
- */
 void register_message_type(unsigned message_type, unsigned max_count, const char *name);
 
-/**
- * @brief Function <b>reset_message_group</b> sets the count to zero of all messages in the
- * specified throttle group.
- *
- * @param throttle_group	an <b>int</b> value of the throttle group to reset.
- *
- */
-void reset_throttle_group(int throttle_group);
-
-/**
- * @brief Member function <b>report_message</b> ...
- *
- * @param message		an <b>char</b> const pointer ...
- *
- * @param message_type		an <b>unsigned int</b> ...
- *
- * @param message_code		a <b>MessageCode</b> ...
- *
- */
 void report_message(const char *message, unsigned message_type, const MessageCode &message_code);
 
 /**
@@ -291,24 +219,8 @@ void add_deferred_message(int message_type, MessageId message_id, size_t throttl
  * processor. 
  *
  * @param comm			a <b>ParallelMachine</b> communicator.
- *
  */
 void report_deferred_messages(MPI_Comm comm);
-
-/**
- * @brief Function <b>aggregate_messages</b> writes a message message to the output string by
- * joining the messages from each processor, in order.  Each message is separated by the specified
- * separation string.
- *
- * @param comm			a <b>ParallelMachine</b> communicator.
- *
- * @param os			a <b>std::ostream</b> reference to the output stream to receive the
- *                              aggregated message.
- *
- * @param separator		a <b>char</b> const pointer to the separation string.
- *
- */
-void aggregate_messages(MPI_Comm comm, std::ostringstream &os, const char *separator = ", ");
 
 /**
  * @brief Function <b>operator<<</b> writes the message type name to the output stream.  If the

@@ -50,8 +50,6 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -61,7 +59,7 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -388,7 +386,7 @@ int main (int argc, char* argv[])
   using panzer::StrPureBasisPair;
   using panzer::StrPureBasisComp;
 
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   {
 
@@ -436,7 +434,7 @@ int main (int argc, char* argv[])
       try {
         clp.parse(argc, argv);
       } catch (...) {
-        PHX::FinalizeKokkosDevice();
+        Kokkos::finalize_all();
         return -1;
       }
   
@@ -497,7 +495,7 @@ int main (int argc, char* argv[])
       mesh_factory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
       mesh->writeToExodus("output.exo");
       out << "Stopping after writing mesh because --generate-mesh-only was requested.\n";
-      PHX::FinalizeKokkosDevice();
+      Kokkos::finalize_all();
       return 0;
     }
   
@@ -505,23 +503,12 @@ int main (int argc, char* argv[])
     // reader.
     po.is3d = mesh->getMetaData()->spatial_dimension() == 3;
   
-    if ( ! po.mesh_filename.empty() && ! po.is3d) {
-      // Special case.
-      po.eb_names.clear();
-      po.ss_names.clear();
-      po.eb_names.push_back("silicon1");
-      po.eb_names.push_back("silicon2");
-      po.ss_names.push_back("anode");
-      po.ss_names.push_back("interface");
-      po.ss_names.push_back("cathode");    
+    if (po.is3d) {
+      po.eb_names.push_back("eblock-0_0_0");
+      po.eb_names.push_back("eblock-1_0_0");
     } else {
-      if (po.is3d) {
-        po.eb_names.push_back("eblock-0_0_0");
-        po.eb_names.push_back("eblock-1_0_0");
-      } else {
-        po.eb_names.push_back("eblock-0_0");
-        po.eb_names.push_back("eblock-1_0");
-      }
+      po.eb_names.push_back("eblock-0_0");
+      po.eb_names.push_back("eblock-1_0");
     }
   
     // construct input physics and physics block
@@ -589,7 +576,11 @@ int main (int argc, char* argv[])
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
   
     std::vector<std::string> elementBlockNames;
     mesh->getElementBlockNames(elementBlockNames);
@@ -607,7 +598,7 @@ int main (int argc, char* argv[])
       if (has_interface_condition)
         buildInterfaceConnections(bcs, conn_manager);
       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-      globalIndexerFactory.setEnableGhosting(has_interface_condition);
+      globalIndexerFactory.setUseNeighbors(has_interface_condition);
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
         Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, conn_manager, "");
       if (has_interface_condition)
@@ -616,7 +607,7 @@ int main (int argc, char* argv[])
   
     // construct some linear algebra object, build object to pass to evaluators
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-      = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+      = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
   
     std::vector<std::string> names;
     std::vector<std::vector<std::string> > eblocks;
@@ -829,8 +820,6 @@ int main (int argc, char* argv[])
     /////////////////////////////////////////////////////////////
     out << (pass ? "PASS" : "FAIL") << " BASICS\n";
   }
-
-  PHX::FinalizeKokkosDevice();
 
   return 0;
 }

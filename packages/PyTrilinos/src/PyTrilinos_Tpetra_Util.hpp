@@ -55,6 +55,7 @@
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
+#include "Python3Compat.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Teuchos includes
@@ -146,7 +147,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
     if (!dim_dict) goto fail;
     dist_type = PyDict_GetItemString(dim_dict, "dist_type");
     if (!dist_type) goto fail;
-    if (strcmp(PyString_AsString(dist_type), "b") == 0)
+    if (strcmp(convertPyStringToChar(dist_type), "b") == 0)
     {
       start = PyDict_GetItemString(dim_dict, "start");
       if (!start) goto fail;
@@ -155,7 +156,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
       dims[i] = PyInt_AsLong(stop) - PyInt_AsLong(start);
       if (PyErr_Occurred()) goto fail;
     }
-    else if (strcmp(PyString_AsString(dist_type), "u") == 0)
+    else if (strcmp(convertPyStringToChar(dist_type), "u") == 0)
     {
       indices = PyDict_GetItemString(dim_dict, "indices");
       if (!indices) goto fail;
@@ -166,7 +167,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
     {
       PyErr_Format(PyExc_ValueError,
                    "Unsupported distribution type '%s'",
-                   PyString_AsString(dist_type));
+                   convertPyStringToChar(dist_type));
       goto fail;
     }
   }

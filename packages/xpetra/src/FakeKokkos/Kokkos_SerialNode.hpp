@@ -48,25 +48,22 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-/*namespace KokkosClassic {
-namespace DoNotUse {
-
-  class SerialNode {
-    public:
-      SerialNode(Teuchos::ParameterList &pl) {}
-  };
-
-} // end of DoNotUse namespace
-} // end of KokkosClassic namespace*/
-
 // This is the node definition used if Epetra is enabled only
+// Epetra can be compiled using the SerialNode OR the OpenMP Node
+// If there is no Kokkos provide dummy classes for all Kokkos node
+// types that Epetra might be compiled for.
 namespace Kokkos {
 namespace Compat {
-  //typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
   class KokkosSerialWrapperNode {
   public:
     KokkosSerialWrapperNode(Teuchos::ParameterList &pl) {}
     KokkosSerialWrapperNode() {}
+  };
+
+  class KokkosOpenMPWrapperNode {
+  public:
+    KokkosOpenMPWrapperNode(Teuchos::ParameterList &pl) {}
+    KokkosOpenMPWrapperNode() {}
   };
 } // end of Compat namespace
 } // end of Kokkos namespace

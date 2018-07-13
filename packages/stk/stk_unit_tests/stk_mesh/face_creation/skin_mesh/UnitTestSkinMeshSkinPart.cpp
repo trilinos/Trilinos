@@ -4,7 +4,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
@@ -35,7 +35,7 @@ using namespace stk::mesh;
 
 void add_element_to_block(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::Part& block)
 {
-    bulkData.change_entity_parts(element, {&block}, {});
+    bulkData.change_entity_parts(element, ConstPartVector{&block}, ConstPartVector{});
 }
 
 stk::mesh::PartVector create_element_blocks(stk::mesh::MetaData& meta, stk::topology top)
@@ -198,7 +198,7 @@ TEST(ElementGraph, skin_part_3_blocks)
          stk::mesh::PartVector blocks = create_element_blocks(meta, stk::topology::HEX_8);
 
          stk::mesh::Part& active = meta.declare_part("active");
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+         stk::io::fill_mesh("generated:1x1x4", bulkData);
 
          stk::mesh::EntityVector elements = get_elements(bulkData);
          add_elements_to_various_blocks(bulkData, blocks, elements);

@@ -60,13 +60,6 @@ set_max_doomed_count(
 }
 
 
-unsigned
-get_max_doomed_count()
-{
-  return get_max_message_count(MSG_DOOMED);
-}
-
-
 void
 report_doomed(
   const char *          message,

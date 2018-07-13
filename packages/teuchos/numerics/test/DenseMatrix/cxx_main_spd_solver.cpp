@@ -243,6 +243,9 @@ int main(int argc, char* argv[])
   xhat.putScalar( ScalarTraits<STYPE>::zero() );
   b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A3full, *x3, ScalarTraits<STYPE>::zero());
 
+  Teuchos::RCP<SDMatrix> A3bak = Teuchos::rcp( new SDMatrix( *A3 ) );
+  Teuchos::RCP<DVector> b3bak = Teuchos::rcp( new DVector( Teuchos::Copy, b ) );
+
   // Create a serial dense solver.
   Teuchos::SerialSpdDenseSolver<OTYPE, STYPE> solver3;
   solver3.factorWithEquilibration( true );
@@ -259,6 +262,16 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver3.solve();
   testName = "Solve with matrix equilibration: solve() random A (NO_TRANS):";
+  failedComparison = CompareVectors( *x3, xhat, tol );
+  if(verbose && failedComparison>0) std::cout << "COMPARISON FAILED : ";
+  numberFailedTests += failedComparison;
+  numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
+
+  // Factor and solve with matrix equilibration, where only solve is called.
+  solver3.setMatrix( A3bak );
+  solver3.setVectors( Teuchos::rcp( &xhat, false ), b3bak );
+  returnCode = solver3.solve();
+  testName = "Solve with matrix equilibration: solve() without factor() random A (NO_TRANS):";
   failedComparison = CompareVectors( *x3, xhat, tol );
   if(verbose && failedComparison>0) std::cout << "COMPARISON FAILED : ";
   numberFailedTests += failedComparison;

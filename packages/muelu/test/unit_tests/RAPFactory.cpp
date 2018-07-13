@@ -168,6 +168,7 @@ namespace MueLuTests {
 
     // build test-specific default factory manager
     RCP<FactoryManager> defManager = rcp(new FactoryManager());
+    defManager->SetKokkosRefactor(false);
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
@@ -196,7 +197,7 @@ namespace MueLuTests {
     sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
     RAPFactory rap;
-    ParameterList rapList = *(rap.GetValidParameterList());
+    Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
     rapList.set("transpose: use implicit", true);
     rap.SetParameterList(rapList);
     rap.SetFactory("P", rcpFromRef(sapFactory));

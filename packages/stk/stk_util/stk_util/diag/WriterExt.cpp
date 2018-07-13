@@ -75,7 +75,6 @@ operator<<(
   return dout;
 }
 
-
 #if defined ( STK_HAS_MPI )
 Writer &
 operator<<(
@@ -87,7 +86,6 @@ operator<<(
   return dout;
 }
 
-
 Writer &
 operator<<(
   Writer &        dout,
@@ -98,7 +96,6 @@ operator<<(
   return dout;
 }
 
-
 Writer &
 operator<<(
   Writer &        dout,
@@ -108,17 +105,7 @@ operator<<(
     dout << loc.m_value << "@" << loc.m_loc;
   return dout;
 }
-
-  
-Writer &
-operator<<(
-  Writer &        dout,
-  const sierra::MPI::TempLoc &   loc)
-{
-  if (dout.shouldPrint())
-    dout << loc.m_value << " " << loc.m_other << "@" << loc.m_loc;
-  return dout;
-}
+ 
 #endif
 
 } // namespace diag

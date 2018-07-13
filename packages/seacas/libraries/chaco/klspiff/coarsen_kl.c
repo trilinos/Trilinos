@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -136,8 +136,9 @@ void coarsen_kl(
       vwsqrt = smalloc((nvtxs + 1) * sizeof(double));
       makevwsqrt(vwsqrt, graph, nvtxs);
     }
-    else
+    else {
       vwsqrt = NULL;
+    }
 
     /* Create space for subgraph yvecs. */
     for (i = 1; i <= ndims; i++) {
@@ -166,12 +167,15 @@ void coarsen_kl(
         twptr  = term_wgts[j];
         ctwptr = new_term_wgts[j];
         for (i = 1; i <= nvtxs; i++) {
-          if (twptr[i] > .5)
+          if (twptr[i] > .5) {
             ctwptr[i] = 1;
-          else if (twptr[i] < -.5)
+          }
+          else if (twptr[i] < -.5) {
             ctwptr[i] = -1;
-          else
+          }
+          else {
             ctwptr[i] = 0;
+          }
         }
       }
       real_term_wgts = new_term_wgts;
@@ -183,14 +187,17 @@ void coarsen_kl(
 
     if (!COARSEN_VWGTS && step != 0) { /* Construct new goal */
       goal_weight = 0;
-      for (i = 0; i < nsets; i++)
+      for (i = 0; i < nsets; i++) {
         goal_weight += goal[i];
-      for (i        = 0; i < nsets; i++)
+      }
+      for (i = 0; i < nsets; i++) {
         new_goal[i] = goal[i] * (nvtxs / goal_weight);
-      real_goal     = new_goal;
+      }
+      real_goal = new_goal;
     }
-    else
+    else {
       real_goal = goal;
+    }
 
     if (ndims == 1 && nsets > 2) { /* Striping. */
       mediantype   = 4;
@@ -217,8 +224,9 @@ void coarsen_kl(
                real_term_wgts, 0, (float **)NULL, yvecs, evals, architecture, assignment, fake_goal,
                solver_flag, FALSE, 0, ndims, mediantype, eigtol);
 
-    if (mkconnected)
+    if (mkconnected) {
       make_unconnected(graph, &nedges, &cdata, using_ewgts);
+    }
 
     assign(graph, yvecs, nvtxs, ndims, architecture, nsets, vwsqrt, assignment, active, mediantype,
            real_goal, vwgt_max);
@@ -231,8 +239,9 @@ void coarsen_kl(
 
     bndy_list = NULL;
     if (COARSE_KL_BOTTOM || !(step % nstep)) {
-      if (LIMIT_KL_EWGTS)
+      if (LIMIT_KL_EWGTS) {
         compress_ewgts(graph, nvtxs, nedges, ewgt_max, using_ewgts);
+      }
 
       max_dev     = (step == 0) ? vwgt_max : 5 * vwgt_max;
       goal_weight = 0;
@@ -254,8 +263,9 @@ void coarsen_kl(
       }
       klspiff(graph, nvtxs, assignment, nsets, hops, real_goal, real_term_wgts, max_dev, maxdeg,
               using_ewgts, &bndy_list, weights);
-      if (LIMIT_KL_EWGTS)
+      if (LIMIT_KL_EWGTS) {
         restore_ewgts(graph, nvtxs);
+      }
     }
 
     else if (KL_ONLY_BNDY) { /* Find boundary vertices directly. */
@@ -278,10 +288,12 @@ void coarsen_kl(
     if (real_term_wgts != term_wgts && new_term_wgts[1] != NULL) {
       sfree(real_term_wgts[1]);
     }
-    if (vwsqrt != NULL)
+    if (vwsqrt != NULL) {
       sfree(vwsqrt);
-    for (i = ndims; i > 0; i--)
+    }
+    for (i = ndims; i > 0; i--) {
       sfree(yvecs[i]);
+    }
     return;
   }
 
@@ -337,12 +349,14 @@ void coarsen_kl(
   if (COARSEN_VWGTS) {
     cvwgt_max = 0;
     for (i = 1; i <= cnvtxs; i++) {
-      if (cgraph[i]->vwgt > cvwgt_max)
+      if (cgraph[i]->vwgt > cvwgt_max) {
         cvwgt_max = cgraph[i]->vwgt;
+      }
     }
   }
-  else
+  else {
     cvwgt_max = 1;
+  }
 
   cassignment = smalloc((cnvtxs + 1) * sizeof(int));
   nextstep    = step + 1;
@@ -351,8 +365,9 @@ void coarsen_kl(
              mediantype, mkconnected, eigtol, nstep, nextstep, &cbndy_list, weights, give_up);
 
   /* Interpolate assignment back to fine graph. */
-  for (i          = 1; i <= nvtxs; i++)
+  for (i = 1; i <= nvtxs; i++) {
     assignment[i] = cassignment[v2cv[i]];
+  }
 
   if (KL_ONLY_BNDY) {
     /* Construct boundary list from coarse boundary list. */
@@ -399,8 +414,9 @@ void coarsen_kl(
 
   /* Free the space that was allocated. */
   sfree(cassignment);
-  if (cterm_wgts[1] != NULL)
+  if (cterm_wgts[1] != NULL) {
     sfree(cterm_wgts[1]);
+  }
   free_graph(cgraph);
   sfree(v2cv);
 
@@ -408,18 +424,22 @@ void coarsen_kl(
   if (!(step % nstep)) {
     if (!COARSEN_VWGTS && step != 0) { /* Construct new goal */
       goal_weight = 0;
-      for (i = 0; i < nsets; i++)
+      for (i = 0; i < nsets; i++) {
         goal_weight += goal[i];
-      for (i        = 0; i < nsets; i++)
+      }
+      for (i = 0; i < nsets; i++) {
         new_goal[i] = goal[i] * (nvtxs / goal_weight);
-      real_goal     = new_goal;
+      }
+      real_goal = new_goal;
     }
-    else
+    else {
       real_goal = goal;
+    }
 
     maxdeg = find_maxdeg(graph, nvtxs, using_ewgts, &ewgt_max);
-    if (LIMIT_KL_EWGTS)
+    if (LIMIT_KL_EWGTS) {
       compress_ewgts(graph, nvtxs, nedges, ewgt_max, using_ewgts);
+    }
 
     /* If not coarsening ewgts, then need care with term_wgts. */
     if (!using_ewgts && term_wgts[1] != NULL && step != 0) {
@@ -434,12 +454,15 @@ void coarsen_kl(
         twptr  = term_wgts[j];
         ctwptr = new_term_wgts[j];
         for (i = 1; i <= nvtxs; i++) {
-          if (twptr[i] > .5)
+          if (twptr[i] > .5) {
             ctwptr[i] = 1;
-          else if (twptr[i] < -.5)
+          }
+          else if (twptr[i] < -.5) {
             ctwptr[i] = -1;
-          else
+          }
+          else {
             ctwptr[i] = 0;
+          }
         }
       }
       real_term_wgts = new_term_wgts;
@@ -470,14 +493,16 @@ void coarsen_kl(
       sfree(real_term_wgts[1]);
     }
 
-    if (LIMIT_KL_EWGTS)
+    if (LIMIT_KL_EWGTS) {
       restore_ewgts(graph, nvtxs);
+    }
   }
   *pbndy_list = bndy_list;
 
   if (ccoords != NULL) {
-    for (i = 0; i < igeom; i++)
+    for (i = 0; i < igeom; i++) {
       sfree(ccoords[i]);
+    }
     sfree(ccoords);
   }
 

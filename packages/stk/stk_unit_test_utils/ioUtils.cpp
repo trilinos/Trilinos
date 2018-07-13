@@ -1,63 +1,60 @@
 #include "ioUtils.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include "stk_mesh/base/MetaData.hpp"
+#include "GeneratedMeshToFile.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include <stk_mesh/base/Field.hpp>
+#include <stk_io/StkIoUtils.hpp>
 
 namespace stk
 {
 namespace unit_test_util
 {
 
-void fill_mesh_using_stk_io_preexisting(stk::io::StkMeshIoBroker & stkIo, const std::string& meshSpec, stk::mesh::BulkData& bulkData)
-{
-    stkIo.set_bulk_data(bulkData);
-    stkIo.add_mesh_database(meshSpec, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.add_all_mesh_fields_as_input_fields();
-    stkIo.populate_bulk_data();
-}
-
-void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
-{
-    stk::io::StkMeshIoBroker stkIo;
-    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-    fill_mesh_using_stk_io_preexisting(stkIo, meshSpec, bulkData);
-}
-
-void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
-{
-    stk::io::StkMeshIoBroker stkIo;
-    fill_mesh_using_stk_io_preexisting(stkIo, meshSpec, bulkData);
-}
-
-void write_mesh_using_stk_io(const std::string &filename,
-                             stk::mesh::BulkData &bulkData,
-                             stk::io::DatabasePurpose databasePurpose)
-{
-    stk::io::StkMeshIoBroker stkIo;
-    stkIo.set_bulk_data(bulkData);
-    size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
-    stkIo.write_output_mesh(outputFileIndex);
-    stkIo.write_defined_output_fields(outputFileIndex);
-}
-
-
 void generated_mesh_to_file_in_serial(const std::string &meshSizeSpec, const std::string &fileName)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    const int procId = stk::parallel_machine_rank(communicator);
-    if (procId == 0)
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
     {
-        const int spatialDimension = 3;
-        stk::mesh::MetaData meta(spatialDimension);
-        stk::mesh::BulkData stkMesh(meta,MPI_COMM_SELF,stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::io::StkMeshIoBroker broker;
-        broker.set_bulk_data(stkMesh);
-        broker.add_mesh_database("generated:"+meshSizeSpec, stk::io::READ_MESH);
-        broker.create_input_mesh();
-        broker.populate_bulk_data();
-        size_t output_file_index = broker.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
-        broker.write_output_mesh(output_file_index);
+        GeneratedMeshToFile gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+
+        gMesh.setup_mesh(meshSizeSpec, fileName);
+        gMesh.write_mesh();
+    }
+}
+
+void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const
+{
+    stk::mesh::EntityRank fieldRank = field->entity_rank();
+
+    std::vector<stk::mesh::Entity> entities;
+    stk::mesh::get_entities(bulk, fieldRank, entities);
+
+    stk::mesh::FieldVector allTransientFields = stk::io::get_transient_fields(bulk.mesh_meta_data());
+
+    for(stk::mesh::FieldBase * transientField : allTransientFields)
+    {
+        for(size_t i = 0; i < entities.size(); i++)
+        {
+            unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*transientField, entities[i]);
+            double value = 100.0 * time + static_cast<double>(bulk.identifier(entities[i]));
+            double *data = static_cast<double*> (stk::mesh::field_data(*transientField, entities[i]));
+            for(unsigned j=0; j<numEntriesPerEntity; j++)
+                data[j] = value + j;
+        }
+    }
+}
+
+void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
+                                                          const std::string &fileName,
+                                                          const std::string& fieldName,
+                                                          const std::string& globalVariableName,
+                                                          const std::vector<double>& timeSteps,
+                                                          const FieldValueSetter &fieldValueSetter)
+{
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
+    {
+        GeneratedMeshToFileWithTransientFields gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA, fieldName, stk::topology::NODE_RANK);
+
+        gMesh.setup_mesh(meshSizeSpec, fileName);
+        gMesh.write_mesh_with_field(timeSteps, fieldValueSetter, globalVariableName);
     }
 }
 

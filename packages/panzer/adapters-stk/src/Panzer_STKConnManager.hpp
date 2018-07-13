@@ -65,7 +65,7 @@ public:
    typedef typename panzer::ConnManager<int, GO>::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager<int, GO>::GlobalOrdinal GlobalOrdinal;
 
-   STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB);
+   STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
 
    virtual ~STKConnManager() {}
 
@@ -126,7 +126,16 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { return stkMeshDB_->getElementBlockNames(elementBlockIds); }
-
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+    */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const{
+     std::vector<std::string> elementBlockIds;
+     getElementBlockIds(elementBlockIds);
+     elementBlockTopologies.reserve(elementBlockIds.size());
+     for (unsigned i=0; i<elementBlockIds.size(); ++i) {
+       elementBlockTopologies.push_back(*(stkMeshDB_->getCellTopology(elementBlockIds[i])));
+     }
+   }
    /** Get the local element IDs for a paricular element
      * block. These are only the owned element ids.
      *
@@ -163,7 +172,7 @@ public:
 
     /** Get STK interface that this connection manager is built on.
       */
-    Teuchos::RCP<STK_Interface> getSTKInterface() const
+    Teuchos::RCP<const STK_Interface> getSTKInterface() const
     { return stkMeshDB_; }
 
     /** How many elements are owned by this processor. Further,
@@ -222,7 +231,7 @@ protected:
    void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                     unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);
 
-   Teuchos::RCP<STK_Interface> stkMeshDB_;
+   Teuchos::RCP<const STK_Interface> stkMeshDB_;
 
    Teuchos::RCP<std::vector<stk::mesh::Entity> > elements_;
 

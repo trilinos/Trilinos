@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>

@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <string>                       // for to_string
 #include <Ioss_Utils.h>                 // for Utils
 #include <stddef.h>                     // for size_t
 #include <iosfwd>                       // for ostream
@@ -44,9 +45,6 @@
 #include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 
-
-
-
 enum { SpaceDim = 3 };
 
 TEST(UnitTestGmeshFixture, testUnit)
@@ -55,9 +53,9 @@ TEST(UnitTestGmeshFixture, testUnit)
   const size_t num_y = 2;
   const size_t num_z = 3;
   const size_t num_surf = 6;
-  std::string config_mesh = Ioss::Utils::to_string(num_x) + "x" +
-                            Ioss::Utils::to_string(num_y) + "x" +
-                            Ioss::Utils::to_string(num_z) + "|sideset:xXyYzZ";
+  std::string config_mesh = std::to_string(num_x) + "x" +
+                            std::to_string(num_y) + "x" +
+                            std::to_string(num_z) + "|sideset:xXyYzZ";
   stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
 
   fixture.commit();
@@ -66,7 +64,7 @@ TEST(UnitTestGmeshFixture, testUnit)
   ASSERT_EQ( num_surf, sideset_names.size() );
 
   for( size_t i = 0; i < num_surf; ++i ) {
-    std::string surf_name =  (std::string)"surface_" + Ioss::Utils::to_string(i+1);
+    std::string surf_name =  (std::string)"surface_" + std::to_string(i+1);
     ASSERT_TRUE(surf_name == sideset_names[i]);
   }
 

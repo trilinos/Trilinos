@@ -49,8 +49,10 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // Include these to make all of the helpful decls appear
+#ifdef HAVE_STRATIMIKOS_THYRAEPETRAADAPTERS
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#endif
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"

@@ -1,95 +1,67 @@
-KOKKOS_PATH = ../..
+ifndef KOKKOS_PATH
+  MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+  KOKKOS_PATH = $(subst Makefile,,$(MAKEFILE_PATH))../..
+endif
 
 PREFIX ?= /usr/local/lib/kokkos
 
-default: messages build-lib
-	echo "End Build"
+default: build-lib
 
-include $(KOKKOS_PATH)/Makefile.kokkos
-
-ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
-	CXX = $(NVCC_WRAPPER)
-	CXXFLAGS ?= -O3
-	LINK = $(NVCC_WRAPPER)
-	LINKFLAGS ?= 
+ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
+  CXX ?= $(KOKKOS_PATH)/bin/nvcc_wrapper
 else
-	CXX ?= g++
-	CXXFLAGS ?= -O3
-	LINK ?= g++
-	LINKFLAGS ?=  
+  CXX ?= g++
 endif
 
-PWD = $(shell pwd)
+CXXFLAGS ?= -O3
+LINK ?= $(CXX)
+LDFLAGS ?=
 
-KOKKOS_HEADERS_INCLUDE = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
-KOKKOS_HEADERS_INCLUDE_IMPL = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
-KOKKOS_HEADERS_INCLUDE += $(wildcard $(KOKKOS_PATH)/containers/src/*.hpp)
-KOKKOS_HEADERS_INCLUDE_IMPL += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.hpp)
-KOKKOS_HEADERS_INCLUDE += $(wildcard $(KOKKOS_PATH)/algorithms/src/*.hpp)
+include $(KOKKOS_PATH)/Makefile.kokkos
+include $(KOKKOS_PATH)/core/src/Makefile.generate_header_lists
+include $(KOKKOS_PATH)/core/src/Makefile.generate_build_files
 
 CONDITIONAL_COPIES =
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
-	KOKKOS_HEADERS_CUDA += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.hpp)
-	CONDITIONAL_COPIES += copy-cuda
+  CONDITIONAL_COPIES += copy-cuda
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
-	KOKKOS_HEADERS_THREADS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.hpp)
-	CONDITIONAL_COPIES += copy-threads
+  CONDITIONAL_COPIES += copy-threads
 endif
 
-ifeq ($(KOKKOS_INTERNAL_USE_QTHREAD), 1)
-	KOKKOS_HEADERS_QTHREAD += $(wildcard $(KOKKOS_PATH)/core/src/Qthread/*.hpp)
-	CONDITIONAL_COPIES += copy-qthread
+ifeq ($(KOKKOS_INTERNAL_USE_QTHREADS), 1)
+  CONDITIONAL_COPIES += copy-qthreads
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
-	KOKKOS_HEADERS_OPENMP += $(wildcard $(KOKKOS_PATH)/core/src/OpenMP/*.hpp)
-	CONDITIONAL_COPIES += copy-openmp
+  CONDITIONAL_COPIES += copy-openmp
 endif
 
-messages: 
-	echo "Start Build"
+ifeq ($(KOKKOS_INTERNAL_USE_ROCM), 1)
+  CONDITIONAL_COPIES += copy-rocm
+endif
 
-build-makefile-kokkos:
-	rm -f Makefile.kokkos
-	echo "#Global Settings used to generate this library" >> Makefile.kokkos
-	echo "KOKKOS_PATH = $(PREFIX)" >> Makefile.kokkos
-	echo "KOKKOS_DEVICES = $(KOKKOS_DEVICES)" >> Makefile.kokkos
-	echo "KOKKOS_ARCH = $(KOKKOS_ARCH)" >> Makefile.kokkos
-	echo "KOKKOS_DEBUG = $(KOKKOS_DEBUG)" >> Makefile.kokkos
-	echo "KOKKOS_USE_TPLS = $(KOKKOS_USE_TPLS)" >> Makefile.kokkos
-	echo "KOKKOS_CXX_STANDARD = $(KOKKOS_CXX_STANDARD)" >> Makefile.kokkos
-	echo "KOKKOS_OPTIONS = $(KOKKOS_OPTIONS)" >> Makefile.kokkos
-	echo "KOKKOS_CUDA_OPTIONS = $(KOKKOS_CUDA_OPTIONS)" >> Makefile.kokkos
-	echo "CXX ?= $(CXX)" >> Makefile.kokkos 
-	echo "NVCC_WRAPPER ?= $(PREFIX)/bin/nvcc_wrapper" >> Makefile.kokkos
-	echo "" >> Makefile.kokkos  
-	echo "#Source and Header files of Kokkos relative to KOKKOS_PATH" >> Makefile.kokkos
-	echo "KOKKOS_HEADERS = $(KOKKOS_HEADERS)" >> Makefile.kokkos
-	echo "KOKKOS_SRC = $(KOKKOS_SRC)" >> Makefile.kokkos
-	echo "" >> Makefile.kokkos  
-	echo "#Variables used in application Makefiles" >> Makefile.kokkos
-	echo "KOKKOS_CPP_DEPENDS = $(KOKKOS_CPP_DEPENDS)" >> Makefile.kokkos
-	echo "KOKKOS_CXXFLAGS = $(KOKKOS_CXXFLAGS)" >> Makefile.kokkos
-	echo "KOKKOS_CPPFLAGS = $(KOKKOS_CPPFLAGS)" >> Makefile.kokkos
-	echo "KOKKOS_LINK_DEPENDS  = $(KOKKOS_LINK_DEPENDS)" >> Makefile.kokkos
-	echo "KOKKOS_LIBS = $(KOKKOS_LIBS)" >> Makefile.kokkos
-	echo "KOKKOS_LDFLAGS = $(KOKKOS_LDFLAGS)" >> Makefile.kokkos
-	sed \
-		-e 's|$(KOKKOS_PATH)/core/src|$(PREFIX)/include|g' \
-		-e 's|$(KOKKOS_PATH)/containers/src|$(PREFIX)/include|g' \
-		-e 's|$(KOKKOS_PATH)/algorithms/src|$(PREFIX)/include|g' \
-		-e 's|-L$(PWD)|-L$(PREFIX)/lib|g' \
-		-e 's|= libkokkos.a|= $(PREFIX)/lib/libkokkos.a|g' \
-		-e 's|= KokkosCore_config.h|= $(PREFIX)/include/KokkosCore_config.h|g' Makefile.kokkos \
-		> Makefile.kokkos.tmp
-	mv -f Makefile.kokkos.tmp Makefile.kokkos
+ifeq ($(KOKKOS_OS),CYGWIN)
+  COPY_FLAG = -u
+endif
+ifeq ($(KOKKOS_OS),Linux)
+  COPY_FLAG = -u
+endif
+ifeq ($(KOKKOS_OS),Darwin)
+  COPY_FLAG =
+endif
 
-build-lib: build-makefile-kokkos $(KOKKOS_LINK_DEPENDS)
+ifeq ($(KOKKOS_DEBUG),"no")
+  KOKKOS_DEBUG_CMAKE = OFF
+else
+  KOKKOS_DEBUG_CMAKE = ON
+endif
 
-mkdir: 
+build-lib: $(KOKKOS_LINK_DEPENDS)
+
+mkdir:
 	mkdir -p $(PREFIX)
 	mkdir -p $(PREFIX)/bin
 	mkdir -p $(PREFIX)/include
@@ -98,27 +70,32 @@ mkdir:
 
 copy-cuda: mkdir
 	mkdir -p $(PREFIX)/include/Cuda
-	cp $(KOKKOS_HEADERS_CUDA) $(PREFIX)/include/Cuda
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_CUDA) $(PREFIX)/include/Cuda
 
 copy-threads: mkdir
 	mkdir -p $(PREFIX)/include/Threads
-	cp $(KOKKOS_HEADERS_THREADS) $(PREFIX)/include/Threads
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_THREADS) $(PREFIX)/include/Threads
 
-copy-qthread: mkdir
-	mkdir -p $(PREFIX)/include/Qthread
-	cp $(KOKKOS_HEADERS_QTHREAD) $(PREFIX)/include/Qthread
+copy-qthreads: mkdir
+	mkdir -p $(PREFIX)/include/Qthreads
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_QTHREADS) $(PREFIX)/include/Qthreads
 
 copy-openmp: mkdir
 	mkdir -p $(PREFIX)/include/OpenMP
-	cp $(KOKKOS_HEADERS_OPENMP) $(PREFIX)/include/OpenMP
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_OPENMP) $(PREFIX)/include/OpenMP
 
-install: mkdir $(CONDITIONAL_COPIES) build-lib 
-	cp $(NVCC_WRAPPER) $(PREFIX)/bin
-	cp $(KOKKOS_HEADERS_INCLUDE) $(PREFIX)/include
-	cp $(KOKKOS_HEADERS_INCLUDE_IMPL) $(PREFIX)/include/impl
-	cp Makefile.kokkos $(PREFIX)
-	cp libkokkos.a $(PREFIX)/lib
-	cp KokkosCore_config.h $(PREFIX)/include
+copy-rocm: mkdir
+	mkdir -p $(PREFIX)/include/ROCm
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_ROCM) $(PREFIX)/include/ROCm
+
+install: mkdir $(CONDITIONAL_COPIES) build-lib generate_build_settings
+	cp $(COPY_FLAG) $(NVCC_WRAPPER) $(PREFIX)/bin
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_INCLUDE) $(PREFIX)/include
+	cp $(COPY_FLAG) $(KOKKOS_HEADERS_INCLUDE_IMPL) $(PREFIX)/include/impl
+	cp $(COPY_FLAG) $(KOKKOS_MAKEFILE)  $(PREFIX)
+	cp $(COPY_FLAG) $(KOKKOS_CMAKEFILE)  $(PREFIX)
+	cp $(COPY_FLAG) libkokkos.a $(PREFIX)/lib
+	cp $(COPY_FLAG) $(KOKKOS_CONFIG_HEADER) $(PREFIX)/include
 
 clean: kokkos-clean
-	rm -f Makefile.kokkos
+	rm -f $(KOKKOS_MAKEFILE) $(KOKKOS_CMAKEFILE) 

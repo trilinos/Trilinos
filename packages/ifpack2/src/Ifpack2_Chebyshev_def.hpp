@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -46,6 +46,7 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -211,6 +212,18 @@ double Chebyshev<MatrixType>::getApplyFlops () const {
   return ApplyFlops_;
 }
 
+template<class MatrixType>
+size_t Chebyshev<MatrixType>::getNodeSmootherComplexity() const {
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chevyshev::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // Chevyshev costs roughly one apply + one diagonal inverse per iteration
+  return A->getNodeNumRows() + A->getNodeNumEntries();
+}
+
+
 
 template<class MatrixType>
 void
@@ -345,83 +358,58 @@ std::string Chebyshev<MatrixType>::description () const {
 
 template <class MatrixType>
 void Chebyshev<MatrixType>::
-describe (Teuchos::FancyOStream &out,
+describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+
+  // Default verbosity level is VERB_LOW
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+
+  if (vl == Teuchos::VERB_NONE) {
+    return; // print NOTHING, not even the class name
+  }
+
+  // By convention, describe() starts with a tab.
+  //
+  // This does affect all processes on which it's valid to print to
+  // 'out'.  However, it does not actually print spaces to 'out'
+  // unless operator<< gets called, so it's safe to use on all
+  // processes.
+  Teuchos::OSTab tab0 (out);
   const int myRank = this->getComm ()->getRank ();
-
-  if (vl != Teuchos::VERB_NONE && myRank == 0) {
-    // By convention, describe() starts with a tab.
-    Teuchos::OSTab tab0 (out);
-    out << description ();
+  if (myRank == 0) {
+    // Output is a valid YAML dictionary.
+    // In particular, we quote keys with colons in them.
+    out << "\"Ifpack2::Chebyshev\":" << endl;
   }
 
-#if 0
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::VERB_DEFAULT;
-  using Teuchos::VERB_NONE;
-  using Teuchos::VERB_LOW;
-  using Teuchos::VERB_MEDIUM;
-  using Teuchos::VERB_HIGH;
-  using Teuchos::VERB_EXTREME;
-  using std::endl;
-  using std::setw;
-
-  Teuchos::EVerbosityLevel vl = verbLevel;
-  if (vl == VERB_DEFAULT) {
-    vl = VERB_LOW;
-  }
-  RCP<const Comm<int> > comm = A_->getRowMap ()->getComm ();
-
-  const int myImageID = comm->getRank();
-  Teuchos::OSTab tab(out);
-
-  scalar_type MinVal, MaxVal;
-  if (IsComputed_) {
-    Teuchos::ArrayRCP<const scalar_type> DiagView = InvDiagonal_->get1dView();
-    scalar_type myMinVal = DiagView[0];
-    scalar_type myMaxVal = DiagView[0];
-    for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=1; i<DiagView.size(); ++i) {
-      if (STS::magnitude(myMinVal) > STS::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (STS::magnitude(myMaxVal) < STS::magnitude(DiagView[i])) myMaxVal = DiagView[i];
+  Teuchos::OSTab tab1 (out);
+  if (vl >= Teuchos::VERB_LOW && myRank == 0) {
+    out << "Template parameters:" << endl;
+    {
+      Teuchos::OSTab tab2 (out);
+      out << "Scalar: " << TypeNameTraits<scalar_type>::name () << endl
+          << "LocalOrdinal: " << TypeNameTraits<local_ordinal_type>::name () << endl
+          << "GlobalOrdinal: " << TypeNameTraits<global_ordinal_type>::name () << endl
+          << "Device: " << TypeNameTraits<device_type>::name () << endl;
     }
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
-  }
+    out << "Initialized: " << (isInitialized () ? "true" : "false") << endl
+        << "Computed: " << (isComputed () ? "true" : "false") << endl;
+    impl_.describe (out, vl);
 
-  //    none: print nothing
-  //     low: print O(1) info from node 0
-  //  medium:
-  //    high:
-  // extreme:
-  if (vl != VERB_NONE && myImageID == 0) {
-    out << this->description() << endl;
-    out << endl;
-    out << "===============================================================================" << std::endl;
-    out << "Degree of polynomial      = " << PolyDegree_ << std::endl;
-    if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
-    else                         { out << "Using input starting solution" << endl; }
-    if (IsComputed_) {
-      out << "Minimum value on stored inverse diagonal = " << MinVal << std::endl;
-      out << "Maximum value on stored inverse diagonal = " << MaxVal << std::endl;
+    if (impl_.getMatrix ().is_null ()) {
+      out << "Matrix: null" << endl;
     }
-    out << std::endl;
-    out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;
-    out << "------------    -------    ---------------    ---------------   ---------------" << endl;
-    out << setw(12) << "initialize()" << setw(5) << getNumInitialize() << "    " << setw(15) << getInitializeTime() << endl;
-    out << setw(12) << "compute()" << setw(5) << getNumCompute()    << "    " << setw(15) << getComputeTime() << "    "
-        << setw(15) << getComputeFlops() << "    "
-        << setw(15) << (getComputeTime() != 0.0 ? getComputeFlops() / getComputeTime() * 1.0e-6 : 0.0) << endl;
-    out << setw(12) << "apply()" << setw(5) << getNumApply()    << "    " << setw(15) << getApplyTime() << "    "
-        << setw(15) << getApplyFlops() << "    "
-        << setw(15) << (getApplyTime() != 0.0 ? getApplyFlops() / getApplyTime() * 1.0e-6 : 0.0) << endl;
-    out << "===============================================================================" << std::endl;
-    out << endl;
+    else {
+      out << "Global matrix dimensions: ["
+          << impl_.getMatrix ()->getGlobalNumRows () << ", "
+          << impl_.getMatrix ()->getGlobalNumCols () << "]" << endl
+          << "Global nnz: " << impl_.getMatrix ()->getGlobalNumEntries() << endl;
+    }
   }
-#endif // 0
 }
 
 template<class MatrixType>
@@ -476,7 +464,7 @@ applyImpl (const MV& X,
   {
     auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
     auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+    if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
       copiedInput = true;
     } else {

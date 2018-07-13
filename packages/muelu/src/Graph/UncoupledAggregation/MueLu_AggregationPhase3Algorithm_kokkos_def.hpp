@@ -68,6 +68,10 @@ namespace MueLu {
   void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
+    bool error_on_isolated = false;
+    if(params.isParameter("aggregation: error on nodes with no on-rank neighbors"))
+      params.get<bool>("aggregation: error on nodes with no on-rank neighbors");
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
@@ -80,12 +84,12 @@ namespace MueLu {
       if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
-      typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(i);
+      auto neighOfINode = graph.getNeighborVertices(i);
 
       // We don't want a singleton. So lets see if there is an unaggregated
       // neighbor that we can also put with this point.
       bool isNewAggregate = false;
-      for (int j = 0; j < neighOfINode.size(); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
@@ -107,10 +111,10 @@ namespace MueLu {
       } else {
         // We do not want a singleton, but there are no non-aggregated
         // neighbors. Lets see if we can connect to any other aggregates
-        // NOTE: This is very similar to phase 2b, but simplier: we stop with
+        // NOTE: This is very similar to phase 2b, but simpler: we stop with
         // the first found aggregate
         int j = 0;
-        for (; j < neighOfINode.size(); j++) {
+        for (; j < as<int>(neighOfINode.length); j++) {
           LO neigh = neighOfINode(j);
 
           // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
@@ -118,10 +122,16 @@ namespace MueLu {
             break;
         }
 
-        if (j < neighOfINode.size()) {
+        if (j < as<int>(neighOfINode.length)) {
           // Assign to an adjacent aggregate
           vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
-
+        } else if (error_on_isolated) {
+          // Error on this isolated node, as the user has requested
+          std::ostringstream oss;
+          oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
+          oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
+          oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
+          throw Exceptions::RuntimeError(oss.str());
         } else {
           // Create new aggregate (singleton)
           this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;

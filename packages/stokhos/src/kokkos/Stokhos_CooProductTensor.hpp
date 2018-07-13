@@ -149,7 +149,7 @@ public:
 
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
-  size_type entry_count() const { return m_coord.dimension_0(); }
+  size_type entry_count() const { return m_coord.extent(0); }
 
   /** \brief  Get (i,j,k) coordinates of an entry */
   KOKKOS_INLINE_FUNCTION
@@ -165,7 +165,7 @@ public:
 
   /** \brief Number of non-zero's */
   KOKKOS_INLINE_FUNCTION
-  size_type num_non_zeros() const { return m_coord.dimension_0(); }
+  size_type num_non_zeros() const { return m_coord.extent(0); }
 
   /** \brief Number flop's per multiply-add */
   KOKKOS_INLINE_FUNCTION
@@ -199,7 +199,7 @@ public:
     }
 
     // Align entry_count
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };
@@ -332,7 +332,7 @@ public:
 
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
-  size_type entry_count() const { return m_coord.dimension_0(); }
+  size_type entry_count() const { return m_coord.extent(0); }
 
   /** \brief  Get (i,j,k) coordinates of an entry */
   KOKKOS_INLINE_FUNCTION
@@ -350,7 +350,7 @@ public:
 
   /** \brief Number of non-zero's */
   KOKKOS_INLINE_FUNCTION
-  size_type num_non_zeros() const { return m_coord.dimension_0(); }
+  size_type num_non_zeros() const { return m_coord.extent(0); }
 
   /** \brief Number flop's per multiply-add */
   KOKKOS_INLINE_FUNCTION
@@ -384,7 +384,7 @@ public:
     }
 
     // Align entry_count
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };

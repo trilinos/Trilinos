@@ -42,14 +42,15 @@
 // @HEADER
 
 /*! \file  test_01.cpp
-    \brief Unit tests for the mesh manager and the degree-of-freedom manager.
+    \brief Unit test for the mesh manager and the degree-of-freedom manager.
+           Mesh type: RECTANGLE with QUAD CELLS and HGRAD SPACE.
 */
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -69,12 +70,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -82,55 +83,81 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    std::string filename = "input.xml";
+    std::string filename = "input_01.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    //MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
-    Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
-    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
-    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
+    ROL::Ptr<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
+    ROL::Ptr<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
+
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
     Intrepid::FieldContainer<int>   &cellToEdgeMap = *cellToEdgeMapPtr;
+    std::vector<std::vector<std::vector<int> > >  &sideSets = *sideSetsPtr;
     *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
-    // Print mesh to file.
+    // Print mesh info to file.
     std::ofstream meshfile;
-    meshfile.open("mesh.txt");
+    meshfile.open("cells.txt");
     for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,3), 0) << "  " << nodes(cellToNodeMap(i,3), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
+      meshfile << cellToNodeMap(i,0) << "  "
+               << cellToNodeMap(i,1) << "  "
+               << cellToNodeMap(i,2) << "  "
+               << cellToNodeMap(i,3) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("edges.txt");
+    for (int i=0; i<cellToEdgeMap.dimension(0); ++i) {
+      meshfile << cellToEdgeMap(i,0) << "  "
+               << cellToEdgeMap(i,1) << "  "
+               << cellToEdgeMap(i,2) << "  "
+               << cellToEdgeMap(i,3) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("nodes.txt");
+    for (int i=0; i<nodes.dimension(0); ++i) {
+      meshfile << nodes(i,0) << "  "
+               << nodes(i,1) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("sideset.txt");
+    for (int i=0; i<static_cast<int>(sideSets.size()); ++i) {
+      for (int j=0; j<static_cast<int>(sideSets[i].size()); ++j) {
+        if (sideSets[i][j].size() > 0) {
+          for (int k=0; k<static_cast<int>(sideSets[i][j].size()); ++k) {
+            meshfile << sideSets[i][j][k] << std::endl;
+          }
+        }
+        meshfile << std::endl << std::endl;
+      }
     }
     meshfile.close();
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ1 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+    ROL::Ptr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ1 =
+      ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ2 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+    ROL::Ptr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ2 =
+      ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
 
-    std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
+    std::vector<ROL::Ptr<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, ROL::nullPtr);
     basisPtrs[0] = basisPtrQ2;
     basisPtrs[1] = basisPtrQ1;
     basisPtrs[2] = basisPtrQ2;
 
-    Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
+    ROL::Ptr<MeshManager<RealT> > meshmgrPtr = ROL::makePtrFromRef(meshmgr);
 
     DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
 
     *outStream << "Number of node dofs = " << dofmgr.getNumNodeDofs() << std::endl << *(dofmgr.getNodeDofs());
     *outStream << "Number of edge dofs = " << dofmgr.getNumEdgeDofs() << std::endl << *(dofmgr.getEdgeDofs());
     *outStream << "Number of face dofs = " << dofmgr.getNumFaceDofs() << std::endl << *(dofmgr.getFaceDofs());
+    *outStream << "Number of void dofs = " << dofmgr.getNumVoidDofs() << std::endl << *(dofmgr.getVoidDofs());
     *outStream << "Total number of dofs = " << dofmgr.getNumDofs() << std::endl << *(dofmgr.getCellDofs());
 
     std::vector<std::vector<int> > fieldPattern = dofmgr.getFieldPattern();
@@ -145,6 +172,15 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<dofmgr.getNumFields(); ++i) {
       *outStream << "\nField  " << i << std::endl;
       *outStream << *(dofmgr.getFieldDofs(i));
+    }
+
+    bool correct = true;
+    static const int checkDofs[] = {20, 23, 35, 32, 55, 63, 69, 61, 81};
+    for (int i=0; i<dofmgr.getLocalFieldSize(2); ++i) {
+      correct = correct && ( (*(dofmgr.getFieldDofs(2)))(5,i) == checkDofs[i] );
+    }
+    if (!correct) {
+      errorFlag = -1;
     }
 
   }

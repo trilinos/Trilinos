@@ -383,6 +383,35 @@ public:
     else                   return NULL;
   }
 
+  /*! \brief calculate if partition tree is binary.
+   */
+  virtual bool isPartitioningTreeBinary() const
+  {
+    if (this->algorithm_ == Teuchos::null)
+      throw std::logic_error("no partitioning algorithm has been run yet");
+    return this->algorithm_->isPartitioningTreeBinary();
+  }
+
+  /*! \brief get the partition tree - fill the relevant arrays
+   */
+  void getPartitionTree(part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const {
+
+    part_t numParts = static_cast<part_t>(getTargetGlobalNumberOfParts());
+
+    if (this->algorithm_ == Teuchos::null)
+      throw std::logic_error("no partitioning algorithm has been run yet");
+    this->algorithm_->getPartitionTree(
+      numParts, // may want to change how this is passed through
+      numTreeVerts,
+      permPartNums,
+      splitRangeBeg,
+      splitRangeEnd,
+      treeVertParents);
+  }
 
   /*! \brief returns the part box boundary list.
    */
@@ -695,24 +724,21 @@ template <typename Adapter>
   const ParameterList &pl = env_->getParameters();
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
   int numLocal=0, numGlobal=0;
-  double val;
 
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("num_global_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);  // TODO: KDD Skip this double get
-    haveGlobalNumParts = 1;            // TODO: KDD Should be unnecessary once
-    numGlobal = static_cast<int>(val); // TODO: KDD paramlist handles long long.
-    nGlobalParts_ = part_t(numGlobal); // TODO: KDD  also do below.
+    haveGlobalNumParts = 1;
+    nGlobalParts_ = part_t(pe->getValue(&nGlobalParts_));
+    numGlobal = nGlobalParts_;
   }
 
   pe = pl.getEntryPtr("num_local_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);
     haveLocalNumParts = 1;
-    numLocal = static_cast<int>(val);
-    nLocalParts_ = part_t(numLocal);
+    nLocalParts_ = part_t(pe->getValue(&nLocalParts_));
+    numLocal = nLocalParts_;
   }
 
   try{
@@ -1238,8 +1264,8 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  part_t lMax = std::numeric_limits<part_t>::min(); 
-  part_t lMin = std::numeric_limits<part_t>::max();
+  part_t lMax = -1;
+  part_t lMin = (len > 0 ? std::numeric_limits<part_t>::max() : 0);
   part_t gMax, gMin;
 
   for (size_t i = 0; i < len; i++) {
@@ -1260,82 +1286,84 @@ template <typename Adapter>
     env_->localMemoryAssertion(__FILE__, __LINE__, len, procs);
     procs_ = arcp<int>(procs, 0, len);
 
-    part_t *parts = partList.getRawPtr();
-
-    if (procDist_.size() > 0){    // parts are not split across procs
-
-      int procId;
-      for (size_t i=0; i < len; i++){
-        partToProcsMap(parts[i], procs[i], procId);
-      }
-    }
-    else{  // harder - we need to split the parts across multiple procs
-
-      lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_,
-        partCounter);
-
-      int numProcs = comm_->getSize();
-
-      //MD NOTE: there was no initialization for partCounter.
-      //I added the line below, correct me if I am wrong.
-      memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
-
-      for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++)
-        partCounter[parts[i]]++;
-
-      lno_t *procCounter = new lno_t [numProcs];
-      env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
-
-      int proc1;
-      int proc2 = partDist_[0];
-
-      for (part_t part=1; part < nGlobalParts_; part++){
-        proc1 = proc2;
-        proc2 = partDist_[part+1];
-        int numprocs = proc2 - proc1;
-
-        double dNum = partCounter[part];
-        double dProcs = numprocs;
-
-        //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
-        double each = floor(dNum/dProcs);
-        double extra = fmod(dNum,dProcs);
-
-        for (int proc=proc1, i=0; proc<proc2; proc++, i++){
-          if (i < extra)
-            procCounter[proc] = lno_t(each) + 1;
-          else
-            procCounter[proc] = lno_t(each);
+    if (len > 0) {
+      part_t *parts = partList.getRawPtr();
+  
+      if (procDist_.size() > 0){    // parts are not split across procs
+  
+        int procId;
+        for (size_t i=0; i < len; i++){
+          partToProcsMap(parts[i], procs[i], procId);
         }
       }
-
-      delete [] partCounter;
-
-      for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++){
-        if (partList[i] >= nGlobalParts_){
-          // Solution has more parts that targeted.  These
-          // objects just remain on this process.
-          procs[i] = comm_->getRank();
-          continue;
-        }
-        part_t partNum = parts[i];
-        proc1 = partDist_[partNum];
-        proc2 = partDist_[partNum + 1];
-
-        int proc;
-        for (proc=proc1; proc < proc2; proc++){
-          if (procCounter[proc] > 0){
-            procs[i] = proc;
-            procCounter[proc]--;
-            break;
+      else{  // harder - we need to split the parts across multiple procs
+  
+        lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_,
+          partCounter);
+  
+        int numProcs = comm_->getSize();
+  
+        //MD NOTE: there was no initialization for partCounter.
+        //I added the line below, correct me if I am wrong.
+        memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
+  
+        for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++)
+          partCounter[parts[i]]++;
+  
+        lno_t *procCounter = new lno_t [numProcs];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
+  
+        int proc1;
+        int proc2 = partDist_[0];
+  
+        for (part_t part=1; part < nGlobalParts_; part++){
+          proc1 = proc2;
+          proc2 = partDist_[part+1];
+          int numprocs = proc2 - proc1;
+  
+          double dNum = partCounter[part];
+          double dProcs = numprocs;
+  
+          //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
+          double each = floor(dNum/dProcs);
+          double extra = fmod(dNum,dProcs);
+  
+          for (int proc=proc1, i=0; proc<proc2; proc++, i++){
+            if (i < extra)
+              procCounter[proc] = lno_t(each) + 1;
+            else
+              procCounter[proc] = lno_t(each);
           }
         }
-        env_->localBugAssertion(__FILE__, __LINE__, "part to proc",
-          proc < proc2, COMPLEX_ASSERTION);
+  
+        delete [] partCounter;
+  
+        for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++){
+          if (partList[i] >= nGlobalParts_){
+            // Solution has more parts that targeted.  These
+            // objects just remain on this process.
+            procs[i] = comm_->getRank();
+            continue;
+          }
+          part_t partNum = parts[i];
+          proc1 = partDist_[partNum];
+          proc2 = partDist_[partNum + 1];
+  
+          int proc;
+          for (proc=proc1; proc < proc2; proc++){
+            if (procCounter[proc] > 0){
+              procs[i] = proc;
+              procCounter[proc]--;
+              break;
+            }
+          }
+          env_->localBugAssertion(__FILE__, __LINE__, "part to proc",
+            proc < proc2, COMPLEX_ASSERTION);
+        }
+  
+        delete [] procCounter;
       }
-
-      delete [] procCounter;
     }
   }
 
@@ -1344,7 +1372,7 @@ template <typename Adapter>
   // TODO:  remapping.  This problem will go away after we separate process
   // TODO:  mapping from setParts.  But for MueLu's use case, the part
   // TODO:  remapping is all that matters; they do not use the process mapping.
-  int doRemap = 0;
+  bool doRemap = false;
   const Teuchos::ParameterEntry *pe =
                  env_->getParameters().getEntryPtr("remap_parts");
   if (pe) doRemap = pe->getValue(&doRemap);
@@ -1479,7 +1507,7 @@ template <typename Adapter>
     int numLocalParts, int numGlobalParts)
 {
 #ifdef _MSC_VER
-	typedef SSIZE_T ssize_t;
+  typedef SSIZE_T ssize_t;
 #endif
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
@@ -1487,7 +1515,7 @@ template <typename Adapter>
   ssize_t sumGlobal=0, sumLocal=0;
   ssize_t maxGlobal=0, maxLocal=0;
   ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
-      numGlobalParts, numLocalParts};
+                     numGlobalParts, numLocalParts};
 
   partDist_.clear();
   procDist_.clear();

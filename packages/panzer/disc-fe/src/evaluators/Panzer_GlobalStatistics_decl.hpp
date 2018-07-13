@@ -57,7 +57,37 @@ namespace panzer {
 
 struct GlobalData;
     
-PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
+template<typename EvalT, typename Traits>
+class GlobalStatistics
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    GlobalStatistics(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+    void
+    preEvaluate(
+      typename Traits::PreEvalData d);
+
+    void
+    postEvaluate(
+      typename Traits::PostEvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell> volumes;
     
@@ -65,7 +95,7 @@ PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
 
   PHX::MDField<ScalarT,Cell,IP> ones;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_values;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_values;
 
   ScalarT total_volume;
   std::vector<ScalarT> averages;
@@ -88,7 +118,8 @@ PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
 public:
   const PHX::FieldTag& getRequiredFieldTag();
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class GlobalStatistics
+
 
 }
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,15 +34,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
+#include <cmath>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <utility>
 #include <string>
@@ -66,6 +67,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
+     , CMD_USE_ROCM
      , CMD_USE_OPENMP
      , CMD_USE_CUDA_DEV
      , CMD_USE_FIXTURE_X
@@ -113,6 +115,9 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_CUDA ] ) {
     s << " CUDA(" << cmd[ CMD_USE_CUDA_DEV ] << ")" ;
   }
+  if ( cmd[ CMD_USE_ROCM ] ) {
+    s << " ROCM" ;
+  }
   if ( cmd[ CMD_USE_ATOMIC ] ) {
     s << " ATOMIC" ;
   }
@@ -155,7 +160,7 @@ void run( MPI_Comm comm , const int cmd[] )
 {
   int comm_rank = 0 ;
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Comm_rank( comm , & comm_rank );
 #else
   comm = 0 ;
@@ -166,6 +171,7 @@ void run( MPI_Comm comm , const int cmd[] )
     if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
     else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
     else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+    else if ( cmd[ CMD_USE_ROCM ] ) { std::cout << "ROCM" ; }
 
     if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
     else { std::cout << " , LINEAR-ELEMENT" ; }
@@ -254,7 +260,7 @@ int main( int argc , char ** argv )
 {
   int comm_rank = 0 ;
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Init( & argc , & argv );
   MPI_Comm comm = MPI_COMM_WORLD ;
   MPI_Comm_rank( comm , & comm_rank );
@@ -263,31 +269,14 @@ int main( int argc , char ** argv )
   (void) comm ; // suppress warning
 #endif
 
+  Kokkos::initialize(argc,argv);
   int cmdline[ CMD_COUNT ] ;
 
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
 
   if ( 0 == comm_rank ) {
     for ( int i = 1 ; i < argc ; ++i ) {
-      if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
-        cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
-        cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
-        sscanf( argv[++i] , "%dx%d" ,
-                cmdline + CMD_USE_NUMA ,
-                cmdline + CMD_USE_CORE_PER_NUMA );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
-        cmdline[ CMD_USE_CUDA ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
-        cmdline[ CMD_USE_CUDA ] = 1 ;
-        cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "fixture" ) ) {
+      if ( 0 == strcasecmp( argv[i] , "fixture" ) ) {
         sscanf( argv[++i] , "%dx%dx%d" ,
                 cmdline + CMD_USE_FIXTURE_X ,
                 cmdline + CMD_USE_FIXTURE_Y ,
@@ -326,7 +315,7 @@ int main( int argc , char ** argv )
     if ( cmdline[ CMD_ECHO ] && 0 == comm_rank ) { print_cmdline( std::cout , cmdline ); }
   }
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Bcast( cmdline , CMD_COUNT , MPI_INT , 0 , comm );
 #endif
 
@@ -356,64 +345,12 @@ int main( int argc , char ** argv )
       cmdline[ CMD_USE_FIXTURE_Z ] = 2 ;
     }
 
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-    if ( cmdline[ CMD_USE_THREADS ] ) {
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
-      }
-
-      run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::Threads::finalize();
-    }
-
-#endif
-
-#if defined( KOKKOS_HAVE_OPENMP )
-
-    if ( cmdline[ CMD_USE_OPENMP ] ) {
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
-      }
-
-      run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::OpenMP::finalize();
-    }
-
-#endif
-
-#if defined( KOKKOS_HAVE_CUDA )
-    if ( cmdline[ CMD_USE_CUDA ] ) {
-      // Use the last device:
-
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
-
-      run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::Cuda::finalize();
-      Kokkos::HostSpace::execution_space::finalize();
-    }
-
-#endif
+    run< Kokkos::DefaultExecutionSpace , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
 
   }
 
-#if defined( KOKKOS_HAVE_MPI )
+  Kokkos::finalize();
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Finalize();
 #endif
 

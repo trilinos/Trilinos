@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
+template<typename EvalT, typename Traits>
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+Integrator_TransientBasisTimesScalar(
+  const Teuchos::ParameterList& p) :
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   scalar( p.get<std::string>("Value Name"), 
@@ -83,12 +86,12 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
     for (std::vector<std::string>::const_iterator name = 
 	   field_multiplier_names.begin(); 
 	 name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -97,25 +100,34 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
-  num_nodes = residual.dimension(1);
-  num_qp = scalar.dimension(1);
+  num_nodes = residual.extent(1);
+  num_qp = scalar.extent(1);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.evaluate_transient_terms) {
     
@@ -127,17 +139,17 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
 	tmp(cell,qp) = multiplier * scalar(cell,qp);
-	for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+	for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	     field != field_multipliers.end(); ++field)
 	  tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
       }
     }
 
     if(workset.num_cells>0)
-      Intrepid2::FunctionSpaceTools::
-        integrate<ScalarT>(residual, tmp, 
-			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			   Intrepid2::COMP_CPP);
+      Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+        integrate<ScalarT>(residual.get_view(),
+                           tmp, 
+			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   }
 }
 

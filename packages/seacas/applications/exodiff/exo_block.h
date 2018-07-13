@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -45,9 +45,8 @@ template <typename INT> class Exo_Block : public Exo_Entity
 {
 public:
   Exo_Block();
-  Exo_Block(int exo_file_id, size_t block_id);
-  Exo_Block(int exo_file_id, size_t block_id, const char *type, size_t num_elmts,
-            size_t num_nodes_per_elmt_x);
+  Exo_Block(int file_id, size_t exo_block_id);
+  Exo_Block(int file_id, size_t id, const char *type, size_t num_e, size_t num_npe);
   ~Exo_Block() override;
 
   std::string Load_Connectivity();
@@ -71,8 +70,8 @@ public:
 
   int Check_State() const;
 
-  void Display_Stats(std::ostream & = std::cout) const;
-  void Display(std::ostream & = std::cout) const;
+  void Display_Stats(std::ostream & /*s*/ = std::cout) const;
+  void Display(std::ostream & /*s*/ = std::cout) const;
 
 private:
   Exo_Block(const Exo_Block &);                  // Not written.

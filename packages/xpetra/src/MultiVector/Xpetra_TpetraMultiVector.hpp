@@ -244,6 +244,10 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("TpetraMultiVector::getGlobalLength"); return vec_->getGlobalLength(); }
 
+    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { XPETRA_MONITOR("TpetraMultiVector::isSameSize"); return vec_->isSameSize(toTpetra(vec));}
+                          
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -478,27 +482,27 @@ namespace Xpetra {
 
     //! Default constructor
     TpetraMultiVector () {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
 
@@ -621,6 +625,9 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
 
+    // \! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
+  
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -664,7 +671,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) { }
+    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { return Teuchos::null; }
@@ -752,22 +761,22 @@ namespace Xpetra {
 
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
 
@@ -890,6 +899,9 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
 
+    // \! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -933,7 +945,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) { }
+    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { return Teuchos::null; }

@@ -192,12 +192,6 @@ namespace Xpetra {
     //! Returns the current number of allocated entries on this node in the specified local row.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("TpetraCrsGraph::getNumAllocatedEntriesInLocalRow"); return graph_->getNumAllocatedEntriesInLocalRow(localRow); }
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("TpetraCrsGraph::getGlobalNumDiags"); return graph_->getGlobalNumDiags(); }
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeNumDiags"); return graph_->getNodeNumDiags(); }
-
     //! Maximum number of entries in all rows over all processes.
     size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsGraph::getGlobalMaxNumRowEntries"); return graph_->getGlobalMaxNumRowEntries(); }
 
@@ -206,12 +200,6 @@ namespace Xpetra {
 
     //! Whether the graph has a column Map.
     bool hasColMap() const { XPETRA_MONITOR("TpetraCrsGraph::hasColMap"); return graph_->hasColMap(); }
-
-    //! Whether the graph is locally lower triangular.
-    bool isLowerTriangular() const { XPETRA_MONITOR("TpetraCrsGraph::isLowerTriangular"); return graph_->isLowerTriangular(); }
-
-    //! Whether the graph is locally upper triangular.
-    bool isUpperTriangular() const { XPETRA_MONITOR("TpetraCrsGraph::isUpperTriangular"); return graph_->isUpperTriangular(); }
 
     //! Whether column indices are stored using local indices on the calling process.
     bool isLocallyIndexed() const { XPETRA_MONITOR("TpetraCrsGraph::isLocallyIndexed"); return graph_->isLocallyIndexed(); }
@@ -230,6 +218,14 @@ namespace Xpetra {
 
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const { XPETRA_MONITOR("TpetraCrsGraph::getLocalRowView"); graph_->getLocalRowView(LocalRow, indices); }
+
+
+    //! Force the computation of global constants if we don't have them
+    void computeGlobalConstants() {
+      // mfh 07 May 2018: See GitHub Issue #2565.
+      constexpr bool computeLocalTriangularConstants = true;
+      graph_->computeGlobalConstants(computeLocalTriangularConstants);
+    }
 
     //@}
 
@@ -372,22 +368,22 @@ namespace Xpetra {
 
     //! Constructor specifying fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -477,12 +473,6 @@ namespace Xpetra {
     //! Returns the current number of allocated entries on this node in the specified local row.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    global_size_t getGlobalNumDiags() const { return 0; }
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { return 0; }
-
     //! Maximum number of entries in all rows over all processes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -491,12 +481,6 @@ namespace Xpetra {
 
     //! Whether the graph has a column Map.
     bool hasColMap() const { return false; }
-
-    //! Whether the graph is locally lower triangular.
-    bool isLowerTriangular() const { return false; }
-
-    //! Whether the graph is locally upper triangular.
-    bool isUpperTriangular() const { return false; }
 
     //! Whether column indices are stored using local indices on the calling process.
     bool isLocallyIndexed() const { return false; }
@@ -515,6 +499,9 @@ namespace Xpetra {
 
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
+
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
 
     //@}
 
@@ -565,7 +552,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  { }
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra graph
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const { return Teuchos::null; }
@@ -597,22 +586,22 @@ namespace Xpetra {
 
     //! Constructor specifying fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -702,12 +691,6 @@ namespace Xpetra {
     //! Returns the current number of allocated entries on this node in the specified local row.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    global_size_t getGlobalNumDiags() const { return 0; }
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { return 0; }
-
     //! Maximum number of entries in all rows over all processes.
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
@@ -716,12 +699,6 @@ namespace Xpetra {
 
     //! Whether the graph has a column Map.
     bool hasColMap() const { return false; }
-
-    //! Whether the graph is locally lower triangular.
-    bool isLowerTriangular() const { return false; }
-
-    //! Whether the graph is locally upper triangular.
-    bool isUpperTriangular() const { return false; }
 
     //! Whether column indices are stored using local indices on the calling process.
     bool isLocallyIndexed() const { return false; }
@@ -740,6 +717,9 @@ namespace Xpetra {
 
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
+
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
 
     //@}
 
@@ -790,7 +770,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  { }
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra graph
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const { return Teuchos::null; }

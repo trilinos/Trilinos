@@ -396,6 +396,13 @@ field_data(const FieldType & f, Entity e)
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
 }
 
+struct FieldBasePtrLess {
+  bool operator()(const stk::mesh::FieldBase* lhs, const stk::mesh::FieldBase* rhs) const
+  {
+    return lhs->mesh_meta_data_ordinal() < rhs->mesh_meta_data_ordinal();
+  }
+};
+
 } //namespace mesh
 } //namespace stk
 

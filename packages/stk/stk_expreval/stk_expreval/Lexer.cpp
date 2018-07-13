@@ -108,7 +108,7 @@ tokenize(
     Token	token;
   };
 
-  static Graph graph[] = {
+  static constexpr Graph graph[] = {
     {'+', TOKEN_PLUS},
     {'-', TOKEN_MINUS},
     {'*', TOKEN_MULTIPLY},
@@ -138,7 +138,7 @@ tokenize(
     Token	token;
   };
 
-  static Digraph digraph[] = {
+  static constexpr Digraph digraph[] = {
     {'=', '=', TOKEN_EQUAL},
     {'!', '=', TOKEN_NOT_EQUAL},
     {'>', '=', TOKEN_GREATER_EQUAL},

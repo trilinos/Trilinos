@@ -283,6 +283,9 @@ public:
 
   bool operator()(const PartVector& parts) const;
 
+
+  stk::mesh::Selector clone_for_different_mesh(const stk::mesh::MetaData &differentMeta) const;
+
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
 private:

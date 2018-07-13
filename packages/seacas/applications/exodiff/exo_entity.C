@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -31,32 +31,29 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for SystemInterface, interface
+#include "ED_SystemInterface.h" // for ERROR
 #include "exo_entity.h"
-#include "exodusII.h"     // for ex_get_var, ex_inquire_int, etc
+#include "exodusII.h"     // for ex_get_var, EX_INVALID_ID, etc
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for to_lower
-#include "util.h"         // for TOPTR, free_name_array, etc
-#include <cstdlib>        // for exit, nullptr
+#include <cstdint>        // for int64_t
+#include <cstdlib>        // for exit
 #include <cstring>        // for strlen
 #include <iostream>       // for operator<<, basic_ostream, etc
-#include <string>         // for string, char_traits, etc
-#include <sys/types.h>    // for int64_t
-#include <vector>         // for vector
+#include <string>
+#include <string> // for string, char_traits, etc
+#include <vector>
+#include <vector> // for vector
 
 namespace {
-  template <class T> static std::string to_string(const T &t)
-  {
-    std::ostringstream os;
-    os << t;
-    return os.str();
-  }
   size_t get_index(int file_id, EXOTYPE exo_type, size_t id, const char *label);
   size_t get_num_entities(int file_id, EXOTYPE exo_type);
-  size_t get_num_variables(int file_id, EXOTYPE exo_type, const char *label);
-  size_t get_num_attributes(int file_id, EXOTYPE exo_type, size_t id, const char *label);
+  size_t get_num_variables(int file_id, EXOTYPE type, const char *label);
+  size_t get_num_attributes(int file_id, EXOTYPE type, size_t id, const char *label);
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id);
-}
+#endif
+} // namespace
 
 Exo_Entity::Exo_Entity()
     : fileId(-1), id_(EX_INVALID_ID), index_(0), numEntity(0), truth_(nullptr), currentStep(0),
@@ -84,13 +81,15 @@ Exo_Entity::~Exo_Entity()
 {
   delete[] truth_;
   if (numVars > 0) {
-    for (int i = 0; i < numVars; ++i)
+    for (int i = 0; i < numVars; ++i) {
       delete[] results_[i];
+    }
     delete[] results_;
   }
   if (numAttr > 0) {
-    for (int i = 0; i < numAttr; ++i)
+    for (int i = 0; i < numAttr; ++i) {
       delete[] attributes_[i];
+    }
   }
 }
 
@@ -128,10 +127,12 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
 {
   SMART_ASSERT(Check_State());
 
-  if (fileId < 0)
+  if (fileId < 0) {
     return "exodiff: ERROR:  Invalid file id!";
-  if (id_ == EX_INVALID_ID)
+  }
+  if (id_ == EX_INVALID_ID) {
     return "exodiff: ERROR:  Must initialize block parameters first!";
+  }
   if (var_index < 0 || var_index >= numVars) {
     ERROR("Exo_Entity::Load_Results(): var_index is invalid. Aborting...\n");
     exit(1);
@@ -147,20 +148,20 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
     get_truth_table();
   }
 
-  if (truth_[var_index]) {
-    if (!results_[var_index] && numEntity) {
+  if (truth_[var_index] != 0) {
+    if ((results_[var_index] == nullptr) && (numEntity != 0u)) {
       results_[var_index] = new double[numEntity];
       SMART_ASSERT(results_[var_index] != nullptr);
     }
-    if (numEntity) {
+    if (numEntity != 0u) {
       int err = 0;
       err     = ex_get_var(fileId, time_step, exodus_type(), var_index + 1, id_, numEntity,
                        results_[var_index]);
 
       if (err < 0) {
         ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-	      << " returned error value! " << label() << " id = " << id_ << '\n'
-	      << "Aborting...\n");
+              << " returned error value! " << label() << " id = " << id_ << '\n'
+              << "Aborting...\n");
         exit(1);
       }
       else if (err > 0) {
@@ -169,8 +170,9 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
         return oss.str();
       }
     }
-    else
+    else {
       return std::string("WARNING:  No items in this ") + label();
+    }
   }
   else {
     return std::string("WARNING: Variable not stored in this ") + label();
@@ -184,10 +186,12 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 
   SMART_ASSERT(Check_State());
 
-  if (fileId < 0)
+  if (fileId < 0) {
     return "exodiff: ERROR:  Invalid file id!";
-  if (id_ == EX_INVALID_ID)
+  }
+  if (id_ == EX_INVALID_ID) {
     return "exodiff: ERROR:  Must initialize block parameters first!";
+  }
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
   SMART_ASSERT(t1 >= 1 && t1 <= (int)get_num_timesteps(fileId));
   SMART_ASSERT(t2 >= 1 && t2 <= (int)get_num_timesteps(fileId));
@@ -201,19 +205,19 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
     get_truth_table();
   }
 
-  if (truth_[var_index]) {
-    if (!results_[var_index] && numEntity) {
+  if (truth_[var_index] != 0) {
+    if ((results_[var_index] == nullptr) && (numEntity != 0u)) {
       results_[var_index] = new double[numEntity];
       SMART_ASSERT(results_[var_index] != nullptr);
     }
-    if (numEntity) {
+    if (numEntity != 0u) {
       int err =
           ex_get_var(fileId, t1, exodus_type(), var_index + 1, id_, numEntity, results_[var_index]);
 
       if (err < 0) {
         ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-                  << " returned error value! " << label() << " id = " << id_ << '\n'
-	      << "Aborting...\n");
+              << " returned error value! " << label() << " id = " << id_ << '\n'
+              << "Aborting...\n");
         exit(1);
       }
       else if (err > 0) {
@@ -228,8 +232,8 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 
         if (err < 0) {
           ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-                    << " returned error value! " << label() << " id = " << id_ << '\n'
-		<< "Aborting...\n");
+                << " returned error value! " << label() << " id = " << id_ << '\n'
+                << "Aborting...\n");
           exit(1);
         }
 
@@ -239,8 +243,9 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
         }
       }
     }
-    else
+    else {
       return std::string("WARNING:  No items in this ") + label();
+    }
   }
   else {
     return std::string("WARNING: Variable not stored in this ") + label();
@@ -251,15 +256,15 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 const double *Exo_Entity::Get_Results(int var_index) const
 {
   SMART_ASSERT(Check_State());
-  if (currentStep == 0)
+  if (currentStep == 0) {
     return nullptr;
+  }
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
   if (var_index >= 0 && var_index < numVars) {
     return results_[var_index];
   }
-  else {
-    return nullptr;
-  }
+
+  return nullptr;
 }
 
 void Exo_Entity::Free_Results()
@@ -280,9 +285,10 @@ void Exo_Entity::get_truth_table() const
     SMART_ASSERT(truth_ != nullptr);
     // initialize to true for the case of no objects in the block (some older
     // versions of ex_get_object_truth_vector do not set the values at all)
-    for (int i  = 0; i < numVars; ++i)
+    for (int i = 0; i < numVars; ++i) {
       truth_[i] = 1;
-    int err     = ex_get_object_truth_vector(fileId, exodus_type(), id_, numVars, truth_);
+    }
+    int err = ex_get_object_truth_vector(fileId, exodus_type(), id_, numVars, truth_);
     if (err < 0) {
       ERROR("Exo_Entity::get_truth_table(): ex_get_object_truth_vector returned error.\n");
     }
@@ -293,25 +299,27 @@ std::string Exo_Entity::Load_Attributes(int attr_index)
 {
   SMART_ASSERT(Check_State());
 
-  if (fileId < 0)
+  if (fileId < 0) {
     return "exodiff: ERROR:  Invalid file id!";
-  if (id_ == EX_INVALID_ID)
+  }
+  if (id_ == EX_INVALID_ID) {
     return "exodiff: ERROR:  Must initialize block parameters first!";
+  }
   SMART_ASSERT(attr_index >= 0 && attr_index < numAttr);
 
-  if (!attributes_[attr_index] && numEntity) {
+  if ((attributes_[attr_index] == nullptr) && (numEntity != 0u)) {
     attributes_[attr_index] = new double[numEntity];
     SMART_ASSERT(attributes_[attr_index] != nullptr);
   }
 
-  if (numEntity) {
+  if (numEntity != 0u) {
     int err = 0;
     err     = ex_get_one_attr(fileId, exodus_type(), id_, attr_index + 1, attributes_[attr_index]);
 
     if (err < 0) {
       ERROR("Exo_Entity::Load_Attributes(): Call to exodus routine"
-	    << " returned error value! " << label() << " id = " << id_ << '\n'
-	    << "Aborting...\n");
+            << " returned error value! " << label() << " id = " << id_ << '\n'
+            << "Aborting...\n");
       exit(1);
     }
     else if (err > 0) {
@@ -320,8 +328,9 @@ std::string Exo_Entity::Load_Attributes(int attr_index)
       return oss.str();
     }
   }
-  else
+  else {
     return std::string("WARNING:  No items in this ") + label();
+  }
 
   return "";
 }
@@ -376,46 +385,47 @@ void Exo_Entity::internal_load_params()
     else {
       name_ = short_label();
       name_ += "_";
-      name_ += to_string(id_);
+      name_ += std::to_string(id_);
     }
   }
   numVars = get_num_variables(fileId, exodus_type(), label());
-  if (numVars) {
+  if (numVars != 0) {
     results_ = new double *[numVars];
     SMART_ASSERT(results_ != nullptr);
-    for (int i    = 0; i < numVars; ++i)
+    for (int i = 0; i < numVars; ++i) {
       results_[i] = nullptr;
+    }
   }
 
   numAttr = get_num_attributes(fileId, exodus_type(), id_, label());
-  if (numAttr) {
+  if (numAttr != 0) {
     attributes_.resize(numAttr);
 
     char **names = get_name_array(numAttr, name_size);
     int    err   = ex_get_attr_names(fileId, exodus_type(), id_, names);
     if (err < 0) {
       ERROR("ExoII_Read::Get_Init_Data(): Failed to get " << label()
-	    << " attribute names!  Aborting...\n");
+                                                          << " attribute names!  Aborting...\n");
       exit(1);
     }
 
     for (int vg = 0; vg < numAttr; ++vg) {
       SMART_ASSERT(names[vg] != nullptr);
       if (std::strlen(names[vg]) == 0) {
-        std::string name = "attribute_" + to_string(vg + 1);
+        std::string name = "attribute_" + std::to_string(vg + 1);
         attributeNames.push_back(name);
       }
-      else if ((int)std::strlen(names[vg]) > name_size) {
-        std::cerr << trmclr::red
-		  << "exodiff: ERROR: " << label() << " attribute names appear corrupt\n"
+      else if (static_cast<int>(std::strlen(names[vg])) > name_size) {
+        std::cerr << trmclr::red << "exodiff: ERROR: " << label()
+                  << " attribute names appear corrupt\n"
                   << "                A length is 0 or greater than "
                   << "name_size(" << name_size << ")\n"
                   << "                Here are the names that I received from"
                   << " a call to ex_get_attr_names(...):\n";
-        for (int k = 1; k <= numAttr; ++k)
+        for (int k = 1; k <= numAttr; ++k) {
           std::cerr << "\t\t" << k << ") \"" << names[k - 1] << "\"\n";
-        std::cerr << "                 Aborting...\n"
-		  << trmclr::normal;
+        }
+        std::cerr << "                 Aborting...\n" << trmclr::normal;
         exit(1);
       }
       else {
@@ -433,13 +443,14 @@ namespace {
   {
     // Get ids...
     size_t count = get_num_entities(file_id, exo_type);
-    if (ex_int64_status(file_id) & EX_IDS_INT64_API) {
+    if ((ex_int64_status(file_id) & EX_IDS_INT64_API) != 0) {
       std::vector<int64_t> ids(count);
       ex_get_ids(file_id, exo_type, TOPTR(ids));
 
       for (size_t i = 0; i < count; i++) {
-        if ((size_t)ids[i] == id)
+        if (static_cast<size_t>(ids[i]) == id) {
           return i;
+        }
       }
     }
     else {
@@ -447,8 +458,9 @@ namespace {
       ex_get_ids(file_id, exo_type, TOPTR(ids));
 
       for (size_t i = 0; i < count; i++) {
-        if ((size_t)ids[i] == id)
+        if (static_cast<size_t>(ids[i]) == id) {
           return i;
+        }
       }
     }
 
@@ -491,5 +503,7 @@ namespace {
     return num_attr;
   }
 
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id) { return ex_inquire_int(file_id, EX_INQ_TIME); }
-}
+#endif
+} // namespace

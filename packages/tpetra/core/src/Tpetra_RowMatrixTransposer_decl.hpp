@@ -89,7 +89,7 @@ public:
   //@{
 
   //! Compute and return the transpose of the matrix given to the constructor.
-  Teuchos::RCP<crs_matrix_type> createTranspose();
+  Teuchos::RCP<crs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
 
   /// \brief Compute and return the transpose of the matrix given to the constructor.
   ///
@@ -99,7 +99,7 @@ public:
   ///
   /// \warning This routine leaves overlapping rows.  Unless you're
   /// sure that's OK, call createTranspose() instead.
-  Teuchos::RCP<crs_matrix_type> createTransposeLocal ();
+  Teuchos::RCP<crs_matrix_type> createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
 
 private:
   //! The original matrix to be transposed.

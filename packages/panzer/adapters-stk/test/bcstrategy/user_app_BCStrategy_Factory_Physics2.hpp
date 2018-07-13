@@ -56,9 +56,8 @@
 namespace user_app {
   
   /* commenting out since object is already declared in physics 1 factory 
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant 2", 
-					     user_app::BCStrategy_Dirichlet_Constant,
-					     BCStrategy_Dirichlet_Constant)
+  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
+    user_app::BCStrategy_Dirichlet_Constant, BCStrategy_Dirichlet_Constant)
   */
 
   class BCFactoryPhysics2 : public panzer::BCStrategyFactory {
@@ -80,9 +79,8 @@ namespace user_app {
       
       bool found = false;
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant 2", 
-				      user_app::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant);
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant 2",
+        BCStrategy_Dirichlet_Constant);
 
       if (m_throw_on_failure)
 	TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 

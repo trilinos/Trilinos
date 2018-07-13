@@ -14,6 +14,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Export.hpp>

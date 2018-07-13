@@ -37,6 +37,17 @@
 # ************************************************************************
 # @HEADER
 
+# Set up to use CMAKE_PARSE_ARGUMENTS() function!
+INCLUDE(CMakeParseArguments)
+# NOTE: For CMake versions 3.5.0 and above, this module is empty so the
+# natively implemented function CMAKE_PARSE_ARGUMENTS() will get used!
+
+MACRO(PARSE_ARGUMENTS_DEPRECATED_WARNING)
+  MESSAGE(WARNING "PARSE_ARGUMENTS() is deprecated and should not be used."
+     " Instead use CMAKE_PARSE_ARGUMENTS()")
+ENDMACRO()
+
+PARSE_ARGUMENTS_DEPRECATED_WARNING()
 
 # Set PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED to TRUE to see output from parsing.
 
@@ -190,7 +201,9 @@ ENDFUNCTION()
 # names and input argument list names.
 #
 MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
-
+   
+  PARSE_ARGUMENTS_DEPRECATED_WARNING()
+ 
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: prefix='${prefix}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: arg_names='${arg_names}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: option_names='${option_names}'")
@@ -236,11 +249,11 @@ ENDMACRO()
 # NOTE: If the above function turns out to be a performance bottle neck, there
 # are a few things that could be done to improve performance.  One thing you
 # could do is repalce the O(len(arg_names)) and O(len(option_names)) lookups
-# with O(1) lookups by creating CMake varibles of the name
+# with O(1) lookups by creating CMake variables of the name
 # ${OUTER_FUNC_NAME}_arg_<argNamei> and then just look of that varible exists
 # or not.  That should use a hash function.  That might actually slow things
 # down for short lists however so we would have to measure, measure,
-# measure. I we would have to pass in the function/macro name to disabiguate
+# measure. I would have to pass in the function/macro name to disabiguate
 # the varible names.  It would really be better if cmake would provide a
 # sorted list find operation.  That would make this much faster for large
 # numbers of argument and option names.

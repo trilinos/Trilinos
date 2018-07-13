@@ -30,9 +30,7 @@
 #ifndef KOKKOS_VIEW_FACTORY_HPP
 #define KOKKOS_VIEW_FACTORY_HPP
 
-// This only works with the experimental view enabled
-#include "Sacado_ConfigDefs.h"
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#include <type_traits>
 
 #include "Sacado_Traits.hpp"
 #include "KokkosExp_View_Fad.hpp"
@@ -64,12 +62,6 @@ struct ViewFactoryType<View,ViewPack...> {
 
 // Function to compute the scalar dimension (e.g., Fad dimesion) from one or
 // more views.  It relies on the overload for a single view provided by Sacado
-template <class View, class ... ViewPack>
-unsigned dimension_scalar(const View& v, const ViewPack&... views) {
-  const unsigned dim0 = dimension_scalar(v);
-  const unsigned dim1 = dimension_scalar(views...);
-  return dim0 >= dim1 ? dim0 : dim1 ;
-}
 
 // Traits class used to create a view for a given rank and dimension as a
 // function of one or more views.  The value_type for the view is determined
@@ -112,7 +104,7 @@ struct ViewFactory {
     // Reconstruct layout for dynamic rank
     if (is_dyn_rank) {
       constexpr unsigned r = is_scalar ? rank : rank + 1;
-      layout = Experimental::Impl::reconstructLayout(layout, r);
+      layout = Impl::reconstructLayout(layout, r);
     }
 
     return ResultView(prop, layout);
@@ -134,21 +126,40 @@ createDynRankViewWithType(const InputViewType& a,
   return view_factory::template create_view<ResultViewType>(a,prop,dims...);
 }
 
+namespace Impl {
+  // Helper type trait to determine type of resulting DynRankView from
+  // createDynRankView below
+  template <typename InputView>
+  struct ResultDynRankView {
+    // Allow for use of LayoutStride in InputViewType.  We don't want to create
+    // a new view with LayoutStride, so replace it with the default layout
+    // instead.
+    using input_value    = typename InputView::non_const_value_type;
+    using input_layout   = typename InputView::array_layout;
+    using input_device   = typename InputView::device_type;
+    using default_layout = typename input_device::execution_space::array_layout;
+    using result_layout  =
+      typename std::conditional<
+        std::is_same< input_layout, Kokkos::LayoutStride >::value,
+        default_layout,
+        input_layout >::type;
+    using type =
+      Kokkos::DynRankView<input_value, result_layout, input_device>;
+  };
+
+}
+
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename InputViewType, typename CtorProp, typename ... Dims >
 typename std::enable_if<
   is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
-  Kokkos::DynRankView<typename InputViewType::non_const_value_type,
-                      typename InputViewType::array_layout,
-                      typename InputViewType::device_type> >::type
+  typename Impl::ResultDynRankView<InputViewType>::type
+  >::type
 createDynRankView(const InputViewType& a,
                   const CtorProp& prop,
                   const Dims... dims)
 {
-  using ResultViewType =
-    Kokkos::DynRankView<typename InputViewType::non_const_value_type,
-                        typename InputViewType::array_layout,
-                        typename InputViewType::device_type>;
+  using ResultViewType = typename Impl::ResultDynRankView<InputViewType>::type;
   return createDynRankViewWithType<ResultViewType>(a, prop, dims...);
 }
 
@@ -167,7 +178,5 @@ createViewWithType(const InputViewType& a,
 }
 
 }
-
-#endif
 
 #endif /* #ifndef KOKKOS_VIEW_FACTORY_HPP */

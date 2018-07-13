@@ -104,6 +104,7 @@ InverseLibrary::InverseLibrary()
    // set valid solve factory names
    stratValidSolver_.push_back("Belos"); 
    stratValidSolver_.push_back("Amesos"); 
+   stratValidSolver_.push_back("Amesos2"); 
    stratValidSolver_.push_back("AztecOO"); 
 
    // set valid preconditioner factory name

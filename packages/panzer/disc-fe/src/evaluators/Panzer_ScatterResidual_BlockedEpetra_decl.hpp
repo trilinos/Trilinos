@@ -57,9 +57,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-class Epetra_Vector;
-class Epetra_CrsMatrix;
-
 namespace Thyra {
   template <typename> class ProductVectorBase;
   template <typename> class BlockedLinearOpBase;
@@ -112,8 +109,8 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
 public:
 
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
-                                bool useDiscreteAdjoint=false)
+                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */,
+                                bool /* useDiscreteAdjoint=false */)
      : rowIndexers_(rIndexers) {}
   
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
@@ -171,8 +168,8 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
 public:
 
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
-                                bool useDiscreteAdjoint=false)
+                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */,
+                                bool /* useDiscreteAdjoint=false */)
      : rowIndexers_(rIndexers) {}
   
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,

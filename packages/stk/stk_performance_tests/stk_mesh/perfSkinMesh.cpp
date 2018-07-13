@@ -52,7 +52,7 @@ protected:
     }
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 };
 

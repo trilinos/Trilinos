@@ -48,7 +48,7 @@
 #include "Kokkos_Core.hpp"
 
 template <typename Storage>
-void mainCuda(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
+void mainCuda(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config) {
   const int entry_min = 16;
   const int entry_max = 64;
   const int entry_step = 16;
@@ -56,4 +56,4 @@ void mainCuda(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
     nGrid,nIter,dev_config);
 }
 
-template void mainCuda< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Cuda> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+template void mainCuda< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Cuda> >(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);

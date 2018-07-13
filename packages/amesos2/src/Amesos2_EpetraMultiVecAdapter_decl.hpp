@@ -57,7 +57,6 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Map.hpp>
 
@@ -82,7 +81,7 @@ namespace Amesos2 {
     typedef int                                            local_ordinal_t;
     typedef int                                           global_ordinal_t;
     typedef size_t                                           global_size_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_t;
+    typedef Tpetra::Map<>::node_type  node_t;
     typedef Epetra_MultiVector                                  multivec_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<>(Teuchos::RCP<multivec_t>);
@@ -161,13 +160,16 @@ namespace Amesos2 {
     /**
      * \brief Nonconst vector access
      *
-     * \note Vectors returned hold a copy of the date in the multi-vector.  So
+     * \note Vectors returned hold a copy of the data in the multi-vector.  So
      * any changes to the returned vector will not be represented in the
      * underlying multi-vector.
      */
     Teuchos::RCP<Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
     getVectorNonConst( size_t j );
 
+
+    /// Return pointer to vector when number of vectors == 1 and num procs == 1
+    double * getMVPointer_impl() const;
 
     /**
      * \brief Copies the multi-vector's data into the user-provided vector.
@@ -179,7 +181,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > distribution_map ) const;
+		    node_t> > distribution_map,
+        EDistribution distribution) const;
 
 
     /**
@@ -217,7 +220,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > source_map );
+		    node_t> > source_map,
+        EDistribution distribution );
 
 
 

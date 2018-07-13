@@ -1,0 +1,3 @@
+Xpetra routines to import and and export matrices on a file 
+are not optimized for symmetric mattrices.
+Therefore, the user must employ 'mmwriteNonOptimized.m' to interface Matlab wth Trilinos

@@ -63,6 +63,7 @@ namespace Teuchos {
 namespace panzer {
 
   class BC;
+  class WorksetDescriptor;
 
   /** \brief Nonmember constructor to build BC objects from a ParameterList
       \relates panzer::BC
@@ -199,6 +200,8 @@ namespace panzer {
       return left.bcID() < right.bcID();
     }
   };
+
+  WorksetDescriptor bcDescriptor(const panzer::BC & bc);
 
 }
 

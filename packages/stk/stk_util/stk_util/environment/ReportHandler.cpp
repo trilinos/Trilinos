@@ -125,7 +125,6 @@ REH
 set_report_handler(
   REH		        reh)
 {
-  /* %TRACE[ON]% */  /* %TRACE% */
   if (!reh)
     throw std::runtime_error("Cannot set report handler to NULL");
 

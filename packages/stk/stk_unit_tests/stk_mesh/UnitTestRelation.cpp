@@ -34,12 +34,11 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
@@ -74,8 +73,6 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 TEST(UnitTestingOfRelation, testRelationCoverage)
 {
   // Test some relation error cases
@@ -97,7 +94,7 @@ TEST(UnitTestingOfRelation, testRelationCoverage)
   bulk.modification_begin();
   std::vector<Part*> empty_parts;
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity edge = bulk.declare_entity( stk::topology::EDGE_RANK , new_id , empty_parts );
+  Entity edge = bulk.declare_edge(new_id, empty_parts);
 
   // Cannot declare a back relation
   ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
@@ -119,7 +116,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
 
   ring_bulk.modification_begin();
   mesh.generate_mesh( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk));
+  ASSERT_TRUE(ring_bulk.modification_end());
 
   mesh.fixup_node_ownership();
 
@@ -211,11 +208,10 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  Entity elem = mesh.declare_element(p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_node(p_rank+1 /*node_id*/, empty_parts);
 
   // Add degenerate relations
   const unsigned nodes_per_elem = 4;
@@ -233,50 +229,6 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
     ASSERT_EQ( nodes_per_elem - (i+1), static_cast<unsigned>(mesh.num_nodes(elem)) );
   }
 }
-
-
-////
-//// 2014-08-20 PGX:  IT LOOKS LIKE IT HAS BEEN A YEAR SINCE THIS TEST TESTED WHAT IT
-////                  IS SUPPOSED TO.
-////
-//TEST(UnitTestingOfRelation, testRelationAttribute)
-//{
-//  // Test relation attribute
-//
-//  stk::ParallelMachine pm = MPI_COMM_WORLD;
-//
-//  // Set up meta and bulk data
-//  const unsigned spatial_dim = 2;
-//  MetaData meta_data(spatial_dim);
-//  meta_data.commit();
-//  BulkData mesh(meta_data, pm);
-//  unsigned p_rank = mesh.parallel_rank();
-//
-//  // Begin modification cycle so we can create the entities and relations
-//  mesh.modification_begin();
-//
-//  // We're just going to add everything to the universal part
-//  stk::mesh::PartVector empty_parts;
-//
-//  // Create element
-//  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-//  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
-//
-//  // Create node
-//  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
-//
-//  mesh.declare_relation( elem, node, 0 );
-//
-//  //// Tests a deprecated feature?
-//  ////
-//  //  const Relation & my_relation = *(mesh.nodes(elem).begin());
-//  //  my_relation.set_attribute(6u);
-//  //
-//  //  ASSERT_EQ( my_relation.attribute(), 6u);
-//
-//  mesh.modification_end();
-//}
-
 
 TEST(UnitTestingOfRelation, testRelationExtendedRanks)
 {
@@ -308,11 +260,11 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   stk::mesh::PartVector elem_parts;
   elem_parts.push_back(&hex8_part);
   mesh.modification_begin();
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, new_ent_id++, elem_parts);
+  Entity elem = mesh.declare_element(new_ent_id++, elem_parts);
   Entity node;
   for (unsigned i = 0; i < 8; ++i)
   {
-    node = mesh.declare_entity(stk::topology::NODE_RANK, new_ent_id++, empty_parts);
+    node = mesh.declare_node(new_ent_id++, empty_parts);
     mesh.declare_relation(elem, node, i);
   }
   mesh.modification_end();
@@ -442,75 +394,67 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
-  // Bail if we only have one proc
-  if (p_size == 1) {
+  if (p_size != 2) {
     return;
   }
-
-  // Begin modification cycle so we can create the entities and relations
-  mesh.modification_begin();
-
 
   Entity edge = Entity();
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
 
-  if (p_rank < 2) {
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
 
-    // entities with EDGE_RANK, FACE_RANK, or ELEMENT_RANK need topology before
-    // modification_end() is called.
-    stk::mesh::PartVector elems_parts, sides_parts, empty_parts;
-    elems_parts.push_back(&quad4_part);
-    sides_parts.push_back(&line2_part);
+  // entities with EDGE_RANK, FACE_RANK, or ELEMENT_RANK need topology before
+  // modification_end() is called.
+  stk::mesh::PartVector elems_parts, sides_parts, empty_parts;
+  elems_parts.push_back(&quad4_part);
+  sides_parts.push_back(&line2_part);
 
-    // Create element
-    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-    Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, elems_parts);
+  // Create element
+  Entity elem = mesh.declare_element(p_rank+1 /*elem_id*/, elems_parts);
 
-    // Create nodes
-    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
-    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
-    }
+  // Create nodes
+  const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+  for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+      nodes.push_back(mesh.declare_node(id, empty_parts));
+  }
 
-    // Add relations to nodes
-    unsigned rel_id = 0;
-    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+  // Add relations to nodes
+  unsigned rel_id = 0;
+  for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
       mesh.declare_relation( elem, *itr, rel_id );
-    }
-
-    // Create edge
-    const EntityRank edge_rank = meta_data.side_rank();
-    edge = mesh.declare_entity(edge_rank, 1 /*id*/, sides_parts);
-
-    // Set up relation from elem to edge
-    unsigned local_side_id = 2;
-    if (p_rank == 1)
-    {
-        local_side_id = 0;
-    }
-    stk::topology elem_top = mesh.bucket(elem).topology();
-    stk::mesh::EntityVector side_nodes(2);
-    side_nodes[0] = mesh.get_entity(stk::topology::NODE_RANK, 3);
-    side_nodes[1] = mesh.get_entity(stk::topology::NODE_RANK, 4);
-
-    stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
-    ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
-    mesh.declare_relation(elem, edge, local_side_id, perm1);
   }
 
-  if (p_rank < 2) {
-    // Set up relations from edge to nodes
-    unsigned rel_id = 0;
-    const unsigned starting_node_idx = (1 - p_rank) * nodes_per_side;
-    for (unsigned node_idx = starting_node_idx;
-         node_idx < starting_node_idx + nodes_per_side;
-         ++node_idx, ++rel_id) {
+  stk::mesh::EntityVector side_nodes(2);
+  side_nodes[0] = mesh.get_entity(stk::topology::NODE_RANK, 3);
+  side_nodes[1] = mesh.get_entity(stk::topology::NODE_RANK, 4);
+  int otherProc = (1 - p_rank);
+  mesh.add_node_sharing(side_nodes[0], otherProc);
+  mesh.add_node_sharing(side_nodes[1], otherProc);
+
+  // Create side (edge)
+  unsigned local_side_id = 2;
+  if (p_rank == 1)
+  {
+      local_side_id = 0;
+  }
+  edge = mesh.declare_element_side(elem, local_side_id, sides_parts);
+
+  stk::topology elem_top = mesh.bucket(elem).topology();
+  stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+  ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
+
+  // Set up duplicate relations from edge to nodes
+  rel_id = 0;
+  const unsigned starting_node_idx = (1 - p_rank) * nodes_per_side;
+  for (unsigned node_idx = starting_node_idx;
+       node_idx < starting_node_idx + nodes_per_side;
+       ++node_idx, ++rel_id) {
       mesh.declare_relation( edge, nodes[node_idx], rel_id );
-    }
   }
-
   mesh.modification_end();
+
 }
 
 }

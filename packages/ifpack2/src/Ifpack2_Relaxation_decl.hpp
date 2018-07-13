@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -51,10 +51,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
-
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
 #include <KokkosKernels_Handle.hpp>
-#endif
 
 namespace Teuchos {
   // forward declarations
@@ -534,6 +531,9 @@ public:
   //! Total time in seconds spent in all calls to apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;
+    
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
@@ -592,20 +592,23 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
-  typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType crs_graph_type;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::values_type scalar_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type TemporaryWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type PersistentWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::execution_space MyExecSpace;
+
+  //@}
+  //! \name Implementation of multithreaded Gauss-Seidel.
+  //@{
+
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,
-      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
-  Teuchos::RCP<KernelHandle> kh;
-#endif
+      <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
+      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
+  Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
+
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -703,6 +706,9 @@ private:
 
   void computeBlockCrs ();
 
+  //! A service routine for updating the cached MultiVector
+  void updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map, size_t numVecs) const;
+
 
   //@}
   //! @name Internal data and parameters
@@ -718,13 +724,13 @@ private:
 
   //! The matrix for which to construct the preconditioner or smoother.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
+  //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
-
+  //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedMV_;
 
   typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
                        typename block_crs_matrix_type::device_type> block_diag_type;
@@ -772,6 +778,13 @@ private:
   bool fixTinyDiagEntries_;
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
   bool checkDiagEntries_;
+
+  //!Wheter the provided matrix is structurally symmetric or not.
+  bool is_matrix_structurally_symmetric_;
+
+  //!Whether to write the given input file
+  bool ifpack2_dump_matrix_;
+
 
   //! If \c true, the preconditioner has been initialized successfully.
   bool isInitialized_;

@@ -70,11 +70,11 @@
 #cmakedefine HAVE_STOKHOS_BOOST
 
 /* Define if TpetraKernels is enabled */
-#cmakedefine HAVE_STOKHOS_TPETRAKERNELS
-#ifdef HAVE_STOKHOS_TPETRAKERNELS
+#cmakedefine HAVE_STOKHOS_KOKKOSKERNELS
+#ifdef HAVE_STOKHOS_KOKKOSKERNELS
 // Define old macro for backwards compatibility.
 #  define HAVE_STOKHOS_KOKKOSLINALG
-#endif // HAVE_STOKHOS_TPETRAKERNELS
+#endif // HAVE_STOKHOS_KOKKOSKERNELS
 
 /* Define if KokkosMpiCom is enabled */
 #cmakedefine HAVE_STOKHOS_TEUCHOSKOKKOSCOMM

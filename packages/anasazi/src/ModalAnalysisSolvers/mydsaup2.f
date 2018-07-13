@@ -1,55 +1,77 @@
-c**************************************************************************
+c @HEADER
+c***********************************************************************
 c
-c                                 NOTICE
+c                 Anasazi: Block Eigensolvers Package
+c                 Copyright 2004 Sandia Corporation
 c
+c Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+c the U.S. Government retains certain rights in this software.
+c
+c Redistribution and use in source and binary forms, with or without
+c modification, are permitted provided that the following conditions are
+c met:
+c
+c 1. Redistributions of source code must retain the above copyright
+c notice, this list of conditions and the following disclaimer.
+c
+c 2. Redistributions in binary form must reproduce the above copyright
+c notice, this list of conditions and the following disclaimer in the
+c documentation and/or other materials provided with the distribution.
+c
+c 3. Neither the name of the Corporation nor the names of the
+c contributors may be used to endorse or promote products derived from
+c this software without specific prior written permission.
+c
+c THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+c EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+c IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+c PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+c CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+c EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+c PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+c PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+c LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+c NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+c SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+c
+c Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+c
+c***********************************************************************
+c @HEADER
+
 c This software is a result of the research described in the report
 c
-c " A comparison of algorithms for modal analysis in the absence 
-c   of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
-c  Sandia National Laboratories, Technical report SAND2003-1028J.
+c     "A comparison of algorithms for modal analysis in the absence
+c     of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
+c     Sandia National Laboratories, Technical report SAND2003-1028J.
 c
 c It is based on the Epetra, AztecOO, and ML packages defined in the Trilinos
-c framework ( http://software.sandia.gov/trilinos/ ).
-c
-c The distribution of this software follows also the rules defined in Trilinos.
-c This notice shall be marked on any reproduction of this software, in whole or
-c in part.
-c
-c Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-c license for use of this work by or on behalf of the U.S. Government.
-c
-c This program is distributed in the hope that it will be useful, but
-c WITHOUT ANY WARRANTY; without even the implied warranty of
-c MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-c
-c Code Authors: U. Hetmaniuk (ulhetma@sandia.gov), R. Lehoucq (rblehou@sandia.gov)
-c
-c**************************************************************************
+c framework ( http://trilinos.org/ ).
 c-----------------------------------------------------------------------
 c\BeginDoc
 c
 c\Name: mydsaup2
 c
-c\Description: 
+c\Description:
 c  Intermediate level interface called by dsaupd.
 c
 c\Usage:
-c  call mydsaup2 
+c  call mydsaup2
 c     ( IDO, BMAT, N, WHICH, NEV, NP, TOL, RESID, MODE, IUPD,
-c       ISHIFT, MXITER, V, LDV, H, LDH, RITZ, BOUNDS, Q, LDQ, WORKL, 
+c       ISHIFT, MXITER, V, LDV, H, LDH, RITZ, BOUNDS, Q, LDQ, WORKL,
 c       IPNTR, WORKD, INFO, VERBOSE, USRCHK, UNCONV )
 c
 c\Arguments
 c
 c  IDO, BMAT, N, WHICH, NEV, TOL, RESID: same as defined in dsaupd.
 c  MODE, ISHIFT, MXITER: see the definition of IPARAM in dsaupd.
-c  
+c
 c  NP      Integer.  (INPUT/OUTPUT)
-c          Contains the number of implicit shifts to apply during 
-c          each Arnoldi/Lanczos iteration.  
-c          If ISHIFT=1, NP is adjusted dynamically at each iteration 
+c          Contains the number of implicit shifts to apply during
+c          each Arnoldi/Lanczos iteration.
+c          If ISHIFT=1, NP is adjusted dynamically at each iteration
 c          to accelerate convergence and prevent stagnation.
-c          This is also roughly equal to the number of matrix-vector 
+c          This is also roughly equal to the number of matrix-vector
 c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.

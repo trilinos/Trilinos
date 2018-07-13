@@ -1,7 +1,6 @@
-// Copyright(C) 2016
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -30,22 +30,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "Ioss_CommSet.h"
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementTopology.h"
-#include "Ioss_IOFactory.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_ParallelUtils.h"
-#include "Ioss_Property.h"
-#include "Ioss_Region.h"
 #include <Ioss_CodeTypes.h>
+#include <Ioss_CodeTypes.h>
+#include <Ioss_CommSet.h>
+#include <Ioss_DBUsage.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_ElementTopology.h>
 #include <Ioss_FaceGenerator.h>
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include <Ioss_IOFactory.h>
+#include <Ioss_NodeBlock.h>
+#include <Ioss_ParallelUtils.h>
+#include <Ioss_Property.h>
+#include <Ioss_Region.h>
 
 #include <algorithm>
 #include <chrono>
@@ -249,7 +246,7 @@ namespace {
       // add the element...
       for (size_t i = 0; i < check_faces.size(); i += values_per_face) {
         size_t id = check_faces[i + 0];
-        std::array<size_t, 4> conn;
+        std::array<size_t, 4> conn{};
         conn[0]            = check_faces[i + 1];
         conn[1]            = check_faces[i + 2];
         conn[2]            = check_faces[i + 3];
@@ -320,7 +317,7 @@ namespace Ioss {
       int num_face_per_elem = topo->number_faces();
       assert(num_face_per_elem <= 6);
       std::array<Ioss::IntVector, 6> face_conn;
-      std::array<int, 6>             face_count;
+      std::array<int, 6>             face_count{};
       for (int face = 0; face < num_face_per_elem; face++) {
         face_conn[face]  = topo->face_connectivity(face + 1);
         face_count[face] = topo->face_type(face + 1)->number_corner_nodes();
@@ -351,8 +348,6 @@ namespace Ioss {
 
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    auto diffp = endp - endf;
-
     std::cout << "Node ID hash time:   \t"
               << std::chrono::duration<double, std::milli>(diffh).count() << " ms\t"
               << hash_ids.size() / std::chrono::duration<double>(diffh).count()
@@ -361,6 +356,7 @@ namespace Ioss {
               << std::chrono::duration<double, std::milli>(difff).count() << " ms\t"
               << faces_.size() / std::chrono::duration<double>(difff).count() << " faces/second.\n";
 #ifdef HAVE_MPI
+    auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
@@ -407,7 +403,7 @@ namespace {
 
     uint64_t h = seed ^ (len * m);
 
-    const uint64_t *data = (const uint64_t *)key;
+    const uint64_t *data = reinterpret_cast<const uint64_t *>(key);
     const uint64_t *end  = data + (len / 8);
 
     while (data != end) {
@@ -421,7 +417,7 @@ namespace {
       h *= m;
     }
 
-    const unsigned char *data2 = (const unsigned char *)data;
+    const unsigned char *data2 = reinterpret_cast<const unsigned char *>(data);
 
     switch (len & 7) {
     case 7: h ^= uint64_t(data2[6]) << 48;

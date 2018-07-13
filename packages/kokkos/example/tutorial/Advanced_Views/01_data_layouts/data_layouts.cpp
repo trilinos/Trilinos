@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -73,8 +73,8 @@ struct init_view {
     // access on a for optimal performance. I.e. a should be LayoutRight.
     // On GPUs threads should do coalesced loads and stores. That means
     // that i should be the stride one access for optimal performance.
-    for (typename ViewType::size_type j = 0; j < a.dimension_1 (); ++j) {
-      a(i,j) = 1.0*a.dimension_0()*i + 1.0*j;
+    for (typename ViewType::size_type j = 0; j < a.extent(1); ++j) {
+      a(i,j) = 1.0*a.extent(0)*i + 1.0*j;
     }
   }
 };
@@ -104,7 +104,7 @@ struct contraction {
   // LayoutLeft and v2 LayoutRight.
   KOKKOS_INLINE_FUNCTION
   void operator() (const view_type::size_type i) const {
-    for (view_type::size_type j = 0; j < v1.dimension_1 (); ++j) {
+    for (view_type::size_type j = 0; j < v1.extent(1); ++j) {
       a(i) = v1(i,j)*v2(j,i);
     }
   }
@@ -127,44 +127,46 @@ int main (int narg, char* arg[]) {
   // arguments from the list that start with '--kokkos-'.
   Kokkos::initialize (narg, arg);
 
-  int size = 10000;
-  view_type a("A",size);
+  {
+    int size = 10000;
+    view_type a("A",size);
 
-  // Define two views with LayoutLeft and LayoutRight.
-  left_type l("L",size,10000);
-  right_type r("R",size,10000);
+    // Define two views with LayoutLeft and LayoutRight.
+    left_type l("L",size,10000);
+    right_type r("R",size,10000);
 
-  // Initialize the data in the views.
-  Kokkos::parallel_for(size,init_view<left_type>(l));
-  Kokkos::parallel_for(size,init_view<right_type>(r));
-  Kokkos::fence();
+    // Initialize the data in the views.
+    Kokkos::parallel_for(size,init_view<left_type>(l));
+    Kokkos::parallel_for(size,init_view<right_type>(r));
+    Kokkos::fence();
 
-  // Measure time to execute the contraction kernel when giving it a
-  // LayoutLeft view for v1 and a LayoutRight view for v2. This should be
-  // fast on GPUs and slow on CPUs
-  Kokkos::Timer time1;
-  Kokkos::parallel_for(size,contraction<left_type,right_type>(a,l,r));
-  Kokkos::fence();
-  double sec1 = time1.seconds();
+    // Measure time to execute the contraction kernel when giving it a
+    // LayoutLeft view for v1 and a LayoutRight view for v2. This should be
+    // fast on GPUs and slow on CPUs
+    Kokkos::Timer time1;
+    Kokkos::parallel_for(size,contraction<left_type,right_type>(a,l,r));
+    Kokkos::fence();
+    double sec1 = time1.seconds();
 
-  double sum1 = 0;
-  Kokkos::parallel_reduce(size,dot(a),sum1);
-  Kokkos::fence();
+    double sum1 = 0;
+    Kokkos::parallel_reduce(size,dot(a),sum1);
+    Kokkos::fence();
 
-  // Measure time to execute the contraction kernel when giving it a
-  // LayoutRight view for v1 and a LayoutLeft view for v2. This should be
-  // fast on CPUs and slow on GPUs
-  Kokkos::Timer time2;
-  Kokkos::parallel_for(size,contraction<right_type,left_type>(a,r,l));
-  Kokkos::fence();
-  double sec2 = time2.seconds();
+    // Measure time to execute the contraction kernel when giving it a
+    // LayoutRight view for v1 and a LayoutLeft view for v2. This should be
+    // fast on CPUs and slow on GPUs
+    Kokkos::Timer time2;
+    Kokkos::parallel_for(size,contraction<right_type,left_type>(a,r,l));
+    Kokkos::fence();
+    double sec2 = time2.seconds();
 
-  double sum2 = 0;
-  Kokkos::parallel_reduce(size,dot(a),sum2);
+    double sum2 = 0;
+    Kokkos::parallel_reduce(size,dot(a),sum2);
 
-  // Kokkos' reductions are deterministic.
-  // The results should always be equal.
-  printf("Result Left/Right %f Right/Left %f (equal result: %i)\n",sec1,sec2,sum2==sum1);
+    // Kokkos' reductions are deterministic.
+    // The results should always be equal.
+    printf("Result Left/Right %f Right/Left %f (equal result: %i)\n",sec1,sec2,sum2==sum1);
+  }
 
   Kokkos::finalize();
 }

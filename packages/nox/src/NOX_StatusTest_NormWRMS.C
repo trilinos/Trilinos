@@ -141,10 +141,11 @@ checkStatus(const NOX::Solver::Generic& problem,
   // **** Begin check for convergence criteria #1 ****
 
   // Create the working vectors if this is the first time this
-  // operator is called.
-  if (Teuchos::is_null(u))
+  // operator is called, or if mesh adaptation has altered
+  // the solution vector size.
+  if (Teuchos::is_null(u) || (u->length() != x.length()))
     u = x.clone(NOX::ShapeCopy);
-  if (Teuchos::is_null(v))
+  if (Teuchos::is_null(v) || (v->length() != x.length()))
     v = x.clone(NOX::ShapeCopy);
 
   // Create the weighting vector u = RTOL |x| + ATOL

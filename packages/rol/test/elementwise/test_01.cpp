@@ -47,7 +47,7 @@
 */
 
 #include "ROL_StdVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 
@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -120,28 +120,28 @@ int main(int argc, char *argv[]) {
     int dim = k*k;
     RealT threshValue = 4.0;
 
-    RCP<vec> w_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> w2_rcp       = rcp( new vec(dim, 0.0) );
-    RCP<vec> x_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> x_recip_rcp  = rcp( new vec(dim, 0.0) );
-    RCP<vec> y_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> z_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> z_thresh_rcp = rcp( new vec(dim, 0.0) );
+    ROL::Ptr<vec> w_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> w2_ptr       = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> x_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> x_recip_ptr  = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> y_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> z_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> z_thresh_ptr = ROL::makePtr<vec>(dim, 0.0);
 
-    V w(w_rcp);
-    V w2(w2_rcp);
-    V x(x_rcp);
-    V x_recip(x_recip_rcp);
-    V y(y_rcp);
-    V z(z_rcp);
-    V z_thresh(z_thresh_rcp);
+    V w(w_ptr);
+    V w2(w2_ptr);
+    V x(x_ptr);
+    V x_recip(x_recip_ptr);
+    V y(y_ptr);
+    V z(z_ptr);
+    V z_thresh(z_thresh_ptr);
 
     for(int i=0; i<dim; ++i) {
-      (*w_rcp)[i] = 1.0+i;
+      (*w_ptr)[i] = 1.0+i;
 
-      (*w2_rcp)[i] = std::pow(1.0+i,2);   
-      (*x_recip_rcp)[i]  = 1.0/(1.0+i);
-      (*z_thresh_rcp)[i] = std::min(1.0+i,threshValue);
+      (*w2_ptr)[i] = std::pow(1.0+i,2);   
+      (*x_recip_ptr)[i]  = 1.0/(1.0+i);
+      (*z_thresh_ptr)[i] = std::min(1.0+i,threshValue);
     }
 
     x.set(w);

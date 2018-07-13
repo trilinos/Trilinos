@@ -48,7 +48,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(TensorToStdVector, p)
+template<typename EvalT, typename Traits>
+TensorToStdVector<EvalT, Traits>::
+TensorToStdVector(
+  const Teuchos::ParameterList&  p)
 {
   Teuchos::RCP<PHX::DataLayout> vector_dl = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Vector");
@@ -65,7 +68,7 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
       PHX::MDField<ScalarT,Cell,Point,Dim>(vector_names[i], vector_dl);
 
   tensor_field =
-    PHX::MDField<ScalarT,Cell,Point,Dim,Dim>(p.get<std::string>
+    PHX::MDField<const ScalarT,Cell,Point,Dim,Dim>(p.get<std::string>
 					 ("Tensor Name"), tensor_dl);
 
   this->addDependentField(tensor_field);
@@ -78,7 +81,12 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(TensorToStdVector, worksets, fm)
+template<typename EvalT, typename Traits>
+void
+TensorToStdVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   for (std::size_t i=0; i < vector_fields.size(); ++i)
     this->utils.setFieldData(vector_fields[i], fm);
@@ -87,7 +95,11 @@ PHX_POST_REGISTRATION_SETUP(TensorToStdVector, worksets, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
+template<typename EvalT, typename Traits>
+void
+TensorToStdVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
 { 
 
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;
@@ -96,13 +108,13 @@ PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
     // Loop over points
-    for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {
+    for (size_type pt = 0; pt < tensor_field.extent(1); ++pt) {
       
       // Loop over vectors
       for (std::size_t vec = 0; vec < vector_fields.size(); ++vec) {
 
         // Loop over spatial dimensions
-        for (std::size_t dim = 0; dim < tensor_field.dimension(2); ++dim) {
+        for (std::size_t dim = 0; dim < tensor_field.extent(2); ++dim) {
       
           vector_fields[vec](cell,pt,dim) = tensor_field(cell,pt,vec,dim);
 

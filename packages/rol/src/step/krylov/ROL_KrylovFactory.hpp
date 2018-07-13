@@ -46,11 +46,12 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "ROL_Krylov.hpp"
 #include "ROL_GMRES.hpp"
+#include "ROL_MINRES.hpp"
 #include "ROL_ConjugateGradients.hpp"
 #include "ROL_ConjugateResiduals.hpp"
 
@@ -60,7 +61,7 @@ namespace ROL {
   class GMRES;
 
   template<class Real>
-  inline Teuchos::RCP<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
+  inline ROL::Ptr<Krylov<Real> > KrylovFactory( ROL::ParameterList &parlist ) {
     Real em4(1e-4), em2(1e-2);
     EKrylov ekv = StringToEKrylov(
                    parlist.sublist("General").sublist("Krylov").get("Type","Conjugate Gradients"));
@@ -70,12 +71,14 @@ namespace ROL {
     bool inexact = parlist.sublist("General").get("Inexact Hessian-Times-A-Vector",false);
     switch(ekv) {
       case KRYLOV_CR: 
-        return Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,inexact) );
+        return ROL::makePtr<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_CG: 
-        return Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,inexact) );
+        return ROL::makePtr<ConjugateGradients<Real>>(absTol,relTol,maxit,inexact);
+      case KRYLOV_MINRES:
+        return ROL::makePtr<MINRES<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_GMRES:
-        return Teuchos::rcp( new GMRES<Real>(parlist) );
-      default:        return Teuchos::null;
+        return ROL::makePtr<GMRES<Real>>(parlist);
+      default:        return ROL::nullPtr;
     }
   }
 }

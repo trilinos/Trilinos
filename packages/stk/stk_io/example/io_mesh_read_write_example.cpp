@@ -126,8 +126,7 @@ namespace {
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
-    Teuchos::RCP<Ioss::Region> io_region = mesh_data.get_input_io_region();
-    STKIORequire(!Teuchos::is_null(io_region));
+    auto io_region = mesh_data.get_input_io_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
@@ -212,6 +211,11 @@ namespace {
 	if (hb_type != stk::io::NONE && !global_fields.empty()) {
 	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
+
+	// Flush the data.  This is not necessary in a normal
+	// application, Just being done here to verify that the
+	// function exists and does not core dump.  
+	mesh_data.flush_output();
       }
     }
   }
@@ -330,6 +334,10 @@ int main(int argc, char** argv)
   else if (strncasecmp("cgns:", mesh.c_str(), 5) == 0) {
     mesh = mesh.substr(5, mesh.size());
     type = "cgns";
+  }
+  else if (strncasecmp("pamgen:", mesh.c_str(), 7) == 0) {
+    mesh = mesh.substr(7, mesh.size());
+    type = "pamgen";
   }
 
   stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output

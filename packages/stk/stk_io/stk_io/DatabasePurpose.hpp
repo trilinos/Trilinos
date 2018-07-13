@@ -40,7 +40,8 @@ namespace stk {
       WRITE_RESULTS=1,
       WRITE_RESTART=2,
       READ_MESH=4,
-      READ_RESTART=8
+      READ_RESTART=8,
+      APPEND_RESULTS=16
     };
   }
 }

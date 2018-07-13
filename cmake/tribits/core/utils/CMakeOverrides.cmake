@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 #
 # FUNCTION: TRIBITS_INCLUDE_DIRECTORIES()
@@ -67,12 +67,19 @@ INCLUDE(ParseVariableArguments)
 # directory does need to be set for instaltion testing.
 #
 FUNCTION(TRIBITS_INCLUDE_DIRECTORIES)
-  PARSE_ARGUMENTS(
-    PARSE #prefix
-    "" # Lists
-    "REQUIRED_DURING_INSTALLATION_TESTING" #Options
+  CMAKE_PARSE_ARGUMENTS(
+    #prefix
+    PARSE
+    #Options
+    "REQUIRED_DURING_INSTALLATION_TESTING"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    ""
     ${ARGN}
     )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
     _INCLUDE_DIRECTORIES(${PARSE_DEFAULT_ARGS})
@@ -90,12 +97,19 @@ ENDFUNCTION()
 #For that case we allow people to set "REQUIRED_DURING_INSTALLATION_TESTING" to
 #tell us that this include directory does need to be set for instaltion testing.
 FUNCTION(INCLUDE_DIRECTORIES)
-  PARSE_ARGUMENTS(
-    PARSE #prefix
-    "" # Lists
-    "REQUIRED_DURING_INSTALLATION_TESTING" #Options
+  CMAKE_PARSE_ARGUMENTS(
+    #prefix
+    PARSE
+    #Options
+    "REQUIRED_DURING_INSTALLATION_TESTING"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    ""
     ${ARGN}
     )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
     _INCLUDE_DIRECTORIES(${PARSE_DEFAULT_ARGS})

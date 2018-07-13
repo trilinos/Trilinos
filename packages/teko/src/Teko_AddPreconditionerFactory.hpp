@@ -85,6 +85,8 @@ public:
    virtual Teuchos::RCP<Teko::PreconditionerState> buildPreconditionerState() const;
 
 protected:
+   using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+
    // class members
    Teuchos::RCP<const Teko::BlockPreconditionerFactory> FirstFactory_;
    Teuchos::RCP<const Teko::BlockPreconditionerFactory> SecondFactory_;

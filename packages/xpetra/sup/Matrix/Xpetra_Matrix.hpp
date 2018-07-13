@@ -108,7 +108,9 @@ namespace Xpetra {
     typedef Node            node_type;
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 #endif
 
     //! @name Constructor/Destructor Methods
@@ -356,16 +358,6 @@ namespace Xpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    virtual global_size_t getGlobalNumDiags() const =0;
-
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    virtual size_t getNodeNumDiags() const =0;
-
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
      */
@@ -442,6 +434,11 @@ namespace Xpetra {
     //! Right scale matrix using the given vector entries
     virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const = 0;
+
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods
@@ -514,6 +511,9 @@ namespace Xpetra {
 
     // JG: Added:
 
+    //! Supports the getCrsGraph() call
+    virtual bool hasCrsGraph() const =0;
+    
     //! Returns the CrsGraph associated with this matrix.
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 
@@ -579,8 +579,14 @@ namespace Xpetra {
 
     // ----------------------------------------------------------------------------------
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
     // ----------------------------------------------------------------------------------
 

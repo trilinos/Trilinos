@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ScalarParameterEntry.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"

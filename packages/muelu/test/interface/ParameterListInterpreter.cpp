@@ -46,6 +46,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <algorithm>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -71,7 +72,7 @@
 void run_sed(const std::string& pattern, const std::string& baseFile);
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -80,7 +81,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int numProc = comm->getSize();
@@ -91,8 +91,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
 
   bool runHeavyTests = false;
+  std::string xmlForceFile = "";
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
-
+  clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -104,21 +105,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   // Problem construction
   // =========================================================================
-  ParameterList matrixParameters;
+  Teuchos::ParameterList matrixParameters;
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
-  RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
 
   std::string outDir = "Output/";
 
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back("EasyParameterListInterpreter-heavy/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter-heavy/");
+#endif
   } else {
     dirList.push_back("EasyParameterListInterpreter/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter/");
+#endif
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting
@@ -131,11 +138,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   int numLists = dirList.size();
 
   bool failed = false;
+  bool jumpOut = false;
   Teuchos::Time timer("Interpreter timer");
   //double lastTime = timer.wallTime();
   for (int k = 0; k < numLists; k++) {
     Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
       (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
+
+    std::sort(fileList.begin(),fileList.end());
 
     for (int i = 0; i < fileList.size(); i++) {
       // Set seed
@@ -144,10 +154,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Reset (potentially) cached value of the estimate
       A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-      std::string xmlFile  = dirList[k] + fileList[i];
-      std::string outFile  = outDir     + fileList[i];
-      std::string baseFile = outFile.substr(0, outFile.find_last_of('.'));
-      std::size_t found = baseFile.find("_np");
+      std::string xmlFile;
+      std::string outFile;
+      std::string baseFile;
+      std::size_t found;
+      if (xmlForceFile==""){
+        xmlFile  = dirList[k] + fileList[i];
+        outFile  = outDir     + fileList[i];
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+      } else {
+        xmlFile = xmlForceFile;
+        std::string dir = xmlForceFile.substr(0, xmlForceFile.find_last_of('/')+1);
+        dirList[k] = dir;
+        outFile = outDir + xmlForceFile.substr(xmlForceFile.find_last_of('/')+1, xmlForceFile.size());
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+        jumpOut = true;
+      }
+      
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
         baseFile = baseFile.substr(0, found);
@@ -156,6 +181,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         continue;
 #endif
       }
+      std::cout << "Testing: "<< xmlFile << std::endl;
+      
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
@@ -206,7 +233,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         } else if (dirList[k] == "MLParameterListInterpreter2/") {
           //std::cout << "ML ParameterList: " << std::endl;
           //std::cout << paramList << std::endl;
-          RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
           //std::cout << "MueLu ParameterList: " << std::endl;
           //std::cout << *mueluParamList << std::endl;
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
@@ -278,6 +305,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // NOTE1 : Epetra, on the other hand, rolls out its out random number
         // generator, which always produces same results
 
+        // make sure complex tests pass
+        run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
+        run_sed("'s/damping factor: (1,0)/damping factor: 1/'", baseFile);
+        run_sed("'s/relaxation: min diagonal value = (0,0)/relaxation: min diagonal value = 0/'", baseFile);
+
         // Ignore the value of "lambdaMax"
         run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
 
@@ -303,6 +335,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         for (size_t q = 0; q < classes.size(); q++)
           run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
+        // Strip ParamterList pointers
+        run_sed("'s/Teuchos::RCP<Teuchos::ParameterList const>{.*}/Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}/'", baseFile);
+
 #ifdef __APPLE__
         // Some Macs print outs ptrs as 0x0 instead of 0, fix that
         run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
@@ -322,7 +357,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
         std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
       }
+      if (jumpOut)
+        break;
     }
+    if (jumpOut)
+      break;
   }
 
   if (myRank == 0)
@@ -331,61 +370,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   return (failed ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
-int main(int argc, char* argv[]) {
-  bool success = false;
-  bool verbose = true;
 
-  try {
-    const bool throwExceptions = false;
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-    Teuchos::CommandLineProcessor clp(throwExceptions);
-    Xpetra::Parameters xpetraParameters(clp);
-
-    clp.recogniseAllOptions(false);
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-    }
-
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return main_<double,int,long,Node>(clp, lib, argc, argv);
-#else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)           && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      return main_<double,int,int,Node> (clp, lib, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)     && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-      return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#  else
-      throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation for Tpetra");
-#  endif
-#endif
-
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+int main(int argc, char *argv[]) {
+  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+  return Automatic_Test_ETI(argc,argv);
 }
+
 
 void run_sed(const std::string& pattern, const std::string& baseFile) {
   // sed behaviour differs between Mac and Linux
@@ -395,7 +389,9 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
 #ifdef __APPLE__
   sed_pref = sed_pref +  "\"\" ";
 #endif
-
-  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  int ret;
+  ret = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
+  ret = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
 }

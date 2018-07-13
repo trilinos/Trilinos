@@ -44,13 +44,13 @@
 
 #include <vector>
 #include <limits>
-#include "Phalanx_config.hpp"
-#include "Phalanx.hpp"
 #include "Phalanx_MDField_Utilities.hpp"
 #include "Phalanx_DimTag.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -85,7 +85,6 @@ PHX::DataLayout* makeLayout (const int rank, const int* d) {
     d[0], d[1], d[2], d[3], d[4], d[5], d[6]);
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "bad rank");
-    return 0;
   }
 }
 } // namespace
@@ -135,11 +134,8 @@ TEUCHOS_UNIT_TEST(mdfield, Utilities) {
   Teuchos::RCP<Teuchos::Time>
     total_time = Teuchos::TimeMonitor::getNewTimer("Total Run Time");
   Teuchos::TimeMonitor tm(*total_time);
-  
-  PHX::InitializeKokkosDevice();
 
   for (int rank = 1; rank <= 7; ++rank) testRank(rank,out,success);
 
-  PHX::FinalizeKokkosDevice();  
   Teuchos::TimeMonitor::summarize();
 }

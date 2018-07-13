@@ -48,8 +48,10 @@
 
 template <typename Scalar>
 Piro::MatrixFreeDecorator<Scalar>::MatrixFreeDecorator(
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model) :
-  Thyra::ModelEvaluatorDelegatorBase<Scalar>(model)
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model, 
+  double lambda_) :
+  Thyra::ModelEvaluatorDelegatorBase<Scalar>(model), 
+  lambda(lambda_) 
 {
 }
 
@@ -57,7 +59,7 @@ template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::MatrixFreeDecorator<Scalar>::create_W_op() const
 {
-  return Teuchos::rcp(new MatrixFreeLinearOp<Scalar>(this->getUnderlyingModel()));
+  return Teuchos::rcp(new MatrixFreeLinearOp<Scalar>(this->getUnderlyingModel(), lambda));
 }
 
 template <typename Scalar>

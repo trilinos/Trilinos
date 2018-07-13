@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2011 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
  *
- * * Neither the name of Sandia Corporation nor the names of its
+ * * Neither the name of NTESS nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 /* exodus II to matlab m file, copy of
    exo2mat.
@@ -62,10 +61,10 @@
 #include "add_to_log.h" // for add_to_log
 #include "exodusII.h"   // for ex_get_variable_param, etc
 #include "matio.h"      // for Mat_VarCreate, Mat_VarFree, etc
-#include <assert.h>     // for assert
-#include <stddef.h>     // for size_t
-#include <stdio.h>      // for fprintf, printf, sprintf, etc
-#include <stdlib.h>     // for free, calloc, exit, malloc
+#include <cassert>      // for assert
+#include <cstddef>      // for size_t
+#include <cstdio>       // for fprintf, printf, sprintf, etc
+#include <cstdlib>      // for free, calloc, exit, malloc
 #if MATIO_VERSION < 151
 #error "MatIO Version 1.5.1 or greater is required"
 #endif
@@ -84,7 +83,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat output */
 bool   debug    = false;
 
 static const char *qainfo[] = {
-    "exo2mat", "2016/06/27", "4.00",
+    "exo2mat", "2017/07/18", "4.03",
 };
 
 std::string time_stamp(const std::string &format)
@@ -92,22 +91,20 @@ std::string time_stamp(const std::string &format)
   if (format == "") {
     return std::string("");
   }
-  else {
-    const int   length = 256;
-    static char time_string[length];
 
-    time_t     calendar_time = time(nullptr);
-    struct tm *local_time    = localtime(&calendar_time);
+  const int   length = 256;
+  static char time_string[length];
 
-    int error = strftime(time_string, length, format.c_str(), local_time);
-    if (error != 0) {
-      time_string[length - 1] = '\0';
-      return std::string(time_string);
-    }
-    else {
-      return std::string("[ERROR]");
-    }
+  time_t     calendar_time = time(nullptr);
+  struct tm *local_time    = localtime(&calendar_time);
+
+  int error = strftime(time_string, length, format.c_str(), local_time);
+  if (error != 0) {
+    time_string[length - 1] = '\0';
+    return std::string(time_string);
   }
+
+  return std::string("[ERROR]");
 }
 
 void logger(const char *message)
@@ -136,8 +133,9 @@ void usage()
 void mPutStr(const char *name, const char *str)
 {
   assert(m_file != nullptr);
-  if (strchr(str, '\n') == nullptr)
+  if (strchr(str, '\n') == nullptr) {
     fprintf(m_file, "%s='%s';\n", name, str);
+  }
   else {
     fprintf(m_file, "%s=[", name);
     size_t i;
@@ -163,9 +161,11 @@ void mPutDbl(const char *name, int n1, int n2, double *pd)
     return;
   }
   fprintf(m_file, "%s=zeros(%d,%d);\n", name, n1, n2);
-  for (int i = 0; i < n1; i++)
-    for (int j = 0; j < n2; j++)
+  for (int i = 0; i < n1; i++) {
+    for (int j = 0; j < n2; j++) {
       fprintf(m_file, "%s(%d,%d)=%15.8e;\n", name, i + 1, j + 1, pd[i * n2 + j]);
+    }
+  }
 }
 
 /* put integer array in m file */
@@ -173,7 +173,6 @@ void mPutInt(const char *name, int pd)
 {
   assert(m_file != nullptr);
   fprintf(m_file, "%s=%d;\n", name, pd);
-  return;
 }
 
 /* put integer array in m file */
@@ -185,9 +184,11 @@ void mPutInt(const char *name, int n1, int n2, int *pd)
     return;
   }
   fprintf(m_file, "%s=zeros(%d,%d);\n", name, n1, n2);
-  for (int i = 0; i < n1; i++)
-    for (int j = 0; j < n2; j++)
+  for (int i = 0; i < n1; i++) {
+    for (int j = 0; j < n2; j++) {
       fprintf(m_file, "%s(%d,%d)=%d;\n", name, i + 1, j + 1, pd[i * n2 + j]);
+    }
+  }
 }
 
 /* put string in mat file*/
@@ -256,39 +257,47 @@ int matPutInt(const char *name, int n1, int n2, int *pd)
 /* wrappers for the output routine types */
 void PutStr(const char *name, const char *str)
 {
-  if (textfile)
+  if (textfile != 0) {
     mPutStr(name, str);
-  else
-    matPutStr(name, (char *)str);
+  }
+  else {
+    matPutStr(name, const_cast<char *>(str));
+  }
 }
 
 int PutInt(const char *name, int pd)
 {
   int error = 0;
-  if (textfile)
+  if (textfile != 0) {
     mPutInt(name, pd);
-  else
+  }
+  else {
     error = matPutInt(name, 1, 1, &pd);
+  }
   return error;
 }
 
 int PutInt(const char *name, int n1, int n2, int *pd)
 {
   int error = 0;
-  if (textfile)
+  if (textfile != 0) {
     mPutInt(name, n1, n2, pd);
-  else
+  }
+  else {
     error = matPutInt(name, n1, n2, pd);
+  }
   return error;
 }
 
 int PutDbl(const char *name, int n1, int n2, double *pd)
 {
   int error = 0;
-  if (textfile)
+  if (textfile != 0) {
     mPutDbl(name, n1, n2, pd);
-  else
+  }
+  else {
     error = matPutDbl(name, n1, n2, pd);
+  }
   return error;
 }
 
@@ -310,14 +319,32 @@ void delete_exodus_names(char **names, int count)
   delete[] names;
 }
 
+void get_put_user_names(int exo_file, ex_entity_type type, int num_blocks, const char *mname)
+{
+  int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  max_name_length     = max_name_length < 32 ? 32 : max_name_length;
+  ex_set_max_name_length(exo_file, max_name_length);
+  char **names = get_exodus_names(num_blocks, max_name_length + 1);
+  ex_get_names(exo_file, type, names);
+
+  std::string user_names;
+  for (int j = 0; j < num_blocks; j++) {
+    user_names += names[j];
+    user_names += "\n";
+  }
+  PutStr(mname, user_names.c_str());
+  delete_exodus_names(names, num_blocks);
+}
+
 void get_put_names(int exo_file, ex_entity_type type, int num_vars, const char *mname)
 {
   int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   max_name_length     = max_name_length < 32 ? 32 : max_name_length;
   char **names        = get_exodus_names(num_vars, max_name_length + 1);
 
-  if (debug)
+  if (debug) {
     logger("\tReading variable names");
+  }
   ex_get_variable_names(exo_file, type, num_vars, names);
 
   std::string mat;
@@ -325,8 +352,9 @@ void get_put_names(int exo_file, ex_entity_type type, int num_vars, const char *
     mat += names[i];
     mat += "\n";
   }
-  if (debug)
+  if (debug) {
     logger("\tWriting variable names");
+  }
   PutStr(mname, mat.c_str());
 
   delete_exodus_names(names, num_vars);
@@ -338,8 +366,9 @@ std::vector<std::string> get_names(int exo_file, ex_entity_type type, int num_va
   max_name_length     = max_name_length < 32 ? 32 : max_name_length;
   char **names        = get_exodus_names(num_vars, max_name_length + 1);
 
-  if (debug)
+  if (debug) {
     logger("\tReading variable names");
+  }
   ex_get_variable_names(exo_file, type, num_vars, names);
 
   std::vector<std::string> mat(num_vars);
@@ -356,8 +385,9 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
 
 {
   /* truth table */
-  if (debug)
+  if (debug) {
     logger("\tTruth Table");
+  }
   std::vector<int> truth_table(num_vars * num_blocks);
   ex_get_truth_table(exo_file, type, num_blocks, num_vars, TOPTR(truth_table));
 
@@ -373,7 +403,7 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
     dims[0] = 2;
     dims[1] = num_vars;
     matvar_t *cell_array =
-        Mat_VarCreate(var_name.c_str(), MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+        Mat_VarCreate(var_name.c_str(), MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
     assert(cell_array);
 
     std::vector<double> scr(num_vars * num_time_steps * num_entity);
@@ -391,12 +421,12 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
       size_t sdims[2];
       sdims[0]        = 1;
       sdims[1]        = names[i].length();
-      cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+      cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                       (void *)names[i].c_str(), MAT_F_DONT_COPY_DATA);
       Mat_VarSetCell(cell_array, j, cell_element[j]);
       j++;
 
-      cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+      cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                       MAT_F_DONT_COPY_DATA);
       assert(cell_element[j]);
       Mat_VarSetCell(cell_array, j, cell_element[j]);
@@ -424,8 +454,9 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
     std::string format = prefix + "var%02d";
     char        str[32];
     for (int i = 0; i < num_vars; i++) {
-      if (debug)
+      if (debug) {
         logger("\tReading");
+      }
       std::fill(scr.begin(), scr.end(), 0.0);
       size_t n = 0;
       sprintf(str, format.c_str(), i + 1);
@@ -437,8 +468,9 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
           n = n + num_per_block[k];
         }
       }
-      if (debug)
+      if (debug) {
         logger("\tWriting");
+      }
       PutDbl(str, num_entity, num_time_steps, TOPTR(scr));
     }
   }
@@ -464,7 +496,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
     dims[0] = num_field;
     dims[1] = num_blocks;
     matvar_t *cell_array =
-        Mat_VarCreate("element_blocks", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+        Mat_VarCreate("element_blocks", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
     assert(cell_array);
 
     std::vector<matvar_t *> cell_element(num_blocks * num_field);
@@ -479,7 +511,8 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int  num_elem = 0;
       int  num_node = 0;
       int  num_attr = 0;
-      ex_get_elem_block(exo_file, ids[i], type, &num_elem, &num_node, &num_attr);
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], type, &num_elem, &num_node, nullptr, nullptr,
+                   &num_attr);
       types[i]             = std::string(type);
       num_elem_in_block[i] = num_elem;
       num_node_per_elem[i] = num_node;
@@ -495,28 +528,28 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       dims[1]      = std::strlen(name.data());
       size_t index = num_field * i + 0;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+          Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = 1;
       dims[1] = 1;
       index   = num_field * i + 1;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+          Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = 1;
       dims[1] = types[i].length();
       index   = num_field * i + 2;
       cell_element[index] =
-          Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)types[i].c_str(), 0);
+          Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)types[i].c_str(), 0);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
 
       dims[0] = num_node_per_elem[i];
       dims[1] = num_elem_in_block[i];
       index   = num_field * i + 3;
       ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], &connect[conn_off], nullptr, nullptr);
-      cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+      cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                           &connect[conn_off], MAT_F_DONT_COPY_DATA);
       assert(cell_element[index]);
       Mat_VarSetCell(cell_array, index, cell_element[index]);
@@ -527,8 +560,9 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
     Mat_VarFree(cell_array);
   }
   else {
-    char             str[33];
-    std::vector<int> connect;
+    char                str[33];
+    std::vector<int>    connect;
+    std::vector<double> attr;
 
     PutInt("blkids", num_blocks, 1, TOPTR(ids));
     std::vector<char> type(max_name_length + 1);
@@ -537,7 +571,8 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int num_elem = 0;
       int num_node = 0;
       int num_attr = 0;
-      ex_get_elem_block(exo_file, ids[i], TOPTR(type), &num_elem, &num_node, &num_attr);
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(type), &num_elem, &num_node, nullptr,
+                   nullptr, &num_attr);
       types += type.data();
       types += "\n";
       num_elem_in_block[i] = num_elem;
@@ -545,7 +580,32 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(connect), nullptr, nullptr);
       sprintf(str, "blk%02d", i + 1);
       PutInt(str, num_node, num_elem, TOPTR(connect));
+
+      // Handle block attributes (if any...)
+      attr.resize(num_elem);
+      sprintf(str, "blk%02d_nattr", i + 1);
+      PutInt(str, num_attr);
+      if (num_attr > 0) {
+        std::string attr_names;
+        char **     names = get_exodus_names(num_attr, max_name_length + 1);
+        ex_get_attr_names(exo_file, EX_ELEM_BLOCK, ids[i], names);
+        for (int j = 0; j < num_attr; j++) {
+          attr_names += names[j];
+          attr_names += "\n";
+        }
+        sprintf(str, "blk%02d_attrnames", i + 1);
+        PutStr(str, attr_names.c_str());
+        delete_exodus_names(names, num_attr);
+
+        for (int j = 0; j < num_attr; j++) {
+          sprintf(str, "blk%02d_attr%02d", i + 1, j + 1);
+          ex_get_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, attr.data());
+          PutDbl(str, num_elem, 1, attr.data());
+        }
+      }
     }
+
+    get_put_user_names(exo_file, EX_ELEM_BLOCK, num_blocks, "blkusernames");
     PutStr("blknames", types.c_str());
   }
   return num_elem_in_block;
@@ -580,9 +640,10 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
     // 4) distribution factors
     if (use_cell_arrays) {
       size_t dims[2];
-      dims[0]              = 4;
-      dims[1]              = num_sets;
-      matvar_t *cell_array = Mat_VarCreate("node_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      dims[0] = 4;
+      dims[1] = num_sets;
+      matvar_t *cell_array =
+          Mat_VarCreate("node_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
 
       std::vector<matvar_t *> cell_element(num_sets * 4);
@@ -602,14 +663,14 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[1]      = std::strlen(name.data());
         size_t index = 4 * i + 0;
         cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
-        dims[0] = 1;
-        dims[1] = 1;
-        index   = 4 * i + 1;
-        cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+        dims[0]             = 1;
+        dims[1]             = 1;
+        index               = 4 * i + 1;
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i],
+                                            MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         dims[0] = num_nodes[i];
@@ -617,15 +678,15 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         index   = 4 * i + 2;
         ex_get_set(exo_file, EX_NODE_SET, ids[i], &node_list[nl_off], nullptr);
         /* nodes list */
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &node_list[nl_off], MAT_F_DONT_COPY_DATA);
         assert(cell_element[index]);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         /* distribution-factors list */
-        ex_get_node_set_dist_fact(exo_file, ids[i], &dist_fac[df_off]);
+        ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], &dist_fac[df_off]);
         index               = 4 * i + 3;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
                                             &dist_fac[df_off], MAT_F_DONT_COPY_DATA);
         assert(cell_element[index]);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
@@ -649,11 +710,13 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
 
         /* distribution-factors list */
         std::vector<double> dist_fac(num_df[i]);
-        ex_get_node_set_dist_fact(exo_file, ids[i], TOPTR(dist_fac));
+        ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fac));
         sprintf(str, "nsfac%02d", i + 1);
         PutDbl(str, dist_fac.size(), 1, TOPTR(dist_fac));
       }
     }
+
+    get_put_user_names(exo_file, EX_NODE_SET, num_sets, "nsusernames");
 
     /* Store # nodes and # dis. factors per node set */
     PutInt("nnsnodes", num_sets, 1, TOPTR(num_nodes));
@@ -682,9 +745,10 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
     if (use_cell_arrays) {
       size_t dims[2];
-      dims[0]              = 7;
-      dims[1]              = num_sets;
-      matvar_t *cell_array = Mat_VarCreate("side_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      dims[0] = 7;
+      dims[1] = num_sets;
+      matvar_t *cell_array =
+          Mat_VarCreate("side_sets", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
 
       std::vector<matvar_t *> cell_element(num_sets * 7);
@@ -712,14 +776,14 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[1]      = std::strlen(name.data());
         size_t index = 7 * i + 0;
         cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
+            Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, dims, (void *)name.data(), 0);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
-        dims[0] = 1;
-        dims[1] = 1;
-        index   = 7 * i + 1;
-        cell_element[index] =
-            Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i], MAT_F_DONT_COPY_DATA);
+        dims[0]             = 1;
+        dims[1]             = 1;
+        index               = 7 * i + 1;
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i],
+                                            MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         int n1, n2;
@@ -727,24 +791,30 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         num_sideset_sides[i] = n1;
         num_sideset_dfac[i]  = n2;
         ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
+        if (n2 != num_sideset_nodes[i]) {
+          std::cerr
+              << "WARNING: Number of sideset nodes does not match number of distribution factors"
+              << " for sideset with id = " << ids[i] << ".\n";
+        }
 
         /* element and side list for side sets (dgriffi) */
         ex_get_set(exo_file, EX_SIDE_SET, ids[i], &elem_list[side_off], &side_list[side_off]);
         dims[0]             = num_sideset_sides[i];
         dims[1]             = 1;
         index               = 7 * i + 2;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &elem_list[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         index               = 7 * i + 3;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &side_list[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         bool has_ss_dfac = (n2 != 0);
         if (n2 == 0 || n1 == n2) {
-          std::cerr << "WARNING: Exodus file does not contain distribution factors.\n";
+          std::cerr << "WARNING: Sideset with id " << ids[i]
+                    << " does not contain distribution factors.\n";
           num_sideset_dfac[i] = num_sideset_nodes[i];
         }
 
@@ -753,22 +823,23 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
         /* number-of-nodes-per-side list */
         index               = 7 * i + 4;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &num_nodes_per_side[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         dims[0]             = num_sideset_nodes[i];
         dims[1]             = 1;
         index               = 7 * i + 5;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_INT32, MAT_T_INT32, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &side_nodes[node_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         /* distribution-factors list */
         if (has_ss_dfac) {
-          ex_get_side_set_dist_fact(exo_file, ids[i], &ssdfac[df_off]);
+          ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], &ssdfac[df_off]);
         }
         else {
+          n2 = num_sideset_dfac[i];
           for (int j = 0; j < n2; j++) {
             ssdfac[j] = 1.0;
           }
@@ -776,7 +847,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[0]             = num_sideset_dfac[i];
         dims[1]             = 1;
         index               = 7 * i + 6;
-        cell_element[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
+        cell_element[index] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
                                             &ssdfac[df_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
@@ -802,7 +873,8 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
         bool has_ss_dfac = (n2 != 0);
         if (n2 == 0 || n1 == n2) {
-          std::cerr << "WARNING: Exodus file does not contain distribution factors.\n";
+          std::cerr << "WARNING: Sideset with id " << ids[i]
+                    << " does not contain distribution factors.\n";
           ex_get_side_set_node_list_len(exo_file, ids[i], &n2);
         }
 
@@ -821,7 +893,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         /* distribution-factors list */
         ssdfac.resize(n2);
         if (has_ss_dfac) {
-          ex_get_side_set_dist_fact(exo_file, ids[i], TOPTR(ssdfac));
+          ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(ssdfac));
         }
         else {
           for (int j = 0; j < n2; j++) {
@@ -841,6 +913,8 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         PutInt(str, n1, 1, TOPTR(elem_list));
       }
     }
+    get_put_user_names(exo_file, EX_SIDE_SET, num_sets, "ssusernames");
+
     /* Store # sides and # dis. factors per side set (dgriffi) */
     PutInt("nsssides", num_sets, 1, TOPTR(num_sideset_sides));
     PutInt("nssdfac", num_sets, 1, TOPTR(num_sideset_dfac));
@@ -855,10 +929,12 @@ void handle_coordinates(int exo_file, size_t num_nodes, int num_axes)
   }
   std::vector<double> x, y, z;
   x.resize(num_nodes);
-  if (num_axes >= 2)
+  if (num_axes >= 2) {
     y.resize(num_nodes);
-  if (num_axes == 3)
+  }
+  if (num_axes == 3) {
     z.resize(num_nodes);
+  }
   ex_get_coord(exo_file, TOPTR(x), TOPTR(y), TOPTR(z));
   PutDbl("x0", num_nodes, 1, TOPTR(x));
   if (num_axes >= 2) {
@@ -873,8 +949,9 @@ void handle_coordinates(int exo_file, size_t num_nodes, int num_axes)
 /* remove an argument from the list */
 void del_arg(int *argc, char *argv[], int j)
 {
-  for (int jj    = j + 1; jj < *argc; jj++)
+  for (int jj = j + 1; jj < *argc; jj++) {
     argv[jj - 1] = argv[jj];
+  }
   (*argc)--;
   argv[*argc] = nullptr;
 }
@@ -941,8 +1018,8 @@ int main(int argc, char *argv[])
     }
     if (strcmp(argv[j], "-o") == 0) { /* specify output file name */
       del_arg(&argc, argv, j);
-      if (argv[j]) {
-        oname = (char *)calloc(std::strlen(argv[j]) + 10, sizeof(char));
+      if (argv[j] != nullptr) {
+        oname = reinterpret_cast<char *>(calloc(std::strlen(argv[j]) + 10, sizeof(char)));
         strcpy(oname, argv[j]);
         del_arg(&argc, argv, j);
         std::cout << "output file: " << oname << "\n";
@@ -967,24 +1044,25 @@ int main(int argc, char *argv[])
   }
 
   /* open output file */
-  if (textfile)
+  if (textfile != 0) {
     ext = ".m";
-
-  if (!oname) {
-    filename = (char *)malloc(std::strlen(argv[1]) + 10);
+  }
+  if (oname == nullptr) {
+    filename = reinterpret_cast<char *>(malloc(std::strlen(argv[1]) + 10));
     strcpy(filename, argv[1]);
     dot = strrchr(filename, '.');
-    if (dot)
+    if (dot != nullptr) {
       *dot = '\0';
+    }
     strcat(filename, ext);
   }
   else {
     filename = oname;
   }
 
-  if (textfile) {
+  if (textfile != 0) {
     m_file = fopen(filename, "w");
-    if (!m_file) {
+    if (m_file == nullptr) {
       std::cerr << "ERROR: Unable to open " << filename << "\n";
       exit(1);
     }
@@ -1003,6 +1081,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  ex_opts(EX_VERBOSE);
+
   /* word sizes */
   int cpu_word_size = sizeof(double);
   int io_word_size  = 0;
@@ -1019,7 +1099,7 @@ int main(int argc, char *argv[])
   std::cout << "\ttranslating " << argv[1] << " to " << filename << "...\n";
 
   /* read database paramters */
-  char *line = (char *)calloc((MAX_LINE_LENGTH + 1), sizeof(char));
+  char *line = reinterpret_cast<char *>(calloc((MAX_LINE_LENGTH + 1), sizeof(char)));
   ex_get_init(exo_file, line, &num_axes, &num_nodes, &num_elements, &num_blocks, &num_node_sets,
               &num_side_sets);
   num_info_lines = ex_inquire_int(exo_file, EX_INQ_INFO);
@@ -1113,7 +1193,7 @@ int main(int argc, char *argv[])
       size_t dims[2];
       dims[0]              = 2;
       dims[1]              = num_global_vars;
-      matvar_t *cell_array = Mat_VarCreate("gvar", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      matvar_t *cell_array = Mat_VarCreate("gvar", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
       std::vector<double> scr(num_time_steps * num_global_vars);
       dims[0]       = num_time_steps;
@@ -1128,13 +1208,13 @@ int main(int argc, char *argv[])
         size_t sdims[2];
         sdims[0]        = 1;
         sdims[1]        = gnames[i].length();
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                         (void *)gnames[i].c_str(), MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         j++;
 
-        ex_get_glob_var_time(exo_file, i + 1, 1, num_time_steps, &scr[offset]);
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, &scr[offset]);
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                         MAT_F_DONT_COPY_DATA);
         assert(cell_element[j]);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
@@ -1149,7 +1229,7 @@ int main(int argc, char *argv[])
       std::vector<double> scr(num_time_steps);
       for (int i = 0; i < num_global_vars; i++) {
         sprintf(str, "gvar%02d", i + 1);
-        ex_get_glob_var_time(exo_file, i + 1, 1, num_time_steps, TOPTR(scr));
+        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, TOPTR(scr));
         PutDbl(str, num_time_steps, 1, TOPTR(scr));
       }
     }
@@ -1167,7 +1247,7 @@ int main(int argc, char *argv[])
       size_t dims[2];
       dims[0]              = 2;
       dims[1]              = num_nodal_vars;
-      matvar_t *cell_array = Mat_VarCreate("nvar", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+      matvar_t *cell_array = Mat_VarCreate("nvar", MAT_C_CELL, MAT_T_CELL, 2, dims, nullptr, 0);
       assert(cell_array);
       std::vector<double> scr(num_nodal_vars * num_time_steps * num_nodes);
       dims[0]       = num_nodes;
@@ -1182,17 +1262,17 @@ int main(int argc, char *argv[])
         size_t sdims[2];
         sdims[0]        = 1;
         sdims[1]        = nnames[i].length();
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_CHAR, MAT_T_UINT8, 2, sdims,
                                         (void *)nnames[i].c_str(), MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         j++;
 
-        cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
+        cell_element[j] = Mat_VarCreate(nullptr, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                         MAT_F_DONT_COPY_DATA);
         assert(cell_element[j]);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         for (int k = 0; k < num_time_steps; k++) {
-          ex_get_nodal_var(exo_file, k + 1, i + 1, num_nodes, &scr[num_nodes * k + offset]);
+          ex_get_var(exo_file, k + 1, EX_NODAL, i + 1, 1, num_nodes, &scr[num_nodes * k + offset]);
         }
         offset += num_time_steps * num_nodes;
         j++;
@@ -1210,7 +1290,7 @@ int main(int argc, char *argv[])
           logger("\tReading");
         }
         for (int j = 0; j < num_time_steps; j++) {
-          ex_get_nodal_var(exo_file, j + 1, i + 1, num_nodes, &scr[num_nodes * j]);
+          ex_get_var(exo_file, j + 1, EX_NODAL, i + 1, 1, num_nodes, &scr[num_nodes * j]);
         }
         if (debug) {
           logger("\tWriting");
@@ -1253,13 +1333,13 @@ int main(int argc, char *argv[])
   }
   ex_opts(0); /* turn off error reporting. It is not an error to have no map*/
   std::vector<int> ids(num_nodes);
-  err = ex_get_node_num_map(exo_file, TOPTR(ids));
+  err = ex_get_id_map(exo_file, EX_NODE_MAP, TOPTR(ids));
   if (err == 0) {
     PutInt("node_num_map", num_nodes, 1, TOPTR(ids));
   }
 
   ids.resize(num_elements);
-  err = ex_get_elem_num_map(exo_file, TOPTR(ids));
+  err = ex_get_id_map(exo_file, EX_ELEM_MAP, TOPTR(ids));
   if (err == 0) {
     PutInt("elem_num_map", num_elements, 1, TOPTR(ids));
   }
@@ -1269,8 +1349,9 @@ int main(int argc, char *argv[])
   }
   ex_close(exo_file);
 
-  if (textfile)
+  if (textfile != 0) {
     fclose(m_file);
+  }
   else {
     Mat_Close(mat_file);
   }

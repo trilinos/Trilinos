@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -30,23 +30,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
-#include <Ioss_CodeTypes.h>
 #ifdef HAVE_MPI
 #include <Ioss_SerializeIO.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
-#include <mpi.h>
-
 #endif
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator) : communicator_(the_communicator) {}
@@ -63,7 +61,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   int rank = parallel_rank();
   if (rank == 0) {
     result_string = std::getenv(name.c_str());
-    string_length = result_string ? (int)std::strlen(result_string) : 0;
+    string_length = result_string != nullptr ? static_cast<int>(std::strlen(result_string)) : 0;
   }
 
   if (sync_parallel && parallel_size() > 1) {
@@ -72,7 +70,8 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        std::strncpy(TOPTR(broadcast_string), result_string, (size_t)string_length + 1);
+        std::strncpy(TOPTR(broadcast_string), result_string,
+                     static_cast<size_t>(string_length) + 1);
       }
       MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
       value = std::string(TOPTR(broadcast_string));
@@ -83,10 +82,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   }
   else {
     if (rank == 0) {
-      if (string_length > 0)
+      if (string_length > 0) {
         value = std::string(result_string);
-      else
+      }
+      else {
         value = std::string("");
+      }
     }
   }
   return string_length > 0;
@@ -124,11 +125,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
   int rank = Ioss::ParallelUtils::parallel_rank();
   if (rank == 0) {
     result_string = std::getenv(name.c_str());
-    string_length = result_string ? (int)std::strlen(result_string) : 0;
+    string_length = result_string != nullptr ? static_cast<int>(std::strlen(result_string)) : 0;
   }
 
-  if (sync_parallel && parallel_size() > 1)
+  if (sync_parallel && parallel_size() > 1) {
     MPI_Bcast(&string_length, 1, MPI_INT, 0, communicator_);
+  }
 
   return string_length > 0;
 #else
@@ -175,11 +177,39 @@ int Ioss::ParallelUtils::parallel_rank() const
   return my_rank;
 }
 
+void Ioss::ParallelUtils::memory_stats(int64_t &min, int64_t &max, int64_t &avg) const
+{
+  int64_t my_memory = Ioss::Utils::get_memory_info();
+  min = max = avg = my_memory;
+#ifdef HAVE_MPI
+  if (parallel_size() > 1) {
+    min = global_minmax(my_memory, DO_MIN);
+    max = global_minmax(my_memory, DO_MAX);
+    avg = global_minmax(my_memory, DO_SUM);
+    avg /= parallel_size(); // Integer truncation probably ok...
+  }
+#endif
+}
+
+void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &avg) const
+{
+  int64_t my_memory = Ioss::Utils::get_hwm_memory_info();
+  min = max = avg = my_memory;
+#ifdef HAVE_MPI
+  if (parallel_size() > 1) {
+    min = global_minmax(my_memory, DO_MIN);
+    max = global_minmax(my_memory, DO_MAX);
+    avg = global_minmax(my_memory, DO_SUM);
+    avg /= parallel_size(); // Integer truncation probably ok...
+  }
+#endif
+}
+
 void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) const
 {
 #ifdef HAVE_MPI
   if (1 < parallel_size()) {
-    assert(sizeof(char) == 1);
+    static_assert(sizeof(char) == 1, "");
 
     std::vector<char> recv_buf(length);
     const int         success =
@@ -284,12 +314,15 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
     inbuf[0] = local_minmax;
 
     MPI_Op oper = MPI_MAX;
-    if (which == DO_MAX)
+    if (which == DO_MAX) {
       oper = MPI_MAX;
-    else if (which == DO_MIN)
+    }
+    else if (which == DO_MIN) {
       oper = MPI_MIN;
-    else if (which == DO_SUM)
+    }
+    else if (which == DO_SUM) {
       oper = MPI_SUM;
+    }
 
     const int success =
         MPI_Allreduce((void *)&inbuf[0], &outbuf[0], 1, mpi_type(T(1)), oper, communicator_);
@@ -319,12 +352,15 @@ void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
     std::vector<T> maxout(count);
 
     MPI_Op oper = MPI_MAX;
-    if (which == DO_MAX)
+    if (which == DO_MAX) {
       oper = MPI_MAX;
-    else if (which == DO_MIN)
+    }
+    else if (which == DO_MIN) {
       oper = MPI_MIN;
-    else if (which == DO_SUM)
+    }
+    else if (which == DO_SUM) {
       oper = MPI_SUM;
+    }
 
     const int success = MPI_Allreduce((void *)&local_minmax[0], &maxout[0], static_cast<int>(count),
                                       mpi_type(T(1)), oper, communicator_);
@@ -400,6 +436,25 @@ template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vect
 #else
   result[0] = my_value;
 #endif
+}
+
+#include <chrono>
+#include <iomanip>
+
+void Ioss::ParallelUtils::progress(const std::string &output) const
+{
+  int64_t MiB = 1024 * 1024;
+  int64_t min = 0, max = 0, avg = 0;
+  memory_stats(min, max, avg);
+
+  static auto start = std::chrono::high_resolution_clock::now();
+
+  if (parallel_rank() == 0) {
+    auto                          now  = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> diff = now - start;
+    std::cerr << " [" << std::fixed << std::setprecision(2) << diff.count() << "] (" << min / MiB
+              << "M  " << max / MiB << "M  " << avg / MiB << "M)\t" << output << "\n";
+  }
 }
 
 template void Ioss::ParallelUtils::gather(std::vector<int> &my_values,

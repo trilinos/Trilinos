@@ -69,25 +69,38 @@ namespace MueLu {
       const std::string& levelName = it->first;
 
       // Check for mach of the form "level X" where X is a positive integer
-      if (inList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
+      if (inList.isSublist(levelName) && ((levelName.find("level ") == 0 && levelName.size() > 6) || levelName.find("user data") == 0)) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
-        if (maxLevel < levelID)
-          maxLevel = levelID;
+        bool userFlag = true;
+        if(levelName.find("user data") == std::string::npos) { // if "user data" is not found in levelName, switc userFlag and set levelID
+          userFlag = false;
+          levelID = strtol(levelName.substr(6).c_str(), 0, 0);
+          if (maxLevel < levelID)
+            maxLevel = levelID;
+        }
 
         // Split the sublist
         const ParameterList& levelList = inList.sublist(levelName);
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
-          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
+          if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "K" || name == "Nullspace" || name == "Coordinates"
+#ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
+              || name == "pcoarsen: element to node map"
+#endif
+              ) {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
-          #ifdef HAVE_MUELU_MATLAB
-          else if(IsParamMuemexVariable(name))
+          }
+#ifdef HAVE_MUELU_MATLAB
+          else if(!userFlag && IsParamMuemexVariable(name))
           {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
           }
-          #endif
-          else
+#endif
+          else if( userFlag && IsParamValidVariable(name)) {
+            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          } else {
             serialList.sublist(levelName).setEntry(name, it2->second);
+          }
         }
 
       } else {
@@ -169,6 +182,60 @@ namespace MueLu {
        strstr(firstWord, "double") ||
        strstr(firstWord, "complex") ||
        strstr(firstWord, "string"))
+      //Add name to list of keys to remove
+    {
+      free(str);
+      return true;
+    }
+    else
+    {
+      free(str);
+      return false;
+    }
+  }
+
+bool IsParamValidVariable(const std::string& name)
+  {
+    //see if paramName is exactly two "words" - like "OrdinalVector myNullspace" or something
+    char* str = (char*) malloc(name.length() + 1);
+    strcpy(str, name.c_str());
+    //Strip leading and trailing whitespace
+    char* firstWord = strtok(str, " ");
+    if(!firstWord) {
+      free(str);
+      return false;
+    }
+    char* secondWord = strtok(NULL, " ");
+    if(!secondWord) {
+      free(str);
+      return false;
+    }
+    char* thirdWord = strtok(NULL, " ");
+    if(thirdWord) {
+      free(str);
+      return false;
+    }
+    //convert first word to all lowercase for case insensitive compare
+    char* tolowerIt = firstWord;
+    while(*tolowerIt)
+    {
+      *tolowerIt = (char) tolower(*tolowerIt);
+      tolowerIt++;
+    }
+    //See if the first word is one of the custom variable names
+    if(strstr(firstWord, "matrix") ||
+       strstr(firstWord, "multivector") ||
+       strstr(firstWord, "map") ||
+       strstr(firstWord, "ordinalvector") ||
+       strstr(firstWord, "int") ||
+       strstr(firstWord, "scalar") ||
+       strstr(firstWord, "double") ||
+       strstr(firstWord, "complex") ||
+       strstr(firstWord, "string") ||
+       strstr(firstWord, "array<go>") ||
+       strstr(firstWord, "array<lo>") ||
+       strstr(firstWord, "arrayrcp<lo>") ||
+       strstr(firstWord, "arrayrcp<go>"))
       //Add name to list of keys to remove
     {
       free(str);

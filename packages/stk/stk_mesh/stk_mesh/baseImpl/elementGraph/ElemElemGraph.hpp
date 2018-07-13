@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STK_ELEM_ELEM_GRAPH_HPP
 #define STK_ELEM_ELEM_GRAPH_HPP
 
@@ -16,8 +48,8 @@
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 #include "SideConnector.hpp"
-#include "../MeshImplUtils.hpp"
-#include "../../../../stk_util/stk_util/util/SortAndUnique.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
 #include "BulkDataIdMapper.hpp"
 
 namespace stk { class CommBuffer; }
@@ -114,14 +146,15 @@ public:
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
-    size_t size() {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
+    size_t size() const {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
     void fill_from_mesh();
-    stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
+    stk::mesh::SideNodeConnector get_side_node_connector();
+    stk::mesh::SideIdChooser get_side_id_chooser();
 
     const stk::mesh::BulkData& get_mesh() const;
 
@@ -133,6 +166,16 @@ public:
     const std::vector<GraphEdge> & get_coincident_edges_for_element(impl::LocalId elem) const
     {
         return m_coincidentGraph.get_edges_for_element(elem);
+    }
+
+    std::vector<stk::mesh::impl::LocalId> get_coincident_elements(impl::LocalId elem) const
+    {
+        std::vector<stk::mesh::impl::LocalId> coincidents;
+        const std::vector<stk::mesh::GraphEdge>& coincidentEdges = get_coincident_edges_for_element(elem);
+        for(const stk::mesh::GraphEdge& coinEdge : coincidentEdges)
+            coincidents.push_back(coinEdge.elem2());
+        stk::util::sort_and_unique(coincidents);
+        return coincidents;
     }
 
     stk::mesh::Entity get_entity_from_local_id(impl::LocalId localId) const
@@ -168,6 +211,7 @@ public:
     {
         return m_idMapper.local_to_entity(localId);
     }
+
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
@@ -178,9 +222,6 @@ protected:
                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideToProcAndFaceId& elementSidesToSend);
-
-    stk::mesh::EntityId pick_id_for_side_if_created(const impl::ParallelElementData & elemDataFromOtherProc,
-            const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideDataSent, stk::mesh::Entity localElem, unsigned side_index);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 
@@ -250,11 +291,10 @@ protected:
     std::vector<stk::topology> m_element_topologies;
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_parallel_edges;
-    stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
 private:
-    stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
+    void add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,
@@ -269,8 +309,6 @@ private:
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
 
-    void fix_coincident_chosen_side_ids();
-
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
     unsigned get_max_num_sides_per_element() const;
     bool did_already_delete_a_shell_between_these_elements(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
@@ -282,7 +320,6 @@ private:
                                       int side_index,
                                       const impl::SerialElementData& elemData,
                                       std::vector<stk::mesh::GraphEdge>& coincidentGraphEdges) const;
-    void generate_initial_side_ids(size_t numPotentialParallelBoundarySides);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData,
@@ -431,13 +468,13 @@ inline impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::
     return impl::build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
 }
 
-inline void fill_suggested_side_ids(stk::mesh::SideIdPool& sideIdPool, impl::ElemSideToProcAndFaceId& elements_to_communicate)
+inline void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate)
 {
     impl::ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     impl::ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
     for(; iter != end; ++iter)
     {
-        stk::mesh::EntityId suggested_side_id = sideIdPool.get_available_id();
+        stk::mesh::EntityId suggested_side_id = stk::mesh::impl::side_id_formula(bulkData.identifier(iter->first.entity), iter->first.side_id);
         iter->second.side_id = suggested_side_id;
     }
 }

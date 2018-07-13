@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
       AggregationFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
       std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
       if (optAggOrdering == "natural" || optAggOrdering == "random" || optAggOrdering == "graph") {
-        *out << "aggregate ordering :                    " << optAggOrdering << std::endl;
+        *out << "aggregate ordering :                    " << optAggOrdering << std::endl;
         AggregationFact->SetOrdering(optAggOrdering);
       } else {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";

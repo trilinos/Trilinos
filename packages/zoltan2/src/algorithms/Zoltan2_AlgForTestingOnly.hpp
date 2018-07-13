@@ -76,6 +76,17 @@ public:
   {
   }
 
+  /*! \brief Set up validators specific to this algorithm
+    */
+  static void getValidParameters(ParameterList & pl)
+  {
+    RCP<Teuchos::EnhancedNumberValidator<int>> forTestingOnlyFlag_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+    pl.set("forTestingOnlyFlag", 0, "Used only for testing; look at "
+      "Zoltan2_AlgForTestingOnly for interpretations",
+      forTestingOnlyFlag_Validator);
+  }
+
   void partition(const RCP<PartitioningSolution<Adapter> > &solution)
   {
     size_t nObj = adapter->getLocalNumIDs();

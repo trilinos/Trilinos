@@ -62,6 +62,7 @@ namespace panzer {
     }
     else {
       entry = Teuchos::rcp(new panzer::ScalarParameterEntry<EvaluationType>);
+      entry->setValue(NAN);
       pl.addEntry<EvaluationType>(name,entry);
     }
 

@@ -98,20 +98,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Array;
 using Teuchos::get_extra_data;
-using Thyra::VectorSpaceBase;
-using Thyra::VectorBase;
-using Thyra::MultiVectorBase;
-using Thyra::createMember;
-using Thyra::createMembers;
-using Thyra::DefaultSpmdVectorSpace;
-using Thyra::defaultSpmdVectorSpace;
-using Thyra::ConstDetachedVectorView;
-using Thyra::DetachedVectorView;
-using Thyra::ConstDetachedSpmdVectorView;
-using Thyra::DetachedSpmdVectorView;
-using Thyra::assign;
-using Thyra::apply;
-typedef Thyra::Ordinal Ordinal;
 
 
 #define PRINT_VAR(varName) \

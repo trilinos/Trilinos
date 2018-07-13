@@ -588,6 +588,109 @@ RCP<StringToIntegralParameterEntryValidator<IntegralType> >
     tuple<IntegralType>((IntegralType)1), "");
 }
 
+/** \brief Standard implementation of a BoolParameterEntryValidator that accepts
+ * bool values (true/false) or string values for bool ("true"/"false").
+ *
+ * Objects of this type are meant to be used as both abstract objects passed
+ * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
+ * types and values, and to be used by the code that reads parameter values.
+ * Having a single definition for the types of valids input and outputs for a
+ * parameter value makes it easier to write error-free validated code.
+ *
+ * Please see <tt>AnyNumberValidatorXMLConverter</tt> for documenation
+ * regarding the XML representation of this validator.
+ */
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolParameterEntryValidator
+ : public ParameterEntryValidator
+{
+public:
+
+  /** \name Constructors*/
+  //@{
+
+  BoolParameterEntryValidator();
+
+  //@}
+
+  /** \name Local non-virtual validated lookup functions */
+  //@{
+
+  /** \brief Get bool value from a parameter entry. */
+  bool getBool(
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Lookup parameter from a parameter list and return as a bool
+   * value.
+   */
+  bool getBool(
+    ParameterList &paramList, const std::string &paramName,
+    const int defaultValue
+    ) const;
+
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  const std::string getXMLTypeName() const;
+
+  /** \brief . */
+  void printDoc(
+    std::string const& docString,
+    std::ostream & out
+    ) const;
+
+  /** \brief . */
+  ValidStringsList
+  validStringValues() const;
+
+  /** \brief . */
+  void validate(
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
+    ) const;
+
+  /** \brief . */
+  void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+    ) const;
+
+  //@}
+
+private:
+
+  // ////////////////////////////
+  // Private data members
+
+  std::string acceptedTypesString_;
+
+  // ////////////////////////////
+  // Private member functions
+
+  void finishInitialization();
+
+  void throwTypeError(
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
+    ) const;
+};
+
+// Nonmember helper functions
+
+
+/** \brief Nonmember constructor BoolParameterEntryValidator.
+ *
+ * \relates BoolParameterEntryValidator
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT RCP<BoolParameterEntryValidator>
+boolParameterEntryValidator();
 
 
 /** \brief Standard implementation of a ParameterEntryValidator that accepts
@@ -612,7 +715,7 @@ public:
   //@{
 
   /** \brief Determines what type is the preferred type. */
-  enum EPreferredType { PREFER_INT, PREFER_DOUBLE, PREFER_STRING };
+  enum EPreferredType { PREFER_INT, PREFER_LONG_LONG, PREFER_DOUBLE, PREFER_STRING };
 
 
   /** \brief Determines the types that are accepted.  */
@@ -620,12 +723,17 @@ public:
   public:
     /** \brief Allow all types or not on construction. */
     AcceptedTypes( bool allowAllTypesByDefault = true )
-      :allowInt_(allowAllTypesByDefault),allowDouble_(allowAllTypesByDefault),
-       allowString_(allowAllTypesByDefault)
+      :allowInt_(allowAllTypesByDefault)
+      ,allowLongLong_(allowAllTypesByDefault)
+      ,allowDouble_(allowAllTypesByDefault)
+      ,allowString_(allowAllTypesByDefault)
       {}
     /** \brief Set allow an <tt>int</tt> value or not */
     AcceptedTypes& allowInt( bool _allowInt )
       { allowInt_ = _allowInt; return *this; }
+    /** \brief Set allow an <tt>long long</tt> value or not */
+    AcceptedTypes& allowLongLong( bool _allowLongLong )
+      { allowLongLong_ = _allowLongLong; return *this; }
     /** \brief Set allow a <tt>double</tt> value or not */
     AcceptedTypes& allowDouble( bool _allowDouble )
       { allowDouble_ = _allowDouble; return *this; }
@@ -634,12 +742,15 @@ public:
       { allowString_ = _allowString; return *this; }
     /** \brief Allow an <tt>int</tt> value? */
     bool allowInt() const { return allowInt_; }
+    /** \brief Allow an <tt>long long</tt> value? */
+    bool allowLongLong() const { return allowLongLong_; }
     /** \brief Allow an <tt>double</tt> value? */
     bool allowDouble() const { return allowDouble_; }
     /** \brief Allow an <tt>std::string</tt> value? */
     bool allowString() const { return allowString_; }
   private:
     bool  allowInt_;
+    bool  allowLongLong_;
     bool  allowDouble_;
     bool  allowString_;
   };
@@ -674,13 +785,29 @@ public:
   /** \name Local non-virtual validated lookup functions */
   //@{
 
-  /** \brief Get an integer value from a parameter entry. */
+  /** \brief Get an integer value from a parameter entry.
+   * will call std::stoi
+   * Note that std::stoi throws on badly formatted strings but
+   * some formats can be accepted, such as "1.1" becoming 1
+   */
   int getInt(
     const ParameterEntry &entry, const std::string &paramName = "",
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
-  /** \brief Get a double value from a parameter entry. */
+  /** \brief Get a long long value from a parameter entry.
+   * will call std::stoll
+   * Note that std::stoll throws on badly formatted strings but
+   * some formats can be accepted, such as "1.1" becoming 1
+   */
+  long long getLongLong(
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Get a double value from a parameter entry.
+   * will call std::stod
+   */
   double getDouble(
     const ParameterEntry &entry, const std::string &paramName = "",
     const std::string &sublistName = "", const bool activeQuery = true
@@ -700,6 +827,14 @@ public:
     const int defaultValue
     ) const;
 
+  /** \brief Lookup parameter from a parameter list and return as a long long
+   * value.
+   */
+  long long getLongLong(
+    ParameterList &paramList, const std::string &paramName,
+    const long long defaultValue
+    ) const;
+
   /** \brief Lookup parameter from a parameter list and return as an double
    * value.
    */
@@ -716,13 +851,17 @@ public:
     const std::string &defaultValue
     ) const;
 
-  /** \brief Lookup whether or not Doubles are allowed.
-   */
-  bool isDoubleAllowed() const;
-
   /** \brief Lookup whether or not ints are allowed.
    */
   bool isIntAllowed() const;
+
+  /** \brief Lookup whether or not long longs are allowed.
+   */
+  bool isLongLongAllowed() const;
+
+  /** \brief Lookup whether or not doubles are allowed.
+   */
+  bool isDoubleAllowed() const;
 
   /** \brief Lookup whether or not strings are allowed.
    */
@@ -738,6 +877,8 @@ public:
     switch (enumValue) {
       case PREFER_INT:
         return getIntEnumString ();
+      case PREFER_LONG_LONG:
+        return getLongLongEnumString ();
       case PREFER_DOUBLE:
         return getDoubleEnumString ();
       case PREFER_STRING:
@@ -753,6 +894,9 @@ public:
   {
     if (enumString == getIntEnumString ()) {
       return PREFER_INT;
+    }
+    else if (enumString == getLongLongEnumString ()) {
+      return PREFER_LONG_LONG;
     }
     else if (enumString == getDoubleEnumString ()) {
       return PREFER_DOUBLE;
@@ -827,6 +971,12 @@ private:
     return intEnumString_;
   }
 
+  /* \brief Gets the string representing the "int" preferred type enum */
+  static const std::string& getLongLongEnumString(){
+    static const std::string longLongEnumString_ = TypeNameTraits<long long>::name();
+    return longLongEnumString_;
+  }
+
   /* \brief Gets the string representing the "double" preferred type enum */
   static const std::string& getDoubleEnumString(){
     static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
@@ -886,6 +1036,19 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setIntParameter(
   );
 
 
+/** \brief Set an integer parameter that allows for (nearly) any input
+ * parameter type that is convertible to an int.
+ *
+ * \relates ParameterList
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setLongLongParameter(
+  std::string const& paramName,
+  long long const value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  = AnyNumberParameterEntryValidator::AcceptedTypes()
+  );
+
 /** \brief Set an double parameter that allows for (nearly) any input
  * parameter type that is convertible to a double.
  *
@@ -932,6 +1095,24 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT int getIntParameter(
   ParameterList const& paramList, std::string const& paramName
   );
 
+
+/** \brief Get a long long parameter.
+ *
+ * If the underlying parameter type is already a long long, then all is good.
+ * However, if it is not, then a AnyNumberParameterEntryValidator object is
+ * looked for to extract the type correctly.  If no validator is attached to
+ * the entry, then a new AnyNumberParameterEntryValidator object will be
+ * created that that will allow the conversion from any supported type.
+ *
+ * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
+ * object will be thrown.  The parameters type must be acceptable, or an
+ * <tt>Exceptions::InvalidParameterType</tt> object will be thown.
+ *
+ * \relates ParameterList
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT long long getLongLongParameter(
+  ParameterList const& paramList, std::string const& paramName
+  );
 
 /** \brief Get double integer parameter.
  *
@@ -1114,9 +1295,6 @@ public:
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
-
 template<>
 class EnhancedNumberTraits<long long int>{
 public:
@@ -1135,9 +1313,6 @@ public:
   static inline long long unsigned int defaultStep() { return 1; }
   static inline unsigned short defaultPrecision() { return 0; }
 };
-
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
@@ -1329,6 +1504,14 @@ public:
     std::string const &sublistName) const;
 
   /** \brief . */
+  void validateAndModify( std::string const& paramName,
+    std::string const& sublistName, ParameterEntry * entry) const;
+
+  /** \brief . */
+  Teuchos::any getNumberFromString(const ParameterEntry &entry,
+    const bool activeQuery) const;
+
+  /** \brief . */
   const std::string getXMLTypeName() const{
     return  "EnhancedNumberValidator(" + TypeNameTraits<T>::name()+ ")";
   }
@@ -1347,6 +1530,16 @@ public:
   //@}
 
 private:
+  /** \name Private Methods */
+  //@{
+
+  // note this was discussed in issue #612
+  // currently we are keeping a string validator with EnhancedNumberValidator
+  // an alternative is to make a combined class for AnyNumberParameterEntryValidator
+  // and EnhancedNumberValidator
+  bool useIntConversions() const;
+
+  //@}
 
   /** \name Private Members */
   //@{
@@ -1381,12 +1574,89 @@ private:
 };
 
 template<class T>
+void EnhancedNumberValidator<T>::validateAndModify(
+  std::string const& paramName,
+  std::string const& sublistName,
+  ParameterEntry * entry
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(0==entry);
+
+  any anyValue = entry->getAny(true);
+  // preferred type is not string
+  if( anyValue.type() == typeid(std::string) ) {
+    anyValue = getNumberFromString(*entry,false);
+    entry->setValue(
+      any_cast<T>(anyValue),
+      false // isDefault
+    );
+  }
+  else {
+    // default behavior
+    return ParameterEntryValidator::validateAndModify(
+      paramName, sublistName, entry);
+  }
+}
+
+template<class T>
+bool EnhancedNumberValidator<T>::useIntConversions() const
+{
+  // this will need some rethinking and exists only for supporting
+  // conversion of strings to the templated type T
+  // but we may want to unify this into the base class anyways
+  // and share string conversion concepts with other parameters
+  // like AnyNumberParameterEntryValidator
+  if(typeid(T) == typeid(char))               return true;
+  if(typeid(T) == typeid(unsigned char))      return true;
+  if(typeid(T) == typeid(int))                return true;
+  if(typeid(T) == typeid(unsigned int))       return true;
+  if(typeid(T) == typeid(short))              return true;
+  if(typeid(T) == typeid(unsigned short))     return true;
+  if(typeid(T) == typeid(long))               return true;
+  if(typeid(T) == typeid(unsigned long))      return true;
+  if(typeid(T) == typeid(long long))          return true;
+  if(typeid(T) == typeid(unsigned long long)) return true;
+
+  // default to double stod to older atof conversion
+  // depending on HAVE_TEUCHOSCORE_CXX11
+  // those conversions would probably handle all above discrete types anyways
+  return false;
+}
+
+template<class T>
+Teuchos::any EnhancedNumberValidator<T>::getNumberFromString(
+  const ParameterEntry &entry, const bool activeQuery
+  ) const
+{
+  // perhaps we want to just eliminate the int checks
+  // and always use double conversion which I think would work
+  // well for all types - but this will give us a behavior which mirrors
+  // AnyNumberParameterEntryValidator more closely
+  const any &anyValue = entry.getAny(activeQuery);
+  if(useIntConversions()) {
+    return any((T)convertStringToInt(any_cast<std::string>(anyValue)));
+  }
+  else { // if not discrete, read as a double and cast to our type T
+    return any((T)convertStringToDouble(any_cast<std::string>(anyValue)));
+  }
+}
+
+template<class T>
 void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::string const &paramName,
   std::string const &sublistName) const
 {
   any anyValue = entry.getAny(true);
-  const std::string &entryName = entry.getAny(false).typeName();
 
+  // This was new code added to allow EnhancedNumberValidator to accept a string
+  // This was added for consistency with AnyNumberParameterEntryValidator
+  // and the new BoolParameterEntryValidator which all take string
+  // We may wish to change this to be optional like AnyNumberParameterEntryValidator
+  if( anyValue.type() == typeid(std::string) ) {
+    // try to upgrade from a string to a number
+    anyValue = getNumberFromString(entry, false);
+  }
+
+  const std::string &entryName = entry.getAny(false).typeName();
   TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(T),
     Exceptions::InvalidParameterType,
     "The \"" << paramName << "\"" <<

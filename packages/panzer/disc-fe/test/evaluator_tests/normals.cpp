@@ -63,7 +63,6 @@ using Teuchos::rcp;
 #include "Panzer_Normals.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -153,9 +152,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   }
   PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & normals = *normalsPtr;
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
+
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
@@ -164,15 +167,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 #endif
   fm->postRegistrationSetup(setupData);
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(normals);
+  fm->getFieldData<EvalType>(normals);
 
   TEST_EQUALITY(normals.rank(),3);
-  TEST_EQUALITY(normals.size(),numCells*quadRule->num_points*dim);
+  TEST_EQUALITY(static_cast<int>(normals.size()),numCells*quadRule->num_points*dim);
   normals.print(out,false);
   for(int i=0;i<numCells;i++) {
 

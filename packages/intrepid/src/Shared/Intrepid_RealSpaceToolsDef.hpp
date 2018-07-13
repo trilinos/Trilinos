@@ -128,7 +128,7 @@ void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray
 template<class Scalar>
 template<class ArrayInOut>
 void RealSpaceTools<Scalar>::absval(ArrayInOut & inoutAbsArray) {
-  for (size_t i=0; i<inoutAbsArray.size(); i++) {
+  for (size_t i=0; i<(size_t)inoutAbsArray.size(); i++) {
     inoutAbsArray[i] = std::abs(inoutAbsArray[i]);
   }
 }
@@ -1833,7 +1833,9 @@ void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & in
 template<class Scalar>
 template<class ArrayScaled>
 void RealSpaceTools<Scalar>::scale(ArrayScaled & inoutScaledArray, const Scalar scalar) {
-  for (size_t i=0; i<inoutScaledArray.size(); i++) {
+  // Intrepid::FieldContainer has size type int
+  const int theSize = (int) inoutScaledArray.size();
+  for (int i=0; i<theSize; i++) {
     inoutScaledArray[i] *= scalar;
   }
 }

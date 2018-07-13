@@ -114,7 +114,6 @@ private:
         EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.get_proc_rank_of_neighbor());
         EXPECT_EQ(4, p_info.m_permutation);
         EXPECT_EQ(stk::topology::HEXAHEDRON_8, p_info.m_remote_element_toplogy);
-        EXPECT_EQ(2u, p_info.m_chosen_side_id);
     }
 };
 
@@ -131,7 +130,7 @@ TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, twoHexesTwoProcsCreateTwoFaces
 //  the graph parallel info is incorrect because it assumes all faces are created with permutation
 //  0 on the originating element/side.  If we can guarantee all faces are created through
 //  declare_element_side, then this issue goes away.
-TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, testFaceDataUsingElemElemGraphWithAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
@@ -141,7 +140,7 @@ TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElem
     }
 }
 
-TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithoutAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, testFaceDataUsingElemElemGraphWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {

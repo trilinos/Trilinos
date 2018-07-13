@@ -1,3 +1,5 @@
+#ifndef TEUCHOSCORE_CONFIG_H_
+#define TEUCHOSCORE_CONFIG_H_
 
 #cmakedefine HAVE_TEUCHOSCORE_KOKKOSCORE
 
@@ -17,5 +19,6 @@
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOSCORE_ARPREC
 
-/* ToDo: Move the TeuchosCore parts from Teuchos_config.h.in to here and git
- * rid of Teuchos_config.h.in */
+#cmakedefine HAVE_TEUCHOSCORE_PTHREAD
+
+#endif // TEUCHOSCORE_CONFIG_H_

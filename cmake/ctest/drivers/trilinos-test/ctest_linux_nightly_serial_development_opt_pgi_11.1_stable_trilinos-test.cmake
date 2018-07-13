@@ -66,7 +66,7 @@ SET(BUILD_DIR_NAME SERIAL_OPT_DEV1)
 SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
 SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Pliris OptiPack EpetraExt Triutils GlobiPack Shards Zoltan Kokkos RTOp ThreadPool TriBITS)
 

@@ -40,87 +40,203 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_GATHER_TANGENT_EPETRA_DECL_HPP
-#define PANZER_EVALUATOR_GATHER_TANGENT_EPETRA_DECL_HPP
+#ifndef   __Panzer_GatherTangent_Epetra_decl_hpp__
+#define   __Panzer_GatherTangent_Epetra_decl_hpp__
 
-#include "Phalanx_config.hpp"
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Panzer
+#include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+
+// Phalanx
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Forward Declarations
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_Dimension.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_CloneableEvaluator.hpp"
-
-#include "Panzer_Evaluator_WithBaseImpl.hpp"
-
-class Epetra_Vector;
-class Epetra_CrsMatrix;
-
-namespace panzer {
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer; //forward declaration
-
-/** \brief Gathers tangent vectors dx/dp for computing df/dx*dx/dp + df/dp into
-    the nodal fields of the field manager.
-
-    This evaluator is very similar to GatherSolution, however it always gathers
-    into fields of type double, and it is a no-op if the global evaluation data
-    container does not exist (which is an error for GatherSolution).
-
-    Currently makes an assumption that the stride is constant for dofs
-    and that the nmber of dofs is equal to the size of the solution
-    names vector.
-*/
-template<typename EvalT,typename TRAITS,typename LO,typename GO>
-class GatherTangent_Epetra
-  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
-    public PHX::EvaluatorDerived<EvalT, TRAITS>,
-    public panzer::CloneableEvaluator  {
-public:
-
-  GatherTangent_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
-     globalIndexer_(indexer) {}
-
-  GatherTangent_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                        const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm);
-
-  void preEvaluate(typename TRAITS::PreEvalData d);
-
-  void evaluateFields(typename TRAITS::EvalData d);
-
-  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherTangent_Epetra<EvalT,TRAITS,LO,GO>(globalIndexer_,pl)); }
-
-private:
-
-  // We always use RealType for gathering as we never compute derivatives for this evaluator
-  //typedef typename panzer::Traits::RealType ScalarT;
-  typedef typename EvalT::ScalarT ScalarT;
-
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
-  std::vector<int> fieldIds_; // field IDs needing mapping
-
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
-
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
-  bool useTimeDerivativeSolutionVector_;
-  std::string globalDataKey_; // what global data does this fill?
-
-  Teuchos::RCP<Epetra_Vector> dxdp_;
-
-  GatherTangent_Epetra();
-};
-
+namespace panzer
+{
+  template <typename LocalOrdinalT, typename GlobalOrdinalT>
+  class UniqueGlobalIndexer;
 }
 
-// **************************************************************
-#endif
+namespace panzer
+{
+  /**
+   *  \brief GatherTangent_Epetra.
+   *
+   *  Gathers tangent vectors \f$\left(\frac{dx}{dp}\right)\f$ for computing
+   *  \f$\frac{df}{dx}\frac{dx}{dp} + \frac{df}{dp}\f$ into the nodal fields of
+   *  the field manager.
+   *
+   *  This evaluator is very similar to `GatherSolution`, however it always
+   *  gathers into fields of type `double`, and it is a no-op if the global
+   *  evaluation data container does not exist (which is an error for
+   *  `GatherSolution`).
+   *
+   *  Currently makes an assumption that the stride is constant for DOFs and
+   *  that the number of DOFs is equal to the size of the solution names
+   *  vector.
+   */
+  template<typename EvalT, typename TRAITS, typename LO, typename GO>
+  class GatherTangent_Epetra
+    :
+    public panzer::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<EvalT, TRAITS>,
+    public panzer::CloneableEvaluator
+  {
+    public:
+
+      /**
+       *  \brief Constructor.
+       *
+       *  Simply saves the input `indexer` as this object's `globalIndexer_`.
+       *
+       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *                     unknown numbering.
+       */
+      GatherTangent_Epetra(
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer)
+        :
+        globalIndexer_(indexer)
+      {
+      } // end of Constructor
+
+      /**
+       *  \brief Initializing Constructor.
+       *
+       *  Saves the input `indexer` as this object's `globalIndexer_`,
+       *  allocates fields, and determines the first active name.
+       *
+       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *                     unknown numbering.
+       *  \param[in] p       The input parameters.
+       */
+      GatherTangent_Epetra(
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+        const Teuchos::ParameterList&                                  p);
+
+      /**
+       *  \brief Post-Registration Setup.
+       *
+       *  Loops over the `gatherFields_` and sets the `fieldIds_`.
+       *
+       *  \param[in] d  Unused.
+       *  \param[in] fm Unused.
+       */
+      void
+      postRegistrationSetup(
+        typename TRAITS::SetupData d,
+        PHX::FieldManager<TRAITS>& fm);
+
+      /**
+       *  \brief Pre-Evaluate:  Sets the tangent vector.
+       *
+       *  Sets the `GlobalEvaluationData` containing the owned and ghosted
+       *  tangent vectors.
+       *
+       *  \param[in] d The `PreEvalData` containing the
+       *               `GlobalEvaluationDataContainer`.
+       */
+      void
+      preEvaluate(
+        typename TRAITS::PreEvalData d);
+
+      /**
+       *  \brief Evaluate Fields:  Gather operation.
+       *
+       *  Loops over the cells in the workset, the fields to be gathered, and
+       *  the basis functions, and fills in the fields.
+       *
+       *  \param[in] d The `Workset` on which we're going to do all the work.
+       */
+      void
+      evaluateFields(
+        typename TRAITS::EvalData d);
+
+      /**
+       *  \brief Create a copy.
+       *
+       *  Creates a `GatherTangent_Epetra` using the Initializing Constructor
+       *  and the current object's `globalIndexer_`.
+       *
+       *  \param[in] pl The input parameters.
+       *
+       *  \returns A `GatherTangent_Epetra` constructed with this object's
+       *           `globalIndexer_` and the input `ParameterList`.
+       */
+      virtual Teuchos::RCP<CloneableEvaluator>
+      clone(
+        const Teuchos::ParameterList& pl) const
+      {
+        using Teuchos::rcp;
+        return rcp(new
+          GatherTangent_Epetra<EvalT, TRAITS, LO, GO>(globalIndexer_, pl));
+      } // end of clone()
+
+    private:
+
+      /**
+       *  \brief The scalar type.
+       */
+      typedef typename EvalT::ScalarT ScalarT;
+
+      /**
+       *  \brief Maps the local (field, element, basis) triplet to a global ID
+       *         for scattering.
+       */
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>> globalIndexer_;
+
+      /**
+       *  \brief Field IDs, which need to be mapped.
+       */
+      std::vector<int> fieldIds_;
+
+      /**
+       *  \brief The fields to be gathered.
+       */
+      std::vector<PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
+
+      /**
+       *  \brief A list of the names of the fields to be gathered.
+       */
+      Teuchos::RCP<std::vector<std::string>> indexerNames_;
+
+      /**
+       *  \brief A flag indicating whether we should be working with \f$ x \f$
+       *         or \f$ \dot{x} \f$.
+       */
+      bool useTimeDerivativeSolutionVector_;
+
+      /**
+       *  \brief The key identifying the `GlobalEvaluationData`.
+       */
+      std::string globalDataKey_;
+
+      /**
+       *  \brief The `GlobalEvaluationData` containing both the owned and
+       *         ghosted tangent vectors.
+       */
+      Teuchos::RCP<panzer::EpetraVector_ReadOnly_GlobalEvaluationData>
+      dxdpEvRoGed_;
+
+      /**
+       *  \brief Default Constructor (disabled).
+       */
+      GatherTangent_Epetra();
+
+  }; // end of class GatherTangent_Epetra
+
+} // end of namespace panzer
+
+#endif // __Panzer_GatherTangent_Epetra_decl_hpp__

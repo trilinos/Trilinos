@@ -61,6 +61,13 @@ public:
       const Thyra::VectorBase<Scalar> &solution,
       const Thyra::VectorBase<Scalar> &solution_dot,
       const Scalar stamp);
+  
+  virtual void observeSolution(
+      const Thyra::VectorBase<Scalar> &solution,
+      const Thyra::VectorBase<Scalar> &solution_dot,
+      const Thyra::VectorBase<Scalar> &solution_dotdot,
+      const Scalar stamp);
+
 
   virtual void observeSolution(
       const Thyra::MultiVectorBase<Scalar> &solution, Scalar time);
@@ -90,6 +97,17 @@ void
 ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
     const Thyra::VectorBase<Scalar> &/*solution_dot*/,
+    const Scalar /*stamp*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::VectorBase<Scalar> &/*solution*/,
+    const Thyra::VectorBase<Scalar> &/*solution_dot*/,
+    const Thyra::VectorBase<Scalar> &/*solution_dotdot*/,
     const Scalar /*stamp*/)
 {
   // Nothing to do by default

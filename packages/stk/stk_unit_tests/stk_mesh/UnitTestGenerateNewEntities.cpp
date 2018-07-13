@@ -48,8 +48,6 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
 {
   // Test BulkData's generate_new_entities method.
@@ -66,7 +64,7 @@ TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
 
   bulk_data.modification_begin();
 
-  bulk_data.declare_entity(NODE_RANK, bulk_data.parallel_rank() + 1, no_parts);
+  bulk_data.declare_node(bulk_data.parallel_rank() + 1, no_parts);
 
   bulk_data.modification_end();
 

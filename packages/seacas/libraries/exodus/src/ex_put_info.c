@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
 #include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stddef.h>       // for size_t
@@ -42,7 +42,7 @@
 
 /*!
 The function ex_put_info() writes information records to the
-database. The records are \c MAX_LINE_LENGTH-character strings.
+database. The records are MAX_LINE_LENGTH-character strings.
 
 In case of an error, ex_put_info() returns a negative number;
 a warning will return a positive number. Possible causes of errors
@@ -63,7 +63,7 @@ ex_create() or ex_open().
 The following code will write out three information records
 to an open exodus file -
 
-\code
+~~~{.c}
 int error, exoid, num_info;
 char *info[3];
 
@@ -75,12 +75,12 @@ info[1] = "This is the second information record.";
 info[2] = "This is the third information record.";
 
 error = ex_put_info(exoid, num_info, info);
-\endcode
+~~~
 
 The following code will first tell the database that there are three
 information records, and then later actually output those records.
 
-\code
+~~~{.c}
 int error, exoid, num_info;
 char *info[3];
 
@@ -97,7 +97,7 @@ info[1] = "This is the second information record.";
 info[2] = "This is the third information record.";
 error = ex_put_info(exoid, num_info, info);
 
-\endcode
+~~~
 
  */
 
@@ -110,7 +110,8 @@ int ex_put_info(int exoid, int num_info, char *info[])
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* only do this if there are records */
   if (num_info > 0) {
@@ -124,34 +125,30 @@ int ex_put_info(int exoid, int num_info, char *info[])
 
       /*   inquire previously defined dimensions  */
       if ((status = nc_inq_dimid(rootid, DIM_LIN, &lindim)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get line string length in file id %d",
                  rootid);
-        ex_err("ex_put_info", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_info", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       /* put file into define mode  */
       if ((status = nc_redef(rootid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed put file id %d into define mode", rootid);
-        ex_err("ex_put_info", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_info", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
 
       /* define dimensions */
       if ((status = nc_def_dim(rootid, DIM_NUM_INFO, num_info, &num_info_dim)) != NC_NOERR) {
         if (status == NC_ENAMEINUSE) { /* duplicate entry? */
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: info records already exist in file id %d",
                    rootid);
-          ex_err("ex_put_info", errmsg, exerrval);
+          ex_err("ex_put_info", errmsg, status);
         }
         else {
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define number of info records in file id %d", rootid);
-          ex_err("ex_put_info", errmsg, exerrval);
+          ex_err("ex_put_info", errmsg, status);
         }
 
         goto error_ret; /* exit define mode and return */
@@ -162,30 +159,27 @@ int ex_put_info(int exoid, int num_info, char *info[])
       dims[1] = lindim;
 
       if ((status = nc_def_var(rootid, VAR_INFO, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define info record in file id %d",
                  rootid);
-        ex_err("ex_put_info", errmsg, exerrval);
+        ex_err("ex_put_info", errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
       ex_compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
       if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to complete info record definition in file id %d", rootid);
-        ex_err("ex_put_info", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_info", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     else {
       if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
-        exerrval = status;
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find info record variable in file id %d",
                  rootid);
-        ex_err("ex_put_info", errmsg, exerrval);
-        return (EX_FATAL);
+        ex_err("ex_put_info", errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
     }
 
@@ -200,11 +194,10 @@ int ex_put_info(int exoid, int num_info, char *info[])
         count[1] = length < MAX_LINE_LENGTH ? length : MAX_LINE_LENGTH;
 
         if ((status = nc_put_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
-          exerrval = status;
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store info record in file id %d",
                    rootid);
-          ex_err("ex_put_info", errmsg, exerrval);
-          return (EX_FATAL);
+          ex_err("ex_put_info", errmsg, status);
+          EX_FUNC_LEAVE(EX_FATAL);
         }
       }
     }
@@ -219,13 +212,13 @@ int ex_put_info(int exoid, int num_info, char *info[])
       }
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if (nc_enddef(rootid) != NC_NOERR) { /* exit define mode */
+  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err("ex_put_info", errmsg, exerrval);
+    ex_err("ex_put_info", errmsg, status);
   }
-  return (EX_FATAL);
+  EX_FUNC_LEAVE(EX_FATAL);
 }

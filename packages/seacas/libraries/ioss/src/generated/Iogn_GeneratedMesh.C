@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -66,7 +66,7 @@ namespace Iogn {
     // of the last '/' (if any)...
     auto params = Ioss::tokenize(parameters, "/");
 
-    auto groups = Ioss::tokenize(params[params.size() - 1], "|+");
+    auto groups = Ioss::tokenize(params.back(), "|+");
 
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
@@ -367,7 +367,8 @@ namespace Iogn {
                   << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
                   << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
                   << "\ttets (split each hex into 6 tets)\n"
-                  << "\tvariables:type,count,...  type=element|nodal|nodeset\n"
+                  << "\tvariables:type,count,...  "
+                     "type=global|element|node|nodal|nodeset|sideset|surface\n"
                   << "\ttimes:count (number of timesteps to generate)\n"
                   << "\tshow -- show mesh parameters\n"
                   << "\thelp -- show this list\n\n";
@@ -670,16 +671,19 @@ namespace Iogn {
 
     int64_t count = (numX + 1) * (numY + 1);
     int64_t slab  = count;
-    if (!isFirstProc && !isLastProc)
+    if (!isFirstProc && !isLastProc) {
       count *= 2;
+    }
     map.resize(count);
     proc.resize(count);
 
     int64_t j = 0;
-    if (!isFirstProc)
+    if (!isFirstProc) {
       j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
-    if (!isLastProc)
+    }
+    if (!isLastProc) {
       j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
+    }
   }
 
   void GeneratedMesh::element_map(int64_t block_number, Ioss::Int64Vector &map) const
@@ -1138,7 +1142,7 @@ namespace Iogn {
           for (size_t i = 0, k = 0; i < numY; i++) {
             for (size_t j = 0; j < numX; j++, k++) {
               size_t base = (m * xp1yp1) + k + i + 1;
-              ;
+
               connect[cnt++] = base;
               connect[cnt++] = base + 1;
               connect[cnt++] = base + numX + 2;
@@ -1474,7 +1478,7 @@ namespace Iogn {
     else if (type == "element") {
       variableCount[Ioss::ELEMENTBLOCK] = count;
     }
-    else if (type == "nodal") {
+    else if (type == "nodal" || type == "node") {
       variableCount[Ioss::NODEBLOCK] = count;
     }
     else if (type == "nodeset") {
@@ -1486,7 +1490,7 @@ namespace Iogn {
     else {
       std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
                 << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
-                << "       global, element, nodal, nodeset, surface, sideset.\n";
+                << "       global, element, node, nodal, nodeset, surface, sideset.\n";
     }
   }
 
@@ -1527,7 +1531,7 @@ namespace Iogn {
     double sinang = std::sin(ang);
 
     assert(n1 >= 0 && n2 >= 0 && n3 >= 0);
-    double by[3][3];
+    std::array<std::array<double, 3>, 3> by;
     by[n1][n1] = cosang;
     by[n2][n1] = -sinang;
     by[n1][n3] = 0.0;
@@ -1538,21 +1542,13 @@ namespace Iogn {
     by[n3][n2] = 0.0;
     by[n3][n3] = 1.0;
 
-    double res[3][3];
+    std::array<std::array<double, 3>, 3> res;
     for (int i = 0; i < 3; i++) {
       res[i][0] = rotmat[i][0] * by[0][0] + rotmat[i][1] * by[1][0] + rotmat[i][2] * by[2][0];
       res[i][1] = rotmat[i][0] * by[0][1] + rotmat[i][1] * by[1][1] + rotmat[i][2] * by[2][1];
       res[i][2] = rotmat[i][0] * by[0][2] + rotmat[i][1] * by[1][2] + rotmat[i][2] * by[2][2];
     }
 
-#if 1
-    std::memcpy(rotmat, res, 9 * sizeof(double));
-#else
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        rotmat[i][j] = res[i][j];
-      }
-    }
-#endif
+    rotmat = res;
   }
 } // namespace Iogn

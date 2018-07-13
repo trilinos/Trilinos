@@ -91,13 +91,13 @@ namespace Experimental {
   ///     if the values are zero.
   ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
   template<class Scalar, class LO, class GO, class Node>
-  RCP<BlockCrsMatrix<Scalar, LO, GO, Node>>
+  Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node>>
   convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
 
   /// @brief Helper function to generate a mesh map from a point map.
   /// Important! It's assumed that point GIDs associated with a single mesh GID appear consecutively in pointMap.
   template<class LO, class GO, class Node>
-  RCP<const Tpetra::Map<LO,GO,Node>>
+  Teuchos::RCP<const Tpetra::Map<LO,GO,Node>>
   createMeshMap(LO const &blockSize, const Tpetra::Map<LO,GO,Node> &pointMap);
 
 } // namespace Experimental

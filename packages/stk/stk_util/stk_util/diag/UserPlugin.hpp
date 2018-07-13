@@ -34,11 +34,11 @@
 #ifndef STK_UTIL_DIAG_UserPlugin_h
 #define STK_UTIL_DIAG_UserPlugin_h
 
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for 
 #include <functional>                   // for binary_function
 #include <iosfwd>                       // for ostream
 #include <map>                          // for map, map<>::value_compare
-#include <stk_util/diag/StringUtil.hpp>  // for less_nocase
+#include <stk_util/diag/StringUtil.hpp> // for less_nocase
 #include <stk_util/util/Fortran.hpp>    // for SIERRA_FORTRAN
 #include <string>                       // for string
 #include <typeinfo>                     // for type_info
@@ -48,8 +48,6 @@ namespace stk { namespace diag { class Writer; } }
 
 
 /**
- * @file
- *
  * Historically, the term User Subroutine has referred to Fortran subroutines which are
  * generally called from within a procedure, allowing the user to create or select a
  * mathematical calculation to be applied to set of arguments.
@@ -97,32 +95,6 @@ public:
    *
    */
   typedef std::pair<const std::type_info *, std::string> NamePair;
-
-//   /**
-//    * @brief Class <b>hash_nocase</b> implements a hash, case insensitive NamePair
-//    * hash functor.
-//    *
-//    */
-//   struct hash_nocase
-//   {
-//     size_t operator()(const NamePair &n) const {
-//       return sierra::hash_string_nocase(n.second.c_str());
-//     }
-//   };
-
-//   /**
-//    * @brief Class <b>hash_nocase</b> implements a hash, case insensitive compare
-//    * equal NamePair functor.
-//    *
-//    */
-//   struct equal_nocase : public std::binary_function<NamePair, NamePair, bool>
-//   {
-//     bool operator()(const NamePair &lhs, const NamePair &rhs) const {
-//       sierra::equal_nocase<NamePair::second_type> second_equal_nocase;
-
-//       return *lhs.first == *rhs.first && second_equal_nocase(lhs.second, rhs.second);
-//     }
-//   };
 
   /**
    * @brief Class <b>less_nocase</b> implements a case insensitive NamePair compare
@@ -267,24 +239,24 @@ public:
 
   /**
    * @brief Member function <b>getFuncPtr</b> returns the function pointer with the
-   * specfied <it>name</it>.
+   * specified <it>name</it>.
    *
    * @param name		a <b>NamePair</b> const reference to the registered
    *				name pair.
    *
-   * @returns			a <b>void</b> function pointer with the specfied
+   * @returns			a <b>void</b> function pointer with the specified
    *				<it>name_pair</it>.
    */
   Registry *getFactoryPtr(const NamePair &name) const;
 
   /**
    * @brief Member function <b>getFuncPtr</b> returns the function pointer with the
-   * specfied <it>name_pair</it>.
+   * specified <it>name_pair</it>.
    *
    * @param name_pair		a <b>NamePair</b> const reference to the registered
    *				name pair.
    *
-   * @returns			a <b>void</b> function pointer with the specfied
+   * @returns			a <b>void</b> function pointer with the specified
    *				<it>name_pair</it>.
    */
   void *getFuncPtr(const NamePair &name_pair) const;
@@ -453,7 +425,7 @@ public:
    * @return			a <b>bool</b> of true if class of the type specified by derived_name exists in BaseClass.
    */
   static bool exists(const std::string &derived_name) {
-    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != NULL;
+    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != nullptr;
   }
 
   static std::vector<std::string> getDerivedNames() {
@@ -643,7 +615,7 @@ public:
    *				signature and <it>function_name</it> exists in BaseClass.
    */
   static bool exists(const std::string &derived_name) {
-    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != NULL;
+    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != nullptr;
   }
 
   /**

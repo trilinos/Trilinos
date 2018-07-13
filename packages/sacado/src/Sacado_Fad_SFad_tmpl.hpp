@@ -27,6 +27,11 @@
 // ***********************************************************************
 // @HEADER
 
+#if defined(HAVE_SACADO_KOKKOSCORE)
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Error.hpp"
+#endif
+
 namespace Sacado {
 
   namespace FAD_NS {
@@ -60,6 +65,12 @@ namespace Sacado {
       template <typename T>
       struct apply {
         typedef SFad<T,Num> type;
+      };
+
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef SFad<ValueT,N> type;
       };
 
       /*!
@@ -300,108 +311,44 @@ namespace Sacado {
 
 } // namespace Sacado
 
-//
-// Classes needed for Kokkos::View< SFad<...> ... > specializations
-//
-// Users can disable these view specializations either at configure time or
-// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
-//
+#if defined(HAVE_SACADO_KOKKOSCORE)
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+//-------------------------- Atomic Operators -----------------------
 
-#include "impl/Kokkos_AnalyzeShape.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
-
-// Forward declarations
 namespace Sacado {
+
   namespace FAD_NS {
-    template <typename,unsigned,unsigned,typename> class ViewFad;
-  }
-}
 
-namespace Kokkos {
-namespace Impl {
+    // Overload of Kokkos::atomic_add for Fad types.
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x) {
+      using Kokkos::atomic_add;
 
-// Forward declarations
-struct ViewSpecializeSacadoFad;
+      const int xsz = x.size();
+      const int sz = dst->size();
 
-/** \brief  Analyze the array shape of a Sacado::FAD_NS::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::FAD_NS::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, int N >
-struct AnalyzeShape< Sacado::FAD_NS::SFad< ValueType, N > >
-  : Shape< sizeof(Sacado::FAD_NS::SFad< ValueType, N >) , 0 > // Treat as a scalar
-{
-public:
+      // We currently cannot handle resizing since that would need to be
+      // done atomically.
+      if (xsz > sz)
+        Kokkos::abort(
+          "Sacado error: Fad resize within atomic_add() not supported!");
 
-  typedef ViewSpecializeSacadoFad specialize ;
+      if (xsz != sz && sz > 0 && xsz > 0)
+        Kokkos::abort(
+          "Sacado error: Fad assignment of incompatiable sizes!");
 
-  typedef Shape< sizeof(Sacado::FAD_NS::SFad< ValueType, N >) , 0 > shape ;
 
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  array_intrinsic_type ;
-  typedef const Sacado::FAD_NS::SFad< ValueType, N >  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
+      if (sz > 0 && xsz > 0) {
+        SACADO_FAD_DERIV_LOOP(i,sz)
+          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
+      }
+      SACADO_FAD_THREAD_SINGLE
+        atomic_add(&(dst->val()), x.val());
+    }
 
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  type ;
-  typedef const Sacado::FAD_NS::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  non_const_type ;
+  } // namespace Fad
 
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::FAD_NS::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  non_const_value_type ;
-};
+} // namespace Sacado
 
-/** \brief  Analyze the array shape of a Sacado::FAD_NS::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::FAD_NS::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, class Layout, int N >
-struct AnalyzeSacadoShape< Sacado::FAD_NS::SFad< ValueType, N >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape ,
-                 /*N+1*/
-                 sizeof(Sacado::FAD_NS::SFad< ValueType, N >)/sizeof(ValueType)>::type
-{
-private:
-
-  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
-
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  // Note:  In most cases M = N+1, but might not if there is padding
-  // in SFad for alignment purposes
-  static const unsigned M =
-    sizeof(Sacado::FAD_NS::SFad< ValueType, N >)/sizeof(ValueType);
-  typedef typename ShapeInsert< typename nested::shape , M >::type shape ;
-
-  typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
-  typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  type ;
-  typedef const Sacado::FAD_NS::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::FAD_NS::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::FAD_NS::SFad< ValueType, N >  non_const_value_type ;
-
-  typedef typename nested::type           flat_array_type ;
-  typedef typename nested::const_type     const_flat_array_type ;
-  typedef typename nested::non_const_type non_const_flat_array_type ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif
+#endif // HAVE_SACADO_KOKKOSCORE

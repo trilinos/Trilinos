@@ -1080,9 +1080,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
       status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
                         plist_id_, LinearX->operator[](n));
       CHECK_STATUS(status);
+      H5Sclose(memspace_id);
     }
   H5Gclose(group_id);
-  H5Sclose(memspace_id);
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
   H5Pclose(plist_id_);
@@ -1597,7 +1597,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
-                         const int type, const int Length,
+                         const hid_t type, const int Length,
                          void* data)
 {
   if (!IsContained(GroupName))
@@ -1624,7 +1624,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
 // ==========================================================================
 void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName,
-                        const int type, const int Length,
+                        const hid_t type, const int Length,
                         void* data)
 {
   if (!IsContained(GroupName))
@@ -1655,7 +1655,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
-                         int MySize, int GlobalSize, int type, const void* data)
+                         int MySize, int GlobalSize, hid_t type, const void* data)
 {
   int Offset;
   Comm_.ScanSum(&MySize, &Offset, 1);
@@ -1706,7 +1706,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 // ==========================================================================
 void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName,
                         int MySize, int GlobalSize,
-                        const int type, void* data)
+                        const hid_t type, void* data)
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));

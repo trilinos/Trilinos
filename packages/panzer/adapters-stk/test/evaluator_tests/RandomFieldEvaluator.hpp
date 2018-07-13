@@ -45,9 +45,7 @@
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
-
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
@@ -58,7 +56,29 @@ public:
                                   PHX::MDField<ScalarT> & field) const = 0;
 };
 
-PHX_EVALUATOR_CLASS(RandomFieldEvaluator)
+template<typename EvalT, typename Traits>
+class RandomFieldEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    RandomFieldEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT> field;
 
@@ -66,22 +86,35 @@ public:
   RandomFieldEvaluator(const std::string & name,
                        const Teuchos::RCP<PHX::DataLayout> & dl)
      : field(name,dl) { this->addEvaluatedField(field); }
-PHX_EVALUATOR_CLASS_END
+}; // end of class RandomFieldEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(RandomFieldEvaluator,p)
+template<typename EvalT, typename Traits>
+RandomFieldEvaluator<EvalT, Traits>::
+RandomFieldEvaluator(
+  const Teuchos::ParameterList& p)
 {
    TEUCHOS_ASSERT(false); // don't do this
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(RandomFieldEvaluator,sd,fm)
+template<typename EvalT, typename Traits>
+void
+RandomFieldEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(field,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(RandomFieldEvaluator,workset)
+template<typename EvalT, typename Traits>
+void
+RandomFieldEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 {
    for(int i=0;i<static_cast<int>(field.size());i++)
       field[i] = double(std::rand())/double(RAND_MAX);

@@ -256,6 +256,8 @@ public:
    virtual int LargestIndex() const { return value_; }
 
 protected:
+   using BlockReorderManager::SetBlock;
+
    //! The value of the index for this leaf
    int value_;
 

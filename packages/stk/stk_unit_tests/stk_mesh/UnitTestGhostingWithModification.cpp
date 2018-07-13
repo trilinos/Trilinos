@@ -102,7 +102,7 @@ TEST(UnitTestGhosting, WithChangeParts)
         stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
         stkMeshBulkData.modification_end();
 
-        std::vector<unsigned> entityCounts;
+        std::vector<size_t> entityCounts;
         stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
         if(stkMeshBulkData.parallel_rank() == 0)
         {
@@ -205,7 +205,7 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
         stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
         stkMeshBulkData.modification_end();
 
-        std::vector<unsigned> entityCounts;
+        std::vector<size_t> entityCounts;
         stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
         if(stkMeshBulkData.parallel_rank() == 0)
         {
@@ -233,7 +233,7 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
         if(stkMeshBulkData.parallel_rank() == 2)
         {
             stk::mesh::EntityId constraintId = 1;
-            stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+            stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(constraintId);
             stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
             EXPECT_TRUE(stkMeshBulkData.bucket(node1).member(stkMeshBulkData.ghosting_part(ghostElemFrom0To2)));
             stkMeshBulkData.declare_relation(constraint, node1, 0);

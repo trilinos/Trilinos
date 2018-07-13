@@ -51,8 +51,11 @@
 // Ifpack2 includes
 #include "Ifpack2_Krylov.hpp"
 
+#ifdef HAVE_IFPACK2_DEPRECATED_CODE
+
 #if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
 namespace Ifpack2 {
+namespace DeprecatedAndMayDisappearAtAnyTime {
 
   //! Specialization of BelosScalarType to MP types
   template <typename S>
@@ -61,6 +64,10 @@ namespace Ifpack2 {
   };
 
 }
+}
+
+#endif
+
 #endif
 
 #endif // IFPACK2_KRYLOV_MP_VECTOR_HPP

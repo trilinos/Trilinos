@@ -1,0 +1,17 @@
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+#
+# Executables
+#
+
+IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+
+  #TRIBITS_ADD_EXECUTABLE(
+  #  Test_xpetra
+  #  SOURCES Test_xpetra.cpp
+  #  )
+
+
+ENDIF()

@@ -47,7 +47,6 @@ LOCA      = fromPyTrilinosImport('LOCA'     , options.testharness)
 
 # ######################################################################
 
-
 class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
                            LOCA.Epetra.Interface.Required ):
   def __init__(self, comm, N):
@@ -61,15 +60,16 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
 
     vec = zeros(N)
     for i in range(0,self.n):
-      vec[i] = i*(self.n-1-i)/((self.n-1.)*(self.n-1.)) + 0.001
+      vec[i] = i*(self.n-1-i) / ((self.n-1.)*(self.n-1.)) + 0.001
     
     map_ = Epetra.Map(N,0,comm)
     self.initGuess = Epetra.Vector(map_,vec)  
 
   def printSolution(self,x,conParam):
-      print x
+      print(x)
     
-  def computeF(self, x, F, fillFlag): # we ignore the fillFlag argument and always perform all computation
+  def computeF(self, x, F, fillFlag):
+    # we ignore the fillFlag argument and always perform all computation
     n = self.n
     for i in range(0,n):
       F[i] = x[i]**2 - self.lambda_ * float(i)
@@ -110,7 +110,7 @@ def main():
     msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % \
           (numGlobalElements,numProc)
     msg += "\nTest failed!"
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
   # Get parameters
   scale = options.scale
@@ -140,7 +140,7 @@ def main():
   noxSoln   = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
   
 
-  print '--> initial guess, done!'
+  print('--> initial guess, done!')
   # Define the Jacobian linear system
   mfJac = NOX.Epetra.MatrixFree(printParams, interface, noxSoln)
   iReq = interface
@@ -152,7 +152,7 @@ def main():
   globalData = LOCA.createGlobalData(paramList)
   group = LOCA.Epetra.Group(globalData, printParams, interface, locaSoln, linSys, p)
 
-  print '--> group done!'
+  print('--> group done!')
 
   # Create the convergence tests
   normF = NOX.StatusTest.NormF(1.0e-8)
@@ -160,13 +160,19 @@ def main():
   converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
 
   # Create the stepper
-  print("Making stepper")
   stepper = LOCA.Stepper(globalData, group, converged, paramList)
 
   # Perform continuation run
-  print("About to run stepper")
   status = stepper.run()
-  print("Completed stepper run")
+
+  #
+  # *** IMPORTANT ***
+  # If you create a GlobalData object, as above with the line
+  #     globalData = LOCA.createGlobalData(paramList)
+  # you should destroy it with the following command in order to resolve
+  # circular dependencies
+  #
+  LOCA.destroyGlobalData(globalData)
 
   return 0
 
@@ -177,6 +183,6 @@ if __name__ == "__main__":
     status = main()
 
     if status == 0:
-        print "End Result: TEST PASSED"
+        print("End Result: TEST PASSED")
 
     sys.exit(status)

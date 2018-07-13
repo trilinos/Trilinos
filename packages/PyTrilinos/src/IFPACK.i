@@ -83,80 +83,31 @@ example subdirectory of the PyTrilinos package:
 	docstring = %ifpack_docstring) IFPACK
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_MapColoring.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #endif
 
-// PyTrilinos utility code
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// IFPACK includes
-#include "Ifpack.h"
-#include "Ifpack_Version.h"
-#include "Ifpack_Utils.h"
-#include "Ifpack_Preconditioner.h"
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
+// IFPACK include files
+#include "PyTrilinos_IFPACK_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -233,7 +184,8 @@ example subdirectory of the PyTrilinos package:
 // IFPACK_Version support //
 ////////////////////////////
 %include "Ifpack_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 Version = Ifpack_Version
 __version__ = Version().split()[3]
 %}

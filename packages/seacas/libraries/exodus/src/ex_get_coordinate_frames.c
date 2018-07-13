@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -69,7 +69,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <assert.h>       // for assert
@@ -139,28 +139,30 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   size_t start = 0; /* start value for varputs        */
   size_t count = 0; /* number vars to put in varput   */
 
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
+
   /* get the dimensions */
   assert(nframes != NULL);
   status = nc_inq_dimid(exoid, DIM_NUM_CFRAMES, &dimid);
   if (status != NC_NOERR) {
     *nframes = 0;
-    return EX_NOERR;
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   (void)nc_inq_dimlen(exoid, dimid, &count);
   *nframes = (int)count;
 
   if (count == 0) {
-    return (EX_NOERR);
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   if (cf_ids) {
     if ((status = nc_inq_varid(exoid, VAR_FRAME_IDS, &varids)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate ids from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(PROCNAME, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
@@ -171,32 +173,29 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to read coordinate frame ids from file id %d",
                exoid);
-      ex_err(PROCNAME, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(PROCNAME, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
   if (tags) {
     if ((status = nc_inq_varid(exoid, VAR_FRAME_TAGS, &varids)) != NC_NOERR ||
         (nc_get_vara_text(exoid, varids, &start, &count, tags) != NC_NOERR)) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(PROCNAME, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
   if (pt_coordinates) {
     if ((status = nc_inq_varid(exoid, VAR_FRAME_COORDS, &varids)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(PROCNAME, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (ex_comp_ws(exoid) == 4) {
@@ -207,13 +206,12 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     }
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(PROCNAME, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

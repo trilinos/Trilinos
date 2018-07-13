@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,12 +33,12 @@
  *
  */
 
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-
 #include "elb_allo.h"
-#include "elb_format.h"
+#include "elb_format.h" // for ST_ZU
+#include <cstdarg>      // for va_end, va_arg, va_list, etc
+#include <cstddef>      // for size_t
+#include <cstdio>       // for fprintf, stderr
+#include <cstdlib>      // for exit, malloc
 
 static void *smalloc(size_t n);
 

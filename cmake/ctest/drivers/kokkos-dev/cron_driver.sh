@@ -27,6 +27,7 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
 export CUDA_LAUNCH_BLOCKING=1
 export OMP_NUM_THREADS=2
+export OMP_PROC_BIND=false
 export PATH="$PATH:/opt/intel/composer_xe_2013_sp1.1.106/compiler/lib/intel64"
 
 # Machine independent cron_driver:

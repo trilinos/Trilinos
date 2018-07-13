@@ -42,8 +42,8 @@
 
 class Amesos_Superlu_Pimpl {
 public:
-  //   Teuchos::RCP<klu_symbolic> Symbolic_ ;
-  //   Teuchos::RCP<klu_numeric> Numeric_ ;
+  //   Teuchos::RCP<trilinos_klu_symbolic> Symbolic_ ;
+  //   Teuchos::RCP<trilinos_klu_numeric> Numeric_ ;
   fact_t FactOption_; 
   //  Here are the structures used by Superlu
   SuperMatrix SuperluA_;

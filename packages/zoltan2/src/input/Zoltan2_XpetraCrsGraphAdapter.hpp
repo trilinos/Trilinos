@@ -87,6 +87,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::offset_t    offset_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -210,7 +211,7 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  void getEdgesView(const lno_t *&offsets, const gno_t *&adjIds) const
+  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
@@ -221,8 +222,15 @@ public:
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
                             int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerVertex_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
+
     size_t length;
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -233,8 +241,15 @@ public:
 
   void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerEdge_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid edge weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
+
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -254,7 +269,7 @@ private:
   RCP<const xgraph_t > graph_;
   RCP<const Comm<int> > comm_;
 
-  ArrayRCP<const lno_t> offs_;
+  ArrayRCP<const offset_t> offs_;
   ArrayRCP<const gno_t> adjids_;
 
   int nWeightsPerVertex_;
@@ -267,10 +282,6 @@ private:
   int coordinateDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > coords_;
 
-  // A default Environment for error messages.  User-written
-  // InputAdapter classes can use some other error return convention
-  // if desired.
-  RCP<const Environment> env_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -283,8 +294,7 @@ template <typename User, typename UserCoord>
       ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       nWeightsPerVertex_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
       nWeightsPerEdge_(nEdgeWgts), edgeWeights_(),
-      coordinateDim_(0), coords_(),
-      env_(rcp(new Environment))
+      coordinateDim_(0), coords_()
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 
@@ -302,13 +312,26 @@ template <typename User, typename UserCoord>
   // because edge Ids are not usually stored in vertex id order.
 
   size_t n = nvtx + 1;
-  lno_t *offs = new lno_t [n];
-  env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
+  offset_t *offs = new offset_t [n];
+
+  if (!offs)
+  {
+    std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+    std::cerr << n << " objects" << std::endl;
+    throw std::bad_alloc();
+  }
 
   gno_t *adjids = NULL;
-  if (nedges){
+  if (nedges)
+  {
     adjids = new gno_t [nedges];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, adjids);
+
+    if (!adjids)
+    {
+      std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+      std::cerr << nedges << " objects" << std::endl;
+      throw std::bad_alloc();
+    }
   }
 
   offs[0] = 0;
@@ -316,7 +339,7 @@ template <typename User, typename UserCoord>
     ArrayView<const lno_t> nbors;
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();
-    for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
+    for (offset_t e=offs[v], i=0; e < offs[v+1]; e++)
       adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
   }
 
@@ -353,8 +376,15 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+
+  if(idx<0 || idx >= nWeightsPerVertex_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nvtx = getLocalNumVertices();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   vertexWeights_[idx] = input_t(weightV, stride);
@@ -381,8 +411,13 @@ template <typename User, typename UserCoord>
   void XpetraCrsGraphAdapter<User,UserCoord>::setVertexWeightIsDegree(
     int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerVertex_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
 
   vertexDegreeWeight_[idx] = true;
 }
@@ -393,8 +428,15 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid edge weight index",
-    idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
+
+  if(idx<0 || idx >= nWeightsPerEdge_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid edge weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nedges = getLocalNumEdges();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges*stride, false);
   edgeWeights_[idx] = input_t(weightV, stride);

@@ -41,6 +41,7 @@
 // @HEADER
 
 // Include files
+#include "Python3Compat.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "swigpyrun.h"
 
@@ -84,10 +85,19 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     plist.set(name, PyFloat_AsDouble(value));
   }
 
+  // Unicode values
+  else if (PyUnicode_Check(value))
+  {
+    PyObject * pyBytes = PyUnicode_AsASCIIString(value);
+    if (!pyBytes) return false;
+    plist.set(name, std::string(PyBytes_AsString(pyBytes)));
+    Py_DECREF(pyBytes);
+  }
+
   // String values
   else if (PyString_Check(value))
   {
-    plist.set(name, std::string(PyString_AsString(value)));
+    plist.set(name, std::string(convertPyStringToChar(value)));
   }
 
   // None object not allowed: this is a python type not usable by
@@ -177,7 +187,8 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
       copyNumPyToTeuchosArray(pyArray, tArray);
       plist.set(name, tArray);
     }
-    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_STRING)
+    else if ((PyArray_TYPE((PyArrayObject*) pyArray) == NPY_STRING) ||
+             (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_UNICODE))
     {
       Teuchos::Array< std::string > tArray;
       copyNumPyToTeuchosArray(pyArray, tArray);
@@ -250,9 +261,10 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
   // Teuchos::ParameterList values
   else if (entry->isList())
   {
-    Teuchos::ParameterList & value = Teuchos::getValue< Teuchos::ParameterList >(*entry);
+    Teuchos::ParameterList value;
     Teuchos::RCP< Teuchos::ParameterList > * valuercp =
-      new Teuchos::RCP< Teuchos::ParameterList >(&value,false);
+      new Teuchos::RCP< Teuchos::ParameterList >(
+        new Teuchos::ParameterList(Teuchos::any_cast< Teuchos::ParameterList >(entry->getAny(false))));
     return SWIG_NewPointerObj((void*)valuercp, swig_TPL_ptr, SWIG_POINTER_OWN);
   }
   // Teuchos::Array values
@@ -360,7 +372,7 @@ bool isEquivalent(PyObject                     * dict,
   while (PyDict_Next(dict, &pos, &key, &value))
   {
     if (!PyString_Check(key)) goto fail;
-    name = std::string(PyString_AsString(key));
+    name = std::string(convertPyStringToChar(key));
     if (!plist.isParameter(name)) goto fail;
     if (plist.isSublist(name))
     {
@@ -498,13 +510,23 @@ bool updateParameterListWithPyDict(PyObject                  * dict,
   {
 
     // If the key is not a string, we can't synchronize
-    if (!PyString_Check(key))
+    if (!PyUnicode_Check(key) && !PyString_Check(key))
     {
       PyErr_SetString(PyExc_TypeError, "Encountered non-string key in dictionary");
       goto fail;
     }
 
-    name = std::string(PyString_AsString(key));
+    if (PyUnicode_Check(key))
+    {
+      PyObject * pyBytes = PyUnicode_AsASCIIString(key);
+      if (!pyBytes) goto fail;
+      name = std::string(PyBytes_AsString(pyBytes));
+      Py_DECREF(pyBytes);
+    }
+    else
+    {
+      name = std::string(convertPyStringToChar(key));
+    }
     if (!setPythonParameter(plist, name, value))
     {
       // If value is not settable, behavior is determined by flag

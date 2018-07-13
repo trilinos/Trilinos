@@ -82,13 +82,17 @@ private:
   Teuchos::RCP<const PureBasis> basis;
   int num_pts;
   int num_dim;
+  int quad_degree;
 
-  PHX::MDField<ScalarT,Cell,BASIS,Dim> normals;
-  PHX::MDField<ScalarT,Cell,BASIS,Dim> vector_values;
+  PHX::MDField<const ScalarT,Cell,BASIS,Dim> normals;
+  std::vector<PHX::MDField<const ScalarT,Cell,BASIS,Dim> > vector_values;
   PHX::MDField<ScalarT,Cell,BASIS> result;
 
   ProjectToFaces();
 
+  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldNormals;
+
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 };
 
 }

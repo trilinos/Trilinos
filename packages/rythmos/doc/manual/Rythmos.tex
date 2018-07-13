@@ -1,11 +1,12 @@
-%% LyX 2.0.5 created this file.  For more info, see http://www.lyx.org/.
+%% LyX 2.2.2 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
-\documentclass{article}
+\documentclass[english]{article}
 \usepackage[T1]{fontenc}
-%\usepackage[latin9]{inputenc}
+\usepackage[latin9]{inputenc}
 \usepackage{geometry}
 \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1.25in,rmargin=1.25in}
 \usepackage{color}
+\usepackage{babel}
 \usepackage{array}
 \usepackage{float}
 \usepackage{amsmath}
@@ -14,7 +15,7 @@
 \usepackage{graphicx}
 \usepackage[unicode=true,pdfusetitle,
  bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
- breaklinks=false,pdfborder={0 0 0},backref=false,colorlinks=true]
+ breaklinks=false,pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]
  {hyperref}
 
 \makeatletter
@@ -27,22 +28,20 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
-\usepackage[nottoc]{tocbibind}
+\usepackage[nottoc]{tocbibind} 
 
 \makeatother
 
 \begin{document}
 \input{rab_commands.tex}
 
-
 \title{Rythmos: Solution and Analysis Package for Differential-Algebraic
 and Ordinary-Differential Equations}
 
-
-\author{Curtis C. Ober, Numerical Analysis and Applications\\
-Roscoe A. Bartlett, Oak Ridge National Laboratories\\
+\author{Curtis C. Ober, Multiphysics Applications\\
+Roscoe A. Bartlett, Multiphysics Applications\\
 Todd S. Coffey, Simulation Modeling Sciences\\
-Roger P. Pawlowski, Multiphysics Simulation Technology}
+Roger P. Pawlowski, Multiphysics Applications}
 \maketitle
 \begin{abstract}
 \input{RythmosAbstract.tex}
@@ -56,13 +55,11 @@ Roger P. Pawlowski, Multiphysics Simulation Technology}
 
 \newpage{}
 
-
 \part{Theory Manual}
 
 \include{RythmosTheoryIntroduction}\include{RythmosExplicitStepperFormulation}\include{RythmosImplicitStepperFormulation}\include{RythmosTheoryBDF}\include{RythmosTheoryIRK}
 
 \newpage{}
-
 
 \part{User's Manual}
 
@@ -70,11 +67,9 @@ Roger P. Pawlowski, Multiphysics Simulation Technology}
 
 \newpage{}
 
-
 \part{Developer's Guide}
 
 \include{RythmosDevelopersGuide}
-
 
 \part{Back Matter}
 

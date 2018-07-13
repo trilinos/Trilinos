@@ -43,7 +43,6 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
@@ -90,7 +89,7 @@ namespace panzer {
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
-      const size_type num_pts = a_.dimension_1();
+      const size_type num_pts = a_.extent(1);
       for (size_type pt = 0; pt < num_pts; ++pt) {
 	panzer::zeroSensitivities(a_(c,pt));
       }
@@ -110,7 +109,7 @@ namespace panzer {
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
-      const size_type num_pts = a_.dimension_1();
+      const size_type num_pts = a_.extent(1);
       for (size_type pt = 0; pt < num_pts; ++pt) {
 	panzer::zeroSensitivities(a_(c,pt));
       }
@@ -138,14 +137,14 @@ namespace panzer {
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::RealType,PHX::Device>::buildView(a.fieldTag()));
       
       // initialize
-      for (size_type cell = 0; cell < a.dimension_0(); ++cell) {
-	for (size_type pt=0; pt < a.dimension_1(); ++pt) {
+      for (int cell = 0; cell < a.extent_int(0); ++cell) {
+	for (int pt=0; pt < a.extent_int(1); ++pt) {
 	  a(cell,pt) = 2.0;
 	}
       }
       
       // Compute
-      Kokkos::parallel_for(a.dimension_0(),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
+      Kokkos::parallel_for(a.extent_int(0),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
       PHX::Device::fence();
       
       // Check
@@ -164,8 +163,8 @@ namespace panzer {
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::FadType,PHX::Device>::buildView(a.fieldTag(),derivative_dimension));
       
       // initialize
-      for (size_type cell = 0; cell < a.dimension_0(); ++cell) {
-	for (size_type pt=0; pt < a.dimension_1(); ++pt) {
+      for (int cell = 0; cell < a.extent_int(0); ++cell) {
+	for (int pt=0; pt < a.extent_int(1); ++pt) {
 	  a(cell,pt) = 1.0;
 	  a(cell,pt).fastAccessDx(0) = 2.0;
 	  a(cell,pt).fastAccessDx(1) = 3.0;
@@ -176,12 +175,12 @@ namespace panzer {
       }
       
       // Compute
-      Kokkos::parallel_for(a.dimension_0(),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
+      Kokkos::parallel_for(a.extent(0),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
       PHX::Device::fence();
       
       // Check
-      for (size_type cell = 0; cell < a.dimension_0(); ++cell) {
-	for (size_type pt=0; pt < a.dimension_1(); ++pt) {
+      for (int cell = 0; cell < a.extent_int(0); ++cell) {
+	for (int pt=0; pt < a.extent_int(1); ++pt) {
 	  TEST_FLOATING_EQUALITY(a(cell,pt).val(),1.0,1e-12);
 	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(0),0.0,1e-12);
 	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(1),0.0,1e-12);

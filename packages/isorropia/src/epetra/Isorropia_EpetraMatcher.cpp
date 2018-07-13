@@ -423,9 +423,9 @@ Matcher::~Matcher()
     if(choice_==3 ||choice_==4)
         delete [] unmatchedU_;
 
-    if (CRS_indices_) delete [] CRS_indices_; CRS_indices_ = NULL;
-    if (CRS_pointers_) delete [] CRS_pointers_; CRS_pointers_ = NULL;
-    if (parent_) delete [] parent_; parent_ = NULL;
+    if (CRS_indices_) { delete [] CRS_indices_; CRS_indices_ = NULL; }
+    if (CRS_pointers_) { delete [] CRS_pointers_; CRS_pointers_ = NULL; }
+    if (parent_) { delete [] parent_; parent_ = NULL; }
 
 #ifdef ISORROPIA_HAVE_OMP
     for(int i=0;i<V_;i++)

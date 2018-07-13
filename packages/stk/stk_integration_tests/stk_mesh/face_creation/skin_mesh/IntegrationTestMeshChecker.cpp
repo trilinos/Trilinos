@@ -13,8 +13,8 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
-#include "../FaceCreationTestUtils.hpp"
-#include <mpi.h>
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
+#include "mpi.h"
 #include <map>
 #include <string>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
@@ -75,8 +75,12 @@ public:
     void run_all_test_cases(const TestCaseData &testCases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         for(const TestCase& testCase : testCases)
+        {
             if(stk::parallel_machine_size(get_comm()) == testCase.maxNumProcs)
+            {
                 EXPECT_THROW(test_one_case(testCase, auraOption), std::logic_error);
+            }
+        }
     }
 
     void test_one_case(const TestCase &testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption)

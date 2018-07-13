@@ -123,8 +123,8 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject,
            NumRowCol - Number of rows and columns in object.
 
     Ifpack_SerialTriDiMatrix objects defined by the shaped constructor are already shaped to the
-		dimensions given as a parameters. All values are initialized to 0. Calling this constructor
-		is equivalent to using the default constructor, and then calling the Shape function on it.
+                dimensions given as a parameters. All values are initialized to 0. Calling this constructor
+                is equivalent to using the default constructor, and then calling the Shape function on it.
     Values should be defined by using the [] or () operators.
    */
   Ifpack_SerialTriDiMatrix(int NumRowCol, bool set_object_label=true);
@@ -134,12 +134,12 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject,
     \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
-           A - Pointer to an array of double precision numbers. 
-	   The 
+           A - Pointer to an array of double precision numbers.
+           The
     \param In
            NumRows - Number of rows and columns in object.
 
-	   See Detailed Description section for further discussion.
+           See Detailed Description section for further discussion.
   */
   Ifpack_SerialTriDiMatrix(Epetra_DataAccess CV, double* A_in, int NumRowCol,
                            bool set_object_label=true);
@@ -159,9 +159,9 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject,
     \param In
            NumRowCol - Number of rows and columns in object.
 
-	   Allows user to define the dimensions of a Ifpack_SerialTriDiMatrix at any point. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   destroyed and the resized matrix starts off with all zero values.
+           Allows user to define the dimensions of a Ifpack_SerialTriDiMatrix at any point. This function can
+           be called at any point after construction.  Any values that were previously in this object are
+           destroyed and the resized matrix starts off with all zero values.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -190,12 +190,12 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject,
          ScalarThis - Scalar to multiply with \e this.
 
     \return Integer error code, set to 0 if successful.
-	
+
   */
   int Multiply(char TransA, char TransB, double ScalarAB,
-  	       const Ifpack_SerialTriDiMatrix& A,
-  	       const Ifpack_SerialTriDiMatrix& B,
-  	       double ScalarThis);
+               const Ifpack_SerialTriDiMatrix& A,
+               const Ifpack_SerialTriDiMatrix& B,
+               double ScalarThis);
 
   //! Matrix-Vector multiplication, y = A*x, where 'this' == A.
   /* This method is intended to imitate the semantics of the matrix-vector
@@ -220,20 +220,20 @@ This function performs a variety of matrix-matrix multiply operations.
          ScalarAB - Scalar to multiply with A*B.
   \param In
          A - Symmetric TriDi Matrix, either upper or lower triangle will be used depending on
-	 value of A.Upper().
+         value of A.Upper().
   \param In
          B - TriDi Matrix.
   \param In
          ScalarThis - Scalar to multiply with \e this.
 
     \return Integer error code, set to 0 if successful.
-	
+
 
 
   \param ScalarA (In) Scalar to multiply with A.
 
    \return Integer error code, set to 0 if successful.
-	
+
   */
   int Scale(double ScalarA);
 
@@ -285,13 +285,13 @@ This function performs a variety of matrix-matrix multiply operations.
   //! Element access function.
   /*!
     The parentheses operator returns the element in the ith row and jth column if A(i,j) is
-    specified, 
+    specified,
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+                \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
-	    double& operator () (int RowIndex, int ColIndex);
+            double& operator () (int RowIndex, int ColIndex);
 
   //! Element access function.
   /*!
@@ -301,7 +301,7 @@ This function performs a variety of matrix-matrix multiply operations.
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+                \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const double& operator () (int RowIndex, int ColIndex) const;
 
@@ -314,7 +314,7 @@ This function performs a variety of matrix-matrix multiply operations.
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+                \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     //    double* operator [] (int ColIndex);
 
@@ -327,16 +327,16 @@ This function performs a variety of matrix-matrix multiply operations.
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+                \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     //    const double* operator [] (int ColIndex) const;
 
   //! Set matrix values to random numbers.
   /*!
-		SerialTriDiMatrix uses the random number generator provided by Epetra_Util.
-		The matrix values will be set to random values on the interval (-1.0, 1.0).
+                SerialTriDiMatrix uses the random number generator provided by Epetra_Util.
+                The matrix values will be set to random values on the interval (-1.0, 1.0).
 
-		\return Integer error code, set to 0 if successful.
+                \return Integer error code, set to 0 if successful.
   */
   int Random();
 
@@ -463,34 +463,34 @@ inline double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int ColIndex
 
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
  if (ColIndex >= N_ || ColIndex < 0)
-		throw ReportError("Column index = " +toString(ColIndex) +
-				  " Out of Range 0 - " + toString(N_-1),-2);
+                throw ReportError("Column index = " +toString(ColIndex) +
+                                  " Out of Range 0 - " + toString(N_-1),-2);
  if (RowIndex >= N_ || RowIndex < 0)
-		throw ReportError("Row index = " +toString(RowIndex) +
-				  " Out of Range 0 - " + toString(N_-1),-2);
+                throw ReportError("Row index = " +toString(RowIndex) +
+                                  " Out of Range 0 - " + toString(N_-1),-2);
 
  if ( diff > 1 || diff < -1 )
    throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		     " Out of Range -1 to 1",-2);
+                     " Out of Range -1 to 1",-2);
 #endif
 
  switch (diff) {
  case -1:
    // DL
    return DL_[ColIndex];
-   break;
+   // break; // unreachable
  case 0:
    return D_[ColIndex];
-   break;
+   // break; // unreachable
  case 1:
    return DU_[RowIndex];
-   break;
+   // break; // unreachable
  default:
    throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +" Out of Range -1 to 1",1);
-   return D_[0]; // ultimate badness, should never get here
+   // return D_[0]; // unreachable
  }
- throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",1);
- return D_[0]; // ultimat badness, should never get here
+ //throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",1); // unreachable
+ // return D_[0]; // unreachable
 }
 //=========================================================================
 inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int ColIndex) const {
@@ -498,11 +498,11 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
 
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
  if (ColIndex >= N_ || ColIndex < 0)
-		throw ReportError("Column index = " +toString(ColIndex) +
-				  " Out of Range 0 - " + toString(N_-1),-2);
+                throw ReportError("Column index = " +toString(ColIndex) +
+                                  " Out of Range 0 - " + toString(N_-1),-2);
  if (RowIndex >= N_ || RowIndex < 0)
-		throw ReportError("Row index = " +toString(RowIndex) +
-				  " Out of Range 0 - " + toString(N_-1),-2);
+                throw ReportError("Row index = " +toString(RowIndex) +
+                                  " Out of Range 0 - " + toString(N_-1),-2);
  if ( diff > 1 || diff < -1 )
    throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",-2);
 #endif
@@ -510,18 +510,18 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
  case -1:
    // DL
    return DL_[ColIndex];
-   break;
+   // break; // unreachable
  case 0:
    return D_[ColIndex];
-   break;
+   // break; // unreachable
  case 1:
    return DU_[RowIndex];
-   break;
+   // break; // unreachable
  default:
    throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",-2);
-  return D_[0]; // Ultimate badness, should never get here.
+   // return D_[0]; // unreachable
  }
- return D_[0]; // Crime against humanity, should never get here. 
+ // return D_[0]; // unreachable
 }
 
 

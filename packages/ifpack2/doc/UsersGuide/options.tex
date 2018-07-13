@@ -447,6 +447,107 @@ The following parameters are used in the ILUTP method:
     {``SILU''}
     {Type of modified ILU to use. Accepted values: ``SILU'', ``SMILU\_1'', ``SMILU\_2'', or ``SMILU\_3''.}
 
+\subsection{FastILU}\label{s:FastILU}
+\textbf{Preconditioner type:} ``FAST\_ILU''.
+
+\ifpacktwo{} provides an interface to the FastILU (incomplete LU) factorization provided by \shylu{}.
+It accepts the following parameters:
+\ccc{sweeps}
+    {int}
+    {5}
+    {Number of applications of the FastILU algorithm}
+\ccc{triangular solve iterations}
+    {int}
+    {1}
+    {Number of iterations of the block Jacobi triangular solver}
+\ccc{level}
+    {int}
+    {0}
+    {Level of fill}
+\ccc{damping factor}
+    {double}
+    {0.5}
+    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
+\ccc{shift}
+    {double}
+    {0}
+    {Parameter that controls Manteuffel shifting}
+\ccc{guess}
+    {bool}
+    {true}
+    {Whether to run a few sweeps of FastILU with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
+\ccc{block size}
+    {int}
+    {1}
+    {Block size for the block Jacobi solver}
+
+\subsection{FastIC}\label{s:FastIC}
+\textbf{Preconditioner type:} ``FAST\_IC''.
+
+\ifpacktwo{} provides an interface to the FastIC (incomplete Chebyshev) factorization provided by \shylu{}.
+It accepts the following parameters:
+\ccc{sweeps}
+    {int}
+    {5}
+    {Number of applications of the FastIC algorithm}
+\ccc{triangular solve iterations}
+    {int}
+    {1}
+    {Number of iterations of the block Jacobi triangular solver}
+\ccc{level}
+    {int}
+    {0}
+    {Level of fill}
+\ccc{damping factor}
+    {double}
+    {0.5}
+    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
+\ccc{shift}
+    {double}
+    {0}
+    {Parameter that controls Manteuffel shifting}
+\ccc{guess}
+    {bool}
+    {true}
+    {Whether to run a few sweeps of FastIC with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
+\ccc{block size}
+    {int}
+    {1}
+    {Block size for the block Jacobi solver}
+
+\subsection{FastILDL}\label{s:FastILDL}
+\textbf{Preconditioner type:} ``FAST\_ILDL''.
+
+\ifpacktwo{} provides an interface to the FastILDL (incomplete lower-diagonal-lower) factorization provided by \shylu{}.
+It accepts the following parameters:
+\ccc{sweeps}
+    {int}
+    {5}
+    {Number of applications of the FastILDL algorithm}
+\ccc{triangular solve iterations}
+    {int}
+    {1}
+    {Number of iterations of the block Jacobi triangular solver}
+\ccc{level}
+    {int}
+    {0}
+    {Level of fill}
+\ccc{damping factor}
+    {double}
+    {0.5}
+    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
+\ccc{shift}
+    {double}
+    {0}
+    {Parameter that controls Manteuffel shifting}
+\ccc{guess}
+    {bool}
+    {true}
+    {Whether to run a few sweeps of FastILDL with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
+\ccc{block size}
+    {int}
+    {1}
+    {Block size for the block Jacobi solver}
 
 \section{Additive Schwarz}\label{s:schwarz}
 
@@ -518,6 +619,9 @@ Table~\ref{t:schwarz_inner}.
     ``CHEBYSHEV''           & Chebyshev iteration (see~\ref{s:Chebyshev}) \\
     ``RILUK''               & ILU($k$) (see~\ref{s:ILU}) \\
     ``ILUT''                & ILUT (see~\ref{s:ILUT}) \\
+    ``FastILU''             & FastILU (see~\ref{s:FastILU}) \\
+    ``FastIC''              & FastIC (see~\ref{s:FastIC}) \\
+    ``FastILDL''            & FastILDL(see~\ref{s:FastILDL}) \\
     ``AMESOS2''             & \amesostwo's interface to sparse direct solvers \\
     ``DENSE'' or ``LAPACK'' & LAPACK's LU factorization for a dense representation of a subdomain matrix \\
     ``CUSTOM''              & User provided inner solver \\

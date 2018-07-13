@@ -51,12 +51,21 @@
 #include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* HAVE_PIRO_NOX */
 
-#ifdef HAVE_PIRO_RYTHMOS
-// This "define" turns on the extended template interface in RythmosSolver. This should be cleaned up at some
-// point.
+
+// This "define" turns on the extended template interface in RythmosSolver and TempusSolver.
+// This should be cleaned up at some.
+#if defined(HAVE_PIRO_RYTHMOS) || defined(HAVE_PIRO_TEMPUS) 
 #define ALBANY_BUILD
+#endif
+
+#ifdef HAVE_PIRO_RYTHMOS
+// point.
 #include "Piro_RythmosSolver.hpp"
 #endif /* HAVE_PIRO_RYTHMOS */
+
+#ifdef HAVE_PIRO_TEMPUS
+#include "Piro_TempusSolver.hpp"  
+#endif /*HAVE_PIRO_TEMPUS */
 
 #include "Teuchos_TestForException.hpp"
 
@@ -94,12 +103,17 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     else
       result = observedLocaSolver(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_NOX */
-#ifdef Piro_ENABLE_Rythmos
+#endif /* HAVE_PIRO_NOX */
+#ifdef HAVE_PIRO_RYTHMOS
   if (solverType == "Rythmos") {
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */
+#ifdef HAVE_PIRO_TEMPUS
+  if (solverType == "Tempus") {
+    result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
+  } else
+#endif /* HAVE_PIRO_TEMPUS */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
@@ -125,7 +139,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 
   const std::string &solverType = piroParams->get("Solver Type", "NOX");
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
   } else
@@ -146,6 +160,11 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* HAVE_PIRO_RYTHMOS */
+#ifdef HAVE_PIRO_TEMPUS
+  if (solverType == "Tempus") {
+    result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
+  } else
+#endif /* HAVE_PIRO_TEMPUS */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,

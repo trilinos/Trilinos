@@ -58,7 +58,7 @@ namespace {
 
 void verify_mesh_is_empty(const stk::mesh::BulkData& mesh)
 {
-  std::vector<unsigned> counts(mesh.mesh_meta_data().entity_rank_count());
+  std::vector<size_t> counts(mesh.mesh_meta_data().entity_rank_count());
   stk::mesh::count_entities(mesh.mesh_meta_data().universal_part(), mesh, counts);
   for(size_t i=0; i<counts.size(); ++i) {
     EXPECT_EQ(0u, counts[i]);

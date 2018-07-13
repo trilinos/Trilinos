@@ -71,8 +71,9 @@ FOREACH(MODULE ${LOCAL_MODULES})
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
   ADD_CUSTOM_COMMAND(TARGET PyTrilinos_Pure_Python_Modules
-    COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py')"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py', '${MODULE}.pyc')"
     COMMENT "Byte compiling ${MODULE}.py"
+    BYPRODUCTS ${MODULE}.pyc
     VERBATIM)
   INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py
@@ -88,6 +89,9 @@ LIST(APPEND            clean_files ${ADDITIONAL_CLEAN_FILES})
 LIST(REMOVE_DUPLICATES clean_files)
 LIST(REMOVE_ITEM       clean_files "")
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
+
+# The Teuchos module employs namespaces, so include the Teuchos directory
+ADD_SUBDIRECTORY(Teuchos)
 
 # The Isorropia module employs namespaces, so include the Isorropia
 # directory

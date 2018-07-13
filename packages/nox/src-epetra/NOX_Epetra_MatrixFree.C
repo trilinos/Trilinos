@@ -49,6 +49,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Epetra_Vector.H"
 #include "NOX_Epetra_VectorSpace.H"
@@ -231,7 +232,7 @@ int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << std::endl;
   throw "NOX Error";
-  return (-1);
+  TEUCHOS_UNREACHABLE_RETURN(-1);
 }
 
 double MatrixFree::NormInf() const
@@ -239,7 +240,7 @@ double MatrixFree::NormInf() const
   utils.out() << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
        << "Matrix-Free mode!" << std::endl;
   throw "NOX Error";
-  return 1.0;
+  TEUCHOS_UNREACHABLE_RETURN(1.0);
 }
 
 

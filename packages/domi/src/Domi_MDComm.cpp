@@ -101,19 +101,10 @@ MDComm::MDComm(Teuchos::ParameterList & plist) :
   // Validate the ParameterList
   plist.validateParameters(*getValidParameters());
 
-  // Determine a first cut at the number of dimensions
-  Teuchos::Array< int > dims =
-    plist.get("dimensions", Teuchos::Array< int >());
-  int numDims = dims.size();
-
-  // Set the communicator sizes along each axis and reset the
-  // dimensions if necessary
-  Teuchos::Array< int > commDims =
-    plist.get("comm dimensions", Teuchos::Array< int >());
-  if (numDims == 0) numDims = commDims.size();
+  // Obtain the communicator dimensions from the ParameterList
   _commDims = regularizeCommDims(_teuchosComm->getSize(),
-                                 numDims,
-                                 commDims());
+                                 plist);
+  int numDims = _commDims.size();
 
   // Set the periodic flags along each axis
   Teuchos::Array< int > periodic =
@@ -138,19 +129,10 @@ MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Validate the ParameterList
   plist.validateParameters(*getValidParameters());
 
-  // Determine a first cut at the number of dimensions
-  Teuchos::Array< int > dims =
-    plist.get("dimensions", Teuchos::Array< int >());
-  int numDims = dims.size();
-
-  // Set the communicator sizes along each axis and reset the
-  // dimensions if necessary
-  Teuchos::Array< int > commDims =
-    plist.get("comm dimensions", Teuchos::Array< int >());
-  if (numDims == 0) numDims = commDims.size();
+  // Obtain the communicator dimensions from the ParameterList
   _commDims = regularizeCommDims(_teuchosComm->getSize(),
-                                 numDims,
-                                 commDims());
+                                 plist);
+  int numDims = _commDims.size();
 
   // Set the periodic flags along each axis
   Teuchos::Array< int > periodic =
@@ -445,9 +427,6 @@ MDComm::MDComm(const MDComm & parent,
     tempMDComm1 = tempMDComm2;
   }
   *this = tempMDComm1;
-  // std::cout << parent.getTeuchosComm()->getRank() << ": _commDims = " << _commDims
-  //           << ", _commStrides = " << _commStrides << ", _commIndex = "
-  //           << _commIndex << ", _periodic = " << _periodic << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////

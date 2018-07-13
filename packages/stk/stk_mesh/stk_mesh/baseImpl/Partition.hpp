@@ -69,7 +69,7 @@ public:
   /// including the parts it corresponds to.
   const std::vector<PartOrdinal> &get_legacy_partition_id() const { return m_extPartitionKey; }
 
-  const unsigned * key() const { return &m_extPartitionKey[0]; }
+  const unsigned * key() const { return m_extPartitionKey.data(); }
 
   /// Add an entity to this partition.  The entity must not be a member
   /// of another partition.

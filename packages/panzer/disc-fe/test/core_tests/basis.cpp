@@ -45,8 +45,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
@@ -79,22 +77,23 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > >
+    Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> >
       intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 4);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 4);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.getBasis()->local_mat_layout->size()), num_cells * 9 * 9);
 
   }
 
@@ -125,22 +124,23 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > >
+    Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> >
       intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 2);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 2);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.getBasis()->local_mat_layout->size()), num_cells * 9 * 9);
 
   }
 

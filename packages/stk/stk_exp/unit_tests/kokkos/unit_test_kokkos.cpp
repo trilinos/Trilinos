@@ -11,9 +11,9 @@
 
 namespace {
 
-#if defined(KOKKOS_HAVE_PTHREAD)
+#if defined(KOKKOS_ENABLE_THREADS)
 #define KOKKOS_THREAD_DEVICE Kokkos::Threads
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif defined(KOKKOS_ENABLE_OPENMP)
 #define KOKKOS_THREAD_DEVICE Kokkos::OpenMP
 #else
 #define KOKKOS_THREAD_DEVICE Kokkos::Serial
@@ -43,7 +43,7 @@ protected:
 
     KOKKOS_THREAD_DEVICE::initialize( num_threads );
 
-#if defined(KOKKOS_HAVE_OPENMP) || defined(KOKKOS_HAVE_PTHREAD)
+#if defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_THREADS)
     std::cout << "Kokkos thread device 'print_configuration' output:\n";
     KOKKOS_THREAD_DEVICE::print_configuration(std::cout, true);
 #endif
@@ -93,7 +93,7 @@ TEST_F( KokkosThreads, SerialInitialize)
 }
 
 // Not available until c++11 support is enable in Sierra and Kokkos
-#if defined (KOKKOS_HAVE_C_PLUS_PLUS_11_LAMBDA)
+#if defined (KOKKOS_ENABLE_C_PLUS_PLUS_11_LAMBDA)
 TEST_F( KokkosThreads, LambdaInitialize)
 {
   Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);

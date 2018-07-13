@@ -3,6 +3,8 @@
 # project!
 #
 
+INCLUDE(CombinedOption)
+
 
 IF (TRIBITS_PROCESSING_PACKAGE)
 
@@ -125,21 +127,41 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
+ELSE()
+  # If Teuchos is configured as its own CMake project, independent of
+  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_TEUCHOS_COMPLEX
   "Enable Teuchos features for complex data type."
-  ${ST_FOR_DEV_PT_FOR_RELEASE}
+  ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT}
   )
 
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-SET(${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT ${${PROJECT_NAME}_ENABLE_CXX11})
+# ToDo: Above, split ${PACKAGE_NAME}_ENABLE_COMPLEX into
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
+
+set(TEUCHOS_LONG_LONG_DESC
+  "This option is DEPRECATED. Teuchos will ignore this option. Teuchos requires C++11, and long long comes with C++11, so you will always get long long. If you want to change the set of global ordinal types that Tpetra enables, set a Tpetra option, not a Teuchos option.")
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
-  "Enable Teuchos features for the 'long long' data type.  This is ON by default if and only if C++11 is enabled.  Please remember that 'long long' only entered the C++ language standard with C++11, even though many compilers supported it before."
-  ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT}
+  ${TEUCHOS_LONG_LONG_DESC}
+  ON
   )
+IF(NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
+  MESSAGE(WARNING
+      "${PACKAGE_NAME}_ENABLE_LONG_LONG_INT=\
+       ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT}.\
+       ${TEUCHOS_LONG_LONG_DESC}")
+ENDIF()
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
   # Can only provide __int64 support if it will not clash with 
@@ -170,9 +192,36 @@ IF (DEFINED BUILD_SHARED_LIBS)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+  HAVE_TEUCHOS_THREAD_SAFE
+  "Enable thread safe code for RCP classes."
+  ${Trilinos_ENABLE_THREAD_SAFE}
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+  MESSAGE(FATAL_ERROR
+    "You set ${PACKAGE_NAME}_ENABLE_THREAD_SAFE=ON, but ${PACKAGE_NAME}' support"
+    " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
+    "  This is not allowed.  Please enable ${PACKAGE_NAME}_ENABLE_CXX11 in"
+    " ${PACKAGE_NAME} before attempting to enable ${PACKAGE_NAME}_ENABLE_THREAD_SAFE"
+    " or leave ${PACKAGE_NAME}_ENABLE_THREAD_SAFE off.")
+ENDIF ()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
+ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Pthread)
+COMBINED_OPTION(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  DEP_OPTIONS_NAMES
+    ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+    ${PACKAGE_NAME}Core_ENABLE_Pthread
+  DOCSTR
+    "Enable thread safe unit tests for ${PACKAGE_NAME} Memory Management classes."
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  "Enable Teuchos features for array bounds checking."
+  "Enable ${PACKAGE_NAME} features for array bounds checking."
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
@@ -210,11 +259,18 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX
 # C) Set up package-specific options
 #
 
+IF (Trilinos_ENABLE_FLOAT)
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  FALSE)
+  # ABove will be set in case Teuchos is confiugred as its own CMake project!
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_FLOAT
   HAVE_TEUCHOS_FLOAT
   "Enable Teuchos features for float data type."
-  ${ST_FOR_DEV_PT_FOR_RELEASE}
+  ${${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT}
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -269,11 +325,50 @@ IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_STACKED_TIMER_IN_TIME_MONITOR
+  HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  "Adds timings from TimeMonitor to the StackedTimer object."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_GLOBALLY_REDUCE_UNITTEST_RESULTS
   HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
   "Set the Teuchos::UnitTestRepository to globally reduce test pass/fail results across all MPI ranks."
   OFF
   )
+
+ASSERT_DEFINED(TPL_ENABLE_Valgrind)
+IF(TPL_ENABLE_Valgrind)
+  # Heap profiling using massif
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS
+    HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+    "Enable memory profiling using massif."
+    OFF)
+  IF (${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS)
+    MESSAGE(STATUS "Enabling memory profiling using massif")
+  ENDIF()
+ENDIF()
+
+# Enabling Kokkos profiling hooks in Teuchos timers requires that the
+# Kokkos package be enabled, and that KOKKOS_ENABLE_PROFILING is ON.
+
+IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
+  ASSERT_DEFINED(KOKKOS_ENABLE_PROFILING)
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ${KOKKOS_ENABLE_PROFILING})
+ELSE()
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT OFF)
+ENDIF()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
+  HAVE_TEUCHOS_KOKKOS_PROFILING
+  "Wrap every Teuchos timer with a Kokkos profiling region."
+  "${${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT}")
+IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
+ENDIF()
+
 
 #
 # D) Process the subpackages for Teuchos

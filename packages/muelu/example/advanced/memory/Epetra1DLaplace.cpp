@@ -62,7 +62,7 @@
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr, i;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -145,7 +145,8 @@ int main(int argc, char *argv[])
 
     MemoryUsageStop();
 
-    success = true;
+    if(ierr==0) success = true;
+    else success=false;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

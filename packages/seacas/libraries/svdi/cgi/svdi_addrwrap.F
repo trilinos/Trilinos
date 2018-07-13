@@ -1,6 +1,6 @@
-C Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright (C) 2009 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
 C 
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -38,7 +38,7 @@ C
 c
 c       This wrapper module handles two kinds of interface problems:
 c       the routines starting with 'v' arbitrate between Fortran caller
-c       and C callee; the routines starting with 'c' arbitrate between
+c       and C callee; the routines; starting with 'c' arbitrate between
 c       C caller and Fortran callee.  The only exception is cgtxx1,
 c       which arbitrates between Fortran caller and C callee.
 c

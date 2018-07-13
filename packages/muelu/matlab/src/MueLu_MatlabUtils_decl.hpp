@@ -71,8 +71,12 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include <Tpetra_DefaultPlatform.hpp>
+
+#include "Kokkos_DynRankView.hpp"
+
 
 namespace MueLu
 {
@@ -99,6 +103,9 @@ enum MuemexType
   AGGREGATES,
   AMALGAMATION_INFO,
   GRAPH
+#ifdef HAVE_MUELU_INTREPID2
+, FIELDCONTAINER_ORDINAL
+#endif
 };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
@@ -114,6 +121,7 @@ typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_map;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
+typedef Xpetra::CrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsGraph;
 typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_double;
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
@@ -121,6 +129,10 @@ typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierar
 typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
 typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
+
+#ifdef HAVE_MUELU_INTREPID2
+  typedef Kokkos::DynRankView<mm_LocalOrd,typename mm_node_t::device_type> FieldContainer_ordinal;
+#endif
 
 class MuemexArg
 {
@@ -160,7 +172,7 @@ mxArray* saveDataToMatlab(T& data);
 
 //Add data to level. Set the keep flag on the data to "user-provided" so it's not deleted.
 template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl, Factory *fact = NoFactory::get());
+void addLevelVariable(const T& data, std::string& name, Level& lvl, const FactoryBase *fact = NoFactory::get());
 
 template<typename T>
 const T& getLevelVariable(std::string& name, Level& lvl);

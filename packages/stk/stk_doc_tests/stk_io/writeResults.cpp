@@ -113,19 +113,19 @@ namespace {
       // Iterate the application's execute loop five times and output
       // field data each iteration.
       for (int step=0; step < 5; step++) {
-	double time = step;
+          double time = step;
 
-	// Application execution...
-	double value = 10.0 * time;
-	for(size_t i=0; i<nodes.size(); i++) {
-	  double *node_data = stk::mesh::field_data(field, nodes[i]);
-	  *node_data = value;
-	}
+          // Application execution...
+          double value = 10.0 * time;
+          for(size_t i=0; i<nodes.size(); i++) {
+              double *node_data = stk::mesh::field_data(field, nodes[i]);
+              *node_data = value;
+          }
 
-	//+ Output the field data calculated by the application.
-	stkIo.begin_output_step(fh, time);
-	stkIo.write_defined_output_fields(fh);
-        stkIo.end_output_step(fh);
+          //+ Output the field data calculated by the application.
+          stkIo.begin_output_step(fh, time);
+          stkIo.write_defined_output_fields(fh);
+          stkIo.end_output_step(fh);
       }
       //-END      
     }
@@ -164,4 +164,5 @@ namespace {
     unlink(mesh_name.c_str());
     unlink(results_name.c_str());
   }
+
 }

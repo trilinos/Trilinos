@@ -10,6 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     STANDARD_PASS_OUTPUT
     )
 
+IF (${PACKAGE_NAME}_ENABLE_Thyra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ThyraBlockedOperator_UnitTests
     SOURCES
@@ -18,6 +19,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
+ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(BlockedCrsMatrix_UnitTests_copyfiles
     SOURCE_FILES

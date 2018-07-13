@@ -64,6 +64,9 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace Ioss { class DatabaseIO; }
 
+#include <stk_unit_test_utils/MeshFixture.hpp>
+
+
 namespace stk { namespace mesh { class Bucket; } }
 
 
@@ -269,15 +272,11 @@ TEST(UnitTestField, testFieldWithSelector)
 
   // Declare 10 nodes on each part
 
-  for ( unsigned i = 1 ; i < 11 ; ++i ) {
-    bulk_data.declare_entity( NODE_RANK , i ,
-                              std::vector< stk::mesh::Part * >( 1 , & p0 ) );
-  }
+  for ( unsigned i = 1 ; i < 11 ; ++i )
+      bulk_data.declare_node(i, std::vector< stk::mesh::Part * >(1, &p0));
 
-  for ( unsigned i = 11 ; i < 21 ; ++i ) {
-    bulk_data.declare_entity( NODE_RANK , i ,
-                              std::vector< stk::mesh::Part * >( 1 , & p1 ) );
-  }
+  for ( unsigned i = 11 ; i < 21 ; ++i )
+    bulk_data.declare_node(i, std::vector< stk::mesh::Part * >(1, &p1));
 
   const stk::mesh::BucketVector & node_buckets =
     bulk_data.buckets( NODE_RANK );
@@ -344,17 +343,15 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   parts.push_back(&elements);
   parts.push_back(&hex8s);
 
-  for ( unsigned i = 1 ; i < 11 ; ++i ) {
-    bulk_data.declare_entity( elem_rank , i , parts );
-  }
+  for ( unsigned i = 1 ; i < 11 ; ++i )
+    bulk_data.declare_element(i, parts);
 
   parts.clear();
   parts.push_back(&elements);
   parts.push_back(&tet4s);
 
-  for ( unsigned i = 11 ; i < 21 ; ++i ) {
-    bulk_data.declare_entity( elem_rank , i , parts );
-  }
+  for ( unsigned i = 11 ; i < 21 ; ++i )
+    bulk_data.declare_element(i, parts);
 
   {
     stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_hex_selector);
@@ -418,7 +415,7 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
   stk::mesh::PartVector parts;
   parts.push_back(&hex8s);
   ASSERT_THROW(
-    bulk_data.declare_entity( elem_rank , 1 , parts ),
+    bulk_data.declare_element(1, parts),
     std::runtime_error
   );
 
@@ -475,7 +472,6 @@ TEST(UnitTestField, writeFieldsWithSameName)
         const unsigned goldNumNodeFields = 1;
         EXPECT_EQ(goldNumNodeFields, nb->field_count(Ioss::Field::TRANSIENT));
         EXPECT_TRUE(nb->field_exists(fieldName));
-
         Ioss::ElementBlock *eb = results.get_element_blocks()[0];
         const unsigned goldNumElemFields = 1;
         EXPECT_EQ(goldNumElemFields, eb->field_count(Ioss::Field::TRANSIENT));
@@ -526,7 +522,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
         for (size_t bucket_i=0 ; bucket_i<nodeBuckets.size() ; ++bucket_i) {
             stk::mesh::Bucket &nodeBucket = *nodeBuckets[bucket_i];
             for (size_t node_i=0 ; node_i<nodeBucket.size() ; ++node_i) {
-                double * nodeData = field_data(nodeField,nodeBucket.bucket_id(),node_i);
+                double * nodeData = stk::mesh::field_data(nodeField,nodeBucket.bucket_id(),node_i);
                 EXPECT_EQ(nodeInitialValue, *nodeData);
             }
         }
@@ -535,7 +531,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
         for (size_t bucket_i=0 ; bucket_i<elemBuckets.size() ; ++bucket_i) {
             stk::mesh::Bucket &elemBucket = *elemBuckets[bucket_i];
             for (size_t elem_i=0 ; elem_i<elemBucket.size() ; ++elem_i) {
-                double * elemData = field_data(elemField,elemBucket.bucket_id(),elem_i);
+                double * elemData = stk::mesh::field_data(elemField,elemBucket.bucket_id(),elem_i);
                 EXPECT_EQ(elemInitialValue, *elemData);
             }
         }
@@ -552,7 +548,199 @@ TEST(UnitTestField, writeFieldsWithSameName)
     unlink(mesh_name.c_str());
 }
 
+//////////////////////
 
+void write_mesh_with_fields(stk::io::StkMeshIoBroker &stkIo, const std::string& filename, stk::mesh::EntityRank rank, const std::vector<std::string>& field_names)
+{
+    size_t fh = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
+    for(size_t i=0;i<field_names.size();++i)
+    {
+        stk::mesh::FieldBase* field = stkIo.bulk_data().mesh_meta_data().get_field(rank, field_names[i]);
+        ASSERT_TRUE(field!=nullptr);
+        stkIo.add_field(fh, *field);
+    }
+
+    double timeValue = 1.0;
+    stkIo.begin_output_step(fh, timeValue);
+    stkIo.write_defined_output_fields(fh);
+    stkIo.end_output_step(fh);
+}
+
+class SolutionCases
+{
+public:
+    const int numSolnCases = 3;
+    enum cases { STATIC, TRANSIENT, EIGEN, NUM_SOLUTION_CASES };
+    std::vector<std::string> solnNames = { "static", "trans", "eigen" };
+
+    SolutionCases() : fieldsPerSolutionCase(numSolnCases) {};
+    ~SolutionCases() {};
+
+    const std::vector<std::string> get_solution_case_names() const { return solnNames; }
+
+    const std::string get_part_name_for_solution_case(size_t i) const { return solnNames[i]; }
+
+    void add_static_field(const std::string& fieldname)
+    {
+        fieldsPerSolutionCase[STATIC].push_back(fieldname);
+    }
+
+    void add_eigen_field(const std::string& fieldname)
+    {
+        fieldsPerSolutionCase[EIGEN].push_back(fieldname);
+    }
+
+    void add_transient_field(const std::string& fieldname)
+    {
+        fieldsPerSolutionCase[TRANSIENT].push_back(fieldname);
+    }
+
+    size_t get_num_solution_cases() const { return NUM_SOLUTION_CASES; }
+
+    const std::vector<std::string> get_fields_for_case(int i) const
+    {
+        return fieldsPerSolutionCase[i];
+    }
+
+    void set_up_additional_fields_on_mesh(stk::mesh::MetaData& meta,
+                                          stk::mesh::Part &part,
+                                          stk::mesh::EntityRank rank,
+                                          const std::vector<std::string>& fieldNames)
+    {
+        for(size_t j = 0; j < fieldNames.size(); ++j)
+        {
+            stk::mesh::Field<double>& field =
+                    meta.declare_field<stk::mesh::Field<double>>(rank,
+                            fieldNames[j],  1u);
+            stk::mesh::Selector sel = part;
+            stk::mesh::put_field(field, sel, &init_val);
+        }
+    }
+
+private:
+    std::vector<std::vector<std::string>> fieldsPerSolutionCase;
+    double init_val = 1.0;
+};
+
+SolutionCases setup_solution_cases()
+{
+    SolutionCases solnCases;
+    solnCases.add_static_field("displacement");
+    solnCases.add_transient_field("displacement");
+    solnCases.add_transient_field("acceleration");
+    solnCases.add_eigen_field("displacement");
+    return solnCases;
+}
+
+void setup_parts_associated_with_solution_cases(SolutionCases &solnCases, stk::mesh::MetaData& meta, stk::mesh::EntityRank rank, stk::mesh::PartVector &partVector)
+{
+    for(size_t i=0;i<solnCases.get_num_solution_cases();++i)
+    {
+        std::string partName = solnCases.get_part_name_for_solution_case(i);
+        stk::mesh::Part* part = nullptr;
+        if(rank!=stk::topology::ELEM_RANK)
+            part = &meta.declare_part(partName, rank);
+        else
+            part = &meta.declare_part_with_topology(partName, stk::topology::HEX_8);
+
+        stk::io::put_io_part_attribute(*part);
+        partVector.push_back(part);
+        solnCases.set_up_additional_fields_on_mesh(meta, *part, rank, solnCases.get_fields_for_case(i));
+    }
+}
+
+void move_entities_into_solution_part(int soln_index, stk::mesh::BulkData& bulk, stk::mesh::PartVector& partVector, stk::mesh::EntityRank rank, const stk::mesh::EntityVector& nodes)
+{
+    std::vector<stk::mesh::PartVector> addPartsPerEntity(nodes.size(), {partVector[soln_index]});
+    std::vector<stk::mesh::PartVector> removePartsPerEntity;
+
+    if(soln_index==0)
+    {
+        removePartsPerEntity.assign(nodes.size(), stk::mesh::PartVector{});
+    }
+    else
+    {
+        removePartsPerEntity.assign(nodes.size(), stk::mesh::PartVector{partVector[soln_index-1]} );
+    }
+
+    bulk.batch_change_entity_parts(nodes, addPartsPerEntity, removePartsPerEntity);
+
+    stk::mesh::Field<double> *dispField = bulk.mesh_meta_data().get_field<stk::mesh::Field<double>>(rank, "displacement");
+    for(size_t j=soln_index; j<nodes.size(); ++j)
+    {
+        double *data = stk::mesh::field_data(*dispField, nodes[j]);
+        *data = static_cast<double>(soln_index);
+    }
+}
+
+void verify_acceleration_is_not_on_entities(stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank)
+{
+    stk::mesh::FieldBase* field = bulk.mesh_meta_data().get_field(rank, "acceleration");
+    stk::mesh::Selector accelEntities = stk::mesh::selectField(*field);
+    unsigned numAccelEntities = stk::mesh::count_selected_entities(accelEntities, bulk.buckets(rank));
+    EXPECT_EQ(0u, numAccelEntities);
+}
+
+void verify_fields_are_on_entities(const std::string& filename, stk::mesh::EntityRank rank, const std::vector<std::string>& fieldnames, size_t goldNum)
+{
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+    int stepNum = 1;
+    double time = 1.0;
+    stk::io::fill_mesh_save_step_info(filename, bulk, stepNum, time);
+
+    for(const std::string& field_name : fieldnames)
+    {
+        stk::mesh::FieldBase* field = bulk.mesh_meta_data().get_field(rank, field_name);
+        ThrowRequireWithSierraHelpMsg(field!=nullptr);
+        stk::mesh::Selector selector = stk::mesh::selectField(*field) & meta.locally_owned_part();
+        unsigned numAccelEntities = stk::mesh::count_selected_entities(selector, bulk.buckets(rank));
+        EXPECT_EQ(goldNum, numAccelEntities);
+    }
+}
+
+class FieldFixture : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void test_solution_case_with_rank(stk::mesh::EntityRank rank)
+    {
+        SolutionCases solnCases = setup_solution_cases();
+
+        stk::mesh::PartVector solutionCasePartVector;
+        setup_parts_associated_with_solution_cases(solnCases, get_meta(), rank, solutionCasePartVector);
+
+        setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+        stk::io::StkMeshIoBroker stkIo;
+        stkIo.set_bulk_data(get_bulk());
+
+        stk::mesh::EntityVector locallyOwnedEntities;
+        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::get_selected_entities(selector, get_bulk().buckets(rank), locallyOwnedEntities);
+
+        for(size_t solnIndex=0;solnIndex<solnCases.get_num_solution_cases();++solnIndex)
+        {
+            move_entities_into_solution_part(solnIndex, get_bulk(), solutionCasePartVector, rank, locallyOwnedEntities);
+            std::string filename = "junk-" + solnCases.get_solution_case_names()[solnIndex] + ".g";
+            EXPECT_NO_THROW(write_mesh_with_fields(stkIo, filename, rank, solnCases.get_fields_for_case(solnIndex)));
+            verify_fields_are_on_entities(filename, rank, solnCases.get_fields_for_case(solnIndex), locallyOwnedEntities.size());
+        }
+
+        verify_acceleration_is_not_on_entities(get_bulk(), rank);
+    }
+};
+
+TEST_F(FieldFixture, writingDifferentNodalFieldsPerSolutionCase)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD)<3)
+        test_solution_case_with_rank(stk::topology::NODE_RANK);
+}
+
+TEST_F(FieldFixture, DISABLED_writingDifferentElementFieldsPerSolutionCase)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD)<3)
+        test_solution_case_with_rank(stk::topology::ELEM_RANK);
+}
 
 } //namespace <anonymous>
 

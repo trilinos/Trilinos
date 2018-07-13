@@ -86,15 +86,6 @@ extern void product_registry_add(const char *name);
  */
 extern void product_registry_add_tpl(const char *name, const char *version, const char *qualifier);
 
-/**
- * @brief Extern "C" function <b>product_registry_size</b> returns the number of
- * products in the registry.
- *
- * @return			an <b>int</b> value of the number of products in the
- *				registry.
- */
-extern size_t product_registry_size();
-
 #if defined(__cplusplus)
 } /* extern "C" */
 #endif

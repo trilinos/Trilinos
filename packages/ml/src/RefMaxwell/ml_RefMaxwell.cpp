@@ -5,6 +5,7 @@
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <iostream>
+#include<fstream>
 #include <vector>
 #include <string.h>
 #include "ml_RefMaxwell.h"
@@ -98,6 +99,56 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
 
+// ================================================ ====== ==== ==== == =
+ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
+							      const Teuchos::ParameterList& List,
+							      const bool ComputePrec):
+  ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
+  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
+#ifdef HAVE_ML_IFPACK
+  IfSmoother(0),
+#endif
+  aggregate_with_sigma(false),lump_m1(false),
+  use_local_nodal_solver(false),LocalNodalSolver(0),NodesToLocalNodes(0),LocalNodalMatrix(0),
+  verbose_(false),very_verbose_(false)
+{
+  using Teuchos::RCP;
+  D0_Clean_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("D0");
+  ML_CHK_ERRV((D0_Clean_Matrix_==0));
+#ifdef ENABLE_MS_MATRIX
+  Ms_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("Ms");
+  ML_CHK_ERRV((Ms_Matrix_==0));
+#endif
+  M0inv_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("M0inv");
+  ML_CHK_ERRV((M0inv_Matrix_==0));
+  M1_Matrix_ = (Epetra_CrsMatrix*)&*List.get<RCP<const Epetra_CrsMatrix> >("M1");
+  ML_CHK_ERRV((M1_Matrix_==0));
+
+  /* Set the Epetra Goodies */
+  Comm_ = &(SM_Matrix_->Comm());
+  DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
+  RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
+  NodeMap_ = &(D0_Clean_Matrix_->OperatorDomainMap());
+
+  Label_=new char [80];
+  strcpy(Label_,"ML reformulated Maxwell preconditioner");
+  List_=List;
+  SetDefaultsRefMaxwell(List_,false);
+
+#ifdef ML_TIMING
+  /* Internal Timings */
+  NumApplications_ = 0;
+  ApplicationTime_ = 0.0;
+  FirstApplication_ = true;
+  FirstApplicationTime_ = 0.0;
+  NumConstructions_ = 0;
+  ConstructionTime_ = 0.0;
+#endif
+
+  if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
+
+}
+
 
 // ================================================ ====== ==== ==== == =
 ML_Epetra::RefMaxwellPreconditioner::~RefMaxwellPreconditioner()
@@ -114,6 +165,12 @@ void ML_Epetra::RefMaxwellPreconditioner::Print(int whichHierarchy){
   if(IsComputePreconditionerOK_ && NodePC && whichHierarchy==22) NodePC->Print(-1);
 }/*end Print*/
 
+
+// ================================================ ====== ==== ==== == =
+int ML_Epetra::RefMaxwellPreconditioner::ReComputePreconditioner() {
+  // Hope for the best...
+  return ComputePreconditioner();
+}
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
@@ -169,6 +226,19 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     if((*BCnodes)[i]) numBCnodes++;
   }
 
+  if (print_hierarchy) {
+  std::ofstream outBCrows("BCrows.dat");
+  for(int i=0;i<numBCrows;i++)
+    outBCrows<<BCrows[i]<<"\n";
+  outBCrows.close();
+
+  std::ofstream outBCnodes("BCnodes.dat");
+  for(int i=0;i<Nn;i++ )
+    if ((*BCnodes)[i])
+      outBCnodes<<i<<"\n";
+  outBCnodes.close();
+  }
+
   /* Sanity Check: We have at least some Dirichlet nodes */
   int HasInterior = numBCnodes != Nn;
   if(very_verbose_ && !Comm_->MyPID()) {
@@ -210,14 +280,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* Build the TMT Matrix */
   if(!HasOnlyDirichletNodes){
-    printf("CMS: Building TMT Matrix\n");
     // Need to use keep zero rows here, due to how D0 has been nuked
     Epetra_PtAP(*SM_Matrix_,*D0_Matrix_,TMT_Matrix_,true,verbose_);
     Remove_Zeroed_Rows(*TMT_Matrix_,1e-10);
   }/*end if */
 
   /* Build the TMT-Agg Matrix */
-    printf("CMS: Building TMT-Agg Matrix\n");
   if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
     Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
@@ -231,7 +299,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");
   }
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
-  printf("CMS: Finished the obvious stuff\n");
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[1]));
@@ -465,6 +532,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   if(mode=="212") rv=ApplyInverse_Implicit_212(B,X);
   else if(mode=="additive") rv=ApplyInverse_Implicit_Additive(B,X);
   else if(mode=="121") rv=ApplyInverse_Implicit_121(B,X);
+  else if(mode=="none") rv=ApplyInverse_Implicit_OnlySmoothing(B,X);
   else {fprintf(stderr,"%s","RefMaxwellPreconditioner ERROR: Invalid ApplyInverse mode set in Teuchos list");ML_CHK_ERR(-2);}
   ML_CHK_ERR(rv);
 
@@ -701,6 +769,51 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
 
   return 0;
 }
+
+
+// ================================================ ====== ==== ==== == =
+//! Implicitly applies in the inverse with sommothing only
+int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_OnlySmoothing(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
+{
+#ifdef ML_TIMING
+  double t_time,t_diff;
+  StartTimer(&t_time);
+#endif
+
+  int NumVectors=B.NumVectors();
+  Epetra_MultiVector TempE1(X.Map(),NumVectors,false);
+  Epetra_MultiVector TempE2(X.Map(),NumVectors,true);
+  Epetra_MultiVector TempN1(*NodeMap_,NumVectors,false);
+  Epetra_MultiVector TempN2(*NodeMap_,NumVectors,true);
+  Epetra_MultiVector Resid(B.Map(),NumVectors);
+
+  /* Pre-Smoothing */
+#ifdef HAVE_ML_IFPACK
+  if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
+  else
+#endif
+  if(PreEdgeSmoother) ML_CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
+
+  /* Post-Smoothing */
+#ifdef HAVE_ML_IFPACK
+  if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
+  else
+#endif
+    if(PostEdgeSmoother) ML_CHK_ERR(PostEdgeSmoother->ApplyInverse(B,X));
+
+
+#ifdef ML_TIMING
+  StopTimer(&t_time,&t_diff);
+  /* Output */
+  ML_Comm *comm_;
+  ML_Comm_Create(&comm_);
+  this->ApplicationTime_+= t_diff;
+  ML_Comm_Destroy(&comm_);
+#endif
+
+  return 0;
+}
+
 
 // ================================================ ====== ==== ==== == =
 //! Implicitly applies in the inverse in an 1-2-1 format

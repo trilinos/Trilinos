@@ -29,7 +29,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestBasicAztec
+    fei_test
     NAME basic_aztecoo
     ARGS "-d ./basic_aztecoo -i basic_aztecoo.i"
     COMM serial mpi
@@ -47,7 +47,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestRemEssBCsCopyFiles
+    fei_test
     NAME remEssBCs
     ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
     COMM serial mpi
@@ -55,7 +55,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestRemEssBCsCopyFiles
+    fei_test
     NAME remEssBCs
     ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
     COMM serial mpi
@@ -73,7 +73,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestRemEssBCsTrilinosCopyFiles
+    fei_test
     NAME remEssBCs_Trilinos
     ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
     COMM serial mpi
@@ -81,7 +81,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestRemEssBCsTrilinosCopyFiles
+    fei_test
     NAME remEssBCs_Trilinos
     ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
     COMM serial mpi
@@ -99,7 +99,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestElemDOFAztecCopyFiles
+    fei_test
     NAME elemDOF_Aztec
     ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
     COMM serial mpi
@@ -107,7 +107,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestElemDOFAztecCopyFiles
+    fei_test
     NAME elemDOF_Aztec
     ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
     COMM serial mpi
@@ -125,7 +125,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadCopyFiles
+    fei_test
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
     COMM serial mpi
@@ -133,7 +133,7 @@ IF(FEI_ENABLE_AztecOO)
     )
  
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadCopyFiles
+    fei_test
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
     COMM serial mpi
@@ -141,7 +141,7 @@ IF(FEI_ENABLE_AztecOO)
     )
  
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadCopyFiles
+    fei_test
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
     COMM serial mpi
@@ -159,7 +159,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
+    fei_test
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
     COMM serial mpi
@@ -167,7 +167,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
+    fei_test
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
     COMM serial mpi
@@ -175,7 +175,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
+    fei_test
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
     COMM serial mpi
@@ -193,7 +193,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrage20QuadOldCopyFiles
+    fei_test
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
     COMM serial mpi
@@ -201,7 +201,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrage20QuadOldCopyFiles
+    fei_test
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
     COMM serial mpi
@@ -209,7 +209,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRLagrage20QuadOldCopyFiles
+    fei_test
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
     COMM serial mpi
@@ -226,7 +226,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldCopyFiles
+    fei_test
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
     COMM serial mpi
@@ -234,7 +234,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldCopyFiles
+    fei_test
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
     COMM serial mpi
@@ -242,7 +242,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldCopyFiles
+    fei_test
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
     COMM serial mpi
@@ -259,7 +259,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRCopyFiles
+    fei_test
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
     COMM serial mpi
@@ -267,7 +267,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRCopyFiles
+    fei_test
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
     COMM serial mpi
@@ -275,7 +275,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRCopyFiles
+    fei_test
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
     COMM serial mpi
@@ -292,7 +292,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRAZCopyFiles
+    fei_test
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
     COMM serial mpi
@@ -300,7 +300,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRAZCopyFiles
+    fei_test
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
     COMM serial mpi
@@ -308,7 +308,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestMultifieldVBRAZCopyFiles
+    fei_test
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
     COMM serial mpi
@@ -325,7 +325,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRMultifieldSlaveCopyFiles
+    fei_test
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
     COMM serial mpi
@@ -333,7 +333,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRMultifieldSlaveCopyFiles
+    fei_test
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
     COMM serial mpi
@@ -341,7 +341,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRMultifieldSlaveCopyFiles
+    fei_test
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
     COMM serial mpi
@@ -369,7 +369,7 @@ IF(FEI_ENABLE_AztecOO)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRSlave20QuadOldCopyFiles
+    fei_test
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
@@ -377,7 +377,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRSlave20QuadOldCopyFiles
+    fei_test
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
@@ -385,7 +385,7 @@ IF(FEI_ENABLE_AztecOO)
     )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestCRSlave20QuadOldCopyFiles
+    fei_test
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
@@ -406,7 +406,7 @@ IF(FEI_ENABLE_Belos)
   )
 
   TRIBITS_ADD_TEST(
-    fei_test FEITestBasicBelos
+    fei_test
     NAME basic_belos
     ARGS "-d ./basic_belos -i basic_belos.i"
     COMM serial mpi

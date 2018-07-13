@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
@@ -54,13 +54,13 @@ include:
 
 \param[in] exoid          exodus file ID returned from a previous call to
 ex_create() or ex_open().
-\param[in] coord_names    Array containing \c num_dim names of length \p
+\param[in] coord_names    Array containing num_dim names of length \p
 ...max_name_length...                         of the nodal coordinate arrays.
 
 The following coding will write the coordinate names to an
 open exodus file :
 
-\code
+~~~{.c}
 int error, exoid;
 
 char *coord_names[3];
@@ -69,7 +69,7 @@ coord_names[1] = "ycoor";
 coord_names[2] = "zcoor";
 
 error = ex_put_coord_names (exoid, coord_names);
-\endcode
+~~~
 
  */
 
@@ -80,35 +80,33 @@ int ex_put_coord_names(int exoid, char *coord_names[])
   size_t num_dim;
   char   errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
-    ex_err("ex_put_coord_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: inquire failed to get number of dimensions in file id %d", exoid);
-    ex_err("ex_put_coord_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, VAR_NAME_COOR, &varid)) == -1) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate coordinate names in file id %d",
              exoid);
-    ex_err("ex_put_coord_names", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_put_coord_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out coordinate names */
   status = ex_put_names_internal(exoid, varid, num_dim, coord_names, EX_COORDINATE, "",
                                  "ex_put_coord_names");
 
-  return (status);
+  EX_FUNC_LEAVE(status);
 }

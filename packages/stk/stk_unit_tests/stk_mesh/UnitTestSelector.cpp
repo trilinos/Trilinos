@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
-#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
+#include <stk_unit_tests/stk_mesh_fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -194,7 +194,7 @@ TEST(Verify, selectorEmptyDuringMeshMod)
     if (bulk.parallel_rank()==0) {
 
         stk::mesh::EntityId elem1Id = 1;
-        stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
+        stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, {&block1});
 
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
@@ -859,17 +859,19 @@ TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
     stk::mesh::BulkData mesh(meta, pm);
 
     stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
     meta.commit();
 
     mesh.modification_begin();
 
     std::array<int, 3> node_ids = {{1,2,3}};
     stk::mesh::PartVector empty;
-    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    stk::mesh::Entity shell3 = mesh.declare_element(1u, {shellPart});
     for(unsigned i = 0; i<node_ids.size(); ++i) {
-        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
-        mesh.declare_relation(tri3, node, i);
+        stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
+        mesh.declare_relation(shell3, node, i);
     }
+    mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
 
     mesh.modification_end();
 

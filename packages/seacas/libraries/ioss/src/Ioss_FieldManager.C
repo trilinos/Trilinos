@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -33,14 +33,10 @@
 #include <Ioss_Field.h>
 #include <Ioss_FieldManager.h>
 #include <cassert>
+#include <cstddef>
 #include <map>
-#include <stddef.h>
 #include <string>
 #include <utility>
-
-Ioss::FieldManager::FieldManager() {}
-
-Ioss::FieldManager::~FieldManager() = default;
 
 /** \brief Add a field to the field manager.
  *
@@ -52,6 +48,7 @@ Ioss::FieldManager::~FieldManager() = default;
 void Ioss::FieldManager::add(const Ioss::Field &new_field)
 {
   if (!exists(new_field.get_name())) {
+    IOSS_FUNC_ENTER(m_);
     fields.insert(FieldValuePair(new_field.get_name(), new_field));
   }
 }
@@ -64,6 +61,7 @@ void Ioss::FieldManager::add(const Ioss::Field &new_field)
  */
 bool Ioss::FieldManager::exists(const std::string &field_name) const
 {
+  IOSS_FUNC_ENTER(m_);
   return (fields.find(field_name) != fields.end());
 }
 
@@ -75,6 +73,7 @@ bool Ioss::FieldManager::exists(const std::string &field_name) const
  */
 Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
 {
+  IOSS_FUNC_ENTER(m_);
   auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
@@ -88,6 +87,7 @@ Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
  */
 const Ioss::Field &Ioss::FieldManager::getref(const std::string &field_name) const
 {
+  IOSS_FUNC_ENTER(m_);
   auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
@@ -102,6 +102,7 @@ const Ioss::Field &Ioss::FieldManager::getref(const std::string &field_name) con
 void Ioss::FieldManager::erase(const std::string &field_name)
 {
   assert(exists(field_name));
+  IOSS_FUNC_ENTER(m_);
   auto iter = fields.find(field_name);
   if (iter != fields.end()) {
     fields.erase(iter);
@@ -116,6 +117,7 @@ void Ioss::FieldManager::erase(const std::string &field_name)
  */
 int Ioss::FieldManager::describe(NameList *names) const
 {
+  IOSS_FUNC_ENTER(m_);
   int                          the_count = 0;
   FieldMapType::const_iterator I;
   for (I = fields.begin(); I != fields.end(); ++I) {
@@ -134,6 +136,7 @@ int Ioss::FieldManager::describe(NameList *names) const
  */
 int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) const
 {
+  IOSS_FUNC_ENTER(m_);
   int                          the_count = 0;
   FieldMapType::const_iterator I;
   for (I = fields.begin(); I != fields.end(); ++I) {
@@ -149,4 +152,8 @@ int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) co
  *
  *  \returns The number of fields in the field manager.
  */
-size_t Ioss::FieldManager::count() const { return fields.size(); }
+size_t Ioss::FieldManager::count() const
+{
+  IOSS_FUNC_ENTER(m_);
+  return fields.size();
+}

@@ -86,7 +86,7 @@ namespace response_bc_adapters {
     //! \name Derived from BCStrategy
     //@{ 
 
-    virtual void setup(const panzer::PhysicsBlock& side_pb, const Teuchos::ParameterList& user_data) {}
+    virtual void setup(const panzer::PhysicsBlock& /* side_pb */, const Teuchos::ParameterList& /* user_data */) {}
       
     virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::PhysicsBlock& side_pb,
@@ -107,10 +107,10 @@ namespace response_bc_adapters {
     }
 
     virtual void 
-    buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const panzer::PhysicsBlock& side_pb,
-				      const LinearObjFactory<panzer::Traits> & lof,
-				      const Teuchos::ParameterList& user_data) const {}
+    buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+				      const panzer::PhysicsBlock& /* side_pb */,
+				      const LinearObjFactory<panzer::Traits> & /* lof */,
+				      const Teuchos::ParameterList& /* user_data */) const {}
 
     virtual void
     buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
@@ -173,7 +173,7 @@ namespace response_bc_adapters {
       : hashMap_(hashMap) {}
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
+    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& /* global_data */) const
     {
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstrategy_tm 
           = Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);

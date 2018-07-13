@@ -82,7 +82,7 @@ MultiVariateParameter(const std::string parameter_name,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void MultiVariateParameter<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData worksets,
+postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(target_field,fm);
@@ -100,7 +100,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
-         pt < target_field.dimension(1); ++pt) {
+         pt < target_field.extent(1); ++pt) {
       target_field(cell,pt) = sum;
     }
   }

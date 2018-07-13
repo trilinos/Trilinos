@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -59,7 +59,11 @@ struct CrsMatrix {
   typedef Device      execution_space ;
   typedef ScalarType  value_type ;
 
-  typedef StaticCrsGraph< int , execution_space , void , int >  graph_type ;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  typedef StaticCrsGraph< int , execution_space , void , int , void >  graph_type ;
+#else
+  typedef StaticCrsGraph< int , execution_space , void , void , int >  graph_type ;
+#endif
   typedef View< value_type* , execution_space >   coefficients_type ;
 
   graph_type         graph ;
@@ -240,7 +244,7 @@ void cgsolve(
 
   double old_rdot = dot( count_owned , r , data_map.machine );
 
-  normr     = sqrt( old_rdot );
+  normr     = std::sqrt( old_rdot );
   iteration = 0 ;
 
   Kokkos::Timer wall_clock ;
@@ -262,7 +266,7 @@ void cgsolve(
 
     /* p = r + beta * p ; */ xpby( count_owned , r , beta , p );
 
-    normr = sqrt( old_rdot = r_dot );
+    normr = std::sqrt( old_rdot = r_dot );
     ++iteration ;
   }
 
@@ -276,7 +280,7 @@ void cgsolve(
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 
 #if ( CUDA_VERSION < 6000 )
 #pragma message "cusparse_v2.h"
@@ -391,7 +395,7 @@ public:
 } /* namespace Impl */
 } /* namespace Kokkos */
 
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

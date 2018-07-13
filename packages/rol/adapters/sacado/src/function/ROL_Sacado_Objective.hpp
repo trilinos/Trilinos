@@ -59,12 +59,12 @@ class Sacado_Objective : public Objective<Real> {
         Obj<Real> obj_;
 
     /* Evaluate the gradient at x */
-    template<class ScalarT> 
+    template<class ScalarT>
     void gradientAD( Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol );
 
     /* Compute the action of the Hessian evaluated at x on a vector v */
-    template<class ScalarT> 
-    void hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol ); 
+    template<class ScalarT>
+    void hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol );
 
 
     public:
@@ -79,7 +79,7 @@ class Sacado_Objective : public Objective<Real> {
 
     /* Evaluate the gradient at x */
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-        this->gradientAD(g,x,tol); 
+        this->gradientAD(g,x,tol);
     }
 
     /* Compute the action of the Hessian evaluated at x on a vector v */
@@ -92,35 +92,35 @@ class Sacado_Objective : public Objective<Real> {
 
 template<class Real, template<class> class Obj>
 template<class ScalarT>
-void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) { 
+void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) {
 
-    // Data type which supports automatic differentiation 
+    // Data type which supports automatic differentiation
     typedef Sacado::Fad::DFad<ScalarT> FadType;
     typedef std::vector<FadType>       Fadvector;
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  
+           
+    
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the gradient vector
-    RCP<vector> gp = dyn_cast<SV>(g).getVector();
-    
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector();
+
     int n = xp->size();
- 
+
     // Create a vector of independent variables
-    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
-    x_fad_rcp->reserve(n);
-   
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
+    x_fad_ptr->reserve(n);
+
     // Initialize constructor for each element
     for(int i=0; i<n; ++i) {
-        x_fad_rcp->push_back(FadType(n,i,(*xp)[i])); 
+        x_fad_ptr->push_back(FadType(n,i,(*xp)[i]));
     }
 
-    StdVector<FadType> x_fad(x_fad_rcp);
+    StdVector<FadType> x_fad(x_fad_ptr);
 
     // AD access to objective function
     FadType J_fad = obj_.value(x_fad,tol);
@@ -135,55 +135,55 @@ void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<Sca
 
 template <class Real, template<class> class Obj>
 template <class ScalarT>
-void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
+void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v,
                                             const Vector<ScalarT> &x, Real &tol ) {
 
-    // Data type which supports automatic differentiation 
+    // Data type which supports automatic differentiation
     typedef Sacado::Fad::SFad<ScalarT,1> FadType;
     typedef std::vector<FadType>         Fadvector;
     typedef std::vector<ScalarT>         vector;
     typedef StdVector<ScalarT>           SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  
- 
-    // Get a pointer to the optimization vector 
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+           
+    
+
+    // Get a pointer to the optimization vector
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
 
-    RCP<vector> hvp = dyn_cast<SV>(hv).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
 
 
     int n = xp->size();
-   
+
     // Create a vector of independent variables
-    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
-    x_fad_rcp->reserve(n);
- 
-    // Allocate for gradient   
-    RCP<Fadvector> g_fad_rcp = rcp( new Fadvector );
-    g_fad_rcp->reserve(n);
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
+    x_fad_ptr->reserve(n);
+
+    // Allocate for gradient
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
+    g_fad_ptr->resize(n);
 
     for(int i=0; i<n; ++i) {
-        x_fad_rcp->push_back(FadType(1,(*xp)[i]));
+        x_fad_ptr->push_back(FadType(1,(*xp)[i]));
     }
 
-    // Set directional derivative    
+    // Set directional derivative
     for(int i=0; i<n; ++i) {
-        (*x_fad_rcp)[i].fastAccessDx(0) = (*vp)[i];
+        (*x_fad_ptr)[i].fastAccessDx(0) = (*vp)[i];
     }
-    
-    StdVector<FadType> x_fad(x_fad_rcp);
-    StdVector<FadType> g_fad(g_fad_rcp);
+
+    StdVector<FadType> x_fad(x_fad_ptr);
+    StdVector<FadType> g_fad(g_fad_ptr);
 
     this->gradientAD(g_fad,x_fad,tol);
 
     for(int i=0; i<n; ++i) {
-        (*hvp)[i] = (*g_fad_rcp)[i].dx(0);            
+        (*hvp)[i] = (*g_fad_ptr)[i].dx(0);
     }
 }
 
 
-#endif 
+#endif

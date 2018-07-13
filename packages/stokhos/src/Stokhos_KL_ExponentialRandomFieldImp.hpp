@@ -169,7 +169,7 @@ evaluate(const point_type& point, const rv_type& random_variables) const
   typedef typename Teuchos::PromotionTraits<typename rv_type::value_type, value_type>::promote result_type;
   result_type result = mean;
   for (int i=0; i<num_KL; ++i) {
-    value_type t = std_dev*std::sqrt(product_eigen_values(i));
+    result_type t = std_dev*std::sqrt(product_eigen_values(i));
     for (int j=0; j<dim; ++j)
       t *= product_eigen_funcs(i,j).evaluate(point[j]);
     result += random_variables[i]*t;
@@ -180,13 +180,14 @@ evaluate(const point_type& point, const rv_type& random_variables) const
 template <typename value_type, typename execution_space>
 template <typename point_type>
 KOKKOS_INLINE_FUNCTION
-value_type
+typename Teuchos::PromotionTraits<typename point_type::value_type, value_type>::promote
 Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 evaluate_standard_deviation(const point_type& point) const
 {
-  value_type result = 0.0;
+  typedef typename Teuchos::PromotionTraits<typename point_type::value_type, value_type>::promote result_type;
+  result_type result = 0.0;
   for (int i=0; i<num_KL; i++) {
-    value_type t = 1.0;
+    result_type t = 1.0;
     for (int j=0; j<dim; ++j)
       t *= product_eigen_funcs(i,j).evaluate(point[j]);
     result += product_eigen_values(i).eig_val*t*t;
@@ -197,11 +198,12 @@ evaluate_standard_deviation(const point_type& point) const
 template <typename value_type, typename execution_space>
 template <typename point_type>
 KOKKOS_INLINE_FUNCTION
-value_type
+typename Teuchos::PromotionTraits<typename point_type::value_type, value_type>::promote
 Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 evaluate_eigenfunction(const point_type& point, int i) const
 {
-  value_type t = std_dev*std::sqrt(product_eigen_values(i));
+  typedef typename Teuchos::PromotionTraits<typename point_type::value_type, value_type>::promote result_type;
+  result_type t = std_dev*std::sqrt(product_eigen_values(i));
   for (int j=0; j<dim; ++j)
     t *= product_eigen_funcs(i,j).evaluate(point[j]);
   return t;

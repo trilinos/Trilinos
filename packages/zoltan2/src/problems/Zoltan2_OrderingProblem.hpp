@@ -53,12 +53,17 @@
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_OrderingAlgorithms.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
+#include <Zoltan2_EvaluateOrdering.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
 #include <string>
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
+
+
+
+
 
 #include <bitset>
 
@@ -103,27 +108,60 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~OrderingProblem() {};
+  virtual ~OrderingProblem() {}
 
+  OrderingProblem(Adapter *A, ParameterList *p,
+                  const RCP<const Teuchos::Comm<int> > &comm) :
+    Problem<Adapter>(A, p, comm) 
+  {
+    HELLO;
+    createOrderingProblem();
+  }
 
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm) 
-  {
-    HELLO;
-    createOrderingProblem();
-  };
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm) :
+  OrderingProblem(A, p, 
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+  OrderingProblem(Adapter *A, ParameterList *p) : 
+  OrderingProblem(A, p, Teuchos::DefaultComm<int>::getComm())
+  {}
+
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
   {
-    HELLO;
-    createOrderingProblem();
-  };
+
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
+    AlgND<Adapter>::getValidParameters(pl);
+#endif
+
+    RCP<Teuchos::StringValidator> order_method_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural",
+          "random", "sorted_degree", "scotch", "nd" )));
+    pl.set("order_method", "rcm", "order algorithm",
+      order_method_Validator);
+
+    RCP<Teuchos::StringValidator> order_method_type_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "local", "global", "both" )));
+    pl.set("order_method_type", "local", "local or global or both",
+      order_method_type_Validator);
+
+    RCP<Teuchos::StringValidator> order_package_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "amd", "package2", "package3" )));
+    pl.set("order_package", "amd", "package to use in ordering",
+      order_package_Validator);
+  }
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -143,30 +181,56 @@ public:
   
   void solve(bool updateInputData=true);
 
-  //!  \brief Get the solution to the problem.
+  //!  \brief Get the local ordering solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  OrderingSolution<lno_t, gno_t> *getSolution() {
-    // std::cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << std::endl;
-    // Compute Perm or InvPerm, if one is missing.
-    if (!(solution_->havePerm()))
-      solution_->computePerm();
-    if (!(solution_->haveInverse()))
-      solution_->computeInverse();
-    return solution_.getRawPtr();
-  };
+  LocalOrderingSolution<lno_t> * getLocalOrderingSolution() {
+    if(localOrderingSolution_ == Teuchos::null) {
+      throw std::logic_error( "OrderingProblem was not created with local"
+        " ordering. Set parameter order_method_type to local or both."
+        " Or use getGlobalOrderingSolution()." );
+    }
+    return setupSolution(localOrderingSolution_);
+  }
+
+  //!  \brief Get the global ordering solution to the problem.
+  //
+  //   \return  a reference to the solution to the most recent solve().
+
+  GlobalOrderingSolution<gno_t> * getGlobalOrderingSolution() {
+    if(globalOrderingSolution_ == Teuchos::null) {
+      throw std::logic_error( "OrderingProblem was not created with global"
+        " ordering. Set parameter order_method_type to global or both."
+        " Or use getLocalOrderingSolution()." );
+    }
+    return setupSolution(globalOrderingSolution_);
+  }
 
 private:
+  template<typename ordering_solution_t>
+  ordering_solution_t *setupSolution(RCP<ordering_solution_t> solution) {
+    // std::cout << "havePerm= " << solution->havePerm() <<  " haveInverse= "
+    //   << solution->haveInverse() << std::endl;
+    // Compute Perm or InvPerm, if one is missing.
+    if (!(solution->havePerm()))
+      solution->computePerm();
+    if (!(solution->haveInverse()))
+      solution->computeInverse();
+    return solution.getRawPtr();
+  }
+
   void createOrderingProblem();
 
-  RCP<OrderingSolution<lno_t, gno_t> > solution_;
+  // local or global ordering is determined by which RCP is NULL
+  RCP<LocalOrderingSolution<lno_t> > localOrderingSolution_;
+  RCP<GlobalOrderingSolution<gno_t> > globalOrderingSolution_;
 
 };
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void OrderingProblem<Adapter>::solve(bool newData)
+void OrderingProblem<Adapter>::solve(bool updateInputData)
 {
   HELLO;
 
@@ -175,72 +239,80 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new OrderingSolution<lno_t, gno_t>(nVtx));
+    std::string method_type = this->params_->template
+      get<std::string>("order_method_type", "local");
+
+    if(method_type == "local" || method_type == "both") {
+      localOrderingSolution_ = rcp(new LocalOrderingSolution<lno_t>(nVtx));
+    }
+    if(method_type == "global" || method_type == "both") {
+      globalOrderingSolution_ = rcp(new GlobalOrderingSolution<gno_t>(nVtx));
+    }
   }
   Z2_FORWARD_EXCEPTIONS;
-
-  // Reset status for perm and InvPerm.
-  this->solution_->setHavePerm(false);
-  this->solution_->setHaveInverse(false);
 
   // Determine which algorithm to use based on defaults and parameters.
   // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
 
-  std::string method = this->params_->template get<std::string>("order_method", "rcm");
+  std::string method = this->params_->template
+    get<std::string>("order_method", "rcm");
   
   // TODO: Ignore case
   try
   {
-  if (method.compare("rcm") == 0)
-  {
-      AlgRCM<base_adapter_t> alg(this->graphModel_,
-                                 this->params_, this->comm_);
-      alg.order(this->solution_);
-  }
-  else if (method.compare("natural") == 0)
-  {
-      AlgNatural<base_adapter_t> alg(this->identifierModel_,
-                                     this->params_, this->comm_);
-      alg.order(this->solution_);
-  }
-  else if (method.compare("random") == 0)
-  {
-      AlgRandom<base_adapter_t> alg(this->identifierModel_,
-                                    this->params_, this->comm_);
-      alg.order(this->solution_);
-  }
-  else if (method.compare("sorted_degree") == 0)
-  {
-      AlgSortedDegree<base_adapter_t> alg(this->graphModel_,
-                                          this->params_, this->comm_);
-      alg.order(this->solution_);
-  }
-  else if (method.compare("minimum_degree") == 0)
-  {
-      std::string pkg = this->params_->template get<std::string>("order_package", "amd");
-      if (pkg.compare("amd") == 0)
-      {
-          AlgAMD<base_adapter_t> alg(this->graphModel_,
-                                     this->params_, this->comm_);
-          alg.order(this->solution_);
+
+  // could be a template... seems maybe more awkward
+  // added this to avoid duplicating local/global below
+  // so many times.
+  #define ZOLTAN2_COMPUTE_ORDERING                      \
+      if(localOrderingSolution_ != Teuchos::null) {     \
+        alg.localOrder(localOrderingSolution_);         \
+      }                                                 \
+      if(globalOrderingSolution_ != Teuchos::null) {    \
+        alg.globalOrder(globalOrderingSolution_);       \
       }
+
+  if (method.compare("rcm") == 0) {
+    AlgRCM<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
-  else if (method.compare("scotch") == 0) // BDD Adding scotch ordering
-  {
-    AlgPTScotch<Adapter> alg(this->envConst_,
-                                    this->comm_,
-                                    this->baseInputAdapter_);
-    alg.order(this->solution_);
+  else if (method.compare("natural") == 0) {
+    AlgNatural<base_adapter_t> alg(this->identifierModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
+  }
+  else if (method.compare("random") == 0) {
+    AlgRandom<base_adapter_t> alg(this->identifierModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
+  }
+  else if (method.compare("sorted_degree") == 0) {
+    AlgSortedDegree<base_adapter_t> alg(this->graphModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
+  }
+  else if (method.compare("minimum_degree") == 0) {
+    std::string pkg = this->params_->template get<std::string>(
+      "order_package", "amd");
+    if (pkg.compare("amd") == 0)
+    {
+      AlgAMD<base_adapter_t> alg(this->graphModel_,
+        this->params_, this->comm_);
+      ZOLTAN2_COMPUTE_ORDERING
+    }
+  }
+  else if (method.compare("scotch") == 0) { // BDD Adding scotch ordering
+    AlgPTScotch<Adapter> alg(this->envConst_, this->comm_,
+      this->baseInputAdapter_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-  else if (method == std::string("nd")) 
-  {
-      AlgND<Adapter> alg(this->envConst_,this->comm_,this->graphModel_,
-                         this->coordinateModel_,this->baseInputAdapter_);
-
-      alg.order(this->solution_);
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
+  else if (method.compare("nd") == 0) {
+    AlgND<Adapter> alg(this->envConst_, this->comm_, this->graphModel_,
+      this->coordinateModel_,this->baseInputAdapter_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
 #endif
 
@@ -267,21 +339,14 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  std::cout << __func__zoltan2__ << " input adapter type " 
-//       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << std::endl;
-
-#ifdef HAVE_ZOLTAN2_OVIS
-  ovis_enabled(this->comm_->getRank());
-#endif
-
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
   //   ALGORITHM = rcm, random, amd
 
   ModelType modelType = IdentifierModelType; //default, change later
-  std::string method = this->params_->template get<std::string>("order_method", "rcm");
+  std::string method = this->params_->template
+    get<std::string>("order_method", "rcm");
 
   if ((method == std::string("rcm")) || 
       (method == std::string("sorted_degree")) || 
@@ -289,7 +354,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     modelType = GraphModelType;
   }
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
   if ((method == std::string("nd")))
   {
     modelType = GraphModelType;
@@ -318,7 +383,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
       this->graphModel_);
 
     break;
-
 
 
   case IdentifierModelType:

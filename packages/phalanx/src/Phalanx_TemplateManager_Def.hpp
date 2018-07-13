@@ -65,7 +65,7 @@ void
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 buildObjects(const BuilderOpT& builder)
 {
-  Sacado::mpl::for_each<TypeSeq>(BuildObject<BuilderOpT>(objects,builder));
+  Sacado::mpl::for_each_no_kokkos<TypeSeq>(BuildObject<BuilderOpT>(objects,builder));
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>

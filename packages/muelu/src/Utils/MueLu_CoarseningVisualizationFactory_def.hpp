@@ -279,14 +279,14 @@ namespace MueLu {
         if(coords->getNumVectors() == 3)
           this->doConvexHulls3D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
         else if(coords->getNumVectors() == 2)
-          this->doConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
+          this->doConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords);
       }
       else if(aggStyle == "CGAL Convex Hulls") {
 #ifdef HAVE_MUELU_CGAL
         if(coords->getNumVectors() == 3)
           this->doCGALConvexHulls3D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
         else if(coords->getNumVectors() == 2)
-          this->doCGALConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
+          this->doCGALConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords);
 #endif
       }
       else

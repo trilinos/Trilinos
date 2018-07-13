@@ -50,10 +50,6 @@ namespace Kokkos {
 
 }
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 #include "KokkosExp_View_MP_Vector_Contiguous.hpp"
-#else
-#include "Kokkos_View_MP_Vector_Contiguous.hpp"
-#endif
 
 #endif /* #ifndef KOKKOS_VIEW_MP_VECTOR_HPP */

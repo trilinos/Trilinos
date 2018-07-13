@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -54,7 +54,7 @@
 
 //------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
 #include <mpi.h>
 #else
   typedef int MPI_Comm ;

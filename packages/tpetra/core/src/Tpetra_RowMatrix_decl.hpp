@@ -189,26 +189,72 @@ namespace Tpetra {
     ///   the number of entries.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! The number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, over
+    ///   all processes in the matrix's communicator.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
 
-    //! The number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, on
+    ///   the calling process.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
 
-    //! The maximum number of entries across all rows/columns on all nodes.
-    virtual size_t getGlobalMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   over all processes.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getGlobalMaxNumRowEntries () const = 0;
 
-    //! The maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   on this process.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getNodeMaxNumRowEntries () const = 0;
 
-    //! Whether this matrix has a well-defined column map.
-    virtual bool hasColMap() const = 0;
+    //! Whether this matrix has a well-defined column Map.
+    virtual bool hasColMap () const = 0;
 
-    //! Whether this matrix is lower triangular.
-    virtual bool isLowerTriangular() const = 0;
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
 
-    //! Whether this matrix is upper triangular.
-    virtual bool isUpperTriangular() const = 0;
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
 
     /// \brief Whether matrix indices are locally indexed.
     ///
@@ -320,8 +366,8 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
-                      ArrayView<const GlobalOrdinal> &indices,
-                      ArrayView<const Scalar> &values) const = 0;
+                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                      Teuchos::ArrayView<const Scalar> &values) const = 0;
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -349,8 +395,40 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getLocalRowView (LocalOrdinal LocalRow,
-                     ArrayView<const LocalOrdinal> &indices,
-                     ArrayView<const Scalar> &values) const = 0;
+                     Teuchos::ArrayView<const LocalOrdinal>& indices,
+                     Teuchos::ArrayView<const Scalar>& values) const = 0;
+
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the matrix, using "raw" pointers instead of
+    ///   Teuchos::ArrayView.
+    ///
+    /// The returned views of the column indices and values are not
+    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
+    /// Furthermore, some RowMatrix implementations allow changing the
+    /// values, or the indices and values.  Any such changes
+    /// invalidate the returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the matrix has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param numEnt [out] Number of entries in the row that are
+    ///   stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns
+    ///   corresponding to values.
+    /// \param vals [out] Matrix values.
+    ///
+    /// \return Error code; zero on no error.
+    virtual LocalOrdinal
+    getLocalRowViewRaw (const LocalOrdinal lclRow,
+                        LocalOrdinal& numEnt,
+                        const LocalOrdinal*& lclColInds,
+                        const Scalar*& vals) const;
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///
@@ -363,25 +441,23 @@ namespace Tpetra {
     /// same diagonal element.  You may combine these overlapping
     /// diagonal elements by doing an Export from the row Map Vector
     /// to a range Map Vector.
-    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic> &diag) const = 0;
+    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const = 0;
 
     //@}
     //! \name Mathematical methods
     //@{
 
-    /**
-     * \brief Scale the RowMatrix on the left with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
-     */
-    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    /// \brief Scale the matrix on the left with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(i)*A(i,j)\f$.
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
-    /**
-     * \brief Scale the RowMatrix on the right with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
-     */
-    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    /// \brief Scale the matrix on the right with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(j)*A(i,j)\f$.
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.
     ///

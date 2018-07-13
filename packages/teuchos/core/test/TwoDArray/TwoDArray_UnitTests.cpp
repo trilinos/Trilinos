@@ -67,12 +67,22 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
   simpleArray[1][1] =4;
   simpleArray[2][0] =5;
   simpleArray[2][1] =6;
+
   TEST_EQUALITY_CONST(simpleArray[0][0],1)
   TEST_EQUALITY_CONST(simpleArray[0][1],2)
   TEST_EQUALITY_CONST(simpleArray[1][0],3)
   TEST_EQUALITY_CONST(simpleArray[1][1],4)
   TEST_EQUALITY_CONST(simpleArray[2][0],5)
   TEST_EQUALITY_CONST(simpleArray[2][1],6)
+
+  TwoDArray<int> const& simpleArrayConst = simpleArray;
+
+  TEST_EQUALITY_CONST(simpleArrayConst[0][0],1)
+  TEST_EQUALITY_CONST(simpleArrayConst[0][1],2)
+  TEST_EQUALITY_CONST(simpleArrayConst[1][0],3)
+  TEST_EQUALITY_CONST(simpleArrayConst[1][1],4)
+  TEST_EQUALITY_CONST(simpleArrayConst[2][0],5)
+  TEST_EQUALITY_CONST(simpleArrayConst[2][1],6)
 
   TEST_EQUALITY_CONST(simpleArray(0,0),1)
   TEST_EQUALITY_CONST(simpleArray(0,1),2)

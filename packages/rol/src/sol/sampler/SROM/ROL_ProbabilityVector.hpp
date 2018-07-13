@@ -63,14 +63,14 @@ template <class Real>
 class ProbabilityVector : public BatchStdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 public:
-  ProbabilityVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                    const Teuchos::RCP<BatchManager<Real> > &bman)
+  ProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                    const ROL::Ptr<BatchManager<Real> > &bman)
    : BatchStdVector<Real>(vec,bman) {}
 
   const Real getProbability(const int i) const {
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     int numMySamples = static_cast<int>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
       ">>> ERROR (ROL::ProbabilityVector): index out of bounds in getProbability!");
     return yval[i];
   }
@@ -78,7 +78,7 @@ public:
   void setProbability(const int i, const Real wt) {
     std::vector<Real> &yval = *(StdVector<Real>::getVector());
     int numMySamples = static_cast<int>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
       ">>> ERROR (ROL::ProbabilityVector): index out of bounds in setProbability!");
     yval[i] = wt;
   }
@@ -93,22 +93,22 @@ template<class Real>
 class PrimalProbabilityVector : public ProbabilityVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  Teuchos::RCP<std::vector<Real> > scale_;
-  mutable Teuchos::RCP<DualProbabilityVector<Real> > dual_vec_;
+  ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<DualProbabilityVector<Real> > dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  PrimalProbabilityVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                          const Teuchos::RCP<BatchManager<Real> > &bman,
-                          const Teuchos::RCP<std::vector<Real> > &scale)
+  PrimalProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                          const ROL::Ptr<BatchManager<Real> > &bman,
+                          const ROL::Ptr<std::vector<Real> > &scale)
     : ProbabilityVector<Real>(vec,bman), scale_(scale),
       isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
+    const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = static_cast<uint>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     Real val(0), sum_val(0);
     for (uint i = 0; i < numMySamples; i++) {
@@ -119,19 +119,19 @@ public:
     return sum_val;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
-    return Teuchos::rcp(new PrimalProbabilityVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples)),
-           BatchStdVector<Real>::getBatchManager(),scale_));
+    return ROL::makePtr<PrimalProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),
+           BatchStdVector<Real>::getBatchManager(),scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
     if ( !isDualInitialized_ ) {
-      dual_vec_ = Teuchos::rcp(new DualProbabilityVector<Real>(
-                  Teuchos::rcp(new std::vector<Real>(numMySamples)),
-                  BatchStdVector<Real>::getBatchManager(),scale_));
+      dual_vec_ = ROL::makePtr<DualProbabilityVector<Real>>(
+                  ROL::makePtr<std::vector<Real>>(numMySamples),
+                  BatchStdVector<Real>::getBatchManager(),scale_);
       isDualInitialized_ = true;
     }
     for (uint i = 0; i < numMySamples; ++i) {
@@ -146,22 +146,22 @@ template<class Real>
 class DualProbabilityVector : public ProbabilityVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  Teuchos::RCP<std::vector<Real> > scale_;
-  mutable Teuchos::RCP<PrimalProbabilityVector<Real> > primal_vec_;
+  ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<PrimalProbabilityVector<Real> > primal_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  DualProbabilityVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                        const Teuchos::RCP<BatchManager<Real> > &bman,
-                        const Teuchos::RCP<std::vector<Real> > &scale)
+  DualProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                        const ROL::Ptr<BatchManager<Real> > &bman,
+                        const ROL::Ptr<std::vector<Real> > &scale)
     : ProbabilityVector<Real>(vec,bman), scale_(scale),
       isDualInitialized_(false) {}
 
   Real dot(const Vector<Real> &x) const {
-    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
+    const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = static_cast<uint>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     Real val(0), sum_val(0);
     for (uint i = 0; i < numMySamples; i++) {
@@ -172,19 +172,19 @@ public:
     return sum_val;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
-    return Teuchos::rcp(new DualProbabilityVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples)),
-           BatchStdVector<Real>::getBatchManager(),scale_));
+    return ROL::makePtr<DualProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),
+           BatchStdVector<Real>::getBatchManager(),scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
     if ( !isDualInitialized_ ) {
-      primal_vec_ = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-                    Teuchos::rcp(new std::vector<Real>(numMySamples)),
-                    BatchStdVector<Real>::getBatchManager(),scale_));
+      primal_vec_ = ROL::makePtr<PrimalProbabilityVector<Real>>(
+                    ROL::makePtr<std::vector<Real>>(numMySamples),
+                    BatchStdVector<Real>::getBatchManager(),scale_);
       isDualInitialized_ = true;
     }
     for (uint i = 0; i < numMySamples; i++) {

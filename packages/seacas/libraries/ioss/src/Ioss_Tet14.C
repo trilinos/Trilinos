@@ -1,7 +1,6 @@
-// Copyright(C) 2016
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Tet14 registerThis; }
 
   protected:
-    St_Tet14() : ElementVariableType("tetra14", 14) {}
+    St_Tet14() : ElementVariableType(Ioss::Tet14::name, 14) {}
   };
 } // namespace Ioss
 
@@ -97,10 +97,10 @@ void Ioss::Tet14::factory()
   Ioss::St_Tet14::factory();
 }
 
-Ioss::Tet14::Tet14() : Ioss::ElementTopology("tetra14", "Tetrahedron_14")
+Ioss::Tet14::Tet14() : Ioss::ElementTopology(Ioss::Tet14::name, "Tetrahedron_14")
 {
-  Ioss::ElementTopology::alias("tetra14", "tet14");
-  Ioss::ElementTopology::alias("tetra14", "Solid_Tet_14_3D");
+  Ioss::ElementTopology::alias(Ioss::Tet14::name, "tet14");
+  Ioss::ElementTopology::alias(Ioss::Tet14::name, "Solid_Tet_14_3D");
 }
 
 Ioss::Tet14::~Tet14() = default;

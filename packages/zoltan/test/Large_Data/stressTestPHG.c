@@ -70,11 +70,15 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <stddef.h>
+
+#ifndef _MSC_VER
 #include <getopt.h>
+#endif
+
 #include <stdint.h>
 #include <math.h>
 #include <inttypes.h>
-#include <sys/time.h>
 #include "zz_const.h"
 
 #ifndef M_PI
@@ -88,13 +92,11 @@ static int *vertex_part = NULL;
 
 static double mbytes=0;
 
-#define NUM_GLOBAL_VERTICES     2500
-#define VERTEX_WEIGHT_DIMENSION 1
-#define EDGE_WEIGHT_DIMENSION 1
+#define NUM_GLOBAL_VERTICES     10000
 
 static int64_t gid_base = 0x000000000;
 static int64_t high_order_bit = 0x100000000;
-static long long numGlobalVertices;
+static long long numGlobalVertices = NUM_GLOBAL_VERTICES;
 static int vwgt_dim=1;
 static int unit_weights=1;
 
@@ -404,16 +406,20 @@ int main(int argc, char *argv[])
 {
   int i, rc, status;
   float ver;
+
+#ifndef _MSC_VER
   struct option opts[20];
+#endif /* _MSC_VER */
+
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   double localMBytes, min, max, avg;
   float cutn[2], cutl[2], imbalance[2];
-  struct timeval t1, t2;
   char factorBuf[64], levelBuf[64];
-  time_t startusecs, endusecs, diff;
+  double t1, t2;
+  double diff;
 
   int use_hg = 1;
   int use_graph = 0;
@@ -448,10 +454,15 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-
-
+#ifdef _MSC_VER
+  if (myRank == 0) {
+    printf("\n***  getopt not supported in Windows; ");
+    printf("command-line arguments will be ignored ***\n\n");
+  }
+#else
   /******************************************************************
-  ** Arguments
+  ** Arguments are accepeted in Unix tests.
+  ** Windoze cannot handle getopt; its tests use only default arguments.
   ******************************************************************/
 
   opts[0].name = "do_rcb";
@@ -563,6 +574,7 @@ int main(int argc, char *argv[])
       break;
     }
   }
+#endif /* _MSC_VER */
 
   sprintf(factorBuf, "%f", hybrid_reduction_factor);
   sprintf(levelBuf, "%d", hybrid_reduction_levels);
@@ -670,7 +682,7 @@ int main(int argc, char *argv[])
   Zoltan_Memory_Debug(1);
   Zoltan_Memory_Reset(ZOLTAN_MEM_STAT_MAXIMUM);
 
-  gettimeofday(&t1, NULL);
+  t1 = MPI_Wtime();
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */
@@ -687,7 +699,7 @@ int main(int argc, char *argv[])
         &exportProcs,    /* Process to which I send each of the vertices */
         &exportToPart);  /* Partition to which each vertex will belong */
 
-  gettimeofday(&t2, NULL);
+  t2 = MPI_Wtime();
   localMBytes = (double)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/(1024.0*1024);
 
   if (rc != ZOLTAN_OK){
@@ -761,15 +773,13 @@ int main(int argc, char *argv[])
     printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3f / %12.3f / %12.3f\n",
              min, avg, max);
 
-    startusecs = (t1.tv_sec * 1e6) + t1.tv_usec;
-    endusecs = (t2.tv_sec * 1e6) + t2.tv_usec;
-    diff = endusecs - startusecs;
-    printf("Time spent in partitioning (s): %f\n",(double)diff/1e6);
+    diff = t2 - t1;
+    printf("Time spent in partitioning (s): %f\n", diff);
   }
 
   status = 0;
 
-  if ((imbalance[1] >= imbalance[0]) && (cutn[1] >= cutn[0])){
+  if ((numProcs > 1) && (imbalance[1] >= imbalance[0]) && (cutn[1] >= cutn[0])){
     if (myRank == 0)
       printf("FAILED: partition quality did not improve\n");
     status = 1;

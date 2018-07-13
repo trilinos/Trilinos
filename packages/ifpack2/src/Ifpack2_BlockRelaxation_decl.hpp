@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -49,7 +49,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
-#include "Ifpack2_Details_ContainerFactory.hpp"
+#include "Ifpack2_ContainerFactory.hpp"
 #include "Teuchos_Time.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
@@ -60,10 +60,8 @@ namespace Ifpack2 {
 /// \brief Block relaxation preconditioners (or smoothers) for
 ///   Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
-/// \tparam ContainerType A specialization or subclass of Container; a
-///   type that knows how to solve linear systems with diagonal blocks
-///   of MatrixType.  Those blocks may be either sparse or dense; the
-///   subclass of Container controls the representation.
+/// \tparam ContainerType DO NOT SPECIFY THIS EXPLICITLY.
+///   This exists only for backwards compatibility.
 ///
 /// This class implements the construction and application of block
 /// relaxation preconditioners and smoothers, for sparse matrices
@@ -71,10 +69,13 @@ namespace Ifpack2 {
 /// implements Tpetra::Operator, and its apply() method applies the
 /// block relaxation.
 ///
-/// BlockRelaxation implements block variants of the following relaxations:
-/// - (Damped) Jacobi;
-/// - (Damped) Gauss-Seidel, i.e., SOR
-/// - (Damped) symmetric Gauss-Seidel, i.e., symmetric SOR
+/// BlockRelaxation implements block variants of the following
+/// relaxations:
+/// <ul>
+/// <li> Damped Jacobi </li>
+/// <li> Damped Gauss-Seidel, i.e., SOR </li>
+/// <li> Damped symmetric Gauss-Seidel, i.e., symmetric SOR </li>
+/// </ul>
 ///
 /// For a list of supported parameters, please refer to the
 /// documentation of setParameters().
@@ -110,9 +111,32 @@ public:
   //! Tpetra::RowMatrix specialization corresponding to \c MatrixType.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
-  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
-                "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+  static_assert (std::is_same<ContainerType, Container<row_matrix_type> >::value,
+                 "Ifpack2::BlockRelaxation: Do NOT specify the (second) "
+                 "ContainerType template parameter explicitly.  The default "
+                 "value is fine.  Please instead specify the container type to "
+                 "use by setting the \"relaxation: container\" parameter.");
 
+  //! Tpetra::Importer specialization for use with \c MatrixType and compatible MultiVectors.
+  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+
+private:
+  void computeImporter() const;
+
+  //! \name Internal typedefs (handy for brevity and code clarity)
+  //@{
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+public:
+  //@}
   //@}
   // \name Constructors and Destructors
   //@{
@@ -185,6 +209,10 @@ public:
   */
   void setParameters(const Teuchos::ParameterList& params);
 
+  //! Return a list of all the parameters that this class accepts.
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters () const;
+
   //! Initialize
   void initialize();
 
@@ -192,8 +220,6 @@ public:
   inline bool isInitialized() const {
     return(IsInitialized_);
   }
-
-  void computeBlockCrs();
 
   //! compute the preconditioner for the specified matrix, diagonal perturbation thresholds and relaxation parameters.
   void compute();
@@ -247,17 +273,17 @@ public:
 
     \warning This routine is NOT AztecOO compliant.
   */
-  void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  void apply(const MV& X,
+             MV& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
              scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
              scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   bool hasTransposeApply() const;
 
@@ -268,8 +294,8 @@ public:
     \param
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  void applyMat(const MV& X,
+                MV& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -280,13 +306,7 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The input matrix of this preconditioner's constructor.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
-
-  //! Returns the number of flops in the computation phase.
-  double getComputeFlops() const;
-
-  //! Returns the number of flops for the application of the preconditioner.
-  double getApplyFlops() const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! Returns the number of calls to initialize().
   int getNumInitialize() const;
@@ -305,6 +325,9 @@ public:
 
   //! Returns the time spent in apply().
   double getApplyTime() const;
+
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
 
   //@}
   //! @name Implementation of the Teuchos::Describable interface
@@ -325,16 +348,6 @@ public:
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > getPartitioner(){return Partitioner_;}
 
 private:
-  //! \name Internal typedefs (handy for brevity and code clarity)
-  //@{
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> MV;
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> block_crs_matrix_type;
-  //@}
 
   //! Copy constructor; do not use (declared but unimplemented)
   BlockRelaxation (const BlockRelaxation<MatrixType, ContainerType> & RHS);
@@ -345,19 +358,13 @@ private:
 
   virtual void ApplyInverseJacobi (const MV& X, MV& Y) const;
 
-  virtual void DoJacobi (const MV& X, MV& Y) const;
-
   virtual void ApplyInverseGS (const MV& X, MV& Y) const;
-
-  virtual void DoGaussSeidel (MV& X, MV& Y) const;
 
   virtual void ApplyInverseSGS (const MV& X, MV& Y) const;
 
-  virtual void DoSGS (MV& X, MV& Y) const;
-
-  void ExtractSubmatrices ();
-
-  void getMatDiag() const;
+  //! Initialize structural information in \c Container_ using
+  //! <tt>Partitioner</tt>.
+  void ExtractSubmatricesStructure();
 
   //@}
   //! \name Internal data and parameters
@@ -369,17 +376,8 @@ private:
   //! Timer
   Teuchos::RCP<Teuchos::Time> Time_;
 
-  //! Import object for parallel GS and SGS
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
-
-  //! Weights for overlapping overlapped Jacobi only.
-  Teuchos::RCP<vector_type> W_;
-
-  // Level of overlap among blocks (for overlapped Jacobi only).
-  int OverlapLevel_;
-
   //! Contains the (block) diagonal elements of \c Matrix.
-  mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
+  mutable Teuchos::RCP<Container<row_matrix_type> > Container_;
 
   // FIXME (mfh 06 Oct 2014) This doesn't comply with the naming
   // convention for instance members of a class.  Furthermore, the
@@ -391,6 +389,8 @@ private:
   //! Contains information about non-overlapping partitions.
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > Partitioner_;
 
+  //! Which partitioner class to use; is \c linear by default
+  //! but can be specified as \c line or \c user in the parameter list.
   std::string PartitionerType_;
 
   //! Parameters list to be used to solve on each subblock
@@ -402,11 +402,11 @@ private:
   //! Number of local blocks
   local_ordinal_type NumLocalBlocks_;
 
+  //! How to solve each block; the "container type"
+  std::string containerType_;
+
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
-
-  //! Damping factor.
-  scalar_type DampingFactor_;
 
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
@@ -414,8 +414,18 @@ private:
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
 
+  //! True when the input matrix is a Tpetra::BlockCrsMatrix, which
+  //! means that multiple DOFs can be counted as a single "row"
+  bool hasBlockCrsMatrix_;
+
   //! Backward-Mode Gauss Seidel
   bool DoBackwardGS_;
+
+  //! Number of rows of overlap between adjacent blocks.
+  int OverlapLevel_;
+
+  //! Damping factor.
+  scalar_type DampingFactor_;
 
   //! If \c true, the preconditioner has been computed successfully.
   bool IsInitialized_;
@@ -441,22 +451,21 @@ private:
   //! Contains the time for all successful calls to apply().
   mutable double ApplyTime_;
 
-  //! Contains the number of flops for compute().
-  double ComputeFlops_;
+  //! The number of input matrix rows on the local process.
+  local_ordinal_type NumLocalRows_;
 
-  //! Contain sthe number of flops for apply().
-  mutable double ApplyFlops_;
+  //! The total number of rows in the input matrix.
+  global_ordinal_type NumGlobalRows_;
 
-  //! Number of local rows.
-  size_t NumMyRows_;
+  //! The total number of nonzero entries in the input matrix.
+  global_ordinal_type NumGlobalNonzeros_;
 
-  //! Number of global rows.
-  global_size_t NumGlobalRows_;
+  //! Weight array used in \c Container::weightedApply(). If it is required,
+  //! \c W_ is created with the row map of <tt>A_</tt>.
+  Teuchos::RCP<vector_type> W_;
 
-  //! Number of global nonzeros.
-  global_size_t NumGlobalNonzeros_;
+  mutable Teuchos::RCP<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
 
-  bool hasBlockCrsMatrix_;
   //@}
 }; //class BlockRelaxation
 

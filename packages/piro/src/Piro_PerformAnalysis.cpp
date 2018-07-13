@@ -69,6 +69,7 @@
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -130,7 +131,7 @@ Piro::PerformAnalysis(
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          analysisParams.sublist("ROL"), result);
+                          analysisParams, result);
 
   }
 #endif
@@ -297,9 +298,10 @@ Piro::PerformOptiPackAnalysis(
 int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& rolParams,
+    Teuchos::ParameterList& analysisParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
+  auto rolParams = analysisParams.sublist("ROL");
 #ifdef HAVE_PIRO_ROL
   using std::string;
 
@@ -333,7 +335,7 @@ Piro::PerformROLAnalysis(
   ROL::ThyraVector<double> rol_p(p_prod);
 
 
-  ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices);
+  ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false));
 
   bool print = rolParams.get<bool>("Print Output", false);
 
@@ -404,8 +406,9 @@ Piro::PerformROLAnalysis(
   }
 
   // Define Step
-  Teuchos::RCP<ROL::LineSearchStep<double> > step = 
-    Teuchos::rcp(new ROL::LineSearchStep<double>(rolParams.sublist("ROL Options")));
+  Teuchos::RCP<ROL::LineSearchStep<double> > stepLS = Teuchos::rcp(new ROL::LineSearchStep<double>(rolParams.sublist("ROL Options")));
+  Teuchos::RCP<ROL::TrustRegionStep<double> > stepTR = Teuchos::rcp(new ROL::TrustRegionStep<double>(rolParams.sublist("ROL Options")));
+
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
   *out << std::endl;
@@ -419,7 +422,8 @@ Piro::PerformROLAnalysis(
     Teuchos::rcp(new ROL::StatusTest<double>(gtol, stol, maxit));
 
   // Define Algorithm
-  ROL::Algorithm<double> algo(step,status,print);
+  ROL::Algorithm<double> algoLS(stepLS,status,print);
+  ROL::Algorithm<double> algoTR(stepTR,status,print);
 
   // Run Algorithm
   std::vector<std::string> output;
@@ -438,10 +442,24 @@ Piro::PerformROLAnalysis(
     Teuchos::RCP<const Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
 
     ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
-    output  = algo.run(rol_p, obj, boundConstraint, print, *out);
+    if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search") {
+      *out << "\nUsing Line Search Algorithm" << std::endl;
+      output  = algoLS.run(rol_p, obj, boundConstraint, print, *out);
+    }
+    else {
+      *out << "\nUsing Trust Region Algorithm" << std::endl;
+      output  = algoTR.run(rol_p, obj, boundConstraint, print, *out);
+    }
   }
   else
-    output = algo.run(rol_p, obj, print, *out);
+    if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search") {
+      *out << "\nUsing Line Search Algorithm" << std::endl;
+      output  = algoLS.run(rol_p, obj, print, *out);
+    }
+    else {
+      *out << "\nUsing Trust Region Algorithm" << std::endl;
+      output  = algoTR.run(rol_p, obj, print, *out);
+    }
 
 
   for ( unsigned i = 0; i < output.size(); i++ ) {
@@ -472,6 +490,7 @@ Piro::getValidPiroAnalysisParameters()
   validPL->sublist("GlobiPack", false, "");
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
+  validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
 
   return validPL;
 }

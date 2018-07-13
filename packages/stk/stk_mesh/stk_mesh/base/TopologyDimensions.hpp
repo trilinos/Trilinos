@@ -82,38 +82,11 @@ inline
 ElementNodeField &
 declare_element_node_field( MetaData & md , const std::string & s )
 {
-
-  ElementNodeField & f =
-    md.declare_field< ElementNodeField >( stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
+  ElementNodeField & f = md.declare_field< ElementNodeField >( stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
 
   return f ;
 }
 
-//----------------------------------------------------------------------
-/** \addtogroup stk_mesh_field_dimension_tags
- *  \{
- */
-
-struct QuadratureTag : public shards::ArrayDimTag {
-  const char * name() const ;
-  static const QuadratureTag & tag(); ///< \brief Singleton
-private:
-  QuadratureTag() {}
-  QuadratureTag( const QuadratureTag & );
-  QuadratureTag & operator = ( const QuadratureTag & );
-};
-
-struct BasisTag : public shards::ArrayDimTag {
-  const char * name() const ;
-  static const BasisTag & tag(); ///< \brief Singleton
-private:
-  BasisTag() {}
-  BasisTag( const BasisTag & );
-  BasisTag & operator = ( const BasisTag & );
-};
-
-
-/** \} */
 //----------------------------------------------------------------------
 
 }//namespace mesh

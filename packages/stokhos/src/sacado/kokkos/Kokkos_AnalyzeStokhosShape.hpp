@@ -38,11 +38,11 @@
 //
 // ***********************************************************************
 // @HEADER
-
+#if false
 #ifndef KOKKOS_ANALYZE_STOKHOS_SHAPE_HPP
 #define KOKKOS_ANALYZE_STOKHOS_SHAPE_HPP
 
-#include <impl/Kokkos_Shape.hpp>
+//#include <impl/Kokkos_Shape.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -280,5 +280,5 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
-
+#endif
 #endif /* #ifndef KOKKOS_ANALYZE_STOKHOS_SHAPE_HPP */

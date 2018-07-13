@@ -36,10 +36,10 @@ buildResponseObject(const std::string & responseName) const
    
 template <typename EvalT> 
 void ResponseEvaluatorFactory_SolutionWriter<EvalT>:: 
-buildAndRegisterEvaluators(const std::string & responseName,
+buildAndRegisterEvaluators(const std::string& /* responseName */,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
-                           const Teuchos::ParameterList & user_data) const
+                           const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -285,18 +285,12 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
    for(std::map<std::string,RCP<const panzer::PureBasis> >::const_iterator itr=bases.begin();
        itr!=bases.end();++itr) {
 
-      // see if this basis has coordinates
-      RCP<Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepidBasis = itr->second->getIntrepid2Basis();
-      RCP<Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > > basisCoords 
-         = rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > >(intrepidBasis);
-
-      if(basisCoords==Teuchos::null) // no coordinates...move on
-         continue;
+      RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis = itr->second->getIntrepid2Basis();
 
       // we've got coordinates, lets commpute the "centroid"
       Kokkos::DynRankView<double,PHX::Device> coords("coords",intrepidBasis->getCardinality(),
 						     intrepidBasis->getBaseCellTopology().getDimension());
-      basisCoords->getDofCoords(coords);
+      intrepidBasis->getDofCoords(coords);
       TEUCHOS_ASSERT(coords.rank()==2);
       TEUCHOS_ASSERT(coords.extent_int(1)==baseDimension);
 
@@ -306,7 +300,7 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
 
       // take the average
       for(int d=0;d<coords.extent_int(1);d++)
-         centroid(0,d) /= coords.dimension(0);
+         centroid(0,d) /= coords.extent(0);
 
       return;
    }

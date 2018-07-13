@@ -1,23 +1,37 @@
 #ifndef IOSS__TRMCLR_H__
 #define IOSS__TRMCLR_H__
 
-// Copyright (c) 2016 Camille Brugel
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
-// This software is provided 'as-is', without any express or implied
-// warranty. In no event will the authors be held liable for any damages
-// arising from the use of this software.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter it and redistribute it
-// freely, subject to the following restrictions:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
 //
-// 1. The origin of this software must not be misrepresented; you must not
-//    claim that you wrote the original software. If you use this software
-//    in a product, an acknowledgement in the product documentation would be
-//    appreciated but is not required.
-// 2. Altered source versions must be plainly marked as such, and must not be
-//    misrepresented as being the original software.
-// 3. This notice may not be removed or altered from any source distribution.
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <limits>
@@ -41,7 +55,7 @@
 //     trmclr::Style basicStyle(trmclr::Attribute::DEFAULT);
 
 //     std::cout << fancyStyle << "Hello "
-//               << basicStyle << "World!" << std::endl;
+//               << basicStyle << "World!\n";
 
 //     return 0;
 // }
@@ -57,7 +71,7 @@ namespace Ioss {
 
     struct Style
     {
-      Style(uint32_t value) : _value(value) {}
+      explicit Style(uint32_t value) : _value(value) {}
 
       operator uint32_t() const { return _value; }
 
@@ -73,13 +87,13 @@ namespace Ioss {
       static const uint32_t SHIFT = STYLE_SHIFT * ATTRIBUTE;
 
       enum {
-        DEFAULT     = 0x001 << SHIFT,
-        BOLD        = 0x002 << SHIFT,
-        DIM         = 0x004 << SHIFT,
-        UNDERLINED  = 0x010 << SHIFT,
-        BLINK       = 0x020 << SHIFT,
-        REVERSE     = 0x080 << SHIFT,
-        HIDDEN      = 0x100 << SHIFT
+        DEFAULT    = 0x001 << SHIFT,
+        BOLD       = 0x002 << SHIFT,
+        DIM        = 0x004 << SHIFT,
+        UNDERLINED = 0x010 << SHIFT,
+        BLINK      = 0x020 << SHIFT,
+        REVERSE    = 0x080 << SHIFT,
+        HIDDEN     = 0x100 << SHIFT
       };
     };
 
@@ -133,16 +147,16 @@ namespace Ioss {
       };
     };
 
-    Style black(Ioss::trmclr::Foreground::BLACK);
-    Style red(Ioss::trmclr::Foreground::RED);
-    Style green(Ioss::trmclr::Foreground::GREEN);
-    Style yellow(Ioss::trmclr::Foreground::YELLOW);
-    Style blue(Ioss::trmclr::Foreground::BLUE);
-    Style magenta(Ioss::trmclr::Foreground::MAGENTA);
-    Style cyan(Ioss::trmclr::Foreground::CYAN);
-    Style normal(Ioss::trmclr::Attribute::DEFAULT);
-    
-    std::ostream &operator<<(std::ostream &os, const Style &style)
+    static Style black(Ioss::trmclr::Foreground::BLACK);
+    static Style red(Ioss::trmclr::Foreground::RED);
+    static Style green(Ioss::trmclr::Foreground::GREEN);
+    static Style yellow(Ioss::trmclr::Foreground::YELLOW);
+    static Style blue(Ioss::trmclr::Foreground::BLUE);
+    static Style magenta(Ioss::trmclr::Foreground::MAGENTA);
+    static Style cyan(Ioss::trmclr::Foreground::CYAN);
+    static Style normal(Ioss::trmclr::Attribute::DEFAULT);
+
+    inline std::ostream &operator<<(std::ostream &os, const Style &style)
     {
       const uint32_t base    = 1 << STYLE_SHIFT;
       uint32_t       encoded = style / base;

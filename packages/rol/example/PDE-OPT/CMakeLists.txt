@@ -1,8 +1,48 @@
+SET(SOURCES "")
+SET(HEADERS "")
+SET(NOINSTALLHEADERS "")
+
+APPEND_SET(SOURCES
+  TOOLS/solver.cpp
+  TOOLS/assembler.cpp
+)
+
+APPEND_SET(NOINSTALLHEADERS
+  TOOLS/solver.hpp
+  TOOLS/solver_def.hpp
+  TOOLS/assembler.hpp
+)
+
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND
+   ${PROJECT_NAME}_ENABLE_Ifpack2  AND
+   ${PROJECT_NAME}_ENABLE_MueLu    AND
+   ${PROJECT_NAME}_ENABLE_Amesos2  AND
+   ${PROJECT_NAME}_ENABLE_Tpetra )
+
+    TRIBITS_ADD_LIBRARY(
+      rol-pdeopt
+      HEADERS ${HEADERS}
+      NOINSTALLHEADERS ${NOINSTALLHEADERS}
+      SOURCES ${SOURCES}
+    )
+
+ENDIF()
+
 ADD_SUBDIRECTORY(TEST)
+ADD_SUBDIRECTORY(0ld)
 ADD_SUBDIRECTORY(poisson)
+ADD_SUBDIRECTORY(allen-cahn)
 ADD_SUBDIRECTORY(poisson-boltzmann)
 ADD_SUBDIRECTORY(stefan-boltzmann)
-ADD_SUBDIRECTORY(elasticity)
-ADD_SUBDIRECTORY(elasticitySIMP_topologyOptimization)
 ADD_SUBDIRECTORY(adv-diff-react)
-ADD_SUBDIRECTORY(stoch-adv-diff)
+ADD_SUBDIRECTORY(stokes)
+ADD_SUBDIRECTORY(navier-stokes)
+ADD_SUBDIRECTORY(obstacle)
+ADD_SUBDIRECTORY(helmholtz)
+ADD_SUBDIRECTORY(ginzburg-landau)
+ADD_SUBDIRECTORY(thermal-fluids)
+ADD_SUBDIRECTORY(nonlinear-elliptic)
+ADD_SUBDIRECTORY(fractional)
+ADD_SUBDIRECTORY(maxwells)
+ADD_SUBDIRECTORY(topo-opt)
+ADD_SUBDIRECTORY(published)

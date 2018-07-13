@@ -135,7 +135,7 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalO
 
   std::size_t myOwnedCount = owned.size();
  
-  std::size_t sum=-1,min=-1,max=-1;
+  std::size_t sum=0,min=0,max=0;
 
   // get min,max and sum
   Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&myOwnedCount,&sum);
@@ -175,7 +175,7 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdin
     // loop over element in this element block, write out to 
     for(std::size_t e=0;e<elements.size();e++) {
       // extract LIDs, this is returned by reference nominally for performance
-      const std::vector<LocalOrdinalT> & lids = ugi.getElementLIDs(elements[e]);
+      Kokkos::View<const int*, PHX::Device> lids = ugi.getElementLIDs(elements[e]);
 
       // extract GIDs, this array is filled
       std::vector<GlobalOrdinalT> gids;
@@ -205,12 +205,12 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
    std::vector<GlobalOrdinalT> indices;
    std::vector<std::string> blocks;
 
-   ugi.getOwnedAndSharedIndices(indices);
+   ugi.getOwnedAndGhostedIndices(indices);
    ugi.getElementBlockIds(blocks);
 
    std::vector<int> fieldNumbers(indices.size(),-1);
 
-   Teuchos::RCP<Map> sharedMap 
+   Teuchos::RCP<Map> ghostedMap 
          = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
 
@@ -229,7 +229,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
          for(std::size_t f=0;f<fields.size();f++) {
             int fieldNum = fields[f];
             GlobalOrdinalT gid = gids[f];
-            std::size_t lid = sharedMap->getLocalElement(gid); // hash table lookup
+            std::size_t lid = ghostedMap->getLocalElement(gid); // hash table lookup
 
             fieldNumbers[lid] = fieldNum; 
          }
@@ -281,7 +281,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    Teuchos::RCP<Map> destMap;
    {
       std::vector<GlobalOrdinalT> indices;
-      ugi.getOwnedAndSharedIndices(indices);
+      ugi.getOwnedAndGhostedIndices(indices);
       destMap = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                      Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
    }
@@ -319,7 +319,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
-   TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=elements.size(),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
    int rank = data.rank();
@@ -337,7 +337,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
       }
    }
    else if(rank==3) {
-      std::size_t entries = data.dimension(2);
+      std::size_t entries = data.extent(2);
  
       TEUCHOS_TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
@@ -389,7 +389,7 @@ template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation)
+                                 std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an edge from node 0 to node 1. As a result if the GID of
@@ -410,7 +410,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
       GlobalOrdinalT v1 = topology[nodes.second];
 
       // using simple rule make a decision about orientation
-      char edgeOrientation = 1; 
+      signed char edgeOrientation = 1;
       if(v1>v0)
          edgeOrientation = 1; 
       else if(v0>v1)
@@ -429,7 +429,7 @@ template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation)
+                                 std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
    // direction away from the cell (counter clockwise rotation of the face). To determine
@@ -490,7 +490,7 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
       // vbefore < *itr  and *itr < vafter
 
       // Based on the next lowest global id starting from the minimum
-      char faceOrientation = 1; 
+      signed char faceOrientation = 1;
       if(vafter>vbefore) // means smaller in clockwise direction
          faceOrientation = -1; 
       else if(vbefore>vafter) // means smaller in counter clockwise direction
@@ -534,7 +534,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    if(rank==2)
       numCols = 1;
    else if(rank==3)
-      numCols = data.begin()->second.dimension(2);
+      numCols = data.begin()->second.extent(2);
    else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                           "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3. This array has rank " << rank << ".");

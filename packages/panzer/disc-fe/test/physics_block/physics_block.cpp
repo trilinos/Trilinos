@@ -45,15 +45,13 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
@@ -213,7 +211,7 @@ namespace panzer {
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
+    panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
@@ -252,7 +250,7 @@ namespace panzer {
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
+    panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();

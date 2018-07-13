@@ -56,8 +56,6 @@ using Teuchos::rcp;
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -68,7 +66,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -133,11 +131,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dx2)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -259,11 +255,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dp2)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -386,11 +380,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dpdx)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -513,11 +505,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dxdp)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -642,7 +632,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -744,7 +733,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -879,7 +867,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -983,7 +970,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -1213,7 +1199,11 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
     ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
@@ -1231,7 +1221,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
 
@@ -1241,7 +1231,7 @@ namespace panzer {
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
-          = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
+        = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY_P",fp);
       dofManager->addField("eblock-1_0","DENSITY_P",fp);
 
@@ -1249,15 +1239,15 @@ namespace panzer {
       dofManager->buildGlobalUnknowns();
 
       // build a nonsquare LOF for the parameter vector
-      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
+      Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
 
-      Teuchos::RCP<Epetra_Map> uniqueMap = linObjFactory->getColMap(0);
+      Teuchos::RCP<Epetra_Map> ownedMap = linObjFactory->getColMap(0);
       Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap(0);
-      Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+      Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
       ap.param_dofManager = dofManager;
-      ap.param_ged = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
+      ap.param_ged = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,ownedMap));
       ap.param_lof = linObjFactory;
     }
 

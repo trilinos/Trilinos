@@ -59,6 +59,14 @@
 
 namespace Xpetra {
 
+// TODO: move that elsewhere
+template<class GlobalOrdinal, class Node>
+Epetra_IntVector & toEpetra(Vector<int, int, GlobalOrdinal, Node> &);
+
+template<class GlobalOrdinal, class Node>
+const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &);
+//
+
   // stub implementation for EpetraIntVectorT
   template<class EpetraGlobalOrdinal, class Node>
   class EpetraIntVectorT
@@ -85,24 +93,24 @@ namespace Xpetra {
     //@{
 
     //! TODO missing comment
-    int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
     //! Return 1-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
     //! Compute 2-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
     //! Compute Inf-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
     //! Compute mean (average) value of this Vector.
-    int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
     //! Compute max value of this Vector.
-    int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+    int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
     //@}
@@ -251,6 +259,9 @@ namespace Xpetra {
 
     //! Returns the global vector length of vectors in the multi-vector.
     global_size_t getGlobalLength() const {  return 0; }
+   
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
 
     //@}
 
@@ -302,14 +313,18 @@ namespace Xpetra {
 
     typename dual_view_type::t_host_um getHostLocalView () const {
       throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_host_um ret;
-      return ret;
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
     /// \brief Return an unmanaged non-const view of the local data on a specific device.
@@ -369,8 +384,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -382,24 +396,24 @@ namespace Xpetra {
       //@{
 
       //! TODO missing comment
-      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
       //! Return 1-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
       //! Compute 2-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
       //! Compute Inf-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
       //! Compute mean (average) value of this Vector.
-      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
       //! Compute max value of this Vector.
-      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); return vec_->MaxValue(); }
 
 
       //@}
@@ -414,10 +428,10 @@ namespace Xpetra {
       void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value; }
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }
@@ -581,6 +595,15 @@ namespace Xpetra {
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
 
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *>(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
+
       //@}
 
       //! @name Overridden from Teuchos::Describable
@@ -689,15 +712,29 @@ namespace Xpetra {
       typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
       typename dual_view_type::t_host_um getHostLocalView () const {
-        throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
-        typename dual_view_type::t_host_um ret;
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+
+        // access Epetra vector data
+        int* data = NULL;
+        vec_->ExtractView(&data);
+        int localLength = vec_->MyLength();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength,1);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+
         return ret;
       }
 
       typename dual_view_type::t_dev_um getDeviceLocalView() const {
         throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
         typename dual_view_type::t_dev_um ret;
-        return ret; // make compiler happy
+#endif
+        TEUCHOS_UNREACHABLE_RETURN(ret);
       }
 
       /// \brief Return an unmanaged non-const view of the local data on a specific device.
@@ -786,8 +823,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -799,25 +835,24 @@ namespace Xpetra {
       //@{
 
       //! TODO missing comment
-      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
 
       //! Return 1-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
 
       //! Compute 2-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute Inf-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute mean (average) value of this Vector.
-      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute max value of this Vector.
-      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
-
+      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); return Teuchos::as<int>(vec_->MaxValue()); }
 
       //@}
 
@@ -831,10 +866,10 @@ namespace Xpetra {
       void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value;}
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }
@@ -998,6 +1033,15 @@ namespace Xpetra {
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
 
+
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* >(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
       //@}
 
       //! @name Overridden from Teuchos::Describable
@@ -1106,15 +1150,29 @@ namespace Xpetra {
       typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
       typename dual_view_type::t_host_um getHostLocalView () const {
-        throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
-        typename dual_view_type::t_host_um ret;
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+
+        // access Epetra vector data
+        int* data = NULL;
+        vec_->ExtractView(&data);
+        int localLength = vec_->MyLength();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength, 1);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+
         return ret;
       }
 
       typename dual_view_type::t_dev_um getDeviceLocalView() const {
         throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
         typename dual_view_type::t_dev_um ret;
-        return ret; // make compiler happy
+#endif
+        TEUCHOS_UNREACHABLE_RETURN(ret);
       }
 
       /// \brief Return an unmanaged non-const view of the local data on a specific device.

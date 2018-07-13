@@ -53,8 +53,6 @@ using Teuchos::rcp;
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -63,7 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -186,7 +184,11 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -200,7 +202,7 @@ namespace panzer {
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -230,8 +232,8 @@ namespace panzer {
     // Print Phalanx DAGs
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-      Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
@@ -458,14 +460,18 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-   mesh->setupTransientExodusFile("transient.exo"); 
+   mesh->setupExodusFile("transient.exo"); 
    
     // build worksets
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -479,7 +485,7 @@ namespace panzer {
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -510,8 +516,8 @@ namespace panzer {
     // Print Phalanx DAGs
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Transient_", physicsBlocks);
 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-      Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;

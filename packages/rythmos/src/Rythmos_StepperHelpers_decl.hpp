@@ -77,7 +77,9 @@ void eval_model_explicit(
     Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const VectorBase<Scalar>& x_in,
     const typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t_in,
-    const Ptr<VectorBase<Scalar> >& f_out
+    const Ptr<VectorBase<Scalar> >& f_out,
+    const Scalar scaled_dt = 0,
+    const Scalar stage_point = 0 /* default value */
     );
 
 

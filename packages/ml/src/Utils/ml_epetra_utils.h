@@ -39,7 +39,7 @@ namespace Teuchos {
 #ifndef EPETRA_MPI
 #define EPETRA_MPI
 #endif
-#include "mpi.h"
+#include <mpi.h>
 #endif
 #include "ml_include.h"
 #include <iostream>

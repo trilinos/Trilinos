@@ -208,6 +208,14 @@ GlobalMPISession::~GlobalMPISession()
 #endif
 }
 
+void GlobalMPISession::abort() {
+  justInTimeInitialize();
+  #ifdef HAVE_MPI
+    MPI_Abort(MPI_COMM_WORLD, MPI_ERR_UNKNOWN);
+  #else
+    std::abort();
+  #endif
+}
 
 bool GlobalMPISession::mpiIsInitialized() {
   justInTimeInitialize();

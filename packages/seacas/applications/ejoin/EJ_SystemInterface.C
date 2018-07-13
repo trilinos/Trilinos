@@ -4,14 +4,15 @@
 #include "EJ_vector3d.h" // for vector3d
 #include <SL_tokenize.h> // for tokenize
 #include <algorithm>     // for sort, find, transform
-#include <cstdlib>       // for nullptr, exit, strtod, strtoul, etc
+#include <cctype>        // for tolower
+#include <climits>       // for INT_MAX
+#include <cstddef>       // for size_t
+#include <cstdlib>       // for exit, strtod, strtoul, abs, etc
 #include <cstring>       // for strchr, strlen
-#include <ctype.h>       // for tolower
+#include <iosfwd>        // for ostream
 #include <iostream>      // for operator<<, basic_ostream, etc
-#include <limits.h>      // for INT_MAX
-#include <stddef.h>      // for size_t
 #include <utility>       // for pair, make_pair
-#include <vector>        // for vector, allocator, etc
+#include <vector>        // for vector
 
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)
@@ -19,10 +20,12 @@ namespace {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
     for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2))
+      if (std::tolower(*c1) != std::tolower(*c2)) {
         return (std::tolower(*c1) - std::tolower(*c2));
-      if (*c1 == '\0')
+      }
+      if (*c1 == '\0') {
         return 0;
+      }
     }
   }
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
@@ -32,7 +35,7 @@ namespace {
   void parse_part_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions, const std::string &basename,
                        bool require_ids);
-}
+} // namespace
 
 SystemInterface::SystemInterface()
     : outputName_(), debugLevel_(0), stepMin_(1), stepMax_(INT_MAX), stepInterval_(1),
@@ -163,28 +166,28 @@ void SystemInterface::enroll_options()
 bool SystemInterface::parse_options(int argc, char **argv)
 {
   int option_index = options_.parse(argc, argv);
-  if (option_index < 1)
+  if (option_index < 1) {
     return false;
+  }
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cerr << "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2010 Sandia Corporation.\n"
+              << "Copyright(C) 2010 National Technology & Engineering Solutions\n"
+              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+              << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
-              << "Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,\n"
-              << "the U.S. Government retains certain rights in this software.\n"
-              << "        \n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
               << "met:\n"
@@ -196,12 +199,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
               << "      copyright notice, this list of conditions and the following\n"
               << "      disclaimer in the documentation and/or other materials provided\n"
               << "      with the distribution.\n"
-              << "    * Neither the name of Sandia Corporation nor the names of its\n"
+              << "\n"
+              << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
               << "      from this software without specific prior written permission.\n"
               << "\n"
               << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
               << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
               << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
               << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
@@ -210,7 +214,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
               << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
               << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
               << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
     exit(EXIT_SUCCESS);
   }
 
@@ -220,7 +224,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (option_index < argc) {
     while (option_index < argc) {
-      inputFiles_.push_back(argv[option_index++]);
+      inputFiles_.emplace_back(argv[option_index++]);
     }
   }
   else {
@@ -254,8 +258,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("tolerance");
-    if (temp != nullptr)
+    if (temp != nullptr) {
       tolerance_ = strtod(temp, nullptr);
+    }
   }
 
   {
@@ -289,10 +294,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_nodesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0)
+      if (case_strcmp("ALL", temp) == 0) {
         omitNodesets_ = true;
-      else
+      }
+      else {
         parse_omissions(temp, &nsetOmissions_, "nodelist", false);
+      }
     }
     else {
       omitNodesets_ = false;
@@ -302,10 +309,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_sidesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0)
+      if (case_strcmp("ALL", temp) == 0) {
         omitSidesets_ = true;
-      else
+      }
+      else {
         parse_omissions(temp, &ssetOmissions_, "surface", false);
+      }
     }
     else {
       omitSidesets_ = false;
@@ -337,18 +346,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("disable_field_recognition")) {
+  if (options_.retrieve("disable_field_recognition") != nullptr) {
     disableFieldRecognition_ = true;
   }
   else {
     disableFieldRecognition_ = false;
   }
 
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints64bit_ = true;
   }
 
-  if (options_.retrieve("match_node_ids")) {
+  if (options_.retrieve("match_node_ids") != nullptr) {
     matchNodeIds_ = true;
     matchNodeXYZ_ = false;
   }
@@ -356,7 +365,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     matchNodeIds_ = false;
   }
 
-  if (options_.retrieve("match_node_coordinates")) {
+  if (options_.retrieve("match_node_coordinates") != nullptr) {
     matchNodeXYZ_ = true;
     matchNodeIds_ = false;
   }
@@ -385,13 +394,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
 bool SystemInterface::convert_nodes_to_nodesets(int part_number) const
 {
-  if (nodesetConvertParts_.empty())
+  if (nodesetConvertParts_.empty()) {
     return false;
-  else if (nodesetConvertParts_[0] == 0)
+  }
+  if (nodesetConvertParts_[0] == 0) {
     return true;
-  else
+  }
+  else {
     return std::find(nodesetConvertParts_.begin(), nodesetConvertParts_.end(), part_number) !=
            nodesetConvertParts_.end();
+  }
 }
 
 void SystemInterface::parse_step_option(const char *tokens)
@@ -434,8 +446,9 @@ void SystemInterface::parse_step_option(const char *tokens)
         }
 
         tmp_str[k] = '\0';
-        if (strlen(tmp_str) > 0)
+        if (strlen(tmp_str) > 0) {
           val = strtoul(tmp_str, nullptr, 0);
+        }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
@@ -473,7 +486,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
@@ -497,13 +510,13 @@ namespace {
         StringVector name_id  = SLIB::tokenize(*I, ":");
         std::string  var_name = LowerCase(name_id[0]);
         if (name_id.size() == 1) {
-          (*variable_list).push_back(std::make_pair(var_name, 0));
+          (*variable_list).emplace_back(std::make_pair(var_name, 0));
         }
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
             int id = strtoul(name_id[i].c_str(), nullptr, 0);
-            (*variable_list).push_back(std::make_pair(var_name, id));
+            (*variable_list).emplace_back(std::make_pair(var_name, id));
           }
         }
         ++I;
@@ -610,8 +623,9 @@ namespace {
     // just specify a part number and all entities (typically nset or
     // sset) will be omitted on that part.
 
-    if (tokens == nullptr)
+    if (tokens == nullptr) {
       return;
+    }
 
     std::string  token_string(tokens);
     StringVector part_block_list = SLIB::tokenize(token_string, ",");
@@ -645,7 +659,7 @@ namespace {
       // this part.  Since don't know how many entities there are,
       // store the id as '0' to signify all.
       if (part_block.size() == 1) {
-        (*omissions)[part_num].push_back("ALL");
+        (*omissions)[part_num].emplace_back("ALL");
       }
       else {
         // Get the list of blocks to omit for this part...
@@ -661,4 +675,4 @@ namespace {
       ++I;
     }
   }
-}
+} // namespace

@@ -205,6 +205,7 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix);
 
   params.set("order_method", "minimum_degree");
+  params.set("order_method_type", "local");
   params.set("order_package", "amd");
 
   ////// Create and solve ordering problem
@@ -213,7 +214,8 @@ int main(int narg, char** arg)
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
 
-  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
+  Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
+    problem.getLocalOrderingSolution();
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
@@ -228,18 +230,8 @@ int main(int narg, char** arg)
   } catch (std::exception &e){
 #ifdef HAVE_ZOLTAN2_AMD
       // AMD is defined and still got an exception.
-      if (comm->getSize() != 1)
-      {
-          std::cout << "AMD is enabled. We do not support distributed matrices."
-             << "AMD Algorithm threw an exception."
-             << std::endl;
-          std::cout << "PASS" << std::endl;
-      }
-      else
-      {
-          std::cout << "Exception from AMD Algorithm" << std::endl;
-          std::cout << "FAIL" << std::endl;
-      }
+      std::cout << "Exception from AMD Algorithm" << std::endl;
+      std::cout << "FAIL" << std::endl;
       return 0;
 #else
       std::cout << "AMD is not enabled. AMD Algorithm threw an exception."

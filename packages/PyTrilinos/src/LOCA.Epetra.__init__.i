@@ -57,83 +57,58 @@ the following classes:
 "
 %enddef
 
+%define %loca_epetra_import_code
+"
+from . import ___init__
+"
+%enddef
+
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %loca_epetra_import_code,
 	docstring    = %loca_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra includes
-#include "Epetra_DLLExportMacro.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "PyTrilinos_LinearProblem.hpp"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
-// NOX includes
+// NOX include files
 #include "NOX.H"
 #include "NOX_Epetra_Group.H"
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "LOCA_Epetra.H"
-#include "LOCA_Epetra_Group.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
+#include "PyTrilinos_LOCA_Epetra_Headers.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;
 using Teuchos::rcp;
 %}
 
+// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
+// that.
+// %pythoncode
+// %{
+// del ___init__
+// from . import ___init__
+// %}
+
 %ignore *::operator=;
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Exception handling
@@ -149,6 +124,9 @@ using Teuchos::rcp;
 %import "Teuchos.i"
 %include "Epetra_Base.i"    // For PyExc_EpetraError
 %import "Epetra.i"
+
+// Learn about LOCA::Abstract::Iterator::StepStatus enumeration
+%import "LOCA_Abstract_Iterator.H"
 
 // Teuchos RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
@@ -182,14 +160,16 @@ using Teuchos::rcp;
 %import "NOX.Epetra.__init__.i"
 %import "NOX.Epetra.Interface.i"
 
-// Allow import from the parent directory
+// Allow import from this and parent directory. Force Interface to be
+// LOCA.Interface
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 %}
 
 // LOCA base classes
@@ -224,13 +204,14 @@ from .. import Abstract
 // The above %import(module="Abstract") ... directives can cause an
 // "import Abstract" to appear in the .py file, causing Abstract to
 // point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
-// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
-// that, too.
+// Interface was pointing to NOX/Epetra/Interface, so I fix that, too.
 %pythoncode
 %{
-del ___init__
+del Abstract
 from .. import Abstract
-from .  import ___init__
+if 'NOX' in Interface.__file__:
+  del Interface
+  from . import Interface
 %}
 
 // Director exception handling

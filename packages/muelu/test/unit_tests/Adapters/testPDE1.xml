@@ -19,12 +19,9 @@
   <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
   <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
 
-  <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+  <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
   <ParameterList    name="smoother: params">
-    <Parameter      name="chebyshev: degree"                    type="int"      value="3"/>>
-    <!-- 7 in 2D, 20 in 3D -->
-    <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="20"/>
-    <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
-    <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+    <Parameter      name="relaxation: type"                     type="string"   value="Symmetric Gauss-Seidel"/>
+    <Parameter      name="relaxation: sweeps"                   type="int"      value="2"/>
   </ParameterList>
 </ParameterList>

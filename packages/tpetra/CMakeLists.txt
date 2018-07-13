@@ -5,7 +5,7 @@
 # NOTE: If the TBB (Intel's Threading Building Blocks) TPL is enabled,
 # it's probably not possible to build Tpetra with shadowing warnings.
 #TRIBITS_PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
-TRIBITS_PACKAGE( Tpetra CLEANED )
+TRIBITS_PACKAGE_DECL( Tpetra CLEANED )
 
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -13,16 +13,230 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+# mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
+# This doesn't meant that users actually want to instantiate Tpetra
+# objects for CUDA.  See Trilinos GitHub issue #1939.
+
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+  SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
+ELSE ()
+  SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_CUDA
+  TPETRA_ENABLE_CUDA
+  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
+  ${Tpetra_ENABLE_CUDA_DEFAULT})
+
+# It's possible for users to _disable_ CUDA in Tpetra.  However,
+# _enabling_ CUDA in Tpetra requires the CUDA TPL, and that Kokkos
+# enable CUDA.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_Cuda))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_Cuda is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+
 # Kokkos and Tpetra require C++11 as of the 12.0 release.
 #
 # I left a special case for CUDA because I'm not sure whether TriBITS
 # counts C++11 as enabled in that case; please feel free to revise if
 # you know better.
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set Trilinos_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting Trilinos_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_CUDA)
+  MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
+
+# Checks that only matter if building with CUDA enabled.
+IF (Tpetra_ENABLE_CUDA)
+  # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+  IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "7.5"))
+    MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  ENDIF ()
+
+  # mfh 30 Sep 2017: Make sure that either Trilinos_CXX_FLAGS
+  # or CMAKE_CXX_FLAGS includes the "--expt-extended-lambda" 
+  # or "-expt-extended-lambda" (either is valid; see #1797 
+  # discussion) flag.
+  SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
+  IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
+    # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
+    # reason.  Nevertheless, it doesn't hurt to check both.
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ENDIF ()
+  IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.")
+  ENDIF ()
+
+  IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS, at least with CUDA_VERSION >= 7.5 and <= 9.0.")
+  ENDIF ()
+ENDIF ()
+
+# Ask the MPI implementation if it is CUDA aware.  See #1571.
+#
+# If users have already set Tpetra_ASSUME_CUDA_AWARE_MPI, we just
+# accept their setting.  This helps with cross-compilation.
+# Otherwise, we try to figure it out for them.
+#
+# Currently, we only have logic to figure it out for them if using
+# OpenMPI >= 1.7.4.  In that case, then we may ask ompi_info:
+#
+# https://www.open-mpi.org/faq/?category=runcuda
+#
+# In order to do so, we need to find the correct ompi_info executable,
+# that is, the one that goes with the version of MPI that we are
+# actually using.  This is not necessarily the version whose
+# executables are in our PATH!  OpenMPI likes to install ompi_info in
+# the same directory as its compiler wrappers, so we can just use the
+# path of MPI_CXX_COMPILER.  If that isn't defined, we can try
+# ${MPI_BIN_DIR} or "${MPI_BASE_DIR}/bin".  Otherwise, we'll make the
+# safe, but possibly less performant assumption that MPI is not CUDA
+# aware.
+
+SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+
+ASSERT_DEFINED (TPL_ENABLE_MPI)
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
+
+IF (NOT Tpetra_ENABLE_CUDA)
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is OFF, so Tpetra will assume that MPI is not CUDA aware.")
+  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+ELSEIF (NOT TPL_ENABLE_MPI)
+  # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
+  # assume host access of input and output buffers (e.g.,
+  # Teuchos::reduceAll on a SerialComm may copy input into output on
+  # host).  Thus, it's safer to assume that "MPI" (rather,
+  # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
+  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
+  # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+  # Just use that value as the default.
+  #
+  # It may seem a little strange to set a default value for a
+  # variable that the user explicitly set.  However, it ensures 
+  # consistency over all cases and can help debugging.
+
+  IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
+    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is CUDA aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
+  ELSE ()
+    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT CUDA aware.  This is always the safe option, but it may reduce performance if it is not true.")
+  ENDIF ()
+ELSE ()
+  # The user did not set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+
+  IF (DEFINED CMAKE_CROSSCOMPILING AND CMAKE_CROSSCOMPILING)
+    MESSAGE (STATUS "  - Since you are cross compiling, if you wish Tpetra to assume that MPI is CUDA aware, you must set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.  For now, Tpetra will assume that MPI is NOT CUDA aware; this is always the safe option, but it may reduce performance if it is not true.")
+  ELSE ()
+    # We are not cross compiling, so it is safe to try to auto-detect
+    # by searching for and running the "ompi_info" executable.
+    MESSAGE (STATUS "  - Attempt to detect whether MPI is CUDA aware, by searching for \"ompi_info\" executable.")
+
+    SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE OFF)
+
+    # First, try the directory where MPI_CXX_COMPILER lives.  This
+    # only makes sense if MPI_USE_COMPILER_WRAPPERS is ON.  We don't
+    # have to test Tpetra_FOUND_OMPI_INFO_EXECUTABLE here, but I find
+    # it helpful to leave in the redundant test, for consistency with
+    # the tests below, and to prevent a bug if we later decide to
+    # change the order of the tests.
+
+
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED MPI_CXX_COMPILER))
+      # Paths are returned with (forward) slashes, and no trailing slash:
+      # 
+      # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
+      #
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${MPI_CXX_COMPILER}" ABSOLUTE)
+      # In the command below, PATH is a "legacy alias" for DIRECTORY; it
+      # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    # Next, try MPI_BIN_DIR.
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BIN_DIR))
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${MPI_BIN_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    # Finally, try "${MPI_BASE_DIR}/bin" (which may not exist).
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BASE_DIR) AND (NOT (MPI_BASE_DIR STREQUAL "")) AND (IS_DIRECTORY "${MPI_BASE_DIR}/bin"))
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" "${MPI_BASE_DIR}/bin" NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    IF (Tpetra_FOUND_OMPI_INFO_EXECUTABLE)
+      MESSAGE (STATUS "  - Calling \"ompi_info\" (full path: ${Tpetra_OMPI_INFO_EXECUTABLE}) to find out whether MPI is CUDA aware.")
+
+      # ompi_info produces a LOT of output.  Making CMake capture and
+      # parse all of it could be slow.  Instead, we use "grep" to get
+      # only the line we want.
+      EXECUTE_PROCESS (COMMAND ${Tpetra_OMPI_INFO_EXECUTABLE} --parsable --all
+                       COMMAND "grep" "mpi_built_with_cuda_support:value"
+                       OUTPUT_VARIABLE Tpetra_OMPI_INFO_OUTPUT)
+      IF (DEFINED Tpetra_OMPI_INFO_OUTPUT)
+        # The output to stdout may have an endline, so we have to do a
+        # string search, not just a comparison.  It's possible that
+        # neither "true" nor "false" are found, so we test both.
+        STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:true" Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE)
+        STRING (FIND "${Tpetra_OMPI_INFO_OUTPUT}" "mca:mpi:base:param:mpi_built_with_cuda_support:value:false" Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE)
+
+        # STRING FIND returns -1 if it didn't find the substring.
+        IF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE EQUAL -1))
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
+          SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+        ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda")
+        ELSE ()
+          MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is CUDA aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
+        ENDIF ()
+      ELSE ()
+        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT CUDA aware.")
+      ENDIF ()
+    ELSE ()
+      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.")
+    ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
+  ENDIF () # Whether we are cross compiling
+ENDIF () # Whether we have CUDA and MPI
+
+# Sanity checks for Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT.
+
+IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
+  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
+ENDIF ()
+
+IF (NOT Tpetra_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
+  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
+ENDIF ()
+  
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ASSUME_CUDA_AWARE_MPI
+  TPETRA_ASSUME_CUDA_AWARE_MPI
+  "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
+  ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
@@ -86,6 +300,15 @@ ENDIF ()
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+# Kokkos versions of Scalar types.  For now, this just means replacing
+# std::complex<T> with Kokkos::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
+# Kokkos versions of Scalar types, excluding ordinal types.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
+# Kokkos versions of Scalar types, including ONLY ordinal types.
+# This relates to Github Issue #700.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
+
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
 SET(${PACKAGE_NAME}_ETI_DEVICES "")
@@ -115,7 +338,15 @@ GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
 
-IF (Kokkos_ENABLE_Cuda) 
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(Kokkos_ENABLE_Serial)
+
+# We already have a separate Tpetra_ENABLE_CUDA option that we defined
+# above, so we don't have to check Kokkos_ENABLE_Cuda here.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA) 
   # If you bothered to build with CUDA enabled, then we assume you
   # only want CUDA.
   GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
@@ -124,6 +355,9 @@ ELSE()
     # It takes effort (setting a nondefault compiler flag) to turn
     # on OpenMP, so we assume that if OpenMP is ON, then you must
     # want it as the Node type.
+    #
+    # mfh 06 Nov 2017: However, see GitHub issue #1939, for the
+    # analogous situation with CUDA.
     GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
   ELSE()
     IF (Kokkos_ENABLE_Serial)
@@ -136,7 +370,7 @@ ELSE()
       ENDIF()  # Kokkos_ENABLE_Pthread
     ENDIF() # Kokkos_ENABLE_Serial
   ENDIF() # Kokkos_ENABLE_OpenMP
-ENDIF() # Kokkos_ENABLE_Cuda
+ENDIF() # Tpetra_ENABLE_CUDA
 
 # Don't turn on both Serial and Threads by default.  Prefer Serial,
 # because Threads is a last resort.  Of course, users may still
@@ -189,15 +423,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
 IF (Tpetra_INST_OPENMP)
+  IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
+  ENDIF ()
   IF (NOT Kokkos_ENABLE_OpenMP)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::OpenMP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_OPENMP=ON.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, you must enable the Kokkos::OpenMP execution space by setting Kokkos_ENABLE_OpenMP=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OpenMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_OPENMP
   IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosOpenMPWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If that does not work, also add Trilinos_ENABLE_OpenMP:BOOL=ON and possibly also Kokkos_ENABLE_OpenMP:BOOL=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OpenMP incorrectly).")
   ENDIF()
   IF (Kokkos_ENABLE_OpenMP)
-    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors!")
+    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
   ENDIF ()
 ENDIF ()
 
@@ -245,6 +482,15 @@ ELSE () # NOT Tpetra_INST_CUDA
     MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
+
+#
+# Check that users did not attempt to enable both the OpenMP and
+# Pthreads back-ends.
+#
+
+IF (Tpetra_INST_OPENMP AND TPETRA_INST_PTHREAD)
+  MESSAGE (FATAL_ERROR "You set both Tpetra_INST_OPENMP=ON and Tpetra_INST_PTHREAD=ON.  This is not allowed, because Kokkos (as of Dec 2017) forbids users from enabling both the OpenMP and Pthreads back-ends.")
+ENDIF ()
 
 #
 # Construct the list of enabled Device and Node types.
@@ -307,11 +553,15 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # If ETI is OFF, #1 no longer holds, but #2 still holds.
 #
 # Currently, we always enable int, because MueLu requires it for
-# examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (which it now does by default with C++11)
-# and CUDA is OFF (CUDA doesn't seem to like GO=long long), we also
-# enable long long (which C++11 / C99 guarantees to be >= 64 bits).
-# We currently only enable other types if the user asks for them.
+# examples and tests (this is Bug 6358 (in the Bugzilla bug tracking
+# system).  Furthermore, if Teuchos enables long long support (which
+# it now does by default with C++11), we also enable long long (which
+# C++11 / C99 guarantees to be >= 64 bits).  We currently only enable
+# other types if the user asks for them.
+#
+# Enabling long long by default no longer depends on whether this is a
+# CUDA build, since we have fixed Trilinos GitHub issue #1683:
+# https://github.com/trilinos/Trilinos/issues/1683
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
@@ -326,21 +576,21 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
 
-# GO = long long is enabled by default if and only if CUDA is OFF.
-# However, if the user enabled GO = long EXPLICITLY, we disable GO =
-# long long by default, because we don't want to enable multiple
-# "long" GO types by default.
-IF (Kokkos_ENABLE_Cuda)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-ELSE ()
-  # Tpetra currently needs Teuchos to support long long.
-  # This may change in the future, though.
-  IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+# GO = long long is enabled by default.  However, if the user enabled
+# GO = long EXPLICITLY, we disable GO = long long by default, because
+# we don't want to enable multiple "long" GO types by default.
+
+# Tpetra currently needs Teuchos to support long long.
+# This may change in the future, though.
+IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+  IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
   ENDIF ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+ELSE ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
 ENDIF ()
+
 IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
   IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
     # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
@@ -454,22 +704,32 @@ ENDIF()
 #
 IF(Tpetra_INST_INT_INT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "int")
 ENDIF()
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long")
 ENDIF()
 IF(Tpetra_INST_INT_LONG_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long long")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
@@ -495,17 +755,6 @@ IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_quadmath)
   ENDIF ()
 ENDIF ()
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
-
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_CUDA)
-  IF (DEFINED TpetraCore_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TpetraCore_ENABLE_CUDA}")
-  ELSEIF (DEFINED TPL_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TPL_ENABLE_CUDA}")
-  ELSE ()
-    SET (${PACKAGE_NAME}_ENABLE_CUDA OFF)
-  ENDIF ()
-ENDIF ()
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_CUDA)
 
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_QD)
   IF (DEFINED TpetraCore_ENABLE_QD)
@@ -537,8 +786,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_DOUBLE ${Tpetra_INST_DOUBLE})
 
-# Scalar = float is NOT enabled by default.
-GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT OFF)
+IF (Trilinos_ENABLE_FLOAT)
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  OFF)
+ENDIF()
 
 # Set up the Tpetra_INST_FLOAT option: whether to instantiate / test
 # Scalar = float.
@@ -571,38 +823,31 @@ IF (Tpetra_INST_FLOAT)
   ENDIF ()
 ENDIF ()
 
-# Decide whether to instantiate / test Scalar = std::complex<float> or
-# std::complex<double> by default.  Both require a complex-arithmetic
-# BLAS.  Furthermore, std::complex<T> requires the corresponding
+# Decide whether to instantiate / test Scalar = std::complex<float> and/or
+# std::complex<double> by default.  Both require a complex-arithmetic BLAS
+# provided by Teuchos.  Furthermore, std::complex<T> requires the corresponding
 # Scalar=T instantiation to be ON.
 #
-# In a debug build, we enable Scalar = complex, in order that this
-# capability be tested.  In a release build, we disable this case, in
-# order to reduce build time.  Users may always enable it explicitly.
-ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
+# The decision to enable or disable std::complex<T> instantiations is also
+# controlled by Trilinos-level configure options.
 # mfh 18 Aug 2015: Teuchos currently doesn't even define
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
-IF (DEFINED HAVE_COMPLEX_BLAS)
-  IF (HAVE_COMPLEX_BLAS)
-    IF (Tpetra_INST_DOUBLE)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-    ENDIF()
-    IF (Tpetra_INST_FLOAT)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-    ENDIF()
+IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
+  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE) 
+    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  ENDIF()
+  IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF() # HAVE_COMPLEX_BLAS
-ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
+  ENDIF()
+ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF () # DEFINED HAVE_COMPLEX_BLAS
+ENDIF()
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
@@ -614,6 +859,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
 GLOBAL_SET (HAVE_TPETRA_COMPLEX_DOUBLE ${Tpetra_INST_COMPLEX_DOUBLE})
+
+IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Trilinos_ENABLE_COMPLEX_DOUBLE)
+  MESSAGE(WARNING "Tpetra_INST_COMPLEX_DOUBLE=ON, but Trilinos_ENABLE_COMPLEX_DOUBLE=OFF.  This will work, but it will make builds more expensive, because it turns off explicit instantiation for complex<double> in KokkosKernels.  If you want to use Scalar=complex<double> in Tpetra, just set Trilinos_ENABLE_COMPLEX_DOUBLE=ON.  You do not need to set Tpetra_INST_COMPLEX_DOUBLE explicitly any more.")
+ENDIF ()
 
 # Enabling Scalar = std::complex<T> requires that the corresponding
 # Scalar=T instantiation be enabled as well.  
@@ -782,37 +1031,58 @@ ENDIF ()
 #
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_FLOAT128) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "__float128")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "__float128")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "__float128")
+  # NOTE (mfh 11 Oct 2016) __float128 does not currently work with CUDA.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "qd_real")
+  # NOTE (mfh 11 Oct 2016) qd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "qd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "qd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "dd_real")
+  # NOTE (mfh 11 Oct 2016) dd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "dd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "dd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "dd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 
@@ -826,6 +1096,10 @@ ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS})
+
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})

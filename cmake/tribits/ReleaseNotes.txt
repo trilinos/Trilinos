@@ -1,0 +1,189 @@
+----------------------------------------
+Release Notes for TriBITS
+----------------------------------------
+2017/09/25:
+
+(*) MINOR: Added cache and enve vars CTEST_SUBMIT_RETRY_COUNT and
+    CTEST_SUBMIT_RETRY_DELAY to allow the number of ctest_submit() submit
+    attemtps to retry and how how log to pause between retries.  Before, these
+    were hard-coded to 25 and 120 respectively, which means that something
+    like a MySQL insertion error could consume as much as 50 minutes befor
+    moving on!  The new defalts are set at 5 retries with a 3 sec delay (which
+    appear to be the CTest defaults).
+
+2017/09/30:
+
+(*) MINOR: Added TEST_<IDX> COPY_FILES_TO_TEST_DIR block for
+    TRIBITS_ADD_ADVANCED_TEST().  This was added in such a way so to avoid
+    clashing with existing usages of the script (since the new arguments
+    SOURCE_DIR and DEST_DIR are only parsed if COPY_FILES_TO_TEST_DIR is
+    listed in the TEST_<IDX> block.
+
+2017/09/05:
+
+(*) MINOR: Unparsed and otherwise ignored arguments are now flagged (see
+    developers guide documentation for
+    ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS).  The default value is
+    'WARNING' which results in simply printing a warning but allow configure
+    to complete.  This allows one to see the warnings but for the project to
+    continue to work as before.  But this can be changed to 'SEND_ERROR' or
+    'FATAL_ERROR' that will fail the configure.
+
+2017/06/24:
+
+(*) MINOR: Add new all-at-once more for CTest -S driver scripts using
+    TRIBITS_CTEST_DRIVER() by setting the variable
+    ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE.  This works with older versions
+    of CMake/CTest and CDash but, by default, will just return a single glob
+    of results, not breaking results out package-by-package.  Therefore, this
+    is disabled by default and package-by-package mode is used by default.
+    But if ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES=TRUE is set, then
+    TriBITS will take advantage of new CMake, CTest, and CDash features
+    (currently on a branch) to display the results on CDash broken down
+    package-by-package.  Once these changes are merged to the CMake/CTest and
+    CDash 'master' branches, then the default for
+    ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES will be set to TRUE
+    automatically when it detects an updated version of CMake/CTest is
+    present.  In the future, at some point, the TriBITS default for
+    ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE will change from FALSE to TRUE since
+    that is a much more efficient way to drive automated testing.
+
+2017/05/25:
+
+(*) MINOR: PARSE_ARGUMENTS() has been deprecated and replaced by
+    CMAKE_PARSE_ARGUMENTS() everywhere in TriBITS. Any call to
+    PARSE_ARGUMENTS() will warn users and tell them to use
+    CMAKE_PARSE_ARGUMENTS() instead.
+
+2017/05/17:
+
+(*) MAJOR: TriBITS now unconditionally sets
+    ${PROJECT_NAME}_ENABLE_Fortran_DEFAULT to ON.  Projects will now need to
+    put in special logic to set to OFF or ON for certain platforms.
+
+2017/01/11:
+
+(*) MINOR: TriBITS now correctly sets the default value for
+    DART_TESTING_TIMEOUT to 1500 seconds and will scale it by
+    <Project>_SCALE_TEST_TIMEOUT even if DART_TESTING_TIMEOUT is not
+    explicitly set.
+
+2016/12/07:
+
+(*) MAJOR: The long deprecated variable
+    ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE has been removed.  Upgrading
+    existing TriBITS projects just requires a simple string replacement of
+    _ENABLE_SECONDARY_STABLE_CODE with _ENABLE_SECONDARY_TESTED_CODE in all
+    files.  Since Trilinos has turned on ST code by default and many other
+    TriBITS projects don't differentiate between PT and ST code, this change
+    should not even break those projects, even if they don't update.
+
+2016/11/02:
+
+(*) MAJOR: gitdist now accepts --dist-repos and --dist-not-repos arguments and
+    requires that the base repo '.' be explicitly listed in the
+    .gitdist[.default] files and in --dist-repos.  The arguments
+    --dist-extra-repos, --dist-not-extra-repos and --dist-not-base-repo are
+    not longer supported.  See gitdist --help for more details.
+
+(*) MINOR: TriBITS projects now install with full RPATH set by default (see
+    "Setting install RPATH" in build reference guide).
+
+2016/10/22:
+
+(*) MAJOR: TriBITS Core: TRIBITS_ADD_TEST() argument FAIL_REGULAR_EXPRESSION
+    now works when circular RCP detection is enabled.  This is technically a
+    break in backward compatibility since now that argument will not be
+    ignored and any tests that specified this may change behavior.
+
+(*) MAJOR: TriBITS Core: TRIBITS_ADD_ADVANCED_TEST() TEST_<IDX> argument
+    FAIL_REGULAR_EXPRESSION now works.  Before, it was just being ignored.
+    This is technically a break in backward compatibility since now that
+    argument will not be ignored and any tests that specified this may change
+    behavior.
+
+(*) MINOR: TriBITS Core: Added TRIBITS_ADD_ADVANCED_TEST() TEST_<IDX> option
+    WILL_FAIL that has the same behavior as the built-in CTest option
+    WILL_FAIL.
+
+2016/01/22:
+
+(*) MINOR: TriBITS Core: Change test category WEEKLY to HEAVY and depreciate
+    WEEKLY.  You can stil use WEEKLY but it will result in a lot of warnings.
+
+2015/12/03:
+
+(*) MINOR: TriBITS CI Support: checkin-test.py: Added support for tracking
+    branches for each repo independently and not assume 'origin' and not
+    assume that all of the repos are on the same branch or will be pulling and
+    pushing to the same remote branch.  This will make it easier to use the
+    checkin-test.py script to set up various integration scenarios.  See
+    TriBITS GitHub Issue #15 for details.
+
+2015/04/14:
+
+(*) MAJOR: TriBITS Core: When configuring with
+    ${PROJECT_NAME}_ENABLE_CXX11=ON, if C++11 support cannot be verified, then
+    the configure will fail hard right away.  Before, TriBITS would disable
+    C++11 support and continue.
+
+2014/11/22:
+
+(*) MINOR: TriBITS Core: Added ${PROJECT_NAME}_TRACE_ADD_TEST: Now you can a
+    single line print if a test got added (and its important properties if it
+    did) or not and if not then why the test did not get added.
+
+2014/09/22:
+
+(*) MAJOR: TriBITS Core: Changed minimum version of CMake from 2.7 to 2.8.11.
+
+2014/09/21:
+
+(*) MINOR: TriBITS Dashboard Driver: Added support for the env var
+    TRIBITS_TDD_USE_SYSTEM_CTEST so that if equal to 1, then the TriBITS
+    Dashboard Driver (TDD) system will use the CTest (and CMake) in the env
+    will be used instead of being downloaded using download-cmake.py.  This
+    not only speeds up the auotmated builds, but it also ensures that the
+    automated testing uses exactly the install of CMake/CTest that is used by
+    the developers on the system.  Also, it has been found that
+    download-cmake.py will download and install a 32bit version even on 64bit
+    machines.
+
+Trilinos 11.7:
+--------------
+
+(*) MINOR: TriBITS Core: Switched from the terms Primary Stable (PS) and
+    Secondary Stable (SS) code to Primary Tested (PT) and Secondary Tested
+    (ST) according to the plan in the TriBITS Lifecycle model.  Using 'PS' and
+    'SS' is still allowed but is deprecated.  This also included deprecating
+    the varible <Project>_ENABLE_SECONDARY_STABLE_CODE and replacing it with
+    <Project>_ENABLE_SECONDARY_TEST_CODE.  Again, backward compatibility is
+    preserved.  Also, the checkin-test.py arg --ss-extra-builds is deprecated
+    and replaced with --st-extra-builds.
+
+
+Trilinos 11.6:
+--------------
+
+(*) MAJOR: TriBITS Core: Changed behavior of <Project>_ENABLE_<PACKAGE>=ON to
+    enable all subpackages for that package including in propogating forward
+    dependencies.  See updated <Project>BuildQuickRef.* document.
+
+
+Trilinos 11.3:
+--------------
+
+(*) MINOR: TriBITS Core: Added ENVIRONMENT env1=val1 env2=val2 ... argument to
+    TRIBITS_ADD_TEST(), TRIBITS_ADD_ADVANCED_TEST(), and
+    TRIBITS_ADD_EXECUTABLE_AND_TEST().
+
+(*) MINOR: TriBITS Core: Fixed the generation of headers for explicit
+    instantation system for subpackages: Now subpackages that use the macro
+    TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() to generate XXX.hpp header files
+    with or without expliict instantation will key off of the parent package's
+    explicit instantation setting.  In addition, packages that use the macro
+    TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() will also need to add a call to
+    TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION() in their top-level
+    CMakeLists.txt file.
+
+

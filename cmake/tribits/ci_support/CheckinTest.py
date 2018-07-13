@@ -731,12 +731,10 @@ def writeDefaultCommonConfigFile():
       "# Fill in the minimum CMake options that are needed to build and link\n" \
       "# that are common to all builds such as the following:\n" \
       "#\n" \
-      "#-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
-      "#-DBUILD_SHARED:BOOL=ON\n" \
-      "#-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
-      "#-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      "#-DCMAKE_VERBOSE_MAKEFILE=ON\n" \
+      "#-DBUILD_SHARED_LIBS=ON\n" \
       "#\n" \
-      "# NOTE: Please do not add any options here that would select what pacakges\n" \
+      "# NOTE: Please do not add any options here that would select what packages\n" \
       "# get enabled or disabled.\n"
 
     writeStrToFile(commonConfigFileName, commonConfigFileStr)
@@ -763,25 +761,9 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
       "# Fill in the minimum CMake options that are needed to build and link\n" \
       "# that are specific to the "+serialOrMpi+" build such as:\n" \
       "#\n" \
-      "#-DBUILD_SHARED:BOOL=ON\n"
-
-    if serialOrMpi == "MPI":
-      buildSpecificConfigFileStr += \
-        "#-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
-        "#-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
-        "#-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
-        "#-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n"
-    elif serialOrMpi == "SERIAL":
-      buildSpecificConfigFileStr += \
-        "#-DCMAKE_CXX_COMPILER:PATHNAME=/usr/local/bin/g++\n" \
-        "#-DCMAKE_C_COMPILER:PATHNAME=/usr/local/bin/gcc\n" \
-        "#-DCMAKE_Fortran_COMPILER:PATHNAME=/usr/local/bin/gfortran\n"
-    else:
-      raise Exception("Invalid value for serialOrMpi="+serialOrMpi)
-      
-    buildSpecificConfigFileStr += \
+      "#-DBUILD_SHARED_LIBS=ON\n" \
       "#\n" \
-      "# NOTE: Please do not add any options here that would change what pacakges\n" \
+      "# NOTE: Please do not add any options here that would change what packages\n" \
       "# or TPLs get enabled or disabled.\n"
 
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
@@ -1344,13 +1326,15 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   cmakePkgOptions = []
   enablePackagesList = []
   gitRepoList = tribitsGitRepos.gitRepoList()
-    
+  enableAllPackages = False
+
   if inOptions.enableAllPackages == "on":
     if verbose:
       print("\nEnabling all packages on request since " +
             "--enable-all-packages=on! ...")
       print("\nSkipping detection of changed packages since " +
             "--enable-all-packages=on ...")
+    enableAllPackages = True
   elif inOptions.enablePackages:
     if verbose:
       print("\nEnabling only the explicitly specified packages '" +
@@ -1370,6 +1354,12 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
       else:
         if verbose:
           print("\nThe file " + diffOutFileName + " does not exist!\n")
+
+  if not enableAllPackages and inOptions.enableExtraPackages:
+    if verbose:
+      print("\nEnabling extra explicitly specified packages '" +
+            inOptions.enableExtraPackages + "' ...")
+    enablePackagesList += inOptions.enableExtraPackages.split(',')
 
   if verbose:
     print("\nFull package enable list: [" + ','.join(enablePackagesList) + "]")
@@ -1470,11 +1460,12 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     # A.1) Set the base options
   
     cmakeBaseOptions = []
+    if inOptions.useNinja:
+      cmakeBaseOptions.append("-GNinja")
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
-  
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
-      "TRIBITS_DIR:PATH", inOptions.tribitsDir))
+    "TRIBITS_DIR:PATH", inOptions.tribitsDir))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
       "ENABLE_TESTS:BOOL", "ON"))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
@@ -1586,7 +1577,10 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
   
     if inOptions.doBuild and configurePassed:
   
-      cmnd = "make"
+      if inOptions.useNinja:
+        cmnd = "ninja"
+      else:
+        cmnd = "make"
       if inOptions.makeOptions:
         cmnd += " " + inOptions.makeOptions
   
@@ -1710,6 +1704,28 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
       removeIfExists(getEmailBodyFileName())
       removeIfExists(getEmailSuccessFileName())
       echoChDir("..")
+
+def cleanBuildTestCaseSuccessFiles(runBuildTestCaseBool, inOptions, baseTestDir, \
+  buildTestCaseName \
+  ):
+
+  removeIfExists(buildTestCaseName+"/"+getConfigureSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getBuildSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getTestSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getEmailSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getEmailBodyFileName())
+  # NOTE: ABove, we need to delete the 'email.out' file otherwise it will get
+  # picked up in a later run of just a status check.  But this info is not
+  # really last because it is duplicated in the file
+  # commitStatusEmailBody.out.
+
+
+def cleanSuccessFiles(buildTestCaseList, inOptions, baseTestDir):
+  print("\nRemoving *.success files ...\n")
+  removeIfExists(getInitialPullSuccessFileName())
+  for buildTestCase in buildTestCaseList:
+    cleanBuildTestCaseSuccessFiles(
+      buildTestCase.runBuildTestCase, inOptions, baseTestDir, buildTestCase.name)
 
 
 def runBuildTestCaseDriver(inOptions, tribitsGitRepos, baseTestDir, buildTestCase, timings):
@@ -2089,9 +2105,12 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
   # Assert the names of packages passed in
   assertPackageNames("--enable-packages", inOptions.enablePackages)
+  assertPackageNames("--enable-extra-packages", inOptions.enableExtraPackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
 
   success = True
+
+  didAtLeastOnePush = False
 
   timings = Timings()
 
@@ -2441,7 +2460,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         runBuildCases = False
     else:
       if inOptions.allowNoPull:
-        print("\nNo pull was attemted but we are running the build/test cases "
+        print("\nNo pull was attempted but we are running the build/test cases "
               "anyway because --allow-no-pull was specified ...\n")
         runBuildCases = True
       elif os.path.exists(getInitialPullSuccessFileName()):
@@ -2581,7 +2600,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
           abortedCommitPush = True
       else:
         okayToPush = False
-  
+
       if okayToPush:
         print("\n  => A PUSH IS READY TO BE PERFORMED!")
       else:
@@ -2788,8 +2807,6 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         #print("debugSkipPush =", debugSkipPush)
         #debugSkipPush = True
 
-        didAtLeastOnePush = False
-
         repoIdx = 0
         for gitRepo in tribitsGitRepos.gitRepoList():
   
@@ -2931,9 +2948,13 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
           success = False
       else:
         if okayToPush:
-          subjectLine = "READY TO PUSH"
+          subjectLine = "PASSED (READY TO PUSH)"
         else:
-          subjectLine = "NOT READY TO PUSH"
+          if success:
+            subjectLine = "PASSED"
+          else:
+            subjectLine = "FAILED"
+          subjectLine += " (NOT READY TO PUSH)"
 
       #
       print("\n9.b) Create and send out push (or readiness status) notification email ...")
@@ -2994,6 +3015,8 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       print("\nNot performing push or sending out push readiness status on "
             "request!")
 
+    if pushPassed and didAtLeastOnePush and didPush:
+      cleanSuccessFiles(buildTestCaseList, inOptions, baseTestDir)
   
     print("\n***")
     print("*** 10) Run execute extra command on ready to push  ...")

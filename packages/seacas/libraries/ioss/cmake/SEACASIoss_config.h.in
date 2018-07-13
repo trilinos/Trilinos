@@ -1,1 +1,10 @@
+#if !defined(HAVE_MPI)
+#if !defined(NO_MPI)
 #cmakedefine HAVE_MPI
+#endif
+#endif
+
+#cmakedefine IOSS_THREADSAFE
+
+/* Define to indicate that the SEACAS project is being built with the KOKKOS package enabled*/
+#cmakedefine SEACAS_HAVE_KOKKOS

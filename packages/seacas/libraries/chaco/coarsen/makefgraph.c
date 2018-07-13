@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -124,48 +124,56 @@ void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
 
     cgptr = cgraph[cvtx] = links++;
 
-    if (COARSEN_VWGTS)
+    if (COARSEN_VWGTS) {
       cgptr->vwgt = 0;
-    else
+    }
+    else {
       cgptr->vwgt = 1;
+    }
 
     eptr[0]      = cvtx;
     cgptr->edges = eptr;
     if (COARSEN_EWGTS) {
       cgptr->ewgts = ewptr;
     }
-    else
+    else {
       cgptr->ewgts = NULL;
+    }
 
     ewgt_sum = 0;
     for (i = cv2v_ptrs[cvtx + 1] - cv2v_ptrs[cvtx]; i; i--) {
       vtx = *sptr++;
 
       iptr = graph[vtx]->edges;
-      if (using_ewgts)
+      if (using_ewgts) {
         fptr = graph[vtx]->ewgts;
+      }
       for (j = graph[vtx]->nedges - 1; j; j--) {
         neighbor  = *(++iptr);
         cneighbor = v2cv[neighbor];
         if (cneighbor != cvtx) {
-          if (using_ewgts)
+          if (using_ewgts) {
             ewgt = *(++fptr);
+          }
           ewgt_sum += ewgt;
 
           /* Seenflags being used as map from cvtx to index. */
           if (seenflag[cneighbor] == 0) { /* New neighbor. */
             cgptr->edges[nseen] = cneighbor;
-            if (COARSEN_EWGTS)
+            if (COARSEN_EWGTS) {
               cgptr->ewgts[nseen] = ewgt;
-            seenflag[cneighbor]   = nseen++;
+            }
+            seenflag[cneighbor] = nseen++;
           }
           else { /* Already seen neighbor. */
-            if (COARSEN_EWGTS)
+            if (COARSEN_EWGTS) {
               cgptr->ewgts[seenflag[cneighbor]] += ewgt;
+            }
           }
         }
-        else if (using_ewgts)
+        else if (using_ewgts) {
           ++fptr;
+        }
       }
     }
 
@@ -175,8 +183,9 @@ void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
       seenflag[*(++iptr)] = 0;
     }
 
-    if (COARSEN_EWGTS)
+    if (COARSEN_EWGTS) {
       cgptr->ewgts[0] = -ewgt_sum;
+    }
     /* Increment pointers into edges list. */
     cgptr->nedges = nseen;
     eptr += nseen;

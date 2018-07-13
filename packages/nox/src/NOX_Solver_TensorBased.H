@@ -535,7 +535,7 @@ protected:
   double sTinvJa;
 
   //! Common line search printing utilities.
-  NOX::LineSearch::Utils::Printing print;
+  Teuchos::RCP<NOX::LineSearch::Utils::Printing> print;
 
   //! Common common counters for line searches.
   NOX::LineSearch::Utils::Counters counter;

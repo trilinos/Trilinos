@@ -95,10 +95,10 @@ namespace MueLuExamples {
     std::streambuf* oldbuffer = NULL;
 
 #ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+    typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
+    typedef Tpetra::Vector<SC,LO,GO,NO> Tpetra_Vector;
+    typedef Tpetra::MultiVector<SC,LO,GO,NO> Tpetra_MultiVector;
     if (lib == Xpetra::UseTpetra) {
       if (myRank == 0) {
         // Redirect output
@@ -107,7 +107,8 @@ namespace MueLuExamples {
       }
 
       RCP<Tpetra_CrsMatrix> At = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
-      RCP<Tpetra_Operator>  Mt = MueLu::CreateTpetraPreconditioner(At, mueluList);
+      RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > opA(At);
+      RCP<Tpetra_Operator>  Mt = MueLu::CreateTpetraPreconditioner(opA, mueluList);
 
       if (myRank == 0) {
         // Redirect output back
@@ -198,6 +199,11 @@ namespace MueLuExamples {
       // This leads to us always failing this test.
       // NOTE1 : Epetra, on the other hand, rolls out its out random number
       // generator, which always produces same results
+
+      // make sure complex tests pass
+      run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
+      run_sed("'s/damping factor: (1,0)/damping factor: 1/'", baseFile);
+      run_sed("'s/relaxation: min diagonal value = (0,0)/relaxation: min diagonal value = 0/'", baseFile);
 
       // Ignore the value of "lambdaMax"
       run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
@@ -437,62 +443,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
-int main(int argc, char* argv[]) {
-  bool success = false;
-  bool verbose = true;
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-  try {
-    const bool throwExceptions = false;
-
-    Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-
-    Teuchos::CommandLineProcessor clp(throwExceptions);
-    Xpetra::Parameters xpetraParameters(clp);
-
-    clp.recogniseAllOptions(false);
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-    }
-
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return main_<double,int,long,Node>(clp, lib, argc, argv);
-#else
-#  if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      return main_<double,int,int,Node> (clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-      return main_<double,int,long,Node>(clp, lib, argc, argv);
-#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      return main_<double,int,long long,Node>(clp, lib, argc, argv);
-#  else
-      throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation for Tpetra");
-#  endif
-#endif
-
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-    }
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }
 
 

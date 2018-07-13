@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,12 +33,14 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_WARN, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid
 #include <stdio.h>
 
 /*!
+\ingroup ResultsData
+
 The function ex_get_variable_names() reads the names of the results
 variables from the database. Memory must be allocated for the name
 array before this function is invoked. The names are \p
@@ -57,27 +59,27 @@ ex_create() or ex_open().
 \param[in]  obj_type   Variable indicating the type of variable which is
 described. Use one
                        of the options in the table below.
-\param[in]  num_vars   The number of \c var_type variables that will be read
+\param[in]  num_vars   The number of  var_type variables that will be read
                        from the database.
-\param[out] var_names  Returned array of pointers to \c num_vars variable names.
+\param[out] var_names  Returned array of pointers to  num_vars variable names.
 
-<table>
-<tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
-<tr><td> \c EX_NODAL}     </td><td>  Nodal entity type        </td></tr>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-</table>
+| ex_entity_type|  description              |
+|---------------|---------------------------|
+| EX_GLOBAL     |  Global entity type       |
+| EX_NODAL      |  Nodal entity type        |
+| EX_NODE_SET   |  Node Set entity type     |
+| EX_EDGE_BLOCK |  Edge Block entity type   |
+| EX_EDGE_SET   |  Edge Set entity type     |
+| EX_FACE_BLOCK |  Face Block entity type   |
+| EX_FACE_SET   |  Face Set entity type     |
+| EX_ELEM_BLOCK |  Element Block entity type|
+| EX_ELEM_SET   |  Element Set entity type  |
+| EX_SIDE_SET   |  Side Set entity type     |
 
 As an example, the following code segment will read the names of the
 nodal variables stored in the data file:
 
-\code
+~~~{.c}
 int error, exoid, num_nod_vars;
 char *var_names[10];
 
@@ -87,7 +89,7 @@ for (i=0; i < num_nod_vars; i++) {
    var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 }
 error = ex_get_variable_names(exoid, EX_NODAL, num_nod_vars, var_names);
-\endcode
+~~~
 
 */
 
@@ -97,7 +99,8 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   char        errmsg[MAX_ERR_LENGTH];
   const char *vvarname;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   switch (obj_type) {
   case EX_NODAL: vvarname      = VAR_NAME_NOD_VAR; break;
@@ -111,27 +114,25 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   case EX_ELEM_SET: vvarname   = VAR_NAME_ELSET_VAR; break;
   case EX_GLOBAL: vvarname     = VAR_NAME_GLO_VAR; break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_names", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_variable_names", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* inquire previously defined variables  */
   if ((status = nc_inq_varid(exoid, vvarname, &varid)) != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_names", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_variable_names", errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* read the variable names */
   status =
       ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type, "ex_get_variable_names");
   if (status != NC_NOERR) {
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

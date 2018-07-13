@@ -237,10 +237,48 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
           << "exportPIDs count: " << getExportPIDs () << endl;
     }
     else { // vl = VERB_HIGH or VERB_EXTREME
+      // Build RemoteGIDs
+      RCP<const Map<LO,GO,NT> > tmap = getTargetMap();
+      RCP<const Map<LO,GO,NT> > smap = getSourceMap();
+      Teuchos::Array<GO>  RemoteGIDs(getRemoteLIDs().size());
+      Teuchos::Array<int> RemotePIDs(getRemoteLIDs().size());
+      for(size_t i=0; i<(size_t)getRemoteLIDs().size(); i++)
+	RemoteGIDs[i] = tmap->getGlobalElement(getRemoteLIDs()[i]);
+
+      Teuchos::Array<int> ExportGIDs(getExportLIDs().size());
+      for(size_t i=0; i<(size_t)getExportLIDs().size(); i++)
+	ExportGIDs[i] = smap->getGlobalElement(getExportLIDs()[i]);      
+      
+      // Build RemotePIDs (taken from Tpetra_Import_Util.hpp)
+      const Tpetra::Distributor & D=getDistributor();
+      size_t NumReceives                           = D.getNumReceives();
+      Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
+      Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
+      for (size_t i = 0, j = 0; i < NumReceives; ++i) {
+	const int pid = ProcsFrom[i];
+	for (size_t k = 0; k < LengthsFrom[i]; ++k) {
+	  RemotePIDs[j] = pid;
+	  j++;
+	}
+      }
+
+      out << "distor.NumRecvs   : "<<NumReceives<<endl 
+	  << "distor.ProcsFrom  : "<<toString(ProcsFrom)<<endl
+	  << "distor.LengthsFrom: "<<toString(LengthsFrom)<<endl;
+
+      out << "distor.NumSends   : "<<D.getNumSends()<<endl 
+	  << "distor.ProcsTo    : "<<toString(D.getProcsTo())<<endl
+	  << "distor.LengthsTo  : "<<toString(D.getLengthsTo())<<endl;
+
+      out << "distor.hasSelfMsg : "<<D.hasSelfMessage()<<endl;
+
       out << "permuteFromLIDs: " << toString (getPermuteFromLIDs ()) << endl
           << "permuteToLIDs: " << toString (getPermuteToLIDs ()) << endl
           << "remoteLIDs: " << toString (getRemoteLIDs ()) << endl
+          << "remoteGIDs: " << toString (RemoteGIDs ()) << endl
+          << "remotePIDs: " << toString (RemotePIDs ()) << endl
           << "exportLIDs: " << toString (getExportLIDs ()) << endl
+          << "exportGIDs: " << toString (ExportGIDs ()) << endl
           << "exportPIDs: " << toString (getExportPIDs ()) << endl;
     }
 

@@ -52,31 +52,31 @@
 
 namespace {
 
-#if KOKKOS_HAVE_CUDA
+#if KOKKOS_ENABLE_CUDA
 typedef double my_double;
 #else
 typedef long double my_double;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 typedef Kokkos::OpenMP   ExecSpace ;
-#elif KOKKOS_HAVE_CUDA
+#elif KOKKOS_ENABLE_CUDA
 typedef Kokkos::Cuda     ExecSpace ;
 #else
 typedef Kokkos::Serial   ExecSpace ;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 typedef Kokkos::OpenMP       MemSpace;
-#elif KOKKOS_HAVE_CUDA
+#elif KOKKOS_ENABLE_CUDA
 typedef Kokkos::CudaSpace    MemSpace;
 #else
 typedef Kokkos::HostSpace    MemSpace;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 typedef Kokkos::OpenMP       UVMMemSpace;
-#elif KOKKOS_HAVE_CUDA
+#elif KOKKOS_ENABLE_CUDA
 typedef Kokkos::CudaUVMSpace UVMMemSpace;
 #else
 typedef Kokkos::HostSpace    UVMMemSpace;
@@ -91,7 +91,7 @@ typedef Kokkos::View<my_double*, Kokkos::HostSpace>   HostViewVectorType;
 typedef Kokkos::TeamPolicy<ExecSpace>               team_policy ;
 typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 typedef Kokkos::LayoutLeft   Layout ;
 #else
 typedef Kokkos::LayoutRight   Layout ;

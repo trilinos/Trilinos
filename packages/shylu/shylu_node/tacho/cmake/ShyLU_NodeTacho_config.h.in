@@ -1,0 +1,44 @@
+#ifndef SHYLU_NODETACHO_CONFIG_H
+#define SHYLU_NODETACHO_CONFIG_H
+
+/* Define if kokkos tasking is enabled */
+#cmakedefine TACHO_HAVE_KOKKOS_TASK
+
+/* Define if want to build with size_type (int)  enabled */
+#cmakedefine TACHO_USE_INT_INT
+
+/* Define if want to build with size_type (size_t)  enabled */
+#cmakedefine TACHO_USE_INT_SIZE_T
+
+/* Define if want to build with MKL enabled */
+#cmakedefine TACHO_HAVE_MKL
+
+/* Define if want to build with LAPACK enabled */
+#cmakedefine TACHO_HAVE_LAPACK
+
+/* Define if want to build with BLAS enabled */
+#cmakedefine TACHO_HAVE_BLAS
+
+/* Define if want to build with METIS enabled */
+#cmakedefine TACHO_HAVE_METIS
+
+/* Define if want to build with METIS enabled */
+//#cmakedefine TACHO_HAVE_METIS_MT
+
+/* Define if want to build with Scotch enabled */
+//#cmakedefine TACHO_HAVE_SCOTCH
+
+/* Define if want to build with CHOLMOD enabled */
+#cmakedefine TACHO_HAVE_SUITESPARSE
+
+/* Define if want to build with VTune enabled */
+#cmakedefine TACHO_HAVE_VTUNE
+
+///* Define if want to build with Teuchos enabled */
+#cmakedefine TACHO_HAVE_TRILINOS_SS
+
+#ifndef F77_BLAS_MANGLE
+# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
+
+#endif

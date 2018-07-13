@@ -1,0 +1,5 @@
+NOTE: It is unlikely that the raw build scripts in this directory
+still work.  For now, please use the CMake build system to build these
+examples.
+
+Note: Float128 test is disabled for now. I am getting undefined reference errors.

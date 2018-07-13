@@ -55,15 +55,13 @@
 
 #include "Panzer_NodeType.hpp"
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
@@ -110,7 +108,7 @@ int main(int argc, char *argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  PHX::InitializeKokkosDevice();
+  Kokkos::initialize(argc,argv);
 
   int status = 0;
 
@@ -237,7 +235,7 @@ int main(int argc, char *argv[])
 
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
  
-      mesh->setupTransientExodusFile("output.exo");
+      mesh->setupExodusFile("output.exo");
     }
 
     // build worksets
@@ -247,7 +245,11 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer             // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer);
+    wkstContainer->setFactory(wkstFactory);
+    for(size_t i=0;i<physicsBlocks.size();i++) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -262,7 +264,7 @@ int main(int argc, char *argv[])
     {
       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
+      linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
     }
 
     // build linear solver 
@@ -351,8 +353,6 @@ int main(int argc, char *argv[])
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
-
-  PHX::FinalizeKokkosDevice();
 
   return status;
 }

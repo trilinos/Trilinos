@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -58,9 +58,8 @@ template <typename INT> struct NODE_COMM_MAP;
 
 namespace {
   template <typename INT>
-  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, size_t msize,
-                   INT *mapout);
-}
+  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout);
+} // namespace
 /*
  * need this variable for the 0 processor to hold on to the correct
  * Exodus II database title
@@ -183,8 +182,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         ncomm_cnt++;
         n_comm_map[ncomm_cnt].node_cnt = 1;
       }
-      else
+      else {
         (n_comm_map[ncomm_cnt].node_cnt)++;
+      }
     }
 
     ncomm_cnt++;
@@ -251,8 +251,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         ecomm_cnt++;
         e_comm_map[ecomm_cnt].elem_cnt = 1;
       }
-      else
+      else {
         (e_comm_map[ecomm_cnt].elem_cnt)++;
+      }
     }
 
     ecomm_cnt++;
@@ -304,8 +305,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     printf("\tNumber External Nodes: " ST_ZU "\n", (size_t)globals.Num_External_Nodes[iproc]);
     printf("\tNumber Internal Elements: " ST_ZU "\n", (size_t)globals.Num_Internal_Elems[iproc]);
     printf("\tNumber Border Elements: " ST_ZU "\n", (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", (size_t)ncomm_cnt);
-    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", (size_t)ecomm_cnt);
+    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", static_cast<size_t>(ncomm_cnt));
+    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", static_cast<size_t>(ecomm_cnt));
     printf("\tProccesor For: %d\n", proc_for);
   }
 
@@ -344,24 +345,26 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   INT *nem_node_mapb = nem_node_mapi + globals.Num_Internal_Nodes[iproc];
   INT *nem_node_mape = nem_node_mapb + globals.Num_Border_Nodes[iproc];
 
-  for (size_t i1      = 0; i1 < itotal_nodes; i1++)
+  for (size_t i1 = 0; i1 < itotal_nodes; i1++) {
     nem_node_mapi[i1] = i1 + 1;
+  }
 
   /* Convert Elem_Map to local element numbering */
   reverse_map(globals.Elem_Map[iproc], 0, itotal_elems, &globals.GElems[iproc][0], (INT *)nullptr,
-              itotal_elems, &globals.Elem_Map[iproc][0]);
+              &globals.Elem_Map[iproc][0]);
   /* Convert element IDs in the comm map to local numbering */
   for (int i0 = 0; i0 < ecomm_cnt; i0++) {
     reverse_map(e_comm_map[i0].elem_ids, 0, e_comm_map[i0].elem_cnt, &globals.GElems[iproc][0],
-                (INT *)nullptr, itotal_elems, e_comm_map[i0].elem_ids);
+                (INT *)nullptr, e_comm_map[i0].elem_ids);
   }
 
   /* Sort the globals.GNodes array using the index array 'loc_index' */
   INT *loc_index = (INT *)array_alloc(__FILE__, __LINE__, 1, itotal_nodes, sizeof(INT));
 
   /* Initialize index array */
-  for (size_t i2  = 0; i2 < itotal_nodes; i2++)
+  for (size_t i2 = 0; i2 < itotal_nodes; i2++) {
     loc_index[i2] = i2;
+  }
 
   /*
    * Sort the globals.GNodes[iproc] array via the index array
@@ -372,7 +375,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   /* Convert nodal IDs in the comm map to local numbering */
   for (int i0 = 0; i0 < ncomm_cnt; i0++) {
     reverse_map(n_comm_map[i0].node_ids, 0, n_comm_map[i0].node_cnt, &globals.GNodes[iproc][0],
-                loc_index, itotal_nodes, n_comm_map[i0].node_ids);
+                loc_index, n_comm_map[i0].node_ids);
   }
 
   PIO_Time_Array[3] = 0.0;
@@ -488,9 +491,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
     strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
 
-    if (qa_date[strlen(qa_date) - 1] == '\n')
+    if (qa_date[strlen(qa_date) - 1] == '\n') {
       qa_date[strlen(qa_date) - 1] = '\0';
-
+    }
     if (globals.Num_QA_Recs > 0) {
       strcpy(globals.QA_Record[4 * (globals.Num_QA_Recs - 1)], qa_name);
       strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers);
@@ -510,8 +513,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     /* Output the QA and Info records */
-    for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++)
+    for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
       bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
+    }
 
     tt1 = second();
 
@@ -698,7 +702,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
     char **EB_Types = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                            MAX_STR_LENGTH + 1, sizeof(char));
-    if (!EB_Types) {
+    if (EB_Types == nullptr) {
       fprintf(stderr, "%s: fatal: insufficient memory\n", yo);
       exit(1);
     }
@@ -739,8 +743,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       /* Find the local element block index */
       int ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
-        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk)
+        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
+        }
       }
 
       /* Error check */
@@ -769,7 +774,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
                                      &EB_NperE[0], &EB_Nattr[0], 1);
     check_exodus_error(error, "ex_put_concat_elem_block");
 
-    safe_free((void **)&EB_Types);
+    safe_free(reinterpret_cast<void **>(&EB_Types));
 
     /* Output attribute names for each element block */
     for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
@@ -779,8 +784,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       /* Find the local element block index */
       int ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
-        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk)
+        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
+        }
       }
 
       /* If it's a non-null block output attribute name information */
@@ -797,8 +803,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     /* Reset globals.GNodes to start at 1 instead of 0 */
-    for (size_t i1 = 0; i1 < itotal_nodes; (globals.GNodes[iproc][i1++])++)
+    for (size_t i1 = 0; i1 < itotal_nodes; (globals.GNodes[iproc][i1++])++) {
       ;
+    }
 
     /* Output the Exodus node number map */
     bytes_out += itotal_nodes * sizeof(INT);
@@ -823,8 +830,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     INT *iElem_Map = (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] +
                                                                    globals.Num_Border_Elems[iproc],
                                         sizeof(INT));
-    for (INT i1 = 0; i1 < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc]; i1++)
+    for (INT i1 = 0; i1 < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc];
+         i1++) {
       iElem_Map[i1] = globals.GElems[iproc][i1] + 1;
+    }
 
     bytes_out +=
         2 * globals.Num_Internal_Elems[iproc] * globals.Num_Border_Elems[iproc] * sizeof(INT);
@@ -882,8 +891,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       /* Find the local element block index */
       int ilocal;
       for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
-        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk)
+        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
           break;
+        }
       }
 
       /* Error check */
@@ -910,7 +920,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         INT *proc_local_conn = (INT *)array_alloc(__FILE__, __LINE__, 1, tmp_cnt, sizeof(INT));
 
         reverse_map(&globals.Proc_Elem_Connect[iproc][iIndex0], 1, tmp_cnt,
-                    &globals.GNodes[iproc][0], loc_index, itotal_nodes, proc_local_conn);
+                    &globals.GNodes[iproc][0], loc_index, proc_local_conn);
 
         bytes_out += globals.Proc_Nodes_Per_Elem[iproc][ilocal] *
                      globals.Proc_Num_Elem_In_Blk[iproc][ilocal] * sizeof(INT);
@@ -966,8 +976,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
    * dummy set is output for this value.
    */
   INT iMaxLen = 0;
-  for (int i1 = 0; i1 < globals.Proc_Num_Node_Sets[iproc]; i1++)
+  for (int i1 = 0; i1 < globals.Proc_Num_Node_Sets[iproc]; i1++) {
     iMaxLen = PEX_MAX(globals.Proc_NS_Count[iproc][i1], iMaxLen);
+  }
 
   /* Renumber Node set node lists to use local node numbers */
   INT *proc_local_ns = nullptr;
@@ -976,7 +987,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Proc_NS_List_Length[iproc], sizeof(INT));
 
     reverse_map(&globals.Proc_NS_List[iproc][0], 1, globals.Proc_NS_List_Length[iproc],
-                &globals.GNodes[iproc][0], loc_index, itotal_nodes, proc_local_ns);
+                &globals.GNodes[iproc][0], loc_index, proc_local_ns);
   }
 
   safe_free((void **)&loc_index);
@@ -1027,8 +1038,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       /* Find the local ID */
       int i2 = 0;
       for (i2 = 0; i2 < globals.Num_Node_Set; i2++) {
-        if (globals.Proc_NS_Ids[iproc][i2] == Node_Set_Ids[i1])
+        if (globals.Proc_NS_Ids[iproc][i2] == Node_Set_Ids[i1]) {
           break;
+        }
       }
 
       conc_ids[i1]   = globals.Proc_NS_Ids[iproc][i2];
@@ -1047,14 +1059,23 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       }
     }
 
-    ex_put_concat_node_sets(mesh_exoid, TOPTR(conc_ids), TOPTR(conc_nodes), TOPTR(conc_df),
-                            TOPTR(conc_nind), TOPTR(conc_dind), TOPTR(conc_nlist), TOPTR(conc_sdf));
+    ex_set_specs set_specs{};
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_nodes);
+    set_specs.num_dist_per_set    = TOPTR(conc_df);
+    set_specs.sets_entry_index    = TOPTR(conc_nind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_nlist);
+    set_specs.sets_extra_list     = nullptr;
+    set_specs.sets_dist_fact      = TOPTR(conc_sdf);
+    ex_put_concat_sets(mesh_exoid, EX_NODE_SET, &set_specs);
   }
   total_out_time += second() - tt1;
 
   /* Free local number array */
-  if (globals.Proc_Num_Node_Sets[iproc] > 0)
+  if (globals.Proc_Num_Node_Sets[iproc] > 0) {
     safe_free((void **)&proc_local_ns);
+  }
 
   /* Renumber element SS to use local element numbers */
   INT *proc_local_ss = nullptr;
@@ -1062,8 +1083,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     proc_local_ss = (INT *)array_alloc(__FILE__, __LINE__, 1,
                                        globals.Proc_SS_Elem_List_Length[iproc], sizeof(INT));
     reverse_map(&globals.Proc_SS_Elem_List[iproc][0], 0, globals.Proc_SS_Elem_List_Length[iproc],
-                &globals.GElems[iproc][0], (INT *)nullptr,
-                globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc], proc_local_ss);
+                &globals.GElems[iproc][0], (INT *)nullptr, proc_local_ss);
   }
 
   PIO_Time_Array[18] = 0.0;
@@ -1125,8 +1145,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       /* Find the local ID of this side set */
       int i2 = 0;
       for (i2 = 0; i2 < globals.Num_Side_Set; i2++) {
-        if (globals.Proc_SS_Ids[iproc][i2] == Side_Set_Ids[i1])
+        if (globals.Proc_SS_Ids[iproc][i2] == Side_Set_Ids[i1]) {
           break;
+        }
       }
 
       conc_ids[i1]   = globals.Proc_SS_Ids[iproc][i2];
@@ -1147,16 +1168,25 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
             globals.Proc_SS_Dist_Fact[iproc][globals.Proc_SS_DF_Pointers[iproc][i2] + i3];
       }
     }
-    ex_put_concat_side_sets(mesh_exoid, TOPTR(conc_ids), TOPTR(conc_sides), TOPTR(conc_dist),
-                            TOPTR(conc_eind), TOPTR(conc_dind), TOPTR(conc_elist),
-                            TOPTR(conc_slist), TOPTR(conc_sdflist));
+
+    ex_set_specs set_specs{};
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_sides);
+    set_specs.num_dist_per_set    = TOPTR(conc_dist);
+    set_specs.sets_entry_index    = TOPTR(conc_eind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_elist);
+    set_specs.sets_extra_list     = TOPTR(conc_slist);
+    set_specs.sets_dist_fact      = TOPTR(conc_sdflist);
+    ex_put_concat_sets(mesh_exoid, EX_SIDE_SET, &set_specs);
   }
   PIO_Time_Array[19] += (second() - tt1);
   total_out_time += (PIO_Time_Array[18] + PIO_Time_Array[19]);
 
   /* Free unneeded memory */
-  if (globals.Proc_Num_Side_Sets[iproc] > 0)
+  if (globals.Proc_Num_Side_Sets[iproc] > 0) {
     safe_free((void **)&proc_local_ss);
+  }
 
   /*
    * Write out the name of the coordinate axes to the parallel ExodusII
@@ -1189,16 +1219,16 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   /* Calculate the overall performance */
   tt1 = bytes_out;
 
-  if (total_out_time == 0)
+  if (total_out_time == 0) {
     tt1 = 0;
-  else
+  }
+  else {
     tt1 = tt1 / total_out_time;
+  }
 
   tt1 /= 1024.0;
 
   PIO_Time_Array[25] = tt1;
-
-  return;
 
 } /* END write_parExo_data() */
 
@@ -1280,7 +1310,7 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
     T *var_ptr = &Restart_Info.Glob_Vals[0];
 
-    error = ex_put_glob_vars(exoid, time_step, Restart_Info.NVar_Glob, var_ptr);
+    error = ex_put_var(exoid, time_step, EX_GLOBAL, 1, 0, Restart_Info.NVar_Glob, var_ptr);
 
     check_exodus_error(error, "ex_put_glob_vars");
   }
@@ -1295,9 +1325,9 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
       T *var_ptr = &(Restart_Info.Node_Vals[proc][var_offset]);
 
-      error = ex_put_nodal_var(exoid, time_step, (var_num + 1), num_nodes, var_ptr);
+      error = ex_put_var(exoid, time_step, EX_NODAL, (var_num + 1), 1, num_nodes, var_ptr);
 
-      check_exodus_error(error, "ex_put_nodal_var");
+      check_exodus_error(error, "ex_put_var");
     }
   }
 
@@ -1423,8 +1453,7 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
 namespace {
   template <typename INT>
-  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, size_t msize,
-                   INT *mapout)
+  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout)
   {
     /*
      * The 'global' array is an array of node or element numbers
@@ -1449,8 +1478,9 @@ namespace {
     INT *tmp_index = (INT *)array_alloc(__FILE__, __LINE__, 1, gsize, sizeof(INT));
 
     /* Initialize index array */
-    for (size_t i2  = 0; i2 < gsize; i2++)
+    for (size_t i2 = 0; i2 < gsize; i2++) {
       tmp_index[i2] = i2;
+    }
 
     /* Sort the 'global' array via the index array 'tmp_index' */
     gds_iqsort(global, tmp_index, gsize);
@@ -1460,8 +1490,9 @@ namespace {
       for (size_t i2 = 0; i2 < gsize; i2++) {
         INT gval = global[tmp_index[i2]] + p01;
 
-        while (glmap[index[i3]] < gval)
+        while (glmap[index[i3]] < gval) {
           i3++;
+        }
 
         assert(glmap[index[i3]] == gval);
 
@@ -1472,8 +1503,9 @@ namespace {
       for (size_t i2 = 0; i2 < gsize; i2++) {
         INT gval = global[tmp_index[i2]] + p01;
 
-        while (glmap[i3] < gval)
+        while (glmap[i3] < gval) {
           i3++;
+        }
 
         assert(glmap[i3] == gval);
 
@@ -1482,4 +1514,4 @@ namespace {
     }
     safe_free((void **)&tmp_index);
   }
-}
+} // namespace

@@ -157,6 +157,10 @@ MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = fal
     return GRAPH;
   if(myStr == "Coordinates")
     return XPETRA_MULTIVECTOR_DOUBLE;
+#ifdef HAVE_MUELU_INTREPID2
+  if(myStr == "pcoarsen: element to node map")
+    return FIELDCONTAINER_ORDINAL;
+#endif
   //Check for custom variable
   size_t firstWordStart = myStr.find_first_not_of(' ');
   size_t firstWordEnd   = myStr.find(' ', firstWordStart);
@@ -506,6 +510,9 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
         return saveDataToMatlab(level->Get<RCP<MAggregates>>(dataName, factory));
       case GRAPH:
         return saveDataToMatlab(level->Get<RCP<MGraph>>(dataName, factory));
+#ifdef HAVE_MUELU_INTREPID2
+        return saveDataToMatlab(level->Get<RCP<FieldContainer_ordinal>>(dataName, factory));
+#endif
       default:
         throw runtime_error("Invalid MuemexType for getting hierarchy data.");
     }
@@ -681,15 +688,16 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
 {
   keepAll = false;
   A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
+  RCP<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > opA(A);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   if(haveCoords)
   {
     RCP<Tpetra_MultiVector_double> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List, coordArray);
   }
   else
   {
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List);
   }
   prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
 
@@ -773,7 +781,7 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
   //Set keep flags on ALL factories in ALL levels
   //We have access to H's list of FactoryManagers so we know how to get factory pointer given the name of the factory.
   //We don't know which names are in the FactoryManagers though so a brute force approach is needed...
-  vector<string> keepItems = {"A", "P", "R", "Ptent", "Aggregates", "Coordinates", "UnAmalgamationInfo", "Smoother", "PreSmoother", "PostSmoother", "CoarseSolver", "Graph", "CoarseMap", "Nullspace", "Ppattern", "Constraint", "CoarseNumZLayers", "LineDetection_Layers", "LineDetection_VertLineIds", "Partition", "Importer", "DofsPerNode", "Filtering"};
+  vector<string> keepItems = {"A", "P", "R", "Ptent", "Aggregates", "Coordinates", "UnAmalgamationInfo", "Smoother", "PreSmoother", "PostSmoother", "CoarseSolver", "Graph", "CoarseMap", "Nullspace", "Ppattern", "Constraint", "CoarseNumZLayers", "LineDetection_Layers", "LineDetection_VertLineIds", "Partition", "Importer", "DofsPerNode", "Filtering" "pcoarsen: element to node map"};
   RCP<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> openH = rcp_static_cast<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Hierarchy>(H);
   if(openH.is_null())
     throw runtime_error("Could not cast RCP<Hierarchy> to subclass.");
@@ -1160,10 +1168,12 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
       opt_int = (int*) mxGetData(prhs);
       if(M == 1 && N == 1)
         List->set(option_name, *opt_int);
-      else
-      {
-        List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
-      }
+#ifdef HAVE_MUELU_INTREPID2
+      else if (strcmp(option_name, "pcoarsen: element to node map") == 0)
+	List->set(option_name, loadDataFromMatlab<RCP<FieldContainer_ordinal>>(prhs));
+#endif
+      else 
+	List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
       break;
       // NTS: 64-bit ints will break on a 32-bit machine.        We
       // should probably detect machine type, or somthing, but that would

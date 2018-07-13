@@ -1,7 +1,7 @@
 #include "stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp"
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
-#include <stk_mesh/base/CreateFaces.hpp>       // for comm_mesh_counts, count_entities
+#include <stk_mesh/base/GetEntities.hpp>       // for count_entities
+#include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
@@ -9,7 +9,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/Setup2Block2HexMesh.hpp"
+#include "stk_unit_tests/stk_mesh/Setup2Block2HexMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_unit_test_utils/getOption.h>
@@ -30,7 +30,7 @@ TEST(ForEntityFunctionInMeshImplUtils, test_counting_nodes_using_raw_bucket_loop
         stk::mesh::BulkData bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
+        stk::io::fill_mesh(generatedMeshSpec, bulkData);
 
         {
             unsigned numNodes = 0;

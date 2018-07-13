@@ -3,4 +3,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     A   a   PT  REQUIRED
     B   b   ST  OPTIONAL
     C   c   ST  OPTIONAL
+  REGRESSION_EMAIL_LIST with_packages-regressions@someurl.none
   )

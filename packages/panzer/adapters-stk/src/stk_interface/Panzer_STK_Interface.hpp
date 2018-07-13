@@ -310,25 +310,152 @@ public:
    // Utility functions
    //////////////////////////////////////////
 
-   /** Write this mesh to exodus. This is a one shot function
-     * that will write to a particular exodus output file.
-     */
-   void writeToExodus(const std::string & filename);
+  /**
+   *  \brief Write this mesh and associated fields to the given output file.
+   *
+   *  \note This will only write a single timestep at time = 0.
+   *
+   *  \param[in] filename The name of the output Exodus file.
+   */
+  void
+  writeToExodus(
+    const std::string& filename);
 
-   /** This simply sets up a transient exodus file for writing.
-     * No work is performed at this stage. This is used
-     * in combination with <code>writeToExodus(double timestep)</code>.
-     */
-   void setupTransientExodusFile(const std::string & filename);
+  /**
+   *  \brief Set up an output Exodus file for writing results.
+   *
+   *  Create an output mesh associated with the given `filename` and add the
+   *  fields to it.
+   *
+   *  \note No writing is actually done at this stage.  That happens with a
+   *        call to `writeToExodus(double timestep)`.
+   *
+   *  \param[in] filename The name of the output Exodus file.
+   *
+   *  \throws `std::logic_error` If the `STK_Interface` does not yet have a MPI
+   *                             communicator.
+   */
+  void
+  setupExodusFile(
+    const std::string& filename);
 
-   /** Write this timestep to the exodus file specified in the
-     * <code>setupTransientExodusFile</code>. This uses the
-     * current state of the STK fields as the time step.
-     */
-   void writeToExodus(double timestep);
+  /**
+   *  \brief Write this mesh and associated fields at the given `timestep`.
+   *
+   *  Write this mesh and the current state of the associated fields for time =
+   *  `timestep` to the output Exodus file created via `setupExodusFile()`.
+   *
+   *  \note `setupExodusFile(const std::string& filename)` must be called
+   *        before any invocations of this routine.
+   *
+   *  \param[in] timestep The simulation time at which you're writing the
+   *                      results.
+   */
+  void
+  writeToExodus(
+    double timestep);
+
+  /**
+   *  \brief Add an `int` global variable to the information to be written to
+   *         the Exodus output file.
+   *
+   *  This allows you to add any arbitrary global data (that is, data not
+   *  associated with nodes, elements, etc.) to the Exodus output file tagged
+   *  with a `string` key.
+   *
+   *  \note Data is not actually written to the output Exodus file until
+   *        `writeToExodus()` is called.
+   *
+   *  \param[in] key   The name of the global variable you'll be adding.  Note
+   *                   that keys should be unique if you're adding multiple
+   *                   global variables with repeated calls to
+   *                   `addGlobalToExodus()`.  Repeated calls with identical
+   *                   keys will result in the value associated with the key
+   *                   simply being overwritten.
+   *  \param[in] value The value of the global variable you'll be adding.
+   */
+  void
+  addGlobalToExodus(
+    const std::string& key,
+    const int&         value);
+
+  /**
+   *  \brief Add a `double` global variable to the information to be written to
+   *         the Exodus output file.
+   *
+   *  This allows you to add any arbitrary global data (that is, data not
+   *  associated with nodes, elements, etc.) to the Exodus output file tagged
+   *  with a `string` key.
+   *
+   *  \note Data is not actually written to the output Exodus file until
+   *        `writeToExodus()` is called.
+   *
+   *  \param[in] key   The name of the global variable you'll be adding.  Note
+   *                   that keys should be unique if you're adding multiple
+   *                   global variables with repeated calls to
+   *                   `addGlobalToExodus()`.  Repeated calls with identical
+   *                   keys will result in the value associated with the key
+   *                   simply being overwritten.
+   *  \param[in] value The value of the global variable you'll be adding.
+   */
+  void
+  addGlobalToExodus(
+    const std::string& key,
+    const double&      value);
+
+  /**
+   *  \brief Add a `std::vector<int>` global variable to the information to be
+   *         written to the Exodus output file.
+   *
+   *  This allows you to add any arbitrary global data (that is, data not
+   *  associated with nodes, elements, etc.) to the Exodus output file tagged
+   *  with a `string` key.
+   *
+   *  \note Data is not actually written to the output Exodus file until
+   *        `writeToExodus()` is called.
+   *
+   *  \param[in] key   The name of the global variable you'll be adding.  Note
+   *                   that keys should be unique if you're adding multiple
+   *                   global variables with repeated calls to
+   *                   `addGlobalToExodus()`.  Repeated calls with identical
+   *                   keys will result in the value associated with the key
+   *                   simply being overwritten.
+   *  \param[in] value The value of the global variable you'll be adding.
+   */
+  void
+  addGlobalToExodus(
+    const std::string&      key,
+    const std::vector<int>& value);
+
+  /**
+   *  \brief Add a `std::vector<double>` global variable to the information to
+   *         be written to the Exodus output file.
+   *
+   *  This allows you to add any arbitrary global data (that is, data not
+   *  associated with nodes, elements, etc.) to the Exodus output file tagged
+   *  with a `string` key.
+   *
+   *  \note Data is not actually written to the output Exodus file until
+   *        `writeToExodus()` is called.
+   *
+   *  \param[in] key   The name of the global variable you'll be adding.  Note
+   *                   that keys should be unique if you're adding multiple
+   *                   global variables with repeated calls to
+   *                   `addGlobalToExodus()`.  Repeated calls with identical
+   *                   keys will result in the value associated with the key
+   *                   simply being overwritten.
+   *  \param[in] value The value of the global variable you'll be adding.
+   */
+  void
+  addGlobalToExodus(
+    const std::string&         key,
+    const std::vector<double>& value);
 
    // Accessor functions
    //////////////////////////////////////////
+
+   //! get the comm associated with this mesh
+   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
  
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
@@ -462,7 +589,7 @@ public:
 
    /**  Get the containing block ID of this element.
      */ 
-   std::string containingBlockId(stk::mesh::Entity elmt);
+   std::string containingBlockId(stk::mesh::Entity elmt) const;
 
    /** Get the stk mesh field pointer associated with a particular solution value
      * Assumes there is a field associated with "fieldName,blockId" pair. If none
@@ -889,6 +1016,41 @@ protected:
    // I/O support
    Teuchos::RCP<stk::io::StkMeshIoBroker> meshData_;
    int meshIndex_;
+
+  /**
+   *  \brief An enumeration to indicate to `globalToExodus()` whether it should
+   *         be adding or writing the global variables to the mesh database.
+   */
+  enum class GlobalVariable
+  {
+    ADD,
+    WRITE
+  }; // end of enum class GlobalVariable
+
+  /**
+   *  \brief Add or write global variables to the mesh database.
+   *
+   *  This routine either adds or writes, depending on the value of `flag`, any
+   *  global variables added via `addGlobalToExodus()` to the mesh database.
+   *
+   *  \param[in] flag Either `GlobalVariable::ADD` or `GlobalVariable::WRITE`,
+   *                  indicating that the global variables should be added or
+   *                  written to the mesh database, respectively.
+   *
+   *  \throws `std::invalid_argument` If a global variable is not an `int`,
+   *                                  `double`, `std::string`,
+   *                                  `std::vector<int>`,
+   *                                  `std::vector<double>`, or
+   *                                  `std::vector<std::string>`.
+   */
+  void
+  globalToExodus(
+    const GlobalVariable& flag);
+
+  /**
+   *  \brief The global variable(s) to be added to the Exodus output.
+   */
+  Teuchos::ParameterList globalData_;
 #endif
 
    // uses lazy evaluation

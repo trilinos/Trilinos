@@ -119,8 +119,8 @@ bool strMatch( const std::string &fullMatchStr, const std::string &str )
 
   const std::string::size_type npos = std::string::npos;
 
-  const int strLen = str.length();
-  const int fullMatchStrLen = fullMatchStr.length();
+  const size_t strLen = str.length();
+  const size_t fullMatchStrLen = fullMatchStr.length();
 
   if (fullMatchStrLen == 0) {
     return true;
@@ -129,7 +129,7 @@ bool strMatch( const std::string &fullMatchStr, const std::string &str )
   const bool beginGlob = fullMatchStr[0] == '*';
   const bool endGlob = fullMatchStr[fullMatchStrLen-1] == '*';
 
-  const int matchStrLen =
+  const size_t matchStrLen =
 	fullMatchStrLen + (beginGlob ? -1 : 0) + (endGlob ? -1 : 0);
 
   if (matchStrLen == 0) {
@@ -486,7 +486,7 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "show-src-location", "no-show-src-location", &getData().showSrcLocation,
     "If true, then the location of the unit test source code is shown."
-    "  Only meaningfull if --show-test-details=ALL."
+    "  Only meaningful if --show-test-details=ALL."
     );
 
   clp->setOption(

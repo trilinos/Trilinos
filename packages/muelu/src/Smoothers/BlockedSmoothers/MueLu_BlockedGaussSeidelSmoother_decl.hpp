@@ -57,6 +57,10 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
 
 #include "MueLu_BlockedGaussSeidelSmoother_fwd.hpp"
@@ -180,6 +184,9 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
 
     //@}
 

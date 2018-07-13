@@ -232,39 +232,6 @@ namespace stk_example_io {
     // Just an example of how application could control whether an
     // entity is subsetted or not...
 
-
-#if 0
-    // Example command line in current code corresponding to behavior below:
-    std::cout << "\nWhen processing file multi-block.g for use case 2, the blocks below will be omitted:\n";
-    std::cout << "\tOMIT BLOCK Cblock Eblock I1 I2\n\n";
-    Ioss::ElementBlock *eb = in_region.get_element_block("cblock");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("eblock");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("i1");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-    eb = in_region.get_element_block("i2");
-    if (eb != NULL)
-      eb->property_add(Ioss::Property(std::string("omitted"), 1));
-#endif
-
-#if 0
-    // Example for subsetting -- omit "odd" blocks
-    if (entity->type() == Ioss::ELEMENTBLOCK) {
-      int id = entity->get_property("id").get_int();
-      if (id % 2) {
-	entity->property_add(Ioss::Property(std::string("omitted"), 1));
-	std::cout << "Skipping " << entity->type_string() << ": "  << entity->name() << "\n";
-      }
-    }
-#endif
-
     //----------------------------------
     // Process Entity Types. Subsetting is possible.
 
@@ -304,27 +271,10 @@ namespace stk_example_io {
       std::exit(EXIT_FAILURE);
     }
 
-#if 0
-    {
-      // Code to test the remove_io_part_attribute functionality.
-      // Hook this up to a command line option at some point to test nightly...
-      const stk::mesh::PartVector & all_parts = fem_meta_data.get_parts();
-      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-	stk::mesh::Part * const part = *ip;
-	const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
-	
-	if (stk::io::is_part_io_part(*part) && part_rank == 2) {
-	  std::cout << "Removing part attribute from " << part->name() << "\n";
-	  stk::io::remove_io_part_attribute(*part);
-	}
-      }
-    }
-#endif
-
     // NOTE: 'out_region' owns 'dbo' pointer at this time...
     Ioss::Region out_region(dbo, "results_output");
 
-    stk::io::define_output_db(out_region, bulk_data, &in_region);
+    stk::io::define_output_db(out_region, bulk_data, {}, &in_region);
     stk::io::write_output_db(out_region,  bulk_data);
 
     // ------------------------------------------------------------------------
@@ -430,10 +380,8 @@ namespace stk_example_io {
   // ========================================================================
   void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
-    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
-
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-    stk::io::default_part_processing(elem_blocks, meta, element_rank);
+    stk::io::default_part_processing(elem_blocks, meta);
 
     // Parts were created above, now handle element block specific
     // information (topology, attributes, ...);
@@ -471,7 +419,7 @@ namespace stk_example_io {
   void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    stk::io::default_part_processing(node_sets, meta, stk::topology::NODE_RANK);
+    stk::io::default_part_processing(node_sets, meta);
 
     /** \todo REFACTOR should "distribution_factor" be a default field
      * that is automatically declared on all objects that it exists
@@ -515,7 +463,7 @@ namespace stk_example_io {
     Ioss::SideSet *fs = dynamic_cast<Ioss::SideSet *>(sset);
     assert(fs != NULL);
     const Ioss::SideBlockContainer& blocks = fs->get_side_blocks();
-    stk::io::default_part_processing(blocks, meta, sset_rank);
+    stk::io::default_part_processing(blocks, meta);
 
     stk::mesh::Part* const fs_part = meta.get_part(sset->name());
     STKIORequire(fs_part != NULL);
@@ -565,7 +513,7 @@ namespace stk_example_io {
     const stk::mesh::EntityRank side_rank = meta.side_rank();
 
     const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-    stk::io::default_part_processing(side_sets, meta, side_rank);
+    stk::io::default_part_processing(side_sets, meta);
 
     for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	it != side_sets.end(); ++it) {
@@ -655,7 +603,7 @@ namespace stk_example_io {
         for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
           if (*I == "attribute" && names.size() > 1)
             continue;
-          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(stk::topology::ELEMENT_RANK, *I);
+          stk::mesh::FieldBase *field = meta.get_field(stk::topology::ELEMENT_RANK, *I);
           stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
         }
@@ -688,7 +636,7 @@ namespace stk_example_io {
         for(int i=0; i<node_count; ++i) {
           nodes[i] = bulk.get_entity( stk::topology::NODE_RANK, node_ids[i] );
           if (bulk.is_valid(nodes[i])) {
-            bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
+            bulk.declare_node(node_ids[i], add_parts );
           }
         }
 
@@ -745,13 +693,13 @@ namespace stk_example_io {
             int side_ordinal = elem_side[is*2+1] - 1 ;
 
             stk::mesh::Entity side = stk::mesh::Entity();
-	    int64_t side_id = ten * elem_side[is*2+0] + elem_side[is*2+1];
             if (side_rank == 2) {
-              side = stk::mesh::declare_element_side(bulk, side_id, elem, side_ordinal);
+              side = bulk.declare_element_side(elem, side_ordinal, add_parts);
             } else {
+              int64_t side_id = ten * elem_side[is*2+0] + elem_side[is*2+1];
               side = stk::mesh::declare_element_edge(bulk, side_id, elem, side_ordinal);
+              bulk.change_entity_parts( side, add_parts );
             }
-            bulk.change_entity_parts( side, add_parts );
             sides[is] = side;
           } else {
             sides[is] = stk::mesh::Entity();

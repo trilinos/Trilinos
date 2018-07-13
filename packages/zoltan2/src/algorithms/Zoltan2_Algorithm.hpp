@@ -59,6 +59,7 @@ class Algorithm;
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_MatrixPartitioningSolution.hpp>
 #include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
@@ -87,7 +88,13 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
+  virtual int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Ordering method
+  virtual int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
   {
     Z2_THROW_NOT_IMPLEMENTED 
   }
@@ -109,8 +116,31 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  //! \brief Matrix Partitioning method
+  virtual void partitionMatrix(const RCP<MatrixPartitioningSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
   //! \brief Mapping method
   virtual void map(const RCP<MappingSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  return if algorithm determins tree to be binary
+  virtual bool isPartitioningTreeBinary() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  for partitioning methods, fill arrays with partition tree info
+  virtual void getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
   {
     Z2_THROW_NOT_IMPLEMENTED
   }

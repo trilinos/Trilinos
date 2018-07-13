@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 INCLUDE(GlobalSet)
 
 
@@ -104,15 +104,19 @@ ENDFUNCTION()
 #
 FUNCTION(UNITTEST_STRING_REGEX INPUT_STRING)
 
-  PARSE_ARGUMENTS(
+  CMAKE_PARSE_ARGUMENTS(
      #prefix
      PARSE
-     #lists
-     "REGEX_STRINGS"
      #options
      ""
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "REGEX_STRINGS"
      ${ARGN}
      )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   FOREACH(REGEX ${PARSE_REGEX_STRINGS})
 

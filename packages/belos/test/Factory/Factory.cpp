@@ -89,8 +89,26 @@ testSolver (bool& success, Teuchos::FancyOStream& out, const std::string& solver
       << "SolverBaseType: " << TypeNameTraits<SolverBaseType>::name () << endl
       << "SolverImplType: " << TypeNameTraits<SolverImplType>::name () << endl;
 
-  factory_type factory;
+  RCP<factory_type> pFactory;
   RCP<solver_base_type> solver;
+
+  out << "Test whether creating a Belos::SolverFactory works" << endl;
+  try {
+    pFactory = rcp (new factory_type ());
+  }
+  catch (std::exception& e) {
+    out << "Belos::SolverFactory constructor threw an exception: "
+        << e.what () << endl;
+    success = false;
+    return; // doesn't make sense to continue
+  }
+  catch (...) {
+    out << "Belos::SolverFactory constructor threw an exception not a subclass "
+      "of std::exception" << endl;
+    success = false;
+    return; // doesn't make sense to continue
+  }
+  factory_type& factory = *pFactory;
 
   out << "Test whether factory works when input ParameterList is null" << endl;
 
@@ -204,6 +222,7 @@ do { \
     out << "*** Solver \"" << solverName << "\" threw an exception: " \
         << e.what () << std::endl; \
     success = false; \
+    failedSolvers.push_back (solverName); \
   } \
 } while (false)
 
@@ -296,6 +315,22 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
     BELOS_TEST_SOLVER( "bicgstab" );
   }
 
+#if 1
+  if (success) {
+    out << endl << "Test SUCCEEDED!" << endl;
+  }
+  else {
+    out << endl << "Test FAILED!" << endl
+        << "Solvers that failed: [";
+    for (size_t k = 0; k < failedSolvers.size (); ++k) {
+      out << "\"" << failedSolvers[k] << "\"";
+      if (k + 1 < failedSolvers.size ()) {
+        out << ", ";
+      }
+    }
+    out << "]" << endl;
+  }
+#else
   if (! success) {
     out << endl << "*** Solvers that failed: ";
     out << "[";
@@ -307,5 +342,6 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
     }
     out << "]" << endl;
   }
+#endif // 0
 }
 

@@ -2,6 +2,7 @@ BlockedCrsMatrix
 CrsMatrix
 CrsMatrix
 CrsMatrixFactory
+CrsMatrixUtils
 MapExtractor
 MapExtractorFactory
 Matrix

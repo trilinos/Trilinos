@@ -74,7 +74,7 @@
 //    }
 // }
 
-#include <Python.h>
+#include "Python3Compat.hpp"
 #include <stdexcept>
 
 namespace PyTrilinos

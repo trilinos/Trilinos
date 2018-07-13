@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Pyramid14() : ElementVariableType("pyramid14", 14) {}
+    St_Pyramid14() : ElementVariableType(Ioss::Pyramid14::name, 14) {}
   };
 } // namespace Ioss
 
@@ -100,10 +100,10 @@ void Ioss::Pyramid14::factory()
   Ioss::St_Pyramid14::factory();
 }
 
-Ioss::Pyramid14::Pyramid14() : Ioss::ElementTopology("pyramid14", "Pyramid_14")
+Ioss::Pyramid14::Pyramid14() : Ioss::ElementTopology(Ioss::Pyramid14::name, "Pyramid_14")
 {
-  Ioss::ElementTopology::alias("pyramid14", "Solid_Pyramid_14_3D");
-  Ioss::ElementTopology::alias("pyramid14", "pyra14");
+  Ioss::ElementTopology::alias(Ioss::Pyramid14::name, "Solid_Pyramid_14_3D");
+  Ioss::ElementTopology::alias(Ioss::Pyramid14::name, "pyra14");
 }
 
 Ioss::Pyramid14::~Pyramid14() = default;
@@ -177,10 +177,9 @@ Ioss::ElementTopology *Ioss::Pyramid14::face_type(int face_number) const
     //    return Ioss::ElementTopology::factory("triface6");
     return Ioss::ElementTopology::factory("tri6");
   }
-  else {
-    //    return Ioss::ElementTopology::factory("quadface9");
-    return Ioss::ElementTopology::factory("quad9");
-  }
+
+  //    return Ioss::ElementTopology::factory("quadface9");
+  return Ioss::ElementTopology::factory("quad9");
 }
 
 Ioss::ElementTopology *Ioss::Pyramid14::edge_type(int edge_number) const

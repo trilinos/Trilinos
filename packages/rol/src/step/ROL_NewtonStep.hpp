@@ -71,11 +71,11 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a NewtonStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  NewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  NewtonStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
@@ -84,7 +84,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
 
     // Compute unconstrained step
@@ -95,7 +95,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate
     algo_state.iter++;

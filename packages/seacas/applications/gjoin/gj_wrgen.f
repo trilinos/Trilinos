@@ -1,6 +1,6 @@
-C Copyright (c) 2008 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright (c) 2008 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
 C 
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -39,7 +39,7 @@ C=======================================================================
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, KFACSS,
-     &   kltsss, NQAREC, QAREC, NINFO, INFREC, NAMELB, *)
+     &   kltsss, NQAREC, QAREC, NINFO, INFREC, NAMELB, L64BIT, NC4, *)
 C=======================================================================
 
 C   --*** WRGEN *** (GJOIN) Writes the GENESIS database
@@ -83,7 +83,8 @@ C   --      for each set
 C   --   KLTESS - IN - index of LTEESS; the elements for all sets
 C   --   KFACSS - IN - index of FACESS; the distribution factors for all sets
 C   --   NAMELB - IN - the names of the element blocks
-
+C   --   L64BIT - IN - true if use 64-bit integer output database
+      
       include 'exodusII.inc'
       include 'gj_params.blk'
 
@@ -93,6 +94,8 @@ C   --   NAMELB - IN - the names of the element blocks
       character*(MXSTLN) qarec(4,MAXQA)
       character*(MXLNLN) infrec(MAXINF)
       character*(MXSTLN) nameco(6), namelb(*)
+      LOGICAL            l64bit, NC4
+      
 C      --QAREC - the QA records
 C      --INFREC - the information records
       integer cpuws,wsout
@@ -112,7 +115,14 @@ C     Create the netcdf file
       LNAM = LENSTR (FILNAM)
 
       cpuws = 0
-      idexo = excre (filnam(:lnam), EXCLOB, cpuws, wsout, ierr)
+      MODE = EX_CLOBBER
+      if (l64bit) then
+        MODE = MODE + EX_ALL_INT64_DB + EX_ALL_INT64_API
+      end if
+      if (nc4) then
+        MODE = MODE + EX_NETCDF4
+      end if
+      idexo = excre (filnam(:lnam), MODE, cpuws, wsout, ierr)
       if (ierr .lt. 0) then
          call exerr('gjoin2', 'Error from excre', exlmsg)
          go to 150

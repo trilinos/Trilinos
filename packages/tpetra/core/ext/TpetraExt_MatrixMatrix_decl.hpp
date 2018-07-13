@@ -100,8 +100,9 @@ void Multiply(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  bool call_FillComplete_on_result=true,
-  const std::string & label = std::string());
+  bool call_FillComplete_on_result = true,
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
      * Currently not functional.
@@ -127,6 +128,108 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB );
 
+namespace AddDetails
+{
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+struct AddKernels
+{
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef typename Node::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename execution_space::memory_space memory_space;
+  typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename KCRS::values_type::non_const_type values_array;
+  typedef typename KCRS::row_map_type::non_const_type row_ptrs_array;
+  typedef typename KCRS::row_map_type row_ptrs_array_const;
+  typedef typename KCRS::index_type::non_const_type col_inds_array;
+  typedef typename Kokkos::View<const GlobalOrdinal*, device_type> local_map_type;
+  typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
+  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B must both have column indices sorted within each row
+  /// \param Avals Values array for A
+  /// \param Arowptrs Row pointers array for A
+  /// \param Acolinds Column indices array for A
+  /// \param scalarA Scaling factor for A
+  /// \param Bvals Values array for B
+  /// \param Browptrs Row pointers array for B
+  /// \param Bcolinds Column indices array for B
+  /// \param scalarB Scaling factor for B
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void addSorted(
+    const values_array& Avals,
+    const row_ptrs_array_const& Arowptrs,
+    const col_inds_array& Acolinds, 
+    const impl_scalar_type scalarA,
+    const values_array& Bvals,
+    const row_ptrs_array_const& Browptrs,
+    const col_inds_array& Bcolinds, 
+    const impl_scalar_type scalarB,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    col_inds_array& Ccolinds);
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B don't need to be sorted, and column indices are given as global indices
+  /// \param A A (local) matrix
+  /// \param scalarA Scaling factor for A
+  /// \param B B (local) matrix
+  /// \param scalarB Scaling factor for B
+  /// \param minGlobalCol The minimum global index owned by this processor in the column map
+  /// \param globalNumCols The global size of the column map
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void convertToGlobalAndAdd(
+    const KCRS& A,
+    const impl_scalar_type scalarA,
+    const KCRS& B,
+    const impl_scalar_type scalarB,
+    const local_map_type& AcolMap,
+    const local_map_type& BcolMap,
+    GlobalOrdinal minGlobalCol,
+    GlobalOrdinal globalNumCols,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    global_col_inds_array& Ccolinds);
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B don't need to be sorted
+  /// \param Avals Values array for A
+  /// \param Arowptrs Row pointers array for A
+  /// \param Acolinds Column indices array for A
+  /// \param scalarA Scaling factor for A
+  /// \param Bvals Values array for B
+  /// \param Browptrs Row pointers array for B
+  /// \param Bcolinds Column indices array for B
+  /// \param scalarB Scaling factor for B
+  /// \param globalNumCols The global size of the column map
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void addUnsorted(
+    const values_array& Avals,
+    const row_ptrs_array_const& Arowptrs,
+    const col_inds_array& Acolinds, 
+    const impl_scalar_type scalarA,
+    const values_array& Bvals,
+    const row_ptrs_array_const& Browptrs,
+    const col_inds_array& Bcolinds, 
+    const impl_scalar_type scalarB,
+    GlobalOrdinal numGlobalCols,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    col_inds_array& Ccolinds);
+
+  static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal ncols, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+};
+}//end AddDetails
 
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
@@ -138,8 +241,8 @@ void Add(
 /// have different row Maps; the returned matrix will have the same
 /// row Map as the row Map of B.
 ///
-/// \pre If A and B are both fill complete, then they must have the
-///   same domain and range Maps.
+/// \pre A and B must both be fillComplete and have matching domain and
+///   range Maps.
 ///
 /// \param scalarA [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
@@ -168,9 +271,58 @@ add (const Scalar& alpha,
      const Scalar& beta,
      const bool transposeB,
      const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
-     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
-     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
-     const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap = Teuchos::null,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap  = Teuchos::null,
+     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
+/// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
+///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+///
+/// This version of sparse matrix-matrix add returns a new CrsMatrix
+/// instance, rather than using an existing instance for the result.
+/// The returned matrix is fill complete, with the given domain and
+/// range Maps.  It is correct (though less efficient) for A and B to
+/// have different row Maps; the returned matrix will have the same
+/// row Map as the row Map of B.
+///
+/// \pre A and B must both be fillComplete and have matching domain and
+///   range Maps.
+///
+/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param transposeA [in] If true, use the transpose of A.
+/// \param A [in] The first input matrix.
+///
+/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param transposeB [in] If true, use the transpose of B.
+/// \param B [in] The second input matrix.
+///
+/// \param B [in] The result matrix, which we expect to be 'new'
+///
+/// \param domainMap [in] Domain Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
+/// \param rangeMap [in] Range Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
+/// \param params [in/out] Same as the parameters of RowMatrix::add.
+///
+/// See the documentation of RowMatrix::add for a more detailed
+/// discussion of the optional parameters.
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+add (const Scalar& alpha,
+     const bool transposeA,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+     const Scalar& beta,
+     const bool transposeB,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap = Teuchos::null,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap  = Teuchos::null,
+     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
 
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
@@ -212,7 +364,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
 
 
   /** Given CrsMatrix objects A, B and C, and Vector Dinv, form the product C = (I-omega * Dinv A)*B
@@ -245,13 +397,15 @@ void Add(
               const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
               const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-              bool call_FillComplete_on_result=true,
-	      const std::string & label = std::string());
+              bool call_FillComplete_on_result = true,
+                   const std::string& label = std::string(),
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 } // namespace MatrixMatrix
 
 namespace MMdetails{
 
+  // Matrix multiplication functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -260,7 +414,8 @@ void mult_AT_B_newmatrix(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
 template<class Scalar,
@@ -271,7 +426,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 template<class Scalar,
          class LocalOrdinal,
@@ -281,7 +437,11 @@ void mult_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
+
 
 template<class Scalar,
          class LocalOrdinal,
@@ -291,8 +451,13 @@ void mult_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+
+
+  // Matrix jacobi functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -303,7 +468,9 @@ void jacobi_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string & label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
 
 template<class Scalar,
          class LocalOrdinal,
@@ -315,19 +482,22 @@ void jacobi_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label = std::string());
+  const std::string & label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+  // Other functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class Node>
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes=false,
-  const std::string & label = std::string());
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
+  bool userAssertsThereAreNoRemotes = false,
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 template<class Scalar,
          class LocalOrdinal,
@@ -335,6 +505,92 @@ template<class Scalar,
          class Node>
 void setMaxNumEntriesPerRow(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview);
+
+
+  // MMM Kernel wrappers struct
+  // Because C++ doesn't support partial template specialization of functions.
+  template<class Scalar,
+	   class LocalOrdinal,
+	   class GlobalOrdinal,
+	   class Node,
+           class LocalOrdinalViewType>
+  struct KernelWrappers {
+    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+							 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+							 const LocalOrdinalViewType & Acol2Brow,
+							 const LocalOrdinalViewType & Acol2Irow,
+							 const LocalOrdinalViewType & Bcol2Ccol,
+							 const LocalOrdinalViewType & Icol2Ccol,
+							 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+							 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                         const std::string& label = std::string(),
+							 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                     const LocalOrdinalViewType & Acol2Brow,
+                                                     const LocalOrdinalViewType & Acol2Irow,
+                                                     const LocalOrdinalViewType & Bcol2Ccol,
+                                                     const LocalOrdinalViewType & Icol2Ccol,
+                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                     const std::string& label = std::string(),
+                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  };
+
+  // Jacobi Kernel wrappers struct
+  // Because C++ doesn't support partial template specialization of functions.
+
+  template<class Scalar,
+	   class LocalOrdinal,
+	   class GlobalOrdinal,
+	   class Node,
+           class LocalOrdinalViewType>
+  struct KernelWrappers2 {
+    static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                           const LocalOrdinalViewType & Acol2Brow,
+                                                           const LocalOrdinalViewType & Acol2Irow,
+                                                           const LocalOrdinalViewType & Bcol2Ccol,
+                                                           const LocalOrdinalViewType & Icol2Ccol,
+                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                           const std::string& label = std::string(),
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                       const LocalOrdinalViewType & Acol2Brow,
+                                                       const LocalOrdinalViewType & Acol2Irow,
+                                                           const LocalOrdinalViewType & Bcol2Ccol,
+                                                       const LocalOrdinalViewType & Icol2Ccol,
+                                                       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                       Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                       const std::string& label = std::string(),
+                                                       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  };
+
+
+  // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
+  template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
+  inline const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type 
+  merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                 const LocalOrdinalViewType & Acol2Brow,
+                 const LocalOrdinalViewType & Acol2Irow,
+                 const LocalOrdinalViewType & Bcol2Ccol,
+                 const LocalOrdinalViewType & Icol2Ccol,  
+                 const size_t mergedNodeNumCols);
+
+
+
+
+template<class CrsMatrixType>
+size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B);
 
 }//end namespace MMdetails
 

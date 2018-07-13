@@ -221,6 +221,9 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
 
+    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -312,8 +315,10 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif
@@ -380,7 +385,7 @@ namespace Xpetra {
       }
       double** rawArrayOfRawPtrs = const_cast<double**>(arrayOfRawPtrs.getRawPtr()); // This const_cast should be fine, because Epetra_DataAccess=Copy.
 
-      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, NumVectors));
+      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, static_cast<int>(NumVectors)));
     }
 
     //! MultiVector destructor.
@@ -516,6 +521,13 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getGlobalLength"); return vec_->GlobalLength64(); }
 
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+      XPETRA_MONITOR("EpetraMultiVectorT::isSameSize"); 
+      auto vv = toEpetra<GlobalOrdinal,Node>(vec); 
+      return ( (vec_->MyLength() == vv.MyLength()) && (vec_->NumVectors() == vv.NumVectors()));
+    }
+                          
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -525,7 +537,7 @@ namespace Xpetra {
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_UNREACHABLE_RETURN("TODO");
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
@@ -682,8 +694,10 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif
@@ -920,6 +934,13 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getGlobalLength"); return vec_->GlobalLength64(); }
 
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+      XPETRA_MONITOR("EpetraMultiVectorT::isSameSize"); 
+      auto vv = toEpetra<GlobalOrdinal,Node>(vec); 
+      return ( (vec_->MyLength() == vv.MyLength()) && (vec_->NumVectors() == vv.NumVectors()));
+    }
+         
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -928,8 +949,8 @@ namespace Xpetra {
     //! A simple one-line description of this object.
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
-      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO");
+      //return "TODO"; // unreachable
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
@@ -1086,8 +1107,10 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif

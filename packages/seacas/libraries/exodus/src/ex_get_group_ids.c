@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2013 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
 #include "netcdf.h"       // for nc_inq_grps, NC_NOERR
 #include <stdio.h>
@@ -46,26 +46,27 @@
  */
 int ex_get_group_ids(int parent_id, int *num_groups, int *group_ids)
 {
-  int  status;
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
-
 #if NC_HAS_HDF5
+  int status;
+
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(parent_id);
+
   status = nc_inq_grps(parent_id, num_groups, group_ids);
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to get child group ids in file id %d",
              parent_id);
-    ex_err("ex_get_group_ids", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_group_ids", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 #else
-  exerrval = NC_ENOTNC4;
+  EX_FUNC_ENTER();
   snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Group capabilities are not available in this netcdf "
                                    "version--not netcdf4");
-  ex_err("ex_get_group_ids", errmsg, exerrval);
-  return (EX_FATAL);
+  ex_err("ex_get_group_ids", errmsg, NC_ENOTNC4);
+  EX_FUNC_LEAVE(EX_FATAL);
 #endif
 }

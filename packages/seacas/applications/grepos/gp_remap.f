@@ -1,6 +1,6 @@
-C Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
 C                         
-C * Neither the name of Sandia Corporation nor the names of its
+C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
 C                                                 
@@ -29,7 +29,6 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
 
 C=======================================================================
       SUBROUTINE REMAP (LLIST, IX, LIST, ISCR)
@@ -54,7 +53,7 @@ C   --   LIST - IN/OUT - the list of integers; renumbered
         ISCR(I) = 0
  100  CONTINUE
 
-      DO 110 I = 1, LLIST
+      DO 110 I = LLIST, 1, -1
         INDEX = IX(I)
         if (index .ne. 0) ISCR(ABS(INDEX)) = LIST(I)
  110  CONTINUE

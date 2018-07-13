@@ -49,10 +49,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Phalanx_KokkosUtilities.hpp"
-
 #include "Panzer_GatherSolution_Epetra.hpp"
-
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
@@ -100,11 +97,11 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+      TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+      TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    }
 
    // test jacobian gather evaluator
@@ -117,11 +114,11 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+      TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
+      TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
    }
 }
 

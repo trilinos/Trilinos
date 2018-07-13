@@ -75,8 +75,8 @@ namespace ROL {
 
 template<class Real>
 struct NonlinearCGState {
-  std::vector<Teuchos::RCP<Vector<Real> > > grad;   // Gradient Storage
-  std::vector<Teuchos::RCP<Vector<Real> > > pstep;  // Step Storage
+  std::vector<ROL::Ptr<Vector<Real> > > grad;   // Gradient Storage
+  std::vector<ROL::Ptr<Vector<Real> > > pstep;  // Step Storage
   int iter;                                         // Nonlinear-CG Iteration Counter
   int restart;                                      // Reinitialize every 'restart' iterations
   ENonlinearCG nlcg_type;                           // Nonlinear-CG Type
@@ -86,10 +86,10 @@ template<class Real>
 class NonlinearCG {
 private:
 
-  Teuchos::RCP<NonlinearCGState<Real> > state_; // Nonlinear-CG State
+  ROL::Ptr<NonlinearCGState<Real> > state_; // Nonlinear-CG State
 
-  Teuchos::RCP<Vector<Real> > y_;
-  Teuchos::RCP<Vector<Real> > yd_;
+  ROL::Ptr<Vector<Real> > y_;
+  ROL::Ptr<Vector<Real> > yd_;
 
 public:
 
@@ -97,21 +97,21 @@ public:
 
   // Constructor
   NonlinearCG(ENonlinearCG type, int restart = 100) {
-    state_ = Teuchos::rcp( new NonlinearCGState<Real> ); 
+    state_ = ROL::makePtr<NonlinearCGState<Real>>(); 
     state_->iter = 0;
     state_->grad.resize(1);
     state_->pstep.resize(1);
-    TEUCHOS_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(type)),
+    ROL_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(type)),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Invalid nonlinear CG type in constructor!");
     state_->nlcg_type = type;
-    TEUCHOS_TEST_FOR_EXCEPTION((restart < 1),
+    ROL_TEST_FOR_EXCEPTION((restart < 1),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Non-positive restart integer in constructor!");
     state_->restart = restart;
   }
 
-  Teuchos::RCP<NonlinearCGState<Real> >& get_state() { return this->state_; }
+  ROL::Ptr<NonlinearCGState<Real> >& get_state() { return this->state_; }
 
   // Run one step of nonlinear CG.
   virtual void run( Vector<Real> &s , const Vector<Real> &g, const Vector<Real> &x, Objective<Real> &obj ) {
@@ -210,7 +210,7 @@ public:
           }
 
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(state_->nlcg_type)),
+          ROL_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(state_->nlcg_type)),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Invalid nonlinear CG type in the 'run' method!");  
       }

@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STK_SIDE_CONNECTOR_HPP
 #define STK_SIDE_CONNECTOR_HPP
 
@@ -16,6 +48,60 @@ namespace stk
 namespace mesh
 {
 
+class SideCreationElementChooser
+{
+public:
+    SideCreationElementChooser(const stk::mesh::BulkData &b,
+                               const stk::mesh::impl::ElementLocalIdMapper &im,
+                               const stk::mesh::Graph &g,
+                               const stk::mesh::impl::SparseGraph &cg)
+    : bulk(b), localIdMapper(im), graph(g), coincidentGraph(cg) { }
+
+    GraphEdge get_chosen_graph_edge(stk::mesh::Entity elem, int elemSide) const;
+private:
+    const stk::mesh::BulkData &bulk;
+    const stk::mesh::impl::ElementLocalIdMapper &localIdMapper;
+    const stk::mesh::Graph &graph;
+    const stk::mesh::impl::SparseGraph &coincidentGraph;
+};
+
+class SideIdChooser
+{
+public:
+    SideIdChooser(const stk::mesh::BulkData &b,
+                  const stk::mesh::impl::ElementLocalIdMapper &im,
+                  const stk::mesh::Graph &g,
+                  const stk::mesh::impl::SparseGraph &cg)
+    : elemChooser(b, im, g, cg), idMapper(b, im) { }
+    stk::mesh::EntityId get_chosen_side_id(stk::mesh::Entity elem, int elemSide) const;
+private:
+    const stk::mesh::SideCreationElementChooser elemChooser;
+    stk::mesh::impl::BulkDataIdMapper idMapper;
+};
+
+class SideNodeConnector
+{
+public:
+    SideNodeConnector(stk::mesh::BulkData &b,
+                      const stk::mesh::Graph &g,
+                      const stk::mesh::impl::SparseGraph &cg,
+                      const stk::mesh::ParallelInfoForGraphEdges &p,
+                      const stk::mesh::impl::ElementLocalIdMapper & lm)
+    : bulk(b), graph(g), coincidentGraph(cg), parallelGraph(p), localMapper(lm)
+    { }
+    void connect_side_to_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+private:
+    void connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+    void connect_side_to_other_elements_nodes(const GraphEdge &edgeWithMinId, stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+    stk::mesh::EntityVector get_permuted_side_nodes(stk::mesh::Entity elemEntity, int elemSide, const stk::mesh::EntityVector &sideNodes, int permutation);
+private:
+    stk::mesh::BulkData &bulk;
+    const stk::mesh::Graph &graph;
+    const stk::mesh::impl::SparseGraph &coincidentGraph;
+    const stk::mesh::ParallelInfoForGraphEdges &parallelGraph;
+    const stk::mesh::impl::ElementLocalIdMapper &localMapper;
+};
+
 class SideConnector
 {
 public:
@@ -29,13 +115,12 @@ public:
             m_localMapper(localMapper)
     {
     }
+
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
                                       stk::mesh::Entity elemEntity,
                                       int elemSide);
 private:
     SideConnector();
-
-    stk::mesh::Entity get_entity_for_local_id(stk::mesh::impl::LocalId localId) const;
 
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
                                               const stk::mesh::GraphEdge &graphEdge);
@@ -48,6 +133,10 @@ private:
                               stk::mesh::Entity otherElement,
                               int sideOrd);
     void connect_side_to_adjacent_elements(stk::mesh::Entity sideEntity, stk::mesh::impl::LocalId elemLocalId, int elemSide);
+    stk::mesh::EntityId get_min_id(const GraphEdge& graphEdge,
+                                   int elemSide,
+                                   const stk::mesh::impl::BulkDataIdMapper& idMapper,
+                                   stk::mesh::EntityId minId);
 
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Graph &m_graph;

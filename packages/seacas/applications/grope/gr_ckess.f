@@ -1,6 +1,6 @@
-C    Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-C    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C    certain rights in this software
+C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    NTESS, the U.S. Government retains certain rights in this software.
 C    
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
@@ -8,16 +8,16 @@ C    met:
 C    
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C    
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
-C    * Neither the name of Sandia Corporation nor the names of its
+C    
+C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C    
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -78,7 +78,7 @@ C   --   RCHECK - SCRATCH - size = NUMNP
       INTEGER MAPND(*)
       LOGICAL DIDHEAD, ALLSAM
       
-      CHARACTER*128 STRA
+      CHARACTER*1024 STRA
 
 C   --Check for unique identifier
 
@@ -161,6 +161,25 @@ C     problems with some analysis codes
         end do
       end do
 
+c ... Check that the distribution factor count matches the number of nodes
+C     in the sideset...
+      do iess = 1, numess
+        call exgsp(ndb, idess(iess), nsess, ndfss, ierr)
+        call exgssc(ndb, idess(iess), nscr, ierr)
+        numnod = 0
+        do i = 1, neess(iess)
+          numnod = numnod + nscr(i)
+        end do
+        if (ndfss .ne. numnod) then
+          write (stra, 10001) idess(iess), ndfss, numnod
+10001     FORMAT('SIDESET ERROR: In sideset ', I10,
+     *      ' the number of distribution factors (', I10,
+     *      ') does not match the sideset node count (', I10, ')')
+            call sqzstr(stra, lstra)
+            CALL PRTERR ('CMDSPEC', STRA(:lstra))
+        endif
+      end do
+      
 c ... Check for discontinuous sideset distribution factors on a sideset.
 C     That is, if node 42 on side 15 has a different df value than node 42 on side 11.
 C     This is allowed for in exodus, but most users want a c1 continuous field defined.

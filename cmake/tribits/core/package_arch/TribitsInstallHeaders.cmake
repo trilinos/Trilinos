@@ -38,7 +38,7 @@
 # @HEADER
 
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(CMakeParseArguments)
 
 
 #
@@ -90,12 +90,19 @@ FUNCTION(TRIBITS_INSTALL_HEADERS)
     MESSAGE("\nTRIBITS_INSTALL_HEADERS: ${ARGN}")
   ENDIF()
 
-  PARSE_ARGUMENTS(
-    PARSE #prefix
-    "HEADERS;INSTALL_SUBDIR;COMPONENT" # Lists
-    "" #Options
-    ${ARGN} # Remaining arguments passed in
+  CMAKE_PARSE_ARGUMENTS(
+    #prefix
+    PARSE
+    #Options
+    ""
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    "HEADERS;INSTALL_SUBDIR;COMPONENT"
+    ${ARGN}
     )
+
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
 
   # ToDo: Assert PARSE_HEADERS has at least one argument!
   # ToDo: Assert PARSE_INSTALL_DIR has 0 or 1 argumnets!

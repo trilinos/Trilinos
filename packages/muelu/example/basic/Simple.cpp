@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     throw std::invalid_argument("This example only supports Tpetra.");
   }
 
-  ParameterList mueluParams;
+  Teuchos::ParameterList mueluParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(mueluParams));
 
   //
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
   //
   // Set up Krylov solver and iterate.
   //
-  RCP<ParameterList> belosList = rcp(new ParameterList());
+  RCP<Teuchos::ParameterList> belosList = rcp(new Teuchos::ParameterList());
   belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
   belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);

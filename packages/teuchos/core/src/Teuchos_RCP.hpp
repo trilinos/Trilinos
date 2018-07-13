@@ -491,6 +491,22 @@ RCP<T> RCP<T>::create_strong() const
   return RCP<T>(ptr_, node_.create_strong());
 }
 
+#if defined(HAVE_TEUCHOSCORE_CXX11) && defined(HAVE_TEUCHOS_THREAD_SAFE)
+template<class T>
+inline
+RCP<T> RCP<T>::create_strong_thread_safe() const
+{
+  if (strength() == RCP_STRONG) {
+    return create_strong(); // it's already thread safe
+  }
+  // we don't check for debug_assert_valid_ptr()
+  // probably doesn't hurt anything if we do but using it would be confusing
+  // because ptr could become invalid immediately after
+  RCPNodeHandle attemptStrong = node_.create_strong_lock();
+  return RCP<T>( attemptStrong.is_node_null() ? 0 : ptr_, attemptStrong);
+}
+#endif
+
 
 template<class T>
 template <class T2>

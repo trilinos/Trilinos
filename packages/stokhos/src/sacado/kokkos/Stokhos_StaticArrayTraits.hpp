@@ -48,6 +48,8 @@
 
 #include "Kokkos_Macros.hpp"
 
+#include "Stokhos_MemoryTraits.hpp"
+
 namespace Stokhos {
 
   /*!
@@ -148,6 +150,15 @@ namespace Stokhos {
     void copy(const volatile T* src, volatile T* dest, std::size_t sz) {
       // if (sz > 0)
       //   std::memcpy(const_cast<const T*>(dest),const_cast<T*>(src),sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = *(src++);
     }
@@ -158,6 +169,15 @@ namespace Stokhos {
     void copy(const volatile T* src, T* dest, std::size_t sz) {
       // if (sz > 0)
       //   std::memcpy(dest,const_cast<const T*>(src),sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = *(src++);
     }
@@ -168,6 +188,15 @@ namespace Stokhos {
     void copy(const T* src, volatile T* dest, std::size_t sz) {
       // if (sz > 0)
       //   std::memcpy(const_cast<T*>(dest),src,sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = *(src++);
     }
@@ -176,14 +205,36 @@ namespace Stokhos {
     static
     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
-      if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
+      //if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
     }
 
     //! Zero out array \c dest of length \c sz
     static
     KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
-      if (sz > 0) std::memset(dest,0,sz*sizeof(T));
+      // if (sz > 0) std::memset(dest,0,sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = T(0.);
     }
 
     //! Zero out array \c dest of length \c sz
@@ -191,6 +242,15 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void zero(volatile T* dest, std::size_t sz) {
       // if (sz > 0) std::memset(const_cast<T*>(dest),0,sz*sizeof(T));
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = T(0.);
     }
@@ -200,6 +260,15 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, T v) {
       //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = v;
     }
@@ -209,6 +278,15 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void fill(volatile T* dest, std::size_t sz, T v) {
       //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_VECTOR_ALIGNED
+#pragma vector aligned
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = v;
     }

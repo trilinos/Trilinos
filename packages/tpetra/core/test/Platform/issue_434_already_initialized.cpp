@@ -62,7 +62,7 @@ namespace { // (anonymous)
     // Kokkos lacks a global is_initialized function.  However,
     // Kokkos::initialize always initializes the default execution
     // space, so we can check that.
-    return Kokkos::DefaultExecutionSpace::is_initialized ();
+    return Kokkos::is_initialized ();
   }
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -209,7 +209,7 @@ main (int argc, char* argv[])
       goto EndOfTest;
     }
     else {
-      if (mpiIsFinalized == 0) {
+      if (mpiIsFinalized == 1) {
         err << "*** MPI_Finalized says MPI was finalized" << endl;
         success = false;
         goto EndOfTest; // MPI is finalized, so this is safe to do
@@ -225,7 +225,11 @@ main (int argc, char* argv[])
     success = false;
   }
 
+#ifdef HAVE_TPETRACORE_MPI
+  // This label only gets used in an MPI build.
+  // Some compilers warn on unused labels.
  EndOfTest:
+#endif // HAVE_TPETRACORE_MPI
 
   // Clean up, if possible.
 #ifdef HAVE_TPETRACORE_MPI

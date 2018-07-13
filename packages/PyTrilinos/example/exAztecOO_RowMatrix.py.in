@@ -63,8 +63,9 @@
 
 #
 # System imports
+from   __future__ import print_function
 import numpy
-from   optparse import *
+from   optparse   import *
 
 #
 # Parse the command-line arguments
@@ -239,7 +240,7 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
                 y = Epetra.MultiVector(Epetra.View, y)
             # Import the off-processor values
             if not x.Map().SameAs(self.__rowMap):
-                print "Vector x must be distributed via the matrix row map"
+                print("Vector x must be distributed via the matrix row map")
                 return -1
             xImp = Epetra.MultiVector(self.__orderedColMap, x.NumVectors())
             xImp.Import(x, self.__orderedImporter, Epetra.Insert)
@@ -263,8 +264,8 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
             # beowulf, which was running numpy 0.9.8 at the time.  The simpler
             # notation in the comment above works for newer versions of numpy.
 
-        except Exception, e:
-            print "Laplace1D_Matrix.Multiply error:", e
+        except Exception as e:
+            print("Laplace1D_Matrix.Multiply error:", e)
             return -1
 
         return 0
@@ -392,8 +393,8 @@ def main():
     # Solve the problem
     solver.Iterate(5*n, tol)
     if iAmRoot:
-        if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
-        else:                             print "End Result: TEST FAILED"
+        if solver.ScaledResidual() < tol: print("End Result: TEST PASSED")
+        else:                             print("End Result: TEST FAILED")
 
 ################################################################################
 

@@ -75,6 +75,7 @@ namespace Amesos2 {
     , bvals_()
     , xvals_()
     , in_grid_(false)
+    , is_contiguous_(true)
   {
     using Teuchos::Comm;
     // It's OK to depend on MpiComm explicitly here, because
@@ -669,6 +670,10 @@ namespace Amesos2 {
 
     bool replace_tiny = parameterList->get<bool>("ReplaceTinyPivot", true);
     data_.options.ReplaceTinyPivot = replace_tiny ? SLUD::YES : SLUD::NO;
+
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
   }
 
 
@@ -732,6 +737,8 @@ namespace Amesos2 {
                                                     tuple<SLUD::colperm_t>(SLUD::NATURAL,
                                                                            SLUD::PARMETIS),
                                                     pl.getRawPtr());
+
+      pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
       valid_params = pl;
     }
@@ -812,6 +819,7 @@ namespace Amesos2 {
                                          nzvals_(), colind_(), rowptr_(),
                                          nnz_ret,
                                          ptrInArg(*superlu_rowmap_),
+                                         ROOTED,
                                          ARBITRARY);
   }
 

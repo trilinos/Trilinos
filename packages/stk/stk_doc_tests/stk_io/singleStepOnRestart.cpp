@@ -44,8 +44,6 @@
 #include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_Property.h"              // for Property
 #include "Ioss_Region.h"                // for Region
-#include "Teuchos_RCP.hpp"              // for RCP::operator->
-#include "Teuchos_RCPDecl.hpp"          // for RCP
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 

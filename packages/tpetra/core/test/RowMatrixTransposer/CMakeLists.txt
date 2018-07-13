@@ -1,11 +1,9 @@
 
-IF (Tpetra_INST_INT_INT)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    RowMatrixTransposer_test
-    SOURCES 
-    main.cpp
-    )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RowMatrixTransposer_test
+  SOURCES 
+  main.cpp
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RowMatrixTransposer_UnitTests

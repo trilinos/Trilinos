@@ -1,8 +1,7 @@
 /*
- * Copyright(C) 1999-2010
- * Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software.
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +14,8 @@
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *     * Neither the name of Sandia Corporation nor the names of its
+ *
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,46 +36,46 @@
 #define IOSS_Ioex_Internals_h
 
 #include "Ioss_ParallelUtils.h" // for ParallelUtils
+#include <cstdint>              // for int64_t
 #include <cstring>              // for strcpy, strncpy
 #include <exodusII.h>           // for MAX_LINE_LENGTH, etc
-#include <stdint.h>             // for int64_t
 #include <string>               // for string
 #include <vector>               // for vector
 namespace Ioss {
   class EdgeBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class EdgeSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class ElementSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class FaceBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class FaceSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class NodeBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class NodeSet;
-}
+} // namespace Ioss
 namespace Ioss {
   class SideBlock;
-}
+} // namespace Ioss
 namespace Ioss {
   class SideSet;
-}
+} // namespace Ioss
 
-typedef int64_t entity_id;
+using entity_id = int64_t;
 
 namespace Ioss {
-}
+} // namespace Ioss
 /*!
  * This set of classes provides a thin wrapper around the exodusII
  * internals.  It supplants several of the exodusII API calls in
@@ -123,11 +123,11 @@ namespace Ioex {
     {
     }
 
-    NodeBlock(const Ioss::NodeBlock &other);
+    explicit NodeBlock(const Ioss::NodeBlock &other);
 
     NodeBlock &operator=(const NodeBlock &other);
 
-    ~NodeBlock() {}
+    ~NodeBlock() = default;
 
     bool operator==(const NodeBlock &) const;
     bool operator!=(const NodeBlock &other) const { return !(*this == other); }
@@ -158,16 +158,16 @@ namespace Ioex {
       std::strcpy(elType, other.elType);
     }
 
-    EdgeBlock(const Ioss::EdgeBlock &other);
+    explicit EdgeBlock(const Ioss::EdgeBlock &other);
 
     EdgeBlock &operator=(const EdgeBlock &other);
 
-    ~EdgeBlock() {}
+    ~EdgeBlock() = default;
 
     bool operator==(const EdgeBlock & /*other*/) const;
     bool operator!=(const EdgeBlock &other) const { return !(*this == other); }
 
-    char        elType[MAX_STR_LENGTH + 1];
+    char        elType[MAX_STR_LENGTH + 1]{};
     std::string name;
     entity_id   id;
     int64_t     entityCount;
@@ -195,16 +195,16 @@ namespace Ioex {
       std::strcpy(elType, other.elType);
     }
 
-    FaceBlock(const Ioss::FaceBlock &other);
+    explicit FaceBlock(const Ioss::FaceBlock &other);
 
     FaceBlock &operator=(const FaceBlock &other);
 
-    ~FaceBlock() {}
+    ~FaceBlock() = default;
 
     bool operator==(const FaceBlock & /*other*/) const;
     bool operator!=(const FaceBlock &other) const { return !(*this == other); }
 
-    char        elType[MAX_STR_LENGTH + 1];
+    char        elType[MAX_STR_LENGTH + 1]{};
     std::string name;
     entity_id   id;
     int64_t     entityCount;
@@ -234,16 +234,16 @@ namespace Ioex {
       std::strcpy(elType, other.elType);
     }
 
-    ElemBlock(const Ioss::ElementBlock &other);
+    explicit ElemBlock(const Ioss::ElementBlock &other);
 
     ElemBlock &operator=(const ElemBlock &other);
 
-    ~ElemBlock() {}
+    ~ElemBlock() = default;
 
     bool operator==(const ElemBlock & /*other*/) const;
     bool operator!=(const ElemBlock &other) const { return !(*this == other); }
 
-    char        elType[MAX_STR_LENGTH + 1];
+    char        elType[MAX_STR_LENGTH + 1]{};
     std::string name;
     entity_id   id;
     int64_t     entityCount;
@@ -264,7 +264,7 @@ namespace Ioex {
           dfCount(other.dfCount), procOffset(other.procOffset)
     {
     }
-    NodeSet(const Ioss::NodeSet &other);
+    explicit NodeSet(const Ioss::NodeSet &other);
     bool operator==(const NodeSet & /*other*/) const;
     bool operator!=(const NodeSet &other) const { return !(*this == other); }
 
@@ -272,7 +272,7 @@ namespace Ioex {
     entity_id   id;
     int64_t     entityCount;
     int64_t     localOwnedCount;
-    int64_t     attributeCount;
+    int64_t     attributeCount{};
     int64_t     dfCount;
     int64_t     procOffset;
   };
@@ -285,14 +285,14 @@ namespace Ioex {
           attributeCount(other.attributeCount), dfCount(other.dfCount), procOffset(other.procOffset)
     {
     }
-    EdgeSet(const Ioss::EdgeSet &other);
+    explicit EdgeSet(const Ioss::EdgeSet &other);
     bool operator==(const EdgeSet & /*other*/) const;
     bool operator!=(const EdgeSet &other) const { return !(*this == other); }
 
     std::string name;
     entity_id   id;
     int64_t     entityCount;
-    int64_t     attributeCount;
+    int64_t     attributeCount{};
     int64_t     dfCount;
     int64_t     procOffset;
   };
@@ -305,14 +305,14 @@ namespace Ioex {
           attributeCount(other.attributeCount), dfCount(other.dfCount), procOffset(other.procOffset)
     {
     }
-    FaceSet(const Ioss::FaceSet &other);
+    explicit FaceSet(const Ioss::FaceSet &other);
     bool operator==(const FaceSet & /*other*/) const;
     bool operator!=(const FaceSet &other) const { return !(*this == other); }
 
     std::string name;
     entity_id   id;
     int64_t     entityCount;
-    int64_t     attributeCount;
+    int64_t     attributeCount{};
     int64_t     dfCount;
     int64_t     procOffset;
   };
@@ -325,14 +325,14 @@ namespace Ioex {
           attributeCount(other.attributeCount), dfCount(other.dfCount), procOffset(other.procOffset)
     {
     }
-    ElemSet(const Ioss::ElementSet &other);
+    explicit ElemSet(const Ioss::ElementSet &other);
     bool operator==(const ElemSet & /*other*/) const;
     bool operator!=(const ElemSet &other) const { return !(*this == other); }
 
     std::string name;
     entity_id   id;
     int64_t     entityCount;
-    int64_t     attributeCount;
+    int64_t     attributeCount{};
     int64_t     dfCount;
     int64_t     procOffset;
   };
@@ -340,8 +340,8 @@ namespace Ioex {
   struct SideSet
   {
     SideSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0), dfProcOffset(0) {}
-    SideSet(const Ioss::SideBlock &other);
-    SideSet(const Ioss::SideSet &other);
+    explicit SideSet(const Ioss::SideBlock &other);
+    explicit SideSet(const Ioss::SideSet &other);
     bool operator==(const SideSet & /*other*/) const;
     bool operator!=(const SideSet &other) const { return !(*this == other); }
 
@@ -420,7 +420,7 @@ namespace Ioex {
       title[MAX_LINE_LENGTH] = '\0';
     }
 
-    char title[MAX_LINE_LENGTH + 1];
+    char title[MAX_LINE_LENGTH + 1]{};
     int  dimensionality;
     bool file_per_processor;
 
@@ -495,5 +495,5 @@ namespace Ioex {
     int                 maximumNameLength;
     Ioss::ParallelUtils parallelUtil;
   };
-}
+} // namespace Ioex
 #endif /* IOSS_Ioex_Internals_h */

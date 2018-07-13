@@ -1,0 +1,119 @@
+#!/bin/bash
+
+rm -f CMakeCache.txt;
+rm -rf CMakeFiles
+echo ""
+echo "WARNING: In order to get modules correctly loaded source this files, don't just execute it."
+echo ""
+EXTRA_ARGS=$@
+
+# Trilinos Path:
+#TRILINOS_PATH=${HOME}/Trilinos
+
+# Top Level Configuration Options
+TESTS=${JENKINS_DO_TESTS}
+EXAMPLES=${JENKINS_DO_EXAMPLES}
+
+CUDA=${JENKINS_DO_CUDA}
+OPENMP=${JENKINS_DO_OPENMP}
+PTHREAD=${JENKINS_DO_PTHREAD}
+SERIAL=${JENKINS_DO_SERIAL}
+
+COMPLEX=${JENKINS_DO_COMPLEX}
+
+
+#--------------------------------------------------
+#--------------------------------------------------
+
+
+# CMAKE Command structured
+#
+# Basic Options for backends (Enable OpenMP etc.)
+# \
+# Build control (flags, debug, ETI)
+# \
+# Generic CMake options 
+# \
+# TPL Setup
+# \
+# Packages (on/off, tests, examples)
+
+cmake \
+-D Trilinos_ENABLE_OpenMP=${OPENMP} \
+-D Kokkos_ENABLE_Pthread=${PTHREAD} \
+-D TPL_ENABLE_CUDA=${CUDA} \
+  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
+-D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
+\
+-D CMAKE_CXX_FLAGS="${JENKINS_EXTRA_CXX_FLAGS} -g" \
+-D KOKKOS_ARCH="${JENKINS_ARCH}" \
+-D CMAKE_C_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
+-D CMAKE_Fortran_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
+-D CMAKE_EXE_LINKER_FLAGS="${JENKINS_ARCH_C_FLAG}" \
+-D CMAKE_Fortran_COMPILER="mpif77" \
+-D HAVE_CXX_PRAGMA_WEAK:BOOL=OFF \
+-D CMAKE_AR:FILEPATH=/usr/bin/ar \
+-D CMAKE_STRIP:FILEPATH=/usr/bin/strip \
+-D CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_DEBUG:BOOL=OFF \
+\
+-D CMAKE_INSTALL_PREFIX:PATH="$PWD/../install/" \
+-D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON \
+-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+-D CMAKE_SKIP_RULE_DEPENDENCY=ON \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D DART_TESTING_TIMEOUT:STRING=200 \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D Trilinos_ENABLE_CXX11=ON \
+  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
+\
+-D TPL_ENABLE_MPI=ON \
+  -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \
+-D TPL_ENABLE_BinUtils=OFF \
+-D TPL_ENABLE_SuperLU=OFF \
+  -D TPL_SuperLU_LIBRARIES:STRING="${SUPERLU_ROOT}/lib/libsuperlu.a" \
+  -D TPL_SuperLU_INCLUDE_DIRS:STRING="${SUPERLU_ROOT}/include" \
+-D TPL_ENABLE_BLAS=ON \
+   -D TPL_BLAS_LIBRARIES:PATH="${BLAS_LIBRARIES}" \
+-D TPL_ENABLE_LAPACK=ON \
+   -D TPL_LAPACK_LIBRARIES:PATH="${LAPACK_LIBRARIES}" \
+-D TPL_ENABLE_Boost=ON \
+   -D Boost_INCLUDE_DIRS:PATH="${BOOST_ROOT}/include" \
+   -D Boost_LIBRARY_DIRS:PATH="${BOOST_ROOT}/lib" \
+-D TPL_ENABLE_BoostLib=ON \
+   -D BoostLib_INCLUDE_DIRS:PATH="${BOOST_ROOT}/include" \
+   -D BoostLib_LIBRARY_DIRS:PATH="${BOOST_ROOT}/lib" \
+-D TPL_ENABLE_Netcdf=ON \
+  -D Netcdf_INCLUDE_DIRS:PATH="${NETCDF_ROOT}/include" \
+  -D Netcdf_LIBRARY_DIRS:PATH="${NETCDF_ROOT}/lib" \
+  -D TPL_Netcdf_LIBRARIES:PATH="${NETCDF_ROOT}/lib/libnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;${PNETCDF_ROOT}/lib/libpnetcdf.a" \
+  -D TPL_Netcdf_PARALLEL:BOOL=ON \
+-D TPL_ENABLE_HDF5=ON \
+  -D HDF5_INCLUDE_DIRS:PATH="${HDF5_ROOT}/include" \
+  -D TPL_HDF5_LIBRARIES:PATH="${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a" \
+-D TPL_ENABLE_Zlib=ON \
+  -D Zlib_INCLUDE_DIRS:PATH="${ZLIB_ROOT}/include" \
+  -D TPL_Zlib_LIBRARIES:PATH="${ZLIB_ROOT}/lib/libz.a" \
+-D TPL_ENABLE_DLlib=ON \
+\
+\
+-D Trilinos_ENABLE_Kokkos=ON \
+  -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Tpetra=ON \
+  -D Tpetra_INST_SERIAL:BOOL=${SERIAL} \
+  -D Tpetra_INST_OPENMP:BOOL=${OPENMP} \
+  -D Tpetra_INST_PTHREAD:BOOL=${PTHREAD} \
+  -D Tpetra_INST_CUDA:BOOL=${CUDA} \
+  -D Tpetra_INST_COMPLEX_DOUBLE:BOOL=${COMPLEX} \
+  -D Tpetra_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Tpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+\
+\
+$EXTRA_ARGS \
+${TRILINOS_PATH}
+

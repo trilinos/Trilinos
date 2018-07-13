@@ -111,7 +111,10 @@ namespace Teuchos {
           return make_pair (first, 1);
         else
           { // Next index of a delimiter character
-            const size_t next = str.find_first_of (delimiters, start+1);
+            // Search for the next delimiting token from "first" (instead of
+            // "start+1" as originally coded and commented out below.)
+            // const size_t next = str.find_first_of (delimiters, start+1);
+            const size_t next = str.find_first_of (delimiters, first);
             return make_pair (first, next - first);
           }
       }

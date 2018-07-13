@@ -67,6 +67,8 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
 // This example demonstrates how to reuse some parts of a classical SA multigrid setup between runs.
 //
 // In this example, we suppose that the pattern of the matrix does not change between runs so that:
@@ -77,139 +79,12 @@
 // The resulting preconditioners are identical to multigrid preconditioners built without recycling the parts described above.
 // This can be verified by using the --no-recycling option.
 
-#ifdef HAVE_MUELU_TPETRA
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#endif
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coords = Teuchos::null) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif // HAVE_MUELU_TPETRA
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-#ifdef HAVE_MUELU_EPETRA
-template<>
-Teuchos::RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > coords) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-    RCP<Epetra_CrsMatrix>      eA = Utilities::Op2NonConstEpetraCrs(A);
-    RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, paramList, Utilities::MV2NonConstEpetraMV(coords));
-    return eH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif // HAVE_MUELU_EPETRA
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-ReuseHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>& H) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    MueLu::TpetraOperator<SC, LO, GO, NO> tH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseTpetraPreconditioner(Utilities::Op2NonConstTpetraCrs(A), tH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-#ifdef HAVE_MUELU_EPETRA
-template<>
-void
-ReuseHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode>& H) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    MueLu::TpetraOperator<SC, LO, GO, NO> tH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseTpetraPreconditioner(Utilities::Op2NonConstTpetraCrs(A), tH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-    MueLu::EpetraOperator eH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseEpetraPreconditioner(Utilities::Op2NonConstEpetraCrs(A), eH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
-                   Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
+                   Teuchos::RCP<Xpetra::MultiVector <double,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
                    Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -217,6 +92,8 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
+  typedef typename RealValuedMultiVector::scalar_type Real;
+
 
   // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
   //                                 d1  d2  d3
@@ -233,16 +110,16 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
   if (matrixType == "Laplace1D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
   } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
              matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
   } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
   }
 
   // Expand map to do multiple DOF per node for block problems
@@ -272,7 +149,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -283,7 +160,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // =========================================================================
@@ -315,16 +191,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
-  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-  ParameterList paramList;
-  paramList.set("verbosity", "none");
-  if (xmlFileName != "")
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
-  ParameterList galeriList = galeriParameters.GetParameterList();
+  Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
 
   // =========================================================================
   // Problem construction
@@ -332,9 +202,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // For comments, see Driver.cpp
   out << "========================================================\n" << xpetraParameters << galeriParameters;
   std::string matrixType = galeriParameters.GetMatrixType();
-  RCP<Matrix>       A, B;
-  RCP<const Map>    map;
-  RCP<MultiVector>  coordinates, nullspace;
+  RCP<Matrix>           A, B;
+  RCP<const Map>        map;
+  RCP<RealValuedMultiVector>  coordinates;
+  RCP<MultiVector>      nullspace;
   ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
 
   if (modify) {
@@ -362,6 +233,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   std::string thickSeparator = "=============================================================";
   std::string thinSeparator  = "-------------------------------------------------------------";
 
+  Teuchos::ParameterList paramList;
+  paramList.set("verbosity", "none");
+  if (xmlFileName != "")
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+  out << "Parameter list:" << std::endl << paramList << std::endl;
+
   // =========================================================================
   // Setup #1 (no reuse)
   // =========================================================================
@@ -378,7 +256,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         tm->start();
 
       A->SetMaxEigenvalueEstimate(-one);
-      H = CreateHierarchy(A, paramList, coordinates);
+      H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
 
       // Stop timing
       if (!(numRebuilds && i == 0)) {
@@ -393,7 +271,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     // Run a build for matrix B to record its convergence
     B->SetMaxEigenvalueEstimate(-one);
-    H = CreateHierarchy(B, paramList, coordinates);
+    H = MueLu::CreateXpetraPreconditioner(B, paramList, coordinates);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);
@@ -404,9 +282,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // Setup #2-inf (reuse)
   // =========================================================================
   std::vector<std::string> reuseTypes, reuseNames;
-  reuseTypes.push_back("S");  reuseNames.push_back("smoothers");
-  reuseTypes.push_back("tP"); reuseNames.push_back("tentative P");
-  reuseTypes.push_back("RP"); reuseNames.push_back("smoothed P and R");
+  reuseTypes.push_back("none"); reuseNames.push_back("none");
+  reuseTypes.push_back("S");    reuseNames.push_back("smoothers");
+  reuseTypes.push_back("tP");   reuseNames.push_back("tentative P");
+  reuseTypes.push_back("RP");   reuseNames.push_back("smoothed P and R");
 
   for (size_t k = 0; k < reuseTypes.size(); k++) {
     out << thickSeparator << " " << reuseTypes[k] << " " << thickSeparator << std::endl;
@@ -415,7 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     paramList.set("reuse: type", reuseTypes[k]);
 
     out << thinSeparator << " " << reuseTypes[k] << " (initial) " << thinSeparator << std::endl;
-    RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);
@@ -433,7 +312,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         tm->start();
 
       B->SetMaxEigenvalueEstimate(-one);
-      ReuseHierarchy(B, *H);
+      MueLu::ReuseXpetraPreconditioner(B, H);
 
       // Stop timing
       if (!(numRebuilds && i == 0)) {
@@ -464,54 +343,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
-int main(int argc, char* argv[]) {
-  bool verbose = true;
-  bool success = false;
 
-  try {
-    const bool throwExceptions = false;
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-    Teuchos::CommandLineProcessor clp(throwExceptions);
-    Xpetra::Parameters xpetraParameters(clp);
-
-    clp.recogniseAllOptions(false);
-    switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-    }
-
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
-#else
-      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-    }
-
-    if (lib == Xpetra::UseTpetra) {
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return main_<double,int,long,Node>(clp, argc, argv);
-#else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-      return main_<double,int,int,Node> (clp, argc, argv);
-#elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-      return main_<double,int,long,Node>(clp, argc, argv);
-#elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-      return main_<double,int,long long,Node>(clp, argc, argv);
-#else
-      throw std::runtime_error("Found no suitable instantiation");
-#endif
-#endif
-    }
-
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

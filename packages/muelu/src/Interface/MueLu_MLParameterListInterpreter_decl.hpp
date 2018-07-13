@@ -80,6 +80,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#include "MueLu_RepartitionHeuristicFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_IsorropiaInterface_fwd.hpp"

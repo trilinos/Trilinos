@@ -603,7 +603,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
     if(  xadj==NULL || adjncy==NULL ) {
       fprintf( stderr,
-	       "on proc %d, not enought space for %d bytes.\n"
+	       "on proc %d, not enough space for %d bytes.\n"
 	       "file %s, line %d\n",
 	       comm->ML_mypid, N_nonzeros,
 	       __FILE__,

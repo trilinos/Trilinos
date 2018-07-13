@@ -43,12 +43,6 @@ namespace stk {
  *    - Coarse Search Interface
  *      - \ref stk_search_coarse_howto_create "Create Coarse Searchers"<br>
  *      - \ref stk_search_coarse_howto_use "Use Coarse Searchers"<br>
- *    - OctTree
- *      - \ref stk_search_octtree_howto_create "Use OctTree as coarse search"<br>
- *      - \ref stk_search_octtree_howto_use "Use OctTree stand alone"<br>
- *    - BIH
- *      - \ref stk_search_bihtree_howto_create "Use BihTree as coarse search"<br>
- *      - \ref stk_search_bihtree_howto_use "Use BihTree stand alone"<br>
  *    - ACME
  *      - \ref stk_search_acme_howto_create "Use ACME as coarse search"<br>
  *      - \ref stk_search_acme_howto_use "Use ACME stand alone"<br>
@@ -70,18 +64,6 @@ namespace stk {
  * \defgroup diagnostics_module Search Diagnostics
  *    @{
  *      \defgroup stk_search_diag_detail Diagnostics available for search
- *      \defgroup
- *    @} 
- *  
- * \defgroup stk_search_octtree_module OctTree
- *    @{
- *      \defgroup stk_search_octtree_detail OctTree
- *      \defgroup
- *    @} 
- *  
- * \defgroup stk_search_bihtree_module BIH
- *    @{
- *      \defgroup stk_search_bihtree_detail BihTree 
  *      \defgroup
  *    @} 
  *  

@@ -49,13 +49,8 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpSum.hpp"
-#include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
-#include "RTOpPack_TOpAssignVectors.hpp"
-#include "RTOpPack_TOpAXPY.hpp"
-#include "RTOpPack_TOpLinearCombination.hpp"
-#include "RTOpPack_TOpScaleVector.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -78,21 +73,7 @@ template<class Scalar>
 void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
   const ArrayView<Scalar> &dots )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  const int m = V1.domain()->dim();
-  RTOpPack::ROpDotProd<Scalar> dot_op;
-  Array<RCP<RTOpPack::ReductTarget> > rcp_dot_targs(m);
-  Array<Ptr<RTOpPack::ReductTarget> > dot_targs(m);
-  for( int kc = 0; kc < m; ++kc ) {
-    rcp_dot_targs[kc] = dot_op.reduct_obj_create();
-    dot_targs[kc] = rcp_dot_targs[kc].ptr();
-  }
-  applyOp<Scalar>( dot_op, tuple(ptrInArg(V1), ptrInArg(V2)),
-    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
-    dot_targs );
-  for( int kc = 0; kc < m; ++kc ) {
-    dots[kc] = dot_op(*dot_targs[kc]);
-  }
+  V2.dots(V1, dots);
 }
 
 
@@ -140,19 +121,7 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
 template<class Scalar>
 void Thyra::scale( Scalar alpha, const Ptr<MultiVectorBase<Scalar> > &V )
 {
-  using Teuchos::tuple; using Teuchos::null;
-  typedef ScalarTraits<Scalar> ST;
-  if (alpha==ST::zero()) {
-    assign( V, ST::zero() );
-    return;
-  }
-  if (alpha==ST::one()) {
-    return;
-  }
-  RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-  applyOp<Scalar>(scale_vector_op,
-    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
-    tuple(V), null );
+  V->scale(alpha);
 }
 
 
@@ -192,9 +161,7 @@ template<class Scalar>
 void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V,
   const MultiVectorBase<Scalar>& U )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
-  applyOp<Scalar>( assign_vectors_op, tuple(ptrInArg(U)), tuple(V), null );
+  V->assign(U);
 }
 
 
@@ -202,9 +169,7 @@ template<class Scalar>
 void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U,
   const Ptr<MultiVectorBase<Scalar> > &V )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  applyOp<Scalar>( axpy_op, tuple(ptrInArg(U)), tuple(V), null );
+  V->update(alpha, U);
 }
 
 
@@ -259,21 +224,7 @@ void Thyra::linear_combination(
   const Ptr<MultiVectorBase<Scalar> > &Y
   )
 {
-  using Teuchos::tuple; using Teuchos::null;
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(alpha.size(),X.size());
-#endif
-  const int m = alpha.size();
-  if ( beta == ScalarTraits<Scalar>::one() && m == 1 ) {
-    update( alpha[0], *X[0], Y );
-    return;
-  }
-  else if (m == 0) {
-    scale( beta, Y );
-    return;
-  }
-  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha, beta);
-  Thyra::applyOp<Scalar>( lin_comb_op, X, tuple(Y), null );
+  Y->linear_combination(alpha, X, beta);
 }
 
 
@@ -292,10 +243,7 @@ template<class Scalar>
 void Thyra::Vt_S( const Ptr<MultiVectorBase<Scalar> > &Z,
   const Scalar& alpha )
 {
-  const int m = Z->domain()->dim();
-  for( int j = 0; j < m; ++j )
-    Vt_S( Z->col(j).ptr(), alpha );
-  // Todo: call applyOp(...) directly!
+  Z->scale(alpha);
 }
 
 

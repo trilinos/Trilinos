@@ -21,7 +21,7 @@ SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
 # OpenMP support -- Add our own option to turn it off
 # without turning it off globally
 SET(Stokhos_ENABLE_OpenMP_Default OFF)
-IF(Trilinos_ENABLE_OpenMP)
+IF(${PROJECT_NAME}_ENABLE_OpenMP)
   SET(Stokhos_ENABLE_OpenMP_Default ON)
 ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -230,6 +230,7 @@ IF (Stokhos_ENABLE_EpetraExt)
     epetra/Stokhos_MLPreconditionerFactory.hpp
     epetra/Stokhos_PreconditionerFactory.hpp
     epetra/Stokhos_MLPrecOp.hpp
+    epetra/Stokhos_SGModelEvaluatorBase.hpp
     epetra/Stokhos_SGModelEvaluator.hpp
     epetra/Stokhos_SGQuadModelEvaluator.hpp
     epetra/Stokhos_SGInverseModelEvaluator.hpp
@@ -482,13 +483,18 @@ IF (Stokhos_ENABLE_Sacado)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
+      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits.hpp
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/vector/Sacado_MP_ScalarTraitsImp.hpp
       sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
       sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_SFS.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_SFS_unary_op_tmpl.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_SFS_unary_func_tmpl.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_SFS_binary_op_tmpl.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_SFS_binary_func_tmpl.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector_Contiguous.hpp
       sacado/kokkos/vector/KokkosExp_View_MP_Vector_Contiguous.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
@@ -512,6 +518,8 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Fad/Sacado_Fad_SFad_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_SLFad_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_ViewFad_MP_Vector.hpp
+      sacado/kokkos/vector/Fad/Sacado_Fad_Exp_MP_Vector.hpp
+      sacado/kokkos/vector/Fad/Sacado_Fad_MP_Vector.hpp
       )
   ENDIF()
   IF(Stokhos_ENABLE_PCE_Scalar_Type)
@@ -523,16 +531,16 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/Sacado_UQ_PCE_Traits.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE_ScalarTraitsImp.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE.hpp
-      sacado/kokkos/pce/Kokkos_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/KokkosExp_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
       sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_BLAS_UQ_PCE.hpp
       sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
       sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
       )
   ENDIF()
 
-  IF (Stokhos_ENABLE_TpetraKernels)
+  IF (Stokhos_ENABLE_KokkosKernels)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       LIST(APPEND SACADO_HEADERS
@@ -611,9 +619,13 @@ IF (Stokhos_ENABLE_Sacado)
         Experimental::BlockVector
         Experimental::BlockMultiVector
         Experimental::BlockCrsMatrix
+        Details::getDiagCopyWithoutOffsets
+        Details::packCrsMatrix
+        Details::unpackCrsMatrixAndCombine
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix
+        TripleMatrixMultiply
         )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
@@ -756,6 +768,7 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/belos/Belos_Tpetra_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_SolverManager_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_PseudoBlockCGIter_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_StatusTest_GenResNorm_MP_Vector.hpp
           )
       ENDIF()
@@ -945,7 +958,7 @@ IF (Stokhos_ENABLE_Sacado)
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
-        IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+        IF (MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           IF (Tpetra_INST_SERIAL)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Serial.cpp)
           ENDIF()

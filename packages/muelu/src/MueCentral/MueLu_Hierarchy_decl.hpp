@@ -70,6 +70,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
 #include "MueLu_RFactory_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
@@ -125,9 +126,14 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy();
+    //! Constructor that labels the hierarchy.
+    Hierarchy(const std::string& label);
 
     //! Constructor
     Hierarchy(const RCP<Matrix> & A);
+
+    //! Constructor
+    Hierarchy(const RCP<Matrix> & A, const std::string& label);
 
     //! Destructor.
     virtual ~Hierarchy() { }
@@ -180,6 +186,9 @@ namespace MueLu {
 
     // This function is global
     double GetOperatorComplexity() const;
+
+    // This function is global
+    double GetSmootherComplexity() const;
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -240,6 +249,9 @@ namespace MueLu {
     //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
+    //! Specify damping factor alpha such that x = x + alpha*P*c, where c is the coarse grid correction.
+    void SetProlongatorScalingFactor(double scalingFactor) { scalingFactor_ = scalingFactor; }
+
     /*!
       @brief Apply the multigrid preconditioner.
 
@@ -289,7 +301,7 @@ namespace MueLu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const;
+    std::string description() const; 
 
     /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
 
@@ -322,6 +334,14 @@ namespace MueLu {
 
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
+
+    // force recreation of cached description_ next time description() is called: 
+    void ResetDescription() {
+      description_ = "";
+    }
+
+    void AllocateLevelMultiVectors(int numvecs);
+    void DeleteLevelMultiVectors();
 
   protected:
     const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
@@ -359,8 +379,14 @@ namespace MueLu {
     // V- or W-cycle
     CycleType Cycle_;
 
+    // Scaling factor to be applied to coarse grid correction.
+    double scalingFactor_;
+
     // Epetra/Tpetra mode
     Xpetra::UnderlyingLib lib_;
+
+    // cache description to avoid recreating in each call to description() - use ResetDescription() to force recreation in Setup, SetupRe, etc.
+    mutable std::string description_ = ""; // mutable so that we can lazily initialize in description(), which is declared const
 
     //! Graph dumping
     // If enabled, we dump the graph on a specified level into a specified file
@@ -373,6 +399,11 @@ namespace MueLu {
 
     // Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;
+
+    // Caching (Multi)Vectors used in Hierarchy::Iterate()
+    int sizeOfAllocatedLevelMultiVectors_;
+    Array<RCP<MultiVector> > residual_, coarseRhs_, coarseX_, coarseImport_, coarseExport_, correction_;
+    
 
   }; //class Hierarchy
 

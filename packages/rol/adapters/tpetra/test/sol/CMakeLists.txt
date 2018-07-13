@@ -1,3 +1,4 @@
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
 
 IF(${PROJECT_NAME}_ENABLE_Tpetra)
 
@@ -13,6 +14,15 @@ IF(${PROJECT_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TpetraSimulatedConstraintInterfaceCVaR
     SOURCES test_02.cpp
+    ARGS PrintItAll
+    COMM serial mpi  
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TpetraSimulatedConstraintInterfaceDual
+    SOURCES test_03.cpp
     ARGS PrintItAll
     COMM serial mpi  
     PASS_REGULAR_EXPRESSION "TEST PASSED"

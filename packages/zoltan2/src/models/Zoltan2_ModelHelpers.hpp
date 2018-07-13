@@ -68,6 +68,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   typedef typename MeshAdapter<User>::gno_t gno_t;
   typedef typename MeshAdapter<User>::lno_t lno_t;
   typedef typename MeshAdapter<User>::node_t node_t;
+  typedef typename MeshAdapter<User>::offset_t offset_t;
 
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
@@ -85,7 +86,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     // Get node-element connectivity
 
-    const lno_t *offsets=NULL;
+    const offset_t *offsets=NULL;
     const gno_t *adjacencyIds=NULL;
     ia->getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
@@ -196,11 +197,12 @@ void get2ndAdjsViewFromAdjs(
     const RCP<const Comm<int> > comm,
     Zoltan2::MeshEntityType sourcetarget,
     Zoltan2::MeshEntityType through,
-    Teuchos::ArrayRCP<typename MeshAdapter<User>::lno_t> &offsets,
+    Teuchos::ArrayRCP<typename MeshAdapter<User>::offset_t> &offsets,
     Teuchos::ArrayRCP<typename MeshAdapter<User>::gno_t> &adjacencyIds)
 {
   typedef typename MeshAdapter<User>::gno_t gno_t;
   typedef typename MeshAdapter<User>::lno_t lno_t;
+  typedef typename MeshAdapter<User>::offset_t offset_t;
   typedef typename MeshAdapter<User>::node_t node_t;
 
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
@@ -248,7 +250,7 @@ void get2ndAdjsViewFromAdjs(
       adj_[i] = adj[i];
     }
 
-    offsets = arcp<lno_t>(start, 0, LocalNumIDs+1, true);
+    offsets = arcp<offset_t>(start, 0, LocalNumIDs+1, true);
     adjacencyIds = arcp<gno_t>(adj_, 0, nadj, true);
   }
   else {
@@ -256,7 +258,7 @@ void get2ndAdjsViewFromAdjs(
     for (size_t i = 0; i <= LocalNumIDs; i++)
       start[i] = 0;
 
-    offsets = arcp<lno_t>(start, 0, LocalNumIDs+1, true);
+    offsets = arcp<offset_t>(start, 0, LocalNumIDs+1, true);
     adjacencyIds = Teuchos::null;
   }
 

@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -40,7 +40,7 @@ namespace {
      for the potential portability problems with the union and bit-fields below.
   */
   union Float_t {
-    Float_t(float num = 0.0f) : f(num) {}
+    explicit Float_t(float num = 0.0f) : f(num) {}
     // Portable extraction of components.
     bool Negative() const { return (i >> 31) != 0; }
 
@@ -49,7 +49,7 @@ namespace {
   };
 
   union Double_t {
-    Double_t(double num = 0.0) : f(num) {}
+    explicit Double_t(double num = 0.0) : f(num) {}
     // Portable extraction of components.
     bool Negative() const { return (i >> 63) != 0; }
 
@@ -65,17 +65,12 @@ namespace {
     // Different signs means they do not match.
     if (uA.Negative() != uB.Negative()) {
       // Check for equality to make sure +0==-0
-      if (A == B)
-        return true;
-      return false;
+      return (A == B);
     }
 
     // Find the difference in ULPs.
     int ulpsDiff = std::abs(uA.i - uB.i);
-    if (ulpsDiff <= maxUlpsDiff)
-      return true;
-
-    return false;
+    return (ulpsDiff <= maxUlpsDiff);
   }
 
   bool AlmostEqualUlpsDouble(double A, double B, int maxUlpsDiff)
@@ -86,46 +81,45 @@ namespace {
     // Different signs means they do not match.
     if (uA.Negative() != uB.Negative()) {
       // Check for equality to make sure +0==-0
-      if (A == B)
-        return true;
-      return false;
+      return (A == B);
     }
 
     // Find the difference in ULPs.
     int ulpsDiff = std::abs(uA.i - uB.i);
-    if (ulpsDiff <= maxUlpsDiff)
-      return true;
-
-    return false;
+    return (ulpsDiff <= maxUlpsDiff);
   }
-}
+} // namespace
 
 bool Tolerance::use_old_floor = false;
 
 bool Tolerance::Diff(double v1, double v2) const
 {
-  if (type == IGNORE)
+  if (type == IGNORE) {
     return false;
+  }
 
   if (use_old_floor) {
-    if (fabs(v1 - v2) < floor)
+    if (fabs(v1 - v2) < floor) {
       return false;
+    }
   }
   else {
-    if (fabs(v1) <= floor && fabs(v2) <= floor)
+    if (fabs(v1) <= floor && fabs(v2) <= floor) {
       return false;
+    }
   }
 
   if (type == RELATIVE) {
-    if (v1 == 0.0 && v2 == 0.0)
-      return 0;
+    if (v1 == 0.0 && v2 == 0.0) {
+      return false;
+    }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return fabs(v1 - v2) > value * max;
   }
-  else if (type == ABSOLUTE) {
+  if (type == ABSOLUTE) {
     return fabs(v1 - v2) > value;
   }
-  else if (type == COMBINED) {
+  if (type == COMBINED) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // At some point, store both values...
@@ -142,15 +136,16 @@ bool Tolerance::Diff(double v1, double v2) const
     // to do a better check to ensure that ratio of one shape to other
     // is 1 or -1...
   }
-  else if (type == ULPS_FLOAT) {
-    return !AlmostEqualUlpsFloat(v1, v2, (int)value);
+  if (type == ULPS_FLOAT) {
+    return !AlmostEqualUlpsFloat(v1, v2, static_cast<int>(value));
   }
   else if (type == ULPS_DOUBLE) {
-    return !AlmostEqualUlpsDouble(v1, v2, (int)value);
+    return !AlmostEqualUlpsDouble(v1, v2, static_cast<int>(value));
   }
   else if (type == EIGEN_REL) {
-    if (v1 == 0.0 && v2 == 0.0)
-      return 0;
+    if (v1 == 0.0 && v2 == 0.0) {
+      return false;
+    }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return fabs(fabs(v1) - fabs(v2)) > value * max;
   }
@@ -175,46 +170,64 @@ bool Tolerance::Diff(double v1, double v2) const
 
 const char *Tolerance::typestr() const
 {
-  if (type == RELATIVE)
+  if (type == RELATIVE) {
     return "relative";
-  else if (type == ABSOLUTE)
+  }
+  if (type == ABSOLUTE) {
     return "absolute";
-  else if (type == COMBINED)
+  }
+  else if (type == COMBINED) {
     return "combined";
-  else if (type == ULPS_FLOAT)
+  }
+  else if (type == ULPS_FLOAT) {
     return "ulps_float";
-  else if (type == ULPS_DOUBLE)
+  }
+  else if (type == ULPS_DOUBLE) {
     return "ulps_double";
-  else if (type == EIGEN_REL)
+  }
+  else if (type == EIGEN_REL) {
     return "eigenrel";
-  else if (type == EIGEN_ABS)
+  }
+  else if (type == EIGEN_ABS) {
     return "eigenabs";
-  else if (type == EIGEN_COM)
+  }
+  else if (type == EIGEN_COM) {
     return "eigencom";
-  else
+  }
+  else {
     return "ignore";
+  }
 }
 
 const char *Tolerance::abrstr() const
 {
-  if (type == RELATIVE)
+  if (type == RELATIVE) {
     return "rel";
-  else if (type == ABSOLUTE)
+  }
+  if (type == ABSOLUTE) {
     return "abs";
-  else if (type == COMBINED)
+  }
+  else if (type == COMBINED) {
     return "com";
-  else if (type == ULPS_FLOAT)
+  }
+  else if (type == ULPS_FLOAT) {
     return "upf";
-  else if (type == ULPS_DOUBLE)
+  }
+  else if (type == ULPS_DOUBLE) {
     return "upd";
-  else if (type == EIGEN_REL)
+  }
+  else if (type == EIGEN_REL) {
     return "ere";
-  else if (type == EIGEN_ABS)
+  }
+  else if (type == EIGEN_ABS) {
     return "eab";
-  else if (type == EIGEN_COM)
+  }
+  else if (type == EIGEN_COM) {
     return "eco";
-  else
+  }
+  else {
     return "ign";
+  }
 }
 
 double Tolerance::UlpsDiffFloat(double A, double B) const
@@ -225,8 +238,9 @@ double Tolerance::UlpsDiffFloat(double A, double B) const
   // Different signs means they do not match.
   if (uA.Negative() != uB.Negative()) {
     // Check for equality to make sure +0==-0
-    if (A == B)
+    if (A == B) {
       return 0.0;
+    }
     return 2 << 28;
   }
 
@@ -242,8 +256,9 @@ double Tolerance::UlpsDiffDouble(double A, double B) const
   // Different signs means they do not match.
   if (uA.Negative() != uB.Negative()) {
     // Check for equality to make sure +0==-0
-    if (A == B)
+    if (A == B) {
       return 0.0;
+    }
     return 2 << 28;
   }
 

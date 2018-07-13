@@ -53,6 +53,7 @@
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
 #include <Tpetra_CrsMatrix.hpp>
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_MatlabSmoother_fwd.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
 
 namespace MueLu {
@@ -154,6 +155,9 @@ namespace MueLu {
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+    size_t getNodeSmootherComplexity() const {return Teuchos::OrdinalTraits<size_t>::invalid();}
+
 
     //@}
 

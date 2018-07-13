@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -48,7 +48,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_dimension, EX_FATAL, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <stddef.h>       // for size_t
@@ -56,7 +56,13 @@
 #include <stdlib.h> // for NULL
 
 /*!
- * reads the EXODUS II specified variable truth table from the database
+ * \ingroup ResultsData
+ * reads the EXODUS specified variable truth table from the database
+ * \param[in]       exoid              exodus file id
+ * \param[in]       obj_type           object type
+ * \param[in]       num_blk            number of blocks or sets
+ * \param[in]       num_var            number of variables
+ * \param[out]     *var_tab            variable truth table array
  */
 
 int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)
@@ -75,7 +81,8 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   const char *ent_type = NULL;
   const char *var_name = NULL;
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   switch (obj_type) {
   case EX_EDGE_BLOCK:
@@ -135,40 +142,35 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     ent_type = "es";
     break;
   default:
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid variable type %d specified in file id %d",
              obj_type, exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_WARN);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
-    return (EX_WARN);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   status = ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                             &num_entity, &dimid, routine);
   if (status != NC_NOERR) {
-    exerrval = status;
-    return (EX_FATAL);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (num_entity != (size_t)num_blk) {
-    exerrval = EX_FATAL;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: # of %s doesn't match those defined in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (num_var_db != (size_t)num_var) {
-    exerrval = EX_FATAL;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: # of %s variables doesn't match those defined in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err(routine, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (status1 != NC_NOERR) {
@@ -193,12 +195,11 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     status = nc_get_var_int(exoid, tabid, var_tab);
 
     if (status != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s truth table from file id %d",
                ex_name_of_object(obj_type), exoid);
-      ex_err(routine, errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err(routine, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -1,0 +1,35 @@
+<ParameterList name = "Inputs">
+
+  <ParameterList name = "Step">
+
+    <ParameterList name = "Trust Region">
+      <Parameter name = "Subproblem Solver"     type = "string"   value = "Truncated CG" />
+      <Parameter name = "Subproblem Model"      type = "string"   value = "Kelley-Sachs" />
+    </ParameterList>
+
+    <ParameterList name = "Composite Step">
+    </ParameterList>
+
+    <ParameterList name = "Augmented Lagrangian">
+    </ParameterList>
+
+
+    <ParameterList name = "Moreau-Yosida Penalty">
+      <Parameter name = "Initial Penalty Parameter"  type = "double" value = "1.0" />
+      <ParameterList name = "Subproblem">
+        <Parameter name = "Iteration Limit"  type = "int"  value = "200"   />
+        <Parameter name = "Print History"    type = "bool" value = "false" />
+      </ParameterList> 
+ 
+    </ParameterList> 
+
+  </ParameterList> 
+
+    <ParameterList name = "Status Test"> 
+      <Parameter name = "Constraint Tolerance"   type = "double"   value = "1e-9" />
+      <Parameter name = "Gradient Tolerance"     type = "double"   value = "1e-7" />
+      <Parameter name = "Iteration Limit"        type = "int"      value = "200"  />
+    </ParameterList>
+
+
+</ParameterList>

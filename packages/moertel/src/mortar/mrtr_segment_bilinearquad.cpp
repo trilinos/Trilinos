@@ -70,6 +70,12 @@ MOERTEL::Segment(id,nnode,nodeId,out)
   stype_ = MOERTEL::Segment::seg_BiLinearQuad;
 }
 
+MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(int id, const std::vector<int>& nodev, int out) :
+MOERTEL::Segment(id, nodev, out)
+{
+  stype_ = MOERTEL::Segment::seg_BiLinearQuad;
+}
+
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
  |  This constructor should not be used by the user, it is used         |
@@ -251,7 +257,7 @@ double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][
 { 
   // get nodal coords;
   const double* x[4];
-  for (int i=0; i<4; ++i) x[i] = nodeptr_[i]->X();
+  for (int i=0; i<4; ++i) x[i] = nodeptr_[i]->XCoords();
   
   // get shape functions and derivatives at xi
   double val[4];

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -33,7 +33,7 @@
  *
  */
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
 #include <inttypes.h>     // for PRId64
@@ -64,20 +64,21 @@ MAX_STR_LENGTH ) for
                       which the value is desired.
 \param[out]  value    Returned value of the property.
 
-<table>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_MAP   </td><td>  Element Map entity type  </td></tr>
-<tr><td> \c EX_NODE_MAP   </td><td>  Node Map entity type     </td></tr>
-<tr><td> \c EX_EDGE_MAP   </td><td>  Edge Map entity type     </td></tr>
-<tr><td> \c EX_FACE_MAP   </td><td>  Face Map entity type     </td></tr>
-</table>
+| ex_entity_type | description               |
+| -------------- | ------------------------- |
+|  EX_NODE_SET   |  Node Set entity type     |
+|  EX_EDGE_BLOCK |  Edge Block entity type   |
+|  EX_EDGE_SET   |  Edge Set entity type     |
+|  EX_FACE_BLOCK |  Face Block entity type   |
+|  EX_FACE_SET   |  Face Set entity type     |
+|  EX_ELEM_BLOCK |  Element Block entity type|
+|  EX_ELEM_SET   |  Element Set entity type  |
+|  EX_SIDE_SET   |  Side Set entity type     |
+|  EX_ELEM_MAP   |  Element Map entity type  |
+|  EX_NODE_MAP   |  Node Map entity type     |
+|  EX_EDGE_MAP   |  Edge Map entity type     |
+|  EX_FACE_MAP   |  Face Map entity type     |
+
 
 For an example of code to read an object property, refer to the
 description for ex_get_prop_names().
@@ -96,7 +97,8 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
 
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  EX_FUNC_ENTER();
+  ex_check_valid_file_id(exoid);
 
   /* open appropriate variable, depending on obj_type and prop_name */
   num_props = ex_get_num_props(exoid, obj_type);
@@ -116,28 +118,25 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
     case EX_EDGE_MAP: name   = VAR_EDM_PROP(i); break;
     case EX_NODE_MAP: name   = VAR_NM_PROP(i); break;
     default:
-      exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
                exoid);
-      ex_err("ex_get_prop", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_prop", errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate property array %s in file id %d",
                name, exoid);
-      ex_err("ex_get_prop", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_prop", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /*   compare stored attribute name with passed property name   */
     memset(tmpstr, 0, MAX_STR_LENGTH + 1);
     if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
-      exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
-      ex_err("ex_get_prop", errmsg, exerrval);
-      return (EX_FATAL);
+      ex_err("ex_get_prop", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if (strcmp(tmpstr, prop_name) == 0) {
@@ -148,32 +147,36 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
 
   /* if property is not found, return warning */
   if (!found) {
-    exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s property %s not defined in file id %d",
              ex_name_of_object(obj_type), prop_name, exoid);
-    ex_err("ex_get_prop", errmsg, exerrval);
-    return (EX_WARN);
+    ex_err("ex_get_prop", errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* find index into property array using obj_id; read value from property */
   /* array at proper index; ex_id_lkup returns an index that is 1-based,   */
   /* but netcdf expects 0-based arrays so subtract 1                       */
-  start[0] = ex_id_lkup(exoid, obj_type, obj_id);
-  if (exerrval != 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s id %" PRId64 " is NULL in file id %d",
-               ex_name_of_object(obj_type), obj_id, exoid);
-      ex_err("ex_get_prop", errmsg, EX_NULLENTITY);
-      return (EX_WARN);
-    }
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate id %" PRId64 " in %s property array in file id %d", obj_id,
-             ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_prop", errmsg, exerrval);
-    return (EX_FATAL);
+  status = ex_id_lkup(exoid, obj_type, obj_id);
+  if (status > 0) {
+    start[0] = status - 1;
   }
-  start[0] = start[0] - 1;
+  else {
+    ex_get_err(NULL, NULL, &status);
+
+    if (status != 0) {
+      if (status == EX_NULLENTITY) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s id %" PRId64 " is NULL in file id %d",
+                 ex_name_of_object(obj_type), obj_id, exoid);
+        ex_err("ex_get_prop", errmsg, EX_NULLENTITY);
+        EX_FUNC_LEAVE(EX_WARN);
+      }
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to locate id %" PRId64 " in %s property array in file id %d", obj_id,
+               ex_name_of_object(obj_type), exoid);
+      ex_err("ex_get_prop", errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+  }
 
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     long long l_val;
@@ -193,13 +196,12 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   }
 
   if (status != NC_NOERR) {
-    exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to read value in %s property array in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_prop", errmsg, exerrval);
-    return (EX_FATAL);
+    ex_err("ex_get_prop", errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  return (EX_NOERR);
+  EX_FUNC_LEAVE(EX_NOERR);
 }

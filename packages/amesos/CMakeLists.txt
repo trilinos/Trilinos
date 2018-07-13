@@ -15,6 +15,10 @@ IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND NOT ${PACKAGE_NAME}_ENABLE_ParMETIS)
   MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
 ENDIF()
 
+IF(${PACKAGE_NAME}_ENABLE_PARAKLETE)
+  MESSAGE(FATAL_ERROR "Support for the PARAKLETE package has been removed from Amesos.")
+ENDIF()
+
 # if using MUMPS, must be parallel
 IF(${PACKAGE_NAME}_ENABLE_MUMPS)
 IF(NOT TPL_ENABLE_MPI)
@@ -37,6 +41,18 @@ IF(${PACKAGE_NAME}_ENABLE_MUMPS AND ${PACKAGE_NAME}_ENABLE_MPI AND NOT ${PACKAGE
 ENDIF()
 
 
+# if using SuperLU_5.0, must use the proper API
+IF(${PACKAGE_NAME}_ENABLE_SuperLU)
+  IF(NOT ${PROJECT_NAME}_ENABLE_SuperLU5_API)
+
+   SET(HAVE_AMESOS_SUPERLU5_API OFF)
+
+  ELSE()
+
+   SET(HAVE_AMESOS_SUPERLU5_API ON)
+
+  ENDIF()
+ENDIF()
 
 ## Most of the options below are bogus.  The handling of TPLs is done
 ## through the dependencies file.  This needs to be cleaned up. I'm
@@ -110,40 +126,6 @@ TRIBITS_EXCLUDE_FILES(
   src/Amesos_Component.h
   src/Amesos_Merikos.h
   src/Amesos_BTF.h
-  src/SuiteSparse/CAMD/Source/amesos_camd_1.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_aat.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_control.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_info.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_order.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_amd.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_analyze.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_colamd.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_etree.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_factorize.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_postorder.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rcond.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_resymbol.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowcolcounts.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowfac.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_spsolve.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_rowfac.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_aat.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_add.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_band.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_change_factor.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_copy.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_dense.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_factor.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_camd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_ccolamd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_csymamd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_metis.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_nesdis.c
   src/src-repository
   src/stamp-h.in
   test/TestOptions/Dummy

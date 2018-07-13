@@ -95,7 +95,7 @@ BCStrategy_Interface_Robin(const panzer::BC& bc, const Teuchos::RCP<panzer::Glob
 template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
 setup(const panzer::PhysicsBlock& side_pb,
-      const Teuchos::ParameterList& user_data)
+      const Teuchos::ParameterList& /* user_data */)
 {
   using Teuchos::RCP;
   using std::vector;
@@ -146,9 +146,9 @@ template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 			   const panzer::PhysicsBlock& pb,
-			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-			   const Teuchos::ParameterList& models,
-			   const Teuchos::ParameterList& user_data) const
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
+			   const Teuchos::ParameterList& /* models */,
+			   const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -275,13 +275,13 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
 template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
-postRegistrationSetup(typename panzer::Traits::SetupData d,
-		      PHX::FieldManager<panzer::Traits>& vm)
+postRegistrationSetup(typename panzer::Traits::SetupData /* d */,
+		      PHX::FieldManager<panzer::Traits>& /* vm */)
 { 
 }
 
 template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
-evaluateFields(typename panzer::Traits::EvalData d)
+evaluateFields(typename panzer::Traits::EvalData /* d */)
 {  
 }

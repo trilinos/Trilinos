@@ -19,11 +19,18 @@
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
+#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
+#include "LibraryEnvironment.hpp"
+#include "DirectApplicInterface.hpp"
+#include "ProblemDescDB.hpp"
+#include "DakotaModel.hpp"
+#endif
+
 #ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
 #include <TasmanianSparseGrid.hpp>
 #endif
 
-#include <fstream>
+#include "VPS_ensemble.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -31,7 +38,7 @@ template < class ProblemType, class CoeffFunctionType >
 void run_samples(
   const Teuchos::Comm<int>& comm ,
   ProblemType& problem,
-  const CoeffFunctionType& coeff_function,
+  CoeffFunctionType& coeff_function,
   const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const CMD & cmd ,
@@ -39,25 +46,31 @@ void run_samples(
   const double bc_upper_value,
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
+  Teuchos::Array< Teuchos::Array<double> >& response_gradients,
   Teuchos::Array<int>& iterations,
+  Teuchos::Array<int>& ensemble_iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   typedef typename CoeffFunctionType::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
-  RV rv = coeff_function.getRandomVariables();
+  const int dim = cmd.USE_UQ_DIM;
+  RV rv("KL Random Variables", dim);
   HRV hrv = Kokkos::create_mirror_view(rv);
 
   const int num_samples = points.size();
-  const int dim = rv.dimension_0();;
   for (int sample=0; sample<num_samples; ++sample) {
 
     // Set random variable values to this sample
     for (int i=0; i<dim; ++i)
       hrv(i) = points[sample][i];
     Kokkos::deep_copy( rv, hrv );
+    coeff_function.setRandomVariables(rv);
 
     // Evaluate response at quadrature point
     double response = 0;
+    Teuchos::Array<double> response_gradient;
+    if (response_gradients.size() > 0)
+      response_gradient.resize(dim);
     Kokkos::Example::FENL::Perf perf =
       fenl( problem , fenlParams ,
             cmd.PRINT , cmd.USE_TRIALS , cmd.USE_ATOMIC ,
@@ -65,10 +78,13 @@ void run_samples(
             coeff_function , cmd.USE_ISOTROPIC ,
             cmd.USE_COEFF_SRC , cmd.USE_COEFF_ADV ,
             bc_lower_value , bc_upper_value ,
-            response);
+            response, response_gradient);
 
     responses[sample] = response;
+    if (response_gradients.size() > 0)
+      response_gradients[sample] = response_gradient;
     iterations[sample] = perf.cg_iter_count;
+    ensemble_iterations[sample] = perf.cg_iter_count;
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << sample << " : " << perf.cg_iter_count << " ( ";
@@ -90,7 +106,7 @@ template < class Storage,
 void run_samples(
   const Teuchos::Comm<int>& comm ,
   Kokkos::Example::FENL::Problem< Sacado::MP::Vector<Storage>, Device, ElemOrder>& problem ,
-  const CoeffFunctionType & coeff_function,
+  CoeffFunctionType & coeff_function,
   const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const CMD & cmd ,
@@ -98,7 +114,9 @@ void run_samples(
   const double bc_upper_value,
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
+  Teuchos::Array< Teuchos::Array<double> >& response_gradients,
   Teuchos::Array<int>& iterations,
+  Teuchos::Array<int>& ensemble_iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   using Teuchos::Array;
@@ -115,9 +133,9 @@ void run_samples(
   grouper->group(VectorSize, points, groups, num_duplicate);
 
   const int num_groups = groups.size();
-  RV rv = coeff_function.getRandomVariables();
+  const int dim = cmd.USE_UQ_DIM;
+  RV rv("KL Random Variables", dim, VectorSize);
   HRV hrv = Kokkos::create_mirror_view(rv);
-  const int dim = rv.dimension_0();
 
   // Loop over quadrature point groups
   for (int group=0; group<num_groups; ++group) {
@@ -127,9 +145,13 @@ void run_samples(
       for (int i=0; i<dim; ++i)
         hrv(i).fastAccessCoeff(qp) = points[groups[group][qp]][i];
     Kokkos::deep_copy( rv, hrv );
+    coeff_function.setRandomVariables(rv);
 
     // Evaluate response at quadrature point
     Scalar response = 0;
+    Teuchos::Array<Scalar> response_gradient;
+    if (response_gradients.size() > 0)
+      response_gradient.resize(dim);
     Kokkos::Example::FENL::Perf perf =
       fenl( problem , fenlParams ,
             cmd.PRINT , cmd.USE_TRIALS , cmd.USE_ATOMIC ,
@@ -137,20 +159,30 @@ void run_samples(
             coeff_function , cmd.USE_ISOTROPIC ,
             cmd.USE_COEFF_SRC , cmd.USE_COEFF_ADV ,
             bc_lower_value , bc_upper_value ,
-            response);
+            response, response_gradient);
 
-    // Save response -- note currently all samples within an ensemble
-    // get the same number of iterations
+    // Save response and iterations
+    const int ensemble_it_size = perf.ensemble_cg_iter_count.size();
     for (int qp=0; qp<VectorSize; ++qp) {
       responses[groups[group][qp]] = response.coeff(qp);
-      iterations[groups[group][qp]] = perf.cg_iter_count;
+      if (response_gradients.size() > 0) {
+        for (int i=0; i<dim; ++i)
+          response_gradients[groups[group][qp]][i] =
+            response_gradient[i].coeff(qp);
+      }
+      if (ensemble_it_size == VectorSize)
+        iterations[groups[group][qp]] = perf.ensemble_cg_iter_count[qp];
+      else
+        iterations[groups[group][qp]] = perf.cg_iter_count;
+      ensemble_iterations[groups[group][qp]] = perf.cg_iter_count;
     }
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
-      std::cout << group << " : " << perf.cg_iter_count << " ( ";
+      std::cout << group << " : " << perf.cg_iter_count << " [ ";
       for (int qp=0; qp<VectorSize; ++qp)
-        std::cout << groups[group][qp] << " ";
-      std::cout << ")";
+        std::cout << "(" << groups[group][qp] << ","
+                  << iterations[groups[group][qp]] << ") ";
+      std::cout << "]";
       std::cout << " ( ";
       for (int i=0; i<dim; ++i)
         std::cout << hrv(i) << " ";
@@ -177,7 +209,7 @@ template< class ProblemType, class CoeffFunctionType >
 void run_stokhos(
   const Teuchos::Comm<int>& comm ,
   ProblemType& problem ,
-  const CoeffFunctionType & coeff_function,
+  CoeffFunctionType & coeff_function,
   const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const CMD & cmd ,
@@ -242,11 +274,14 @@ void run_stokhos(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
-  Array<int> iterations(num_quad_points);
+  Array< Array<double> > response_gradients; // Can't use gradients
+  Array<int> iterations(num_quad_points), ensemble_iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, iterations, perf_total);
+              quad_points, responses, response_gradients,
+              iterations, ensemble_iterations,
+              perf_total);
 
   // Integrate responses into PCE
   for (int qp=0; qp<num_quad_points; ++qp) {
@@ -260,13 +295,245 @@ void run_stokhos(
 
   perf_total.response_mean = response_pce.mean();
   perf_total.response_std_dev = response_pce.standard_deviation();
+
+  // Compute efficiency
+  double R_num = 0.0;
+  double R_denom = 0.0;
+  for (int i=0; i<num_quad_points; ++i) {
+    R_num += ensemble_iterations[i];
+    R_denom += iterations[i];
+  }
+  double R = R_num / R_denom;
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "R_total = " << R << std::endl;
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
+  }
 }
+
+#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
+namespace FENL {
+
+template <typename Problem, typename CoeffFunction>
+class DirectApplicInterface : public Dakota::DirectApplicInterface {
+public:
+
+  //! Constructor that takes the Model Evaluator to wrap
+  DirectApplicInterface(
+    Dakota::ProblemDescDB& problem_db_,
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm_,
+    const Teuchos::RCP<Problem>& problem_,
+    const Teuchos::RCP<CoeffFunction>& coeff_function_,
+    const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grpr_,
+    const Teuchos::RCP<Teuchos::ParameterList>& fenlParams_,
+    const Teuchos::RCP<const CMD>& cmd_,
+    const Teuchos::RCP<Kokkos::Example::FENL::Perf>& perf_total_,
+    const double bc_lower_value_,
+    const double bc_upper_value_) :
+    Dakota::DirectApplicInterface(problem_db_),
+    comm(comm_),
+    problem(problem_),
+    coeff_function(coeff_function_),
+    grouper(grpr_),
+    fenlParams(fenlParams_),
+    cmd(cmd_),
+    perf_total(perf_total_),
+    bc_lower_value(bc_lower_value_),
+    bc_upper_value(bc_upper_value_)
+  {
+    numParameters = cmd->USE_UQ_DIM;
+
+    // Check number of parameters is consistent
+    Dakota::Model& first_model = *(problem_db_.model_list().begin());
+    unsigned int num_dakota_vars =  first_model.acv();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      num_dakota_vars != numParameters, std::logic_error,
+      "TriKota Adapter Error: number of parameters " <<  numParameters <<
+      "does not match the number of continuous variables " <<
+      "specified in the dakota.in input file " << num_dakota_vars << "\n" );
+  }
+
+  ~DirectApplicInterface() {};
+
+protected:
+
+  //! Virtual function redefinition from Dakota::DirectApplicInterface
+  int derived_map_ac(const Dakota::String& ac_name) {
+    using Teuchos::Array;
+
+    // test for consistency of problem definition between ModelEval and Dakota
+    TEUCHOS_TEST_FOR_EXCEPTION(numVars != numParameters, std::logic_error,
+                               "TriKota_Dakota Adapter Error: ");
+    TEUCHOS_TEST_FOR_EXCEPTION(numFns != 1, std::logic_error,
+                               "TriKota_Dakota Adapter Error: ");
+    TEUCHOS_TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
+                               "TriKota_Dakota Adapter Error: ");
+
+    Array< Array<double> > p(1);
+    p[0].resize(numVars);
+    for (unsigned int i=0; i<numVars; i++)
+      p[0][i] = xC[i];
+    Array<double> responses(1);
+    Array< Array<double> > response_gradients;
+    if (gradFlag) {
+      response_gradients.resize(1);
+      response_gradients[0].resize(numVars);
+    }
+    Array<int> iterations(1), ensemble_iterations(1);
+    run_samples(*comm, *problem, *coeff_function, grouper,
+                fenlParams, *cmd,
+                bc_lower_value, bc_upper_value,
+                p, responses, response_gradients,
+                iterations, ensemble_iterations,
+                *perf_total);
+    ++perf_total->uq_count;
+
+    fnVals[0]= responses[0];
+    if (gradFlag) {
+      for (unsigned int i=0; i<numVars; ++i)
+        fnGrads[0][i] = response_gradients[0][i];
+    }
+
+    return 0;
+  }
+
+  //! Virtual function redefinition from Dakota::DirectApplicInterface
+  int derived_map_of(const Dakota::String& of_name) {
+    return 0;
+  }
+
+  //int derived_map_if(const Dakota::String& if_name);
+
+private:
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;
+  Teuchos::RCP<Problem> problem;
+  Teuchos::RCP<CoeffFunction> coeff_function;
+  Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> > grouper;
+  Teuchos::RCP<Teuchos::ParameterList> fenlParams;
+  Teuchos::RCP<const CMD> cmd;
+  Teuchos::RCP<Kokkos::Example::FENL::Perf> perf_total;
+  double bc_lower_value;
+  double bc_upper_value;
+  unsigned int numParameters;
+};
+
+}
+#endif
+
+template< class ProblemType, class CoeffFunctionType >
+void run_dakota(
+  const Teuchos::Comm<int>& comm ,
+  ProblemType& problem ,
+  CoeffFunctionType & coeff_function,
+  const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
+  const CMD & cmd ,
+  const double bc_lower_value,
+  const double bc_upper_value,
+  Kokkos::Example::FENL::Perf& perf_total)
+{
+#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
+
+  using Teuchos::rcpFromRef;
+
+  // set the Dakota input/output/etc in program options
+  std::string dakota_in="dakota.in";
+  std::string dakota_out="dakota.out";
+  std::string dakota_err="dakota.err";
+  Dakota::ProgramOptions prog_opts;
+  prog_opts.input_file(dakota_in);
+  prog_opts.output_file(dakota_out);
+  prog_opts.error_file(dakota_err);
+  Dakota::LibraryEnvironment dakota_env(prog_opts);
+
+  // Create interface
+  FENL::DirectApplicInterface<ProblemType,CoeffFunctionType> *interface =
+    new FENL::DirectApplicInterface<ProblemType,CoeffFunctionType>(
+      dakota_env.problem_description_db(),
+      rcpFromRef(comm),
+      rcpFromRef(problem),
+      rcpFromRef(coeff_function),
+      grouper,
+      fenlParams,
+      rcpFromRef(cmd),
+      rcpFromRef(perf_total),
+      bc_lower_value,
+      bc_upper_value);
+
+  Dakota::Model& first_model =
+    *(dakota_env.problem_description_db().model_list().begin());
+  Dakota::Interface& dakota_interface  = first_model.derived_interface();
+
+  // Pass a pointer to a Dakota::DirectApplicInterface
+  dakota_interface.assign_rep(interface, false);
+
+  dakota_env.execute();
+
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total tangent time (s) = " << perf_total.tangent_fill_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+  }
+
+#else
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DAKOTA not available.  Please re-configure with TriKota enabled.");
+
+#endif
+}
+
+#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
+class TasmanianSurrogate {
+public:
+  TasmanianSurrogate(const int min_level) : m_min_level(min_level) {}
+  void setTasmanian(const Teuchos::RCP<const TasGrid::TasmanianSparseGrid>& tas,
+                    const int index) {
+    m_tas = tas;
+    m_index = index;
+    const int ny = m_tas->getNumOutputs();
+    m_y.resize(ny);
+  }
+  void setLevel(const int level) { m_level = level; }
+  int evaluate(const Teuchos::Array<double>& x) const {
+    if (m_level < m_min_level)
+      return 1;
+    m_tas->evaluate(x.getRawPtr(), m_y.getRawPtr());
+    return static_cast<int>(m_y[m_index]);
+  }
+
+private:
+  Teuchos::RCP<const TasGrid::TasmanianSparseGrid> m_tas;
+  mutable Teuchos::Array<double> m_y;
+  int m_index;
+  int m_min_level;
+  int m_level;
+};
+#endif
 
 template< class ProblemType, class CoeffFunctionType >
 void run_tasmanian(
   const Teuchos::Comm<int>& comm ,
   ProblemType& problem ,
-  const CoeffFunctionType & coeff_function,
+  CoeffFunctionType & coeff_function,
   const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const CMD & cmd ,
@@ -283,7 +550,7 @@ void run_tasmanian(
 
   // Algorithmic parameters
   const int dim = cmd.USE_UQ_DIM;
-  const int qoi = 2;
+  const int qoi = 3;
   const int initial_level = cmd.USE_UQ_INIT_LEVEL;
   const int max_level = cmd.USE_UQ_MAX_LEVEL;
   const int max_order = 1;
@@ -292,13 +559,32 @@ void run_tasmanian(
   const TasGrid::TypeRefinement refinement = TasGrid::refine_classic;
   const int qoi_to_refine = 0;
 
+  // For studying efficiency of ensemble propagation
+  std::vector<double> R_level;
+  double R_total_num, R_total_denom, R_total;
+
   // Create the initial grid
   sparseGrid.makeLocalPolynomialGrid(dim, qoi, initial_level, max_order, rule);
   int num_new_points = sparseGrid.getNumNeeded();
 
+  // Check for Tasmanian-based surrogate grouping
+  typedef Kokkos::Example::FENL::SurrogateGrouping<double,TasmanianSurrogate> TasGrouper;
+  Teuchos::RCP<TasGrouper> tas_grouper =
+    Teuchos::rcp_dynamic_cast<TasGrouper>(grouper);
+  if (tas_grouper != Teuchos::null)
+    tas_grouper->getSurrogate()->setTasmanian(Teuchos::rcpFromRef(sparseGrid),
+                                              2);
+
   perf_total.uq_count = num_new_points;
   int level = initial_level;
+  R_total_num = 0.0;
+  R_total_denom = 0.0;
+  bool reached_max_samples = false;
   while (num_new_points > 0 && level <= max_level) {
+
+    // Set level in grouper
+    if (tas_grouper != Teuchos::null)
+    tas_grouper->getSurrogate()->setLevel(level);
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << "Tasmanian grid level " << level
@@ -319,17 +605,32 @@ void run_tasmanian(
 
     // Evaluate response on those points
     Array<double> responses(num_new_points);
-    Array<int> iterations(num_new_points);
+    Array< Array<double> > response_gradients; // Can't use gradients
+    Array<int> iterations(num_new_points), ensemble_iterations(num_new_points);
     run_samples(comm, problem, coeff_function, grouper,
                 fenlParams, cmd,
                 bc_lower_value, bc_upper_value,
-                quad_points, responses, iterations, perf_total);
+                quad_points, responses, response_gradients,
+                iterations, ensemble_iterations,
+                perf_total);
+
+    // Compute efficiency
+    double R_num = 0.0;
+    double R_denom = 0.0;
+    for (int i=0; i<num_new_points; ++i) {
+      R_num += ensemble_iterations[i];
+      R_denom += iterations[i];
+    }
+    R_level.push_back( R_num / R_denom );
+    R_total_num += R_num;
+    R_total_denom += R_denom;
 
     // Load responses back into Tasmanian
     Array<double> tas_responses(qoi*num_new_points);
     for (int i=0; i<num_new_points; ++i) {
       tas_responses[i*qoi]   = responses[i];              // for mean
       tas_responses[i*qoi+1] = responses[i]*responses[i]; // for variance
+      tas_responses[i*qoi+2] = iterations[i];             // solver iterations
     }
     sparseGrid.loadNeededPoints(&tas_responses[0]);
 
@@ -338,11 +639,21 @@ void run_tasmanian(
 
     // Get the number of new points
     num_new_points = sparseGrid.getNumNeeded();
-    perf_total.uq_count += num_new_points;
-    ++level;
-  }
 
-  if (level > max_level && comm.getRank() == 0)
+    ++level;
+
+    if (static_cast<int>(perf_total.uq_count) + num_new_points > cmd.USE_UQ_MAX_SAMPLES) {
+      reached_max_samples = true;
+      break;
+    }
+
+    // Don't add new points to the count if this is the last iteration
+    if (level <= max_level)
+      perf_total.uq_count += num_new_points;
+  }
+  R_total = R_total_num / R_total_denom;
+
+  if (((level > max_level) || reached_max_samples) && comm.getRank() == 0)
     std::cout << "Warning:  Tasmanian did not achieve refinement tolerance "
               << tol << std::endl;
 
@@ -354,6 +665,26 @@ void run_tasmanian(
   perf_total.response_mean = s[0];
   perf_total.response_std_dev = std::sqrt(s[1]-s[0]*s[0]);
 
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "R_level = ";
+    for (int l=0; l<level-1; ++l)
+      std::cout << R_level[l] << " ";
+    std::cout << std::endl << "R_total = " << R_total << std::endl;
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
+  }
+
 #else
 
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TASMANIAN not available.  Please re-configure with TASMANIAN TPL enabled.");
@@ -361,12 +692,11 @@ void run_tasmanian(
 #endif
 }
 
-
 template< class ProblemType, class CoeffFunctionType >
 void run_file(
   const Teuchos::Comm<int>& comm ,
   ProblemType& problem ,
-  const CoeffFunctionType & coeff_function,
+  CoeffFunctionType & coeff_function,
   const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const CMD & cmd ,
@@ -393,11 +723,14 @@ void run_file(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
-  Array<int> iterations(num_quad_points);
+  Array< Array<double> > response_gradients; // Can't use gradients yet
+  Array<int> iterations(num_quad_points), ensemble_iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, iterations, perf_total);
+              quad_points, responses, response_gradients,
+              iterations, ensemble_iterations,
+              perf_total);
 
   // Write responses to file, including solver iterations
   if (comm.getRank() == 0) {
@@ -411,6 +744,70 @@ void run_file(
 
   perf_total.response_mean = 0.0;
   perf_total.response_std_dev = 0.0;
+}
+
+template< class ProblemType, class CoeffFunctionType >
+void run_vps(
+  const Teuchos::Comm<int>& comm ,
+  ProblemType& problem ,
+  CoeffFunctionType & coeff_function,
+  const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
+  const CMD & cmd ,
+  const double bc_lower_value,
+  const double bc_upper_value,
+  Kokkos::Example::FENL::Perf& perf_total)
+{
+  const unsigned ensemble_size =
+    cmd.USE_UQ_ENSEMBLE > 0 ? cmd.USE_UQ_ENSEMBLE : 1;
+  EnsembleVPS vps(cmd.USE_UQ_DIM, cmd.USE_UQ_MAX_SAMPLES, ensemble_size,
+                  comm.getRank());
+  double mean, sd;
+  vps.run(
+    [&](const size_t num_samples, const size_t dim, const double*const* x,
+        double** f)
+    {
+      using Teuchos::Array;
+      Array<double> responses(num_samples);
+      Array< Array<double> > response_gradients; // Can't use gradients
+      Array<int> iterations(num_samples), ensemble_iterations(num_samples);
+      Array< Array<double> > points(num_samples);
+      for (size_t iSample = 0; iSample < num_samples; iSample++) {
+        points[iSample].resize(dim);
+        for (size_t idim = 0; idim < dim; idim++)
+          points[iSample][idim] = x[iSample][idim];
+      }
+      run_samples(comm, problem, coeff_function, grouper,
+                  fenlParams, cmd,
+                  bc_lower_value, bc_upper_value,
+                  points, responses, response_gradients,
+                  iterations, ensemble_iterations,
+                  perf_total);
+      for (size_t iSample = 0; iSample < num_samples; iSample++) {
+        f[iSample][0] = responses[iSample];
+        f[iSample][1] = iterations[iSample];
+      }
+      perf_total.uq_count += num_samples;
+    }, mean, sd);
+
+  perf_total.response_mean = mean;
+  perf_total.response_std_dev = sd;
+
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = "
+              << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
+  }
 }
 
 template< class Device , int VectorSize >
@@ -451,6 +848,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const bool kl_exp = cmd.USE_EXPONENTIAL;
   const double kl_exp_shift = cmd.USE_EXP_SHIFT;
   const double kl_exp_scale = cmd.USE_EXP_SCALE;
+  const bool kl_disc_exp_scale = cmd.USE_DISC_EXP_SCALE;
 
   int nelem[3] = { cmd.USE_FIXTURE_X,
                    cmd.USE_FIXTURE_Y,
@@ -461,6 +859,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Teuchos::RCP<Teuchos::ParameterList> fenlParams = Teuchos::parameterList();
   Teuchos::updateParametersFromXmlFileAndBroadcast(
     cmd.USE_FENL_XML_FILE, fenlParams.ptr(), *comm);
+
+  // Number of sensitivities -- currently only useful for Dakota
+  unsigned num_sens = 0;
+  if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
+    num_sens = kl_dim;
 
   // Compute PCE of response propagating blocks of quadrature
   // points at a time
@@ -474,11 +877,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
-                              kl_exp, kl_exp_shift, kl_exp_scale );
+                              kl_exp, kl_exp_shift, kl_exp_scale,
+                              kl_disc_exp_scale );
 
     // Problem setup
     typedef Problem< Scalar, Device , BoxElemPart::ElemLinear > ProblemType;
-    ProblemType problem( comm , node , nelem , geom_bubble , cmd.PRINT );
+    ProblemType problem( comm , node , nelem , geom_bubble , cmd.PRINT ,
+                         num_sens );
 
     // Grouping method
     RCP< Kokkos::Example::FENL::SampleGrouping<double> > grouper;
@@ -487,22 +892,36 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     else if (cmd.USE_GROUPING == GROUPING_MAX_ANISOTROPY) {
       typedef ExponentialKLCoefficient< double, double, Device > DKL;
       DKL diff_coeff( kl_mean, kl_variance, kl_correlation, kl_dim,
-                      kl_exp, kl_exp_shift, kl_exp_scale);
+                      kl_exp, kl_exp_shift, kl_exp_scale, kl_disc_exp_scale );
       typedef typename ProblemType::FixtureType Mesh;
       grouper =
         rcp(new Kokkos::Example::FENL::MaxAnisotropyGrouping<double,Mesh,DKL>(
               comm, problem.fixture, diff_coeff));
     }
+#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
+    else if (cmd.USE_GROUPING == GROUPING_TASMANIAN_SURROGATE) {
+      const int min_level = cmd.TAS_GROUPING_INITIAL_LEVEL;
+      RCP<TasmanianSurrogate> s = rcp(new TasmanianSurrogate(min_level));
+      grouper =
+        rcp(new Kokkos::Example::FENL::SurrogateGrouping<double,TasmanianSurrogate>(s, cmd.PRINT_ITS, comm->getRank()));
+    }
+#endif
 
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, grouper,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+    else if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
+      run_dakota(*comm, problem, diffusion_coefficient, grouper,
+                 fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
       run_tasmanian(*comm, problem, diffusion_coefficient, grouper,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, grouper,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+    else if (cmd.USE_UQ_SAMPLING == SAMPLING_VPS)
+      run_vps(*comm, problem, diffusion_coefficient, grouper,
+              fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
 
   }
 
@@ -512,21 +931,28 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef double Scalar;
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
-                              kl_exp, kl_exp_shift, kl_exp_scale );
+                              kl_exp, kl_exp_shift, kl_exp_scale,
+                              kl_disc_exp_scale);
 
     // Problem setup
     Problem< Scalar, Device , BoxElemPart::ElemLinear > problem(
-      comm , node , nelem , geom_bubble , cmd.PRINT );
+      comm , node , nelem , geom_bubble , cmd.PRINT , num_sens );
 
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, Teuchos::null,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+     else if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
+      run_dakota(*comm, problem, diffusion_coefficient, Teuchos::null,
+                 fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
       run_tasmanian(*comm, problem, diffusion_coefficient, Teuchos::null,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, Teuchos::null,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+    else if (cmd.USE_UQ_SAMPLING == SAMPLING_VPS)
+      run_vps(*comm, problem, diffusion_coefficient, Teuchos::null,
+              fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
 
   }
 

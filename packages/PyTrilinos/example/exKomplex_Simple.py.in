@@ -45,7 +45,8 @@
 
 #
 # System imports
-from optparse import *
+from __future__ import print_function
+from optparse   import *
 
 #
 # Parse the command-line arguments
@@ -77,7 +78,7 @@ def main(comm):
     if n < 0:
         n = 10 * comm.NumProc()
     elif n == 0:
-        print "Problem size must be positive"
+        print("Problem size must be positive")
         sys.exit(-1)
 
     # Build the complex matrix
@@ -120,9 +121,9 @@ def main(comm):
        solver.SetParameters(plist,True)
     except AttributeError:
        # If AztecOO and its python wrappers have been compiled without Teuchos
-       # support, then then the SetParameters method will not exist, thus raising an
-       # AttributeError exception
-       print "Teuchos ParameterLists not supported"
+       # support, then then the SetParameters method will not exist, thus
+       # raising an AttributeError exception
+       print("Teuchos ParameterLists not supported")
        solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres)
        solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
        solver.SetAztecOption(AztecOO.AZ_output, 16)
@@ -138,4 +139,4 @@ if __name__ == "__main__":
     result = main(comm)
     if result:
         if comm.MyPID() == 0:
-            print "End Result: TEST PASSED"
+            print("End Result: TEST PASSED")

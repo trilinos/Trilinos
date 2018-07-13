@@ -129,10 +129,6 @@ void Eigs(const Operator& A, int NumEigenvalues,
   if (A.GetDomainSpace() != A.GetRangeSpace())
     ML_THROW("Input Operator is not square", -1);
 
-  double time;
-
-  time = GetClock();
-
   int length = NumEigenvalues;
   double tol = 1e-3;
   int restarts = 1;

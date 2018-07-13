@@ -82,12 +82,12 @@ struct FillCoords {
   const size_type m_dim;
 
   FillCoords( const coords_type& coords, const coords_vec_type& coords_vec )
-    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.dimension_1())
+    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.extent(1))
   {
     // Note:  coords contains off-processor halo nodes and thus is longer
     // than coords_vec, which is the same length as the solution vector.
     // These extra halo nodes are stored at the end.
-    Kokkos::parallel_for( m_coords_vec.dimension_0(), *this );
+    Kokkos::parallel_for( m_coords_vec.extent(0), *this );
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -115,9 +115,10 @@ struct ExtractEnsembleIts {
 template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  Tpetra::CrsMatrix<SM,LO,GO,N>& A,
+  const Tpetra::MultiVector<SV,LO,GO,N>& b,
+  Tpetra::MultiVector<SV,LO,GO,N>& x,
+  Teuchos::RCP< Tpetra::Operator<SM,LO,GO,N> >& precOp,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
@@ -136,6 +137,7 @@ belos_solve(
   typedef SGPreconditioner<SM,LO,GO,N> PreconditionerType;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using Teuchos::ParameterList;
 
   // Create some timers used by Belos so we can access them
@@ -148,30 +150,25 @@ belos_solve(
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
 
   //--------------------------------
-  // Create preconditioner
-  RCP<PreconditionerType> preconditioner;
-  RCP<OperatorType> precOp;
-
-  if (use_muelu) {
+  // Create preconditioner if requested and we weren't given one
+  if (use_muelu && precOp == Teuchos::null) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
+    RCP<PreconditionerType> preconditioner;
 
     // Create tpetra-vector storing coordinates for repartitioning
     typename Mesh::node_coord_type node_coords = mesh.node_coord();
     //Teuchos::RCP<VectorType> coords =
     Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
-      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x->getMap(), node_coords.dimension_1()));
+      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x.getMap(), node_coords.extent(1)));
     fill_coords(node_coords, coords->getDualView().d_view);
 
     RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
     if (use_mean_based) {
-      preconditioner =
-        Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+      precOp = build_mean_based_muelu_preconditioner(rcpFromRef(A), mueluParams,
+                                                     coords);
     }
     else {
-      preconditioner =
-        Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+      precOp = build_muelu_preconditioner(rcpFromRef(A), mueluParams, coords);
     }
   }
 
@@ -186,7 +183,8 @@ belos_solve(
   if (!(belosParams->isParameter("Output Frequency")))
     belosParams->set("Output Frequency", 1);
 
-  RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
+  RCP<ProblemType> problem =
+    rcp(new ProblemType(rcpFromRef(A), rcpFromRef(x), rcpFromRef(b)));
 
   std::string belos_solver = belosParams->get("Belos Solver", "CG");
   RCP<SolverType> solver;
@@ -260,9 +258,10 @@ namespace Example {
 template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  Tpetra::CrsMatrix<SM,LO,GO,N>& A,
+  const Tpetra::MultiVector<SV,LO,GO,N>& b,
+  Tpetra::MultiVector<SV,LO,GO,N>& x,
+  Teuchos::RCP< Tpetra::Operator<SM,LO,GO,N> >& precOp,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,

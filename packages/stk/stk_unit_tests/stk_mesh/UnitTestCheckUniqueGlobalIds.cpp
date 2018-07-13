@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include "../../stk_util/stk_util/parallel/DistributedIndex.hpp"
-#include "../../stk_mesh/stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
-#include "../../stk_util/stk_util/parallel/ParallelReduce.hpp"
-#include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
-#include "../../stk_mesh/stk_mesh/base/MeshDiagnostics.hpp"
+#include "stk_util/parallel/DistributedIndex.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/MeshDiagnostics.hpp"
 
 namespace
 {
@@ -41,7 +41,7 @@ TEST_F(MeshChecker, check_throw_on_non_unique_ids)
 
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
         get_bulk().modification_begin();
-        get_bulk().declare_entity(stk::topology::NODE_RANK, 1);
+        get_bulk().declare_node(1);
         get_bulk().modification_end();
 
         test_non_unique_key_results(get_bulk(), gold_values);
@@ -54,7 +54,7 @@ TEST_F(MeshChecker, check_no_throw_on_shared_nodes)
     {
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
         get_bulk().modification_begin();
-        stk::mesh::Entity node1 = get_bulk().declare_entity(stk::topology::NODE_RANK, 1);
+        stk::mesh::Entity node1 = get_bulk().declare_node(1);
         get_bulk().add_node_sharing(node1, 1-get_bulk().parallel_rank());
         get_bulk().modification_end();
 
@@ -75,7 +75,7 @@ TEST_F(MeshChecker, check_throw_on_partial_shared_nodes)
 
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
         get_bulk().modification_begin();
-        stk::mesh::Entity node1 = get_bulk().declare_entity(stk::topology::NODE_RANK, 1);
+        stk::mesh::Entity node1 = get_bulk().declare_node(1);
         if(get_bulk().parallel_rank()<2)
         {
             get_bulk().add_node_sharing(node1, 1-get_bulk().parallel_rank());
@@ -103,7 +103,7 @@ TEST_F(MeshChecker, check_throw_on_partial_shared_nodes_on_four_procs)
 
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
         get_bulk().modification_begin();
-        stk::mesh::Entity node1 = get_bulk().declare_entity(stk::topology::NODE_RANK, 1);
+        stk::mesh::Entity node1 = get_bulk().declare_node(1);
         if(get_bulk().parallel_rank()<2)
         {
             get_bulk().add_node_sharing(node1, 1-get_bulk().parallel_rank());

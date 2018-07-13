@@ -153,7 +153,7 @@ Registry::getFuncPtr(
   const NamePair &	name_pair) const
 {
   RegistryMap::const_iterator registry_entry = getRegistryMap().find(name_pair);
-  return registry_entry == getRegistryMap().end() ? NULL : (*registry_entry).second;
+  return registry_entry == getRegistryMap().end() ? nullptr : (*registry_entry).second;
 }
 
 
@@ -220,8 +220,8 @@ Registry::getsym<void *>(
   const char *  sym)
 {
 #ifdef SIERRA_DLOPEN_ENABLED
-  void *s = NULL;
-  void *dl = dlopen(NULL, RTLD_LAZY);
+  void *s = nullptr;
+  void *dl = dlopen(nullptr, RTLD_LAZY);
   if (dl) {
     s = dlsym(dl, sym);
     dlclose(dl);
@@ -229,7 +229,7 @@ Registry::getsym<void *>(
 
   return s;
 #else
-  return NULL;
+  return nullptr;
 #endif
 }
 

@@ -58,7 +58,7 @@ void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blo
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& elemElemGraph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(elemElemGraph, partToPutSidesInto, blocksToSkin, air);
+    SkinMeshUtil skinMesh(elemElemGraph, blocksToSkin, air);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
 
     FaceCreator(bulkData, elemElemGraph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
@@ -74,7 +74,7 @@ void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const s
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& elemElemGraph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(elemElemGraph, partToPutSidesInto, blocksToConsider);
+    SkinMeshUtil skinMesh(elemElemGraph, blocksToConsider);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
 
     FaceCreator(bulkData, elemElemGraph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
@@ -84,7 +84,7 @@ void create_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& graph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(graph, partToPutSidesInto, blocksToConsider);
+    SkinMeshUtil skinMesh(graph, blocksToConsider);
     std::vector<SideSetEntry> sideSet = skinMesh.extract_all_sides_sideset();
 
     FaceCreator(bulkData, graph).create_side_entities_given_sideset(sideSet, partToPutSidesInto);
@@ -186,7 +186,7 @@ bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skin
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& elemElemGraph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(elemElemGraph, {&skinnedPart}, skinnedBlock);
+    SkinMeshUtil skinMesh(elemElemGraph, skinnedBlock);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
@@ -203,7 +203,7 @@ bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const st
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& graph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(graph, {&skinnedPart}, skinnedBlock);
+    SkinMeshUtil skinMesh(graph, skinnedBlock);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
@@ -220,7 +220,7 @@ bool check_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &s
 {
     bulkData.initialize_face_adjacent_element_graph();
     ElemElemGraph& graph = bulkData.get_face_adjacent_element_graph();
-    SkinMeshUtil skinMesh(graph, {&skinnedPart}, skinnedBlock);
+    SkinMeshUtil skinMesh(graph, skinnedBlock);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_all_sides_sideset();
     impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 

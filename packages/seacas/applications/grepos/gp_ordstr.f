@@ -1,6 +1,6 @@
-C Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
 C                         
-C * Neither the name of Sandia Corporation nor the names of its
+C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
 C                                                 
@@ -29,10 +29,9 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
 
 C=======================================================================
-      SUBROUTINE ORDSTR (NORD, IXORD, LOLD, IOLD, ISCR, INEW)
+      SUBROUTINE ORDSTR (NORD, IXORD, LOLD, NAME, ISCR)
 C=======================================================================
 C   --*** ORDSTR *** (GJOIN) Order a list of strings according to indices
 C   --   Written by Greg Sjaardema - revised 07/11/90
@@ -43,21 +42,20 @@ C   --
 C   --Parameters:
 C   --   NORD - IN - the number of indices
 C   --   IXORD - IN - the indices of the ordered items
-C   --   LOLD - IN - the length of IOLD
-C   --   IOLD - IN - the unordered string list
+C   --   LOLD - IN - the length of NAME
+C   --   NAME - IN - the unordered string list
 C   --   ISCR - SCRATCH - size = LOLD
 C   --   INEW - OUT - the ordered string list
 
       INTEGER IXORD(*)
-      CHARACTER*(*) IOLD(*)
+      CHARACTER*(*) NAME(*)
       CHARACTER*(*) ISCR(*)
-      CHARACTER*(*) INEW(*)
 
       DO 100 I = 1, LOLD
-         ISCR(I) = IOLD(I)
+         ISCR(I) = NAME(I)
   100 CONTINUE
       DO 110 I = 1, NORD
-         INEW(I) = ISCR(IXORD(I))
+         NAME(I) = ISCR(IXORD(I))
   110 CONTINUE
 
       RETURN

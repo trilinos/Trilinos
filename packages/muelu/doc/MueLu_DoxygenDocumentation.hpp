@@ -87,6 +87,7 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
   - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
   - Brian Kelley, Texas A&M (summer intern, 2015)
+  - Matthias Mayr, Sandia National Labs
   - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Paul Tsuji, LLNL

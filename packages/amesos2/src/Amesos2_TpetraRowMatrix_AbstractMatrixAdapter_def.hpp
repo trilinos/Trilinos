@@ -221,6 +221,68 @@ namespace Amesos2 {
     return this->mat_->getNumEntriesInGlobalRow(row);
   }
 
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_ptr_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseRowPtr() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.row_map.data();
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_idx_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseColInd() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.entries.data();
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_vals_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseValues() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.values.data();
+  }
+
+
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -273,6 +335,22 @@ namespace Amesos2 {
                         std::runtime_error,
                         "Column access to row-based object not yet supported.  "
                         "Please contact the Amesos2 developers." );
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>:: getMap_impl() const
+  {
+    return this->mat_->getMap();
   }
 
   template <typename Scalar,
@@ -355,17 +433,18 @@ namespace Amesos2 {
     return this->mat_->isGloballyIndexed();
   }
 
+
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
-    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
+    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #endif
   }
 

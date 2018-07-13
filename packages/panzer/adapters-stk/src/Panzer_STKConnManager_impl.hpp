@@ -56,10 +56,10 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
+namespace panzer_stk {
+
 using Teuchos::RCP;
 using Teuchos::rcp;
-
-namespace panzer_stk {
 
 // Object describing how to sort a vector of elements using
 // local ID as the key
@@ -76,7 +76,7 @@ private:
 };
 
 template <typename GO>
-STKConnManager<GO>::STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB)
+STKConnManager<GO>::STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB)
    : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
 {
 }
@@ -180,8 +180,10 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
    switch(patternDim) {
    case 3:
      faceIdCnt = fp.getSubcellIndices(2,0).size();
+     // Intentional fall-through.
    case 2:
      edgeIdCnt = fp.getSubcellIndices(1,0).size();
+     // Intentional fall-through.
    case 1:
      nodeIdCnt = fp.getSubcellIndices(0,0).size();
      cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
@@ -246,6 +248,11 @@ void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern 
 template <typename GO>
 void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
 {
+#ifdef HAVE_EXTRA_TIMERS
+  using Teuchos::TimeMonitor;
+  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::buildConnectivity"))));
+#endif
+
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
    // get element info from STK_Interface
@@ -261,10 +268,10 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
    buildOffsetsAndIdCounts(fp, nodeIdCnt,  edgeIdCnt,  faceIdCnt,  cellIdCnt,
                                nodeOffset, edgeOffset, faceOffset, cellOffset);
 
-   // std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
-   // std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
-   // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
-   // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
+    // std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
+    // std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
+    // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
+    // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
 
    // loop over elements and build global connectivity 
    for(std::size_t elmtLid=0;elmtLid!=elements_->size();++elmtLid) {
@@ -311,10 +318,15 @@ std::string STKConnManager<GO>::getBlockId(STKConnManager::LocalOrdinal localElm
 
 template <typename GO>
 void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
-                                                                        GlobalOrdinal faceOffset, GlobalOrdinal cellOffset)
+                                                                        GlobalOrdinal faceOffset, GlobalOrdinal /* cellOffset */)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
+
+#ifdef HAVE_EXTRA_TIMERS
+  using Teuchos::TimeMonitor;
+  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::applyPeriodicBCs"))));
+#endif
 
    std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > > matchedValues
             = stkMeshDB_->getPeriodicNodePairing();

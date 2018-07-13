@@ -114,13 +114,13 @@ public:
   /*! \brief Constructor that takes an MPI communicator
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
-                 MPI_Comm ucomm_,
+                 MPI_Comm mpicomm_,
                  partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) :
-    Problem<Adapter>(A_, p_, ucomm_) 
-  {
-    HELLO;
-    createMappingProblem(partition_, machine_);
-  };
+  MappingProblem(A_, p_,
+                 rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                           Teuchos::opaqueWrapper(mpicomm_))),
+                 partition_, machine_)
+  {}
 #endif
 
   //!  \brief Direct the problem to create a solution.
@@ -141,12 +141,43 @@ public:
   
   void solve(bool updateInputData=true); 
 
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    MachineRepresentation <typename Adapter::scalar_t,typename Adapter::part_t>::getValidParameters(pl);
+    RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "geometric", "default", "block" )));
+    pl.set("mapping_algorithm", "default", "mapping algorithm",
+      mapping_algorithm_Validator);
+
+
+    // bool parameter
+    pl.set("distributed_input_adapter", true,
+        "Whether the input adapter for mapping is distributed over processes or not",
+        Environment::getBoolValidator());
+
+    // bool parameter
+    pl.set("divide_prime_first", false,
+        "When partitioning into-non power of two, whether to partition for nonpowers of two at the beginning, or at the end",
+        Environment::getBoolValidator());
+
+    //TODO: This should be positive integer validator.
+    pl.set("ranks_per_node", 1,
+        "The number of MPI ranks per node",
+        Environment::getAnyIntValidator());
+    pl.set("reduce_best_mapping", true,
+        "If true, nodes will calculate different mappings with rotations, and best one will be reduced. If not, the result will be the one with longest dimension partitioning.",
+        Environment::getBoolValidator());
+  }
+
   //!  \brief Get the solution to the problem.
   //
   //   \return  the solution to the most recent solve().
 
   mapsoln_t *getSolution() { return soln.getRawPtr(); };
-
+  Teuchos::RCP<MachineRep> getMachine(){return machine; }
 private:
   void createMappingProblem(partsoln_t *partition_, MachineRep *machine_);
 
@@ -205,7 +236,9 @@ void MappingProblem<Adapter, MachineRep>::createMappingProblem(
     machine = Teuchos::rcp(machine_, false);
   else {
     try {
-      machine = Teuchos::rcp(new MachineRep(*(this->comm_)));
+      Teuchos::ParameterList pl = this->env_->getParameters();
+
+      machine = Teuchos::rcp(new MachineRep(*(this->comm_), pl));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -233,7 +266,7 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                    this->comm_, machine,
                                                    this->inputAdapter_,
                                                    partition, this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
 #endif
     }
@@ -242,21 +275,41 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                  this->comm_, machine,
                                                  this->inputAdapter_,
                                                  partition, this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
     }
-#ifdef KDDNOTREADY_NEEDTOMAKE_CTM_ANALGORITHM
     else if (algName == "geometric") {
+
+      bool is_input_distributed = true;
+      const Teuchos::ParameterEntry *pe_input_adapter = pl.getEntryPtr("distributed_input_adapter");
+      if (pe_input_adapter) is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
+
+
+      int ranks_per_node = 1;
+      pe_input_adapter = pl.getEntryPtr("ranks_per_node");
+      if (pe_input_adapter) ranks_per_node = pe_input_adapter->getValue<int>(&ranks_per_node);
+
+      bool divide_prime_first = false;
+      pe_input_adapter = pl.getEntryPtr("divide_prime_first");
+      if (pe_input_adapter) divide_prime_first = pe_input_adapter->getValue<bool>(&divide_prime_first);
+
+      bool reduce_best_mapping = true;
+      pe_input_adapter = pl.getEntryPtr("reduce_best_mapping");
+      if (pe_input_adapter) reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
+
+
+
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
                                                          machine, 
                                                          this->inputAdapter_,
                                                          partition,
-                                                         this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+                                                         this->envConst_,
+                                                         is_input_distributed, ranks_per_node, divide_prime_first, reduce_best_mapping));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
+
     }
-#endif
     else {
       // Add other mapping methods here
       throw std::logic_error("specified mapping_algorithm not supported");

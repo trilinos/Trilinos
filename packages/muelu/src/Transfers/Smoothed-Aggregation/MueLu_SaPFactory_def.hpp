@@ -76,6 +76,12 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
 
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
+
     return validParamList;
   }
 
@@ -110,6 +116,7 @@ namespace MueLu {
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+    const ParameterList& pL = GetParameterList();
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
@@ -124,13 +131,24 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    if (coarseLevel.IsAvailable("AP graph", this)) {
-      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
+    RCP<ParameterList> APparams;
+    if(pL.isSublist("matrixmatrix: kernel params"))
+      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+    else
+      APparams= rcp(new ParameterList);
 
-      finalP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
+    if (coarseLevel.IsAvailable("AP reuse data", this)) {
+      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
+
+      APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
+      if (APparams->isParameter("graph"))
+        finalP = APparams->get< RCP<Matrix> >("graph");
     }
+    // By default, we don't need global constants for SaP
+    APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
+    APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-    const ParameterList& pL = GetParameterList();
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
@@ -158,7 +176,8 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs);
+        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
+                    GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
       }
 
     } else {
@@ -168,18 +187,20 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
-      Set(coarseLevel, "P",        finalP);
-      Set(coarseLevel, "AP graph", finalP);
+      Set(coarseLevel, "P",             finalP);
+
+      APparams->set("graph", finalP);
+      Set(coarseLevel, "AP reuse data", APparams);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
         finalP->CreateView("stridedMaps", Ptent);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
       }
 
     } else {
@@ -196,11 +217,11 @@ namespace MueLu {
       if (Ptent->IsView("stridedMaps"))
         R->CreateView("stridedMaps", Ptent, true/*transposeA*/);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
       }
     }
 

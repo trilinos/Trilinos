@@ -23,6 +23,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 #TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
-# E) Do standard postprocessing
+# E) Do standard post processing
 #
 TRIBITS_PACKAGE_POSTPROCESS()

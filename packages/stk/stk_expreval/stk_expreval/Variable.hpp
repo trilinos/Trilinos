@@ -43,6 +43,8 @@
 #include <set>
 #include <stdexcept>
 #include <cctype>
+#include <sstream>
+
 
 #include <stk_util/util/string_case_compare.hpp>
 
@@ -70,21 +72,23 @@ public:
   /**
    * @brief Enumeration <b>Type</b> lists the variable data types.  <b>double</b> and
    * <b>int</b> are currently supported.
-   *
    */
-  enum Type {DOUBLE, INTEGER};
-  enum Use {DEPENDENT, INDEPENDENT};
+  enum Type        {DOUBLE, INTEGER};
+  enum Use         {DEPENDENT, INDEPENDENT};
+  enum ArrayOffset {ZERO_BASED_INDEX, ONE_BASED_INDEX};
   
   /**
    * Creates a new <b>Variable</b> instance.
-   *
    */
-  Variable()
+  Variable(const std::string& name)
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
+      m_size(1),
       m_doublePtr(&m_doubleValue),
-      m_doubleValue(0.0)
-  {}
+      m_doubleValue(0.0),
+      m_name(name)
+  {
+  }
 
   /**
    * Creates a new <b>Variable</b> instance.  The new variable will be local and
@@ -92,11 +96,12 @@ public:
    *
    * @param type		an <b>Type</b> value of the type of the new
    *				variable.
-   *
    */
-  explicit Variable(Type type)
+  explicit Variable(Type type, const std::string& name)
     : m_type(type),
-      m_use(INDEPENDENT)
+      m_use(INDEPENDENT),
+      m_size(1),
+      m_name(name)
   {
     switch (type) {
     case DOUBLE:
@@ -120,12 +125,15 @@ public:
    *				variable.
    *
    */
-  explicit Variable(double &address)
+  explicit Variable(double &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
+      m_size(definedLength),
       m_doublePtr(&address),
-      m_doubleValue(0.0)
-  {}
+      m_doubleValue(0.0),
+      m_name(name)
+  {
+  }
 
   /**
    * Creates a new <b>Variable</b> instance.  The new variable will use the
@@ -137,12 +145,15 @@ public:
    *				variable.
    *
    */
-  explicit Variable(int &address)
+  explicit Variable(int &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
+      m_size(definedLength),
       m_intPtr(&address),
-      m_intValue(0)
-  {}
+      m_intValue(0),
+      m_name(name)
+  {
+  }
 
   /**
    * @brief Member function <b>operator=</b> assigns a new value to the variable.
@@ -157,6 +168,11 @@ public:
   Variable &operator=(const double &value) {
     m_type = this->m_type;
     m_use = this->m_use;
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      std::stringstream error;
+      error << "In analytic expression evaluator, invalid use of equal on multi-component array variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
+    }
     if (m_type == INTEGER)
       *m_intPtr = static_cast<int>(value);
     else if (m_type == DOUBLE)
@@ -176,6 +192,11 @@ public:
   Variable &operator=(const int &value) {
     m_type = this->m_type;
     m_use = this->m_use;
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      std::stringstream error;
+      error << "In analytic expression evaluator, invalid use of equal on multi-component variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
+    }
     if (m_type == INTEGER)
       *m_intPtr = value;
     else if (m_type == DOUBLE)
@@ -199,23 +220,50 @@ public:
 
   /**
    * @brief Member function <b>operator[]</b> returns a value from an array of
-   * double values.  No bounds checkin is performed.  Not even if the variable is and
-   * array is checked.
+   * double values.  
    *
    * @param index		a <b>int</b> value of the zero based index into the
    *				array to retrieve the value.
    *
    * @return			a <b>double</b> reference to the value.
    */
-  inline double &operator[](int index) {
-    if (m_type != DOUBLE)
-      throw std::runtime_error("Only double arrays allowed");
+  inline double& getArrayValue(int index, ArrayOffset offsetType) const {
+    if (m_type != DOUBLE) {
+      std::stringstream error;
+      error << "In analytic expression evaluator, only double arrays allowed for variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
+    }
 
-    if (m_doublePtr == 0)
-      throw std::runtime_error("Unbound variable");
+    if (m_doublePtr == nullptr) {
+      std::stringstream error;
+      error << "In analytic expression evaluator, unbound variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
+    }
 
-    return m_doublePtr[index];
-  }
+    if(offsetType == ZERO_BASED_INDEX) {
+      if(index < 0 || (index+1) > m_size) {
+        std::stringstream error;
+        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
+        throw std::runtime_error(error.str());
+      }
+      return m_doublePtr[index];
+    } else if (offsetType == ONE_BASED_INDEX) {
+      if(index < 1 || (index) > m_size) {
+        std::stringstream error;
+        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 1 to '"<<m_size<<"'.  ";
+        throw std::runtime_error(error.str());
+      }
+      return m_doublePtr[index-1];
+    } else {
+      std::stringstream error;
+      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+      error << "Invalid internal state of expression evaluator";
+      throw std::runtime_error(error.str());
+      return m_doublePtr[0];
+    }
+  } 
 
   /**
    * @brief Member function <b>bind</b> binds variable to the address of the
@@ -226,9 +274,10 @@ public:
    *
    * @return			a <b>Variable</b> reference to the variable.
    */
-  inline Variable &bind(double &value_ref) {
+  inline Variable &bind(double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
+    m_size = definedLength;
     return *this;
   }
 
@@ -241,9 +290,10 @@ public:
    *
    * @return			a <b>Variable</b> reference to the variable.
    */
-  inline Variable &bind(int &value_ref) {
+  inline Variable &bind(int &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = INTEGER;
     m_intPtr = &value_ref;
+    m_size = definedLength;
     return *this;
   }
 
@@ -257,39 +307,59 @@ public:
     switch (m_type) {
     case DOUBLE:
       m_doublePtr = &m_doubleValue;
+      m_size = 1;
       m_doubleValue = 0.0;
       break;
     case INTEGER:
       m_intPtr = &m_intValue;
+      m_size = 1;
       m_intValue = 0;
       break;
     }
     return *this;
   }
 
-  double *getAddress() const {
+  //
+  //  Get the variable pointer and its defined length
+  //
+  double* getAddress() const {
     return m_doublePtr;
   }
-  
+  int getLength() const {
+    return m_size;
+  }
+
   /**
    * @brief Member function <b>getValue</b> returns the variable value as a double.
    *
    * @return			a <b>double</b> value of the value of the variable.
    */
   inline double getValue() const {
+
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      std::stringstream error;
+      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+      error << "Invalid direct access of array variable, must access by index";
+      throw std::runtime_error(error.str());
+    }
+
     switch (m_type) {
     case DOUBLE:
       return *m_doublePtr;
     case INTEGER:
       return *m_intPtr;
     }
-    throw std::runtime_error("Invalid variable type");
+
+    std::stringstream error;
+    error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+    error << "Invalid variable type";
+    throw std::runtime_error(error.str());
   }
 
 private:
   Type	        m_type;                 ///< Variable data type
   Use           m_use;                  ///< Variable is dependent or independent
-  
+  int           m_size;                 ///< Size of defined values in the double or int pointer  
   union {
     double *	m_doublePtr;		///< Pointer to value as double
     int *	m_intPtr;		///< Pointer to value as integer
@@ -298,13 +368,13 @@ private:
     double	m_doubleValue;		///< Local variable value as double
     int	        m_intValue;             ///< Local variable value as integer
   };
+  const std::string  m_name;            ///< Name given to the variable, used for error messaging
 };
 
 
 /**
  * @brief Class <b>VariableMap</b> implements a mapping from name to a pointer to
  * a <b>Variable</b> object.  The mapping is case insensitive.
- *
  */
 class VariableMap : public std::map<std::string, Variable *, LessCase>
 {
@@ -312,7 +382,6 @@ public:
   /**
    * @brief Typedef <b>value_type</b> is the value_type of the
    * <b>std::map</b> subclass.  The mapping is case insensitive.
-   *
    */
   typedef std::map<std::string, Variable *, LessCase >::value_type value_type;
 
@@ -347,13 +416,15 @@ public:
      * @param it		a <b>VariableMap::iterator</b> reference to the
      *			variable whose name is to be resolved.
      */
-    virtual void resolve(VariableMap::iterator &it) = 0;
+    virtual void resolve(VariableMap::iterator &)
+    {
+    }
   };
 
 private:
   /**
    * @brief Member function <b>delete_variable</b> is a function which will delete
-   * the variabel pointed to by <b>t</b>.
+   * the variable pointed to by <b>t</b>.
    *
    * @param t			a <b>value_type</b> reference to the variable to be
    *				deleted.
@@ -376,20 +447,11 @@ private:
      */
     virtual ~DefaultResolver()
     {}
-
-    /**
-     * @brief Member function <b>resolve</b> implements the default resolvers
-     * function, which does nothing.  I.E. lets the local variable values stand.
-     */
-    virtual void resolve(VariableMap::iterator &)
-    {}
-    
   };
 
 public:
   /**
-   * @brief Member function <b>getDefaultResolver</b> returns a reference to the
-   * default resolver.
+   * @brief Member function <b>getDefaultResolver</b> returns a reference to the default resolver.
    */
   static Resolver &getDefaultResolver();
 
@@ -399,7 +461,6 @@ public:
    *
    * @param resolver		a <b>Resolver</b> reference to the variable name
    *				resolver for this variable map.
-   *
    */
   VariableMap(Resolver &resolver = getDefaultResolver())
     : std::map<std::string, Variable *, LessCase>(),
@@ -408,7 +469,6 @@ public:
 
   /**
    * Destroys a <b>VariableMap</b> instance.  All variables are destroyed.
-   *
    */
   virtual ~VariableMap() {
     std::for_each(begin(), end(), &delete_variable);
@@ -425,7 +485,7 @@ public:
   Variable *operator[](const std::string &s) {
     std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)nullptr));
     if (i.second) {
-      (*i.first).second = new Variable();
+      (*i.first).second = new Variable(s);
     }
     return (*i.first).second;
   }

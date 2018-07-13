@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -219,24 +219,24 @@ namespace Ioxf {
         title_str = "Sierra Output Default Title";
       }
 
-      *XML << "<?xml version=\"1.0\" ?>" << endl;
-      *XML << "<Xdmf>" << endl;
-      *XML << " <Domain>" << endl << endl;
-      *XML << "<!-- Raw Information from SierraFrameWork -->" << endl;
-      *XML << "<?ExodusII Title=\"" << title_str << "\"" << endl;
-      *XML << "\tElements=\"" << elementCount << "\"" << endl;
-      *XML << "\tElementBlocks=\"" << elementBlockCount << "\"" << endl;
-      *XML << "\tNodes=\"" << nodeCount << "\"" << endl;
-      *XML << "\tNodeSets=\"" << nodesetCount << "\"" << endl;
-      *XML << "\tSideSets=\"" << sidesetCount << "\"" << endl;
-      *XML << "\tspatialDimension=\"" << spatialDimension << "\"" << endl;
+      *XML << "<?xml version=\"1.0\" ?>\n";
+      *XML << "<Xdmf>\n";
+      *XML << " <Domain>\n\n";
+      *XML << "<!-- Raw Information from SierraFrameWork -->\n";
+      *XML << "<?ExodusII Title=\"" << title_str << "\"\n";
+      *XML << "\tElements=\"" << elementCount << "\"\n";
+      *XML << "\tElementBlocks=\"" << elementBlockCount << "\"\n";
+      *XML << "\tNodes=\"" << nodeCount << "\"\n";
+      *XML << "\tNodeSets=\"" << nodesetCount << "\"\n";
+      *XML << "\tSideSets=\"" << sidesetCount << "\"\n";
+      *XML << "\tspatialDimension=\"" << spatialDimension << "\"\n";
       if (nodeCount > 0) {
-        *XML << "\tcoordXName=\"x\"" << endl;
-        *XML << "\tcoordYName=\"y\"" << endl;
+        *XML << "\tcoordXName=\"x\"\n";
+        *XML << "\tcoordYName=\"y\"\n";
         if (spatialDimension == 3)
-          *XML << "\tcoordZName=\"z\"" << endl;
+          *XML << "\tcoordZName=\"z\"\n";
       }
-      *XML << "\t?>" << endl << endl;
+      *XML << "\t?>\n\n";
     }
   }
 
@@ -244,11 +244,11 @@ namespace Ioxf {
 
   void DatabaseIO::put_info() {}
 
-  void DatabaseIO::read_meta_data() { output_only(); }
+  void DatabaseIO::read_meta_data__() { output_only(); }
 
   void DatabaseIO::read_region() { output_only(); }
 
-  void DatabaseIO::get_step_times() { output_only(); }
+  void DatabaseIO::get_step_times__() { output_only(); }
 
   void DatabaseIO::read_communication_metadata() { output_only(); }
 
@@ -257,11 +257,11 @@ namespace Ioxf {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
 
-    if (nodeMap.map.empty()) {
+    if (nodeMap.map().empty()) {
       // Cast away the 'const'.  Conceptually, this is a const operation
       // since it doesn't change the clients view of the database.
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
-      new_this->nodeMap.map.resize(nodeCount + 1);
+      new_this->nodeMap.map().resize(nodeCount + 1);
 
       if (is_input()) {
         output_only();
@@ -269,10 +269,10 @@ namespace Ioxf {
       else {
         // Output database; nodeMap not set yet... Build a default map.
         for (int i = 1; i < nodeCount + 1; i++) {
-          new_this->nodeMap.map[i] = i;
+          new_this->nodeMap.map()[i] = i;
         }
         // Sequential map
-        new_this->nodeMap.map[0] = -1;
+        new_this->nodeMap.map()[0] = -1;
       }
     }
     return nodeMap;
@@ -282,11 +282,11 @@ namespace Ioxf {
   {
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elemMap.map.empty()) {
+    if (elemMap.map().empty()) {
       // Cast away the 'const'.  Conceptually, this is a const operation
       // since it doesn't change the clients view of the database.
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
-      new_this->elemMap.map.resize(elementCount + 1);
+      new_this->elemMap.map().resize(elementCount + 1);
 
       if (is_input()) {
         output_only();
@@ -294,10 +294,10 @@ namespace Ioxf {
       else {
         // Output database; elemMap.map not set yet... Build a default map.
         for (int i = 1; i < elementCount + 1; i++) {
-          new_this->elemMap.map[i] = i;
+          new_this->elemMap.map()[i] = i;
         }
         // Sequential map
-        new_this->elemMap.map[0] = -1;
+        new_this->elemMap.map()[0] = -1;
       }
     }
     return elemMap;
@@ -613,22 +613,22 @@ namespace Ioxf {
 
               XML = BlockGridXmls[ElementBlockIndex];
 
-              *XML << "\t<Attribute Name=\"" << name << "\"" << endl;
+              *XML << "\t<Attribute Name=\"" << name << "\"\n";
               *XML << "\t\tCenter=\""
                    << "Grid"
-                   << "\"" << endl;
+                   << "\"\n";
               *XML << "\t\tType=\""
                    << "Scalar"
-                   << "\">" << endl;
-              *XML << "\t\t<DataStructure" << endl;
-              *XML << "\t\t\tFormat=\"HDF\"" << endl;
-              *XML << "\t\t\tDimensions=\"" << num_to_get << "\"" << endl;
+                   << "\">\n";
+              *XML << "\t\t<DataStructure\n";
+              *XML << "\t\t\tFormat=\"HDF\"\n";
+              *XML << "\t\t\tDimensions=\"" << num_to_get << "\"\n";
               *XML << "\t\t\tDataType=\""
                    << "Float"
-                   << "\" >" << endl;
-              *XML << "\t\t" << hdfname.tailname() << ":/" << block_name << "/" << name << endl;
-              *XML << "\t\t</DataStructure>" << endl;
-              *XML << "\t</Attribute>" << endl;
+                   << "\" >\n";
+              *XML << "\t\t" << hdfname.tailname() << ":/" << block_name << "/" << name << "\n";
+              *XML << "\t\t</DataStructure>\n";
+              *XML << "\t</Attribute>\n";
 
               XdmfArray *ScalarArray = new XdmfArray();
 
@@ -727,12 +727,12 @@ namespace Ioxf {
     assert(num_to_get == nodeCount);
 
     if (dbState == Ioss::STATE_MODEL) {
-      if (nodeMap.map.empty()) {
-        nodeMap.map.resize(nodeCount + 1);
-        nodeMap.map[0] = -1;
+      if (nodeMap.map().empty()) {
+        nodeMap.map().resize(nodeCount + 1);
+        nodeMap.map()[0] = -1;
       }
 
-      if (nodeMap.map[0] == -1) {
+      if (nodeMap.map()[0] == -1) {
         nodeMap.set_map(ids, num_to_get, 0);
       }
 
@@ -740,7 +740,7 @@ namespace Ioxf {
 
       // Only a single nodeblock and all set
       if (num_to_get == nodeCount) {
-        assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
+        assert(nodeMap.map()[0] == -1 || nodeMap.reverse().size() == (size_t)nodeCount);
       }
       assert(get_region()->get_property("node_block_count").get_int() == 1);
 
@@ -818,12 +818,12 @@ namespace Ioxf {
     // 'eb_offset+offset' and ending at
     // 'eb_offset+offset+num_to_get'. If the entire block is being
     // processed, this reduces to the range 'eb_offset..eb_offset+element_count'
-    if (elemMap.map.empty()) {
-      elemMap.map.resize(elementCount + 1);
-      elemMap.map[0] = -1;
+    if (elemMap.map().empty()) {
+      elemMap.map().resize(elementCount + 1);
+      elemMap.map()[0] = -1;
     }
 
-    assert(static_cast<int>(elemMap.map.size()) == elementCount + 1);
+    assert(static_cast<int>(elemMap.map().size()) == elementCount + 1);
 
     int eb_offset = eb->get_offset();
     elemMap.set_map(ids, num_to_get, eb_offset);
@@ -841,23 +841,23 @@ namespace Ioxf {
       XML = BlockNodeVarXmls[ElementBlockIndex];
       *XML << "\t<Attribute Name=\""
            << "ids"
-           << "\"" << endl;
+           << "\"\n";
       *XML << "\t\tCenter=\""
            << "Cell"
-           << "\"" << endl;
+           << "\"\n";
       *XML << "\t\tType=\""
            << "Scalar"
-           << "\">" << endl;
-      *XML << "\t\t<DataStructure" << endl;
-      *XML << "\t\t\tFormat=\"HDF\"" << endl;
-      *XML << "\t\t\tDimensions=\"" << num_to_get << "\"" << endl;
+           << "\">\n";
+      *XML << "\t\t<DataStructure\n";
+      *XML << "\t\t\tFormat=\"HDF\"\n";
+      *XML << "\t\t\tDimensions=\"" << num_to_get << "\"\n";
       *XML << "\t\t\tDataType=\""
            << "Int"
-           << "\" >" << endl;
+           << "\" >\n";
       *XML << "\t\t" << hdfname.tailname() << ":/" << block_name << "/"
-           << "ids" << endl;
-      *XML << "\t\t</DataStructure>" << endl;
-      *XML << "\t</Attribute>" << endl;
+           << "ids\n";
+      *XML << "\t\t</DataStructure>\n";
+      *XML << "\t</Attribute>\n";
 
       XdmfArray *ScalarArray = new XdmfArray();
 
@@ -927,23 +927,23 @@ namespace Ioxf {
         int num_elemets_blocks = BlockNodeVarXmls.size();
         for (int ii = 0; ii < num_elemets_blocks; ii++) {
           XML = BlockNodeVarXmls[ii];
-          *XML << "\t<Attribute Name=\"" << var_name << "\"" << endl;
+          *XML << "\t<Attribute Name=\"" << var_name << "\"\n";
           *XML << "\t\tCenter=\""
                << "Node"
-               << "\"" << endl;
+               << "\"\n";
           *XML << "\t\tType=\""
                << "Scalar"
-               << "\">" << endl;
-          *XML << "\t\t<DataStructure" << endl;
-          *XML << "\t\t\tFormat=\"HDF\"" << endl;
-          *XML << "\t\t\tDimensions=\"" << num_out << "\"" << endl;
+               << "\">\n";
+          *XML << "\t\t<DataStructure\n";
+          *XML << "\t\t\tFormat=\"HDF\"\n";
+          *XML << "\t\t\tDimensions=\"" << num_out << "\"\n";
           *XML << "\t\t\tDataType=\""
                << "Float"
-               << "\">" << endl;
-          *XML << "\t\t" << hdfname.tailname() << ":/NodeData/Iteration/" << var_name << endl;
+               << "\">\n";
+          *XML << "\t\t" << hdfname.tailname() << ":/NodeData/Iteration/" << var_name << "\n";
 
-          *XML << "\t\t</DataStructure>" << endl;
-          *XML << "\t</Attribute>" << endl;
+          *XML << "\t\t</DataStructure>\n";
+          *XML << "\t</Attribute>\n";
         }
       }
 
@@ -961,7 +961,7 @@ namespace Ioxf {
 
       std::string FinalName(hdfname.tailname());
       FinalName += ":/NodeData/Iteration ";
-      FinalName += Ioss::Utils::to_string(step);
+      FinalName += std::to_string(step);
       FinalName += "/";
       FinalName += var_name;
       WriteHdfDataset(FinalName, ScalarArray, __LINE__);
@@ -973,23 +973,23 @@ namespace Ioxf {
       int num_elemets_blocks = BlockNodeVarXmls.size();
       for (int i = 0; i < num_elemets_blocks; i++) {
         std::ostringstream *XML = BlockNodeVarXmls[i];
-        *XML << "\t<Attribute Name=\"DISPLACEMENT\" Type=\"Vector\" Center=\"Node\">" << endl;
+        *XML << "\t<Attribute Name=\"DISPLACEMENT\" Type=\"Vector\" Center=\"Node\">\n";
         *XML << "\t\t<DataTransform Type=\"Function\" Format=\"XML\" Function=\"join($0 , $1 ,  "
                 "$2)\""
-             << " Dimensions=\"" << nodeCount << " 3\">" << endl;
+             << " Dimensions=\"" << nodeCount << " 3\">\n";
 
         for (int j = 0; j < comp_count; j++) {
           std::string var_name =
               var_type->label_name(field.get_name(), j + 1, get_field_separator());
 
           *XML << "\t\t\t<DataStructure Format=\"HDF\" Dimensions=\"" << nodeCount
-               << "\" DataType=\"Float\">" << endl;
-          *XML << "\t\t\t\t" << hdfname.tailname() << ":/NodeData/Iteration/" << var_name << endl;
-          *XML << "\t\t\t</DataStructure>" << endl;
+               << "\" DataType=\"Float\">\n";
+          *XML << "\t\t\t\t" << hdfname.tailname() << ":/NodeData/Iteration/" << var_name << "\n";
+          *XML << "\t\t\t</DataStructure>\n";
         }
 
-        *XML << "\t\t</DataTransform>" << endl;
-        *XML << "\t</Attribute>" << endl;
+        *XML << "\t\t</DataTransform>\n";
+        *XML << "\t</Attribute>\n";
       }
     }
   }
@@ -1051,8 +1051,7 @@ namespace Ioxf {
         std::string block_name = ge->name();
 
         std::string FinalName(hdfname.tailname().c_str());
-        FinalName +=
-            ":/" + block_name + "/Iteration " + Ioss::Utils::to_string(step) + "/" + var_name;
+        FinalName += ":/" + block_name + "/Iteration " + std::to_string(step) + "/" + var_name;
         XdmfArray *ScalarArray = new XdmfArray();
         if (sizeof(double) == 8)
           ScalarArray->SetNumberType(XDMF_FLOAT64_TYPE);
@@ -1076,8 +1075,8 @@ namespace Ioxf {
         ScalarArray->SetDataPointer(&temp[0]);
 
         std::string FinalName(hdfname.tailname().c_str());
-        FinalName += ":/NodeSets/" + Ioss::Utils::to_string(id) + "/Iteration " +
-                     Ioss::Utils::to_string(step) + "/" + var_name;
+        FinalName += ":/NodeSets/" + std::to_string(id) + "/Iteration " + std::to_string(step) +
+                     "/" + var_name;
 
         WriteHdfDataset(FinalName, ScalarArray, __LINE__);
         delete ScalarArray;
@@ -1092,8 +1091,8 @@ namespace Ioxf {
         ScalarArray->SetDataPointer(&temp[0]);
 
         std::string FinalName(hdfname.tailname().c_str());
-        FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Iteration " +
-                     Ioss::Utils::to_string(step) + "/" + var_name;
+        FinalName += ":/SideSets/" + std::to_string(id) + "/Iteration " + std::to_string(step) +
+                     "/" + var_name;
         WriteHdfDataset(FinalName, ScalarArray, __LINE__);
         delete ScalarArray;
       }
@@ -1206,7 +1205,7 @@ namespace Ioxf {
             ScalarArray->SetDataPointer(data);
 
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/NodeSets/" + Ioss::Utils::to_string(id) + "/Node";
+            FinalName += ":/NodeSets/" + std::to_string(id) + "/Node";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
             delete ScalarArray;
           }
@@ -1221,7 +1220,7 @@ namespace Ioxf {
             ScalarArray->SetDataPointer(data);
 
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/NodeSets/" + Ioss::Utils::to_string(id) + "/DistributionFactor";
+            FinalName += ":/NodeSets/" + std::to_string(id) + "/DistributionFactor";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
             delete ScalarArray;
           }
@@ -1484,7 +1483,7 @@ namespace Ioxf {
           int df_to_get  = node_count * num_to_get;
 
           std::string FinalName(hdfname.tailname());
-          FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/DistributionFactor";
+          FinalName += ":/SideSets/" + std::to_string(id) + "/DistributionFactor";
 
           XdmfArray *ScalarArray = new XdmfArray();
           if (sizeof(double) == 8)
@@ -1535,7 +1534,7 @@ namespace Ioxf {
 
           {
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Side";
+            FinalName += ":/SideSets/" + std::to_string(id) + "/Side";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
           }
 
@@ -1553,7 +1552,7 @@ namespace Ioxf {
             ScalarArray->SetShape(2, Dimensions); // Rank, Dimensions
 
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Element";
+            FinalName += ":/SideSets/" + std::to_string(id) + "/Element";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
             delete ScalarArray;
             // delete Hdf;
@@ -1595,7 +1594,7 @@ namespace Ioxf {
 
           {
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Side";
+            FinalName += ":/SideSets/" + std::to_string(id) + "/Side";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
           }
 
@@ -1613,7 +1612,7 @@ namespace Ioxf {
             ScalarArray->SetShape(2, Dimensions); // Rank, Dimensions
 
             std::string FinalName(hdfname.tailname());
-            FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Element";
+            FinalName += ":/SideSets/" + std::to_string(id) + "/Element";
             WriteHdfDataset(FinalName, ScalarArray, __LINE__);
             delete ScalarArray;
             // delete Hdf;
@@ -1644,13 +1643,13 @@ namespace Ioxf {
     return num_to_get;
   }
 
-  bool DatabaseIO::begin(Ioss::State state)
+  bool DatabaseIO::begin__(Ioss::State state)
   {
     dbState = state;
     return true;
   }
 
-  bool DatabaseIO::end(Ioss::State state)
+  bool DatabaseIO::end__(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -1681,7 +1680,7 @@ namespace Ioxf {
 
   // Default versions do nothing at this time...
   // Will be used for global variables...
-  bool DatabaseIO::begin_state(Ioss::Region * /* region */, int state, double /* time */)
+  bool DatabaseIO::begin_state__(Ioss::Region * /* region */, int state, double /* time */)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -1697,7 +1696,7 @@ namespace Ioxf {
     return true;
   }
 
-  bool DatabaseIO::end_state(Ioss::Region * /* region */, int state, double /* time */)
+  bool DatabaseIO::end_state__(Ioss::Region * /* region */, int state, double /* time */)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -1868,10 +1867,10 @@ namespace Ioxf {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      *MainXML << "<BoundaryConditions>" << endl;
+      *MainXML << "<BoundaryConditions>\n";
       WriteMetaXdmfNodesets(MainXML, nsets);
       WriteMetaXdmfSidesets(MainXML, ssets);
-      *MainXML << "</BoundaryConditions>" << endl;
+      *MainXML << "</BoundaryConditions>\n";
       WriteMetaXdmfElementBlock(blocks);
     }
   }
@@ -1893,27 +1892,27 @@ namespace Ioxf {
         num_df_in_set    = nodesets[node_set].dfCount;
         NodeSetIndexNames.insert(BINMValuePair(std::string(nodesets[node_set].name), node_set));
 
-        *XML << "\t<NodeSet Name=\"" << node_set_id << "\" >" << endl;
-        *XML << "\t<Nodes>" << endl;
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
-        *XML << "\t\t\tDimensions=\"" << num_nodes_in_set << "\"" << endl;
-        *XML << "\t\t\tDataType=\"Int\">" << endl;
-        *XML << "\t\t\t" << hdfname.tailname() << ":/NodeSets/" << node_set_id << "/Node" << endl;
-        *XML << "\t\t</DataStructure>" << endl;
-        *XML << "\t</Nodes>" << endl;
+        *XML << "\t<NodeSet Name=\"" << node_set_id << "\" >\n";
+        *XML << "\t<Nodes>\n";
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
+        *XML << "\t\t\tDimensions=\"" << num_nodes_in_set << "\"\n";
+        *XML << "\t\t\tDataType=\"Int\">\n";
+        *XML << "\t\t\t" << hdfname.tailname() << ":/NodeSets/" << node_set_id << "/Node\n";
+        *XML << "\t\t</DataStructure>\n";
+        *XML << "\t</Nodes>\n";
         if (num_df_in_set) {
-          *XML << "\t<DistributionFactor>" << endl;
-          *XML << "\t\t<DataStructure" << endl;
-          *XML << "\t\t\tFormat=\"HDF\"" << endl;
-          *XML << "\t\t\tDimensions=\"" << num_df_in_set << "\"" << endl;
-          *XML << "\t\t\tDataType=\"Float\">" << endl;
+          *XML << "\t<DistributionFactor>\n";
+          *XML << "\t\t<DataStructure\n";
+          *XML << "\t\t\tFormat=\"HDF\"\n";
+          *XML << "\t\t\tDimensions=\"" << num_df_in_set << "\"\n";
+          *XML << "\t\t\tDataType=\"Float\">\n";
           *XML << "\t\t\t" << hdfname.tailname() << ":/NodeSets/" << node_set_id
-               << "/DistributionFactor" << endl;
-          *XML << "\t\t</DataStructure>" << endl;
-          *XML << "\t</DistributionFactor>" << endl;
+               << "/DistributionFactor\n";
+          *XML << "\t\t</DataStructure>\n";
+          *XML << "\t</DistributionFactor>\n";
         }
-        *XML << "\t</NodeSet>" << endl;
+        *XML << "\t</NodeSet>\n";
       }
     }
   }
@@ -1934,56 +1933,56 @@ namespace Ioxf {
         num_df_in_set    = sidesets[side_set].dfCount;
         SideSetIndexNames.insert(BINMValuePair(std::string(sidesets[side_set].name), side_set));
 
-        *XML << "\t<SideSet Name=\"" << side_set_id << "\" >" << endl;
+        *XML << "\t<SideSet Name=\"" << side_set_id << "\" >\n";
 
         // there was no mention of this element block in the exodusII implementation
         // We might have to get rid of this.
         /*
-         *XML << "\t<Node>" << endl;
-         *XML << "\t\t<DataStructure" << endl;
-         *XML << "\t\t\tFormat=\"HDF\"" << endl;
-         *XML << "\t\t\tDimensions=\"" << SideSetNodes->GetNumberOfElements() << "\""<< endl;
-         *XML << "\t\t\tDataType=\"Int\">" << endl;
+         *XML << "\t<Node>\n";
+         *XML << "\t\t<DataStructure\n";
+         *XML << "\t\t\tFormat=\"HDF\"\n";
+         *XML << "\t\t\tDimensions=\"" << SideSetNodes->GetNumberOfElements() << "\""<< "\n";
+         *XML << "\t\t\tDataType=\"Int\">\n";
          *XML << "\t\t\t" << hdfname.tailname()
-         << ":/SideSets/" << side_set_id << "/Node" << endl;
-         *XML << "\t\t</DataStructure>" << endl;
-         *XML << "\t</Node>" << endl;
+         << ":/SideSets/" << side_set_id << "/Node\n";
+         *XML << "\t\t</DataStructure>\n";
+         *XML << "\t</Node>\n";
 
          num_element_in_set = sidesets[side_set].elemCount;
          num_node_per_sideset= sidesets[side_set].nodesPerSideSet ;
         */
 
-        *XML << "\t<Side>" << endl;
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
-        *XML << "\t\t\tDimensions=\"" << num_sides_in_set << "\"" << endl;
-        *XML << "\t\t\tDataType=\"Int\">" << endl;
-        *XML << "\t\t\t" << hdfname.tailname() << ":/SideSets/" << side_set_id << "/Side" << endl;
-        *XML << "\t\t</DataStructure>" << endl;
-        *XML << "\t</Side>" << endl;
+        *XML << "\t<Side>\n";
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
+        *XML << "\t\t\tDimensions=\"" << num_sides_in_set << "\"\n";
+        *XML << "\t\t\tDataType=\"Int\">\n";
+        *XML << "\t\t\t" << hdfname.tailname() << ":/SideSets/" << side_set_id << "/Side\n";
+        *XML << "\t\t</DataStructure>\n";
+        *XML << "\t</Side>\n";
 
-        *XML << "\t<Element>" << endl;
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
-        *XML << "\t\t\tDimensions=\"" << num_sides_in_set << "\"" << endl;
-        *XML << "\t\t\tDataType=\"Int\">" << endl;
+        *XML << "\t<Element>\n";
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
+        *XML << "\t\t\tDimensions=\"" << num_sides_in_set << "\"\n";
+        *XML << "\t\t\tDataType=\"Int\">\n";
         *XML << "\t\t\t" << hdfname.tailname() << ":/SideSets/" << side_set_id << "/Element"
-             << endl;
-        *XML << "\t\t</DataStructure>" << endl;
-        *XML << "\t</Element>" << endl;
+             << "\n";
+        *XML << "\t\t</DataStructure>\n";
+        *XML << "\t</Element>\n";
 
         if (num_df_in_set) {
-          *XML << "\t<DistributionFactor>" << endl;
-          *XML << "\t\t<DataStructure" << endl;
-          *XML << "\t\t\tFormat=\"HDF\"" << endl;
-          *XML << "\t\t\tDimensions=\"" << num_df_in_set << "\"" << endl;
-          *XML << "\t\t\tDataType=\"Float\">" << endl;
+          *XML << "\t<DistributionFactor>\n";
+          *XML << "\t\t<DataStructure\n";
+          *XML << "\t\t\tFormat=\"HDF\"\n";
+          *XML << "\t\t\tDimensions=\"" << num_df_in_set << "\"\n";
+          *XML << "\t\t\tDataType=\"Float\">\n";
           *XML << "\t\t\t" << hdfname.tailname() << ":/SideSets/" << side_set_id
-               << "/DistributionFactor" << endl;
-          *XML << "\t\t</DataStructure>" << endl;
-          *XML << "\t</DistributionFactor>" << endl;
+               << "/DistributionFactor\n";
+          *XML << "\t\t</DataStructure>\n";
+          *XML << "\t</DistributionFactor>\n";
         }
-        *XML << "\t</SideSet>" << endl;
+        *XML << "\t</SideSet>\n";
       }
     }
   }
@@ -2010,11 +2009,11 @@ namespace Ioxf {
 
       *XML << "\t<Grid Name=\"" << block_name;
       if (isParallel) {
-        *XML << " from Processor " << Ioss::Utils::to_string(myProcessor) << " of "
-             << Ioss::Utils::to_string(util().parallel_size()) << "\"";
+        *XML << " from Processor " << std::to_string(myProcessor) << " of "
+             << std::to_string(util().parallel_size()) << "\"";
         *XML << " Collection=\"" << block_name;
       }
-      *XML << "\">" << endl;
+      *XML << "\">\n";
 
       XML = new std::ostringstream();
       BlockParameterXmls.push_back(XML);
@@ -2024,62 +2023,62 @@ namespace Ioxf {
       XML = new std::ostringstream();
       BlockXmls.push_back(XML);
 
-      *XML << "\t<Topology" << endl;
+      *XML << "\t<Topology\n";
       if (strncasecmp(element_Type, "SHE", 3) == 0) {
-        *XML << "\t\tType=\"Quadrilateral\"" << endl;
+        *XML << "\t\tType=\"Quadrilateral\"\n";
       }
       else if (strncasecmp(element_Type, "HEX", 3) == 0) {
-        *XML << "\t\tType=\"Hexahedron\"" << endl;
+        *XML << "\t\tType=\"Hexahedron\"\n";
       }
       else if (strncasecmp(element_Type, "TET", 3) == 0) {
-        *XML << "\t\tType=\"Tetrahedron\"" << endl;
+        *XML << "\t\tType=\"Tetrahedron\"\n";
       }
       else if (strncasecmp(element_Type, "WED", 3) == 0) {
-        *XML << "\t\tType=\"Wedge\"" << endl;
+        *XML << "\t\tType=\"Wedge\"\n";
       }
       else if (strncasecmp(element_Type, "NOD", 3) == 0) {
-        *XML << "\t\tType=\"PolyVertex\"" << endl;
+        *XML << "\t\tType=\"PolyVertex\"\n";
       }
       else if (strncasecmp(element_Type, "BEA", 3) == 0) {
-        *XML << "\t\tType=\"Polyline\"" << endl;
-        *XML << "\t\tNodesPerElement=\"" << num_node_per_element << "\"" << endl;
+        *XML << "\t\tType=\"Polyline\"\n";
+        *XML << "\t\tNodesPerElement=\"" << num_node_per_element << "\"\n";
       }
       else {
-        *XML << "\t\tType=\"" << element_Type << "\"" << endl;
+        *XML << "\t\tType=\"" << element_Type << "\"\n";
       }
-      *XML << "\t\tNumberOfElements=\"" << num_element_in_block << "\"" << endl;
-      *XML << "\t\tBaseOffset=\"1\"" << endl;
-      *XML << "\t\t>" << endl;
+      *XML << "\t\tNumberOfElements=\"" << num_element_in_block << "\"\n";
+      *XML << "\t\tBaseOffset=\"1\"\n";
+      *XML << "\t\t>\n";
       if (strncasecmp(element_Type, "NOD", 3) != 0) {
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
         *XML << "\t\t\tDimensions=\"" << num_element_in_block << " " << num_node_per_element << "\""
-             << endl;
-        *XML << "\t\t\tDataType=\"Int\">" << endl;
-        *XML << "\t\t\t" << hdfname.tailname() << ":/" << block_name << "/Connections" << endl;
-        *XML << "\t\t</DataStructure>" << endl;
+             << "\n";
+        *XML << "\t\t\tDataType=\"Int\">\n";
+        *XML << "\t\t\t" << hdfname.tailname() << ":/" << block_name << "/Connections\n";
+        *XML << "\t\t</DataStructure>\n";
       }
-      *XML << "\t</Topology>" << endl;
+      *XML << "\t</Topology>\n";
 
       if (spatialDimension == 3) {
-        *XML << "\t<Geometry Type=\"XYZ\">" << endl;
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
-        *XML << "\t\t\tDimensions=\"" << nodeCount << " 3\"" << endl;
-        *XML << "\t\t\tDataType=\"Float\">" << endl;
-        *XML << "\t\t" << hdfname.tailname() << ":/Geometry" << endl;
-        *XML << "\t\t</DataStructure>" << endl;
-        *XML << "\t</Geometry>" << endl;
+        *XML << "\t<Geometry Type=\"XYZ\">\n";
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
+        *XML << "\t\t\tDimensions=\"" << nodeCount << " 3\"\n";
+        *XML << "\t\t\tDataType=\"Float\">\n";
+        *XML << "\t\t" << hdfname.tailname() << ":/Geometry\n";
+        *XML << "\t\t</DataStructure>\n";
+        *XML << "\t</Geometry>\n";
       }
       else {
-        *XML << "\t<Geometry Type=\"XY\">" << endl;
-        *XML << "\t\t<DataStructure" << endl;
-        *XML << "\t\t\tFormat=\"HDF\"" << endl;
-        *XML << "\t\t\tDimensions=\"" << nodeCount << " 2\"" << endl;
-        *XML << "\t\t\tDataType=\"Float\">" << endl;
-        *XML << "\t\t" << hdfname.tailname() << ":/Geometry" << endl;
-        *XML << "\t\t</DataStructure>" << endl;
-        *XML << "\t</Geometry>" << endl;
+        *XML << "\t<Geometry Type=\"XY\">\n";
+        *XML << "\t\t<DataStructure\n";
+        *XML << "\t\t\tFormat=\"HDF\"\n";
+        *XML << "\t\t\tDimensions=\"" << nodeCount << " 2\"\n";
+        *XML << "\t\t\tDataType=\"Float\">\n";
+        *XML << "\t\t" << hdfname.tailname() << ":/Geometry\n";
+        *XML << "\t\t</DataStructure>\n";
+        *XML << "\t</Geometry>\n";
       }
 
       XML = new std::ostringstream();
@@ -2090,36 +2089,36 @@ namespace Ioxf {
       BlockNodeVarXmls.push_back(XML);
       *XML << "\t<Attribute Name=\""
            << "Values"
-           << "\"" << endl;
+           << "\"\n";
       *XML << "\t\tCenter=\""
            << "Node"
-           << "\"" << endl;
+           << "\"\n";
       *XML << "\t\tType=\""
            << "Scalar"
-           << "\">" << endl;
-      *XML << "\t\t<DataStructure" << endl;
-      *XML << "\t\t\tFormat=\"HDF\"" << endl;
-      *XML << "\t\t\tDimensions=\"" << nodeCount << "\"" << endl;
+           << "\">\n";
+      *XML << "\t\t<DataStructure\n";
+      *XML << "\t\t\tFormat=\"HDF\"\n";
+      *XML << "\t\t\tDimensions=\"" << nodeCount << "\"\n";
       *XML << "\t\t\tDataType=\""
            << "Int"
-           << "\" >" << endl;
-      *XML << "\t\t" << hdfname.tailname() << ":/NodeData/ids" << endl;
-      *XML << "\t\t</DataStructure>" << endl;
-      *XML << "\t</Attribute>" << endl;
+           << "\" >\n";
+      *XML << "\t\t" << hdfname.tailname() << ":/NodeData/ids\n";
+      *XML << "\t\t</DataStructure>\n";
+      *XML << "\t</Attribute>\n";
 
       XML = new std::ostringstream();
       BlockExtraAttributeXmls.push_back(XML);
 
-      *XML << "\t<Attribute Name=\"BlockId\"" << endl;
-      *XML << "\t\tCenter=\"Grid\"" << endl;
-      *XML << "\t\tType=\"Scalar\">" << endl;
-      *XML << "\t\t<DataStructure" << endl;
-      *XML << "\t\t\tFormat=\"XML\"" << endl;
-      *XML << "\t\t\tDimensions=\"1\"" << endl;
-      *XML << "\t\t\tDataType=\"Int\" >" << endl;
-      *XML << "\t\t" << block_id << endl;
-      *XML << "\t\t</DataStructure>" << endl;
-      *XML << "\t</Attribute>" << endl;
+      *XML << "\t<Attribute Name=\"BlockId\"\n";
+      *XML << "\t\tCenter=\"Grid\"\n";
+      *XML << "\t\tType=\"Scalar\">\n";
+      *XML << "\t\t<DataStructure\n";
+      *XML << "\t\t\tFormat=\"XML\"\n";
+      *XML << "\t\t\tDimensions=\"1\"\n";
+      *XML << "\t\t\tDataType=\"Int\" >\n";
+      *XML << "\t\t" << block_id << "\n";
+      *XML << "\t\t</DataStructure>\n";
+      *XML << "\t</Attribute>\n";
 
       XML = new std::ostringstream();
       BlockFinishXmls.push_back(XML);
@@ -2135,7 +2134,7 @@ namespace Ioxf {
 
     //  MainXML = FixXML(MainXML);
 
-    XMLFile << MainXML->str() << endl;
+    XMLFile << MainXML->str() << "\n";
     if (!XMLFile.good() || XMLFile.fail() || XMLFile.bad())
       xdmf_error(xmlname.filename().c_str(), __LINE__, myProcessor);
 
@@ -2144,39 +2143,39 @@ namespace Ioxf {
     for (int i = 0; i < num_elemets_blocks; i++) {
 
       XML = BlockGridXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       XML = BlockParameterXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       if (nIterations > 0) {
-        XMLFile << "\t<Parameter Name=\"Iteration\" Type=\"Range\"" << endl;
+        XMLFile << "\t<Parameter Name=\"Iteration\" Type=\"Range\"\n";
         XMLFile << "\t\tFormat=\"Iteration %d\" Values=\"" << 1 << " 1 " << nIterations << "\""
-                << endl;
-        XMLFile << "\t\tCurrentIndex=\"0\">" << endl;
+                << "\n";
+        XMLFile << "\t\tCurrentIndex=\"0\">\n";
       }
 
       XML = BlockXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       XML = BlockElementVarXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       XML = BlockNodeVarXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       XML = BlockExtraAttributeXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
 
       XML = BlockFinishXmls[i];
-      XMLFile << XML->str() << endl;
+      XMLFile << XML->str() << "\n";
       if (nIterations > 0) {
-        XMLFile << "\t</Parameter>" << endl;
+        XMLFile << "\t</Parameter>\n";
       }
-      XMLFile << "</Grid>" << endl;
-      XMLFile << "" << endl;
+      XMLFile << "</Grid>\n";
+      XMLFile << "\n";
     }
-    XMLFile << " </Domain>" << endl << "</Xdmf>" << endl;
+    XMLFile << " </Domain>\n</Xdmf>\n";
     // XMLFile << '\0';
 
     if (!XMLFile.good() || XMLFile.fail() || XMLFile.bad())
@@ -2205,11 +2204,11 @@ namespace Ioxf {
       // Examples: basename.8.1, basename.64.03, basename.128.001
 
       // Create a std::string containing the total number of processors
-      std::string num_proc   = Ioss::Utils::to_string(num_processors);
+      std::string num_proc   = std::to_string(num_processors);
       int         proc_width = num_proc.length();
 
       // Create a std::string containing the current processor number
-      std::string cur_proc  = Ioss::Utils::to_string(processor);
+      std::string cur_proc  = std::to_string(processor);
       int         cur_width = cur_proc.length();
 
       // Build the filename
@@ -2597,23 +2596,23 @@ namespace Ioxf {
           // Find position of 'var_string' in 'elementVariables'
           VariableNameMap::iterator VN = elementVariables.find(var_string);
           if (XML && VN != elementVariables.end()) {
-            *XML << "\t<Attribute Name=\"" << var_string << "\"" << endl;
+            *XML << "\t<Attribute Name=\"" << var_string << "\"\n";
             *XML << "\t\tCenter=\""
                  << "Cell"
-                 << "\"" << endl;
+                 << "\"\n";
             *XML << "\t\tType=\""
                  << "Scalar"
-                 << "\">" << endl;
-            *XML << "\t\t<DataStructure" << endl;
-            *XML << "\t\t\tFormat=\"HDF\"" << endl;
-            *XML << "\t\t\tDimensions=\"" << count << "\"" << endl;
+                 << "\">\n";
+            *XML << "\t\t<DataStructure\n";
+            *XML << "\t\t\tFormat=\"HDF\"\n";
+            *XML << "\t\t\tDimensions=\"" << count << "\"\n";
             *XML << "\t\t\tDataType=\""
                  << "Float"
-                 << "\">" << endl;
+                 << "\">\n";
             *XML << "\t\t" << hdfname.tailname() << ":/" << block_name << "/Iteration/"
-                 << var_string << endl;
-            *XML << "\t\t</DataStructure>" << endl;
-            *XML << "\t</Attribute>" << endl;
+                 << var_string << "\n";
+            *XML << "\t\t</DataStructure>\n";
+            *XML << "\t</Attribute>\n";
           }
         }
       }

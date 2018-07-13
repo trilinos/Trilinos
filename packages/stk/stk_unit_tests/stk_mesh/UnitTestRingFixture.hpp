@@ -34,7 +34,7 @@
 #ifndef unit_test_UnitTestRingFixture_hpp
 #define unit_test_UnitTestRingFixture_hpp
 
-#include <stk_mesh/fixtures/RingFixture.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>
 
 // must be in same namespace as BulkData to make friending w/out exposure possible
 

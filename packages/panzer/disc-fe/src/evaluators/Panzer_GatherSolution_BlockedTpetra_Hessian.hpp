@@ -65,15 +65,15 @@ public:
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : gidIndexer_(indexer) {}
 
-   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                const Teuchos::ParameterList& p) {}
+   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
+                                const Teuchos::ParameterList& /* p */) {}
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm) {}
+  void postRegistrationSetup(typename TRAITS::SetupData /* d */,
+                             PHX::FieldManager<TRAITS>& /* vm */) {}
 
-  void preEvaluate(typename TRAITS::PreEvalData d) {}
+  void preEvaluate(typename TRAITS::PreEvalData /* d */) {}
 
-  void evaluateFields(typename TRAITS::EvalData d) {}
+  void evaluateFields(typename TRAITS::EvalData /* d */) {}
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Hessian,TRAITS,S,LO,GO>(gidIndexer_,pl)); }

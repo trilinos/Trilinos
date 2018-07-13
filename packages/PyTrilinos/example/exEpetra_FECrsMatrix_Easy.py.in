@@ -57,11 +57,12 @@
 
 #
 # System imports
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -93,12 +94,12 @@ def main():
   # Method Matrix[GlobalRow, GlobalCol] requires global IDs for rows
   # and columns.
   if Comm.MyPID() == 0:
-    for i in xrange(NumGlobalRows):
+    for i in range(NumGlobalRows):
       # Here i is the global ID or a given row
       Matrix[i, i] = 1.0
   
   Matrix.GlobalAssemble()
-  print Matrix
+  print(Matrix)
   
   Comm.Barrier()
   
@@ -108,20 +109,20 @@ def main():
   # We can now extract local rows of the matrix. Method Matrix[i] returns
   # the nonzeros indices and values for the locally hosted global row `i'.
   for i in MyGlobalElements:
-    print Matrix[i]
+    print(Matrix[i])
   
   # new reset the local values.
   for i in MyGlobalElements:
     Indices, Values = Matrix[i]
-    for j in xrange(len(Indices)):
+    for j in range(len(Indices)):
       Matrix[i, Indices[j]] = 10 * Values[j]
   
-  print Matrix
+  print(Matrix)
 
   # synchronize processors
   Comm.Barrier()
 
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if Comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

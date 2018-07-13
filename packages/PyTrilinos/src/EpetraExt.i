@@ -91,10 +91,10 @@ example subdirectory of the PyTrilinos package:
 	docstring = %epetraext_docstring) EpetraExt
 
 %{
-// System includes
+// System include files
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -103,85 +103,22 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "Teuchos_XMLObject.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Object.h"
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_VbrRowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "Epetra_GIDTypeVector.h"
-#include "PyTrilinos_LinearProblem.hpp"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
-// Epetra python includes
+// Epetra python include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// EpetraExt includes
-#include "EpetraExt_config.h"
-#include "EpetraExt_Version.h"
-#include "EpetraExt_Exception.h"
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_BlockMapOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_BlockMapIn.h"
-#include "EpetraExt_VectorIn.h"
-#include "EpetraExt_MultiVectorIn.h"
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_HDF5.h"
-#include "EpetraExt_XMLReader.h"
-#include "EpetraExt_XMLWriter.h"
-#include "EpetraExt_SubCopy_CrsMatrix.h"
-#include "EpetraExt_ModelEvaluator.h"
-
-// EpetraExt python includes
-#include "PyTrilinos_EpetraExt_Util.hpp"
+// EpetraExt include files
+#include "PyTrilinos_EpetraExt_Headers.hpp"
 %}
 
 // PyTrilinos configuration
@@ -467,13 +404,15 @@ namespace EpetraExt
   %extend XMLReader
   {
     %epetraext_epetra_read_method(  Map        )
-    %epetraext_epetra_read64_method(Map        )
     %epetraext_epetra_read_method(  MultiVector)
-    %epetraext_epetra_read64_method(MultiVector)
     %epetraext_epetra_read_method(  CrsGraph   )
-    %epetraext_epetra_read64_method(CrsGraph   )
     %epetraext_epetra_read_method(  CrsMatrix  )
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    %epetraext_epetra_read64_method(Map        )
+    %epetraext_epetra_read64_method(MultiVector)
+    %epetraext_epetra_read64_method(CrsGraph   )
     %epetraext_epetra_read64_method(CrsMatrix  )
+#endif
   } // XMLReader
 }
 
@@ -569,8 +508,10 @@ EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
 %template (TCrsGraph_MapColoringIndex_int)
 EpetraExt::TCrsGraph_MapColoringIndex<int>;
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 %template (TCrsGraph_MapColoringIndex_long)
 EpetraExt::TCrsGraph_MapColoringIndex<long long>;
+#endif
 
 ////////////////////////////////////////
 // EpetraExt_MapColoringIndex support //

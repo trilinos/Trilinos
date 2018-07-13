@@ -49,7 +49,10 @@
 //#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
-
+#ifndef _WIN32
+#include "Teuchos_Array.hpp"
+#include "unistd.h"
+#endif
 
 namespace {
 
@@ -197,7 +200,6 @@ void CommandLineProcessor::setOption(
     );
 }
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 void CommandLineProcessor::setOption(
   const char     option_name[]
   ,long long int *option_val
@@ -214,8 +216,6 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
-#endif
-
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -270,6 +270,17 @@ CommandLineProcessor::parse(
   const std::string  help_opt = "help";
   const std::string  pause_opt = "pause-for-debugging";
   int procRank = GlobalMPISession::getRank();
+
+  // check for help options before any others as we modify
+  // the values afterwards
+  for( int i = 1; i < argc; ++i ) {
+    bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
+    if( gov_return && opt_name == help_opt ) {
+      if(errout) printHelpMessage( argv[0], *errout );
+      return PARSE_HELP_PRINTED;
+    }
+  }
+  // check all other options
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
     if( !gov_return ) {
@@ -290,11 +301,16 @@ CommandLineProcessor::parse(
       }
       continue;
     }
-    if( opt_name == help_opt ) {
-      if(errout) printHelpMessage( argv[0], *errout );
-      return PARSE_HELP_PRINTED;
-    }
     if( opt_name == pause_opt ) {
+#ifndef _WIN32
+      Array<int> pids;
+      pids.resize(GlobalMPISession::getNProc());
+      int rank_pid = getpid();
+      GlobalMPISession::allGather(rank_pid,pids());
+      if(procRank == 0)
+        for (int k=0; k<GlobalMPISession::getNProc(); k++)
+          std::cerr << "Rank " << k << " has PID " << pids[k] << std::endl;
+#endif
       if(procRank == 0) {
         std::cerr << "\nType 0 and press enter to continue : ";
         int dummy_int = 0;
@@ -333,11 +349,9 @@ CommandLineProcessor::parse(
       case OPT_SIZE_T:
         *(any_cast<size_t *>(opt_val_val.opt_val)) = asSafe<size_t> (opt_val_str);
         break;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
       case OPT_LONG_LONG_INT:
         *(any_cast<long long int*>(opt_val_val.opt_val)) = asSafe<long long int> (opt_val_str);
         break;
-#endif
       case OPT_DOUBLE:
         *(any_cast<double*>(opt_val_val.opt_val)) = asSafe<double> (opt_val_str);
         break;
@@ -417,9 +431,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
       ++itr
       )
     {
-      opt_name_w = my_max(opt_name_w,itr->opt_name.length());
+      opt_name_w = my_max(opt_name_w,static_cast<int>(itr->opt_name.length()));
       if( itr->opt_type )
-        opt_name_w = my_max(opt_name_w,itr->opt_name_false.length());
+        opt_name_w = my_max(opt_name_w,static_cast<int>(itr->opt_name_false.length()));
     }
     opt_name_w += 2;
 
@@ -513,9 +527,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_INT:
         case OPT_LONG_INT:
         case OPT_SIZE_T:
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
-#endif
         case OPT_DOUBLE:
         case OPT_STRING:
         case OPT_ENUM_INT:
@@ -536,11 +548,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_SIZE_T:
           out << "=" << (*(any_cast<size_t*>(itr->default_val)));
           break;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
           out << "=" << (*(any_cast<long long int*>(itr->default_val)));
           break;
-#endif
         case OPT_DOUBLE:
           out <<  "=" << (*(any_cast<double*>(itr->default_val)));
           break;
@@ -665,7 +675,7 @@ void CommandLineProcessor::setEnumOption(
   enum_opt_data_list_.push_back(
     enum_opt_data_t(enum_option_val,num_enum_opt_values,enum_opt_values,enum_opt_names)
     );
-  const int opt_id = enum_opt_data_list_.size()-1;
+  const int opt_id = static_cast<int>(enum_opt_data_list_.size())-1;
   options_list_[std::string(enum_option_name)]
     = opt_val_val_t(OPT_ENUM_INT,any(opt_id),required);
   options_documentation_list_.push_back(
@@ -706,7 +716,7 @@ bool CommandLineProcessor::set_enum_value(
     }
 #undef CLP_ERR_MSG
   }
-  const int enum_opt_val_index = itr - itr_begin;
+  const int enum_opt_val_index = static_cast<int>(itr - itr_begin);
   *enum_opt_data.enum_option_val = enum_opt_data.enum_opt_values.at(enum_opt_val_index);
   return true;
 }
@@ -772,7 +782,7 @@ int CommandLineProcessor::find_enum_opt_index(
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
 #undef CLP_ERR_MSG
   }
-  return itr - itr_begin;
+  return static_cast<int>(itr - itr_begin);
 }
 
 
@@ -782,7 +792,7 @@ bool CommandLineProcessor::get_opt_val(
   ,std::string   *opt_val_str
   ) const
 {
-  const int len = std::strlen(str);
+  const int len = static_cast<int>(std::strlen(str));
   if( len < 3 )
     return false; // Can't be an option with '--' followed by at least one char
   if( str[0] != '-' || str[1] != '-' )

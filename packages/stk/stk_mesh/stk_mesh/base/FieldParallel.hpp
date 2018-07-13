@@ -40,7 +40,8 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
@@ -70,7 +71,7 @@ inline
 void copy_owned_to_shared( const BulkData& mesh,
                            const std::vector< const FieldBase *> & fields )
 {
-  communicate_field_data(*mesh.ghostings()[0], fields);
+  communicate_field_data(*mesh.ghostings()[BulkData::SHARED], fields);
 }
 
 //----------------------------------------------------------------------
@@ -82,96 +83,6 @@ void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, b
 void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 
-
-//
-//  Generalized comm plans
-//
-//  This plan assumes the send and recv lists have identical sizes so no extra sizing communications are needed
-//
-template<typename T>
-void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
-                                  std::vector< std::vector<T> > &recv_lists,
-                                  MPI_Comm &mpi_communicator )
-{
-  //
-  //  Determine the number of processors involved in this communication
-  //
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int class_size = sizeof(T);
-
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    recv_lists[iproc].resize(send_lists[iproc].size());
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
-#endif
-}
-
-template<typename T>
-inline void parallel_data_exchange_nonsym_known_sizes_t(std::vector< std::vector<T> > &send_lists,
-                                                std::vector< std::vector<T> > &recv_lists,
-                                                MPI_Comm mpi_communicator )
-{
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10243; //arbitrary tag value, anything less than 32768 is legal
-  int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int class_size = sizeof(T);
-
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-
-  MPI_Barrier(mpi_communicator);
-
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR, iproc, msg_tag, mpi_communicator);
-    }
-  }
-
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
-#endif
-}
 
 inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc, int index)
 {
@@ -290,7 +201,6 @@ inline void communicate_field_data(
               {
                   unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
                   std::memcpy(field_data_ptr+e_size, ptr, size);
- //                 field_data.insert(field_data.end(), ptr, ptr+size);
               }
               e_size += size;
           }
@@ -365,14 +275,14 @@ inline void communicate_field_data(
 }
 
 template<typename FIELD_DATA_TYPE>
-inline void send_or_recv_field_data_for_assembly(stk::CommAll& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
+inline void send_or_recv_field_data_for_assembly(stk::CommNeighbors& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
 {
     FIELD_DATA_TYPE * ptr =
       reinterpret_cast<FIELD_DATA_TYPE *>(stk::mesh::field_data( f , bucketId, bucket_ordinal, scalars_per_entity*sizeof(FIELD_DATA_TYPE) ));
 
     if (phase == 0)
     { // send
-        CommBuffer & b = sparse.send_buffer( owner );
+        CommBufferV & b = sparse.send_buffer( owner );
         for(unsigned i=0; i<scalars_per_entity; ++i)
         {
           b.pack<FIELD_DATA_TYPE>( ptr[i] );
@@ -383,7 +293,7 @@ inline void send_or_recv_field_data_for_assembly(stk::CommAll& sparse, int phase
         PairIterEntityComm ec(infovec.begin(), infovec.end());
         for ( ; !ec.empty() ; ++ec )
         {
-            CommBuffer & b = sparse.recv_buffer( ec->proc );
+            CommBufferV & b = sparse.recv_buffer( ec->proc );
             for(unsigned i=0; i<scalars_per_entity; ++i)
             {
                 FIELD_DATA_TYPE recvd_value;
@@ -410,8 +320,8 @@ inline void parallel_sum_including_ghosts(
   // Sizing for send and receive
 
   const unsigned zero = 0 ;
-  std::vector<unsigned> send_size( parallel_size , zero );
-  std::vector<unsigned> recv_size( parallel_size , zero );
+  std::vector<int> send_size( parallel_size , zero );
+  std::vector<int> recv_size( parallel_size , zero );
 
   const EntityCommListInfoVector& comm_info_vec = mesh.internal_comm_list();
   size_t comm_info_vec_size = comm_info_vec.size();
@@ -450,14 +360,22 @@ inline void parallel_sum_including_ghosts(
     }
   }
 
-  // Allocate send and receive buffers:
+  std::vector<int> send_procs, recv_procs;
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          send_procs.push_back(p);
+      }
+      if (recv_size[p] > 0) {
+          recv_procs.push_back(p);
+      }
+  }
 
-  CommAll sparse ;
+  CommNeighbors sparse(mesh.parallel(), send_procs, recv_procs);
 
-  {
-    const unsigned * const snd_size = & send_size[0] ;
-    const unsigned * const rcv_size = & recv_size[0] ;
-    sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          sparse.send_buffer(p).reserve(send_size[p]);
+      }
   }
 
   // Send packing:
@@ -511,135 +429,6 @@ inline void parallel_sum_including_ghosts(
   }
 
   communicate_field_data(mesh, fields);
-}
-
-//
-//  This plan assumes the send and recv lists are matched, but that the actual ammount of data to send is unknown.
-//  A processor knows which other processors it will be receiving data from, but does not know who much data.
-//  Thus the comm plan is known from the inputs, but an additional message sizing call must be done.
-//
-template<typename T>
-void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &send_lists,
-                                               std::vector< std::vector<T> > &recv_lists,
-                                               MPI_Comm &mpi_communicator )
-{
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int class_size = sizeof(T);
-
-  //
-  //  Send the message sizes
-  //
-  std::vector<int> send_msg_sizes(num_procs);
-  std::vector<int> recv_msg_sizes(num_procs);
-  std::vector<MPI_Request> recv_handles(num_procs);
-
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    send_msg_sizes[iproc] = send_lists[iproc].size();
-  }    
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size()>0) {
-      MPI_Irecv(&recv_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size()>0) {
-      MPI_Send(&send_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-      recv_lists[iproc].resize(recv_msg_sizes[iproc]);
-    }
-  }
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
-#endif
-}
-
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
-
-//
-//  Parallel_Data_Exchange: General object exchange template with unknown comm plan
-//
-template<typename T>
-void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
-                              std::vector< std::vector<T> > &recv_lists,
-                              MPI_Comm &mpi_communicator ) {
-  //
-  //  Determine the number of processors involved in this communication
-  //
-  const int msg_tag = 10242;
-  int num_procs;
-  MPI_Comm_size(mpi_communicator, &num_procs);
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
-  ThrowRequire((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
-  int class_size = sizeof(T);
-  //
-  //  Determine number of items each other processor will send to the current processor
-  //
-  std::vector<int> global_number_to_send(num_procs);
-  for(int iproc=0; iproc<num_procs; ++iproc) {
-    global_number_to_send[iproc] = send_lists[iproc].size();
-  }
-  std::vector<int> numToRecvFrom = ComputeReceiveList(global_number_to_send, mpi_communicator);
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    recv_lists[iproc].resize(numToRecvFrom[iproc]);
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
 }
 
 } // namespace mesh
