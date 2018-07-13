@@ -90,18 +90,18 @@ struct DynamicConstraintCheck {
     //-------------------------------------------------------------------------
     // Check Jacobian components
     if( std::find(methods.begin(),methods.end(),"applyJacobian_uo") != methods.end() ) {
-      auto J = con_check.jacobian_uo( un, z  );
+      auto J = con_check.jacobian_uo( un, z );
       validator.derivative_check( value_uo, J, update_uo, *c, *vu, uo, "norm(J_uo*vec)" );
     } //else os << "\napplyJacobian_uo not implemented.\n";
 
     if( std::find(methods.begin(),methods.end(),"applyJacobian_un") != methods.end() ) {
-      auto J = con_check.jacobian_un( uo, z  );
+      auto J = con_check.jacobian_un( uo, z );
       validator.derivative_check( value_un, J, update_un, *c, *vu, un, "norm(J_un*vec)" );
     } //else os << "\napplyJacobian_un not implemented.\n";
 
     if( std::find(methods.begin(),methods.end(),"applyJacobian_z") != methods.end() ) {
       auto J = con_check.jacobian_z( uo, un );
-      validator.derivative_check( value_z,  J,  update_z,  *c, *vz, z,  "norm(J_z*vec)" );
+      validator.derivative_check( value_z,  J, update_z,  *c, *vz, z,  "norm(J_z*vec)"  );
     } //else os << "\napplyJacobian_z not implemented.\n";
 
 
@@ -109,7 +109,7 @@ struct DynamicConstraintCheck {
     // Check Adjoint Jacobian component consistencies
     if( std::find(methods.begin(),methods.end(),"applyAdjointJacobian_uo") != methods.end() ) {
       auto J = con_check.jacobian_uo( un, z );
-      auto aJ = con_check.adjointJacobian_uo( un, z  );
+      auto aJ = con_check.adjointJacobian_uo( un, z );
       validator.adjoint_consistency_check( J, aJ, update_uo, *c, *vu, uo, 
                                            "Jacobian with respect to uo", "J_uo");
     } //else os << "\napplyAdjointJacobian_uo not implemented.\n";
@@ -131,6 +131,12 @@ struct DynamicConstraintCheck {
  
     //-------------------------------------------------------------------------
     // Check inverses
+    if( std::find(methods.begin(),methods.end(),"solve") != methods.end() ) {
+      auto S = con_check.solve_un( uo, z );
+      validator.solve_check( S, value_un, update_un, *c, un, "Dynamic Constraint");
+    } //else os << "\nsolve not implemented.\n";
+
+
     if( std::find(methods.begin(),methods.end(),"applyInverseJacobian_un") != methods.end() ) {
       auto J  = con_check.jacobian_un( uo, z );
       auto iJ = con_check.inverseJacobian_un( uo, z );
@@ -229,6 +235,7 @@ struct DynamicConstraintCheck {
                                         "applyAdjointJacobian_uo",
                                         "applyAdjointJacobian_un",
                                         "applyAdjointJacobian_z",
+                                        "solve",
                                         "applyInverseJacobian_un",
                                         "applyInverseAdjointJacobian_un",
                                         "applyAdjointHessian_uo_uo",

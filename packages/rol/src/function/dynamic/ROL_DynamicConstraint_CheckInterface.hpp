@@ -107,6 +107,11 @@ public:
                  ph::_1, cref(uo), cref(un), ph::_2, ts_ );
   }
 
+  f_solve_t<Real> solve_un( const V& uo, const V& z ) {
+    return bind( &Con::solve, &con_,
+                 ph::_1, cref(uo), ph::_2, cref(z), ts_ );
+  }
+
   //----------------------------------------------------------------------------
 
   f_dderiv_t<Real> jacobian_uo( const V& un, const V& z ) {

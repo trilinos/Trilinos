@@ -80,16 +80,16 @@ public:
                                                  f_vector_t<Real> f_derivative,
                                                  f_update_t<Real> f_update,
                                                  const V& g,
-                                                 const V& x,
                                                  const V& v,
+                                                 const V& x,
                                                  const string& label ) const;
 
   virtual vector<vector<Real>> derivative_check( f_vector_t<Real> f_value,
                                                  f_dderiv_t<Real> f_derivative,
                                                  f_update_t<Real> f_update,
                                                  const V& c,
-                                                 const V& x,
                                                  const V& v,
+                                                 const V& x,
                                                  const string& label ) const;
 
   virtual vector<Real> symmetry_check( f_dderiv_t<Real> A,
@@ -117,7 +117,14 @@ public:
                                       const string& name="Linear Operator",
                                       const string& symbol="A" ) const;
 
-   ostream& getStream() const;
+  virtual vector<Real> solve_check( f_solve_t<Real>  solve,
+                                    f_vector_t<Real> value,
+                                    f_update_t<Real> update,
+                                    const V& c,
+                                    const V& x,
+                                    const string& name="Function" ) const;
+
+  ostream& getStream() const;
 
 private:
 

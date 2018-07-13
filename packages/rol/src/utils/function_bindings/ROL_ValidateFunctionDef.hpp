@@ -332,6 +332,62 @@ if (printToStream_) {
 }
 
 template<typename Real>
+vector<Real>
+ValidateFunction<Real>::solve_check( f_solve_t<Real>  solve,
+                                     f_vector_t<Real> value,
+                                     f_update_t<Real> update,
+                                     const V& c,
+                                     const V& x,
+                                     const string& name ) const {
+  auto res1 = workspace_->clone(c);
+  auto res2 = workspace_->clone(c);
+  auto sol  = workspace_->clone(x);
+
+  solve(*res1,*sol);
+  update(*sol);
+  value(*res2,*sol);
+
+  Real sol_norm  = sol->norm();
+  Real res1_norm = res1->norm();
+  Real res2_norm = res2->norm();
+
+  vector<Real> solveCheck(3,0);
+  solveCheck[0] = sol_norm;
+  solveCheck[1] = res1_norm;
+  solveCheck[2] = res2_norm;
+
+  ROL::nullstream oldFormatState;
+  oldFormatState.copyfmt(os_);  
+
+  string label1 = "Solution Norm";
+  string label2 = "Solver Residual";
+  string label3 = "True Residual";
+
+  auto width1 = max(width_,static_cast<int>(label1.length())+3);
+  auto width2 = max(width_,static_cast<int>(label2.length())+3);
+  auto width3 = max(width_,static_cast<int>(label3.length())+3);
+
+if (printToStream_) {
+    os_ << endl << "Test solve of " << name << endl;
+    os_ << right
+        << setw(width1) << label1
+        << setw(width2) << label2
+        << setw(width3) << label3
+        << endl;
+    os_ << scientific << setprecision(precision_) << right
+        << setw(width1) << solveCheck[0]
+        << setw(width2) << solveCheck[1]
+        << setw(width3) << solveCheck[2]
+        << endl;
+  }
+  os_ << endl;
+
+  os_.copyfmt(oldFormatState);               
+  return solveCheck;
+}
+       
+
+template<typename Real>
 ostream& ValidateFunction<Real>::getStream() const { return os_; }
 
 } // namespace details
