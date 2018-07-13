@@ -608,7 +608,7 @@ private:
                           const Vector<Real> &z,    const TimeStamp<Real> &ts) {
     const Real one(1);
     // Mixed derivative rhs term
-    con_->applyAdjointHessian_un_z(*rhs_, l, v, uold, unew, z, ts);
+    con_->applyAdjointHessian_z_un(*rhs_, l, v, uold, unew, z, ts);
     obj_->hessVec_un_z(*udual_, v, uold, unew, z, ts);
     rhs_->axpy(-one, *udual_);
     // State derivative rhs term
@@ -616,7 +616,7 @@ private:
     rhs_->axpy(-one, *udual_);
     obj_->hessVec_un_un(*udual_, wnew, uold, unew, z, ts);
     rhs_->plus(*udual_);
-    con_->applyAdjointHessian_un_uo(*udual_, l, wold, uold, unew, z, ts);
+    con_->applyAdjointHessian_uo_un(*udual_, l, wold, uold, unew, z, ts);
     rhs_->axpy(-one, *udual_);
     obj_->hessVec_un_uo(*udual_, wold, uold, unew, z, ts);
     rhs_->plus(*udual_);
@@ -638,7 +638,7 @@ private:
       obj_->hessVec_un_uo(*udual_, wold, uold, unew, z, ts);
       Hv.plus(*udual_);
     }
-    con_->applyAdjointHessian_un_uo(*udual_, l, wold, uold, unew, z, ts);
+    con_->applyAdjointHessian_uo_un(*udual_, l, wold, uold, unew, z, ts);
     Hv.axpy(-one,*udual_);
     // Compute new/new Hessian of Lagrangian
     obj_->hessVec_un_un(*udual_, wnew, uold, unew, z, ts);
@@ -655,10 +655,10 @@ private:
     const Real one(1);
     // Compute new/old Hessian of Lagrangian
     if (!sumInto) {
-      con_->applyAdjointHessian_un_z(Hv, l, v, uold, unew, z, ts);
+      con_->applyAdjointHessian_z_un(Hv, l, v, uold, unew, z, ts);
     }
     else {
-      con_->applyAdjointHessian_un_z(*udual_, l, v, uold, unew, z, ts);
+      con_->applyAdjointHessian_z_un(*udual_, l, v, uold, unew, z, ts);
       Hv.plus(*udual_);
     }
     obj_->hessVec_un_z(*udual_, v, uold, unew, z, ts);
@@ -694,7 +694,7 @@ private:
       obj_->hessVec_uo_un(*udual_, wnew, uold, unew, z, ts);
       Hv.plus(*udual_);
     }
-    con_->applyAdjointHessian_uo_un(*udual_, l, wnew, uold, unew, z, ts);
+    con_->applyAdjointHessian_un_uo(*udual_, l, wnew, uold, unew, z, ts);
     Hv.axpy(-one,*udual_);
     // Compute old/old Hessian of Lagrangian
     obj_->hessVec_uo_uo(*udual_, wold, uold, unew, z, ts);
@@ -711,10 +711,10 @@ private:
     const Real one(1);
     // Compute new/old Hessian of Lagrangian
     if (!sumInto) {
-      con_->applyAdjointHessian_uo_z(Hv, l, v, uold, unew, z, ts);
+      con_->applyAdjointHessian_z_uo(Hv, l, v, uold, unew, z, ts);
     }
     else {
-      con_->applyAdjointHessian_uo_z(*udual_, l, v, uold, unew, z, ts);
+      con_->applyAdjointHessian_z_uo(*udual_, l, v, uold, unew, z, ts);
       Hv.plus(*udual_);
     }
     obj_->hessVec_uo_z(*udual_, v, uold, unew, z, ts);
@@ -750,12 +750,12 @@ private:
     // Compute Hessian of Lagrangian on previous time interval
     obj_->hessVec_z_uo(*zdual_, wold, uold, unew, z, ts);
     Hv.axpy(-one, *zdual_);
-    con_->applyAdjointHessian_z_uo(*zdual_, l, wold, uold, unew, z, ts);
+    con_->applyAdjointHessian_uo_z(*zdual_, l, wold, uold, unew, z, ts);
     Hv.plus(*zdual_);
     // Compute Hessian of Lagrangian on current time interval
     obj_->hessVec_z_un(*zdual_, wnew, uold, unew, z, ts);
     Hv.axpy(-one, *zdual_);
-    con_->applyAdjointHessian_z_un(*zdual_, l, wnew, uold, unew, z, ts);
+    con_->applyAdjointHessian_un_z(*zdual_, l, wnew, uold, unew, z, ts);
     Hv.plus(*zdual_);
   }
 
