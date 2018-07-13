@@ -51,8 +51,7 @@
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 using Tpetra::CrsMatrix;
@@ -76,10 +75,8 @@ int main(int argc, char *argv[])
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   const ST ONE  = SCT::one();
 
-  Teuchos::GlobalMPISession mpisess (&argc,&argv,&std::cout);
-
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   const int MyPID = comm->getRank ();
   const int NumImages = comm->getSize ();
