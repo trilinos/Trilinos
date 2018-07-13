@@ -49,8 +49,6 @@
 #include <FROSch_ExtractSubmatrices_def.hpp>
 #include <FROSch_Tools_def.hpp>
 
-// TODO
-// -> "InterfaceEntity" -> "Entity"
 
 namespace FROSch {
     
@@ -99,6 +97,7 @@ namespace FROSch {
         
         typedef Teuchos::Array<Node<SC,LO,GO> > NodeVec;
         typedef Teuchos::RCP<Node<SC,LO,GO> > NodePtr;
+        typedef Teuchos::Array<NodePtr> NodePtrVec;
         
         typedef unsigned UN;
         
@@ -140,13 +139,13 @@ namespace FROSch {
         
         int setLocalID(LO localID);
         
-        int setParentID(LO parentID);
+        int setAncestorID(LO AncestorID);
         
         int setUniqueIDToFirstGlobalID();
         
         int resetEntityType(EntityType type);
         
-        int findParents(EntitySetPtr entitySet);
+        int findAncestors(EntitySetPtr entitySet);
         
         InterfaceEntityPtr divideEntity(CrsMatrixPtr matrix, int pID);
         
@@ -164,7 +163,7 @@ namespace FROSch {
         
         LO getLocalID() const;
         
-        LO getParentID() const;
+        LO getAncestorID() const;
         
         const Node<SC,LO,GO>& getNode(UN iDNode) const;
         
@@ -184,7 +183,7 @@ namespace FROSch {
         
         UN getNumNodes() const;
         
-        const EntitySetPtr getParents() const;
+        const EntitySetPtr getAncestors() const;
         
     protected:
         
@@ -194,13 +193,13 @@ namespace FROSch {
         
         GOVec SubdomainsVector_;
         
-        EntitySetPtr Parents_;
+        EntitySetPtr Ancestors_;
         
         UN DofsPerNode_;
         UN Multiplicity_;
         GO UniqueID_;
         LO LocalID_;
-        LO ParentID_;
+        LO AncestorID_;
     };
     
     template <class SC,class LO,class GO,class NO>

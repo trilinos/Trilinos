@@ -45,6 +45,8 @@
 #ifndef PHX_MDFIELD_UTILITIES_DEF_HPP
 #define PHX_MDFIELD_UTILITIES_DEF_HPP
 
+#include <memory>
+
 namespace PHX {
 
   template<typename T>
@@ -56,7 +58,8 @@ namespace PHX {
     // operator-> requires a raw pointer to end its recursive invocation. val_
     // holds an object in memory so that the pointer remains valid for the
     // duration of it->'s use of it.
-    const reference_type* operator-> () const { return &val_; }
+    // Note:  don't use & since it may be overloaded
+    const reference_type* operator-> () const { return std::addressof(val_); }
   };
 
   template<typename T> inline MDFieldIterator<T>::

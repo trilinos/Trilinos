@@ -46,16 +46,14 @@
 \ref Tpetra_Lesson03 explains this example in detail.
 */
 
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
 
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
 
@@ -120,6 +118,7 @@ public:
     using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    const int myRank = A.getMap ()->getComm ()->getRank ();
 
     // Create three vectors for iterating the power method.  Since the
     // power method computes z = A*q, q should be in the domain of A and
@@ -175,15 +174,23 @@ public:
       if (iter % reportFrequency == 0 || iter + 1 == niters) {
         resid.update (one, z, -lambda, q, zero); // z := A*q - lambda*q
         residual = resid.norm2 (); // 2-norm of the residual vector
-        out << "Iteration " << iter << ":" << endl
-            << "- lambda = " << lambda << endl
-            << "- ||A*q - lambda*q||_2 = " << residual << endl;
+	if (myRank == 0) {
+	  out << "Iteration " << iter << ":" << endl
+	      << "- lambda = " << lambda << endl
+	      << "- ||A*q - lambda*q||_2 = " << residual << endl;
+	}
       }
       if (residual < tolerance) {
-        out << "Converged after " << iter << " iterations" << endl;
+	if (myRank == 0) {
+	  out << "Converged after " << iter << " iterations" << endl;
+	}
         break;
-      } else if (iter+1 == niters) {
-        out << "Failed to converge after " << niters << " iterations" << endl;
+      }
+      else if (iter+1 == niters) {
+	if (myRank == 0) {
+	  out << "Failed to converge after " << niters
+	      << " iterations" << endl;
+	}
         break;
       }
     }
@@ -201,7 +208,6 @@ main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  using std::cerr;
   using std::cout;
   using std::endl;
 
@@ -212,151 +218,160 @@ main (int argc, char *argv[])
   typedef Tpetra::Vector<>::mag_type magnitude_type;
   typedef Tpetra::CrsMatrix<> crs_matrix_type;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    // Never create Tpetra objects at main() scope.
+    // Never allow them to persist past ScopeGuard's destructor.
+    auto comm = Tpetra::getDefaultComm ();
 
-  const size_t myRank = comm->getRank();
-  //const size_t numProcs = comm->getSize();
-
-  // Make an output stream (for verbose output) that only prints on
-  // Proc 0 of the communicator.
-  Teuchos::oblackholestream blackHole;
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-
-  // Print the current version of Tpetra.
-  out << Tpetra::version () << endl << endl;
-
-  // The number of rows and columns in the matrix.
-  const Tpetra::global_size_t numGblIndices = 50;
-
-  // Construct a Map that puts approximately the same number of
-  // equations on each processor.
-  const global_ordinal_type indexBase = 0;
-  RCP<const map_type> map =
-    rcp (new map_type (numGblIndices, indexBase, comm));
-
-  const size_t numMyElements = map->getNodeNumElements ();
-
-  // If you like, you may get the list of global indices that the
-  // calling process owns.  This is unnecessary if you don't mind
-  // converting local indices to global indices.
-  //
-  // ArrayView<const global_ordinal_type> myGlobalElements =
-  //   map->getNodeElementList ();
-
-  out << endl << "Creating the sparse matrix" << endl;
-
-  // Create a Tpetra sparse matrix whose rows have distribution given by the Map.
-  RCP<crs_matrix_type> A (new crs_matrix_type (map, 0));
-
-  // Fill the sparse matrix, one row at a time.
-  const scalar_type two = static_cast<scalar_type> (2.0);
-  const scalar_type negOne = static_cast<scalar_type> (-1.0);
-  for (local_ordinal_type lclRow = 0;
-       lclRow < static_cast<local_ordinal_type> (numMyElements);
-       ++lclRow) {
-    const global_ordinal_type gblRow = map->getGlobalElement (lclRow);
-    // A(0, 0:1) = [2, -1]
-    if (gblRow == 0) {
-      A->insertGlobalValues (gblRow,
-                             tuple<global_ordinal_type> (gblRow, gblRow + 1),
-                             tuple<scalar_type> (two, negOne));
+    const size_t myRank = comm->getRank();
+    //const size_t numProcs = comm->getSize();
+    if (myRank == 0) {
+      cout << Tpetra::version () << endl << endl;
     }
-    // A(N-1, N-2:N-1) = [-1, 2]
-    else if (static_cast<Tpetra::global_size_t> (gblRow) == numGblIndices - 1) {
-      A->insertGlobalValues (gblRow,
-                             tuple<global_ordinal_type> (gblRow - 1, gblRow),
-                             tuple<scalar_type> (negOne, two));
-    }
-    // A(i, i-1:i+1) = [-1, 2, -1]
-    else {
-      A->insertGlobalValues (gblRow,
-                             tuple<global_ordinal_type> (gblRow - 1, gblRow, gblRow + 1),
-                             tuple<scalar_type> (negOne, two, negOne));
-    }
-  }
 
-  // Tell the sparse matrix that we are done adding entries to it.
-  A->fillComplete ();
+    // The number of rows and columns in the matrix.
+    const Tpetra::global_size_t numGblIndices = 50;
 
-  // Number of iterations
-  const int niters = 500;
-  // Desired (absolute) residual tolerance
-  const magnitude_type tolerance = 1.0e-2;
+    // Construct a Map that puts approximately the same number of
+    // equations on each processor.
+    const global_ordinal_type indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (numGblIndices, indexBase, comm));
 
-  // Run the power method and report the result.
-  scalar_type lambda =
-    PowerMethod<crs_matrix_type>::run (*A, niters, tolerance, out);
-  out << endl << "Estimated max eigenvalue: " << lambda << endl;
+    const size_t numMyElements = map->getNodeNumElements ();
 
-  //
-  // Now we're going to change values in the sparse matrix and run the
-  // power method again.  In Tpetra, if fillComplete() has been
-  // called, you have to call resumeFill() before you may change the
-  // matrix (either its values or its structure).
-  //
-
-  //
-  // Increase diagonal dominance
-  //
-  out << endl << "Increasing magnitude of A(0,0), solving again" << endl;
-
-  // Must call resumeFill() before changing the matrix, even its values.
-  A->resumeFill ();
-
-  if (A->getRowMap ()->isNodeGlobalElement (0)) {
-    // Get a copy of the row with with global index 0.  Modify the
-    // diagonal entry of that row.  Submit the modified values to the
-    // matrix.
-    const global_ordinal_type idOfFirstRow = 0;
-    size_t numEntriesInRow = A->getNumEntriesInGlobalRow (idOfFirstRow);
-    Array<scalar_type>         rowvals (numEntriesInRow);
-    Array<global_ordinal_type> rowinds (numEntriesInRow);
-
-    // Fill rowvals and rowinds with the values resp. (global) column
-    // indices of the sparse matrix entries owned by the calling
-    // process.
+    // If you like, you may get the list of global indices that the
+    // calling process owns.  This is unnecessary if you don't mind
+    // converting local indices to global indices.
     //
-    // Note that it's legal (though we don't exercise it in this
-    // example) for the row Map of the sparse matrix not to be one to
-    // one.  This means that more than one process might own entries
-    // in the first row.  In general, multiple processes might own the
-    // (0,0) entry, so that the global A(0,0) value is really the sum
-    // of all processes' values for that entry.  However, scaling the
-    // entry by a constant factor distributes across that sum, so it's
-    // OK to do so.
-    //
-    // The parentheses after rowinds and rowvalues indicate "a view of
-    // the Array's data."  Array::operator() returns an ArrayView.
-    A->getGlobalRowCopy (idOfFirstRow, rowinds (), rowvals (), numEntriesInRow);
-    for (size_t i = 0; i < numEntriesInRow; i++) {
-      if (rowinds[i] == idOfFirstRow) {
-        // We have found the diagonal entry; modify it.
-        rowvals[i] *= 10.0;
+    // ArrayView<const global_ordinal_type> myGlobalElements =
+    //   map->getNodeElementList ();
+
+    if (myRank == 0) {
+      cout << endl << "Creating the sparse matrix" << endl;
+    }
+
+    // Create a Tpetra sparse matrix whose rows have distribution
+    // given by the Map.  We expect at most three entries per row.
+    RCP<crs_matrix_type> A (new crs_matrix_type (map, 3));
+
+    // Fill the sparse matrix, one row at a time.
+    const scalar_type two = static_cast<scalar_type> (2.0);
+    const scalar_type negOne = static_cast<scalar_type> (-1.0);
+    for (local_ordinal_type lclRow = 0;
+	 lclRow < static_cast<local_ordinal_type> (numMyElements);
+	 ++lclRow) {
+      const global_ordinal_type gblRow = map->getGlobalElement (lclRow);
+      // A(0, 0:1) = [2, -1]
+      if (gblRow == 0) {
+	A->insertGlobalValues (gblRow,
+			       tuple<global_ordinal_type> (gblRow, gblRow + 1),
+			       tuple<scalar_type> (two, negOne));
+      }
+      // A(N-1, N-2:N-1) = [-1, 2]
+      else if (static_cast<Tpetra::global_size_t> (gblRow) == numGblIndices - 1) {
+	A->insertGlobalValues (gblRow,
+			       tuple<global_ordinal_type> (gblRow - 1, gblRow),
+			       tuple<scalar_type> (negOne, two));
+      }
+      // A(i, i-1:i+1) = [-1, 2, -1]
+      else {
+	A->insertGlobalValues (gblRow,
+			       tuple<global_ordinal_type> (gblRow - 1, gblRow, gblRow + 1),
+			       tuple<scalar_type> (negOne, two, negOne));
       }
     }
-    // "Replace global values" means modify the values, but not the
-    // structure of the sparse matrix.  If the specified columns
-    // aren't already populated in this row on this process, then this
-    // method throws an exception.  If you want to modify the
-    // structure (by adding new entries), you'll need to call
-    // insertGlobalValues().
-    A->replaceGlobalValues (idOfFirstRow, rowinds (), rowvals ());
-  }
 
-  // Call fillComplete() again to signal that we are done changing the
-  // matrix.
-  A->fillComplete ();
+    // Tell the sparse matrix that we are done adding entries to it.
+    A->fillComplete ();
 
-  // Run the power method again.
-  lambda = PowerMethod<crs_matrix_type>::run (*A, niters, tolerance, out);
-  out << endl << "Estimated max eigenvalue: " << lambda << endl;
+    // Number of iterations
+    const int niters = 500;
+    // Desired (absolute) residual tolerance
+    const magnitude_type tolerance = 1.0e-2;
 
-  // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
-    cout << "End Result: TEST PASSED" << endl;
+    // Run the power method and report the result.
+    scalar_type lambda =
+      PowerMethod<crs_matrix_type>::run (*A, niters, tolerance, cout);
+    if (myRank == 0) {
+      cout << endl << "Estimated max eigenvalue: " << lambda << endl;
+    }
+
+    //
+    // Now we will change values in the sparse matrix and run the
+    // power method again.  In Tpetra, if fillComplete() has been
+    // called on a matrix, you must call resumeFill() on that matrix
+    // before you may change it.
+    //
+
+    //
+    // Increase diagonal dominance
+    //
+    if (myRank == 0) {
+      cout << endl << "Increasing magnitude of A(0,0), "
+	"solving again" << endl;
+    }
+
+    // Must call resumeFill() before changing the matrix.
+    A->resumeFill ();
+
+    if (A->getRowMap ()->isNodeGlobalElement (0)) {
+      // Get a copy of the row with with global index 0.  Modify the
+      // diagonal entry of that row.  Submit the modified values to
+      // the matrix.
+      const global_ordinal_type idOfFirstRow = 0;
+      size_t numEntriesInRow = A->getNumEntriesInGlobalRow (idOfFirstRow);
+      Array<scalar_type>         rowvals (numEntriesInRow);
+      Array<global_ordinal_type> rowinds (numEntriesInRow);
+
+      // Fill rowvals and rowinds with the values resp. (global)
+      // column indices of the sparse matrix entries owned by the
+      // calling process.
+      //
+      // Note that it's legal (though we don't exercise it in this
+      // example) for the row Map of the sparse matrix not to be one
+      // to one.  This means that more than one process might own
+      // entries in the first row.  In general, multiple processes
+      // might own the (0,0) entry, so that the global A(0,0) value is
+      // really the sum of all processes' values for that entry.
+      // However, scaling the entry by a constant factor distributes
+      // across that sum, so it's OK to do so.
+      //
+      // The parentheses after rowinds and rowvalues indicate "a view
+      // of the Array's data."  Array::operator() returns an
+      // ArrayView.
+      A->getGlobalRowCopy (idOfFirstRow, rowinds (), rowvals (), numEntriesInRow);
+      for (size_t i = 0; i < numEntriesInRow; i++) {
+	if (rowinds[i] == idOfFirstRow) {
+	  // We have found the diagonal entry; modify it.
+	  rowvals[i] *= 10.0;
+	}
+      }
+      // "Replace global values" means modify the values, but not the
+      // structure of the sparse matrix.  If the specified columns
+      // aren't already populated in this row on this process, then this
+      // method throws an exception.  If you want to modify the
+      // structure (by adding new entries), you'll need to call
+      // insertGlobalValues().
+      A->replaceGlobalValues (idOfFirstRow, rowinds (), rowvals ());
+    }
+
+    // Call fillComplete() again to signal that we are done changing the
+    // matrix.
+    A->fillComplete ();
+
+    // Run the power method again.
+    lambda = PowerMethod<crs_matrix_type>::run (*A, niters, tolerance,
+						cout);
+    if (myRank == 0) {
+      cout << endl << "Estimated max eigenvalue: " << lambda << endl;
+    }
+
+    // This tells the Trilinos test framework that the test passed.
+    if (myRank == 0) {
+      cout << "End Result: TEST PASSED" << endl;
+    }
   }
   return 0;
 }

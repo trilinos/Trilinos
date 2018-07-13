@@ -49,7 +49,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
@@ -78,10 +78,8 @@ using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
 
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-
 int main(int argc, char *argv[]){
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   typedef float SCALAR;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
@@ -96,8 +94,7 @@ int main(int argc, char *argv[]){
   std::ostream &out = std::cout;
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Comm<int> > comm = platform.getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   RCP<MAT> A =
     Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../test/matrices/amesos2_test_mat3.mtx",comm);

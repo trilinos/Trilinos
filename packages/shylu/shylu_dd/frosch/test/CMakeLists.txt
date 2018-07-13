@@ -1,7 +1,10 @@
 ADD_SUBDIRECTORIES(
-    TestLaplacian_Epetra
-    TestLaplacian_Tpetra
-    TestInterfaceSets
-#    TestImport_Tpetra
-#    TestRepeatedMap
+#    Laplacian_Epetra
+    Laplacian_Tpetra
+    TwoLevelPreconditioner
+#    InterfaceSets
+    Import_Tpetra
+    LocalPartitionOfUnityBasis
+#    InterfacePartitionOfUnity
+    TwoLevelPreconditionerInputFiles
 )

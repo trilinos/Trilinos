@@ -58,13 +58,13 @@ inline void ErrorMeasureInfo(ROL::ParameterList &parlist, std::string &name,
   name = parlist.sublist("SOL").sublist("Error Measure").get<std::string>("Name");
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
-  if ( name == "Koenker-Bassett" ||
-       name == "Moreau-Yosida-Koenker-Bassett" ||
+  if ( name == "Koenker-Bassett"                           ||
+       name == "Moreau-Yosida-Koenker-Bassett"             ||
        name == "Generalized Moreau-Yosida-Koenker-Bassett" ||
-       name == "Exponential" ||
-       name == "Least Squares" ||
-       name == "Huber" ||
-       name == "Log Quantile" ||
+       name == "Exponential"                               ||
+       name == "Least Squares"                             ||
+       name == "Huber"                                     ||
+       name == "Log Quantile"                              ||
        name == "Smoothed Worst Cast" ) {
     nStatistic = 0;
   }

@@ -57,9 +57,9 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
@@ -67,8 +67,6 @@
 
 #include <complex>
 #include <stdexcept>
-
-#include "Kokkos_DefaultNode.hpp"
 
 using namespace Anasazi;
 using namespace Teuchos;
@@ -81,7 +79,6 @@ typedef double                                scalar_type;
 typedef double                                mag_type;
 typedef ScalarTraits<scalar_type>             STraits;
 typedef Tpetra::MultiVector<scalar_type>      MultiVec;
-typedef MultiVec::node_type                   node_type;
 typedef Tpetra::Operator<scalar_type>         OP;
 typedef MultiVecTraits<scalar_type, MultiVec> MVTraits;
 typedef SerialDenseMatrix<int, scalar_type>   serial_matrix_type;
@@ -199,13 +196,12 @@ main (int argc, char *argv[])
 {
   const scalar_type ONE = STraits::one();
   const mag_type ZERO = STraits::magnitude(STraits::zero());
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   int info = 0;
   int MyPID = 0;
 
-  RCP< const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP< const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   MyPID = rank(*comm);
 

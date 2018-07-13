@@ -207,7 +207,9 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   echo "***"
   echo
   $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_JOB_NAME_KEYS \
-    --default-builds= --allow-no-pull --send-email-to="" --ctest-timeout=600 "$@"
+    --default-builds= --allow-no-pull --send-email-to="" \
+    --test-categories=NIGHTLY --ctest-timeout=600 \
+    "$@"
   if [[ "$?" == "0" ]] ; then
     echo "$ATDM_JOB_NAME_KEYS: PASSED!"
   else

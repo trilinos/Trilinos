@@ -211,16 +211,20 @@ int main(int argc, char *argv[]) {
     // Compute actual residuals.
     //
     std::vector<double> actual_resids2( numrhs );
-    OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-    MVT::MvNorm( resid, actual_resids2 );
+    Epetra_MultiVector resid2(Map, numrhs);
+    OPT::Apply( *A, *X, resid2 );
+    MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
+    MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -253,16 +257,19 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-    MVT::MvNorm( resid, actual_resids2 );
+    OPT::Apply( *A, *X, resid2 );
+    MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
+    MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -321,18 +328,20 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    Epetra_MultiVector resid2(Map, numrhs);
     OPT::Apply( *A, *X2, resid2 );
     MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
     MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-        }
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
+        } 
       }
     }
     //

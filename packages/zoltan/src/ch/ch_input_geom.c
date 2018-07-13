@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include "ch_input_const.h"
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_compress_const.h"
 
 #ifdef __cplusplus

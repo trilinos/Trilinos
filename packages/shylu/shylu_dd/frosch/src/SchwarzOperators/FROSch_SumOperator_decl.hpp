@@ -68,6 +68,8 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVec BoolVec;
+
         
         SumOperator(CommPtr comm);
         
@@ -101,13 +103,20 @@ namespace FROSch {
         
         int addOperators(SchwarzOperatorPtrVecPtr operators);
         
-        int resetOperator(unsigned iD,
-                          SchwarzOperatorPtr op);
+        int resetOperator(UN iD,
+        		 	 	  SchwarzOperatorPtr op);
         
+        int enableOperator(UN iD,
+        				   bool enable);
+
+        UN getNumOperators();
+
     protected:
         
         SchwarzOperatorPtrVec OperatorVector_;
         
+        BoolVec EnableOperators_;
+
     };
     
 }

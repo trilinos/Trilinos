@@ -135,6 +135,9 @@ public:
   //! \name Constructors and destructor
   //@{
 
+  //! Default constructor: makes a Vector with no rows or columns.
+  Vector ();
+
   /// \brief Basic constructor.
   ///
   /// \param map [in] The Vector's Map.  The Map describes the

@@ -46,297 +46,141 @@
 #include <math_functions.h>
 #endif
 
-#define MP_UNARYOP_MACRO(OPNAME,OPER)                                   \
-namespace Sacado {                                                      \
-  namespace MP {                                                        \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) = OPER(a.fastAccessCoeff(i));              \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) = OPER(a.fastAccessCoeff(i));              \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-  }                                                                     \
-}
+#define OPNAME operator+
+#define OPER +
+#include "Sacado_MP_Vector_SFS_unary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
 
-MP_UNARYOP_MACRO(operator+, +)
-MP_UNARYOP_MACRO(operator-, -)
-MP_UNARYOP_MACRO(exp, std::exp)
-MP_UNARYOP_MACRO(log, std::log)
-MP_UNARYOP_MACRO(log10, std::log10)
-MP_UNARYOP_MACRO(sqrt, std::sqrt)
-MP_UNARYOP_MACRO(cbrt, std::cbrt)
-MP_UNARYOP_MACRO(cos, std::cos)
-MP_UNARYOP_MACRO(sin, std::sin)
-MP_UNARYOP_MACRO(tan, std::tan)
-MP_UNARYOP_MACRO(acos, std::acos)
-MP_UNARYOP_MACRO(asin, std::asin)
-MP_UNARYOP_MACRO(atan, std::atan)
-MP_UNARYOP_MACRO(cosh, std::cosh)
-MP_UNARYOP_MACRO(sinh, std::sinh)
-MP_UNARYOP_MACRO(tanh, std::tanh)
-MP_UNARYOP_MACRO(acosh, std::acosh)
-MP_UNARYOP_MACRO(asinh, std::asinh)
-MP_UNARYOP_MACRO(atanh, std::atanh)
-MP_UNARYOP_MACRO(abs, std::abs)
-MP_UNARYOP_MACRO(fabs, std::fabs)
+#define OPNAME operator-
+#define OPER -
+#include "Sacado_MP_Vector_SFS_unary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
 
-#undef MP_UNARYOP_MACRO
+#define OPNAME exp
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-#define MP_BINARYOP_MACRO(OPNAME,OPER)                                  \
-namespace Sacado {                                                      \
-  namespace MP {                                                        \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b.fastAccessCoeff(i);               \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b.fastAccessCoeff(i);               \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b.fastAccessCoeff(i);               \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b.fastAccessCoeff(i);               \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& a,                                                 \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<b.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a OPER b.fastAccessCoeff(i);                                  \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& a,                                                 \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<b.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a OPER b.fastAccessCoeff(i);                                  \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& b)                                                 \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b;                                  \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& b)                                                 \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          a.fastAccessCoeff(i) OPER b;                                  \
-      return c;                                                         \
-    }                                                                   \
-  }                                                                     \
-}
+#define OPNAME log
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-MP_BINARYOP_MACRO(operator+, +)
-MP_BINARYOP_MACRO(operator-, -)
-MP_BINARYOP_MACRO(operator*, *)
-MP_BINARYOP_MACRO(operator/, /)
+#define OPNAME log10
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-#undef MP_BINARYOP_MACRO
+#define OPNAME sqrt
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-#define MP_BINARYOP_MACRO(OPNAME,OPER)                                  \
-namespace Sacado {                                                      \
-  namespace MP {                                                        \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) ,  b.fastAccessCoeff(i) );         \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) ,  b.fastAccessCoeff(i) );         \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) ,  b.fastAccessCoeff(i) );         \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) ,  b.fastAccessCoeff(i) );         \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& a,                                                 \
-            const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b)    \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<b.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a , b.fastAccessCoeff(i) );                             \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& a,                                                 \
-            const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& b) \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<b.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a , b.fastAccessCoeff(i) );                             \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a,    \
-            const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& b)                                                 \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) , b );                             \
-      return c;                                                         \
-    }                                                                   \
-                                                                        \
-    template <typename O, typename T, int N, typename D>                \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
-    OPNAME (const volatile Vector< Stokhos::StaticFixedStorage<O,T,N,D> >& a, \
-            const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type& b)                                                 \
-    {                                                                   \
-      Vector< Stokhos::StaticFixedStorage<O,T,N,D> > c;                 \
-      for (O i=0; i<a.size(); ++i)                                      \
-        c.fastAccessCoeff(i) =                                          \
-          OPER( a.fastAccessCoeff(i) , b );                             \
-      return c;                                                         \
-    }                                                                   \
-  }                                                                     \
-}
+#define OPNAME cbrt
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-MP_BINARYOP_MACRO(atan2, std::atan2)
-MP_BINARYOP_MACRO(pow, std::pow)
-#ifdef __CUDACC__
-MP_BINARYOP_MACRO(max, ::max)
-MP_BINARYOP_MACRO(min, ::min)
-#else
-MP_BINARYOP_MACRO(max, std::max)
-MP_BINARYOP_MACRO(min, std::min)
-#endif
+#define OPNAME cos
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
 
-#undef MP_BINARYOP_MACRO
+#define OPNAME sin
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME tan
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME acos
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME asin
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME atan
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME cosh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME sinh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME tanh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME acosh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME asinh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME atanh
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME abs
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME fabs
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME operator+
+#define OPER +
+#include "Sacado_MP_Vector_SFS_binary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
+
+#define OPNAME operator-
+#define OPER -
+#include "Sacado_MP_Vector_SFS_binary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
+
+#define OPNAME operator*
+#define OPER *
+#include "Sacado_MP_Vector_SFS_binary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
+
+#define OPNAME operator/
+#define OPER /
+#include "Sacado_MP_Vector_SFS_binary_op_tmpl.hpp"
+#undef OPNAME
+#undef OPER
+
+#define OPNAME atan2
+#include "Sacado_MP_Vector_SFS_binary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME pow
+#include "Sacado_MP_Vector_SFS_binary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME max
+#include "Sacado_MP_Vector_SFS_binary_func_tmpl.hpp"
+#undef OPNAME
+
+#define OPNAME min
+#include "Sacado_MP_Vector_SFS_binary_func_tmpl.hpp"
+#undef OPNAME
+
+//#ifdef __CUDACC__
+//MP_BINARYOP_MACRO(max, ::max)
+//MP_BINARYOP_MACRO(min, ::min)
+//#else
+//MP_BINARYOP_MACRO(max, std::max)
+//MP_BINARYOP_MACRO(min, std::min)
+//#endif
 
 //-------------------------- Relational Operators -----------------------
 

@@ -565,7 +565,7 @@ public:
 
   virtual ~CgWrapper () {}
 
-  const Belos::LinearProblem<SC,MV,OP>& getProblem () const {
+  const Belos::LinearProblem<SC,MV,OP>& getProblem () const override {
     TEUCHOS_TEST_FOR_EXCEPTION
       (problem_.is_null (), std::runtime_error, "The linear problem has not "
        "yet been set.  Please call setProblem with a nonnull argument before "
@@ -573,7 +573,7 @@ public:
     return *problem_;
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const {
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const override {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
@@ -583,7 +583,7 @@ public:
     return params;
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters () const {
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters () const override {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
@@ -593,16 +593,16 @@ public:
     return params;
   }
 
-  int getNumIters () const {
+  int getNumIters () const override {
     return lastSolverOutput_.numIters;
   }
 
-  bool isLOADetected () const {
+  bool isLOADetected () const override {
     return false; // this solver doesn't attempt to detect loss of accuracy
   }
 
   void
-  setProblem (const Teuchos::RCP<belos_problem_type>& problem)
+  setProblem (const Teuchos::RCP<belos_problem_type>& problem) override
   {
     if (problem.is_null ()) {
       solver_.setMatrix (Teuchos::null);
@@ -615,17 +615,17 @@ public:
     problem_ = problem;
   }
 
-  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) override {
     if (! params.is_null ()) {
       solver_.setParameters (*params);
     }
   }
 
-  void reset (const Belos::ResetType /* type */ ) {
+  void reset (const Belos::ResetType /* type */ ) override {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
 
-  Belos::ReturnType solve () {
+  Belos::ReturnType solve () override {
     using Teuchos::RCP;
     TEUCHOS_TEST_FOR_EXCEPTION
       (problem_.is_null (), std::runtime_error, "The linear problem has not "

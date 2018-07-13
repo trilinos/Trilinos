@@ -59,10 +59,20 @@ namespace Sacado {
   //! Namespace for forward-mode AD classes
   namespace Fad {
 
+#ifndef SACADO_FAD_DERIV_LOOP
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
 #define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
 #else
 #define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=0; I<SZ; ++I)
+#endif
+#endif
+
+#ifndef SACADO_FAD_THREAD_SINGLE
+#if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#define SACADO_FAD_THREAD_SINGLE if (threadIdx.x == 0)
+#else
+#define SACADO_FAD_THREAD_SINGLE /* */
+#endif
 #endif
 
     //! Forward-mode AD class templated on the storage for the derivative array
@@ -176,6 +186,10 @@ namespace Sacado {
       //! Return whether this Fad object has an updated value
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return true; }
+
+      //! Cache values
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>

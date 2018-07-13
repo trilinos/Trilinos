@@ -4,7 +4,7 @@
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxIntelTestingSettings.cmake 
+# Usage: cmake -C PullRequestLinuxIntelTestingSettings.cmake
 
 # Misc options typically added by CI testing mode in TriBITS
 
@@ -18,5 +18,7 @@ set (MueLu_UnitTestsTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in 
 set (KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (Zoltan2_simplePamgenTest_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
-include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxGCCTestingSettings.cmake")
+# (Temporarily) Disable randomly failing ROL test (#3103)
+set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
+include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
