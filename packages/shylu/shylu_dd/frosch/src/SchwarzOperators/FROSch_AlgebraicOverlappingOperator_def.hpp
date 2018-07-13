@@ -55,12 +55,6 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize()
-    {
-        return initialize(0);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
     {
         if (repeatedMap.is_null()) {

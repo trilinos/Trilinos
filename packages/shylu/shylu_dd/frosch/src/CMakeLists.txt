@@ -30,6 +30,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 #
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CoarseSpaces)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSets)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzOperators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzPreconditioners)
@@ -51,6 +52,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/muelu/adapters/belos)
 
 APPEND_SET(HEADERS
+  CoarseSpaces/FROSch_CoarseSpace_decl.hpp
+  CoarseSpaces/FROSch_CoarseSpace_def.hpp
+  CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_decl.hpp
+  CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_def.hpp
+  CoarseSpaces/FROSch_InterfacePartitionOfUnity_decl.hpp
+  CoarseSpaces/FROSch_InterfacePartitionOfUnity_def.hpp
+  CoarseSpaces/FROSch_LocalPartitionOfUnityBasis_decl.hpp
+  CoarseSpaces/FROSch_LocalPartitionOfUnityBasis_def.hpp
   InterfaceSets/FROSch_DDInterface_decl.hpp
   InterfaceSets/FROSch_DDInterface_def.hpp
   InterfaceSets/FROSch_EntitySet_decl.hpp
@@ -65,6 +74,8 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_def.hpp
+  SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_decl.hpp
+  SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_def.hpp
   SchwarzOperators/FROSch_OverlappingOperator_decl.hpp
   SchwarzOperators/FROSch_OverlappingOperator_def.hpp
   SchwarzOperators/FROSch_RGDSWCoarseOperator_decl.hpp
@@ -77,10 +88,14 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_AlgebraicOverlappingPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_GDSWPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_GDSWPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_OneLevelPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_OneLevelPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
   Tools/FROSch_SubdomainSolver_decl.hpp

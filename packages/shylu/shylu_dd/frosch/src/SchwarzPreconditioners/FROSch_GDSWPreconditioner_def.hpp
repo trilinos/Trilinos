@@ -56,12 +56,6 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize()
-    {
-        return initialize(true);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
     int GDSWPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
@@ -91,20 +85,20 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(GOVecPtr &localDirichletBoundaryDofs,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(GOVecPtr &dirichletBoundaryDofs,
                                                     bool useDefaultParameters)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
-        return initialize(repeatedMap,localDirichletBoundaryDofs,useDefaultParameters);
+        return initialize(repeatedMap,dirichletBoundaryDofs,useDefaultParameters);
     }
     
     template <class SC,class LO,class GO,class NO>
     int GDSWPreconditioner<SC,LO,GO,NO>::initialize(MapPtr repeatedMap,
-                                                    GOVecPtr &localDirichletBoundaryDofs,
+                                                    GOVecPtr &dirichletBoundaryDofs,
                                                     bool useDefaultParameters)
     {
         if (useDefaultParameters) {
-            return initialize(3,1,repeatedMap,localDirichletBoundaryDofs);
+            return initialize(3,1,repeatedMap,dirichletBoundaryDofs);
         } else {
             DofOrdering dofOrdering;
             if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("NodeWise")) {
@@ -117,12 +111,12 @@ namespace FROSch {
                 FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
             }
             
-            return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap,localDirichletBoundaryDofs);
+            return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap,dirichletBoundaryDofs);
         }
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
@@ -130,7 +124,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap,
                                                     MapPtr repeatedMap)
     {
@@ -142,21 +136,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap,
                                                     MapPtr repeatedMap,
-                                                    GOVecPtr &localDirichletBoundaryDofs)
+                                                    GOVecPtr &dirichletBoundaryDofs)
     {
         int ret = 0;
         if (0>this->FirstLevelOperator_->initialize(overlap,repeatedMap)) ret -= 1;
-        if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap,localDirichletBoundaryDofs)) ret -= 10;
+        if (0>CoarseLevelOperator_->initialize(dimension,repeatedMap,dirichletBoundaryDofs)) ret -= 10;
         
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap)
@@ -173,12 +167,12 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,
-                                                    GOVecPtr &localDirichletBoundaryDofs)
+                                                    GOVecPtr &dirichletBoundaryDofs)
     {
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
@@ -186,18 +180,18 @@ namespace FROSch {
         MapPtr repeatedNodesMap;
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,localDirichletBoundaryDofs)) ret -=10;
+        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs)) ret -=10;
         
         return ret;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,
-                                                    SCVecPtr2D &localNodeList)
+                                                    MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
@@ -205,19 +199,19 @@ namespace FROSch {
         MapPtr repeatedNodesMap;
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,localNodeList)) ret -=10;
+        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList)) ret -=10;
         
         return ret;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,
-                                                    GOVecPtr &localDirichletBoundaryDofs,
-                                                    SCVecPtr2D &localNodeList)
+                                                    GOVecPtr &dirichletBoundaryDofs,
+                                                    MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
@@ -226,7 +220,7 @@ namespace FROSch {
         MapPtr repeatedNodesMap;
         MapPtrVecPtr repeatedDofMaps;
         if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,repeatedDofMaps)) ret -= 100;
-        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,localDirichletBoundaryDofs,localNodeList)) ret -=10;
+        if (0>CoarseLevelOperator_->initialize(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
         
         return ret;
     }

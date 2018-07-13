@@ -79,58 +79,63 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    MPI_Init(&argc,&argv);
-    Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
-    
-    RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
-    RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));
-    
-    assert(TeuchosComm->getSize()==8);
-    
-    ParameterList GalerList;
-    GalerList.set("nx", 8);
-    GalerList.set("ny", 8);
-    GalerList.set("nz", 8);
-    GalerList.set("mx", 2);
-    GalerList.set("my", 2);
-    GalerList.set("mz", 2);
-    
-    RCP<Epetra_Map> UniqueMapEpetra;
-    RCP<Epetra_CrsMatrix> KEpetra;
-    
-    UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
-    KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
-    
-    ArrayView<GO> uniqueMapArrayView(UniqueMapEpetra->MyGlobalElements(),UniqueMapEpetra->NumMyElements());
-    RCP<Map<LO,GO,NO> > UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArrayView,0,TeuchosComm);
-    RCP<Matrix<SC,LO,GO,NO> > K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
-    for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-        LO numEntries;
-        GO* indices;
-        SC* values;
-        KEpetra->ExtractMyRowView(i,numEntries,values,indices);
-        
-        Array<GO> indicesArray(numEntries);
-        ArrayView<SC> valuesArrayView(values,numEntries);
-        for (LO j=0; j<numEntries; j++) {
-            indicesArray[j] = KEpetra->ColMap().GID(indices[j]);
-        }
-        K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
-    }
-    K->fillComplete(UniqueMap,UniqueMap);
-    
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueMap,1);
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap;
-    FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
-    
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = K;
-    K = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
-    Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
-    TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "BEFORE IMPORT\n";
-    K->doImport(*tmpMatrix,*gather,Xpetra::ADD);
-    TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "AFTER IMPORT\n";
-    
-    MPI_Finalize();
-    
-    return(EXIT_SUCCESS);
+	MPI_Init(&argc,&argv);
+
+	{
+
+		Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
+
+		RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+		RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));
+
+		assert(TeuchosComm->getSize()==8);
+
+		ParameterList GalerList;
+		GalerList.set("nx", 8);
+		GalerList.set("ny", 8);
+		GalerList.set("nz", 8);
+		GalerList.set("mx", 2);
+		GalerList.set("my", 2);
+		GalerList.set("mz", 2);
+
+		RCP<Epetra_Map> UniqueMapEpetra;
+		RCP<Epetra_CrsMatrix> KEpetra;
+
+		UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
+		KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
+
+		ArrayView<GO> uniqueMapArrayView(UniqueMapEpetra->MyGlobalElements(),UniqueMapEpetra->NumMyElements());
+		RCP<Map<LO,GO,NO> > UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArrayView,0,TeuchosComm);
+		RCP<Matrix<SC,LO,GO,NO> > K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
+		for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+			LO numEntries;
+			GO* indices;
+			SC* values;
+			KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+
+			Array<GO> indicesArray(numEntries);
+			ArrayView<SC> valuesArrayView(values,numEntries);
+			for (LO j=0; j<numEntries; j++) {
+				indicesArray[j] = KEpetra->ColMap().GID(indices[j]);
+			}
+			K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
+		}
+		K->fillComplete(UniqueMap,UniqueMap);
+
+		Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueMap,1);
+		Teuchos::RCP<Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap;
+		FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
+
+		Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = K;
+		K = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
+		Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
+		TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "BEFORE IMPORT\n";
+		K->doImport(*tmpMatrix,*gather,Xpetra::ADD);
+		TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "AFTER IMPORT\n";
+
+	}
+
+	MPI_Finalize();
+
+	return(EXIT_SUCCESS);
 }

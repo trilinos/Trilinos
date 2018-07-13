@@ -55,8 +55,6 @@
 
 #include <FROSch_ExtractSubmatrices_def.hpp>
 
-// TODO
-// -> "Parent" -> "Anchestor"
 
 namespace FROSch {
     
@@ -72,12 +70,17 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        typedef const EntitySetPtr EntitySetConstPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
@@ -94,7 +97,6 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<GOVec> GOVecVecPtr;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         DDInterface(UN dimension,
@@ -105,35 +107,44 @@ namespace FROSch {
         
         int resetGlobalDofs(MapPtrVecPtr dofsMaps);
         
-        int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs);
+        int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix);
         
         int sortEntities();
         
-        int sortEntities(SCVecPtr2D localNodeList);
+        int sortEntities(MultiVectorPtr nodeList);
         
-        int findParents();
+        int findAncestors();
         
-        EntitySetPtr & getVertices();
+        UN getDimension() const;
         
-        EntitySetPtr & getShortEdges();
+        UN getDofsPerNode() const;
         
-        EntitySetPtr & getStraightEdges();
+        LO getNumMyNodes() const;
         
-        EntitySetPtr & getEdges();
+        EntitySetConstPtr & getVertices() const;
         
-        EntitySetPtr & getFaces();
+        EntitySetConstPtr & getShortEdges() const;
         
-        EntitySetPtr & getInterface();
+        EntitySetConstPtr & getStraightEdges() const;
         
-        EntitySetPtr & getInterior();
+        EntitySetConstPtr & getEdges() const;
         
-        EntitySetPtr & getParentVertices();
+        EntitySetConstPtr & getFaces() const;
         
-        EntitySetPtr & getParentEdges();
+        EntitySetConstPtr & getInterface() const;
         
-        EntitySetPtr & getParentFaces();
+        EntitySetConstPtr & getInterior() const;
+        
+        EntitySetConstPtr & getAncestorVertices() const;
+        
+        EntitySetConstPtr & getAncestorEdges() const;
+        
+        EntitySetConstPtr & getAncestorFaces() const;
+        
+        ConstMapPtr getNodesMap() const;
+        
         
     protected:
         
@@ -157,12 +168,12 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr ParentVertices_;
-        EntitySetPtr ParentEdges_;
-        EntitySetPtr ParentFaces_;
+        EntitySetPtr AncestorVertices_;
+        EntitySetPtr AncestorEdges_;
+        EntitySetPtr AncestorFaces_;
         
-        MapPtr LocalToGlobalNodesMap_;
-        MapPtr LocalToGlobalNodesUniqueMap_;
+        MapPtr NodesMap_;
+        MapPtr UniqueNodesMap_;
     };
     
 }
