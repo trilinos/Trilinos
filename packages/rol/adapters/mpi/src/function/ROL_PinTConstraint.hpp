@@ -113,6 +113,7 @@ private:
   int maxLevels_;               // must turn on multigrid 
   int numSweeps_;
   Real omega_;
+  Real globalScale_;
 
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
@@ -159,6 +160,7 @@ public:
     , maxLevels_(-1)
     , numSweeps_(1)
     , omega_(2.0/3.0)
+    , globalScale_(0.99e0)
   { }
 
   /**
@@ -180,6 +182,7 @@ public:
     , maxLevels_(-1)
     , numSweeps_(1)
     , omega_(2.0/3.0)
+    , globalScale_(0.99e0)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
   }
@@ -195,6 +198,9 @@ public:
    */
   void setRelaxation(Real o)
   { omega_ = o; }
+
+  void setGlobalScale(Real o)
+  { globalScale_ = o; }
 
   /**
    * Turn on multigrid preconditioning in time with a specified number of levels.
@@ -358,6 +364,7 @@ public:
         // this should be zero!
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
         pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+        pint_c.getVectorPtr(offset)->scale(globalScale_);
       }
       else if(offset<0 and timeRank==0) {  
         // this is the intial condition
@@ -368,6 +375,7 @@ public:
         // this should be zero!
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));
         pint_c.getVectorPtr(offset)->axpy(-1.0,*initialCond_);
+        pint_c.getVectorPtr(offset)->scale(globalScale_);
       }
     }
 
@@ -409,11 +417,13 @@ public:
       if(offset<0 and timeRank>0) {
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
         pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+        pint_c.getVectorPtr(offset)->scale(globalScale_);
       }
       else if(offset<0 and timeRank==0) {  
         // set the initial condition
         pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));            
         pint_c.getVectorPtr(offset)->axpy(-1.0,*initialCond_); 
+        pint_c.getVectorPtr(offset)->scale(globalScale_);
       }
     }
 
@@ -463,6 +473,8 @@ public:
         // don't get accidentally included
         if(timeRank>0) 
           pint_jv.getVectorPtr(offset)->axpy(-1.0,*pint_v.getRemoteBufferPtr(offset)); // this is the remote value
+
+        pint_jv.getVectorPtr(offset)->scale(globalScale_);
       }
     }
 
@@ -561,13 +573,14 @@ public:
 
         // update the old time information
         pint_ijv.getVectorPtr(offset)->set(*pint_ijv.getRemoteBufferPtr(offset));    
-        pint_ijv.getVectorPtr(offset)->axpy(1.0,*pint_v.getVectorPtr(offset));        
+        pint_ijv.getVectorPtr(offset)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(offset));        
       }
       else if(offset<0 and timeRank==0) {  
         // this is the intial condition
 
         // update the old time information
         pint_ijv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));
+        pint_ijv.getVectorPtr(offset)->scale(1.0/globalScale_);
       }
     }
 
@@ -636,9 +649,9 @@ public:
     for(size_t i=0;i<stencil.size();i++) {
       int offset = stencil[i];
       if(offset<0) {
-        pint_ajv.getVectorPtr(offset)->axpy(1.0,*pint_v.getVectorPtr(offset));
+        pint_ajv.getVectorPtr(offset)->axpy(globalScale_,*pint_v.getVectorPtr(offset));
         pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
-        pint_ajv.getRemoteBufferPtr(offset)->scale(-1.0);
+        pint_ajv.getRemoteBufferPtr(offset)->scale(-globalScale_);
       }
     }
 
@@ -746,7 +759,7 @@ public:
       for(size_t i=0;i<stencil.size();i++) {
         if(stencil[i]<0) {
           // this is why the hack above is necessary
-          pint_v.getVectorPtr(owned_steps+stencil[i])->axpy(1.0,*pint_iajv.getVectorPtr(owned_steps+stencil[i]));
+          pint_v.getVectorPtr(owned_steps+stencil[i])->axpy(globalScale_,*pint_iajv.getVectorPtr(owned_steps+stencil[i]));
         }
       }
     }
@@ -769,12 +782,43 @@ public:
         // flag on.
 
         // sending this to the left
+        pint_iajv.getVectorPtr(offset)->scale(1.0/globalScale_);
         pint_iajv.getRemoteBufferPtr(offset)->set(*pint_iajv.getVectorPtr(offset));        
       }
     }
 
     pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::SEND_ONLY);
 
+   }
+
+   // Done in parallel, no blocking, solve a linear system on this processor
+   void invertTimeStepJacobian(Vector<Real>       & pv,
+                               const Vector<Real> & v,
+                               const Vector<Real> & u,
+                               const Vector<Real> & z,
+                               Real &tol,
+                               int level) 
+   {
+     PinTVector<Real> & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
+     const PinTVector<Real> & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
+     const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+
+     invertTimeStepJacobian(pint_pv,pint_v,pint_u,pint_z,tol,level);
+   }
+   void invertAdjointTimeStepJacobian(Vector<Real>       & pv,
+                               const Vector<Real> & v,
+                               const Vector<Real> & u,
+                               const Vector<Real> & z,
+                               Real &tol,
+                               int level) 
+   {
+     PinTVector<Real> & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
+     const PinTVector<Real> & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
+     const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+
+     invertAdjointTimeStepJacobian(pint_pv,pint_v,pint_u,pint_z,tol,level);
    }
 
    // Done in parallel, no blocking, solve a linear system on this processor
@@ -791,6 +835,7 @@ public:
        int offset = stencil[i];
        if(offset<0) {
          pint_pv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));             // this is the local value
+         pint_pv.getVectorPtr(offset)->scale(1.0/globalScale_);
        }
      }
 
@@ -830,6 +875,7 @@ public:
        if(offset<0) {
          // pint_pv.getVectorPtr(offset)->set(*temp);
            // NOT good enough for multi step!!!!
+         pint_pv.getVectorPtr(offset)->scale(1.0/globalScale_);
        }
      }
    }
@@ -847,8 +893,8 @@ public:
      PinTVector<Real> pint_scratch  = dynamic_cast<const PinTVector<Real>&>(*scratch);
 
      // do block Jacobi smoothing
-     // invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
-     applyInverseJacobian_1_leveled(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
+     invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
+     // applyInverseJacobian_1_leveled(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
 
      invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
      // applyInverseAdjointJacobian_1_leveled(pint_pv, pint_scratch, pint_u,pint_z,tol,level);

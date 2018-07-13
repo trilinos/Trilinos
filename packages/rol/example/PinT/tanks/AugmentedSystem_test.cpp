@@ -67,6 +67,7 @@ using size_type = std::vector<RealT>::size_type;
 
 void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 void run_test_simple(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main( int argc, char* argv[] ) 
 {
@@ -84,7 +85,8 @@ int main( int argc, char* argv[] )
   try {
 
     // run_test(MPI_COMM_WORLD, outStream);
-    run_test_simple(MPI_COMM_WORLD, outStream);
+    // run_test_simple(MPI_COMM_WORLD, outStream);
+    run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
   catch (std::logic_error err) {
@@ -509,4 +511,235 @@ void run_test_simple(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     x_current->axpy(1.0,*disp_x); 
   }
 }
+
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
+{
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  using RealT             = double;
+  using size_type         = std::vector<RealT>::size_type;
+  using Bounds            = ROL::Bounds<RealT>;
+  using PartitionedVector = ROL::PartitionedVector<RealT>;
+  using State             = Tanks::StateVector<RealT>;
+  using Control           = Tanks::ControlVector<RealT>;
+
+  int numRanks = -1;
+  int myRank = -1;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+
+  ROL::Ptr< ROL::PinTVector<RealT>> state;
+  ROL::Ptr< ROL::PinTVector<RealT>> control;
+
+  auto  pl_ptr = ROL::getParametersFromXmlFile("tank-parameters.xml");
+  auto& pl     = *pl_ptr;
+  auto  con    = Tanks::DynamicConstraint<RealT>::create(pl);
+  auto  height = pl.get("Height of Tank",              10.0  );
+  auto  Qin00  = pl.get("Corner Inflow",               100.0 );
+  auto  h_init = pl.get("Initial Fluid Level",         2.0   );
+  auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
+  auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
+  auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
+  auto  T      = pl.get("Total Time", 20.0);
+
+  auto  maxlvs = pl.get("MGRIT Levels",           5);
+  auto  sweeps = pl.get("MGRIT Sweeps",           1);
+  auto  omega  = pl.get("MGRIT Relaxation", 2.0/3.0);
+  auto  globalScale  = pl.get("Constraint Scale", 1.0e3);
+
+  RealT dt = T/Nt;
+
+  ROL::Ptr<ROL::Vector<RealT>> initial_cond;
+  {
+    // control
+    auto  z      = Control::create( pl, "Control (z)"     );    
+    auto  vz     = z->clone( "Control direction (vz)"     );
+    auto  z_lo   = z->clone( "Control Lower Bound (z_lo)" );
+    auto  z_bnd  = makePtr<Bounds>( *z_lo );
+    z_lo->zero();
+
+    // State
+    auto u_new     = State::create( pl, "New state (u_new)"   );
+    auto u_old     = u_new->clone( "Old state (u_old)"        );
+    auto u_initial = u_new->clone( "Initial conditions"       );
+    auto u_new_lo  = u_new->clone( "State lower bound (u_lo)" );
+    auto u_new_up  = u_new->clone( "State upper bound (u_up)" );
+    auto u         = PartitionedVector::create( { u_old,    u_new    } );
+    auto u_lo      = PartitionedVector::create( { u_new_lo, u_new_lo } );
+    auto u_up      = PartitionedVector::create( { u_new_up, u_new_up } );
+  
+    u_lo->zero();
+    u_up->setScalar( height );
+    auto u_bnd = makePtr<Bounds>(u_new_lo,u_new_up);
+
+    (*z)(0,0) = Qin00;
+
+    for( size_type i=0; i<nrows; ++i ) {
+      for( size_type j=0; j<ncols; ++j ) {
+        u_old->h(i,j) = h_init;
+        u_initial->h(i,j) = h_init;
+      }
+    }
+
+    state        = ROL::buildStatePinTVector<RealT>(   communicators, Nt,     u_old);
+    control      = ROL::buildControlPinTVector<RealT>( communicators, Nt,         z);
+
+    initial_cond = u_initial;
+    state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
+  }
+
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  for( size_type k=0; k<timeStamp->size(); ++k ) {
+    timeStamp->at(k).t.resize(2);
+    timeStamp->at(k).t.at(0) = k*dt;
+    timeStamp->at(k).t.at(1) = (k+1)*dt;
+  }
+
+
+  // build the parallel in time constraint from the user constraint
+  Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(con,initial_cond,timeStamp);
+  pint_con->applyMultigrid(maxlvs);
+  pint_con->setSweeps(sweeps);
+  pint_con->setRelaxation(omega);
+  pint_con->setGlobalScale(globalScale);
+
+  double tol = 1e-12;
+
+  auto apply_kkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
+                                  const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z) {
+      auto part_output = dynamic_cast<PartitionedVector&>(output);
+      auto part_input = dynamic_cast<const PartitionedVector&>(input);
+
+      part_output.zero();
+
+      auto output_0 = part_output.get(0);
+      auto output_1 = part_output.get(1);
+      auto input_0  = part_input.get(0);
+      auto input_1  = part_input.get(1);
+
+      // objective
+      pint_con->applyAdjointJacobian_1(*output_0,*input_1,u,z,tol);
+      output_0->axpy(1.0,*input_0);
+
+      // constraint
+      pint_con->applyJacobian_1(*output_1,*input_0,u,z,tol);
+    };
+
+  auto apply_invkkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
+                                      const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z,
+                                      bool approx=false) {
+      auto part_output = dynamic_cast<PartitionedVector&>(output);
+      auto part_input = dynamic_cast<const PartitionedVector&>(input);
+
+      part_output.zero();
+
+      auto output_0 = part_output.get(0);
+      auto output_1 = part_output.get(1);
+      auto temp_0 = output_0->clone();
+      auto temp_1 = output_1->clone();
+
+      auto input_0  = part_input.get(0);
+      auto input_1  = part_input.get(1);
+
+      temp_0->zero();
+      temp_1->zero();
+
+      // [ I   J' * inv(J*J') ] [  I     ]
+      // [         -inv(J*J') ] [ -J  I  ]
+     
+      // L Factor
+      /////////////////////
+      temp_0->axpy(1.0,*input_0);
+
+      pint_con->applyJacobian_1(*temp_1,*input_0,u,z,tol);
+      temp_1->scale(-1.0);
+      temp_1->axpy(1.0,*input_1);
+
+      // U Factor
+      /////////////////////
+      
+      // schur complement
+      {
+        auto temp = output_1->clone();
+        temp->zero();
+
+        if(not approx) {
+          pint_con->applyInverseJacobian_1(*temp, *temp_1, u,z,tol);
+          pint_con->applyInverseAdjointJacobian_1(*output_1,*temp,u,z,tol);
+        }
+        else {
+          int level = 0;
+          pint_con->invertTimeStepJacobian(*temp, *temp_1, u,z,tol,level);
+          pint_con->invertAdjointTimeStepJacobian(*output_1,*temp,u,z,tol,level);
+        }
+        output_1->scale(-1.0);
+      }
+
+      pint_con->applyAdjointJacobian_1(*output_0,*output_1,u,z,tol); 
+      output_0->scale(-1.0);
+      output_0->axpy(1.0,*temp_0);
+    };
+
+  // make sure we are globally consistent
+  state->boundaryExchange();
+  control->boundaryExchange();
+
+  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),state->clone()});
+  auto kkt_x_in  = kkt_vector->clone();
+  auto kkt_b     = kkt_vector->clone();
+
+  ROL::RandomizeVector(*kkt_x_in);
+  kkt_b->zero();
+  apply_kkt(*kkt_b,*kkt_x_in,*state,*control);
+
+  // check exact
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
+
+    kkt_x_out->axpy(-1.0,*kkt_x_in);
+
+    RealT norm = kkt_x_out->norm();
+    if(myRank==0)
+      (*outStream) << "NORM EXACT= " << norm << std::endl;
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check jacobi
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    for(int i=0;i<sweeps;i++) {
+      apply_kkt(*kkt_res,*kkt_x_out,*state,*control);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+    
+      apply_invkkt(*kkt_diff,*kkt_res,*state,*control,true);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+      RealT norm = kkt_err->norm() / kkt_b->norm();
+      if(myRank==0)
+        (*outStream) << "NORM JACOBI= " << norm << std::endl;
+    }
+  }
+}
+
 

@@ -211,7 +211,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     if(adj_inv_1 > tol) {
       std::stringstream ss;
-      ss << "Adjoint Jacobian inverse inversion FAILED: error = " << inv_1  << std::endl;
+      ss << "Adjoint Jacobian inverse inversion FAILED: error = " << adj_inv_1  << std::endl;
       throw std::logic_error(ss.str());
     }
     
