@@ -73,7 +73,7 @@
 // Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
 TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    Teko::LinearOp  A_00 = build2x2(Comm,1,2,3,4);
    Teko::LinearOp  A_01 = build2x2(Comm,5,6,7,8);
