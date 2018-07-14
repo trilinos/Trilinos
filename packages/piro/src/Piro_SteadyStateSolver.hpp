@@ -81,6 +81,10 @@ class SteadyStateSolver
   //@{
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   //@}
 
   protected:

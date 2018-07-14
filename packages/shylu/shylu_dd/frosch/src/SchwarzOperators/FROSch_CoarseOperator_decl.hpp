@@ -44,8 +44,8 @@
 
 #include <FROSch_SchwarzOperator_def.hpp>
 
-// TODO:
-// -> Member sortieren!
+// TODO: Member sortieren!?
+
 
 namespace FROSch {
     
@@ -74,6 +74,10 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView ConstGOVecView;
         

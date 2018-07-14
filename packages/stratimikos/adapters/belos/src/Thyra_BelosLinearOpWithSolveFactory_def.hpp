@@ -658,19 +658,24 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       !( left.get() || right.get() || unspecified.get() ), std::logic_error
       ,"Error, at least one preconditoner linear operator objects must be set!"
       );
-    if(unspecified.get()) {
+    if (nonnull(unspecified)) {
       if (paramList_->get<bool>(LeftPreconditionerIfUnspecified_name, false))
         lp->setLeftPrec(unspecified);
       else
         lp->setRightPrec(unspecified);
     }
+    else if (nonnull(left)) {
+      lp->setLeftPrec(left);
+    }
+    else if (nonnull(right)) {
+      lp->setRightPrec(right);
+    }
     else {
       // Set a left, right or split preconditioner
       TEUCHOS_TEST_FOR_EXCEPTION(
-        left.get(),std::logic_error
-        ,"Error, we can not currently handle a left preconditioner!"
+        nonnull(left) && nonnull(right),std::logic_error
+        ,"Error, we can not currently handle split preconditioners!"
         );
-      lp->setRightPrec(right);
     }
   }
   if(myPrec.get()) {
