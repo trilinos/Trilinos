@@ -41,11 +41,7 @@
 // @HEADER
 */
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_RTIOp.hpp>
@@ -97,15 +93,12 @@ class ScaleKernel : public Tpetra::RTI::detail::StdOpKernel<S>
 
 int main(int argc, char *argv[])
 {
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   //
-  // Get the default communicator and node
+  // Get the default communicator
   //
-  auto &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  auto comm = platform.getComm();
-  auto node = platform.getNode();
+  auto comm = Tpetra::getDefaultComm();
   const int myImageID = comm->getRank();
   const int numImages = comm->getSize();
   const bool verbose = (myImageID==0);
@@ -116,7 +109,6 @@ int main(int argc, char *argv[])
   if (verbose) {
     std::cout << "\n" << Tpetra::version() << std::endl;
     std::cout << "Comm info: " << *comm;
-    std::cout << "Node type: " << Teuchos::typeName(*node) << std::endl;
     std::cout << std::endl;
   }
 
@@ -124,7 +116,7 @@ int main(int argc, char *argv[])
   // Create a simple map for domain and range
   //
   Tpetra::global_size_t numGlobalRows = 1000*numImages;
-  auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm, node);
+  auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm);
   auto x = Tpetra::createVector<double>(map),
        y = Tpetra::createVector<double>(map);
 
@@ -153,7 +145,7 @@ int main(int argc, char *argv[])
     if (myImageID != 0) colElements.push_back( map->getMinGlobalIndex() - 1 );
     colElements.insert(colElements.end(), rowElements.begin(), rowElements.end());
     if (myImageID != numImages-1) colElements.push_back( map->getMaxGlobalIndex() + 1 );
-    colmap = Tpetra::createNonContigMapWithNode<int,int>(colElements(), comm, node);
+    colmap = Tpetra::createNonContigMapWithNode<int,int>(colElements(), comm);
   }
   else {
     colmap = map;

@@ -144,10 +144,9 @@ operations.
 </li>
 
 <li>
-Platform classes: These are mainly of legacy interest.
-Tpetra::DefaultPlatform is useful for getting a default communicator
-wrapper that wraps <tt>MPI_COMM_WORLD</tt> if building with MPI, and
-provides stub communication functionality if not building with MPI.
+Tpetra initialization: Tpetra::ScopeGuard's constructor initializes
+MPI and/or Kokkos automatically if needed, and its destructor
+finalizes MPI and/or Kokkos automatically if needed.
 </li>
 </ul>
 

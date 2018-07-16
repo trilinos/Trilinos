@@ -42,7 +42,7 @@
 */
 
 #include "Tpetra_Map.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 #include <vector>
 #include <unordered_map>

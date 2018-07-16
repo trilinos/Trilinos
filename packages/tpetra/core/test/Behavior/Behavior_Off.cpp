@@ -43,8 +43,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
