@@ -2,9 +2,18 @@
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
 #include "TeuchosKokkosCompat_config.h"
-#include "KokkosCompat_View.hpp" // why do we need to include this?
 #include "Kokkos_Core.hpp"
-#include "Teuchos_ParameterList.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+//
+// Dear users: These are just forward declarations.  Please skip
+// over them and go down to KokkosDeviceWrapperNode below.  Thank
+// you.
+//
+namespace Teuchos {
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Kokkos {
 namespace Compat {
@@ -38,15 +47,17 @@ public:
   ///
   /// \param [in/out] params List of Node configuration parameters.
   ///   If empty, we use defaults.
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& params);
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) {}
 
   //! Default constructor (sets default parameters).
-  KokkosDeviceWrapperNode ();
+  KokkosDeviceWrapperNode () {}
 
   //! Get a filled-in set of parameters for Node, with their default values.
   static Teuchos::ParameterList getDefaultParameters ();
 
-  void sync () const;
+  void sync () const {
+    execution_space::fence ();
+  }
 
   //! Human-readable name of this Node.
   static std::string name ();

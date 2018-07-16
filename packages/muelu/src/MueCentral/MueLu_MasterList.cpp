@@ -192,6 +192,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use interface aggregation\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
@@ -233,6 +234,7 @@ namespace MueLu {
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: enable\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
   "<ParameterList name=\"repartition: params\"/>"
@@ -524,6 +526,8 @@ namespace MueLu {
       
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
       
+         ("aggregation: use interface aggregation","aggregation: use interface aggregation")
+      
          ("aggregation: export visualization data","aggregation: export visualization data")
       
          ("aggregation: output filename","aggregation: output filename")
@@ -605,6 +609,8 @@ namespace MueLu {
          ("emin: pattern order","emin: pattern order")
       
          ("tentative: calculate qr","tentative: calculate qr")
+      
+         ("tentative: build coarse coordinates","tentative: build coarse coordinates")
       
          ("repartition: enable","repartition: enable")
       

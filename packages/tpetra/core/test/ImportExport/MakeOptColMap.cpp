@@ -46,7 +46,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Details_makeOptimizedColMap.hpp>
 
 // Test cases:
@@ -225,10 +225,10 @@ namespace {
   template<class MapType>
   class GetImportType {
   public:
-    typedef typename MapType::local_ordinal_type local_ordinal_type;
-    typedef typename MapType::global_ordinal_type global_ordinal_type;
-    typedef typename MapType::node_type node_type;
-    typedef ::Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+    using local_ordinal_type = typename MapType::local_ordinal_type;
+    using global_ordinal_type = typename MapType::global_ordinal_type;
+    using node_type = typename MapType::node_type;
+    using import_type = ::Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
   };
 
   // For the given domain Map and (original) column Map, test
@@ -460,16 +460,13 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test1, LO, GO )
   {
-    typedef Tpetra::Details::DefaultTypes::node_type NT;
-    typedef Tpetra::Map<LO, GO, NT> map_type;
+    typedef Tpetra::Map<LO, GO> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
 
     Teuchos::OSTab tab0 (out);
     out << "\"Tpetra::makeOptimizedColMap\": Test 1" << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBase = 0;
     const int myRank = comm->getRank ();
@@ -485,8 +482,8 @@ namespace {
     ArrayView<const GO> oldColMapGids = domMapGids ();
 
     out << "Making the Maps" << endl;
-    map_type domMap (INVALID, domMapGids (), indexBase, comm, node);
-    map_type oldColMap (INVALID, oldColMapGids, indexBase, comm, node);
+    map_type domMap (INVALID, domMapGids (), indexBase, comm);
+    map_type oldColMap (INVALID, oldColMapGids, indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
     std::pair<map_type, RCP<import_type> > result =
@@ -498,16 +495,13 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test2, LO, GO )
   {
-    typedef Tpetra::Details::DefaultTypes::node_type NT;
-    typedef Tpetra::Map<LO, GO, NT> map_type;
+    typedef Tpetra::Map<LO, GO> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
 
     Teuchos::OSTab tab0 (out);
     out << "\"Tpetra::makeOptimizedColMap\": Test 2" << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     // const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBase = 0;
     const int myRank = comm->getRank ();
@@ -526,10 +520,10 @@ namespace {
 
     out << "Making the Maps" << endl;
     map_type domMap (static_cast<GST> (gblNumGids), domMapGids (),
-                     indexBase, comm, node);
+                     indexBase, comm);
     map_type oldColMap (static_cast<GST> (gblNumGids),
                         static_cast<size_t> (lclNumGids),
-                        indexBase, comm, node);
+                        indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
     std::pair<map_type, RCP<import_type> > result =
@@ -541,16 +535,13 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test3, LO, GO )
   {
-    typedef Tpetra::Details::DefaultTypes::node_type NT;
-    typedef Tpetra::Map<LO, GO, NT> map_type;
-    typedef typename GetImportType<map_type>::import_type import_type;
+    using map_type = Tpetra::Map<LO, GO>;
+    using import_type = typename GetImportType<map_type>::import_type;
 
     Teuchos::OSTab tab0 (out);
     out << "\"Tpetra::makeOptimizedColMap\": Test 3" << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBase = 0;
     const int myRank = comm->getRank ();
@@ -581,8 +572,8 @@ namespace {
     }
 
     out << "Making the Maps" << endl;
-    map_type domMap (INVALID, domMapGids (), indexBase, comm, node);
-    map_type oldColMap (INVALID, oldColMapGids, indexBase, comm, node);
+    map_type domMap (INVALID, domMapGids (), indexBase, comm);
+    map_type oldColMap (INVALID, oldColMapGids, indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
     std::pair<map_type, RCP<import_type> > result =

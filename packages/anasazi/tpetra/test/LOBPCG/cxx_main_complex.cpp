@@ -58,8 +58,7 @@
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
@@ -87,13 +86,12 @@ int main(int argc, char *argv[])
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   const ST ONE  = SCT::one();
 
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   int info = 0;
   int MyPID = 0;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   MyPID = rank(*comm);
 

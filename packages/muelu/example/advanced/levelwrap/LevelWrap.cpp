@@ -199,7 +199,7 @@ namespace MueLuExamples {
         << "========================================================" << std::endl;
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
 
     A = Pr->BuildMatrix();
 
@@ -284,6 +284,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Use an ML-style parameter list for variety
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
+      MLList.set("use kokkos refactor", false);
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
@@ -321,11 +322,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
+      MLList.set("use kokkos refactor", false);
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
       FactoryManager M1;
+      M1.SetKokkosRefactor(false);
       M1.SetFactory("A",        MueLu::NoFactory::getRCP());
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
@@ -360,11 +363,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
+      MLList.set("use kokkos refactor", false);
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
       FactoryManager M1;
+      M1.SetKokkosRefactor(false);
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
 

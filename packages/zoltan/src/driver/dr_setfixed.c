@@ -49,6 +49,7 @@
 #include <stdio.h>
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_loadbal_const.h"
 
 #ifdef __cplusplus

@@ -8,13 +8,16 @@ AggregationPhase2bAlgorithm
 AggregationPhase2bAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 AggregationPhase3Algorithm
 AggregationPhase3Algorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationStructuredAlgorithm
 AmalgamationInfo
 CoupledAggregationCommHelper
 CoupledAggregationFactory
 GlobalLexicographicIndexManager
 Graph
 GraphBase
+HybridAggregationFactory
 IndexManager
+InterfaceAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)

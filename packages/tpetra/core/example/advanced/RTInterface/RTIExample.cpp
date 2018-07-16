@@ -41,15 +41,11 @@
 // @HEADER
 */
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
-
 #include <Tpetra_Version.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_RTI.hpp>
 
@@ -233,8 +229,7 @@ int main(int argc, char *argv[])
   //
   // Set up MPI, if applicable.
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   using Teuchos::TimeMonitor;
   using Tpetra::RTI::ZeroOp;
@@ -244,11 +239,9 @@ int main(int argc, char *argv[])
   using TpetraExamples::Pair;
 
   //
-  // Get the default communicator and node
+  // Get the default communicator
   //
-  auto &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  auto comm = platform.getComm();
-  auto node = platform.getNode();
+  auto comm = Tpetra::getDefaultComm();
   const int myImageID = comm->getRank();
 
   //
@@ -271,16 +264,15 @@ int main(int argc, char *argv[])
   if (verbose) {
     std::cout << "\n" << Tpetra::version() << std::endl;
     std::cout << "Comm info: " << *comm;
-    std::cout << "Node type: " << Teuchos::typeName(*node) << std::endl;
     std::cout << std::endl;
   }
 
 
   //
-  // Create a simple map with 5 local entries per node
+  // Create a simple map with 5 local entries per process
   //
   Tpetra::global_size_t numGlobalRows = numGlobal_user;
-  auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm, node);
+  auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm);
   const size_t numLocalRows = map->getNodeNumElements();
   auto x = Tpetra::createVector<float>(map),
        y = Tpetra::createVector<float>(map);

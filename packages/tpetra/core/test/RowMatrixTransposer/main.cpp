@@ -41,8 +41,7 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
@@ -84,11 +83,8 @@ main (int argc, char* argv[])
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> crs_matrix_type;
   typedef Tpetra::Map<LO, GO> map_type;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<Teuchos::FancyOStream> out =
     Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
   //out->setOutputToRootOnly(comm->getRank());

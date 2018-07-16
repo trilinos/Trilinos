@@ -91,6 +91,19 @@ IF (Piro_ENABLE_NOX)
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
+  
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AnalysisDriverTpetra
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    SOURCES
+      Main_AnalysisDriver_Tpetra.cpp
+      MockModelEval_A_Tpetra.cpp
+      MockModelEval_A_Tpetra.hpp
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 
+  )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SecondOrderIntegrator
@@ -130,6 +143,12 @@ IF (Piro_ENABLE_NOX)
     STANDARD_PASS_OUTPUT
   )
 
+  IF (AnalysisDriverTpetra_NAME)
+   SET(AnalysisDriverTpetra_EXENAME AnalysisDriverTpetra)
+  ELSE()
+   SET(AnalysisDriverTpetra_EXENAME)
+  ENDIF()
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
@@ -146,6 +165,9 @@ IF (Piro_ENABLE_NOX)
           input_Analysis_Dakota.xml dak.in
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml
           input_Analysis_ROL.xml
+          input_Analysis_ROL_Tpetra.xml
+          input_Analysis_ROL_AdjointSensitivities.xml
+          input_Analysis_ROL_AdjointSensitivities_Tpetra.xml
           input_Solve_RythmosMatrixFree_Fails.xml
 	  input_SGSolve.xml
 	  input_problem1.xml input_problem2.xml input_coupled.xml
@@ -153,8 +175,7 @@ IF (Piro_ENABLE_NOX)
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    #EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
-    EXEDEPS ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
+    EXEDEPS ThyraSolver AnalysisDriver ${AnalysisDriverTpetra_EXENAME} UnitTests NOXSolver_UnitTests
   )
 
 ENDIF()

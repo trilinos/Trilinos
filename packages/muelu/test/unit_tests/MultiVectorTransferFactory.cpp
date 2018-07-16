@@ -104,14 +104,20 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel.Set("onesVector",fineOnes);
+    fineLevel.Set("Coordinates", coordinates);
 
     RCP<TentativePFactory>    TentativePFact = rcp(new TentativePFactory());
     RCP<TransPFactory>        RFact = rcp(new TransPFactory());
 
     RCP<FactoryManager> M = rcp(new FactoryManager());
+    M->SetKokkosRefactor(false);
     M->SetFactory("P", TentativePFact);
     M->SetFactory("Ptent", TentativePFact);
     M->SetFactory("R", RFact);
@@ -153,6 +159,10 @@ namespace MueLuTests {
     GO nx = 199;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
 
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
 
     // Set up three level hierarchy.
     RCP<Hierarchy> H = rcp( new Hierarchy() );
@@ -163,7 +173,8 @@ namespace MueLuTests {
     fineLevel->Set("A",A);                       // set fine level matrix
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
     nullSpace->putScalar( (SC) 1.0);
-    fineLevel->Set("Nullspace",nullSpace);       // set null space information for finest level
+    fineLevel->Set("Nullspace", nullSpace);       // set null space information for finest level
+    fineLevel->Set("Coordinates", coordinates);   // set coordinates on finest level
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetMinNodesPerAggregate(3);
@@ -185,6 +196,7 @@ namespace MueLuTests {
     AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("P", PFact);
     M.SetFactory("Ptent", PFact); // for nullspace

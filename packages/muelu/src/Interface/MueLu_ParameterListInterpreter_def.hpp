@@ -91,6 +91,7 @@
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
@@ -169,10 +170,10 @@ namespace MueLu {
 
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
+
     } else if (paramList.isParameter("MueLu preconditioner") == true) {
       this->GetOStream(Runtime0) << "Use facade class: " << paramList.get<std::string>("MueLu preconditioner")  << std::endl;
       Teuchos::RCP<ParameterList> pp = facadeFact_->SetParameterList(paramList);
-
       SetFactoryParameterList(*pp);
 
     }  else {
@@ -257,15 +258,15 @@ namespace MueLu {
 #elif defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
     ParameterList tempList("tempList");
     tempList.set("use kokkos refactor",true);
-    MUELU_SET_VAR_2LIST(constParamList, tempList, "use kokkos refactor", bool, useKokkos);
+    MUELU_SET_VAR_2LIST(paramList, tempList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
 #else
-    MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
+    MUELU_SET_VAR_2LIST(paramList, paramList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
 #endif
 
     // Check for timer synchronization
-    MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
+    MUELU_SET_VAR_2LIST(paramList, paramList, "synchronize factory timers", bool, syncTimers);
     if (syncTimers)
         Factory::EnableTimerSync();
 
@@ -972,6 +973,7 @@ namespace MueLu {
     if (defaultList.isSublist("matrixmatrix: kernel params"))
       ptentParams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, ptentParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: build coarse coordinates", bool, ptentParams);
     Ptent->SetParameterList(ptentParams);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
@@ -1618,6 +1620,7 @@ namespace MueLu {
 #undef MUELU_TEST_AND_SET_VAR
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
 #undef MUELU_TEST_PARAM_2LIST
+#undef MUELU_KOKKOS_FACTORY
 
   size_t LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
@@ -1867,7 +1870,9 @@ namespace MueLu {
           FactoryMap levelFactoryMap;
           BuildFactoryMap(levelList, factoryMap, levelFactoryMap, factoryManagers);
 
-          RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
+          RCP<FactoryManager> m = rcp(new FactoryManager(levelFactoryMap));
+          if (hieraList.isParameter("use kokkos refactor"))
+            m->SetKokkosRefactor(hieraList.get<bool>("use kokkos refactor"));
 
           if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);

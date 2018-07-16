@@ -324,11 +324,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Input parameters: " << *stratimikosList << std::endl;
 
     // Stratimikos vodou
-    typedef Thyra::PreconditionerFactoryBase<SC>         Base;
+    typedef Thyra::PreconditionerFactoryBase<SC>             Base;
     typedef Thyra::Ifpack2PreconditionerFactory<tCrsMatrix > Impl;
-    typedef Thyra::LinearOpWithSolveFactoryBase<SC>      LOWSFB;
-    typedef Thyra::LinearOpWithSolveBase<SC>             LOWSB;
-    typedef Thyra::MultiVectorBase<SC>                   TH_Mvb;
+    typedef Thyra::LinearOpWithSolveFactoryBase<SC>          LOWSFB;
+    typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
+    typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
@@ -373,8 +373,8 @@ int main(int argc, char *argv[]) {
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
     ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
-    ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
-    ArrayRCP<const SC>  tBdata = tB->getData(0);
+    ArrayRCP<SC>         tXdata = tX->getDataNonConst(0);
+    ArrayRCP<const SC>   tBdata = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)
       if (dirBCs[i])
         tXdata[i] = tBdata[i];

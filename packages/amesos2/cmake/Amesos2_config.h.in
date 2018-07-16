@@ -115,6 +115,9 @@
 /*Define if you want to use amesos-Basker */
 #cmakedefine HAVE_AMESOS2_BASKER
 
+/*Define if you want to use ShyLUBasker */
+#cmakedefine HAVE_AMESOS2_SHYLUBASKER
+
 /* Define to 1 if SuperLU_DIST uses a SLU_ prefix on a few of its enums */
 #cmakedefine HAVE_SUPERLUDIST_ENUM_NAMESPACE
 

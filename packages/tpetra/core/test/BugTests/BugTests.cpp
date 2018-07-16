@@ -45,7 +45,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MatrixIO.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -66,7 +66,6 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::Vector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -87,7 +86,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

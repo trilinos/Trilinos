@@ -18,7 +18,8 @@ function [] = mk1DRegionFile(filename)
 %% User-defined cases
 
 if (strcmp(filename, 'caseTen') == true)
-  nNodesPerRegion = [4 7 4];
+%   nNodesPerRegion = [4 7 4];
+  nNodesPerRegion = [7 7 7];
 elseif (strcmp(filename, 'caseEleven') == true)
   nNodesPerRegion = [7 4 7 4 4 7];
 elseif (strcmp(filename, 'caseTwelve') == true)

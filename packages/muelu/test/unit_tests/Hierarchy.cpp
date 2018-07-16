@@ -110,6 +110,10 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     int numRows = 399;
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(numRows);
+    GO nx = numRows;
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Teuchos::ParameterList MueLuList;
     MueLuList.set("verbosity","none");
@@ -119,11 +123,11 @@ namespace MueLuTests {
 
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
         MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-            A, MueLuList, Teuchos::null, Teuchos::null);
+            A, MueLuList, coordinates, Teuchos::null);
 
     // confirm that we did get a hierarchy with two levels -- a sanity check for this test
     TEST_EQUALITY(2, H->GetGlobalNumLevels());
-    
+
     using namespace std;
     string descriptionTwoLevel = H->description();
 
@@ -185,13 +189,19 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(399*comm->getSize());
+    GO nx = 399*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Hierarchy H(A);
     H.SetMaxCoarseSize(1);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
@@ -223,8 +233,13 @@ namespace MueLuTests {
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    GO nx = 6561*comm->getSize();  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
@@ -237,6 +252,7 @@ namespace MueLuTests {
     RCP<MueLu::Level> Finest = H.GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
+    Finest->Set("Coordinates", coordinates);
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
@@ -263,6 +279,7 @@ namespace MueLuTests {
     int maxLevels = 5;
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -270,6 +287,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
+    M.SetFactory("Coordinates", TentPFact);
 
     H.Setup(M, 0, maxLevels);
 
@@ -317,8 +335,13 @@ namespace MueLuTests {
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    GO nx = 6561*comm->getSize();  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
@@ -333,6 +356,7 @@ namespace MueLuTests {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Op);
     Finest->Set("Nullspace", nullSpace);
+    Finest->Set("Coordinates", coordinates);
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetMinNodesPerAggregate(3);
@@ -359,6 +383,7 @@ namespace MueLuTests {
     int maxLevels = 5;
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -366,6 +391,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
+    M.SetFactory("Coordinates", TentPFact);
 
     H.Setup(M, 0, maxLevels);
 
@@ -418,6 +444,7 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     bool r = H.Setup(0, Teuchos::null, rcpFromRef(M0), Teuchos::null); TEST_EQUALITY(r, true); // cf. Teuchos Bug 5214
 
@@ -463,6 +490,7 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     H.Setup(M0, 0, 1);
 
@@ -506,12 +534,15 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     M1.SetFactory("P", rcp(new TentativePFactory()));
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -571,23 +602,32 @@ namespace MueLuTests {
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.setVerbLevel(Teuchos::VERB_HIGH);
     H.SetMaxCoarseSize(50);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     RCP<FactoryBase> P = rcp(new TentativePFactory());
     M1.SetFactory("P", P);
     M1.SetFactory("Ptent", P); //FIXME: can it be done automatically in FactoryManager?
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -660,12 +700,18 @@ namespace MueLuTests {
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.setVerbLevel(Teuchos::VERB_HIGH);
     H.SetMaxCoarseSize(50);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // setup smoother factory
     RCP<SmootherPrototype> smooProto;
@@ -687,9 +733,11 @@ namespace MueLuTests {
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
     M0.SetFactory("Smoother", preSmooFact);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     RCP<FactoryBase> PFact = rcp(new TentativePFactory());
     M1.SetFactory("P", PFact);
@@ -697,6 +745,7 @@ namespace MueLuTests {
     M1.SetFactory("Smoother", postSmooFact);
 
     FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
     M2.SetFactory("A", rcp(new RAPFactory()));
     M2.SetFactory("P", rcp(new SaPFactory()));
 
@@ -768,17 +817,25 @@ namespace MueLuTests {
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx  = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.SetMaxCoarseSize(299*comm->getSize()); // set max coarse size to fit problem size (-> 1 level method)
     H.setVerbLevel(Teuchos::VERB_HIGH);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
 
     FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A", rcp(new RAPFactory()));
     M1.SetFactory("P", rcp(new TentativePFactory()));
 
@@ -815,14 +872,22 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30);
+    GO nx = 30;
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.SetDefaultVerbLevel(MueLu::Low);
     H.SetMaxCoarseSize(29);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
+
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
     H.Setup(M, 0, 2);
@@ -905,6 +970,8 @@ namespace MueLuTests {
       return;
     }
 
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", A->getRowMap(), matrixList);
+
     // extract information
     RCP<const Map>        rangeMap = A->getRangeMap();
     Xpetra::UnderlyingLib lib      = rangeMap->lib();
@@ -920,9 +987,11 @@ namespace MueLuTests {
     Hierarchy Haux(A_point);
     Haux.SetMaxCoarseSize(1);
     Haux.SetDefaultVerbLevel(MueLu::None);
+    Haux.GetLevel(0)->Set("Coordinates", coordinates);
 
     FactoryManager Maux;
-    const FactoryBase* nullFactory = Maux.GetFactory("Nullspace").get();
+    Maux.SetKokkosRefactor(false);
+    const FactoryBase* nullFactory  = Maux.GetFactory("Nullspace").get();
 
     Haux.Keep("Nullspace", nullFactory);
 
@@ -946,10 +1015,13 @@ namespace MueLuTests {
     // fix proposed here is to simply set corresponding fatories to NoFactory, so
     // they would fetch user data.
     FactoryManager M0, M1, M2;
+    M0.SetKokkosRefactor(false);
     M0.SetFactory("Smoother", SmooFact);
+    M1.SetKokkosRefactor(false);
     M1.SetFactory("A",        MueLu::NoFactory::getRCP());
     M1.SetFactory("P",        MueLu::NoFactory::getRCP());
     M1.SetFactory("R",        MueLu::NoFactory::getRCP());
+    M2.SetKokkosRefactor(false);
 
     out << "===== Setting up mixed hierarchy =====" << std::endl;
 
@@ -964,7 +1036,7 @@ namespace MueLuTests {
     H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
 
     RCP<Level> l0 = H.GetLevel(0);
-    l0->Set("A",          A);
+    l0->Set("A",           A);
     H.AddNewLevel();
     RCP<Level> l1     = H   .GetLevel(1);
     RCP<Level> l1_aux = Haux.GetLevel(1);

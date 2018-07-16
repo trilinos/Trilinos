@@ -120,8 +120,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D")
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector,RealValuedMultiVector> > Pr =
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector,RealValuedMultiVector>(matrixType, map, galeriList);
   RCP<Matrix> A = Pr->BuildMatrix();
 
   LO numRows = A->getNodeNumRows();

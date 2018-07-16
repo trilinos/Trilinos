@@ -160,6 +160,7 @@ namespace MueLuTests {
     RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -382,6 +383,7 @@ namespace MueLuTests {
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -635,7 +637,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, ReUseOmegas, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#   include <MueLu_UseShortNames.hpp>
+#include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 #   if !defined(HAVE_MUELU_IFPACK2)
@@ -662,6 +664,11 @@ namespace MueLuTests {
     // create nonsymmetric tridiagonal matrix
     RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
 
+    GO nx = nEle;
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Scalar,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("1D", map, galeriList);
+
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
     nullSpace->putScalar( (SC) 1.0);
@@ -678,6 +685,7 @@ namespace MueLuTests {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",         Op);              // set fine level matrix
     Finest->Set("Nullspace", nullSpace);       // set null space information for finest level
+    Finest->Set("Coordinates", coordinates);   // set coordinates for finest level
 
     // define transfer operators
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -706,6 +714,7 @@ namespace MueLuTests {
     RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P",             Pfact);
     M.SetFactory("R",             Rfact);
     M.SetFactory("A",             Acfact);
@@ -837,6 +846,11 @@ namespace MueLuTests {
     // create nonsymmetric tridiagonal matrix
     RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
 
+    GO nx = nEle;
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Scalar,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("1D", map, galeriList);
+
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
     nullSpace->putScalar( (SC) 1.0);
@@ -851,8 +865,9 @@ namespace MueLuTests {
 
     RCP<Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    Finest->Set("A",Op);                      // set fine level matrix
-    Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+    Finest->Set("A", Op);                      // set fine level matrix
+    Finest->Set("Nullspace", nullSpace);       // set null space information for finest level
+    Finest->Set("Coordinates", coordinates);   // set coordinates for finest level
 
     // define transfer operators
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -881,6 +896,7 @@ namespace MueLuTests {
     RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -1023,6 +1039,7 @@ namespace MueLuTests {
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
           Galeri::Xpetra::BuildProblem<SC, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, matrixParameters);
         RCP<Matrix> Op = Pr->BuildMatrix();
+        RCP<RealValuedMultiVector> coordinates = Pr->BuildCoords();
 
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -1040,6 +1057,7 @@ namespace MueLuTests {
         Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
         Finest->Set("A",Op);                      // set fine level matrix
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+        // Finest->Set("Coordinates", coordinates);  // set coordinates for finest level
 
         // define transfer operators
         RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -1066,6 +1084,7 @@ namespace MueLuTests {
         RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
         FactoryManager M;
+        M.SetKokkosRefactor(false);
         M.SetFactory("P", Pfact);
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);

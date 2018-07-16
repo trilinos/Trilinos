@@ -221,7 +221,7 @@ namespace MueLu {
       // Make sure that each CPU thread has approximately targetRowsPerProcess
 
       int thread_per_mpi_rank = 1;
-#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
       using execution_space = typename Node::device_type::execution_space;
       if (std::is_same<execution_space, Kokkos::OpenMP>::value)
         thread_per_mpi_rank = execution_space::concurrency();

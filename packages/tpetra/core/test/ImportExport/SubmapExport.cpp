@@ -50,7 +50,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Export.hpp>
@@ -93,8 +93,7 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport1 )
 {
   typedef Tpetra::Vector<int>::global_ordinal_type GO;
 
-  Teuchos::oblackholestream blackhole;
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
   // Maps of the export operation:
@@ -131,8 +130,7 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport2 )
 {
   typedef Tpetra::Vector<int>::global_ordinal_type GO;
 
-  Teuchos::oblackholestream blackhole;
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
   // SRC Map  Processor 0: Global IDs =
@@ -163,10 +161,9 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport2 )
 ////
 TEUCHOS_UNIT_TEST( DistObject, SubMapExport3 )
 {
-  typedef Tpetra::Vector<int>::global_ordinal_type GO;
+  using GO = Tpetra::Vector<int>::global_ordinal_type;
 
-  Teuchos::oblackholestream blackhole;
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
   // SRC Map  Processor 0: Global IDs = 0 1

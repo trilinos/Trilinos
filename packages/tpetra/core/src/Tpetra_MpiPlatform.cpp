@@ -53,69 +53,35 @@ namespace Tpetra {
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform () :
-    comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-    node_ (Teuchos::null)
-  {
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-    // that (new) Kokkos won't get initialized with the wrong
-    // command-line arguments, at least not until getNode() is called.
-    // Initializing Kokkos with the wrong command-line arguments may
-    // result in poor performance due to the wrong assignment of
-    // software threads to hardware execution units.
-  }
+    comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD)))
+  {}
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc, char*** argv) :
-    comm_ (Teuchos::null),
-    node_ (Teuchos::null)
+    comm_ (Teuchos::null)
   {
     initialize (argc, argv);
     comm_ = getDefaultComm ();
-
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
-  MpiPlatform (const Teuchos::RCP<NodeType>& node) :
-    comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-    node_ (node)
+  MpiPlatform (const Teuchos::RCP<NodeType>& /* node */) :
+    comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD)))
   {
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-    // that (new) Kokkos won't get initialized with the wrong
-    // command-line arguments, at least not until getNode() is
-    // called.  Initializing Kokkos with the wrong command-line
-    // arguments may result in poor performance due to the wrong
-    // assignment of software threads to hardware execution units.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
-  MpiPlatform (int* argc, char*** argv, const Teuchos::RCP<NodeType>& node) :
-    comm_ (Teuchos::null),
-    node_ (node)
+  MpiPlatform (int* argc, char*** argv, const Teuchos::RCP<NodeType>& /* node */) :
+    comm_ (Teuchos::null)
   {
     initialize (argc, argv);
     comm_ = getDefaultComm ();
-
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
-  MpiPlatform (const Teuchos::RCP<NodeType>& node,
+  MpiPlatform (const Teuchos::RCP<NodeType>& /* node */,
                const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm)
-    : comm_ (Teuchos::null),
-      node_ (node)
+    : comm_ (Teuchos::null)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       rawMpiComm.is_null (), std::invalid_argument, "Tpetra::MpiPlatform "
@@ -125,21 +91,14 @@ namespace Tpetra {
       "nonnull Teuchos::OpaqueWrapper by using the "
       "Teuchos::opaqueWrapper<MPI_Comm>() nonmember constructor.");
     comm_ = Teuchos::createMpiComm<int> (rawMpiComm);
-
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc,
                char*** argv,
-               const Teuchos::RCP<NodeType>& node,
+               const Teuchos::RCP<NodeType>& /* node */,
                const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm)
-    : comm_ (Teuchos::null),
-      node_ (node)
+    : comm_ (Teuchos::null)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       rawMpiComm.is_null (), std::invalid_argument, "Tpetra::MpiPlatform "
@@ -160,42 +119,23 @@ namespace Tpetra {
     // references to the raw MPI_Comm floating around, and comm_'s
     // destructor will get to do the right thing.
     initialize (argc, argv, comm_);
-
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
-  MpiPlatform (const Teuchos::RCP<NodeType>& node, MPI_Comm rawMpiComm)
-    : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
-      node_ (node)
+  MpiPlatform (const Teuchos::RCP<NodeType>& /* node */, MPI_Comm rawMpiComm)
+    : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm)))
   {
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc,
                char*** argv,
-               const Teuchos::RCP<NodeType>& node,
+               const Teuchos::RCP<NodeType>& /* node */,
                MPI_Comm rawMpiComm)
-    : comm_ (Teuchos::null),
-      node_ (node)
+    : comm_ (Teuchos::null)
   {
     initialize (argc, argv, rawMpiComm);
     comm_ = getDefaultComm ();
-
-    // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::Details::getNode<Node> ();
-    // }
   }
 
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
@@ -215,29 +155,7 @@ namespace Tpetra {
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   getNode () const
   {
-    typedef MpiPlatform<NodeType> this_type;
-    if (node_.is_null ()) {
-      // NOTE (mfh 29 Jun 2014): Creating an instance of one of the
-      // new Kokkos wrapper Nodes _must_ call Kokkos::initialize.
-      // If Kokkos has not been initialized yet, this may result in
-      // Kokkos being initialized correctly, since we have no way to
-      // pass it the command-line arguments at this point.  This is
-      // why we should prefer the *Platform constructors that take
-      // argc and argv, since they can (and do) call
-      // Kokkos::initialize (by calling Tpetra::initialize).
-      //
-      // mfh 29 Jun 2014: We're only keeping the *Platform classes
-      // for backwards compatibility anyway, so I don't feel bad
-      // about the const_cast here.
-      const_cast<this_type*> (this)->node_ =
-        KokkosClassic::DefaultNode::getDefaultNode ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        node_.is_null (), std::logic_error, "Tpetra::MpiPlatform::getNode: "
-        "KokkosClassic::DefaultNode::getDefaultNode() returned null.  "
-        "This should never happen.  "
-        "Please report this bug to the Tpetra developers.");
-    }
-    return node_;
+    return Teuchos::rcp (new Tpetra::Details::DefaultTypes::node_type);
   }
 
 } // namespace Tpetra

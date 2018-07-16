@@ -57,7 +57,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockMultiVector.hpp"
 #include "Tpetra_MatrixIO.hpp"
@@ -113,8 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, LowerTriangularBlockCrsMatrix, Scalar,
 
   out << "Ifpack2::Experimental::RBILUK lower triangular BlockCrsMatrix test" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -228,7 +227,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, UpperTriangularBlockCrsMatrix, Scalar,
   const int num_rows_per_proc = 3;
   const int blockSize = 5;
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<crs_graph_type> crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
@@ -282,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, FullLocalBlockCrsMatrix, Scalar, Local
   const int num_rows_per_proc = 3;
   const int blockSize = 5;
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<crs_graph_type> crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
@@ -341,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BandedBlockCrsMatrixWithDropping, Scal
 
   const int lof = 0;
   const size_t rbandwidth = lof+2+2;
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
     tif_utest::create_banded_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc, rbandwidth);
   RCP<block_crs_matrix_type> bcrsmatrix =
@@ -586,8 +585,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalO
   int lclSuccess = 1;
   int gblSuccess = 1;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   const bool useOut = false;
   RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
