@@ -56,7 +56,7 @@
 #include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_Details_DenseSolver.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include <type_traits>
 
@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(ContainerFactory, TestTypesAndInput, SC, LO, G
   using Teuchos::rcp;
   using Teuchos::tuple;
   using std::endl;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  typedef Tpetra::Map<>::node_type NT;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
@@ -85,8 +85,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(ContainerFactory, TestTypesAndInput, SC, LO, G
 
   out << "Create test matrix A" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   // Create a nonzero diagonal matrix with a single row per process.
   // We won't actually do anything with it; we just need to give the

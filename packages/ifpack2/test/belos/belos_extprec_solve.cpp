@@ -44,7 +44,7 @@
 
 #ifdef HAVE_IFPACK2_QD
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -53,8 +53,6 @@
 #include "Teuchos_Comm.hpp"
 
 #include "Ifpack2_Parameters.hpp"
-
-#include "Tpetra_DefaultPlatform.hpp"
 
 #include <qd/dd_real.h>
 // Set a flag that we are using QD so that the solver builder only instantiates supported solvers
@@ -73,17 +71,15 @@ int main(int argc, char*argv[])
   Teuchos::Time timer("total");
   timer.start();
 
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   typedef dd_real Scalar;
   typedef int LO; //LocalOrdinal
   typedef int GO; //GlobalOrdinal
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
-  typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
+  typedef Tpetra::Map<LO, GO>::node_type Node;
+  typedef Tpetra::MultiVector<Scalar,LO,GO> TMV;
+  typedef Tpetra::Operator<Scalar,LO,GO>    TOP;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
   typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
 

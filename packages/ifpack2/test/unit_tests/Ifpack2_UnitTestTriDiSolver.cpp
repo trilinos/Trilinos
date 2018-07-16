@@ -53,7 +53,7 @@
 #include <Ifpack2_Details_TriDiSolver.hpp>
 #include <Ifpack2_Details_DenseSolver.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_SerialTriDiMatrix.hpp>
 
@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   typedef ScalarType scalar_type;
   typedef LocalOrdinalType local_ordinal_type;
   typedef GlobalOrdinalType global_ordinal_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
   typedef Tpetra::global_size_t GST;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -99,8 +99,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   typedef Ifpack2::Details::TriDiSolver<row_matrix_type> solver_type;
     //  typedef Ifpack2::Details::DenseSolver<row_matrix_type> solver_type;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   // We are now in a class method declared by the above macro.
   // The method has these input arguments:
