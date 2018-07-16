@@ -56,7 +56,7 @@
 
 // Include header for Tpetra compressed-row storage matrix
 #include "Tpetra_CrsMatrix.hpp" 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"        
 #include "Tpetra_Map.hpp"            
 #include "Tpetra_MultiVector.hpp" 
@@ -88,16 +88,14 @@
   //
   // Specify types used in this example
   //                                   
-  typedef double                                                  Scalar;
-  typedef int                                                     Ordinal;  
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform; 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;     
-  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
-  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>             Vector;
-  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node>        TMV;
-  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal,Node>           TOP;
-  typedef Anasazi::MultiVecTraits<Scalar, TMV>                     TMVT;
-  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>                 TOPT;
+  typedef double                                           Scalar;
+  typedef int                                              Ordinal;
+  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>   CrsMatrix;
+  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal>      Vector;
+  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal> TMV;
+  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal>    TOP;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV>             TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>        TOPT;
 
 void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const bool normalized, RCP<CrsMatrix>& L, RCP<Vector>& auxVec);
 
@@ -105,15 +103,12 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   // 
-  // Get the default communicator and node
+  // Get the default communicator
   //                                      
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();          
-  RCP<Node>                      node = platform.getNode();          
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();  
 
   //
@@ -147,6 +142,7 @@ int main(int argc, char *argv[]) {
   //
   // Read the matrix from a file
   //
+  RCP<Tpetra::Map<>::node_type> node; // can be null
   RCP<const CrsMatrix> fileMat = Tpetra::MatrixMarket::Reader<CrsMatrix>::readSparseFile(inputFilename, comm, node);
   
   //
@@ -377,7 +373,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
   // L = A + A'
   //
   L = Tpetra::MatrixMatrix::add(ONE,false,*A,ONE,true,*A);
-  RCP<const Tpetra::Map<Ordinal,Ordinal,Node> > rowMap = L->getRowMap();
+  RCP<const Tpetra::Map<Ordinal,Ordinal> > rowMap = L->getRowMap();
 
   // This line tells L that we are going to modify its entries
   L->resumeFill();
@@ -522,7 +518,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     L->fillComplete();
 
     // Create the auxiliary vector and set its values
-    auxVec = Teuchos::rcp( new Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>(rowMap,false) );
+    auxVec = Teuchos::rcp( new Tpetra::Vector<Scalar,Ordinal,Ordinal>(rowMap,false) );
     if(normalized)
     {
       // Computes the degree of each vertex of the graph
@@ -561,7 +557,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     {
       // Compute the degree of each node so we can normalize the Laplacian
       // normalizedL = D^{-1/2} L D^{-1/2}
-      Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> scalars(rowMap,false);
+      Tpetra::Vector<Scalar,Ordinal,Ordinal> scalars(rowMap,false);
       for(Ordinal i=0; i<n; i++)
       {
         // If this process does not own that row of the matrix, do nothing

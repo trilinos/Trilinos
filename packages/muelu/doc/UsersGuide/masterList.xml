@@ -513,6 +513,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: use interface aggregation</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Allow an application to prescribe root nodes to uncoupled aggregation</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: export visualization data</name>
       <type>bool</type>
       <default>false</default>
@@ -1056,7 +1065,7 @@
   <matrixmatrix>
     <parameter>
       <name>matrixmatrix: kernel params</name>
-      <type>parameterlist</type>
+      <type>\parameterlist</type>
       <description>Controls the kernel algorithms for matrix-matrix operations</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
@@ -1107,5 +1116,7 @@
     </parameter>
 
   </debug>
+
+
 
 </masterlist>

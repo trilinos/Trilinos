@@ -43,7 +43,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, IsLocallyComplete, LO, GO, NT )
   out << "Test {Ex,Im}port::isLocallyComplete()" << endl;
   Teuchos::OSTab tab1 (out);
 
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  auto comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
   const GO indexBase = 0;

@@ -81,7 +81,7 @@ public:
   static const char* name;      // declaration. Initialization outside.
 
 
-  typedef Basker<Matrix,Vector>                                        type;
+  typedef Amesos2::Basker<Matrix,Vector>                               type;
 
   typedef SolverCore<Amesos2::Basker,Matrix,Vector>              super_type;
 
@@ -201,34 +201,10 @@ private:
   /// Persisting 1D store for B
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
 
-    /*Handle for Basker object*/
- 
-#ifdef SHYLU_NODEBASKER
-#ifdef HAVE_AMESOS2_KOKKOS
-#ifdef KOKKOS_ENABLE_OPENMP
-  /*
-  typedef typename node_type::device_type  kokkos_device;
-  typedef typename kokkos_device::execution_space kokkos_exe;
-  static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
-  "Kokkos node type not support by experimental Basker Amesos2");
-  */
-  typedef Kokkos::OpenMP Exe_Space;
-#elif defined(KOKKOS_ENABLE_SERIAL)
-  typedef Kokkos::Serial Exe_Space;
-#else
-#pragma message("Kokkos Node type not supported by Basker") 
-#endif // OpenMP vs Serial
-   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>
-       *basker;
-#else
-  #pragma message("HAVE SHYLU_NODEBASKER AND NOT KOKKOS! ERROR")
-#endif
-#else
-   mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
- #endif
+  /*Handle for Basker object*/
+  mutable ::BaskerClassicNS::BaskerClassic<local_ordinal_type,slu_type> basker;
 
-
-};                              // End class Basker
+}; // End class Basker
 
 
 // Specialize solver_traits struct for Basker

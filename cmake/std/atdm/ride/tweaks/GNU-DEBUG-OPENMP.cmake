@@ -29,3 +29,5 @@ ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS
 # Disable randomly failing tests for this build (#2920)
 ATDM_SET_ENABLE(Belos_pseudo_stochastic_pcg_hb_0_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(Belos_pseudo_stochastic_pcg_hb_1_MPI_4_DISABLE ON)
+
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")

@@ -57,15 +57,13 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 
-
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -75,9 +73,13 @@
 
 
 int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+  std::string solver_name = "ShyLUBasker";
+#else
   std::string solver_name = "Basker";
+#endif
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("solver", &solver_name, "Which TPL solver library to use.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -105,7 +107,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    = Tpetra::getDefaultComm();
 
   size_t myRank = comm->getRank();
 
@@ -220,8 +222,8 @@ int main(int argc, char *argv[]) {
 
 //    Teuchos::ParameterList & sublist_params = amesos2_params.sublist(solver_name);
 //     sublist_params.set("IsContiguous", false, "Are GIDs Contiguous");
-#ifdef SHYLU_NODEBASKER
-    if ( solver_name == "Basker" ) {
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+    if ( solver_name == "ShyLUBasker" ) {
       amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
 //      sublist_params.set("num_threads", 1, "Number of threads");
     }

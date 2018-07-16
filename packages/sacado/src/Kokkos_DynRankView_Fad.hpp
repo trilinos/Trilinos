@@ -484,7 +484,7 @@ struct ViewMapping
                     , Kokkos::LayoutRight >::value ||
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
-      ) 
+      )
     ), Kokkos::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
@@ -544,9 +544,19 @@ public:
       , MemoryTraits > type ;
   };
 
-
   template < class Arg0 = int, class Arg1 = int, class Arg2 = int, class Arg3 = int, class Arg4 = int, class Arg5 = int, class Arg6 = int >
   struct ExtentGenerator {
+    template <typename dimension>
+    KOKKOS_INLINE_FUNCTION
+    static SubviewExtents< 7 , rank > generator ( const dimension & dim , Arg0 arg0 = Arg0(), Arg1 arg1 = Arg1(), Arg2 arg2 = Arg2(), Arg3 arg3 = Arg3(), Arg4 arg4 = Arg4(), Arg5 arg5 = Arg5(), Arg6 arg6 = Arg6() )
+    {
+      return SubviewExtents< 7 , rank >( dim , arg0 , arg1 , arg2 , arg3 ,
+                                         arg4 , arg5 , arg6 );
+    }
+  };
+
+  template < class Arg0 = int, class Arg1 = int, class Arg2 = int, class Arg3 = int, class Arg4 = int, class Arg5 = int, class Arg6 = int >
+  struct ArrayExtentGenerator {
     template <typename dimension>
     KOKKOS_INLINE_FUNCTION
     static SubviewExtents< 8 , rank+1 > generator ( const dimension & dim , Arg0 arg0 = Arg0(), Arg1 arg1 = Arg1(), Arg2 arg2 = Arg2(), Arg3 arg3 = Arg3(), Arg4 arg4 = Arg4(), Arg5 arg5 = Arg5(), Arg6 arg6 = Arg6() )
@@ -565,6 +575,15 @@ public:
     typedef ViewMapping< traits_type, void >  DstType ;
     typedef ViewMapping< SrcTraits, void> SrcType;
     enum { FadStaticDim = SrcType::FadStaticDimension };
+    typedef typename std::conditional< (rank==0) , ViewDimension<>
+      , typename std::conditional< (rank==1) , ViewDimension<0>
+      , typename std::conditional< (rank==2) , ViewDimension<0,0>
+      , typename std::conditional< (rank==3) , ViewDimension<0,0,0>
+      , typename std::conditional< (rank==4) , ViewDimension<0,0,0,0>
+      , typename std::conditional< (rank==5) , ViewDimension<0,0,0,0,0>
+      , typename std::conditional< (rank==6) , ViewDimension<0,0,0,0,0,0>
+      , ViewDimension<0,0,0,0,0,0,0>
+      >::type >::type >::type >::type >::type >::type >::type  DstDimType ;
     typedef typename std::conditional< (rank==0) , ViewDimension<FadStaticDim>
       , typename std::conditional< (rank==1) , ViewDimension<0,FadStaticDim>
       , typename std::conditional< (rank==2) , ViewDimension<0,0,FadStaticDim>
@@ -573,19 +592,42 @@ public:
       , typename std::conditional< (rank==5) , ViewDimension<0,0,0,0,0,FadStaticDim>
       , typename std::conditional< (rank==6) , ViewDimension<0,0,0,0,0,0,FadStaticDim>
       , ViewDimension<0,0,0,0,0,0,0,FadStaticDim>
-      >::type >::type >::type >::type >::type >::type >::type  DstDimType ;
+      >::type >::type >::type >::type >::type >::type >::type  DstArrayDimType ;
 
       typedef ViewOffset< DstDimType , Kokkos::LayoutStride > dst_offset_type ;
+      typedef ViewOffset< DstArrayDimType , Kokkos::LayoutStride > dst_array_offset_type ;
       typedef typename DstType::handle_type  dst_handle_type ;
 
       ret_type dst ;
 
-      const SubviewExtents< 8 , rank+1 > extents =
-        ExtentGenerator< Args ... >::generator( src.m_map.m_offset.m_dim , args... ) ;
+      const SubviewExtents< 7 , rank > extents =
+        ExtentGenerator< Args ... >::generator(
+          src.m_map.m_offset.m_dim , args... ) ;
+      const SubviewExtents< 8 , rank+1 > array_extents =
+        ArrayExtentGenerator< Args ... >::generator(
+          src.m_map.m_array_offset.m_dim , args... ) ;
 
       dst_offset_type tempdst( src.m_map.m_offset , extents ) ;
+      dst_array_offset_type temparraydst(
+        src.m_map.m_array_offset , array_extents ) ;
 
       dst.m_track = src.m_track ;
+
+      dst.m_map.m_offset.m_dim.N0 = tempdst.m_dim.N0 ;
+      dst.m_map.m_offset.m_dim.N1 = tempdst.m_dim.N1 ;
+      dst.m_map.m_offset.m_dim.N2 = tempdst.m_dim.N2 ;
+      dst.m_map.m_offset.m_dim.N3 = tempdst.m_dim.N3 ;
+      dst.m_map.m_offset.m_dim.N4 = tempdst.m_dim.N4 ;
+      dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N5 ;
+      dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N6 ;
+
+      dst.m_map.m_offset.m_stride.S0 = tempdst.m_stride.S0;
+      dst.m_map.m_offset.m_stride.S1 = tempdst.m_stride.S1;
+      dst.m_map.m_offset.m_stride.S2 = tempdst.m_stride.S2;
+      dst.m_map.m_offset.m_stride.S3 = tempdst.m_stride.S3;
+      dst.m_map.m_offset.m_stride.S4 = tempdst.m_stride.S4;
+      dst.m_map.m_offset.m_stride.S5 = tempdst.m_stride.S5;
+      dst.m_map.m_offset.m_stride.S6 = tempdst.m_stride.S6;
 
       // Move last non-unit dim and stride to N7/S7 since subview collapses
       // out all singleton dimensions between the last rank and the fad
@@ -594,21 +636,22 @@ public:
       //   dst.m_map.m_offset.m_dim.N7 = tempdst.m_dim.N{rank}
       //   dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*
       //   dst.m_map.m_offset.m_stride.S7 = tempdst.m_stride.S{rank}
-      AssignFadDimStride<rank,FadStaticDim>::eval( dst.m_map.m_offset, tempdst );
+      AssignFadDimStride<rank,FadStaticDim>::eval( dst.m_map.m_array_offset, temparraydst );
 
       dst.m_track = src.m_track ;
 
       dst.m_map.m_handle =
-        dst_handle_type( src.m_map.m_handle +
-                         src.m_map.m_offset( extents.domain_offset(0)
-                                           , extents.domain_offset(1)
-                                           , extents.domain_offset(2)
-                                           , extents.domain_offset(3)
-                                           , extents.domain_offset(4)
-                                           , extents.domain_offset(5)
-                                           , extents.domain_offset(6)
-                                           , extents.domain_offset(7)
-                         ) );
+        dst_handle_type(
+          src.m_map.m_handle +
+          src.m_map.m_array_offset( array_extents.domain_offset(0)
+                                  , array_extents.domain_offset(1)
+                                  , array_extents.domain_offset(2)
+                                  , array_extents.domain_offset(3)
+                                  , array_extents.domain_offset(4)
+                                  , array_extents.domain_offset(5)
+                                  , array_extents.domain_offset(6)
+                                  , array_extents.domain_offset(7)
+            ) );
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size;
       dst.m_map.m_fad_stride = src.m_map.m_fad_stride.value;
@@ -664,21 +707,94 @@ permute_fad_layout(const LayoutStride& src, const unsigned rank) {
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
  *  View<FAD>      = View<FAD>
- *  View<ordinary> = View<FAD>
- *  (TBD)  View<FAD> = View<ordinary>
  */
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
-    // Destination view has FAD or ordinary
-    ( std::is_same< typename DstTraits::specialize
-                , ViewSpecializeSacadoFad >::value
-      ||
-      std::is_same< typename DstTraits::specialize , void >::value
-    )
+    // Destination view has FAD only
+    std::is_same< typename DstTraits::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    &&
+    // Source view has FAD only
+    std::is_same< typename SrcTraits::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+  ), Kokkos::Impl::ViewToDynRankViewTag >::type >
+{
+public:
+
+  enum { is_assignable = true };
+
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
+  typedef ViewMapping< DstTraits , void >  DstType ;
+  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+
+  template < typename DT , typename ... DP , typename ST , typename ... SP >
+  KOKKOS_INLINE_FUNCTION static
+  void assign( Kokkos::DynRankView< DT , DP... > & dst
+             , const Kokkos::View< ST , SP... >& src )
+    {
+      static_assert(
+        (
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        &&
+        (
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        , "View of FAD requires LayoutLeft, LayoutRight, or LayoutStride" );
+
+      static_assert(
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::value_type >::value ||
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::const_value_type >::value ,
+        "View assignment must have same value type or const = non-const" );
+
+      typedef typename DstType::offset_type dst_offset_type;
+      typedef typename DstType::array_offset_type dst_array_offset_type;
+      dst.m_map.m_array_offset =
+        dst_array_offset_type(std::integral_constant<unsigned,0>(),
+                              permute_fad_layout(src.m_map.m_array_offset.layout(),
+                                                 SrcTraits::rank) );
+      dst.m_map.m_offset =
+        dst_offset_type(std::integral_constant<unsigned,0>(),
+                        src.m_map.m_offset.layout() );
+
+      dst.m_map.m_handle = src.m_map.m_handle ;
+      dst.m_rank = src.Rank ;
+
+      dst.m_map.m_fad_size = src.m_map.m_fad_size ;
+      dst.m_map.m_fad_stride = src.m_map.m_fad_stride ;
+    }
+};
+
+/**\brief  Assign compatible Sacado FAD view mappings.
+ *
+ *  View<ordinary> = View<FAD>
+ */
+template< class DstTraits , class SrcTraits >
+class ViewMapping< DstTraits , SrcTraits ,
+  typename std::enable_if<(
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
+    &&
+    // Destination view has ordinary
+    std::is_same< typename DstTraits::specialize , void >::value
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
@@ -692,24 +808,6 @@ public:
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
-
-  template< class S , class D >
-  KOKKOS_INLINE_FUNCTION static
-  typename std::enable_if<( 
-    std::is_same< S , ViewSpecializeSacadoFad >::value
-    )>::type
-  assign_fad_size( D & dst , const SrcFadType & src )
-    { dst.m_fad_size = src.m_fad_size.value ;
-      dst.m_fad_stride = src.m_fad_stride.value ;
-    }
-
-  template< class S , class D >
-  KOKKOS_INLINE_FUNCTION static
-  typename std::enable_if<(
-    ! std::is_same< S , ViewSpecializeSacadoFad >::value 
-    )>::type
-  assign_fad_size( D & , const SrcFadType & ) {}
-
 
   template < typename DT , typename ... DP , typename ST , typename ... SP >
   KOKKOS_INLINE_FUNCTION static
@@ -746,13 +844,11 @@ public:
       typedef typename DstType::offset_type dst_offset_type;
       dst.m_map.m_offset =
         dst_offset_type(std::integral_constant<unsigned,0>(),
-                        permute_fad_layout(src.m_map.m_offset.layout(),
+                        permute_fad_layout(src.m_map.m_array_offset.layout(),
                                            SrcTraits::rank));
 
       dst.m_map.m_handle  = src.m_map.m_handle ;
       dst.m_rank    = src.Rank ;
-
-      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst.m_map , src.m_map );
     }
 };
 

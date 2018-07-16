@@ -761,7 +761,7 @@ namespace Sacado {
       reference fastAccessCoeff(ordinal_type i) {
         return s[i];}
 
-       //! Returns term \c i without bounds checking
+      //! Returns term \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
       const_volatile_reference operator[](ordinal_type i) const volatile {
         return s[i];}
@@ -1795,6 +1795,15 @@ namespace Sacado {
       };
 
     }; // class Vector
+  }
+}
+
+#if STOKHOS_USE_MP_VECTOR_SFS_SPEC
+#include "Sacado_MP_Vector_SFS.hpp"
+#endif
+
+namespace Sacado{
+  namespace MP {
 
     //! Type for storing nodes in expression graph
     /*!
@@ -1838,6 +1847,22 @@ namespace Sacado {
     template <typename T> struct add_volatile<volatile T> {
       typedef volatile T type;
     };
+
+    template <typename Storage>
+    std::ostream&
+    operator << (std::ostream& os, const Vector<Storage>& a)
+    {
+      typedef typename Vector<Storage>::ordinal_type ordinal_type;
+
+      os << "[ ";
+
+      for (ordinal_type i=0; i<a.size(); i++) {
+        os << a.coeff(i) << " ";
+      }
+
+      os << "]";
+      return os;
+    }
 
     template <typename Storage>
     std::ostream&
@@ -2034,8 +2059,6 @@ public:
 #endif
 
 #endif // HAVE_STOKHOS_SACADO
-
-//#include "Sacado_MP_Vector_SFS.hpp"
 
 #include "Kokkos_NumericTraits.hpp"
 

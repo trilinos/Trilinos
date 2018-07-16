@@ -47,11 +47,9 @@
 \ref Tpetra_Lesson02 explains this example in detail.
 */
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -63,8 +61,11 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // Print out the Tpetra software version information.
-  out << Tpetra::version () << endl << endl;
+  const int myRank = comm->getRank ();
+  if (myRank == 0) {
+    // Print out the Tpetra software version information.
+    out << Tpetra::version () << endl << endl;
+  }
 
   //
   // The first thing you might notice that makes Tpetra objects
@@ -345,7 +346,9 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   const mag_type theNorm = y.norm2 ();
 
   // Print the norm of y on Proc 0.
-  out << "Norm of y: " << theNorm << endl;
+  if (myRank == 0) {
+    out << "Norm of y: " << theNorm << endl;
+  }
 }
 
 //
@@ -354,25 +357,17 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 int
 main (int argc, char *argv[])
 {
-  using std::endl;
-  using Teuchos::RCP;
-
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
-  const int myRank = comm->getRank ();
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-
-  // We have a communicator and an output stream.
-  // Let's do something with them!
-  exampleRoutine (comm, out);
-
-  // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    // Never allow Tpetra objects to persist past ScopeGuard's
+    // destructor.
+    auto comm = Tpetra::getDefaultComm ();
+    exampleRoutine (comm, std::cout);
+    
+    // This tells the Trilinos test framework that the test passed.
+    if (comm->getRank () == 0) {
+      std::cout << "End Result: TEST PASSED" << std::endl;
+    }
   }
-
   return 0;
 }

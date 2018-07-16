@@ -215,10 +215,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -305,10 +304,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -395,10 +393,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -494,10 +491,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -596,10 +592,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -705,10 +700,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 13;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -853,10 +847,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1012,10 +1005,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1169,10 +1161,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -1345,10 +1336,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -1546,10 +1536,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1721,10 +1710,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1907,10 +1895,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -2131,10 +2118,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(3));
   Array<GlobalOrdinal> columnIndices(3);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();

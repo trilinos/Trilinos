@@ -60,6 +60,10 @@
       <ParameterList name="Entropic Risk">
         <Parameter name="Rate" type="double" value="2.0" />
       </ParameterList>
+      <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
+      <ParameterList name="Log Exponential">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
       <!-- ===========  KL DIVERGENCE SUBLIST  =========== -->
       <ParameterList name="KL Divergence">
         <Parameter name="Threshold" type="double" value="1.e-2" />
@@ -167,6 +171,10 @@
             <Parameter name="Upper Bound" type="double" value="0.5"  />
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+      <!-- ===========  MEAN PLUS VARIANCE SUBLIST  =========== -->
+      <ParameterList name="Safety Margin">
+        <Parameter name="Coefficient" type="double" value="1.e-2" />
       </ParameterList>
       <!-- ===========  MIXED CVAR SUBLIST  =========== -->
       <ParameterList name="Mixed CVaR">

@@ -285,5 +285,14 @@ namespace TeuchosTests
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
   }
 
+  TEUCHOS_UNIT_TEST(YAML, flow_map)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " Fields: {rho: 0.125, px: 0., py: 0., pz: 0., rho_E: 0.25}\n");
+    auto& field_pl = pl->sublist("Fields");
+    TEST_EQUALITY(field_pl.get<double>("rho"), 0.125);
+  }
+
 } //namespace TeuchosTests
 

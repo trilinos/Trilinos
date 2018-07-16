@@ -41,10 +41,9 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -99,8 +98,7 @@ namespace { // (anonymous)
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Teuchos::Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 

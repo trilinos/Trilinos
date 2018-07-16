@@ -299,7 +299,7 @@ namespace Amesos2
   bool
   MUMPS<Matrix,Vector>::matrixShapeOK_impl() const
   {
-    // The Basker can only handle square for right now
+    // The MUMPS can only handle square for right now
     return( this->globalNumRows_ == this->globalNumCols_ );
   }
   

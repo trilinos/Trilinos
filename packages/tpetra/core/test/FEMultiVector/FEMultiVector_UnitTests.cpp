@@ -51,7 +51,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
@@ -133,7 +133,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
   typedef Tpetra::global_size_t GST;
 

@@ -100,14 +100,16 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doSourceToTarget(const CombineMode CM) {
   if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_SOURCE) {
-    this->doImport(*inactiveMultiVector_,*importer_,CM);
+    inactiveMultiVector_->doImport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  if(*activeMultiVector_ == FE_ACTIVE_TARGET) *activeMultiVector_ = FE_ACTIVE_SOURCE;
-  else *activeMultiVector_ = FE_ACTIVE_TARGET;
+  if(*activeMultiVector_ == FE_ACTIVE_TARGET) 
+    *activeMultiVector_ = FE_ACTIVE_SOURCE;
+  else 
+    *activeMultiVector_ = FE_ACTIVE_TARGET;
 
   if(importer_.is_null()) return;
 

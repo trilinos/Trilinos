@@ -41,7 +41,6 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
@@ -50,21 +49,10 @@
 
 namespace {
 
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
-
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
-  using Teuchos::Comm;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::tuple;
-  using Teuchos::null;
 
-  using Tpetra::Map;
-  using Tpetra::DefaultPlatform;
   using Tpetra::CrsMatrix;
   using Tpetra::createCrsMatrix;
   using Tpetra::createUniformContigMapWithNode;
@@ -84,17 +72,15 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( RowMatrixTransposer, RectangularTranspose, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     int numProcs = comm->getSize();
     Tpetra::global_size_t numGlobal = 4*numProcs;
 
-    RCP<const Map<LO,GO,Node> > rowMap = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,node);
+    auto rowMap = createUniformContigMapWithNode<LO,GO,Node>(numGlobal,comm);
 
-    RCP<MAT> matrix = Reader<MAT>::readSparseFile("a.mtx", comm, node);
-    RCP<MAT> matrixT = Reader<MAT>::readSparseFile("atrans.mtx", comm, node);
+    RCP<MAT> matrix = Reader<MAT>::readSparseFile("a.mtx", comm);
+    RCP<MAT> matrixT = Reader<MAT>::readSparseFile("atrans.mtx", comm);
 
     RowMatrixTransposer<Scalar, LO, GO, Node> at (matrix);
     RCP<MAT> calculated = at.createTranspose();

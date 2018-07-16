@@ -234,3 +234,17 @@ ATDM_SET_CACHE(TPL_Netcdf_LIBRARIES "$ENV{ATDM_CONFIG_NETCDF_LIBS}" CACHE FILEPA
 ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # NOTE: Not clear why you need this since the TPL DLlib is not explicilty
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
+
+#
+# E) Test Disables
+#
+# There are some tests that have to be disabled for a braod set of builds
+# for example, if all openmp builds are failing a certain test then it 
+# makes more sense to disbale it once in this file instead of in every openmp
+# buid's tweaks file
+#
+
+# Disable test that fails for all openmp builds (#3035)
+IF (ATDM_USE_OPENMP)
+  ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
+ENDIF()

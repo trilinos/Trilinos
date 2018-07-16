@@ -1,5 +1,0 @@
-<ParameterList>                                         
-  <Parameter name='tolerance' value='1e-60' type='double'/>
-  <Parameter name='verbose' value='1' type='int'/>      
-  <Parameter name='Extract Diagonal' value='true' type='bool'/>    
-</ParameterList>                                        

@@ -70,7 +70,7 @@ namespace FROSch {
         AlgebraicOverlappingPreconditioner(CrsMatrixPtr k,
                                            ParameterListPtr parameterList);
         
-        virtual int initialize();
+        virtual int initialize(bool useDefaultParameters = true);
         
         virtual int initialize(int overlap,
                                MapPtr repeatedMap);
