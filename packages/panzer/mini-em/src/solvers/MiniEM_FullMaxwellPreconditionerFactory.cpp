@@ -16,6 +16,7 @@
 
 #include "Thyra_TpetraLinearOp.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Panzer_NodeType.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
@@ -30,8 +31,7 @@ namespace mini_em {
 void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
 {
   using Teuchos::RCP;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  using NT = panzer::TpetraNodeType;
   const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
   if(tOp != Teuchos::null) {
     *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
