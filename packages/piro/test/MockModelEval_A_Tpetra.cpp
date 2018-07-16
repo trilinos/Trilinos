@@ -47,14 +47,9 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const MPI_Comm appComm)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<Teuchos::Comm<int> >  appComm)
 {
-
-#ifdef HAVE_MPI
-    comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(appComm)));
-#else
-    comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+    comm = appComm;
 
     //set up map and initial guess for solution vector
     const int vecLength = 4;

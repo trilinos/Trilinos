@@ -83,7 +83,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const MPI_Comm appComm);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<Teuchos::Comm<int> >  appComm);
 
   //@}
 
