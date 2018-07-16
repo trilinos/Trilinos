@@ -47,7 +47,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<Teuchos::Comm<int> >  appComm)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm)
 {
     comm = appComm;
 

@@ -83,7 +83,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<Teuchos::Comm<int> >  appComm);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm);
 
   //@}
 
@@ -165,7 +165,7 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<const Tpetra_Map> p_map;
   Teuchos::RCP<const Tpetra_Map> g_map;
   Teuchos::RCP<Tpetra_CrsGraph> crs_graph;
-  Teuchos::RCP<Teuchos::Comm<int> > comm;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   Teuchos::RCP<Tpetra_Vector> p_vec;
   Teuchos::RCP<Tpetra_Vector> x_vec;

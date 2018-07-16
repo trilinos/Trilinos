@@ -59,6 +59,7 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Piro_StratimikosUtils.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Tpetra_Core.hpp"
 
 #ifdef HAVE_PIRO_IFPACK2
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
@@ -83,13 +84,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   int Proc=mpiSession.getRank();
 
-  Teuchos::RCP<Teuchos::Comm<int> >  appComm;
-
-#ifdef HAVE_MPI
-  appComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
-#else
-  appComm = Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+  auto appComm = Tpetra::getDefaultComm();
 
   using Teuchos::RCP;
   using Teuchos::rcp;
