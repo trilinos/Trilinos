@@ -51,7 +51,7 @@
 #include <limits.h>
 #include "zoltan_comm.h"
 #include "third_library_const.h"
-#include "graph.h"
+#include "../graph/graph.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

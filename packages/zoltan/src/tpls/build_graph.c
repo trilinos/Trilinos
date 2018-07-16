@@ -54,7 +54,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"
-#include "graph.h"
+#include "../graph/graph.h"
 
 int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
 		       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,

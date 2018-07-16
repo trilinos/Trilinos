@@ -56,7 +56,7 @@ extern "C" {
 #include "g2l_hash.h"
 #include "params_const.h"
 #include "zz_util_const.h"
-#include "graph.h"
+#include "../graph/graph.h"
 #include "all_allo_const.h"
 #include "zz_rand.h"
 #include "bucket.h"
