@@ -308,53 +308,19 @@ namespace {
       TEST_ASSERT( colMapsCompat );
     }
 
-    // Call makeOptimizedColMapAndImport with makeImport = false.
-    // This should have the same result as makeOptimizedColMap.
-    out << "Calling makeOptimizedColMapAndImport with makeImport = false" << endl;
-    std::ostringstream errStrm2;
-    bool lclErr2 = false;
-    std::pair<RCP<const map_type>, RCP<import_type> > result2 =
-      makeOptimizedColMapAndImport<map_type> (errStrm2, lclErr2, domMap,
-                                              oldColMap, NULL, false);
-    // We asked it not to make an Import, so it shouldn't have made an Import.
-    TEST_ASSERT( result2.second.is_null () );
-    // Make sure that all processes succeeded.
-    lclSuccess = lclErr2 ? 0 : 1;
-    gblSuccess = 1;
-    reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      reportErrors (comm, errStrm2, lclErr2);
-    }
-    // Check that calling makeOptimizedColMapAndImport with makeImport
-    // = false produces the same column Map as makeOptimizedColMap.
-    //
-    // NOTE (mfh 05 Jul 2014) It's bad form to put any kind of
-    // "serious" function call in a macro, even if that function
-    // promises to have no side effects.  This is because the macro
-    // might be defined _not_ to call the function.  For example, the
-    // function might have collective semantics.  In that case,
-    // putting the function call in the macro would make that line of
-    // code no longer a collective, thus possibly changing the
-    // behavior of code that follows.
-    {
-      const bool sameMaps = result2.first->isSameAs (*newColMap);
-      TEST_ASSERT( sameMaps );
-    }
-
-    // Call makeOptimizedColMapAndImport with makeImport = true.  This
+    // Call makeOptimizedColMapAndImport.  This
     // will make both the optimized column Map, and its corresponding
     // Import (from the domain Map 'domMap' to the new column Map).
     // Note that the function only promises to make an Import if
     // necessary, that is, if the domain Map and the new column Map
     // are not the same.
-    out << "Calling makeOptimizedColMapAndImport with makeImport = true"
+    out << "Calling makeOptimizedColMapAndImport"
         << endl;
     std::ostringstream errStrm3;
     bool lclErr3 = false;
     std::pair<RCP<const map_type>, RCP<import_type> > result3 =
       makeOptimizedColMapAndImport<map_type> (errStrm3, lclErr3, domMap,
-                                              oldColMap, NULL, true);
+                                              oldColMap, NULL);
     // Make sure that all processes succeeded.
     lclSuccess = lclErr3 ? 0 : 1;
     gblSuccess = 1;
@@ -363,8 +329,8 @@ namespace {
     if (gblSuccess != 1) {
       reportErrors (comm, errStrm3, lclErr3);
     }
-    // Check that calling makeOptimizedColMapAndImport with makeImport
-    // = true produces the same column Map as makeOptimizedColMap.
+    // Check that calling makeOptimizedColMapAndImport 
+    // produces the same column Map as makeOptimizedColMap.
     {
       const bool sameMaps = result3.first->isSameAs (*newColMap);
       TEST_ASSERT( sameMaps );

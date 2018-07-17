@@ -317,14 +317,10 @@ namespace Details {
     ///   Import: an Import from \c domMap to \c colMap.  This is not
     ///   required, but if you supply this, this function may use it
     ///   to avoid some communication and/or work when setting up the
-    ///   new Import object.  This function will <i>only</i> look at
-    ///   this pointer if \c makeImport is true.
-    /// \param makeImport [in] Whether to make and return an Import from
-    ///   the input domain Map to the new column Map.
+    ///   new Import object. 
     ///
     /// \return The possibly reordered column Map \c newColMap, and the
-    ///   corresponding Import from \c domMap to \c newColMap.  The
-    ///   latter is nonnull if and only if \c makeImport is true.
+    ///   corresponding Import from \c domMap to \c newColMap. 
     ///
     /// \pre \c domMap and \c colMap must have the same or congruent
     ///   communicators.
@@ -370,6 +366,11 @@ namespace Details {
   /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
   /// \param colMap [in] <i>Original</i> column Map of the same
   ///   CrsGraph or CrsMatrix as \c domMap.
+  /// \param oldImport [in] Optional pointer to the "original
+  ///   Import: an Import from \c domMap to \c colMap.  This is not
+  ///   required, but if you supply this, this function may use it
+  ///   to avoid some communication and/or work when setting up the
+  ///   new Import object. 
   ///
   /// \return The possibly reordered column Map \c newColMap.
   ///
@@ -422,12 +423,14 @@ namespace Details {
   /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
   /// \param colMap [in] <i>Original</i> column Map of the same
   ///   CrsGraph or CrsMatrix as \c domMap.
-  /// \param makeImport [in] Whether to make and return an Import from
-  ///   the input domain Map to the new column Map.
+  /// \param oldImport [in] Optional pointer to the "original
+  ///   Import: an Import from \c domMap to \c colMap.  This is not
+  ///   required, but if you supply this, this function may use it
+  ///   to avoid some communication and/or work when setting up the
+  ///   new Import object. 
   ///
   /// \return The possibly reordered column Map \c newColMap, and the
-  ///   corresponding Import from \c domMap to \c newColMap.  The
-  ///   latter is nonnull if and only if \c makeImport is true.
+  ///   corresponding Import from \c domMap to \c newColMap. 
   ///
   /// \pre \c domMap and \c colMap must have the same or congruent
   ///   communicators.
@@ -459,8 +462,7 @@ namespace Details {
                                 bool& lclErr,
                                 const MapType& domMap,
                                 const MapType& colMap,
-                                const typename OptColMap<MapType>::import_type* oldImport,
-                                const bool makeImport)
+                                const typename OptColMap<MapType>::import_type* oldImport)
   {
     using local_ordinal_type = typename MapType::local_ordinal_type;
     using global_ordinal_type = typename MapType::global_ordinal_type;
@@ -468,14 +470,8 @@ namespace Details {
     using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
     using impl_type = OptColMap<map_type>;
 
-    if (! makeImport) {
-      auto mapPtr = impl_type::makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
-      return std::make_pair (mapPtr, Teuchos::null);
-    }
-    else {
-      auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
-      return std::make_pair (mapAndImp.first, mapAndImp.second);
-    }
+    auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
+    return std::make_pair (mapAndImp.first, mapAndImp.second);
   }
 
 } // namespace Details

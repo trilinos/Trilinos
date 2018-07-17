@@ -615,7 +615,7 @@ runTest (Teuchos::FancyOStream& out,
     Teuchos::RCP<const map_type> actualTgtMap =
       Tpetra::Details::makeOptimizedColMap (out, lclErr, *sourceMap,
                                             *expUnoptTgtMap,
-                                            expUnoptImport.getRawPtr ());;
+                                            expUnoptImport.getRawPtr ());
     const bool gblMadeItThrough = trueEverywhere (! lclErr, *comm);
     TEST_ASSERT( gblMadeItThrough );
     if (! gblMadeItThrough) {
