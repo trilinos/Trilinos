@@ -613,7 +613,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   double tol = 1e-12;
 
   auto apply_kkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
-                                  const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z) {
+                                  const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z,int level=0) {
       auto part_output = dynamic_cast<PartitionedVector&>(output);
       auto part_input = dynamic_cast<const PartitionedVector&>(input);
 
@@ -625,16 +625,16 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       auto input_1  = part_input.get(1);
 
       // objective
-      pint_con->applyAdjointJacobian_1(*output_0,*input_1,u,z,tol);
+      pint_con->applyAdjointJacobian_1_leveled(*output_0,*input_1,u,z,tol,level);
       output_0->axpy(1.0,*input_0);
 
       // constraint
-      pint_con->applyJacobian_1(*output_1,*input_0,u,z,tol);
+      pint_con->applyJacobian_1_leveled(*output_1,*input_0,u,z,tol,level);
     };
 
   auto apply_invkkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
                                       const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z,
-                                      bool approx=false) {
+                                      bool approx=false,int level=0) {
       auto part_output = dynamic_cast<PartitionedVector&>(output);
       auto part_input = dynamic_cast<const PartitionedVector&>(input);
 
@@ -671,11 +671,10 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         temp->zero();
 
         if(not approx) {
-          pint_con->applyInverseJacobian_1(*temp, *temp_1, u,z,tol);
-          pint_con->applyInverseAdjointJacobian_1(*output_1,*temp,u,z,tol);
+          pint_con->applyInverseJacobian_1_leveled(*temp, *temp_1, u,z,tol,level);
+          pint_con->applyInverseAdjointJacobian_1_leveled(*output_1,*temp,u,z,tol,level);
         }
         else {
-          int level = 0;
           pint_con->invertTimeStepJacobian(*temp, *temp_1, u,z,tol,level);
           pint_con->invertAdjointTimeStepJacobian(*output_1,*temp,u,z,tol,level);
         }
