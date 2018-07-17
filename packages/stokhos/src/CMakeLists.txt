@@ -475,6 +475,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/Stokhos_Is_Constant.hpp
     sacado/kokkos/Kokkos_AnalyzeStokhosShape.hpp
     sacado/kokkos/Kokkos_View_Utils.hpp
+    sacado/kokkos/Kokkos_View_Utils_Def.hpp
     )
   LIST(APPEND SACADO_SOURCES
     sacado/kokkos/Stokhos_MemoryTraits.cpp
