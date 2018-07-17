@@ -462,7 +462,7 @@ namespace Details {
                                 bool& lclErr,
                                 const MapType& domMap,
                                 const MapType& colMap,
-                                const typename OptColMap<MapType>::import_type* oldImport)
+                                const typename OptColMap<MapType>::import_type* oldImport = nullptr)
   {
     using local_ordinal_type = typename MapType::local_ordinal_type;
     using global_ordinal_type = typename MapType::global_ordinal_type;
