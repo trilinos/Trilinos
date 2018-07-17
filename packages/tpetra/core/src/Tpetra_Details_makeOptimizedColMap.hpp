@@ -378,7 +378,7 @@ namespace Details {
   /// It does everything that that function does, except that it does
   /// not compute a new Import.
   template<class MapType>
-  MapType
+  Teuchos::RCP<const MapType>
   makeOptimizedColMap (std::ostream& errStream,
                        bool& lclErr,
                        const MapType& domMap,
@@ -395,7 +395,7 @@ namespace Details {
     using impl_type = OptColMap<map_type>;
     auto mapPtr = impl_type::makeOptColMap (errStream, lclErr,
                                             domMap, colMap, oldImport);
-    return *mapPtr;
+    return mapPtr;
   }
 
   /// \brief Return an optimized reordering of the given column Map.
@@ -453,7 +453,8 @@ namespace Details {
   /// domain Map) permits the use of contiguous send and receive
   /// buffers in Distributor, which is used in an Import operation.
   template<class MapType>
-  std::pair<MapType, Teuchos::RCP<typename OptColMap<MapType>::import_type> >
+  std::pair<Teuchos::RCP<const MapType>,
+            Teuchos::RCP<typename OptColMap<MapType>::import_type> >
   makeOptimizedColMapAndImport (std::ostream& errStream,
                                 bool& lclErr,
                                 const MapType& domMap,
@@ -469,11 +470,11 @@ namespace Details {
 
     if (! makeImport) {
       auto mapPtr = impl_type::makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
-      return std::make_pair (*mapPtr, Teuchos::null);
+      return std::make_pair (mapPtr, Teuchos::null);
     }
     else {
       auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
-      return std::make_pair (* (mapAndImp.first), mapAndImp.second);
+      return std::make_pair (mapAndImp.first, mapAndImp.second);
     }
   }
 

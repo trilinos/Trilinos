@@ -238,7 +238,8 @@ namespace {
   // TEST_ASSERT and TEST_EQUALITY.  Those macros use them implicitly,
   // so they must exist in the scope where the macros are used.
   template<class MapType>
-  std::pair<MapType, Teuchos::RCP<typename GetImportType<MapType>::import_type> >
+  std::pair<Teuchos::RCP<const MapType>,
+            Teuchos::RCP<typename GetImportType<MapType>::import_type> >
   testMakeOptColMap (Teuchos::FancyOStream& out,
                      bool& success,
                      const MapType& domMap,
@@ -286,7 +287,7 @@ namespace {
     out << "Calling makeOptimizedColMap" << endl;
     std::ostringstream errStrm1;
     bool lclErr1 = false;
-    map_type newColMap =
+    Teuchos::RCP<const map_type> newColMap =
       makeOptimizedColMap<map_type> (errStrm1, lclErr1, domMap, oldColMap);
     // Make sure that all processes succeeded.
     lclSuccess = lclErr1 ? 0 : 1;
@@ -303,7 +304,7 @@ namespace {
     out << "Test that the new column Map is only a local permutation "
       "of the original column Map." << endl;
     {
-      const bool colMapsCompat = oldColMap.isCompatible (newColMap);
+      const bool colMapsCompat = oldColMap.isCompatible (*newColMap);
       TEST_ASSERT( colMapsCompat );
     }
 
@@ -312,7 +313,7 @@ namespace {
     out << "Calling makeOptimizedColMapAndImport with makeImport = false" << endl;
     std::ostringstream errStrm2;
     bool lclErr2 = false;
-    std::pair<map_type, RCP<import_type> > result2 =
+    std::pair<RCP<const map_type>, RCP<import_type> > result2 =
       makeOptimizedColMapAndImport<map_type> (errStrm2, lclErr2, domMap,
                                               oldColMap, NULL, false);
     // We asked it not to make an Import, so it shouldn't have made an Import.
@@ -337,7 +338,7 @@ namespace {
     // code no longer a collective, thus possibly changing the
     // behavior of code that follows.
     {
-      const bool sameMaps = result2.first.isSameAs (newColMap);
+      const bool sameMaps = result2.first->isSameAs (*newColMap);
       TEST_ASSERT( sameMaps );
     }
 
@@ -351,7 +352,7 @@ namespace {
         << endl;
     std::ostringstream errStrm3;
     bool lclErr3 = false;
-    std::pair<map_type, RCP<import_type> > result3 =
+    std::pair<RCP<const map_type>, RCP<import_type> > result3 =
       makeOptimizedColMapAndImport<map_type> (errStrm3, lclErr3, domMap,
                                               oldColMap, NULL, true);
     // Make sure that all processes succeeded.
@@ -365,7 +366,7 @@ namespace {
     // Check that calling makeOptimizedColMapAndImport with makeImport
     // = true produces the same column Map as makeOptimizedColMap.
     {
-      const bool sameMaps = result3.first.isSameAs (newColMap);
+      const bool sameMaps = result3.first->isSameAs (*newColMap);
       TEST_ASSERT( sameMaps );
     }
 
@@ -374,7 +375,7 @@ namespace {
     // Make sure that on all processes, either the domain and new
     // column Maps are the same, or the returned Import is nontrivial
     // (nonnull).
-    lclSuccess = (result3.first.isSameAs (domMap) || ! result3.second.is_null ());
+    lclSuccess = (result3.first->isSameAs (domMap) || ! result3.second.is_null ());
     gblSuccess = 1;
     reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
@@ -411,7 +412,7 @@ namespace {
         // These are collectives.  We may safely call them without
         // risk of deadlock, because of the global checks above.
         TEST_ASSERT( result3.second->getSourceMap ()->isSameAs (domMap) );
-        TEST_ASSERT( result3.second->getTargetMap ()->isSameAs (newColMap) );
+        TEST_ASSERT( result3.second->getTargetMap ()->isSameAs (*newColMap) );
       }
 
       // Create an Import from domMap to newColMap in the usual way.
@@ -420,7 +421,7 @@ namespace {
       out << "Compare the returned Import against an Import created in the "
         "conventional way." << endl;
       import_type newImport (Teuchos::rcp (new map_type (domMap)),
-                             Teuchos::rcp (new map_type (result3.first)));
+                             result3.first);
       // It should always be the case that an Import's source and target
       // Maps are nonnull, especially if the Import was created in the
       // usual way.  It's worth checking, though.
@@ -486,11 +487,11 @@ namespace {
     map_type oldColMap (INVALID, oldColMapGids, indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
-    std::pair<map_type, RCP<import_type> > result =
+    std::pair<RCP<const map_type>, RCP<import_type> > result =
       testMakeOptColMap<map_type> (out, success, domMap, oldColMap);
 
     // Specific requirement of this test.
-    TEST_ASSERT( oldColMap.isSameAs (result.first) );
+    TEST_ASSERT( oldColMap.isSameAs (*result.first) );
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test2, LO, GO )
@@ -526,11 +527,11 @@ namespace {
                         indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
-    std::pair<map_type, RCP<import_type> > result =
+    std::pair<RCP<const map_type>, RCP<import_type> > result =
       testMakeOptColMap<map_type> (out, success, domMap, oldColMap);
 
     // Specific requirement of this test.
-    TEST_ASSERT( oldColMap.isSameAs (result.first) );
+    TEST_ASSERT( oldColMap.isSameAs (*result.first) );
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test3, LO, GO )
@@ -576,14 +577,14 @@ namespace {
     map_type oldColMap (INVALID, oldColMapGids, indexBase, comm);
 
     // 'out' and 'success' are declared in all Teuchos unit tests.
-    std::pair<map_type, RCP<import_type> > result =
+    std::pair<RCP<const map_type>, RCP<import_type> > result =
       testMakeOptColMap<map_type> (out, success, domMap, oldColMap);
 
     //
     // Specific requirements of this test.
     //
 
-    TEST_ASSERT( oldColMap.isSameAs (result.first) );
+    TEST_ASSERT( oldColMap.isSameAs (*result.first) );
     TEST_ASSERT( ! result.second.is_null () );
     TEST_ASSERT( ! result.second.is_null () && ! result.second->getTargetMap ().is_null () );
     if (! result.second.is_null () && ! result.second->getTargetMap ().is_null ()) {
