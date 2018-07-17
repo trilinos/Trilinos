@@ -7,4 +7,5 @@ ADD_SUBDIRECTORIES(
     LocalPartitionOfUnityBasis
     InterfacePartitionOfUnity
     TwoLevelPreconditionerInputFiles
+    Stratimikos
 )
