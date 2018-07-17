@@ -66,7 +66,6 @@ namespace {
   {
     using std::endl;
     using map_type = Tpetra::Map<>;
-    using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
     using size_type = Teuchos::Array<GO>::size_type;
     
