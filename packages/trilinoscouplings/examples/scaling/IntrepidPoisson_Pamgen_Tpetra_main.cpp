@@ -76,8 +76,6 @@
 
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
-
-
 #include <MatrixMarket_Tpetra.hpp>
 
 int
@@ -322,6 +320,9 @@ main (int argc, char *argv[])
             ParameterList problemFeatures = problemStatistics;
             ParameterList avatarParams = inputList.sublist("Avatar-MueLu");
             ParameterList & mueluParams = inputList.sublist("MueLu");
+
+            *out<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
+
             MueLu::AvatarInterface avatar(comm,avatarParams);
             avatar.Setup();
             avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
