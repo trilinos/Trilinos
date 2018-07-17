@@ -308,14 +308,16 @@ namespace {
       TEST_ASSERT( colMapsCompat );
     }
 
-    // Call makeOptimizedColMapAndImport 
+    // Call makeOptimizedColMapAndImport with makeImport = false.
     // This should have the same result as makeOptimizedColMap.
     out << "Calling makeOptimizedColMapAndImport with makeImport = false" << endl;
     std::ostringstream errStrm2;
     bool lclErr2 = false;
     std::pair<RCP<const map_type>, RCP<import_type> > result2 =
       makeOptimizedColMapAndImport<map_type> (errStrm2, lclErr2, domMap,
-                                              oldColMap);
+                                              oldColMap, NULL, false);
+    // We asked it not to make an Import, so it shouldn't have made an Import.
+    TEST_ASSERT( result2.second.is_null () );
     // Make sure that all processes succeeded.
     lclSuccess = lclErr2 ? 0 : 1;
     gblSuccess = 1;
@@ -324,8 +326,8 @@ namespace {
     if (gblSuccess != 1) {
       reportErrors (comm, errStrm2, lclErr2);
     }
-    // Check that calling makeOptimizedColMapAndImport 
-    // produces the same column Map as makeOptimizedColMap.
+    // Check that calling makeOptimizedColMapAndImport with makeImport
+    // = false produces the same column Map as makeOptimizedColMap.
     //
     // NOTE (mfh 05 Jul 2014) It's bad form to put any kind of
     // "serious" function call in a macro, even if that function
@@ -340,17 +342,45 @@ namespace {
       TEST_ASSERT( sameMaps );
     }
 
+    // Call makeOptimizedColMapAndImport with makeImport = true.  This
+    // will make both the optimized column Map, and its corresponding
+    // Import (from the domain Map 'domMap' to the new column Map).
+    // Note that the function only promises to make an Import if
+    // necessary, that is, if the domain Map and the new column Map
+    // are not the same.
+    out << "Calling makeOptimizedColMapAndImport with makeImport = true"
+        << endl;
+    std::ostringstream errStrm3;
+    bool lclErr3 = false;
+    std::pair<RCP<const map_type>, RCP<import_type> > result3 =
+      makeOptimizedColMapAndImport<map_type> (errStrm3, lclErr3, domMap,
+                                              oldColMap, NULL, true);
+    // Make sure that all processes succeeded.
+    lclSuccess = lclErr3 ? 0 : 1;
+    gblSuccess = 1;
+    reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      reportErrors (comm, errStrm3, lclErr3);
+    }
+    // Check that calling makeOptimizedColMapAndImport with makeImport
+    // = true produces the same column Map as makeOptimizedColMap.
+    {
+      const bool sameMaps = result3.first->isSameAs (*newColMap);
+      TEST_ASSERT( sameMaps );
+    }
+
     out << "Check that either the domain and new column Maps are the same, "
       "or that the returned Import is nontrivial (nonnull)." << endl;
     // Make sure that on all processes, either the domain and new
     // column Maps are the same, or the returned Import is nontrivial
     // (nonnull).
-    lclSuccess = (result2.first->isSameAs (domMap) || ! result2.second.is_null ());
+    lclSuccess = (result3.first->isSameAs (domMap) || ! result3.second.is_null ());
     gblSuccess = 1;
     reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
 
-    if (gblSuccess && ! result2.second.is_null ()) {
+    if (gblSuccess && ! result3.second.is_null ()) {
       // The tests below only make sense if the returned Import is
       // nontrivial (nonnull).  Checking gblSuccess as well as the
       // Import ensures that the above condition is true on all
@@ -363,8 +393,8 @@ namespace {
       // below are collective.
       out << "The returned Import is nontrivial.  "
         "Check that its source and target Maps are nonnull." << endl;
-      lclSuccess = ! result2.second->getSourceMap ().is_null () &&
-        ! result2.second->getTargetMap ().is_null ();
+      lclSuccess = ! result3.second->getSourceMap ().is_null () &&
+        ! result3.second->getTargetMap ().is_null ();
       gblSuccess = 1;
       reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY( gblSuccess, 1 );
@@ -381,8 +411,8 @@ namespace {
 
         // These are collectives.  We may safely call them without
         // risk of deadlock, because of the global checks above.
-        TEST_ASSERT( result2.second->getSourceMap ()->isSameAs (domMap) );
-        TEST_ASSERT( result2.second->getTargetMap ()->isSameAs (*newColMap) );
+        TEST_ASSERT( result3.second->getSourceMap ()->isSameAs (domMap) );
+        TEST_ASSERT( result3.second->getTargetMap ()->isSameAs (*newColMap) );
       }
 
       // Create an Import from domMap to newColMap in the usual way.
@@ -391,7 +421,7 @@ namespace {
       out << "Compare the returned Import against an Import created in the "
         "conventional way." << endl;
       import_type newImport (Teuchos::rcp (new map_type (domMap)),
-                             result2.first);
+                             result3.first);
       // It should always be the case that an Import's source and target
       // Maps are nonnull, especially if the Import was created in the
       // usual way.  It's worth checking, though.
@@ -408,25 +438,25 @@ namespace {
         // global checks above.
 
         // Check that both Imports' source Maps are the same.
-        const map_type& srcMap = * (result2.second->getSourceMap ());
+        const map_type& srcMap = * (result3.second->getSourceMap ());
         const bool srcMapsSame = srcMap.isSameAs (* (newImport.getSourceMap ()));
         TEST_ASSERT( srcMapsSame );
 
         // Check that both Imports' target Maps are the same.
-        const map_type& tgtMap = * (result2.second->getTargetMap ());
+        const map_type& tgtMap = * (result3.second->getTargetMap ());
         const bool tgtMapsSame = tgtMap.isSameAs (* (newImport.getTargetMap ()));
         TEST_ASSERT( tgtMapsSame );
 
         // Check that both Imports are the same.
         const bool impSame =
-          importsGloballySame<import_type> (* (result2.second), newImport);
+          importsGloballySame<import_type> (* (result3.second), newImport);
         TEST_ASSERT( impSame );
       }
     }
 
     // The calling test may want to check the returned Map and Import
     // in other ways, so we return them.
-    return result2;
+    return result3;
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test1, LO, GO )

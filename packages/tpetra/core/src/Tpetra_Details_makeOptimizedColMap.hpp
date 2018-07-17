@@ -88,7 +88,8 @@ namespace Details {
     makeOptColMap (std::ostream& errStream,
                    bool& lclErr,
                    const map_type& domMap,
-                   const map_type& colMap)
+                   const map_type& colMap,
+                   const import_type* /* oldImport */)
     {
       using ::Tpetra::Details::Behavior;
       using Teuchos::Array;
@@ -312,9 +313,18 @@ namespace Details {
     /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
     /// \param colMap [in] <i>Original</i> column Map of the same
     ///   CrsGraph or CrsMatrix as \c domMap.
+    /// \param oldImport [in] Optional pointer to the "original
+    ///   Import: an Import from \c domMap to \c colMap.  This is not
+    ///   required, but if you supply this, this function may use it
+    ///   to avoid some communication and/or work when setting up the
+    ///   new Import object.  This function will <i>only</i> look at
+    ///   this pointer if \c makeImport is true.
+    /// \param makeImport [in] Whether to make and return an Import from
+    ///   the input domain Map to the new column Map.
     ///
     /// \return The possibly reordered column Map \c newColMap, and the
-    ///   corresponding Import from \c domMap to \c newColMap.  
+    ///   corresponding Import from \c domMap to \c newColMap.  The
+    ///   latter is nonnull if and only if \c makeImport is true.
     ///
     /// \pre \c domMap and \c colMap must have the same or congruent
     ///   communicators.
@@ -325,7 +335,8 @@ namespace Details {
     makeOptColMapAndImport (std::ostream& errStream,
                             bool& lclErr,
                             const map_type& domMap,
-                            const map_type& colMap)
+                            const map_type& colMap,
+                            const import_type* oldImport)
     {
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -334,7 +345,7 @@ namespace Details {
       // the conventional two-Map (source and target) Import
       // constructor.
       RCP<const map_type> newColMap =
-        makeOptColMap (errStream, lclErr, domMap, colMap);
+        makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
       RCP<import_type> imp (new import_type (rcp (new map_type (domMap)), newColMap));
 
       // FIXME (mfh 06 Jul 2014) This constructor throws a runtime
@@ -371,14 +382,19 @@ namespace Details {
   makeOptimizedColMap (std::ostream& errStream,
                        bool& lclErr,
                        const MapType& domMap,
-                       const MapType& colMap)
+                       const MapType& colMap,
+                       const Tpetra::Import<
+                         typename MapType::local_ordinal_type,
+                         typename MapType::global_ordinal_type,
+                         typename MapType::node_type>* oldImport = nullptr)
   {
     using map_type = ::Tpetra::Map<
       typename MapType::local_ordinal_type,
       typename MapType::global_ordinal_type,
       typename MapType::node_type>;
     using impl_type = OptColMap<map_type>;
-    auto mapPtr = impl_type::makeOptColMap (errStream, lclErr, domMap, colMap);
+    auto mapPtr = impl_type::makeOptColMap (errStream, lclErr,
+                                            domMap, colMap, oldImport);
     return mapPtr;
   }
 
@@ -391,7 +407,7 @@ namespace Details {
   /// distributed graph (Tpetra::CrsGraph) or matrix (e.g.,
   /// Tpetra::CrsMatrix).  It then creates a new column Map, which
   /// optimizes the performance of an Import operation from the domain
-  /// Map to the new column Map.  This function also 
+  /// Map to the new column Map.  This function also optionally
   /// creates that Import.  Creating the new column Map and its Import
   /// at the same time saves some communication, since making the
   /// Import requires some of the same information that optimizing the
@@ -406,9 +422,12 @@ namespace Details {
   /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
   /// \param colMap [in] <i>Original</i> column Map of the same
   ///   CrsGraph or CrsMatrix as \c domMap.
+  /// \param makeImport [in] Whether to make and return an Import from
+  ///   the input domain Map to the new column Map.
   ///
   /// \return The possibly reordered column Map \c newColMap, and the
-  ///   corresponding Import from \c domMap to \c newColMap. 
+  ///   corresponding Import from \c domMap to \c newColMap.  The
+  ///   latter is nonnull if and only if \c makeImport is true.
   ///
   /// \pre \c domMap and \c colMap must have the same or congruent
   ///   communicators.
@@ -439,7 +458,9 @@ namespace Details {
   makeOptimizedColMapAndImport (std::ostream& errStream,
                                 bool& lclErr,
                                 const MapType& domMap,
-                                const MapType& colMap)
+                                const MapType& colMap,
+                                const typename OptColMap<MapType>::import_type* oldImport,
+                                const bool makeImport)
   {
     using local_ordinal_type = typename MapType::local_ordinal_type;
     using global_ordinal_type = typename MapType::global_ordinal_type;
@@ -447,8 +468,14 @@ namespace Details {
     using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
     using impl_type = OptColMap<map_type>;
 
-    auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap);
-    return std::make_pair (mapAndImp.first, mapAndImp.second);
+    if (! makeImport) {
+      auto mapPtr = impl_type::makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
+      return std::make_pair (mapPtr, Teuchos::null);
+    }
+    else {
+      auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
+      return std::make_pair (mapAndImp.first, mapAndImp.second);
+    }
   }
 
 } // namespace Details
