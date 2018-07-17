@@ -122,7 +122,8 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
 // ***********************************************************************
 Teuchos::ArrayRCP<std::string> AvatarInterface::ReadFromFiles(const char * paramName) const {
-  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(paramName);
+  //  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(paramName);
+  Teuchos::Array<std::string> & tf = params_.get<Teuchos::Array<std::string> >(paramName);
   Teuchos::ArrayRCP<std::string> treelist;
   // Only Proc 0 will read the files and print the strings
   if (comm_->getRank() == 0) {

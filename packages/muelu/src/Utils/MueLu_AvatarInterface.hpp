@@ -102,7 +102,7 @@ namespace MueLu {
 
     // Cached data
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    Teuchos::ParameterList params_;
+    mutable Teuchos::ParameterList params_; // The mutable is a hack to deal with issues in Teuchos
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
 
