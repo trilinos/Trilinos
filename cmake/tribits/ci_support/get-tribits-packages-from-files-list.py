@@ -46,7 +46,16 @@ from TribitsPackageFilePathUtils import *
 # Read in the commandline arguments
 #
 
-usageHelp = r"""get-tribits-packages-from-files-list.py --file=<FILES_LIST_FILE>
+usageHelp = \
+r"""get-tribits-packages-from-files-list.py --files-list-file=<FILES_LIST_FILE>
+    --deps-xml-file=<DEPS_XML_FILE>
+
+This script uses the mapping of directory paths to package names to print out
+to STDOUT a comma-seprated list of all of the packages that a list of input
+files given in <FILES_LIST_FILE> corresponds to. 
+
+For example, the list of input files can come from a 'git diff --name-only
+<new-version> ^<old-version>' command.
 """
 
 from optparse import OptionParser
@@ -55,11 +64,11 @@ clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
   "--files-list-file", dest="filesListFile", type="string", default=None,
-  help="File containing the list of modified files." )
+  help="File containing the list of modified files relative to project base directory, one file per line." )
 
 clp.add_option(
   "--deps-xml-file", dest="depsXmlFile", type="string",
-  help="File containing the listing of packages, dir names, dependencies, etc.")
+  help="File containing TriBITS-generated XML data-structure the listing of packages, dir names, dependencies, etc.")
 
 (options, args) = clp.parse_args()
 
@@ -72,4 +81,4 @@ trilinosDependencies = getProjectDependenciesFromXmlFile(options.depsXmlFile)
 
 packagesList = getPackagesListFromFilePathsList(trilinosDependencies, filesList, True)
 
-print ';'.join(packagesList)
+print ','.join(packagesList)

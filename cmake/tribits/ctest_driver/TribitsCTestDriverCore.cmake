@@ -149,6 +149,7 @@ INCLUDE(TribitsConstants)
 TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION()
 INCLUDE(TribitsCMakePolicies)
 
+INCLUDE(Split)
 INCLUDE(PrintVar)
 INCLUDE(MultilineSet)
 INCLUDE(SetDefaultAndFromEnv)

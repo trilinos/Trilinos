@@ -295,6 +295,9 @@ class TribitsDependencies:
     outputPackagesList = []
     for packageName in inputPackagesList:
       #print("packageName = " + packageName)
+      if packageName == "ALL_PACKAGES":
+        outputPackagesList.append(packageName)
+        continue
       packageDep = self.getPackageByName(packageName)
       packageType = packageDep.packageType
       #print("packageType = " + packageType)

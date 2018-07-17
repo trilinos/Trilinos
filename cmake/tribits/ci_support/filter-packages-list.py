@@ -46,7 +46,15 @@ from TribitsPackageFilePathUtils import *
 # Read in the commandline arguments
 #
 
-usageHelp = r"""filter-packages-list --input-packages-list=P1,P2,... --keep-types=T1,T2,...
+usageHelp = \
+r"""filter-packages-list --deps-xml-file=<PROJECT_DEPS_FILE> \
+  --input-packages-list=<P1>,<P2>,... --keep-types=<T1>,<T2>,...
+
+This script takes in a comma-seprated list of TriBITS package name
+<P1>,<P2>,... and keeps the package names matching the categories listed in
+<T1>,<T2>,... given the TriBITS-generated project dependencies file.
+
+The comma-seprated filtered list of packages is printed to STDOUT.
 """
 
 from optparse import OptionParser
@@ -55,15 +63,15 @@ clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
   "--input-packages-list", dest="inputPackagesList", type="string", default="",
-  help="List of packages that needs to be filtered (i.e. \"P1,P2,...\")." )
+  help="Comma-seprated List of packages that needs to be filtered (i.e. \"P1,P2,...\")." )
 
 clp.add_option(
   "--keep-types", dest="keepTypes", type="string", default="",
-  help="List of types to keep (i.e. \"PT,ST,EX\"." )
+  help="List of package types to keep (i.e. \"PT,ST,EX\"." )
 
 clp.add_option(
   "--deps-xml-file", dest="depsXmlFile", type="string",
-  help="File containing the listing of packages, dir names, dependencies, etc.")
+  help="TriBITS generated XML file containing the listing of packages, dir names, dependencies, etc.")
 
 (options, args) = clp.parse_args()
 

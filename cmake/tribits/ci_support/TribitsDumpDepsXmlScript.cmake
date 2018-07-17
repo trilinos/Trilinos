@@ -42,14 +42,23 @@
 #
 # This script is designed to be run as:
 #
-#   $ cmake -P -DPACKAGE_NAME=<packageName> [options] \
-#       SOME_BASE_DIR/TribitsDumpDepsXmlScript.cmake
+#   $ cmake \
+#       -D PROJECT_SOURCE_DIR=<projectSourceDir> \
+#       [-D <projectName>_TRIBITS_DIR=<tribitDir> ] \
+#       [-D <projectName>_PRE_REPOSITORIES=<prepo0>,<prepo1>,...] \
+#       [-D <projectName>_EXTRA_REPOSITORIES=<erepo0>,<erepo1>,...] \
+#       -D <projectName>_DEPS_XML_OUTPUT_FILE=<projectDepsFileOut> \
+#       -P SOME_BASE_DIR/TribitsDumpDepsXmlScript.cmake
 #
 
 # A) Echo input options (must be specified with -D arguments to CMake command)
 
 MESSAGE("PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
 SET(PROJECT_NAME_FILE "${PROJECT_SOURCE_DIR}/ProjectName.cmake")
+IF (NOT EXISTS "${PROJECT_NAME_FILE}")
+  MESSAGE(FATAL_ERROR
+    "ERROR: PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} is not a TriBITS project base dir!") 
+ENDIF()
 INCLUDE("${PROJECT_NAME_FILE}")
 
 MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
@@ -57,6 +66,26 @@ MESSAGE("${PROJECT_NAME}_PRE_REPOSITORIES = ${${PROJECT_NAME}_PRE_REPOSITORIES}"
 MESSAGE("${PROJECT_NAME}_EXTRA_REPOSITORIES = ${${PROJECT_NAME}_EXTRA_REPOSITORIES}")
 MESSAGE("${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE = ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}")
 # Get the utility CMake code that can determine the dependencies
+
+SET(DEFAULT_TRIBITS_DIR "${PROJECT_SOURCE_DIR}/cmake/tribits")
+
+# Assert and/or select a TriBITS dir
+IF ("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
+  IF (EXISTS "${DEFAULT_TRIBITS_DIR}/TriBITS.cmake")
+    SET(${PROJECT_NAME}_TRIBITS_DIR "${DEFAULT_TRIBITS_DIR}")
+    MESSAGE("Setting ${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}")
+  ELSE()
+    MESSAGE(FATAL_ERROR
+      "ERROR: ${PROJECT_NAME}_TRIBITS_DIR not set and default TriBITS dir"
+      " '${DEFAULT_TRIBITS_DIR}' does not exist.  Please set to valid TriBITS path.")
+  ENDIF()
+ELSE()
+  IF (NOT EXISTS "${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+    MESSAGE(FATAL_ERROR
+      "ERROR: ${PROJECT_NAME}_TRIBITS_DIR='${${PROJECT_NAME}_TRIBITS_DIR}' is not a"
+      " valid TriBITS directory!")
+  ENDIF()
+ENDIF()
 
 SET( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
