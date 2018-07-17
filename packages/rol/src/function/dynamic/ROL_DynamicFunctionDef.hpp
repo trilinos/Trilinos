@@ -72,7 +72,7 @@ DynamicFunction<Real>::getNew( Vector<Real>& x ) const {
 }
 
 template<typename Real>
-const PartitionedVector<Real>& 
+const Vector<Real>& 
 DynamicFunction<Real>::getNew( const Vector<Real>& x ) const { 
   return *(partition(x).get(1));
 }
@@ -84,7 +84,7 @@ DynamicFunction<Real>::getOld( Vector<Real>& x ) const {
 }
 
 template<typename Real>
-const PartitionedVector<Real>& 
+const Vector<Real>& 
 DynamicFunction<Real>::getOld( const Vector<Real>& x ) const { 
   return *(partition(x).get(0));
 }

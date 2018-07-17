@@ -505,7 +505,6 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    Ptr<Vector<Real>> scratch;
     for(int i=0;i<pint_ajv.numOwnedSteps();i++) {
       // pull out all the time steps required
       Ptr<const Vector<Real>> v_dual  = getVector(pint_v,i,CURRENT);

@@ -1,8 +1,7 @@
-// @HEADER
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
+//                 Copyright (1614) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -42,16 +41,53 @@
 // @HEADER
 
 #pragma once
-#ifndef TANK_OBJECTIVE_HPP
-#define TANK_OBJECTIVE_HPP
+#ifndef CONTROLVECTORIMPL_HPP
+#define CONTROLVECTORIMPL_HPP
 
-#include "ROL_Objective_SimOpt.hpp"
+namespace Tanks {
 
-/** \class TankObjective
-    \brief Final time Objective for the coupled tank network
-*/
+using namespace std;
+
+using size_type = typename vector<double>::size_type;
 
 
-#endif // TANK_OBJECTIVE_HPP
+template<typename Real>
+void ControlVector<Real>::set( const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) = xp->at(xbegin+i);
+}
+  
+template<typename Real>
+void ControlVector<Real>::set( const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) = xp->at(i);
+}
 
+template<typename Real>
+void ControlVector<Real>::axpy( Real alpha, const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) += alpha*xp->at(xbegin+i);
+}
+
+template<typename Real>
+void ControlVector<Real>::axpy( Real alpha, const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) += alpha*xp->at(i);
+}
+
+template<typename Real>
+void ControlVector<Real>::hadamard( const StateVector<Real>& x, size_type xbegin ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) *= xp->at(xbegin+i);
+}
+  
+template<typename Real>
+void ControlVector<Real>::hadamard( const ControlVector<Real>& x ) {
+ auto xp = x.getVector(); 
+ for( size_type i=0; i<N_; ++i ) vec_->at(i) *= xp->at(i);
+}
+
+} // namespace Tanks
+
+#endif // CONTROLVECTOR_IMPL_HPP
 

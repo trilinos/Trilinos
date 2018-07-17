@@ -41,61 +41,71 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_STDTRANSFORM_PEBBL_H
+#define ROL_STDTRANSFORM_PEBBL_H
 
-#pragma once
-#ifndef ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
-#define ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
+#include "ROL_Transform_PEBBL.hpp"
+
+/** @ingroup func_group
+    \class ROL::StdTransform_PEBBL
+    \brief Defines the pebbl transform operator interface for StdVectors.
+
+    ROL's pebbl constraint interface is designed to set individual components
+    of a vector to a fixed value.  The range space is the same as the domain.
+
+    ---
+*/
 
 
 namespace ROL {
 
-namespace details {
+template <class Real>
+class StdTransform_PEBBL : public Transform_PEBBL<Real> {
+private:
+  Ptr<std::vector<Real>> getData(Vector<Real> &x) const {
+    return dynamic_cast<StdVector<Real>&>(x).getVector();
+  }
 
-using namespace std;
-namespace ph = std::placeholders; // defines ph::_1, ph::_2, ...
+  Ptr<const std::vector<Real>> getConstData(const Vector<Real> &x) const {
+    return dynamic_cast<const StdVector<Real>&>(x).getVector();
+  }
 
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                      ROL::ParameterList& pl,
-                                                      ostream& os=cout ) :
-  con_(con), os_(os) {
-  auto& fdlist = pl.sublist("Finite Difference Check"); 
-  order_ = fdlist.get("Order", 1);
-  numSteps_ = fdlist.get("Number of Steps", 
-}
+ using Transform_PEBBL<Real>::map_; 
 
-template<typename Real>
-DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                     const int numSteps = ROL_NUM_CHECKDERIVSTEPS, 
-                                                     const int order = 1,
-                                                     ostream& os=cout ) : 
-  con_(con), numSteps_(numSteps), order_(order), os_(os) {
-  steps_.resize(numSteps_);
-}
+public:
+  StdTransform_PEBBL(void)
+    : Transform_PEBBL<Real>() {}
 
+  StdTransform_PEBBL(const StdTransform_PEBBL &T)
+    : Transform_PEBBL<Real>(T) {}
 
+  void value(Vector<Real> &c,
+       const Vector<Real> &x,
+             Real &tol) {
+    Ptr<std::vector<Real>>       cval = getData(c);
+    Ptr<const std::vector<Real>> xval = getConstData(x);
+    cval->assign(xval->begin(),xval->end());
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      (*cval)[it->first] = it->second;
+    }
+  }
 
-template<typename Real>
-DynamicConstraintCheck<Real>::value( V& c, const V& uo, const V& un, 
-                                     const V& z, const TS& ts ) const override {
-  con_.value(c,uo,un,z,ts);
-}
- 
-template<typename Real>
-DynamicConstraintCheck<Real>::applyJacobian_uo( V& jv, const V& vo, const V& uo, 
-                                                const V& un, const V& z, 
-                                                const TS& ts ) const override {
+  void applyJacobian(Vector<Real> &jv,
+               const Vector<Real> &v,
+               const Vector<Real> &x,
+                     Real &tol) {
+    Ptr<std::vector<Real>>       jval = getData(jv);
+    Ptr<const std::vector<Real>> vval = getConstData(v);
+    jval->assign(vval->begin(),vval->end());
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      (*jval)[it->first] = static_cast<Real>(0);
+    }
+  }
 
-  auto f_val = bind( &DC::value, ph::_2, ph::_1, un, z, ts );
-  auto f_der = bind( &DC::applyJacobian_uo, ph::_3, ph::_2, ph::_1, un, z, ts );
-   
-}
-
-
-} // namespace details
+}; // class StdTransform_PEBBL
 
 } // namespace ROL
 
-
-#endif // ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
-
+#endif
