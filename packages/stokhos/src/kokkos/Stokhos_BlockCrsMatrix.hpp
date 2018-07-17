@@ -42,6 +42,9 @@
 #ifndef STOKHOS_BLOCKCRSMATRIX_HPP
 #define STOKHOS_BLOCKCRSMATRIX_HPP
 
+//#include "Kokkos_View.hpp"
+//#include "Kokkos_Layout.hpp"
+//#include "Kokkos_Parallel.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
