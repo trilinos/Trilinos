@@ -95,6 +95,7 @@ IF (Piro_ENABLE_NOX)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriverTpetra
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
     SOURCES
       Main_AnalysisDriver_Tpetra.cpp
       MockModelEval_A_Tpetra.cpp
