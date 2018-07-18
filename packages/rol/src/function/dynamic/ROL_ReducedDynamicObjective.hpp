@@ -488,6 +488,9 @@ private:
       size_type index;
       for (size_type k = 1; k < Nt_; ++k) {
         index = (useSketch_ ? 1 : k);
+        // Update dynamic constraint and objective
+        con_->update(*uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
+        obj_->update(*uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Solve state on current time interval
         con_->solve(*cprimal_, *uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Sketch state
@@ -540,6 +543,9 @@ private:
         uhist_[1]->set(*uhist_[0]);
         stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
       }
+      // Update dynamic constraint and objective
+      con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
+      obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
       // Solve for terminal condition
       setTerminalCondition(*lhist_[lindex],
                            *uhist_[uindex-1], *uhist_[uindex],
@@ -565,6 +571,9 @@ private:
         }
         uindex = (useSketch_ ? 1 : k);
         lindex = (useSketch_ ? 0 : k);
+        // Update dynamic constraint and objective
+        con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
+        obj_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
         // Solve for adjoint on interval k
         advanceAdjoint(*lhist_[lindex],   *rhs_,
                        *uhist_[uindex-1], *uhist_[uindex],
