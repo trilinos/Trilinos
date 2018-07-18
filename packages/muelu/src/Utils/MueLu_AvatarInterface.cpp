@@ -163,15 +163,16 @@ void AvatarInterface::Setup() {
       argv[i] = const_cast<char*>(avatarArgs[i-1].c_str());
     
     // Now actually set up avatar - Avatar's cleanup routine will free the pointer
-    //Avatar_handle* avatar_train(int argc, char** argv, char* names_file, char* tree_file);
-    avatarHandle_ = avatar_train(argc,argv.data(),const_cast<char*>(namesStrings_[0].c_str()),const_cast<char*>(avatarStrings_[0].c_str()));
+    //    Avatar_handle* avatar_train(int argc, char **argv, char* names_file, int names_file_is_a_string, char* train_file, int train_file_is_a_string);
+    const int namesfile_is_a_string = 1;
+    const int trainfile_is_a_string = 1;
+    avatarHandle_ = avatar_train(argc,argv.data(),const_cast<char*>(namesStrings_[0].c_str()),namesfile_is_a_string,const_cast<char*>(avatarStrings_[0].c_str()),trainfile_is_a_string);
 
   }
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
-
-  throw std::runtime_error("Not yet implemented!");
+  throw std::runtime_error("End of AvatarInterface::Setup()");//FIXME: Get rid of this
 
 }
 
@@ -298,7 +299,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    Teuchos::ArrayRCP<int> avatarOutput;
+    int * avatarOutput;
     {
       std::string testString;
       for(int i=0; i<num_combos; i++) {
@@ -308,9 +309,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
       
       // FIXME: Only send in first tree's string
-      //int* avatar_test(Avatar_handle* a, char* tree_file, char* test_data_file);
-      avatarOutput=Teuchos::arcp(avatar_test(&*avatarHandle_,const_cast<char*>(avatarStrings_[0].c_str()),const_cast<char*>(testString.c_str())),0,num_combos,false);
-
+      //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
+      const int test_data_is_a_string = 1;
+      avatarOutput=avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string);
     }
 
     // Look at the list of acceptable combinations of options 
@@ -333,6 +334,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // Generate the parameterList from the chosen option
     GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
+
+    // Cleanup
+    free(avatarOutput);  
   }
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
