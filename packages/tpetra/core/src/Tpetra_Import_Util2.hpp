@@ -219,7 +219,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
     std::ostringstream errstr;
     bool error = false;    
-
+ 
     auto const comm             = MyDomainMap->getComm();
     MPI_Comm rawComm            = getRawMpiComm(*comm);
     const int MyPID             = rcomm->getRank ();
@@ -267,25 +267,34 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // those processes.  Since this is building a reverse, we will send
     // to these processes.
 
-    Teuchos::Array<int> ReverseSendSizes(NumRecvs);  
+
+    Teuchos::Array<int> ReverseSendSizes(NumRecvs,0);   
 
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
     for(uint i=0;i<NumRecvs;++i) {
-	RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs);
+	RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
+	assert(RSB[i].size() == NumExportLIDs);
     }
-
-    // Loop over each exported row and add to the temp list
+  
+  
     // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
     for(size_t i=0; i < NumExportLIDs; i++) {
 	LO lid = ExportLIDs[i];
 	GO exp_pid = ExportPIDs[i];
 	for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
 	    int pid_order = RemotePIDOrder[colind[j]];
+
 	    if(pid_order!=-1) {
 		GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
-		RSB[pid_order][ReverseSendSizes[pid_order]]=pidgidpair_t(exp_pid,gid);
-		ReverseSendSizes[pid_order]++;
+		auto tpair = pidgidpair_t(exp_pid,gid);
+		// don't use a set here
+		// NOTE: This would be more efficient if Reverse Iterators were used in the find, as
+		// gid order tends to follow lid order, generally. 
+		if(std::find(RSB[pid_order].begin(),RSB[pid_order].end(),tpair) == RSB[pid_order].end()) {
+		    RSB[pid_order][ReverseSendSizes[pid_order]]=tpair;
+		    ReverseSendSizes[pid_order]++;
+		}
 	    }
 	}
     }
@@ -358,7 +367,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	}
 #endif
     }
-    Teuchos::ArrayRCP<pidgidpair_t >AllReverseRecv= Teuchos::arcp(new pidgidpair_t[totalexportpairrecsize],0,totalexportpairrecsize);
+    Teuchos::ArrayRCP<pidgidpair_t >AllReverseRecv= Teuchos::arcp(new pidgidpair_t[totalexportpairrecsize],0,totalexportpairrecsize,true);
     int offset = 0;
     for(int i=0;i<ProcsTo.size();++i) {
 	int recv_data_size = 	ReverseRecvSizes[i]*2;
