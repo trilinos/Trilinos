@@ -64,7 +64,6 @@
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Hashtable.hpp"
 
@@ -163,7 +162,7 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();

@@ -63,7 +63,6 @@
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // SCOREC includes
@@ -94,7 +93,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();

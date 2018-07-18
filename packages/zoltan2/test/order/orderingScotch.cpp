@@ -470,7 +470,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 
 int main(int narg, char** arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int result = mainExecute(narg, arg, comm);

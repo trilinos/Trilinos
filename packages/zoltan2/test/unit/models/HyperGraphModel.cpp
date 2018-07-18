@@ -62,7 +62,6 @@
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // SCOREC includes
@@ -81,7 +80,7 @@ using Teuchos::RCP;
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
 #ifdef HAVE_ZOLTAN2_PARMA

@@ -97,7 +97,7 @@ enum Zoltan2::EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) {
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
 #ifdef HAVE_ZOLTAN2_PARMA

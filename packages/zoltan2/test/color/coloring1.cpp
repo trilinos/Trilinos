@@ -154,7 +154,7 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 

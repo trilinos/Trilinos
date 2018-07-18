@@ -72,7 +72,7 @@ typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();

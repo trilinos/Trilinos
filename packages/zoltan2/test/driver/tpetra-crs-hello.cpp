@@ -6,7 +6,6 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
@@ -292,15 +291,16 @@ void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm
 
 int main(int argc, char ** argv)
 {
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-
-  // wrap comm in an RCP
+  // Initialize Tpetra and get the default communicator.  Tpetra works
+  // even if it was not built with MPI.  In that case, "comm" will be
+  // some object that behaves like MPI_COMM_SELF.
+  Tpetra::ScopeGuard mpiSession (&argc, &argv);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // get my rank and set a reference to the output stream
   // all processors not 0 speak into the black hole!
   const int myRank = comm->getRank ();
+  Teuchos::oblackholestream blackHole;
   std::ostream& out = (myRank == 0) ? std::cout : blackHole;
 
   // print current version of tpetra

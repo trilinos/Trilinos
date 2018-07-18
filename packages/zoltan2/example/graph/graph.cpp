@@ -67,7 +67,7 @@ using namespace std;
 int main(int narg, char** arg)
 {
   // Establish session; works both for MPI and non-MPI builds
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 

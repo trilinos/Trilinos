@@ -351,7 +351,7 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int main(int narg, char** arg)
 {
   // Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 

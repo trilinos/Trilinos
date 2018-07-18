@@ -122,8 +122,8 @@ int main(int narg, char** arg)
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
 
-  ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  // Initialize Tpetra and get default communicator.
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
