@@ -62,7 +62,7 @@ class RowMatrix;
 
 namespace Details {
 template<class ValueType, class DeviceType>
-class EquilibrationInfo;
+struct EquilibrationInfo;
 } // namespace Details
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
