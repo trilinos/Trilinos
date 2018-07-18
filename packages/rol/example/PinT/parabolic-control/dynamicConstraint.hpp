@@ -444,7 +444,7 @@ public:
 
   void solve(ROL::Vector<Real>    &c,    const ROL::Vector<Real> &uold,
              ROL::Vector<Real>    &unew, const ROL::Vector<Real> &z,
-       const ROL::TimeStamp<Real> &ts) const {
+       const ROL::TimeStamp<Real> &ts) {
     ROL::Ptr<const std::vector<Real>> uop = getVector(uold);
     ROL::Ptr<std::vector<Real>>       unp = getVector(unew);
     ROL::Ptr<const std::vector<Real>>  zp = getVector(z);
