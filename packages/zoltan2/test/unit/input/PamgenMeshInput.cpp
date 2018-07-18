@@ -60,8 +60,6 @@ using Teuchos::RCP;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
 
 
@@ -73,8 +71,7 @@ typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
 int main(int narg, char *arg[]) {
 
   Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
@@ -98,10 +95,10 @@ int main(int narg, char *arg[]) {
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
       cout << "\nReading parameter list from the XML file \""
-	   <<xmlMeshInFileName<<"\" ...\n\n";
+           <<xmlMeshInFileName<<"\" ...\n\n";
     }
-    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
-					 Teuchos::inoutArg(inputMeshList));
+    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,
+                                         Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
@@ -114,7 +111,7 @@ int main(int narg, char *arg[]) {
 
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
-							     "meshInput");
+                                                             "meshInput");
 
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
@@ -166,7 +163,7 @@ int main(int narg, char *arg[]) {
   int exoid = 0;
   int num_elem_blk, num_node_sets, num_side_sets;
   error += im_ex_get_init(exoid, title, &dimension, &num_nodes, &num_elem,
-			  &num_elem_blk, &num_node_sets, &num_side_sets);
+                          &num_elem_blk, &num_node_sets, &num_side_sets);
 
   int *element_num_map = new int [num_elem];
   error += im_ex_get_elem_num_map(exoid, element_num_map);
@@ -186,9 +183,9 @@ int main(int narg, char *arg[]) {
   for(int i = 0; i < num_elem_blk; i++){
     elem_type[i] = new char [MAX_STR_LENGTH + 1];
     error += im_ex_get_elem_block(exoid, elem_blk_ids[i], elem_type[i],
-				  (int*)&(num_elem_this_blk[i]),
-				  (int*)&(num_nodes_per_elem[i]),
-				  (int*)&(num_attr[i]));
+                                  (int*)&(num_elem_this_blk[i]),
+                                  (int*)&(num_nodes_per_elem[i]),
+                                  (int*)&(num_attr[i]));
     delete[] elem_type[i];
   }
 
@@ -217,29 +214,29 @@ int main(int narg, char *arg[]) {
 
     for (int b = 0; b < num_elem_blk; b++) {
       for (int i = 0; i < num_elem_this_blk[b]; i++) {
-	if (offsets[telct + 1] - offsets[telct] != num_nodes_per_elem[b]) {
-	  std::cout << "Number of adjacencies do not match" << std::endl;
-	  return 3;
-	}
+        if (offsets[telct + 1] - offsets[telct] != num_nodes_per_elem[b]) {
+          std::cout << "Number of adjacencies do not match" << std::endl;
+          return 3;
+        }
 
-	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	  ssize_t in_list = -1;
+        for (int j = 0; j < num_nodes_per_elem[b]; j++) {
+          ssize_t in_list = -1;
 
-	  for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++) {
-	    if(adjacencyIds[k] ==
-	       node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
-	      in_list = k;
-	      break;
-	    }
-	  }
+          for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++) {
+            if(adjacencyIds[k] ==
+               node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
+              in_list = k;
+              break;
+            }
+          }
 
-	  if (in_list < 0) {
-	    std::cout << "Adjacency missing" << std::endl;
-	    return 4;
-	  }
-	}
+          if (in_list < 0) {
+            std::cout << "Adjacency missing" << std::endl;
+            return 4;
+          }
+        }
 
-	++telct;
+        ++telct;
       }
     }
 
@@ -286,33 +283,33 @@ int main(int narg, char *arg[]) {
 
     for (int b = 0; b < num_elem_blk; b++) {
       for (int i = 0; i < num_elem_this_blk[b]; i++) {
-	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	  ssize_t in_list = -1;
-	  ++num_adj[connect[b][i * num_nodes_per_elem[b] + j] - 1];
+        for (int j = 0; j < num_nodes_per_elem[b]; j++) {
+          ssize_t in_list = -1;
+          ++num_adj[connect[b][i * num_nodes_per_elem[b] + j] - 1];
 
-	  for(inputAdapter_t::lno_t k =
-		offsets[connect[b][i * num_nodes_per_elem[b] + j] - 1];
-	      k < offsets[connect[b][i * num_nodes_per_elem[b] + j]]; k++) {
-	    if(adjacencyIds[k] == element_num_map[telct]) {
-	      in_list = k;
-	      break;
-	    }
-	  }
+          for(inputAdapter_t::lno_t k =
+                offsets[connect[b][i * num_nodes_per_elem[b] + j] - 1];
+              k < offsets[connect[b][i * num_nodes_per_elem[b] + j]]; k++) {
+            if(adjacencyIds[k] == element_num_map[telct]) {
+              in_list = k;
+              break;
+            }
+          }
 
-	  if (in_list < 0) {
-	    std::cout << "Adjacency missing" << std::endl;
-	    return 4;
-	  }
-	}
+          if (in_list < 0) {
+            std::cout << "Adjacency missing" << std::endl;
+            return 4;
+          }
+        }
 
-	++telct;
+        ++telct;
       }
     }
 
     for (int i = 0; i < num_nodes; i++) {
       if (offsets[i + 1] - offsets[i] != num_adj[i]) {
-	std::cout << "Number of adjacencies do not match" << std::endl;
-	return 3;
+        std::cout << "Number of adjacencies do not match" << std::endl;
+        return 3;
       }
     }
 

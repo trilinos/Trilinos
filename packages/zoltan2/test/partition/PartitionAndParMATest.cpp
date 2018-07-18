@@ -59,7 +59,7 @@
 #include <Zoltan2_ColoringProblem.hpp>
 
 //Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -81,16 +81,11 @@ using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 
-/*********************************************************/
-/*                     Typedefs                          */
-/*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 
 #ifdef HAVE_ZOLTAN2_PARMA
 
-void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action, 
-	     std::string parma_method,int nParts, double imbalance, std::string output_title );
+void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action,
+             std::string parma_method,int nParts, double imbalance, std::string output_title );
 
 #endif
 /*****************************************************************************/
@@ -100,17 +95,16 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 int main(int narg, char *arg[]) {
 
   Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   //int numProcs = CommT->getSize();
 
   if (me == 0){
-  cout 
-    << "====================================================================\n" 
-    << "|                                                                  |\n" 
-    << "|                  Example: Partition APF Mesh                     |\n" 
+  cout
+    << "====================================================================\n"
+    << "|                                                                  |\n"
+    << "|                  Example: Partition APF Mesh                     |\n"
     << "|                                                                  |\n"
     << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),     |\n"
     << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
@@ -152,7 +146,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("meshfile", &meshFileName,
                  "Mesh file with APF specifications (.smb file(s))");
   cmdp.setOption("modelfile", &modelFileName,
-		 "Model file with APF specifications (.dmg file)");
+                 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
   cmdp.setOption("parma_method", &parma_method,
@@ -165,7 +159,7 @@ int main(int narg, char *arg[]) {
                  "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.parse(narg, arg);
 
-  
+
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
   /***************************************************************************/
@@ -183,16 +177,16 @@ int main(int narg, char *arg[]) {
 
   //Setup for SCOREC
   PCU_Comm_Init();
-  
+
   // Generate mesh with MDS
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
-  
+
   runTest(CommT,m,action,parma_method,nParts,imbalance,"partition");
-  
+
   runTest(CommT,m,"parma",parma_method,nParts,imbalance,"parma");
 
-  
+
 
 
   if (output_loc!="") {
@@ -222,10 +216,10 @@ int main(int narg, char *arg[]) {
 #ifdef HAVE_ZOLTAN2_PARMA
 
 void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action,
-	     std::string parma_method,int nParts, double imbalance,std::string output_title) {
+             std::string parma_method,int nParts, double imbalance,std::string output_title) {
   //Get rank
   int me = CommT->getRank();
-  
+
   //Data for APF MeshAdapter
   std::string primary="region";
   std::string adjacency="face";
@@ -234,7 +228,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
     adjacency="edge";
   }
   bool needSecondAdj=false;
-  
+
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -286,21 +280,21 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
     //params.set("compute_metrics","yes");
     adjacency="vertex";
   }
-  
+
   //Print the stats of original mesh
   Parma_PrintPtnStats(m,output_title+"_before");
-  
+
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
-  
+
   double time_1 = PCU_Time();
   inputAdapter_t *ia =
     new inputAdapter_t(*CommT, m,primary,adjacency,needSecondAdj);
   double time_2 = PCU_Time();
-  
+
 
   // create Partitioning problem
   if (me == 0) cout << "Creating partitioning problem ... \n\n";
@@ -327,20 +321,20 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   if (!me) {
     metricObject->printMetrics(cout);
   }
- 
+
   //Print the stats after partitioning
   Parma_PrintPtnStats(m,output_title+"_after");
   ia->destroy();
-  
+
   time_4-=time_3;
   time_2-=time_1;
   PCU_Max_Doubles(&time_2,1);
   PCU_Max_Doubles(&time_4,1);
   if (!me) {
     std::cout<<"\n"<<output_title<<"Construction time: "<<time_2<<"\n"
-	     <<output_title<<"Problem time: " << time_4<<"\n\n";
+             <<output_title<<"Problem time: " << time_4<<"\n\n";
   }
-  
+
 }
 
 #endif

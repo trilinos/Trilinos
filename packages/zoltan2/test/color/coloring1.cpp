@@ -50,7 +50,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -155,8 +155,7 @@ int main(int narg, char** arg)
 
   ////// Establish session.
   Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
