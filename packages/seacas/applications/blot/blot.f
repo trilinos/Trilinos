@@ -81,7 +81,7 @@ C   --   o A listing of the input database information and any errors
 C   --     found on the standard output device.
 C   --   o The plots on the specified graphics device.
 C   --   o A GRAFAID neutral file on unit 20.
-C   --   o A GROPE listing file on unit 21.
+C   --   o A EXPLORE listing file on unit 21.
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *                    ISSUED BY SANDIA LABORATORIES,                   *
@@ -105,7 +105,7 @@ C   --
 C   --Revision History:
 C   --   05/88  Added PATHLINE (Amy Gilkey)
 C   --   03/88  Added Master/Slave logic (Amy Gilkey)
-C   --   10/87  Added GROPE (Amy Gilkey)
+C   --   10/87  Added EXPLORE (Amy Gilkey)
 C   --   10/87  Converted from SEACO to EXODUS database (Amy Gilkey)
 C   --   07/87  Combined DETOUR, TPLOT, and SPLOT (Amy Gilkey)
 C   --DETOUR:
