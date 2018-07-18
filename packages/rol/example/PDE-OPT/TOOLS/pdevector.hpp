@@ -878,6 +878,15 @@ public:
     }
   }
 
+  void print(std::ostream &outStream) const {
+    if (vec1_ != ROL::nullPtr) {
+      vec1_->print(outStream);
+    }
+    if (vec2_ != ROL::nullPtr) {
+      vec2_->print(outStream);
+    }
+  }
+
   ROL::Ptr<const ROL::TpetraMultiVector<Real> > getField(void) const { 
     return vec1_;
   }
