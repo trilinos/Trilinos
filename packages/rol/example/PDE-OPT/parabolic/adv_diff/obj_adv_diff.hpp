@@ -48,7 +48,7 @@
 #ifndef PDEOPT_QOI_ADV_DIFF_HPP
 #define PDEOPT_QOI_ADV_DIFF_HPP
 
-#include "../TOOLS/qoi.hpp"
+#include "../../TOOLS/qoi.hpp"
 #include "pde_adv_diff.hpp"
 
 template <class Real>

@@ -48,8 +48,8 @@
 #ifndef PDE_ADV_DIFF_HPP
 #define PDE_ADV_DIFF_HPP
 
-#include "../TOOLS/pde.hpp"
-#include "../TOOLS/fe.hpp"
+#include "../../TOOLS/pde.hpp"
+#include "../../TOOLS/fe.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
@@ -166,18 +166,18 @@ public:
                                                     Intrepid::COMP_CPP, true);
     }
     // APPLY DIRICHLET CONDITIONS
-    int numLocalSideIds = bdryCellLocIds_[0].size();
-    for (int j = 0; j < numLocalSideIds; ++j) {
-      int numCellsSide = bdryCellLocIds_[0][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[0][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          (*res)(cidx,fidx_[j][l])
-            = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[0][j])(k,fidx_[j][l]);
-        }
-      }
-    }
+//    int numLocalSideIds = bdryCellLocIds_[0].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[0][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[0][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          (*res)(cidx,fidx_[j][l])
+//            = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[0][j])(k,fidx_[j][l]);
+//        }
+//      }
+//    }
   }
 
   void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
@@ -222,21 +222,21 @@ public:
                                                   V_gradN,
                                                   Intrepid::COMP_CPP, true);
     // APPLY DIRICHLET CONDITIONS
-    int numLocalSideIds = bdryCellLocIds_[0].size();
-    for (int j = 0; j < numLocalSideIds; ++j) {
-      int numCellsSide = bdryCellLocIds_[0][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[0][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-          for (int m = 0; m < f; ++m) {
-            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-          }
-          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
-        }
-      }
-    }
+//    int numLocalSideIds = bdryCellLocIds_[0].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[0][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[0][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+//          for (int m = 0; m < f; ++m) {
+//            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+//          }
+//          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+//        }
+//      }
+//    }
   }
 
   void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
@@ -266,17 +266,17 @@ public:
                                                     *(fe_vol_->NdetJ()),
                                                     Intrepid::COMP_CPP, false);
       // APPLY DIRICHLET CONDITIONS
-      int numLocalSideIds = bdryCellLocIds_[0].size();
-      for (int j = 0; j < numLocalSideIds; ++j) {
-        int numCellsSide = bdryCellLocIds_[0][j].size();
-        int numBdryDofs = fidx_[j].size();
-        for (int k = 0; k < numCellsSide; ++k) {
-          int cidx = bdryCellLocIds_[0][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            (*(jac[i]))(cidx,fidx_[j][l]) = static_cast<Real>(0);
-          }
-        }
-      }
+//      int numLocalSideIds = bdryCellLocIds_[0].size();
+//      for (int j = 0; j < numLocalSideIds; ++j) {
+//        int numCellsSide = bdryCellLocIds_[0][j].size();
+//        int numBdryDofs = fidx_[j].size();
+//        for (int k = 0; k < numCellsSide; ++k) {
+//          int cidx = bdryCellLocIds_[0][j][k];
+//          for (int l = 0; l < numBdryDofs; ++l) {
+//            (*(jac[i]))(cidx,fidx_[j][l]) = static_cast<Real>(0);
+//          }
+//        }
+//      }
     }
   }
 
@@ -425,54 +425,38 @@ private:
   }
 
   Real evaluateDiffusivity(const std::vector<Real> &x) const {
-    // random diffusion coefficient from i. babuska, f. nobile, r. tempone 2010.
-    // simplified model for random stratified media.
-    const int ns = 10;
-    const Real one(1), two(2), three(3), eight(8), sixteen(16), half(0.5);
-    const Real lc = one/sixteen, sqrtpi = std::sqrt(M_PI);
-    const Real xi = std::sqrt(sqrtpi*lc), sqrt3 = std::sqrt(three);
-    Real f(0), phi(0);                                          
-    Real p25 = static_cast<Real>(0); 
-    Real val = one + sqrt3*p25*std::sqrt(sqrtpi*lc*half);
-    Real arg = one + sqrt3*std::sqrt(sqrtpi*lc*half);
-    for (int i = 1; i < ns; ++i) {
-      f = floor(half*static_cast<Real>(i+1));     
-      phi = ((i+1)%2 ? std::sin(f*M_PI*x[0]) : std::cos(f*M_PI*x[0]));
-      Real pi25 = static_cast<Real>(0);
-      val += xi*std::exp(-std::pow(f*M_PI*lc,two)/eight)*phi*sqrt3*pi25;
-      arg += xi*std::exp(-std::pow(f*M_PI*lc,two)/eight)*std::abs(phi)*sqrt3;
-    }
-    return half + two*std::exp(val)/std::exp(arg);
+    return static_cast<Real>(1e-1);
   }
 
   void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x) const {
-    const Real half(0.5), one(1), five(5), ten(10);
-    Real p35 = static_cast<Real>(0);
-    Real p36 = static_cast<Real>(0);
-    const Real a = five*half*(p36+one);
-    const Real b = five + (ten-five)*half*(p35+one);
+    const Real half(0.5), five(5), ten(10);
+    const Real a = five*half;
+    const Real b = five + (ten-five)*half;
     adv[0] = b - a*x[0];
     adv[1] =     a*x[1];
     // Get time
     if (!isLTI_) {
-      const Real time = PDE<Real>::getTime();
-      const Real pd = static_cast<Real>(2.0*M_PI)/T_, shift = half;
-      adv[0] *= std::sin(pd*time)+shift;
-      adv[1] *= std::sin(pd*time)+shift;
+      const Real one(1), two(2), pi2(2.0*M_PI), ten(10), c(5e-2);
+      const Real t = PDE<Real>::getTime()/T_;
+      // U0(t,x,y) =  cos((x-t)*2*pi).*sin((y-t)*2*pi).*exp(-2*t)/(2*pi) + 5e-2*(7.5 - 2.5*x).*exp(20*(t-1));
+      // V0(t,x,y) = -sin((x-t)*2*pi).*cos((y-t)*2*pi).*exp(-2*t)/(2*pi) + 5e-2*(      2.5*y).*exp(20*(t-1));
+      adv[0] *= c*std::exp(two*ten*(t-one));
+      adv[1] *= c*std::exp(two*ten*(t-one));
+      adv[0] += std::cos(pi2*(x[0]-t))*std::sin(pi2*(x[1]-t))*std::exp(-two*t)/pi2;
+      adv[1] -= std::sin(pi2*(x[0]-t))*std::cos(pi2*(x[1]-t))*std::exp(-two*t)/pi2;
     }
   }
 
   Real evaluateRHS(const std::vector<Real> &x) const {
     const int ns = 5;             
-    const Real half(0.5), one(1), two(2);
+    const Real zero(0), half(0.5), one(1), two(2);
     Real source(0), arg1(0), arg2(0), mag(0), x0(0), y0(0), sx(0), sy(0);
     // Upper and lower bounds on source magintudes
     const std::vector<Real> ml = {1.5, 1.2, 1.5, 1.2, 1.1};
     const std::vector<Real> mu = {2.5, 1.8, 1.9, 2.6, 1.5};
     // Period and phase of sources
-    const Real pd0 = static_cast<Real>(2.0*M_PI)/T_;
-    const std::vector<Real> pd = {pd0, 2.0*pd0, 3.0*pd0, 4.0*pd0, 5.0*pd0};
-    const std::vector<Real> ph = {-2.0, -1.0, 0.0, 1.0, 2.0};
+    const std::vector<Real> st = {0.0, 0.2, 0.4, 0.6, 0.8};
+    const std::vector<Real> dr = {1.0, 0.2, 0.5, 0.1, 0.2};
     // Upper and lower bounds on source locations
     const std::vector<Real> xl = {0.45, 0.75, 0.40, 0.05, 0.85};
     const std::vector<Real> xu = {0.55, 0.85, 0.60, 0.35, 0.95};
@@ -489,22 +473,14 @@ private:
       time = PDE<Real>::getTime();
     }
     for (int i=0; i<ns; ++i) {
-      Real pi  = static_cast<Real>(0);
-      Real pi1 = static_cast<Real>(0);
-      Real pi2 = static_cast<Real>(0);
-      Real pi3 = static_cast<Real>(0);
-      Real pi4 = static_cast<Real>(0);
-
-      if (isLTI_) {
-        mag = ml[i] + (mu[i]-ml[i])*half*(pi+one);
+      mag = half*((mu[i]+ml[i]) + (mu[i]-ml[i]));
+      if (!isLTI_) {
+        mag *= (time/T_ > st[i] && time/T_ < st[i]+dr[i]) ? one : zero;
       }
-      else {
-        mag = half*((mu[i]+ml[i]) + (mu[i]-ml[i])*std::sin(pd[i]*time + ph[i]));
-      }
-      x0   = xl[i] + (xu[i]-xl[i])*half*(pi1+one);
-      y0   = yl[i] + (yu[i]-yl[i])*half*(pi3+one);
-      sx   = sxl[i] + (sxu[i]-sxl[i])*half*(pi2+one);
-      sy   = syl[i] + (syu[i]-syl[i])*half*(pi4+one);
+      x0   = half*(( xl[i]+ xu[i]) + ( xu[i]- xl[i]));
+      y0   = half*(( yl[i]+ yu[i]) + ( yu[i]- yl[i]));
+      sx   = half*((sxl[i]+sxu[i]) + (sxu[i]-sxl[i]));
+      sy   = half*((syl[i]+syu[i]) + (syu[i]-syl[i]));
       arg1 = std::pow((x[0]-x0)/sx, two);
       arg2 = std::pow((x[1]-y0)/sy, two);
       source += mag*std::exp(-half*(arg1+arg2));
