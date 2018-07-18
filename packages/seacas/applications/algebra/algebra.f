@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -33,7 +33,6 @@ C
 C=======================================================================
       PROGRAM ALGEBRA2
 C=======================================================================
-C $Id: algebra2.f,v 1.16 2009/03/25 14:42:08 gdsjaar Exp $
 C
 C   --This version of ALGEBRA will read and write EXODUSIIV2 database
 C   --format files.  Many changes have occurred since the first version

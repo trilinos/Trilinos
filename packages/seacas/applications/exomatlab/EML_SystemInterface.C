@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011 National Technology & Engineering Solutions
+ * Copyright(C) 2011-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -210,7 +210,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2011 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2011-2017 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
