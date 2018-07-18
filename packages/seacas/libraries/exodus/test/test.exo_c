@@ -1,73 +1,0 @@
-C Copyright (c) 2005 National Technology & Engineering Solutions
-C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-C NTESS, the U.S. Government retains certain rights in this software.
-C 
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C 
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C 
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C 
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
-
-CDF
-
-	time_stepnum_dim	num_nodesnum_elem
-num_el_blk
-len_string	len_lineQfournum_node_setsnum_side_setsnum_el_in_blk10num_nod_per_el10num_att_in_blk10num_el_in_blk11num_nod_per_el11num_att_in_blk11num_nod_ns20num_nod_ns21num_el_ss30num_nod_ss30
-num_qa_recnum_infonum_glo_varnum_nod_varnum_elem_vartyperversion?ÅGÆtitleThis is a test 
-time_wholeL	el_blk_idºnode_set_idsƒside_set_ids	Ãcoord@–
-coor_names	elem_map	$	connect10
-	elem_type	quadjunk	,	connect11	elem_type	quadjunk	<attrib10
-	Lattrib11	P	node_ns20	Tdist_fact_ns20	h	node_ns21	|dist_fact_ns21	à	elem_ss30	î	node_ss30	údist_fact_ss30	¨
-qa_recordsH	ºinfo_recordsÙ
-vals_glo_varPname_glo_var
-¯vals_nod_var@Tname_nod_varname_elem_varvals_elem_var1eb10
-îvals_elem_var2eb10
-òvals_elem_var3eb10
-úvals_elem_var1eb11†vals_elem_var2eb11§vals_elem_var3eb11®elem_var_tab4
-?Ä?Ä?Ä@@?Ä?Ä?Ä?Ä?Äxcoorycoor@I–@ƒáËdefgh?Ä@@@@Ä@†»… ?åÃÕ@ff@FffPRONTO2Dpronto2d3/10/9215:41:33FASTQfastq2/10/9211:41:33This is the first information record.This is the second information record.This is the third information record.glo_varsnod_var0nod_var1ele_var0ele_var1ele_var2?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä@@@@@@@@@@@Ä@†@Ä@†@¿<#◊
-<#◊
-?Ä?ÅGÆ?Çè\?É◊
-?Ö∏?Üff?áÆ?àı√@@£◊@GÆ@ÎÖ@è\@33@◊
-@z·@@@Ä@†@Ä@†@¿<£◊
-<£◊
-?Ä?Çè\?Ö∏?áÆ?ä=q?åÃÕ?è\)?ëÎÖ@@GÆ@è\@◊
-@∏@ff@Æ@ı√@@@Ä@†@Ä@†@¿<ı¬è<ı¬è?Ä?É◊
-?áÆ?ãÖ?è\)?ì33?ó
-=?ö·H@@ÎÖ@◊
-@¬è@Æ@	ôö@Ö@p§@@@Ä@†@Ä@†@¿=#◊
-=#◊
-?Ä?Ö∏?ä=q?è\)?îz·?ôôö?û∏R?£◊
-@@è\@∏@Æ@
-=q@ÃÕ@\)@ÎÖ@@@Ä@†@Ä@†@¿=LÃÕ=LÃÕ?Ä?Üff?åÃÕ?ì33?ôôö?†?¶ff?¨ÃÕ@@33@ff@	ôö@ÃÕ@@33@ff@@@Ä@†@Ä@†@¿=u¬è=u¬è?Ä?áÆ?è\)?ó
-=?û∏R?¶ff?Æ{?µ¬è@@◊
-@Æ@Ö@\)@33@
-=@·H@@@Ä@†@Ä@†@¿=è\)=è\)?Ä?àı√?ëÎÖ?ö·H?£◊
-?¨ÃÕ?µ¬è?æ∏R@@z·@ı√@p§@ÎÖ@ff@·H@\)@@@Ä@†@Ä@†@¿=£◊
-=£◊
-?Ä?ä=q?îz·?û∏R?®ı¬?≥33?Ωp§?«Æ@@∏@
-=q@\)@z·@ôö@∏R@#◊
-@@@Ä@†@Ä@†@¿=∏QÏ=∏QÏ?Ä?ãÖ?ó
->?¢è\?Æ{?πôö?≈∏?–£◊@@¬è@Ö@GÆ@

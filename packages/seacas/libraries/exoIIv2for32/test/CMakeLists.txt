@@ -39,7 +39,7 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   # NOTE: The "LINKER_LANGUAGE CXX" is used to workaround an issue with
   #       the trilinos cmake adding the pamgen and pamgen_extras libraries as
-  #       a dependency.  These are C++ libraries and result in unresolved depedencies
+  #       a dependency.  These are C++ libraries and result in unresolved dependencies
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${forbind_OLDTESTS} )

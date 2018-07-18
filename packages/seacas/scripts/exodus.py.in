@@ -1,8 +1,8 @@
 """
 
-exodus.py v 1.05 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.07 (beta) is a python wrapper of some of the exodus II library
 
-Copyright(C) 2017 National Technology & Engineering Solutions of
+Copyright(C) 2018 National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -38,12 +38,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.05 (beta-cmake)"
+EXODUS_PY_VERSION = "1.07 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.05 (beta-cmake), a python wrapper of some of the exodus II library.
+You are using exodus.py v 1.07 (beta-cmake), a python wrapper of some of the exodus II library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017 National Technology &
+Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.  
@@ -402,19 +402,18 @@ class exodus:
       return value(s):
         <exodus>  exo_copy  the copy
     """
-    ex_pars = ex_init_params(num_dim=self.num_dimensions(),
-                             num_nodes=self.num_nodes(),
-                             num_elem=self.num_elems(),
-                             num_elem_blk=self.num_blks(),
-                             num_node_sets=self.num_node_sets(),
-                             num_side_sets=self.num_side_sets())
+    fileId = EXODUS_LIB.ex_create_int(fileName, EX_NOCLOBBER,
+                                      byref(self.comp_ws),
+                                      byref(self.io_ws),
+                                      EX_API_VERSION_NODOT)
 
-    new = exodus(fileName,
-                 mode="w",
-                 title=self.title(),
-                 init_params=ex_pars)
-    self.__copy_file(new)
-    return new
+    i64Status = EXODUS_LIB.ex_int64_status(self.fileId)
+    EXODUS_LIB.ex_set_int64_status(fileId, i64Status)
+
+    self.__copy_file(fileId)
+    EXODUS_LIB.ex_close(self.fileId)
+
+    return exodus(fileName, "a")
 
   #
   # general info
@@ -1045,7 +1044,7 @@ class exodus:
       -> **DEPRECATED** use: exo.get_elem_id_map()
 
         get mapping of exodus element index to user- or application-
-        defined element id; elem_id_map is orderd by the element
+        defined element id; elem_id_map is ordered by the element
         *INDEX* ordering, a 1-based system going from 1 to
         exo.num_elems(), used by exodus for storage and input/output
         of array data stored on the elements; a user or application
@@ -3468,13 +3467,16 @@ class exodus:
     print "Opening exodus file: " + self.fileName
     self.mode = EX_READ
     if self.modeChar.lower() == "a": self.mode = EX_WRITE
+    if self.modeChar.lower() == "w+": self.mode = EX_CLOBBER
+
     if self.modeChar.lower() in ["a", "r"] and not os.path.isfile(self.fileName):
       raise Exception, ("ERROR: Cannot open " + self.fileName + " for read. Does not exist.")
     elif self.modeChar.lower() == "w" and os.path.isfile(self.fileName):
       raise Exception, ("ERROR: Cowardly not opening " + self.fileName + \
                         " for write. File already exists.")
-    elif self.modeChar.lower() not in ["a", "r", "w"]:
+    elif self.modeChar.lower() not in ["a", "r", "w", "w+"]:
       raise Exception, ("ERROR: File open mode " + self.modeChar + " unrecognized.")
+
     self.comp_ws = c_int(8)
     self.io_ws = c_int(io_size)
     self.version = c_float(0.0)
@@ -3493,16 +3495,15 @@ class exodus:
   # --------------------------------------------------------------------
 
   def __create(self):
-    cMode = c_int(EX_NOCLOBBER)
-    self.fileId = EXODUS_LIB.ex_create_int(self.fileName, cMode,
+    self.fileId = EXODUS_LIB.ex_create_int(self.fileName, self.mode,
                                            byref(self.comp_ws),
                                            byref(self.io_ws),
                                            EX_API_VERSION_NODOT)
 
   # --------------------------------------------------------------------
 
-  def __copy_file(self, other):
-    EXODUS_LIB.ex_copy(self.fileId, other.fileId)
+  def __copy_file(self, fileId):
+    EXODUS_LIB.ex_copy(self.fileId, fileId)
 
   # --------------------------------------------------------------------
 

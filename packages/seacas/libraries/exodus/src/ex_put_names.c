@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,23 +33,23 @@
  *
  */
 /*****************************************************************************
-*
-* expnam - ex_put_names
-*
-* environment - UNIX
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid       exodus file id
-*       int     obj_type    object type
-*       char*   names       ptr array of entity names
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expnam - ex_put_names
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid       exodus file id
+ *       int     obj_type    object type
+ *       char*   names       ptr array of entity names
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
@@ -74,10 +74,8 @@ int ex_put_names(int exoid, ex_entity_type obj_type, char *names[])
 
   const char *vname = NULL;
 
-  const char *routine = "ex_put_names";
-
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (obj_type) {
   /*  ======== BLOCKS ========= */
@@ -107,22 +105,22 @@ int ex_put_names(int exoid, ex_entity_type obj_type, char *names[])
   /*  ======== ERROR (Invalid type) ========= */
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type), &num_entity,
-                   &varid, routine);
+                   &varid, __func__);
 
   if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write EXODUS entitynames */
-  status = ex_put_names_internal(exoid, varid, num_entity, names, obj_type, "", routine);
+  status = ex_put_names_internal(exoid, varid, num_entity, names, obj_type, "", __func__);
 
   EX_FUNC_LEAVE(status);
 }
