@@ -1,0 +1,274 @@
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+#include <iostream>
+#include <iomanip>
+#include <random>
+#include <utility>
+
+#include "ROL_Ptr.hpp"
+
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "ROL_Stream.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_RandomVector.hpp"
+#include "ROL_Vector_SimOpt.hpp"
+#include "ROL_PinTConstraint.hpp"
+
+#include "dynamicConstraint.hpp"
+#include "dynamicObjective.hpp"
+
+using RealT = double;
+using size_type = std::vector<RealT>::size_type;
+
+void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void run_test_simple(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+
+int main( int argc, char* argv[] ) 
+{
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
+  int myRank = Teuchos::GlobalMPISession::getRank();
+
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
+
+  int errorFlag  = 0;
+
+  try {
+
+    // run_test(MPI_COMM_WORLD, outStream);
+    // run_test_simple(MPI_COMM_WORLD, outStream);
+    run_test_kkt(MPI_COMM_WORLD, outStream);
+
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if(myRank==0) {
+    if (errorFlag != 0)
+      std::cout << "End Result: TEST FAILED\n";
+    else
+      std::cout << "End Result: TEST PASSED\n";
+  }
+
+  return 0;
+}
+
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
+{
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  using RealT             = double;
+  using size_type         = std::vector<RealT>::size_type;
+  using Bounds            = ROL::Bounds<RealT>;
+  using PartitionedVector = ROL::PartitionedVector<RealT>;
+
+  int numRanks = -1;
+  int myRank = -1;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+
+  // Parse input parameter list
+  ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
+  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+  uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
+  uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
+  RealT T         = pl->get("End Time",                  1.0); // Set end time.
+  RealT dt        = T/(static_cast<RealT>(nt)-1.0);
+
+  // Initialize objective function.
+  ROL::Ptr<ROL::DynamicObjective<RealT>> dyn_obj
+    = ROL::makePtr<Objective_ParabolicControl<RealT>>(*pl);
+  ROL::Ptr<ROL::DynamicConstraint<RealT>> dyn_con
+    = ROL::makePtr<Constraint_ParabolicControl<RealT>>(*pl);
+
+  // Create control vectors.
+  ROL::Ptr<ROL::StdVector<RealT>>         zk = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx+2));
+
+  // Create initial state vector.
+  ROL::Ptr<ROL::StdVector<RealT>> u0 = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx,0.0));
+
+  ROL::Ptr< ROL::PinTVector<RealT>> state;
+  ROL::Ptr< ROL::PinTVector<RealT>> control;
+
+  state        = ROL::buildStatePinTVector<RealT>(   communicators, nt,     u0);
+  control      = ROL::buildControlPinTVector<RealT>( communicators, nt,     zk);
+
+  // Construct reduced dynamic objective
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  for( uint k=0; k<timeStamp->size(); ++k ) {
+    timeStamp->at(k).t.resize(2);
+    timeStamp->at(k).t.at(0) = k*dt;
+    timeStamp->at(k).t.at(1) = (k+1)*dt;
+  }
+
+  // build the parallel in time constraint from the user constraint
+  Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
+  pint_con->setGlobalScale(1.0);
+
+  double tol = 1e-12;
+
+  // make sure we are globally consistent
+  state->boundaryExchange();
+  control->boundaryExchange();
+
+  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),state->clone()});
+  auto kkt_x_in  = kkt_vector->clone();
+  auto kkt_b     = kkt_vector->clone();
+
+  int sweeps = 3;
+  RealT omega = 2.0/3.0;
+
+  ROL::RandomizeVector(*kkt_x_in);
+  kkt_b->zero();
+  // apply_kkt(*kkt_b,*kkt_x_in,*state,*control);
+  pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol);
+
+  // check exact
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    // apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
+    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol);
+
+    kkt_x_out->axpy(-1.0,*kkt_x_in);
+
+    RealT norm = kkt_x_out->norm();
+    if(myRank==0)
+      (*outStream) << "NORM EXACT= " << norm << std::endl;
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check jacobi
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    for(int i=0;i<sweeps;i++) {
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+    
+      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+      RealT norm = kkt_err->norm() / kkt_b->norm();
+      if(myRank==0)
+        (*outStream) << "NORM JACOBI= " << norm << std::endl;
+    }
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check MG
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+    kkt_res->scale(-1.0);
+    kkt_res->axpy(1.0,*kkt_b);
+
+    RealT res0 = kkt_res->norm();
+
+    if(myRank==0)
+      (*outStream) << "Multigrid initial res = " << res0 << std::endl;
+
+    for(int i=0;i<100;i++) {
+      pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+   
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+
+      RealT res = kkt_res->norm();
+      if(myRank==0)
+        (*outStream) << " " << i+1 << ". " << res/res0 << std::endl;
+
+      // check the residual
+      if(res/res0 < 1e-9) {
+        // how many iterations
+        if(myRank==0)
+          (*outStream) << "\nIterations = " << i+1 << std::endl;
+        
+        break;
+      }
+    }
+  }
+}
+
+

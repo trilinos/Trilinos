@@ -489,6 +489,52 @@ public:
     constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   }
 
+  void applyJacobian_1_leveled_approx( V& jv, const V& v, const V& u, 
+                       const V& z, Real& tol,int level) {
+    jv.zero();
+
+    PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
+    const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    assert(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    // differentiate the time continuity constraint, note that this just using the identity matrix
+    int timeRank = pint_u.communicators().getTimeRank();
+    const std::vector<int> & stencil = pint_jv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_jv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));             // this is the local value
+
+        // this is a hack to make sure that sensitivities with respect to the initial condition
+        // don't get accidentally included
+        // if(timeRank>0) 
+        //   pint_jv.getVectorPtr(offset)->axpy(-1.0,*pint_v.getRemoteBufferPtr(offset)); // this is the remote value
+
+        pint_jv.getVectorPtr(offset)->scale(globalScale_);
+      }
+    }
+
+    auto part_jv = getStateVector(pint_jv);   // strip out initial condition/constraint
+    auto part_v  = getStateVector(pint_v);    // strip out initial condition/constraint
+    auto part_u  = getStateVector(pint_u);    // strip out initial condition/constraint
+    auto part_z  = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+
+    constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
+  }
+
   void applyJacobian_2( V& jv, const V& v, const V& u,
                         const V &z, Real &tol ) override { 
     int level = 0;
@@ -652,6 +698,59 @@ public:
         pint_ajv.getVectorPtr(offset)->axpy(globalScale_,*pint_v.getVectorPtr(offset));
         pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
         pint_ajv.getRemoteBufferPtr(offset)->scale(-globalScale_);
+      }
+    }
+
+    // this sums from the remote buffer into the local buffer which is part of the vector
+    pint_ajv.boundaryExchangeSumInto();
+   }
+
+   /**
+    * This is a convenience function for multi-grid that gives access
+    * to a "leveled" version of the adjoint jacobian.
+    */
+   void applyAdjointJacobian_1_leveled_approx( V& ajv, 
+                                        const V& v, 
+                                        const V& u,
+                                        const V& z, 
+                                        Real& tol,
+                                        int level) {
+    PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
+    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+      
+    assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+
+    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+    pint_ajv.zeroAll();
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    auto part_ajv = getStateVector(pint_ajv);   // strip out initial condition/constraint
+    auto part_v   = getStateVector(pint_v);   
+    auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
+    auto part_z   = getControlVector(pint_z); 
+
+    // compute the constraint for this subdomain
+    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+
+    constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
+
+    // handle the constraint adjoint
+    const std::vector<int> & stencil = pint_u.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_ajv.getVectorPtr(offset)->axpy(globalScale_,*pint_v.getVectorPtr(offset));
+        pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
+        pint_ajv.getRemoteBufferPtr(offset)->scale(-globalScale_);
+        pint_ajv.getRemoteBufferPtr(offset)->zero();
       }
     }
 
@@ -1357,6 +1456,175 @@ public:
 
        pint_output.getVectorPtr(2*k+0)->set(*pint_input.getVectorPtr(k)); 
        pint_output.getVectorPtr(2*k+1)->set(*pint_input.getVectorPtr(k)); 
+     }
+   }
+
+   // KKT multigrid preconditioner
+   /////////////////////////////////////////////
+   
+   void applyAugmentedKKT(Vector<Real> & output, 
+                          const Vector<Real> & input,
+                          const Vector<Real> & u, 
+                          const Vector<Real> & z,
+                          Real & tol,
+                          int level=0) 
+   {
+     using PartitionedVector = PartitionedVector<Real>;
+
+     auto part_output = dynamic_cast<PartitionedVector&>(output);
+     auto part_input = dynamic_cast<const PartitionedVector&>(input);
+
+     part_output.zero();
+
+     auto output_0 = part_output.get(0);
+     auto output_1 = part_output.get(1);
+     auto input_0  = part_input.get(0);
+     auto input_1  = part_input.get(1);
+
+     // objective
+     applyAdjointJacobian_1_leveled(*output_0,*input_1,u,z,tol,level);
+     output_0->axpy(1.0,*input_0);
+
+     // constraint
+     applyJacobian_1_leveled(*output_1,*input_0,u,z,tol,level);
+   }
+
+   void applyAugmentedInverseKKT(Vector<Real> & output, 
+                                 const Vector<Real> & input,
+                                 const Vector<Real> & u, 
+                                 const Vector<Real> & z,
+                                 Real & tol,
+                                 bool approx=false,
+                                 int level=0) 
+   {
+     using PartitionedVector = PartitionedVector<Real>;
+
+     auto part_output = dynamic_cast<PartitionedVector&>(output);
+     auto part_input = dynamic_cast<const PartitionedVector&>(input);
+ 
+     part_output.zero();
+ 
+     auto output_0 = part_output.get(0);
+     auto output_1 = part_output.get(1);
+     auto temp_0 = output_0->clone();
+     auto temp_1 = output_1->clone();
+ 
+     auto input_0  = part_input.get(0);
+     auto input_1  = part_input.get(1);
+ 
+     temp_0->zero();
+     temp_1->zero();
+ 
+     // [ I   J' * inv(J*J') ] [  I     ]
+     // [         -inv(J*J') ] [ -J  I  ]
+    
+     // L Factor
+     /////////////////////
+     temp_0->axpy(1.0,*input_0);
+ 
+     if(not approx)
+       applyJacobian_1_leveled(*temp_1,*input_0,u,z,tol,level);
+     else
+       applyJacobian_1_leveled_approx(*temp_1,*input_0,u,z,tol,level);
+ 
+     temp_1->scale(-1.0);
+     temp_1->axpy(1.0,*input_1);
+ 
+     // U Factor
+     /////////////////////
+     
+     // schur complement
+     {
+       auto temp = output_1->clone();
+       temp->zero();
+ 
+       if(not approx) {
+         applyInverseJacobian_1_leveled(*temp, *temp_1, u,z,tol,level);
+         applyInverseAdjointJacobian_1_leveled(*output_1,*temp,u,z,tol,level);
+       }
+       else {
+         invertTimeStepJacobian(*temp, *temp_1, u,z,tol,level);
+         invertAdjointTimeStepJacobian(*output_1,*temp,u,z,tol,level);
+       }
+       output_1->scale(-1.0);
+     }
+ 
+     if(not approx)
+       applyAdjointJacobian_1_leveled(*output_0,*output_1,u,z,tol,level); 
+     else 
+       applyAdjointJacobian_1_leveled_approx(*output_0,*output_1,u,z,tol,level); 
+ 
+     output_0->scale(-1.0);
+     output_0->axpy(1.0,*temp_0);
+   }
+
+   void apply2LevelAugmentedKKT(Vector<Real> & x, 
+                                const Vector<Real> & b,
+                                const Vector<Real> & u, 
+                                const Vector<Real> & z,
+                                Real & tol) 
+   {
+     using PartitionedVector = PartitionedVector<Real>;
+
+     int level = 0;
+
+     auto dx = x.clone();
+     auto residual = b.clone();
+     residual->set(b);
+
+     // apply one smoother sweep
+     for(int i=0;i<numSweeps_;i++) {
+       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,true,level); 
+       x.axpy(omega_,*dx);
+
+       // compute the residual
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+       residual->scale(-1.0);
+       residual->axpy(1.0,b);
+     }
+
+     // solve the coarse system
+     {
+       auto pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+       auto pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+
+       auto dx_0 = dynamic_cast<PartitionedVector&>(*dx).get(0);
+       auto dx_1 = dynamic_cast<PartitionedVector&>(*dx).get(1);
+       auto residual_0 = dynamic_cast<PartitionedVector&>(*residual).get(0);
+       auto residual_1 = dynamic_cast<PartitionedVector&>(*residual).get(1);
+
+       auto crs_u            = allocateSimVector(pint_u,level+1);
+       auto crs_z            = allocateOptVector(pint_z,level+1);
+       auto crs_residual_0   = allocateSimVector(pint_u,level+1);
+       auto crs_residual_1   = allocateSimVector(pint_u,level+1);
+       auto crs_correction_0 = allocateSimVector(pint_u,level+1);
+       auto crs_correction_1 = allocateSimVector(pint_u,level+1);
+
+       restrictSimVector(*residual_0,*crs_residual_0);
+       restrictSimVector(*residual_1,*crs_residual_1);
+       restrictSimVector(u,*crs_u);               // restrict the control to the coarse level
+       restrictOptVector(z,*crs_z);               // restrict the state to the coarse level
+
+       auto crs_correction = makePtr<PartitionedVector>({crs_correction_0,crs_correction_1});
+       auto crs_residual   = makePtr<PartitionedVector>({crs_residual_0,crs_residual_1});
+
+       applyAugmentedInverseKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,false,level+1);
+
+       prolongSimVector(*crs_correction_0,*dx_0);
+       prolongSimVector(*crs_correction_1,*dx_1);
+
+       x.axpy(1.0,*dx);
+     }
+
+     // apply one smoother sweep
+     for(int i=0;i<numSweeps_;i++) {
+       // compute the residual
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+       residual->scale(-1.0);
+       residual->axpy(1.0,b);
+
+       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,true,level); 
+       x.axpy(omega_,*dx);
      }
    }
 

@@ -550,7 +550,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   auto  T      = pl.get("Total Time", 20.0);
 
   auto  maxlvs = pl.get("MGRIT Levels",           5);
-  auto  sweeps = pl.get("MGRIT Sweeps",           1);
+  auto  sweeps = pl.get("MGRIT Sweeps",           3);
   auto  omega  = pl.get("MGRIT Relaxation", 2.0/3.0);
   auto  globalScale  = pl.get("Constraint Scale", 1.0e3);
 
@@ -612,80 +612,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   double tol = 1e-12;
 
-  auto apply_kkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
-                                  const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z,int level=0) {
-      auto part_output = dynamic_cast<PartitionedVector&>(output);
-      auto part_input = dynamic_cast<const PartitionedVector&>(input);
-
-      part_output.zero();
-
-      auto output_0 = part_output.get(0);
-      auto output_1 = part_output.get(1);
-      auto input_0  = part_input.get(0);
-      auto input_1  = part_input.get(1);
-
-      // objective
-      pint_con->applyAdjointJacobian_1_leveled(*output_0,*input_1,u,z,tol,level);
-      output_0->axpy(1.0,*input_0);
-
-      // constraint
-      pint_con->applyJacobian_1_leveled(*output_1,*input_0,u,z,tol,level);
-    };
-
-  auto apply_invkkt = [pint_con,&tol](ROL::Vector<RealT> & output, const ROL::Vector<RealT> & input,
-                                      const ROL::Vector<RealT> & u, const ROL::Vector<RealT> & z,
-                                      bool approx=false,int level=0) {
-      auto part_output = dynamic_cast<PartitionedVector&>(output);
-      auto part_input = dynamic_cast<const PartitionedVector&>(input);
-
-      part_output.zero();
-
-      auto output_0 = part_output.get(0);
-      auto output_1 = part_output.get(1);
-      auto temp_0 = output_0->clone();
-      auto temp_1 = output_1->clone();
-
-      auto input_0  = part_input.get(0);
-      auto input_1  = part_input.get(1);
-
-      temp_0->zero();
-      temp_1->zero();
-
-      // [ I   J' * inv(J*J') ] [  I     ]
-      // [         -inv(J*J') ] [ -J  I  ]
-     
-      // L Factor
-      /////////////////////
-      temp_0->axpy(1.0,*input_0);
-
-      pint_con->applyJacobian_1(*temp_1,*input_0,u,z,tol);
-      temp_1->scale(-1.0);
-      temp_1->axpy(1.0,*input_1);
-
-      // U Factor
-      /////////////////////
-      
-      // schur complement
-      {
-        auto temp = output_1->clone();
-        temp->zero();
-
-        if(not approx) {
-          pint_con->applyInverseJacobian_1_leveled(*temp, *temp_1, u,z,tol,level);
-          pint_con->applyInverseAdjointJacobian_1_leveled(*output_1,*temp,u,z,tol,level);
-        }
-        else {
-          pint_con->invertTimeStepJacobian(*temp, *temp_1, u,z,tol,level);
-          pint_con->invertAdjointTimeStepJacobian(*output_1,*temp,u,z,tol,level);
-        }
-        output_1->scale(-1.0);
-      }
-
-      pint_con->applyAdjointJacobian_1(*output_0,*output_1,u,z,tol); 
-      output_0->scale(-1.0);
-      output_0->axpy(1.0,*temp_0);
-    };
-
   // make sure we are globally consistent
   state->boundaryExchange();
   control->boundaryExchange();
@@ -696,14 +622,15 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   ROL::RandomizeVector(*kkt_x_in);
   kkt_b->zero();
-  apply_kkt(*kkt_b,*kkt_x_in,*state,*control);
+  pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol);
 
   // check exact
   {
     auto kkt_x_out = kkt_vector->clone();
     kkt_x_out->zero();
 
-    apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
+    // apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
+    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol);
 
     kkt_x_out->axpy(-1.0,*kkt_x_in);
 
@@ -724,11 +651,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     kkt_x_out->zero();
 
     for(int i=0;i<sweeps;i++) {
-      apply_kkt(*kkt_res,*kkt_x_out,*state,*control);
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
       kkt_res->scale(-1.0);
       kkt_res->axpy(1.0,*kkt_b);
     
-      apply_invkkt(*kkt_diff,*kkt_res,*state,*control,true);
+      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true);
 
       kkt_x_out->axpy(omega,*kkt_diff);
 
@@ -737,6 +664,53 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       RealT norm = kkt_err->norm() / kkt_b->norm();
       if(myRank==0)
         (*outStream) << "NORM JACOBI= " << norm << std::endl;
+    }
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check MG
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+    kkt_res->scale(-1.0);
+    kkt_res->axpy(1.0,*kkt_b);
+
+    RealT res0 = kkt_res->norm();
+
+    if(myRank==0)
+      (*outStream) << "Multigrid initial res = " << res0 << std::endl;
+
+    for(int i=0;i<100;i++) {
+      pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+   
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+
+      RealT res = kkt_res->norm();
+      if(myRank==0)
+        (*outStream) << " " << i+1 << ". " << res/res0 << std::endl;
+
+      // check the residual
+      if(res/res0 < 1e-9) {
+        // how many iterations
+        if(myRank==0)
+          (*outStream) << "\nIterations = " << i+1 << std::endl;
+        
+        break;
+      }
     }
   }
 }
