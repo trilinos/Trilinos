@@ -138,21 +138,22 @@ private:
       assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
       matJun_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt*theta_,
                   *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
-      setSolver();
       // Assemble new affine term.
       assembler_->assemblePDEResidual(vecRtmp_,pde_,uvec_,zvec_,zpar_);
-      vecR_->update(dt * theta_, *vecRtmp_, dt * (one-theta_));
+      vecR_->update(-dt * theta_, *vecRtmp_, -dt * (one-theta_));
       // Assemble new control Jacobian.
       if (zvec_ != ROL::nullPtr) {
         assembler_->assemblePDEJacobian2(matJzf2_,pde_,uvec_,zvec_,zpar_);
-        matJzf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matJzf1_->add(dt*theta_,
-                    *matJzf2_, dt*(one-theta_), matJzf1_->getDomainMap(),
+        matJzf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matJzf1_->add(-dt*theta_,
+                    *matJzf2_, -dt*(one-theta_), matJzf1_->getDomainMap(),
                     matJzf1_->getRangeMap(), Teuchos::null));
       }
       if (zpar_ != ROL::nullPtr) {
         assembler_->assemblePDEJacobian3(vecJzptmp_,pde_,uvec_,zvec_,zpar_);
-        vecJzp_->update(dt * theta_, *vecJzptmp_, dt * (one-theta_));
+        vecJzp_->update(-dt * theta_, *vecJzptmp_, -dt * (one-theta_));
       }
+      // Set solver with unew Jacobian
+      setSolver();
       isAssembled_ = true;
     }
   }
@@ -276,7 +277,7 @@ public:
       isLTI_       ( isLTI ),
       isAssembled_ ( false ) {
     // Get time discretization parameters
-    theta_  = parlist.sublist("Time Discretization").get("Theta",                1.0);
+    theta_  = parlist.sublist("Time Discretization").get("Theta", 1.0);
     // Construct assembler.
     assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
@@ -313,9 +314,7 @@ public:
               const ROL::Vector<Real>    &un,
               const ROL::Vector<Real>    &z,
               const ROL::TimeStamp<Real> &ts) {
-    if (!isLTI_) {
-      isAssembled_ = false;
-    }
+    isAssembled_ = isLTI_;
     assemble(ts);
   }
 
@@ -348,15 +347,15 @@ public:
       cf->update(one, *cvec_, one);
     }
     // Add new state contribution
-    applyJacobian_un(cvec_,unf,false);
-    cf->update(one,*cvec_,-one);
+    applyJacobian_un(cvec_, unf, false);
+    cf->update(one, *cvec_, -one);
   }
 
   void solve(ROL::Vector<Real> &c,
        const ROL::Vector<Real> &uo,
              ROL::Vector<Real> &un,
        const ROL::Vector<Real> &z,
-       const ROL::TimeStamp<Real> &ts) const {
+       const ROL::TimeStamp<Real> &ts) {
     ROL::Ptr<Tpetra::MultiVector<>>        cf = getField(c);
     ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
     ROL::Ptr<Tpetra::MultiVector<>>       unf = getField(un);
