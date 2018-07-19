@@ -8218,7 +8218,8 @@ namespace Tpetra {
     // FIXME (mfh 15 May 2014) Wouldn't communication still be needed,
     // if the source Map is not distributed but the target Map is?
     const bool communication_needed = rowTransfer.getSourceMap ()->isDistributed ();
-
+    int MyPID = getComm ()->getRank ();
+    
     //
     // Get the caller's parameters
     //
@@ -8231,6 +8232,11 @@ namespace Tpetra {
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       matrixparams = sublist (params, "CrsMatrix");
       isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
+      
+      int mm_optimization_size=0; // ~800 for serrano
+      mm_optimization_size = params->get("isMatrixMatrix_TransferAndFillComplete",mm_optimization_size);
+      int commSize = getComm() -> getSize();
+      if(commSize < mm_optimization_size) isMM = false;
       if(reverseMode) isMM = false;
     }
 
@@ -8357,7 +8363,6 @@ namespace Tpetra {
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
     Teuchos::Array<int> TargetPids;
-    int MyPID = getComm ()->getRank ();
 
     // Temp variables for sub-communicators
     RCP<const map_type> ReducedRowMap, ReducedColMap,
