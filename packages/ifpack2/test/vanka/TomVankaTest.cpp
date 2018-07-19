@@ -100,13 +100,11 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Ifpack2_ConfigDefs.hpp"
 
-// Teuchos
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 #ifdef HAVE_MPI
@@ -115,13 +113,11 @@
 #include "Teuchos_DefaultSerialComm.hpp"
 #endif
 
-// Tpetra
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
-// Ifpack2
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_BlockRelaxation_def.hpp"
@@ -136,22 +132,17 @@
 int
 main (int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession mpisess (&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
-  //Define communicator:
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform =
-    Tpetra::DefaultPlatform::getDefaultPlatform ();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-
-  Teuchos::RCP<Teuchos::FancyOStream> fos =
-    Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  auto comm = Tpetra::getDefaultComm ();
+  auto fos = Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
   //out->setOutputToRootOnly (0);
 
   // General stuff
   typedef Tpetra::Vector<>::scalar_type ST;
   typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Map<LO>::global_ordinal_type GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type Node;
 
   // Matrix stuff
   typedef Tpetra::Map<LO,GO,Node> map_type;

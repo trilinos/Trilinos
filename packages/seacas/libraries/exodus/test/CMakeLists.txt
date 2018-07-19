@@ -79,7 +79,7 @@ IF ( NETCDF_NCDUMP_BINARY )
     testrd_ss
     testrdwt
     testcp
-    testcp_ln
+    testcp_tran
     testcp_nl
     testcpd
     testwt_clb
@@ -131,12 +131,14 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   # NOTE: The "LINKER_LANGUAGE CXX" is used to workaround an issue with
   #       the trilinos cmake adding the pamgen and pamgen_extras libraries as
-  #       a dependency.  These are C++ libraries and result in unresolved depedencies
+  #       a dependency.  These are C++ libraries and result in unresolved dependencies
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
     TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
   ENDFOREACH ( testName )
+
+  TRIBITS_ADD_EXECUTABLE( testwt-localization NOEXEPREFIX NOEXESUFFIX SOURCES testwt-localization.C LINKER_LANGUAGE CXX)
 
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
@@ -174,6 +176,19 @@ IF ( NETCDF_NCDUMP_BINARY )
      FINAL_PASS_REGULAR_EXPRESSION 
     )
   endif()
+
+#  if ( TPL_Netcdf_Enables_Netcdf5 )  
+    TRIBITS_ADD_ADVANCED_TEST(
+     exodus_unit_tests_nc5_env
+     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf5
+	    OUTPUT_FILE exodus_unit_tests.out
+	    PASS_ANY
+     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS} 
+                           ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+     COMM mpi serial
+     FINAL_PASS_REGULAR_EXPRESSION 
+    )
+#  endif()
 ELSE()
   MESSAGE(STATUS
       "WARNING: ${PACKAGE_NAME}: Exodus unit tests will not be run due to failure finding ncdump executable.")

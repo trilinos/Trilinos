@@ -348,6 +348,9 @@ public:
     */
   const PinTCommunicators & communicators() const { return *communicators_; }
 
+  /** What is the communicators object used to build this vector?
+    */
+  Ptr<const PinTCommunicators> communicatorsPtr() const { return communicators_; }
 
   /** \brief Determine if an index is valid including the stencil.
 

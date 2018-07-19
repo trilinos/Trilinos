@@ -32,7 +32,7 @@ C=======================================================================
       SUBROUTINE PRGLOB (OPTION, NOUT, NVARGL, LISGV, NAMEGV, VARGL)
 C=======================================================================
 
-C   --*** PRGLOB *** (GROPE) Display current database global variables
+C   --*** PRGLOB *** Display current database global variables
 C   --
 C   --PRGLOB displays the global data for a time step.
 C   --

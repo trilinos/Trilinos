@@ -73,7 +73,8 @@ public:
                const Ptr<Vector<Real>> &x,
                const Real penaltyParam,
                ParameterList &parlist) 
-    : penaltyParam_(penaltyParam), xbar_(nullPtr), w_(nullPtr) {
+    : xbar_(nullPtr), w_(nullPtr), xprimal_(nullPtr),
+      penaltyParam_(penaltyParam) {
     xprimal_ = x->clone();
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
     if (type == "Risk Averse") {
@@ -133,7 +134,6 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    const Real one(1);
     obj_->gradient(g,x,tol);
     xprimal_->set(*w_);
     xprimal_->axpy(penaltyParam_,x);

@@ -902,6 +902,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>tentative: build coarse coordinates</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip the calculation of coarse coordinates.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
   </multigrid>
 
   <rebalancing>

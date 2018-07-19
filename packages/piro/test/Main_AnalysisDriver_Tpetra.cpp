@@ -57,11 +57,17 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Stratimikos_MueLuHelpers.hpp"
 #include "Piro_StratimikosUtils.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Tpetra_Core.hpp"
 
+#ifdef HAVE_PIRO_IFPACK2
+#include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#endif
+
+#ifdef HAVE_PIRO_MUELU
+#include "Stratimikos_MueLuHelpers.hpp"
+#endif
 
 
 
@@ -77,11 +83,8 @@ int main(int argc, char *argv[]) {
   // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   int Proc=mpiSession.getRank();
-#ifdef HAVE_MPI
-  MPI_Comm appComm = MPI_COMM_WORLD;
-#else
-  int appComm=0;
-#endif
+
+  auto appComm = Tpetra::getDefaultComm();
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -128,11 +131,17 @@ int main(int argc, char *argv[]) {
 
 
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+
+#ifdef HAVE_PIRO_IFPACK2
       typedef Thyra::PreconditionerFactoryBase<double>              Base;
       typedef Thyra::Ifpack2PreconditionerFactory<Tpetra_CrsMatrix> Impl;
       linearSolverBuilder.setPreconditioningStrategyFactory(
           Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
+
+#ifdef HAVE_PIRO_MUELU
       Stratimikos::enableMueLu<int, int>(linearSolverBuilder);
+#endif
 
       const Teuchos::RCP<Teuchos::ParameterList> stratList = Piro::extractStratimikosParams(piroParams);
       linearSolverBuilder.setParameterList(stratList);
@@ -153,21 +162,22 @@ int main(int argc, char *argv[]) {
       RCP<Thyra::VectorBase<double>> p;
       status = Piro::PerformAnalysis(*piro, analysisParams, p);
 
-      Thyra::DetachedVectorView<double> p_view(p);
-      double p_exact[2] = {1,3};
-      double tol = 1e-6;
+      if (Teuchos::nonnull(p)) { //p might be null if the packages ROL, Moocho, OptiPack are not enabled
+        Thyra::DetachedVectorView<double> p_view(p);
+        double p_exact[2] = {1,3};
+        double tol = 1e-6;
 
-      double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
-      if(l2_diff > tol) {
-        status+=100;
-        if (Proc==0) {
-          std::cout << "\nPiro_AnalysisDrvier:  Optimum parameter values are: {"
-              <<  p_exact[0] << ", " << p_exact[1] << "}, but computed values are: {"
-              <<  p_view(0) << ", " << p_view(1) << "}." <<
-              "\n                      Difference in l2 norm: " << l2_diff << " > tol: " << tol <<   std::endl;
+        double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
+        if(l2_diff > tol) {
+          status+=100;
+          if (Proc==0) {
+            std::cout << "\nPiro_AnalysisDrvier:  Optimum parameter values are: {"
+                <<  p_exact[0] << ", " << p_exact[1] << "}, but computed values are: {"
+                <<  p_view(0) << ", " << p_view(1) << "}." <<
+                "\n                      Difference in l2 norm: " << l2_diff << " > tol: " << tol <<   std::endl;
+          }
         }
       }
-
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
     if (!success) status+=1000;

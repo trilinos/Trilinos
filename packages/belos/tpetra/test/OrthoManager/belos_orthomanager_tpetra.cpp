@@ -47,9 +47,8 @@
 /// and Tpetra::Operator as the operator implementation.
 ///
 #include "belos_orthomanager_tpetra_util.hpp"
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Tpetra_Core.hpp"
 
 using std::endl;
 
@@ -394,10 +393,9 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
   bool success = false;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   try {
-    RCP<const Teuchos::Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
     // Get values of command-line arguments.
     getCmdLineArgs (*comm, argc, argv);

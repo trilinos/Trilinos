@@ -126,6 +126,14 @@ public:
     epetra_vec_->PutScalar(static_cast<double>(C));
   }
 
+  void randomize(const Real l=0.0, const Real u=1.0) {
+    epetra_vec_->Random();                         // Random numbers between -1 and 1
+    this->scale(static_cast<Real>(0.5)*(u-l));     // Random numbers between (l-u)/2 and (u-l)/2
+    Ptr<Vector<Real>> copy = this->clone();
+    copy->setScalar(static_cast<Real>(0.5)*(u+l)); // Constant vector with values (u+l)/2
+    this->plus(*copy);                             // Random numbers between l and u
+  }
+
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */
   void set( const Vector<Real> &x ) {

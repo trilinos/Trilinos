@@ -143,6 +143,10 @@ public:
     v_->setScalar(C);
   }
 
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    v_->randomize(l,u);
+  }
+
   ROL::Ptr<V> getVector( void ) { 
     return v_;
   }
@@ -225,6 +229,9 @@ public:
     v_->setScalar(C);
   }
 
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    v_->randomize(l,u);
+  }
 
   ROL::Ptr<V> getVector( void ) { 
     return v_;

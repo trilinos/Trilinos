@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@
 #define EXODUS_THREADSAFE
 #endif
 
-/* Deprectated Code Handling Options:
+/* Deprecated Code Handling Options:
  * 1. Ignore -- treat deprecated functions as normal non-deprecated functions (default)
  * 2. Delete -- the deprecated functions are not defined or compiled (SEACAS_HIDE_DEPRECATED_CODE is
  * defined)

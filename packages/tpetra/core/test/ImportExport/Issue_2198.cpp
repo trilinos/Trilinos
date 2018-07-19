@@ -612,10 +612,10 @@ runTest (Teuchos::FancyOStream& out,
 
     std::ostringstream errStrm;
     bool lclErr = false;
-    const map_type actualTgtMap =
+    Teuchos::RCP<const map_type> actualTgtMap =
       Tpetra::Details::makeOptimizedColMap (out, lclErr, *sourceMap,
                                             *expUnoptTgtMap,
-                                            expUnoptImport.getRawPtr ());;
+                                            expUnoptImport.getRawPtr ());
     const bool gblMadeItThrough = trueEverywhere (! lclErr, *comm);
     TEST_ASSERT( gblMadeItThrough );
     if (! gblMadeItThrough) {
@@ -624,9 +624,9 @@ runTest (Teuchos::FancyOStream& out,
     }
 
     out << "Actual target Map:" << endl;
-    printMapCompactly (out, actualTgtMap);
+    printMapCompactly (out, *actualTgtMap);
 
-    const import_type actualImport (sourceMap, rcp (new map_type (actualTgtMap)));
+    const import_type actualImport (sourceMap, actualTgtMap);
     const bool gblImportsSame =
       importsGloballySame (out, *expOptImport, "expOptImport",
                            actualImport, "actualImport");

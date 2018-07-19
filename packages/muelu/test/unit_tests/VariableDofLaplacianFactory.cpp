@@ -80,7 +80,7 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
 
     // TODO coords should use SC = double
-    RCP<MultiVector> coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", A->getRowMap(), matrixParameters);
+    RCP<RealValuedMultiVector> coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", A->getRowMap(), matrixParameters);
 
     // build hierarchy
     RCP<Level> l = rcp(new Level());
@@ -137,7 +137,7 @@ namespace MueLuTests {
     RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
 
     //build coordinates before expanding map (nodal coordinates, not dof-based)
-    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
     RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
 
     galeriList.set("right boundary" , "Neumann");
@@ -235,7 +235,7 @@ namespace MueLuTests {
     RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
 
     //build coordinates before expanding map (nodal coordinates, not dof-based)
-    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
     RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
 
     galeriList.set("right boundary" , "Neumann");
@@ -278,6 +278,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
+    fineLevel.Set("Coordinates", coordinates);
     fineLevel.Set("A", lapA);
 
     TentativePFactory PFact;

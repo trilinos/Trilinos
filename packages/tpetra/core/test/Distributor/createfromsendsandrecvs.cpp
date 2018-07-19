@@ -44,7 +44,7 @@
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
 #include <Tpetra_ConfigDefs.hpp>
@@ -54,8 +54,6 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
 
 namespace { // (anonymous)
 
@@ -174,7 +172,7 @@ TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
   using std::endl;
   //typedef Tpetra::Vector<>::scalar_type SC;
 
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  auto comm = Tpetra::getDefaultComm ();
   int my_proc = comm->getRank();
   //int nprocs = comm->getSize(); // unused
 

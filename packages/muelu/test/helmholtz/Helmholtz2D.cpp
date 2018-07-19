@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     //****************************************//
 
     Teuchos::ParameterList pl = matrixParameters_aux.GetParameterList();
-    RCP<MultiVector> coordinates;
+    RCP<RealValuedMultiVector> coordinates;
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", pl.get("nx", nx));
     galeriList.set("ny", pl.get("ny", ny));
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map;
 
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_aux.GetParameterList());
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", map, matrixParameters_aux.GetParameterList());
 
     RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
       RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
         Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
       RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
-      
+
       RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
         Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
       RCP<Matrix> Pmat = Pr_shifted->BuildMatrix();

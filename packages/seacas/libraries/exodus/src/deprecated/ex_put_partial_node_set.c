@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,7 +57,8 @@
 #include <stdint.h>   // for int64_t
 
 /*!
- * \deprecated Use ex_put_partial_set() instead.
+ * \deprecated Use ex_put_partial_set()(exoid, EX_NODE_SET, node_set_id, start_node_num, num_nodes,
+                            node_set_node_list, NULL)
  */
 
 /*

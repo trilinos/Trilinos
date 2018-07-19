@@ -84,6 +84,16 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+// #include "MueLu_CoarseMapFactory_kokkos.hpp"
+// #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
+// #include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#endif
+
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionHeuristicFactory.hpp"
@@ -186,7 +196,11 @@ namespace MueLu {
 
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
+#if ( defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT) )
+    bool useKokkosRefactor = true;
+#else
     bool useKokkosRefactor = false;
+#endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
       setKokkosRefactor = true;
@@ -236,16 +250,31 @@ namespace MueLu {
         "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
 
     // Create MueLu factories
-    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    RCP<Factory> dropFact;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    if(useKokkosRefactor)
+      dropFact = rcp( new CoalesceDropFactory_kokkos() );
+    else
+#endif
+      dropFact = rcp( new CoalesceDropFactory() );
+
     if (agg_use_aux) {
       dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(std::string("distance laplacian")));
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
     }
 
-    RCP<FactoryBase> AggFact = Teuchos::null;
+    RCP<Factory> AggFact = Teuchos::null;
     if (agg_type == "Uncoupled") {
       // Uncoupled aggregation
-      RCP<UncoupledAggregationFactory> MyUncoupledAggFact = rcp(new UncoupledAggregationFactory());
+      RCP<Factory> MyUncoupledAggFact;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if(useKokkosRefactor) {
+        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory_kokkos() );
+      }
+      else
+#endif
+        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory() );
+
       MyUncoupledAggFact->SetFactory("Graph", dropFact);
       MyUncoupledAggFact->SetFactory("DofsPerNode", dropFact);
       MyUncoupledAggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
@@ -256,7 +285,22 @@ namespace MueLu {
       AggFact = MyUncoupledAggFact;
     } else {
       // Coupled Aggregation (default)
-      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if(useKokkosRefactor) {
+        AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
+      } else {
+        RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
+        CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+        CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+        CoupledAggFact2->SetOrdering("natural");
+        CoupledAggFact2->SetPhase3AggCreation(0.5);
+        CoupledAggFact2->SetFactory("Graph", dropFact);
+        CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
+        AggFact = CoupledAggFact2;
+      }
+#else
+      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
+      CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
       CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
       CoupledAggFact2->SetOrdering("natural");
@@ -264,6 +308,7 @@ namespace MueLu {
       CoupledAggFact2->SetFactory("Graph", dropFact);
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
       AggFact = CoupledAggFact2;
+#endif
     }
     if (verbosityLevel > 3) {
       std::ostringstream oss;
@@ -277,14 +322,26 @@ namespace MueLu {
 
     RCP<Factory> PFact;
     RCP<Factory> RFact;
-    RCP<Factory> PtentFact = rcp( new TentativePFactory() );
+    RCP<Factory> PtentFact;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    if(useKokkosRefactor)
+      PtentFact = rcp( new TentativePFactory_kokkos() );
+    else
+#endif
+      PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
       PFact = PtentFact;
       RFact = rcp( new TransPFactory() );
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
-      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
+      RCP<Factory> SaPFact;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    if(useKokkosRefactor)
+      SaPFact = rcp( new SaPFactory_kokkos() );
+    else
+#endif
+      SaPFact = rcp( new SaPFactory() );
       SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );

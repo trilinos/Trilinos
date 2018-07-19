@@ -76,41 +76,41 @@ public:
   }
 
   virtual const Belos::LinearProblem<SC, MV, OP>&
-  getProblem () const {
+  getProblem () const override {
     return linearProblem_;
   }
 
   virtual Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters () const {
+  getValidParameters () const override {
     return Teuchos::null;
   }
 
   virtual Teuchos::RCP<const Teuchos::ParameterList>
-  getCurrentParameters () const {
+  getCurrentParameters () const override {
     return Teuchos::null;
   }
 
-  virtual int getNumIters () const {
+  virtual int getNumIters () const override {
     return 0;
   }
 
-  virtual bool isLOADetected () const {
+  virtual bool isLOADetected () const override {
     return false;
   }
 
   virtual void
-  setProblem (const Teuchos::RCP<Belos::LinearProblem<SC, MV, OP> >& /* problem */)
+  setProblem (const Teuchos::RCP<Belos::LinearProblem<SC, MV, OP> >& /* problem */) override
   {}
 
   virtual void
-  setParameters (const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
+  setParameters (const Teuchos::RCP<Teuchos::ParameterList>& /* params */) override
   {}
 
   virtual void
-  reset (const Belos::ResetType /* type */)
+  reset (const Belos::ResetType /* type */) override
   {}
 
-  virtual Belos::ReturnType solve () {
+  virtual Belos::ReturnType solve () override {
     return Belos::Unconverged;
   }
 

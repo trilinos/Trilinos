@@ -87,7 +87,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  "Global Lexicographic");
@@ -126,7 +126,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  "Local Lexicographic");
@@ -173,7 +173,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -182,8 +182,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -273,7 +272,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -282,8 +281,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -373,7 +371,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -382,8 +380,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -474,7 +471,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -483,8 +480,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -576,7 +572,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -585,8 +581,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -678,7 +673,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -687,8 +682,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -782,7 +776,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -796,8 +790,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -892,7 +885,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -906,8 +899,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -1002,7 +994,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -1016,8 +1008,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -1108,7 +1099,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -1124,8 +1115,7 @@ namespace MueLuTests {
     matrixList.set("nz", gNodesPerDir[2]);
     matrixList.set("matrixType","Laplace3D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
@@ -1145,10 +1135,10 @@ namespace MueLuTests {
     // create the factory manager and the factories
     FactoryManager M;
 
-    RCP<Factory>      amalgFact     = rcp(new AmalgamationFactory());
+    RCP<Factory>      AmalgFact     = rcp( new AmalgamationFactory() );
     RCP<Factory>      CDropfact     = rcp( new CoalesceDropFactory() );
     RCP<Factory>      Aggfact       = rcp( new StructuredAggregationFactory() );
-    RCP<Factory>      coarseMapFact = rcp(new CoarseMapFactory());
+    RCP<Factory>      coarseMapFact = rcp( new CoarseMapFactory() );
     RCP<Factory>      Pfact         = rcp( new TentativePFactory() );
     RCP<Factory>      Rfact         = rcp( new TransPFactory() );
     RCP<Factory>      Tfact         = rcp( new CoordinatesTransferFactory() );
@@ -1164,7 +1154,7 @@ namespace MueLuTests {
     Tfact->SetParameter("structured aggregation", Teuchos::ParameterEntry(true));
 
     // Set interfactory dependencies
-    CDropfact->SetFactory("UnAmalgamationInfo", amalgFact);
+    CDropfact->SetFactory("UnAmalgamationInfo", AmalgFact);
     Aggfact->SetFactory("Graph", CDropfact);
     coarseMapFact->SetFactory("Aggregates", Aggfact);
     Pfact->SetFactory("Aggregates", Aggfact);
@@ -1174,14 +1164,12 @@ namespace MueLuTests {
     Acfact->AddTransferFactory(Tfact);
 
     // Set default factories in the manager
-    M.SetFactory("P",           Pfact);
-    M.SetFactory("R",           Rfact);
-    M.SetFactory("A",           Acfact);
-    M.SetFactory("Nullspace",   NSfact);
-    M.SetFactory("Graph",       CDropfact);
-    M.SetFactory("gNodesPerDim", Tfact);
-    M.SetFactory("lNodesPerDim", Tfact);
-    M.SetFactory("gCoarseNodesPerDim", Aggfact);
+    M.SetFactory("P",                  Pfact);
+    M.SetFactory("R",                  Rfact);
+    M.SetFactory("A",                  Acfact);
+    M.SetFactory("Nullspace",          NSfact);
+    M.SetFactory("Graph",              CDropfact);
+    M.SetFactory("lNodesPerDim",       Tfact);
     M.SetFactory("lCoarseNodesPerDim", Aggfact);
 
     // setup smoothers
@@ -1204,11 +1192,8 @@ namespace MueLuTests {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", A);                        // set fine level matrix
     Finest->Set("Nullspace", nullSpace);        // set null space information for finest level
-    Finest->Set("Coordinates", Coordinates);    // set fine level coordinates
-    Finest->Set("gNodesPerDim", gNodesPerDir);  // set GeneralGeometricPFactory specific info
+    // Finest->Set("Coordinates", Coordinates);    // set fine level coordinates
     Finest->Set("lNodesPerDim", lNodesPerDir);  // set GeneralGeometricPFactory specific info
-    // Finest->Set("meshData", meshData);          // set GeneralGeometricPFactory specific info
-    Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
 
     // Setup the hierarchy
     LO maxLevels = 5;

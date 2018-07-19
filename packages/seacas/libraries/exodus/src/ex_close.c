@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,26 +33,24 @@
  *
  */
 /*****************************************************************************
-*
-* exclos - ex_close
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exclos - ex_close
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_counter_list, etc
 #include "netcdf.h"       // for NC_NOERR, nc_close, etc
 #include <stdio.h>
-
-extern char *ret_string; /* cf ex_utils.c */
 
 /*!
 
@@ -78,19 +76,21 @@ int ex_close(int exoid)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  status;
+  int  status1;
+  int  status2;
 #if NC_HAS_HDF5
   int parent_id = 0;
 #endif
 
   EX_FUNC_ENTER();
 
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
-/*
- * NOTE: If using netcdf-4, exoid must refer to the root group.
- * Need to determine whether there are any groups and if so,
- * call ex_rm_file_item and ex_rm_stat_ptr on each group.
- */
+  /*
+   * NOTE: If using netcdf-4, exoid must refer to the root group.
+   * Need to determine whether there are any groups and if so,
+   * call ex_rm_file_item and ex_rm_stat_ptr on each group.
+   */
 
 #if NC_HAS_HDF5
   /* nc_inq_grp_parent() will return NC_ENOGRP error if exoid
@@ -98,49 +98,56 @@ int ex_close(int exoid)
    */
   if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file id %d does not refer to root group.", exoid);
-    ex_err("ex_close", errmsg, EX_NOTROOTID);
+    ex_err(__func__, errmsg, EX_NOTROOTID);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 #endif
 
-  if ((status = nc_sync(exoid)) != NC_NOERR) {
+  if ((status1 = nc_sync(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
-    ex_err("ex_close", errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
+    ex_err(__func__, errmsg, status1);
   }
-  if ((status = nc_close(exoid)) == NC_NOERR) {
-    ex_conv_exit(exoid);
 
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_BLOCK));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_BLOCK));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_NODE_SET));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_SET));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_SET));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_SIDE_SET));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_SET));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_NODE_MAP));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_MAP));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_MAP));
-    ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_MAP));
-
-    ex_rm_stat_ptr(exoid, &exoII_ed);
-    ex_rm_stat_ptr(exoid, &exoII_fa);
-    ex_rm_stat_ptr(exoid, &exoII_eb);
-    ex_rm_stat_ptr(exoid, &exoII_ns);
-    ex_rm_stat_ptr(exoid, &exoII_es);
-    ex_rm_stat_ptr(exoid, &exoII_fs);
-    ex_rm_stat_ptr(exoid, &exoII_ss);
-    ex_rm_stat_ptr(exoid, &exoII_els);
-    ex_rm_stat_ptr(exoid, &exoII_nm);
-    ex_rm_stat_ptr(exoid, &exoII_edm);
-    ex_rm_stat_ptr(exoid, &exoII_fam);
-    ex_rm_stat_ptr(exoid, &exoII_em);
-  }
-  else {
+  if ((status2 = nc_close(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to close file id %d", exoid);
-    ex_err("ex_close", errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
+    ex_err(__func__, errmsg, status2);
   }
-  EX_FUNC_LEAVE(EX_NOERR);
+
+  /* Even if we have failures above due to nc_sync() or nc_close(), we still need to clean up our
+   * internal datastructures.
+   */
+
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_BLOCK));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_BLOCK));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_NODE_SET));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_SET));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_SET));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_SIDE_SET));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_SET));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_NODE_MAP));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_EDGE_MAP));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_FACE_MAP));
+  ex_rm_file_item(exoid, ex_get_counter_list(EX_ELEM_MAP));
+
+  ex_rm_stat_ptr(exoid, &exoII_ed);
+  ex_rm_stat_ptr(exoid, &exoII_fa);
+  ex_rm_stat_ptr(exoid, &exoII_eb);
+  ex_rm_stat_ptr(exoid, &exoII_ns);
+  ex_rm_stat_ptr(exoid, &exoII_es);
+  ex_rm_stat_ptr(exoid, &exoII_fs);
+  ex_rm_stat_ptr(exoid, &exoII_ss);
+  ex_rm_stat_ptr(exoid, &exoII_els);
+  ex_rm_stat_ptr(exoid, &exoII_nm);
+  ex_rm_stat_ptr(exoid, &exoII_edm);
+  ex_rm_stat_ptr(exoid, &exoII_fam);
+  ex_rm_stat_ptr(exoid, &exoII_em);
+
+  ex_conv_exit(exoid);
+
+  status = EX_NOERR;
+  if (status1 != NC_NOERR || status2 != NC_NOERR) {
+    status = EX_FATAL;
+  }
+  EX_FUNC_LEAVE(status);
 }

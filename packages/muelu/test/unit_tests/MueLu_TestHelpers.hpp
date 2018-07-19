@@ -198,7 +198,7 @@ namespace MueLuTests {
 
         RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-            Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, matrixList);
+          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, matrixList);
         RCP<Matrix> Op = Pr->BuildMatrix();
 
         return Op;
@@ -343,10 +343,11 @@ namespace MueLuTests {
         return A;
       } // Build2DPoisson()
 
-      static RCP<Xpetra::MultiVector<double,LO,GO,NO> >
+      static RCP<RealValuedMultiVector>
       BuildGeoCoordinates(const int numDimensions, const Array<GO> gNodesPerDir,
                           Array<LO>& lNodesPerDir, Array<GO>& meshData,
                           const std::string meshLayout = "Global Lexicographic") {
+        typedef typename RealValuedMultiVector::scalar_type real_type;
 
         // Get MPI infos
         Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -388,7 +389,7 @@ namespace MueLuTests {
           }
 
           if(numDimensions == 1) {
-            LO numNodesPerRank = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / numRanks);
+            LO numNodesPerRank = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / numRanks);
             if(myRank == numRanks - 1) {
               lNodesPerDir[0] = gNodesPerDir[0] - myRank*numNodesPerRank;
             } else {
@@ -407,14 +408,14 @@ namespace MueLuTests {
             }
           } else {
             if(myRank == 0 || myRank == 2) {
-              lNodesPerDir[0] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
+              lNodesPerDir[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
             } else {
-              lNodesPerDir[0] = std::floor(Teuchos::as<double>(gNodesPerDir[0]) / 2);
+              lNodesPerDir[0] = std::floor(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
             }
             if(myRank == 0 || myRank == 1) {
-              lNodesPerDir[1] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+              lNodesPerDir[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
             } else {
-              lNodesPerDir[1] = std::floor(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+              lNodesPerDir[1] = std::floor(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
             }
             if(meshLayout == "Local Lexicographic") {
               for(int j = 0; j < 2; ++j) {
@@ -422,16 +423,16 @@ namespace MueLuTests {
                   int rank = 2*j + i;
                   if(i == 0) {
                     meshData[10*rank + 3] = 0;
-                    meshData[10*rank + 4] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2) - 1;
+                    meshData[10*rank + 4] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2) - 1;
                   } else if(i == 1) {
-                    meshData[10*rank + 3] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
+                    meshData[10*rank + 3] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
                     meshData[10*rank + 4] = gNodesPerDir[0] - 1;
                   }
                   if(j == 0) {
                     meshData[10*rank + 5] = 0;
-                    meshData[10*rank + 6] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2) - 1;
+                    meshData[10*rank + 6] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2) - 1;
                   } else if(j == 1) {
-                    meshData[10*rank + 5] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+                    meshData[10*rank + 5] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
                     meshData[10*rank + 6] = gNodesPerDir[1] - 1;
                   }
                 }
@@ -464,31 +465,31 @@ namespace MueLuTests {
         GO myGIDOffset = 0;
         Array<GO> myLowestTuple(3);
         if(numDimensions == 1) {
-          myGIDOffset = myRank*std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / numRanks);
+          myGIDOffset = myRank*std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / numRanks);
           myLowestTuple[0] = myGIDOffset;
         } else {
           if(myRank == 1) {
-            myLowestTuple[0] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
+            myLowestTuple[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
             if(meshLayout == "Global Lexicographic") {
               myGIDOffset = myLowestTuple[0];
             } else if(meshLayout == "Local Lexicographic") {
-              myGIDOffset = myLowestTuple[0]*std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2)
+              myGIDOffset = myLowestTuple[0]*std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)
                 *gNodesPerDir[2];
             }
           } else if(myRank == 2) {
-            myLowestTuple[1] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+            myLowestTuple[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
             if(meshLayout == "Global Lexicographic") {
-              myGIDOffset = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2)*gNodesPerDir[0];
+              myGIDOffset = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)*gNodesPerDir[0];
             } else if(meshLayout == "Local Lexicographic") {
               myGIDOffset = gNodesPerDir[0]*myLowestTuple[1]*gNodesPerDir[2];
             }
           } else if(myRank == 3) {
-            myLowestTuple[0] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
-            myLowestTuple[1] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+            myLowestTuple[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+            myLowestTuple[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
             if(meshLayout == "Global Lexicographic") {
               myGIDOffset = myLowestTuple[1]*gNodesPerDir[0] + myLowestTuple[0];
             } else if(meshLayout == "Local Lexicographic") {
-              myGIDOffset = (myLowestTuple[0]*std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2)
+              myGIDOffset = (myLowestTuple[0]*std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)
                              + myLowestTuple[1]*gNodesPerDir[0])*gNodesPerDir[2];
             }
           }
@@ -523,9 +524,9 @@ namespace MueLuTests {
         //    Step 3: Compute coordinates    //
         //                                   //
         ///////////////////////////////////////
-        RCP<Xpetra::MultiVector<double,LO,GO,NO> > Coordinates
-          = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordMap, numDimensions);
-        Array<ArrayRCP<double> > myCoords(numDimensions);
+        RCP<RealValuedMultiVector> Coordinates = RealValuedMultiVectorFactory::Build(coordMap,
+                                                                                     numDimensions);
+        Array<ArrayRCP<real_type> > myCoords(numDimensions);
         for(int dim = 0; dim < numDimensions; ++dim) {
           myCoords[dim] = Coordinates->getDataNonConst(dim);
         }
@@ -541,7 +542,7 @@ namespace MueLuTests {
                   myCoords[dim][nodeIdx] = 0.0;
                 } else {
                   myCoords[dim][nodeIdx] =
-                    Teuchos::as<double>(myLowestTuple[dim] + ijk[dim]) / (gNodesPerDir[dim] - 1);
+                    Teuchos::as<real_type>(myLowestTuple[dim] + ijk[dim]) / (gNodesPerDir[dim] - 1);
                 }
               }
             }

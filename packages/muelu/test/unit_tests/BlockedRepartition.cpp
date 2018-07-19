@@ -796,6 +796,7 @@ namespace MueLuTests {
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
   P11Fact->SetFactory("Aggregates",AggFact11);
   P11Fact->SetFactory("UnAmalgamationInfo",Amalg11);
+  P11Fact->SetParameter("tentative: build coarse coordinates", Teuchos::ParameterEntry(false));
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
   RCP<Factory> Nullspace11 = rcp(new NullspaceFactory());
   Nullspace11->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace1")));
@@ -831,6 +832,7 @@ namespace MueLuTests {
   RCP<TentativePFactory>P22Fact = rcp(new TentativePFactory());
   P22Fact->SetFactory("Aggregates",AggFact22);
   P22Fact->SetFactory("UnAmalgamationInfo",Amalg22);
+  P22Fact->SetParameter("tentative: build coarse coordinates", Teuchos::ParameterEntry(false));
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
   RCP<Factory> Nullspace22 = rcp(new NullspaceFactory());
   Nullspace22->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace2")));
@@ -852,7 +854,7 @@ namespace MueLuTests {
   M22->SetFactory("P", P22Fact);
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Ptent", P22Fact); //for Nullspace
-  M22->SetFactory("Coordinates", Coord22);
+  M22->SetFactory("Coordinates", P22Fact);
   M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetFactory("CoarseMap",Cmap22);
   M22->SetFactory("Nullspace",Nullspace22);

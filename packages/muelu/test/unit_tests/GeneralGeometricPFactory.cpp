@@ -409,7 +409,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace
@@ -615,7 +616,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace
@@ -1166,7 +1168,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace

@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
-  
+
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
     throw std::invalid_argument("This example only supports Tpetra.");
   }

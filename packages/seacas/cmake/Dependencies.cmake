@@ -24,13 +24,13 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Exomatlab   applications/exomatlab  ST  OPTIONAL
   Exotxt      applications/exotxt     PT  OPTIONAL
   Exo_format  applications/exo_format PT  OPTIONAL
+  Explore     applications/explore    PT  OPTIONAL
   Ex1ex2v2    applications/ex1ex2v2   PT  OPTIONAL
   Fastq       applications/fastq      ST  OPTIONAL
   Gjoin       applications/gjoin      PT  OPTIONAL
   Gen3D       applications/gen3d      PT  OPTIONAL
   Genshell    applications/genshell   PT  OPTIONAL
   Grepos      applications/grepos     PT  OPTIONAL
-  Grope       applications/grope      PT  OPTIONAL
   Mapvarlib   libraries/mapvarlib     PT  OPTIONAL
   Mapvar      applications/mapvar     PT  OPTIONAL
   Mapvar-kd   applications/mapvar-kd  PT  OPTIONAL
