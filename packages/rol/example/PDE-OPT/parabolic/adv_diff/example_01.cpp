@@ -109,17 +109,11 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<PDE_mass<RealT>>(*parlist);
 
     /*************************************************************************/
-    /***************** BUILD CONTROL VECTORS *********************************/
-    /*************************************************************************/
-    ROL::Ptr<ROL::Vector<RealT>> zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
-    ROL::Ptr<ROL::PartitionedVector<RealT>> z = ROL::PartitionedVector<RealT>::create(*zk, nt);
-
-    /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
     /*************************************************************************/
     bool isLTI = !parlist->sublist("Problem").get("Time Varying Coefficients",false);
     ROL::Ptr<LinDynConstraint<RealT>> dyn_con
-      = ROL::makePtr<LinDynConstraint<RealT>>(pde,mass,meshMgr,comm,*zk,*parlist,isLTI,*outStream);
+      = ROL::makePtr<LinDynConstraint<RealT>>(pde,mass,meshMgr,comm,*parlist,isLTI,*outStream);
     dyn_con->getAssembler()->printMeshData(*outStream);
 
     /*************************************************************************/
@@ -130,11 +124,14 @@ int main(int argc, char *argv[]) {
     uo_ptr = dyn_con->getAssembler()->createStateVector();
     un_ptr = dyn_con->getAssembler()->createStateVector();
     ck_ptr = dyn_con->getAssembler()->createResidualVector();
-    ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck;
+    ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck, zk;
     u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,dyn_con->getAssembler());
     uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,dyn_con->getAssembler());
     un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,dyn_con->getAssembler());
     ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,dyn_con->getAssembler());
+    zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
+    ROL::Ptr<ROL::PartitionedVector<RealT>> z
+      = ROL::PartitionedVector<RealT>::create(*zk, nt);
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/

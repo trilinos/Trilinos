@@ -88,10 +88,10 @@ private:
   Real theta_;
 
   ROL::Ptr<Tpetra::MultiVector<>> uvec_;
-  ROL::Ptr<Tpetra::MultiVector<>> zvec_;
-  ROL::Ptr<std::vector<Real>>     zpar_;
   ROL::Ptr<Tpetra::CrsMatrix<>>   matM_;
 
+  mutable ROL::Ptr<Tpetra::MultiVector<>> zvec_;
+  mutable ROL::Ptr<std::vector<Real>>     zpar_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matA_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJuo_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJun_;
@@ -106,13 +106,33 @@ private:
 
   const bool isLTI_;
   mutable bool isAssembled_;
+  mutable bool initialize_;
 
   void assembleMass(void) {
     // Assemble mass matrix.
     assembler_->assemblePDEJacobian1(matM_,mass_,uvec_,zvec_,zpar_);
   }
 
-  void assemble(const ROL::TimeStamp<Real> &ts) const {
+
+  void initialize(const ROL::Vector<Real> &z) const {
+    if (initialize_) {
+      // Initialize control vectors
+      ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
+      ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
+      if (zf != ROL::nullPtr) {
+        zvec_ = assembler_->createControlVector();
+        zvec_->putScalar(static_cast<Real>(0));
+      }
+      if (zp != ROL::nullPtr) {
+        zpar_ = ROL::makePtr<std::vector<Real>>(zp->size(),static_cast<Real>(0));
+      }
+      initialize_ = false;
+    }
+  }
+  
+
+  void assemble(const ROL::Vector<Real> &z, const ROL::TimeStamp<Real> &ts) const {
+    initialize(z);
     if (!isAssembled_) {
       const Real one(1);
       Real timeOld = ts.t[0], timeNew = ts.t[1];
@@ -268,14 +288,14 @@ public:
                    const ROL::Ptr<PDE<Real>> &mass,
                    const ROL::Ptr<MeshManager<Real>> &meshMgr,
                    const ROL::Ptr<const Teuchos::Comm<int>> &comm,
-                   const ROL::Vector<Real> &z,
                    Teuchos::ParameterList &parlist,
                    const bool isLTI = false,
                    std::ostream &outStream = std::cout)
     : pde_         (   pde ),
       mass_        (  mass ),
       isLTI_       ( isLTI ),
-      isAssembled_ ( false ) {
+      isAssembled_ ( false ),
+      initialize_  (  true ) {
     // Get time discretization parameters
     theta_  = parlist.sublist("Time Discretization").get("Theta", 1.0);
     // Construct assembler.
@@ -288,16 +308,6 @@ public:
     cvec_ = assembler_->createResidualVector();
     uvec_ = assembler_->createStateVector();
     uvec_->putScalar(static_cast<Real>(0));
-    // Initialize control vectors
-    ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-    ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-    if (zf != ROL::nullPtr) {
-      zvec_ = assembler_->createControlVector();
-      zvec_->putScalar(static_cast<Real>(0));
-    }
-    if (zp != ROL::nullPtr) {
-      zpar_ = ROL::makePtr<std::vector<Real>>(zp->size(),static_cast<Real>(0));
-    }
     // Assemble matrices
     assembleMass();
   }
@@ -315,7 +325,7 @@ public:
               const ROL::Vector<Real>    &z,
               const ROL::TimeStamp<Real> &ts) {
     isAssembled_ = isLTI_;
-    assemble(ts);
+    assemble(z,ts);
   }
 
   void value(ROL::Vector<Real>    &c,
@@ -330,7 +340,7 @@ public:
     ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     c.zero();
     cvec_->putScalar(static_cast<Real>(0));
 
@@ -363,7 +373,7 @@ public:
     ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     c.zero();
     cvec_->putScalar(static_cast<Real>(0));
 
@@ -396,7 +406,7 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     applyJacobian_uo(jvf,vf,false);
     jvf->scale(-one);
   }
@@ -410,7 +420,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    assemble(ts);
+    assemble(z,ts);
     applyJacobian_un(jvf,vf,false);
   }
 
@@ -425,7 +435,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     if (vf != ROL::nullPtr) {
       applyJacobian_zf(cvec_,vf,false);
@@ -450,7 +460,7 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     applyJacobian_uo(ajvf,vf,true);
     ajvf->scale(-one);
   }
@@ -465,7 +475,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>     ajvf = getField(ajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    assemble(ts);
+    assemble(z,ts);
     applyJacobian_un(ajvf,vf,true);
   }
 
@@ -483,7 +493,7 @@ public:
     ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
 
     const Real one(1);
-    assemble(ts);
+    assemble(z,ts);
     if (zf != ROL::nullPtr) {
       applyJacobian_zf(ajvf,vf,true);
     }
@@ -503,7 +513,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>     ijvf = getField(ijv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    assemble(ts);
+    assemble(z,ts);
     solveForward(ijvf,vf);
   }
 
@@ -517,7 +527,7 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>    iajvf = getField(iajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    assemble(ts);
+    assemble(z,ts);
     solveAdjoint(iajvf,vf);
   }
 
