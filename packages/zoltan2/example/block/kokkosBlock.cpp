@@ -173,7 +173,5 @@ int main(int narg, char *arg[]) {
   }
 
   delete problem;
-
-  Kokkos::finalize();
 }
 

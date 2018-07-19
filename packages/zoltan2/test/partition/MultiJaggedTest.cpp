@@ -1401,6 +1401,5 @@ int main(int narg, char *arg[])
             cerr << s << std::endl;
     }
 
-    Kokkos::finalize ();
     return 0;
 }
