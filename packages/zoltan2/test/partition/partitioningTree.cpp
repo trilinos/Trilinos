@@ -53,7 +53,7 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
@@ -101,9 +101,8 @@ int main(int argc, char** argv)
   //////////////////////////////////////////////////////////////////////
   ////// Establish session.
   //////////////////////////////////////////////////////////////////////
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&argc, &argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
   //////////////////////////////////////////////////////////////////////
 
@@ -333,7 +332,7 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     problem.getSolution();
 
   solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
+                            splitRangeEnd,treeVertParents);
 
   comm->barrier(); // for tidy output...
   if(comm->getRank() == 0) { // for now just plot for rank 0

@@ -50,7 +50,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Galeri_XpetraMaps.hpp>
@@ -67,15 +67,14 @@ using namespace std;
 int main(int narg, char** arg)
 {
   // Establish session; works both for MPI and non-MPI builds
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Useful typedefs:  Tpetra types
   // In this example, we'll use Tpetra defaults for local/global ID type
   typedef double scalar_t;
-  typedef Tpetra::Map<> Map_t;  
+  typedef Tpetra::Map<> Map_t;
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
   typedef Tpetra::CrsMatrix<scalar_t, localId_t, globalId_t> Matrix_t;
@@ -128,7 +127,7 @@ int main(int narg, char** arg)
 
     typedef Galeri::Xpetra::Problem<Map_t,Matrix_t,MultiVector_t> Galeri_t;
     RCP<Galeri_t> galeriProblem =
-                  Galeri::Xpetra::BuildProblem<scalar_t, localId_t, globalId_t, 
+                  Galeri::Xpetra::BuildProblem<scalar_t, localId_t, globalId_t,
                                      Map_t, Matrix_t, MultiVector_t>
                                      ("Laplace3D", map, galeriList);
     origMatrix = galeriProblem->BuildMatrix();
@@ -137,7 +136,7 @@ int main(int narg, char** arg)
     cout << "Exception in Galeri matrix generation. " << e.what() << endl;
     return -1;
   }
-  
+
   if (me == 0)
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
@@ -180,7 +179,7 @@ int main(int narg, char** arg)
 
   if (me == 0) cout << "Redistributing vectors..." << endl;
   RCP<Vector_t> redistribVector;
-  MultiVectorAdapter_t adapterVector(origVector); 
+  MultiVectorAdapter_t adapterVector(origVector);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 
@@ -225,6 +224,6 @@ int main(int narg, char** arg)
     else
       cout << "PASS" << endl;
   }
-  
+
   return 0;
 }

@@ -53,7 +53,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
@@ -396,7 +396,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     if (rank == 0 ) {
       cout << "Checking permutation" << endl;
     }
-    
+
     testReturn = soln->validatePerm();
     if (testReturn) return testReturn;
 
@@ -470,9 +470,8 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 
 int main(int narg, char** arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int result = mainExecute(narg, arg, comm);
 

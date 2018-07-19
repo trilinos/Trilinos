@@ -56,7 +56,7 @@
 // #include <Teuchos_FancyOStream.hpp>
 // #include <Teuchos_CommandLineProcessor.hpp>
 // #include <Tpetra_CrsMatrix.hpp>
-// #include <Tpetra_DefaultPlatform.hpp>
+// #include <Tpetra_Core.hpp>
 // #include <Tpetra_Vector.hpp>
 // #include <MatrixMarket_Tpetra.hpp>
 
@@ -117,9 +117,8 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
@@ -150,7 +149,7 @@ int main(int narg, char** arg)
 
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
-  if (origMatrix->getGlobalNumRows() < 40) 
+  if (origMatrix->getGlobalNumRows() < 40)
   {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
     origMatrix->describe(out, Teuchos::VERB_EXTREME);
@@ -191,8 +190,8 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix, 0);
 
   // Zoltan2::TpetraRowMatrixAdapter< User, UserCoord >::TpetraRowMatrixAdapter(const RCP< const User > & inmatrix,
-  // 									     int nWeightsPerRow = 0 
-  // 									     )
+  //                                                                         int nWeightsPerRow = 0
+  //                                                                         )
 
   ////// Create and solve partitioning problem
   Zoltan2::MatrixPartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
@@ -205,7 +204,7 @@ int main(int narg, char** arg)
     if (me == 0) cout << "Done solve() " << endl;
   }
 
-  catch (std::runtime_error &e) 
+  catch (std::runtime_error &e)
   {
     cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
