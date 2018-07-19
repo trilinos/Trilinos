@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       // Print current control
       std::stringstream zfile;
       zfile << "control." << k-1 << ".txt";
-      dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k-1))->getField()->getVector(),zfile.str());
+      dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(k-1))->getVector(),zfile.str());
       // Advance time stepper
       dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
       uo->set(*un);
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     // Print current control
     std::stringstream zfile;
     zfile << "control." << nt-1 << ".txt";
-    dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(nt-1))->getField()->getVector(),zfile.str());
+    dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(nt-1))->getVector(),zfile.str());
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
