@@ -1121,7 +1121,6 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
-      mag_type lclRowScaledColNorm {0.0};
 
       if (gblRow == rowMap->getMinAllGlobalIndex ()) {
         const LO diagLclColInd = colMap->getLocalElement (gblCol);
@@ -1414,9 +1413,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
-      mag_type lclRowScaledColNorm {0.0};
 
-      const mag_type matrixAbsVal = myRank == 1 ? 0.0 : 1.0;
       lclRowScaledColNorms[lclCol] = myRank == 1 ?
         NaughtyValues<mag_type>::quiet_NaN () : 1.0;
     }
@@ -1652,9 +1649,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
       if (lclCol != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-        mag_type lclRowScaledColNorm {0.0};
 
-        const mag_type matrixAbsVal = myRank == 1 ? 0.0 : 1.0;
         lclRowScaledColNorms[lclCol] = myRank == 1 ?
           NaughtyValues<mag_type>::quiet_NaN () : 1.0;
       }
@@ -1919,7 +1914,6 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
-      mag_type lclRowScaledColNorm {0.0};
 
       mag_type matrixAbsVal = 1.0;
       if (myRank == 1) {
@@ -2060,12 +2054,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Equilibration, Test0, SC, LO, GO, NT)
     std::function<test_return_type (FancyOStream&,
                                     const RCP<const Comm<int> >&,
                                     const bool)>;
-  std::array<test_type, 4> tests {
+  std::array<test_type, 4> tests {{
     makeSymmetricPositiveDefiniteTridiagonalMatrixTest<SC, LO, GO, NT>,
     makeMatrixTestWithExplicitZeroDiag<SC, LO, GO, NT>,
     makeMatrixTestWithExplicitInfAndNan<SC, LO, GO, NT>,
     makeMatrixTestWithImplicitZeroDiag<SC, LO, GO, NT>
-  };
+  }};
 
   for (bool assumeSymmetric : {false, true}) {
     for (auto&& currentTest : tests) {

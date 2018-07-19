@@ -220,7 +220,7 @@ void PrintMatrix(Teuchos::FancyOStream &fos, Teuchos::RCP<Xpetra_Matrix> const &
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
   typedef double BasisScalar;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   using Teuchos::RCP;

@@ -2,7 +2,6 @@
 #ifndef ROL_VALIDATEFUNCTIONDEF_HPP
 #define ROL_VALIDATEFUNCTIONDEF_HPP
 
-
 namespace ROL {
 
 namespace details { 
@@ -17,8 +16,10 @@ ValidateFunction<Real>::ValidateFunction( const int order,
                                           const bool printToStream,
                                           ostream& os ) : 
   order_(order), numSteps_(numSteps), width_(width), precision_(precision), 
-  printToStream_(printToStream), steps_(numSteps_), os_(os), 
-  workspace_(makePtr<VectorWorkspace<Real>>()), fd_( order_, workspace_ ) {
+  printToStream_(printToStream), steps_(numSteps_),
+  dashline_(string(precision+6,'-')),  os_(os), 
+  workspace_(makePtr<VectorWorkspace<Real>>()),
+  fd_( order_, workspace_ ) {
 
   Real fact = 1.0;
   for( auto& e: steps_ ) {
@@ -69,10 +70,10 @@ ValidateFunction<Real>::derivative_check( f_scalar_t<Real> f_value,
              << setw(width_) << "FD approx"
              << setw(width_) << "abs error"
              << "\n"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
+             << setw(width_) << dashline_ 
+             << setw(width_) << dashline_
+             << setw(width_) << dashline_
+             << setw(width_) << dashline_
              << "\n";
       }
       os_ << scientific << setprecision(precision_) << right
@@ -137,10 +138,10 @@ ValidateFunction<Real>::derivative_check( f_vector_t<Real> f_value,
             << setw(width_) << "FD approx"
             << setw(width_) << "abs error"
             << "\n"
-            << setw(width_) << "---------"
-            << setw(width_) << "---------"
-            << setw(width_) << "---------"
-            << setw(width_) << "---------"
+            << setw(width_) << dashline_ 
+            << setw(width_) << dashline_ 
+            << setw(width_) << dashline_ 
+            << setw(width_) << dashline_ 
             << "\n";
       }
  
@@ -188,16 +189,22 @@ ValidateFunction<Real>::symmetry_check( f_dderiv_t<Real> A,
   ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
+  string label1 = "<v," + symbol + "(x)u>";
+  string label2 = "<u," + symbol + "(x)v>";
+
+  auto width1 = max(width_,static_cast<int>(label1.length())+3);
+  auto width2 = max(width_,static_cast<int>(label2.length())+3);
+
 if (printToStream_) {
     os_ << "\nTest symmetry of " << name << "\n";
     os_ << right
-        << setw(width_) << "<v, " << symbol << "(x)u>"
-        << setw(width_) << "<u, " << symbol << "(x)v>"
+        << setw(width1) << label1
+        << setw(width2) << label2
         << setw(width_) << "abs error"
         << "\n";
     os_ << scientific << setprecision(precision_) << right
-        << setw(width_) << symCheck[0]
-        << setw(width_) << symCheck[1]
+        << setw(width1) << symCheck[0]
+        << setw(width2) << symCheck[1]
         << setw(width_) << symCheck[2]
         << "\n";
   }
@@ -233,16 +240,22 @@ ValidateFunction<Real>::adjoint_consistency_check( f_dderiv_t<Real> A,
   adjCheck[1] = uAv;
   adjCheck[2] = abs(vAu-uAv);
 
+  string label1 = "<v,"   + symbol + "(x)u>";
+  string label2 = "<adj(" + symbol + "(x))v,u>";
+
+  auto width1 = max(width_,static_cast<int>(label1.length())+3);
+  auto width2 = max(width_,static_cast<int>(label2.length())+3);
+
   if (printToStream_) {
       os_ << "\nTest consistency of " << name << " and its adjoint\n";
       os_ << right
-          << setw(width_) << "<v, "  << symbol << "(x)u>"
-          << setw(width_) << "<adj(" << symbol << "(x))v,u>"
+          << setw(width1) << label1
+          << setw(width2) << label2
           << setw(width_) << "abs error"
           << "\n";
       os_ << scientific << setprecision(precision_) << right
-          << setw(width_) << adjCheck[0]
-          << setw(width_) << adjCheck[1]
+          << setw(width1) << adjCheck[0]
+          << setw(width2) << adjCheck[1]
           << setw(width_) << adjCheck[2]
           << "\n";
     }
@@ -288,19 +301,27 @@ ValidateFunction<Real>::inverse_check( f_dderiv_t<Real> A,
   ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
+  string label1 = "||[" + symbol + "]v||";
+  string label2 = "||[inv(" + symbol + ")" + symbol + "]v||";
+  string label3 = "||v-[inv(" + symbol + ")"  + symbol + "]v||";
+
+  auto width1 = max(width_,static_cast<int>(label1.length())+3);
+  auto width2 = max(width_,static_cast<int>(label2.length())+3);
+  auto width3 = max(width_,static_cast<int>(label3.length())+3);
+
 if (printToStream_) {
     os_ << "\nTest inverse identity of " << name << "\n";
     os_ << right
         << setw(width_) << "||v||"
-        << setw(width_) << "||" << symbol << "v||"
-        << setw(width_) << "||inv(" << symbol << ")" << symbol << "v||"
-        << setw(width_) << "||v-inv(" << symbol << ")" << symbol << "v||"
+        << setw(width1) << label1
+        << setw(width2) << label2
+        << setw(width3) << label3
         << "\n";
     os_ << scientific << setprecision(precision_) << right
         << setw(width_) << invCheck[0]
-        << setw(width_) << invCheck[1]
-        << setw(width_) << invCheck[2]
-        << setw(width_) << invCheck[3]
+        << setw(width1) << invCheck[1]
+        << setw(width2) << invCheck[2]
+        << setw(width3) << invCheck[3]
         << "\n";
   }
 
@@ -309,6 +330,65 @@ if (printToStream_) {
   os_.copyfmt(oldFormatState);               
   return invCheck;
 }
+
+template<typename Real>
+vector<Real>
+ValidateFunction<Real>::solve_check( f_solve_t<Real>  solve,
+                                     f_vector_t<Real> value,
+                                     f_update_t<Real> update,
+                                     const V& c,
+                                     const V& x,
+                                     const string& name ) const {
+  auto res1 = workspace_->clone(c);
+  auto res2 = workspace_->clone(c);
+  auto sol  = workspace_->clone(x);
+
+  solve(*res1,*sol);
+  update(*sol);
+  value(*res2,*sol);
+
+  Real sol_norm  = sol->norm();
+  Real res1_norm = res1->norm();
+  Real res2_norm = res2->norm();
+
+  vector<Real> solveCheck(3,0);
+  solveCheck[0] = sol_norm;
+  solveCheck[1] = res1_norm;
+  solveCheck[2] = res2_norm;
+
+  ROL::nullstream oldFormatState;
+  oldFormatState.copyfmt(os_);  
+
+  string label1 = "Solution Norm";
+  string label2 = "Solver Residual";
+  string label3 = "True Residual";
+
+  auto width1 = max(width_,static_cast<int>(label1.length())+3);
+  auto width2 = max(width_,static_cast<int>(label2.length())+3);
+  auto width3 = max(width_,static_cast<int>(label3.length())+3);
+
+if (printToStream_) {
+    os_ << endl << "Test solve of " << name << endl;
+    os_ << right
+        << setw(width1) << label1
+        << setw(width2) << label2
+        << setw(width3) << label3
+        << endl;
+    os_ << scientific << setprecision(precision_) << right
+        << setw(width1) << solveCheck[0]
+        << setw(width2) << solveCheck[1]
+        << setw(width3) << solveCheck[2]
+        << endl;
+  }
+  os_ << endl;
+
+  os_.copyfmt(oldFormatState);               
+  return solveCheck;
+}
+       
+
+template<typename Real>
+ostream& ValidateFunction<Real>::getStream() const { return os_; }
 
 } // namespace details
 

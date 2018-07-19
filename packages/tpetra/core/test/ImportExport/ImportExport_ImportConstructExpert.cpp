@@ -60,7 +60,7 @@ namespace {
   using Teuchos::outArg;
   using std::endl;
 
-  bool testMpi = true;
+  // bool testMpi = true;
 
   TEUCHOS_STATIC_SETUP()
   {

@@ -1,4 +1,4 @@
-C    Copyright (c) 2005 National Technology & Engineering Solutions
+C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -43,7 +43,7 @@ c
 
       integer iin, iout, exoid, exoid1, ierr, cpu_ws, io_ws
 
-      real*4 vers
+      real vers
 
       data iin /5/, iout /6/
 

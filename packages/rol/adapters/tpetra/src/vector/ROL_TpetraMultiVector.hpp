@@ -248,6 +248,10 @@ public:
     tpetra_vec_->putScalar(static_cast<double>(C));
   }
 
+  void randomize(const Real l=0.0, const Real u = 1.0) {
+    tpetra_vec_->randomize(static_cast<double>(l),static_cast<double>(u));
+  }
+
   Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > getVector() const {
     return tpetra_vec_;
   }
