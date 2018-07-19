@@ -836,7 +836,7 @@ namespace Iofx {
     int error   = ex_get_init_info(get_file_pointer(), &num_proc, &num_proc_in_file, &file_type[0]);
     ex_opts(old_val); // Reset back to what it was.
 
-    if (error < 0) {
+    if (num_proc == 1 && num_proc_in_file == 1) {
       // Not a nemesis file
       nemesis_file = false;
       if (isParallel && util().parallel_size() > 1) {
@@ -844,9 +844,7 @@ namespace Iofx {
         errmsg << "ERROR: Exodus file does not contain nemesis information.\n";
         IOSS_ERROR(errmsg);
       }
-      num_proc         = 1;
-      num_proc_in_file = 1;
-      file_type[0]     = 'p';
+      file_type[0] = 'p';
     }
     else {
       if (!isParallel) {

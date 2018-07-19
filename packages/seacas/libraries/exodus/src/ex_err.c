@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -92,7 +92,7 @@ if (exoid = ex_open ("test.exo", EX_READ, &CPU_word_size,
                      &IO_word_size, &version)) {
    errval = 999;
    snprintf(errmsg, MAX_ERR_LENGTH,"ERROR: cannot open file test.exo");
-   ex_err("prog_name", errmsg, errval);
+   ex_err(__func__, errmsg, errval);
 }
 ~~~
 

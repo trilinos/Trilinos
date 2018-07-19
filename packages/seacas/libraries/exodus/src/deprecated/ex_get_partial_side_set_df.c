@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -56,7 +56,8 @@
 #include <stdint.h> // for int64_t
 
 /*!
- * \deprecated Use ex_get_partial_set_dist_fact() instead.
+ * \deprecated Use ex_get_partial_set_dist_fact()(exoid, EX_SIDE_SET, side_set_id, start_num,
+ num_df_to_get, side_set_dist_fact)
  */
 int ex_get_partial_side_set_df(int exoid, ex_entity_id side_set_id, int64_t start_num,
                                int64_t num_df_to_get, void *side_set_dist_fact)

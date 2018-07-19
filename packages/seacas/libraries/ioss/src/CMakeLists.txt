@@ -54,7 +54,6 @@ IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
   ADD_SUBDIRECTORY(exo_fpp)
 
   IF (TPL_Netcdf_PARALLEL)
-    add_definitions(-DPARALLEL_AWARE_EXODUS)
     ADD_SUBDIRECTORY(exo_par)
   ENDIF()
 
