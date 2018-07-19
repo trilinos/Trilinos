@@ -1,0 +1,100 @@
+EXTRA_ARGS=$@
+
+# # To checkout trilinos:
+# # % eg clone software.sandia.gov:/space/git/Trilinos <your-destination-dir>
+
+# # --------
+
+# # To build trilinos (the stk package, for example):
+
+# # % module load compilers/gcc/gcc-4.1.2
+# # % module load openmpi-1.4/gcc-4.1.2
+# # in your trilinos dir, create a sub-dir in which to do the build:
+# # % mkdir linux-build
+# # put a cmake-script (bottom of this email) in linux-build
+# # % cd linux-build
+# # % source cmake-script
+# # % cd packages/stk
+# # % make -j 8
+# # run stk tests
+# # % make test
+
+
+
+# Have to set this to get TRY_RUN(...) commands to work
+# export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
+
+MPI=ON
+#MPI=OFF
+
+export MPI_BASE_DIR=/Users/gdsjaar/src/SierraMacInstall/openmpi
+if [ "$MPI" == "ON" ]
+then
+  CXX=mpicxx
+  CC=mpicc
+  FC=mpif77
+  ACCESS=/Users/gdsjaar/src/seacas-parallel
+else
+  CXX=g++
+  CC=gcc
+  FC=gfortran
+  ACCESS=/Users/gdsjaar/src/seacas
+fi
+
+TPL=${ACCESS}
+MATIO=${ACCESS}
+
+#-D Trilinos_ENABLE_Moertel:BOOL=ON \
+#-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+#-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+#-D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
+#-D Trilinos_VERBOSE_CONFIGURE=OFF \
+#-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+#-D DART_TESTING_TIMEOUT:STRING=600 \
+#-D SEACAS_SOURCE_DIR_OVERRIDE:STRING=seacas/packages/seacas \
+
+rm -f CMakeCache.txt
+
+cmake  \
+-D CMAKE_MACOSX_RPATH:BOOL=ON \
+-D CMAKE_INSTALL_RPATH:PATH=${INSTALL_PATH}/lib \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D Trilinos_VERBOSE_CONFIGURE=OFF \
+-D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
+-D CMAKE_C_COMPILER:FILEPATH=${CC} \
+-D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
+-D CMAKE_INSTALL_PREFIX:PATH=/Users/gdsjaar/src/TrilinosTest \
+-D PNetCDF_ROOT:PATH=${TPL} \
+-D NetCDF_ROOT:PATH=${TPL} \
+-D CGNS_ROOT:PATH=${TPL} \
+-D CGNS_CGNSLIST_BINARY:FILEPATH=/Users/gdsjaar/src/seacas-parallel/bin/cgnslist \
+-D CGNS_CGNSDIFF_BINARY:FILEPATH=/Users/gdsjaar/src/seacas-parallel/bin/cgnsdiff \
+-D HDF5_ROOT:PATH=${TPL} \
+-D HDF5_NO_SYSTEM_PATHS=ON \
+-D TPL_ENABLE_Matio=OFF \
+-D TPL_ENABLE_CGNS:BOOL=ON \
+-D TPL_ENABLE_Netcdf:BOOL=ON \
+-D TPL_ENABLE_MPI:BOOL=${MPI} \
+-D Matio_LIBRARY_DIRS:PATH=${MATIO}/lib \
+-D TPL_Matio_INCLUDE_DIRS:PATH=${MATIO}/include \
+-D TPL_X11_INCLUDE_DIRS:PATH=/opt/X11/include \
+-D Trilinos_ENABLE_Epetra:BOOL=OFF \
+-D Trilinos_ENABLE_Kokkos:BOOL=OFF \
+-D Trilinos_ENABLE_Tpetra:BOOL=OFF \
+-D BoostLib_LIBRARY_DIRS=/Applications/MATLAB_R2013a.app/bin/maci64/ \
+-D Trilinos_ENABLE_SEACAS:BOOL=ON \
+-D Trilinos_ENABLE_Pamgen:BOOL=ON \
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+-D Trilinos_ENABLE_STK:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D SEACAS_ENABLE_TESTS=ON \
+-D TPL_ENABLE_Pthread:BOOL=ON \
+-D SEACASExodus_ENABLE_THREADSAFE:BOOL=ON \
+-D SEACASIoss_ENABLE_THREADSAFE:BOOL=ON \
+-D Trilinos_ENABLE_TrilinosCouplings:BOOL=OFF \
+-D Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON \
+$EXTRA_ARGS \
+../
+
+
+
