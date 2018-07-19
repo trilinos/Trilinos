@@ -158,9 +158,18 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     timeStamp->at(k).t.at(1) = (k+1)*dt;
   }
 
+  int sweeps = 3;
+  RealT omega = 2.0/3.0;
+
+  int numLevels = 4;
+
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-  pint_con->setGlobalScale(1.0);
+  // pint_con->setGlobalScale(1.0);
+  pint_con->applyMultigrid(numLevels+1);
+  // pint_con->applyMultigrid(2);
+  pint_con->setSweeps(sweeps);
+  pint_con->setRelaxation(omega);
 
   double tol = 1e-12;
 
@@ -171,9 +180,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),state->clone()});
   auto kkt_x_in  = kkt_vector->clone();
   auto kkt_b     = kkt_vector->clone();
-
-  int sweeps = 3;
-  RealT omega = 2.0/3.0;
 
   ROL::RandomizeVector(*kkt_x_in);
   kkt_b->zero();
@@ -227,6 +233,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     (*outStream) << std::endl;
 
   // check MG
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t0 = MPI_Wtime();
   {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -243,10 +251,10 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     if(myRank==0)
       (*outStream) << "Multigrid initial res = " << res0 << std::endl;
 
-    for(int i=0;i<100;i++) {
+    for(int i=0;i<1000;i++) {
       pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
 
-      kkt_x_out->axpy(omega,*kkt_diff);
+      kkt_x_out->axpy(1.0,*kkt_diff);
 
       kkt_err->set(*kkt_x_out);
       kkt_err->axpy(-1.0,*kkt_x_in);
@@ -269,6 +277,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       }
     }
   }
+  MPI_Barrier(MPI_COMM_WORLD);
+  double tf = MPI_Wtime();
+
+  if(myRank==0)
+    (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
 }
 
 

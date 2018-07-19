@@ -671,6 +671,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     (*outStream) << std::endl;
 
   // check MG
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t0 = MPI_Wtime();
   {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -713,6 +715,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       }
     }
   }
+  MPI_Barrier(MPI_COMM_WORLD);
+  double tf = MPI_Wtime();
+
+  if(myRank==0)
+    (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
 }
 
 

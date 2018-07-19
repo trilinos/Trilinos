@@ -1562,11 +1562,17 @@ public:
                                 const Vector<Real> & b,
                                 const Vector<Real> & u, 
                                 const Vector<Real> & z,
-                                Real & tol) 
+                                Real & tol,
+                                int level=0) 
    {
      using PartitionedVector = PartitionedVector<Real>;
 
-     int level = 0;
+     // base case: solve the KKT system directly
+     if(level+1==maxLevels_) {
+       applyAugmentedInverseKKT(x,b,u,z,tol,false,level);
+
+       return;
+     }
 
      auto dx = x.clone();
      auto residual = b.clone();
@@ -1608,7 +1614,8 @@ public:
        auto crs_correction = makePtr<PartitionedVector>({crs_correction_0,crs_correction_1});
        auto crs_residual   = makePtr<PartitionedVector>({crs_residual_0,crs_residual_1});
 
-       applyAugmentedInverseKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,false,level+1);
+       // applyAugmentedInverseKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,false,level+1);
+       apply2LevelAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
 
        prolongSimVector(*crs_correction_0,*dx_0);
        prolongSimVector(*crs_correction_1,*dx_1);
