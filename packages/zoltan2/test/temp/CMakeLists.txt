@@ -119,6 +119,11 @@ IF (NOT Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
     SOURCES femv.cpp
     COMM mpi serial
   )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    vtxlabel
+    SOURCES vtxlabel.cpp
+    COMM mpi serial
+  )
 ENDIF()
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
