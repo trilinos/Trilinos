@@ -59,7 +59,7 @@ int check_input(struct vtx_data **graph,         /* linked lists of vertex data 
                 int *             vmax,          /* smallest acceptable coarsened nvtxs */
                 int               ndims,         /* partitioning level */
                 double            eigtol         /* tolerance for eigen-pairs */
-                )
+)
 {
   extern FILE *Output_File;         /* output file or null */
   extern int   DEBUG_TRACE;         /* trace main execution path? */
@@ -259,7 +259,7 @@ static int check_params(int global_method, /* global partitioning algorithm */
                         int local_method,  /* local partitioning algorithm */
                         int rqi_flag,      /* use multilevel eigensolver? */
                         int ndims          /* number of eigenvectors */
-                        )
+)
 {
   extern FILE *Output_File;    /* Output file or null */
   extern int   ECHO;           /* print input/param options? to file? (-2..2) */
@@ -479,7 +479,7 @@ static int check_assignment(int *assignment,  /* set numbers if read-from-file *
                             int  nsets_tot,   /* total number of desired sets */
                             int  ndims,       /* partitioning level */
                             int  local_method /* local partitioning algorithm */
-                            )
+)
 {
   int flag;  /* return status */
   int nsets; /* number of sets created at each level */

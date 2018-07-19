@@ -39,9 +39,9 @@
 extern "C" {
 #endif
 
-long init_rand_port(long seed);
-long get_init_rand_port(void);
-long genr_rand_port(long init_rand);
+long   init_rand_port(long seed);
+long   get_init_rand_port(void);
+long   genr_rand_port(long init_rand);
 long   rand_port(void);
 double rand_rect_port(void);
 

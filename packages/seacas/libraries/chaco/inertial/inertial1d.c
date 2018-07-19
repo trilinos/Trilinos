@@ -45,7 +45,7 @@ void inertial1d(struct vtx_data **graph,        /* graph data structure */
                 int *             sets,         /* set each vertex gets assigned to */
                 double *          goal,         /* desired set sizes */
                 int               using_vwgts   /* are vertex weights being used? */
-                )
+)
 {
   extern double median_time; /* time to find medians */
   double *      value;       /* values passed to median routine */

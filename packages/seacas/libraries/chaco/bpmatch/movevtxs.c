@@ -55,7 +55,7 @@ void movevtxs(struct vtx_data **graph,               /* data structure with vert
               double *          size,                /* sizes of the different sets */
               double *          goal,                /* desired set sizes */
               int               vwgt_max             /* largest vertex weight */
-              )
+)
 {
   double largest;         /* largest overshoot from desired size */
   double smallest;        /* largest undershoot from desired size */
@@ -193,7 +193,7 @@ static void nextmove(int     nvtxs,               /* number of vertices in graph
                      int *   next_vtx,            /* vertex selected to move next */
                      int *   next_to,             /* set vertex should be moved to */
                      double *next_delta           /* size of change in distances */
-                     )
+)
 {
   double delta;                    /* amount distance must change */
   double bestdelta;                /* best value see so far */
@@ -281,7 +281,7 @@ static int coupled_sets[MAXSETS][MAXSETS];
 static void couple(int nsets,        /* number of sets being divided into */
                    int from, int to, /* sets to be coupled */
                    int vtx           /* vertex that they share */
-                   )
+)
 {
   int i; /* loop counter */
 
@@ -310,7 +310,7 @@ static void undo_coupling(struct vtx_data **graph, /* data structure with vertex
                           int     toobig,          /* are we shrinking or enlarging a set? */
                           int     badset,          /* the set number being shrunk or enlarged */
                           double *size             /* sizes of the different sets */
-                          )
+)
 {
   int done;  /* have enough vertices been moved? */
   int found; /* have I found the right set? */

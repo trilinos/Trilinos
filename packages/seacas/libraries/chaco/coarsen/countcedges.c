@@ -44,7 +44,7 @@ void countcedges(
     int *             mflag,    /* flag indicating vtx matched or not */
     int *             v2cv,     /* mapping from fine to coarse vertices */
     int *             pcnedges  /* number of edges in coarsened graph */
-    )
+)
 {
   int *jptr;       /* loops through edge list */
   int  cnedges;    /* twice number of edges in coarsened graph */

@@ -38,7 +38,7 @@
 void rotate2d(double **yvecs,   /* ptr to list of y-vectors (rotated) */
               int      nmyvtxs, /* length of yvecs */
               double   theta    /* angle to rotate by */
-              )
+)
 {
   double temp1; /* hold values for a while */
   double c, s;  /* cosine and sine of theta */
@@ -57,7 +57,7 @@ void rotate2d(double **yvecs,   /* ptr to list of y-vectors (rotated) */
 void rotate3d(double **yvecs,                         /* ptr to list of y-vectors (to be rotated) */
               int      nmyvtxs,                       /* length of yvecs */
               double theta, double phi, double gamma2 /* rotational parameters */
-              )
+)
 {
   double temp1, temp2;   /* hold values for a while */
   double ctheta, stheta; /* cosine and sine of theta */

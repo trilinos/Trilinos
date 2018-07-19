@@ -57,7 +57,7 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
                 double *          gvec,    /* the rhs n-vector in the extended eigen problem */
                 double            sigma    /* specifies the norm constraint on extended
                                               eigenvector */
-                )
+)
 {
   extern FILE *     Output_File;         /* output file or null */
   extern int        LANCZOS_SO_INTERVAL; /* interval between orthogonalizations */
@@ -74,12 +74,12 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   extern double     evec_time;           /* time to generate eigenvectors */
   extern double     ql_time;             /* time tridiagonal eigenvalue work */
   extern double     blas_time;           /* time for blas. linear algebra */
-  extern double     init_time;           /* time to allocate, intialize variables */
+  extern double     init_time;           /* time to allocate, initialize variables */
   extern double     scan_time;           /* time for scanning eval and bound lists */
   extern double     debug_time;          /* time for (some of) debug computations */
   extern double     ritz_time;           /* time to generate ritz vectors */
   extern double     pause_time;          /* time to compute whether to pause */
-  int               i, j, k;             /* indicies */
+  int               i, j, k;             /* indices */
   int               maxj;                /* maximum number of Lanczos iterations */
   double *          u, *r;               /* Lanczos vectors */
   double *          alpha, *beta;        /* the Lanczos scalars from each step */
@@ -117,7 +117,7 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   double            extval = 0.0;        /* computed extended eigenvalue (of both A and T) */
   double *          work1, *work2;       /* work vectors */
   double            check;               /* to check an orthogonality condition */
-  double            numerical_zero;      /* used for zero in presense of round-off  */
+  double            numerical_zero;      /* used for zero in presence of round-off  */
   int               ritzval_flag;        /* status flag for get_ritzvals() */
   int               memory_ok;           /* TRUE until memory runs out */
 

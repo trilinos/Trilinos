@@ -49,7 +49,7 @@ void make_subgraph(struct vtx_data **graph,      /* graph data structure */
                    int *             loc2glob,   /* mapping from subgraph to graph numbering */
                    int *             degree,     /* degrees of vertices in graph */
                    int               using_ewgts /* are edge weights being used? */
-                   )
+)
 {
   struct vtx_data *subgptr = NULL; /* loops through subgraph */
   float *          fptr    = NULL; /* loops through edge weights */
@@ -113,7 +113,7 @@ void remake_graph(struct vtx_data **subgraph,   /* subgraph data structure */
                   int *             loc2glob,   /* mapping from subgraph to graph numbering */
                   int *             degree,     /* degrees of vertices in graph */
                   int               using_ewgts /* are edge weights being used? */
-                  )
+)
 {
   struct vtx_data *subgptr; /* loops through subgraph */
   float *          fptr;    /* loops through edge weights */

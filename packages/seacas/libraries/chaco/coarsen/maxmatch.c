@@ -45,7 +45,7 @@ int maxmatch(struct vtx_data **graph,       /* array of vtx data for graph */
              int               using_ewgts, /* are edge weights being used? */
              int               igeom,       /* geometric dimensionality */
              float **          coords       /* coordinates for each vertex */
-             )
+)
 {
   extern int DEBUG_COARSEN; /* debug output for coarsening? */
   extern int MATCH_TYPE;    /* which matching routine to use */

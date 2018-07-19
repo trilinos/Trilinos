@@ -41,7 +41,7 @@ void clear_dvals(struct vtx_data **graph,      /* data structure for graph */
                  int *             rdvals,     /* d-values for each transition */
                  int *             bspace,     /* list of activated vertices */
                  int               list_length /* number of activated vertices */
-                 )
+)
 {
   int *edges;    /* loops through edge list */
   int  vtx;      /* vertex in bspace */

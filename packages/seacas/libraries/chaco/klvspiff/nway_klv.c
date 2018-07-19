@@ -66,7 +66,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
              int               max_dev,    /* largest allowed deviation from balance */
              int **            bndy_list,  /* list of vertices on boundary (0 ends) */
              double *          weightsum   /* sum of vweights in each set (in and out) */
-             )
+)
 {
   struct bilist **to_buckets;           /* buckets I'm moving to */
   struct bilist **from_buckets;         /* buckets I'm moving from */

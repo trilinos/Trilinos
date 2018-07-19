@@ -41,7 +41,7 @@ double compute_cube_edata(struct refine_edata *edata,      /* desire data for cu
                           int                  nsets_tot,  /* total number of processors */
                           struct vtx_data **   comm_graph, /* communication graph */
                           int *                node2vtx    /* maps mesh nodes to graph vertices */
-                          )
+)
 {
   double desire;     /* edge's interest in flipping */
   float  ewgt;       /* edge weight */

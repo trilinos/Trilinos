@@ -47,7 +47,7 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
               int               rqi_flag,    /* use multilevel eigensolver? */
               int               vmax,        /* if so, how many vtxs to coarsen down to? */
               double            eigtol       /* tolerance on eigenvectors */
-              )
+)
 {
   extern char       SEQ_FILENAME[];           /* name of sequence file */
   extern int        RQI_CONVERGENCE_MODE;     /* residual or partition mode? */
@@ -94,7 +94,7 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   time        = seconds();
   using_vwgts = (vwsqrt != NULL);
 
-  /* Sort each connected component seperately. */
+  /* Sort each connected component separately. */
   compnum     = smalloc((nvtxs + 1) * sizeof(int));
   permutation = smalloc(nvtxs * sizeof(int));
   values      = smalloc((nvtxs + 1) * sizeof(double));

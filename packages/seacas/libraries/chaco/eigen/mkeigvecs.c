@@ -51,7 +51,7 @@ void mkeigvecs(struct scanlink *scanlist, /* linked list of fields to do with mi
                double **        y,        /* columns of y are eigenvectors of A  */
                int              n,        /* problem size */
                double **        q         /* columns of q are Lanczos basis vectors */
-               )
+)
 {
 
   int              i, k;     /* indcies */

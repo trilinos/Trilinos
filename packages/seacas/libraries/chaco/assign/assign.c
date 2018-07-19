@@ -48,7 +48,7 @@ void assign(struct vtx_data **graph,        /* data structure with vtx weights *
             int               mediantype,   /* which partitioning strategy to use */
             double *          goal,         /* desired set sizes */
             int               vwgt_max      /* largest vertex weight */
-            )
+)
 {
   extern int DEBUG_TRACE;       /* trace execution path of code */
   extern int DEBUG_ASSIGN;      /* turn on debugging in assignment */

@@ -48,7 +48,7 @@ int flatten(struct vtx_data ** graph,       /* array of vtx data for graph */
             int                igeom,       /* dimensions of geometric data */
             float **           coords,      /* coordinates for vertices */
             float **           ccoords      /* coordinates for coarsened vertices */
-            )
+)
 {
   double Thresh; /* minimal acceptable size reduction */
   int *  v2cv;   /* map from vtxs to coarse vtxs */
@@ -79,7 +79,7 @@ void find_flat(struct vtx_data **graph,   /* data structure for storing graph */
                int               nvtxs,   /* number of vertices in graph */
                int *             pcnvtxs, /* number of coarse vertices */
                int *             v2cv     /* map from vtxs to coarse vtxs */
-               )
+)
 {
   /* Look for cliques with the same neighbor set.  These are matrix */
   /* rows corresponding to multiple degrees of freedom on a node. */
@@ -138,7 +138,7 @@ void find_flat(struct vtx_data **graph,   /* data structure for storing graph */
 int SameStructure(int node1, int node2,     /* two vertices which might have same nonzeros */
                   struct vtx_data **graph,  /* data structure for storing graph */
                   int *             scatter /* array for checking vertex labelling */
-                  )
+)
 {
   int same; /* are two vertices indistinguisable? */
   int i;    /* loop counter */

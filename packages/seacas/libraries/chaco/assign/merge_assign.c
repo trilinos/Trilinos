@@ -39,7 +39,7 @@ void merge_assignments(int *assignment, /* assignment list for graph */
                        int *subsets,    /* mapping from local to global sets */
                        int  subnvtxs,   /* number of vtxs in subgraph */
                        int *loc2glob    /* subgraph -> graph numbering map */
-                       )
+)
 {
   int i; /* loop counter */
 

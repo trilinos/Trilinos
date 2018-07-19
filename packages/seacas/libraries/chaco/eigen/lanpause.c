@@ -45,7 +45,7 @@ int lanpause(int      j,         /* current step */
              int *    pausemode, /* which pausing criterion to use */
              int      version,   /* which version of sel. orth. we are using */
              double   beta       /* current off-diagonal value */
-             )
+)
 {
   extern int    DEBUG_EVECS;    /* debugging level for eigen computation */
   extern double DOUBLE_EPSILON; /* machine precision */
@@ -106,7 +106,7 @@ int lanpause_float(int     j,         /* current step */
                    int *   pausemode, /* which pausing criterion to use */
                    int     version,   /* which version of sel. orth. we are using */
                    double  beta       /* current off-diagonal value */
-                   )
+)
 {
   extern int    DEBUG_EVECS;    /* debugging level for eigen computation */
   extern double DOUBLE_EPSILON; /* machine precision */

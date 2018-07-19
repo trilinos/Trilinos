@@ -45,14 +45,14 @@ int kl_init(struct bilist *****bucket_ptrs, /* space for multiple bucket sorts *
             int                nvtxs,       /* number of vertices in the graph */
             int                nsets,       /* number of sets created at each step */
             int                maxchange    /* maximum change by moving a vertex */
-            )
+)
 {
   struct bilist * spacel; /* space for all listspace entries */
   struct bilist **spaceb; /* space for all buckets entries */
   size_t          sizeb;  /* size of set of buckets */
   size_t          sizel;  /* size of set of pointers for all vertices */
   int             i, j;   /* loop counters */
-  double *array_alloc_2D_ret(size_t dim1, size_t dim2, size_t size);
+  double *        array_alloc_2D_ret(size_t dim1, size_t dim2, size_t size);
 
   /* Allocate appropriate data structures for buckets, and listspace. */
 

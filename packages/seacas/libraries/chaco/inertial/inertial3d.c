@@ -46,7 +46,7 @@ void inertial3d(struct vtx_data **graph,        /* graph data structure */
                 int *   sets,                   /* set each vertex gets assigned to */
                 double *goal,                   /* desired set sizes */
                 int     using_vwgts             /* are vertex weights being used? */
-                )
+)
 {
   extern int    DEBUG_INERTIAL;     /* debug flag for inertial method */
   extern double inertial_axis_time; /* time spent computing inertial axis */

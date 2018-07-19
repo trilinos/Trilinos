@@ -45,7 +45,7 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
            double *          vwsqrt,  /* square root of vertex weights */
            double *ptheta, double *pphi, double *pgamma, /* return optimal angles */
            int using_vwgts                               /* are vertex weights being used? */
-           )
+)
 
 /* Compute rotation angle to minimize distance to discrete points. */
 {

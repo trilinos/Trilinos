@@ -55,7 +55,7 @@ void warnings(double *          workn,    /* work vector (1..n) */
               double *          u,        /* Lanczos vector; here used as workspace */
               double            Anorm,    /* Gershgorin bound on eigenvalue */
               FILE *            out_file  /* output file */
-              )
+)
 {
   extern int    DEBUG_EVECS;              /* print debugging output? */
   extern int    WARNING_EVECS;            /* print warning messages? */

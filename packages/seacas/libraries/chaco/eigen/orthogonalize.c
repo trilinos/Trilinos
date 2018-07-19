@@ -39,7 +39,7 @@
 void orthogonalize(double *         vec,     /* vector to be orthogonalized */
                    int              n,       /* length of the columns of orth */
                    struct orthlink *orthlist /* set of vectors to orthogonalize against */
-                   )
+)
 {
   struct orthlink *curlnk;
   void             orthogvec();

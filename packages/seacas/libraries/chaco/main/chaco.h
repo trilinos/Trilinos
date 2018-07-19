@@ -209,7 +209,7 @@ extern int interface(int    nvtxs,                 /**< number of vertices in fu
                      int     vmax,                 /**< how many vertices to coarsen down to? */
                      int     ndims,                /**< number of eigenvectors (2^d sets) */
                      double  eigtol,               /**< tolerance on eigenvectors */
-                     long    seed);                /**< for random graph mutations */
+                     long    seed);                   /**< for random graph mutations */
 
 /* Chaco interface to read assignment vector from file */
 extern int input_assign(FILE *, char *, int, int *);

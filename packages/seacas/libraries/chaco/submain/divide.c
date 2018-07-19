@@ -50,7 +50,7 @@ void divide(struct vtx_data **graph,         /* graph data structure */
             int *             assignment,    /* set number of each vtx (length n) */
             double *          goal,          /* desired set sizes */
             int               architecture,  /* 0 => hypercube, d => d-dimensional mesh */
-            float *           term_wgts[],   /* weights for terminal propogation */
+            float *           term_wgts[],   /* weights for terminal propagation */
             int               global_method, /* global partitioning algorithm */
             int               local_method,  /* local partitioning algorithm */
             int               rqi_flag,      /* should I use multilevel eigensolver? */
@@ -60,7 +60,7 @@ void divide(struct vtx_data **graph,         /* graph data structure */
             int (*hop_mtx)[MAXSETS],         /* between-set hop costs for KL */
             int nsets,                       /* number of sets to partition into */
             int striping                     /* partition by striping into pieces? */
-            )
+)
 {
   extern int           DEBUG_TRACE;        /* trace main execution path? */
   extern int           DEBUG_CONNECTED;    /* debug flag for connected components */

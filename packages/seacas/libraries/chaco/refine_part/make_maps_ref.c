@@ -48,7 +48,7 @@ void make_maps_ref(struct vtx_data **graph,         /* graph data structure */
                    int *psub_nvtxs,                 /* number of vtxs in subgraph */
                    int *pvwgt_max,                  /* returned largest vwgt */
                    int *pvwgt_sum1, int *pvwgt_sum2 /* returned set sizes */
-                   )
+)
 {
   struct bilist *ptr;                  /* loops through set lists */
   int            vwgt_max;             /* largest vertex weight in subgraph */

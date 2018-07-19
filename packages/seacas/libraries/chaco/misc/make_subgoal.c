@@ -44,7 +44,7 @@ void make_subgoal(double *goal,         /* goals for sets */
                   int     mesh_dims[3], /* shape of mesh */
                   int     set,          /* which set am I in? */
                   double  sub_vwgt_sum  /* sum of subgraph vertex weights */
-                  )
+)
 {
   double tweight;        /* total weight among all subgoals */
   double ratio;          /* scaling factor */

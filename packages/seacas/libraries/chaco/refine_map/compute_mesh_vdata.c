@@ -42,7 +42,7 @@ void compute_mesh_vdata(struct refine_vdata *vdata,        /* preference data fo
                         int *                vtx2node,     /* maps graph vtxs to mesh nodes */
                         int                  mesh_dims[3], /* size of mesh */
                         int                  dim /* dimension we are currently working in */
-                        )
+)
 {
   float above;      /* my preference to move up in each dimension */
   float below;      /* my preference to move down in each dimension */

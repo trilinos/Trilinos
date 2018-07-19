@@ -35,7 +35,7 @@
 
 #include "structs.h"
 
-int msolve_(int nvtxs, double *x, double *y)
+int msolve(int nvtxs, double *x, double *y)
 {
   int i;
 

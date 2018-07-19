@@ -46,7 +46,7 @@ void make_bndy_list(struct vtx_data **graph,     /* data structure for graph */
                     int *             bspace,    /* list of active vertices for bucketsort */
                     int **            tops,      /* top of each set of buckets */
                     int **            bndy_list  /* list of boundary vertices returned */
-                    )
+)
 {
   struct bilist *bptr;        /* loops through bspace */
   int            vtx;         /* vertex that was moved */

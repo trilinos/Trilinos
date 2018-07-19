@@ -36,7 +36,7 @@
 #include "params.h" // for MAXDIMS
 #include <math.h>   // for fabs, sqrt
 
-int SRES_SWITCHES = 0; /* # switchs to backup routine for computing evec of T */
+int SRES_SWITCHES = 0; /* # switches to backup routine for computing evec of T */
 
 /* NOTE: Uses a modified form of the bidirectional recurrence similar to Parlett
          and Reid's version. Made a minor correction and modified one heuristic
@@ -52,7 +52,7 @@ int SRES_SWITCHES = 0; /* # switchs to backup routine for computing evec of T */
          to call this routine with the beta vector off-set by one. */
 
 /* NOTE: The residual calculations look too simple, but they are right because
-         the recurrences force (in exact arithmatic) most of the terms in the
+         the recurrences force (in exact arithmetic) most of the terms in the
          residual (T - ritz*I)s to zero. It's only the end points in the forward
          or backward recurrences or the merge point in the bidirectional recurrence
          where the resdual is not forced to zero. The values here are the residuals
@@ -68,7 +68,7 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
              int     j,     /* number of Lanczos iterations taken */
              double  ritz,  /* approximate eigenvalue  of T */
              double *s      /* approximate eigenvector of T */
-             )
+)
 {
   extern double SRESTOL;            /* limit on relative residual tol for evec of T */
   extern double DOUBLE_MAX;         /* maximum double precision value */
@@ -84,11 +84,11 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
   double        hurdle;             /* hurdle for local maximum in recurrence */
   double        prev_resid;         /* stores residual from previous computation */
 
-  int     tinvit_(); /* eispack's tinvit for evecs of symmetric T */
-  double *mkvec();   /* allocates double vectors */
-  void    frvec();   /* frees double vectors */
-  double  bidir();   /* bidirectional recurrence for evec of T */
-  void    cpvec();   /* vector copy routine */
+  int     tinvit(); /* eispack's tinvit for evecs of symmetric T */
+  double *mkvec();  /* allocates double vectors */
+  void    frvec();  /* frees double vectors */
+  double  bidir();  /* bidirectional recurrence for evec of T */
+  void    cpvec();  /* vector copy routine */
 
   s[1] = 1.0;
 
@@ -120,9 +120,9 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
     cpvec(&(work[6 * j]), 1, j, s);
     prev_resid = residual;
 
-    tinvit_(&long_j, &long_j, &(alpha[1]), &(beta[1]), &(work[1]), &nevals, &(w[1]), &(index[1]),
-            &(s[1]), &ierr, &(work[j + 1]), &(work[(2 * j) + 1]), &(work[(3 * j) + 1]),
-            &(work[(4 * j) + 1]), &(work[(5 * j) + 1]));
+    tinvit(&long_j, &long_j, &(alpha[1]), &(beta[1]), &(work[1]), &nevals, &(w[1]), &(index[1]),
+           &(s[1]), &ierr, &(work[j + 1]), &(work[(2 * j) + 1]), &(work[(3 * j) + 1]),
+           &(work[(4 * j) + 1]), &(work[(5 * j) + 1]));
 
     /* fix up sign if needed */
     if (s[j] < 0) {

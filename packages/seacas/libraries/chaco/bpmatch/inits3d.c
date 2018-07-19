@@ -45,7 +45,7 @@ void inits3d(struct vtx_data **graph,                /* graph data structure for
              int               startvtx[8][MAXSETS], /* indices defining separation */
              double *          size,                 /* size of each set being modified */
              int *             sets                  /* set each vertex gets assigned to */
-             )
+)
 {
   double xmid, ymid, zmid;    /* median x, y and z values */
   double val, bestval;        /* values for determining set preferences */

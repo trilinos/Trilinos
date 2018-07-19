@@ -63,7 +63,7 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
                 int               ndims,        /* number of eigenvectors (2^d sets) */
                 int               mediantype,   /* which partitioning strategy to use */
                 double            eigtol        /* tolerance on eigenvectors */
-                )
+)
 {
   extern int    DEBUG_TRACE;              /* trace the execution of the code */
   extern int    DEBUG_EVECS;              /* debug flag for eigenvector generation */

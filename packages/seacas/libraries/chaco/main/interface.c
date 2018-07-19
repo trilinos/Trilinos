@@ -67,7 +67,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
               int     ndims,                /* number of eigenvectors (2^d sets) */
               double  eigtol,               /* tolerance on eigenvectors */
               long    seed                  /* for random graph mutations */
-              )
+)
 {
   extern char *     PARAMS_FILENAME;    /* name of file with parameter updates */
   extern int        MAKE_VWGTS;         /* make vertex weights equal to degrees? */

@@ -39,7 +39,7 @@
 void scale_diag(double *vec,      /* the vector to scale */
                 int beg, int end, /* specify the range to norm over */
                 double *diag      /* vector to scale by */
-                )
+)
 {
   int i;
 
@@ -57,7 +57,7 @@ void scale_diag(double *vec,      /* the vector to scale */
 void scale_diag_float(float *vec,       /* the vector to scale */
                       int beg, int end, /* specify the range to norm over */
                       float *diag       /* vector to scale by */
-                      )
+)
 {
 
   int i;

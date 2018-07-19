@@ -42,7 +42,7 @@ static double *       pvals;  /* perturbed values */
 
 /* Inititialize the perturbation */
 void perturb_init(int n /* graph size at this level */
-                  )
+)
 {
   extern int    NPERTURB;    /* number of edges to perturb */
   extern double PERTURB_MAX; /* maximum perturbation */
@@ -87,7 +87,7 @@ void perturb_clear(void)
 /* Modify the result of splarax to break any graph symmetry */
 void perturb(double *result, /* result of matrix-vector multiply */
              double *vec     /* vector matrix multiplies */
-             )
+)
 {
   extern int NPERTURB; /* number of edges to perturb */
   int        i;        /* loop counter */
@@ -101,7 +101,7 @@ void perturb(double *result, /* result of matrix-vector multiply */
 /* Modify the result of splarax to break any graph symmetry, float version */
 void perturb_float(float *result, /* result of matrix-vector multiply */
                    float *vec     /* vector matrix multiplies */
-                   )
+)
 {
   extern int NPERTURB; /* number of edges to perturb */
   int        i;        /* loop counter */

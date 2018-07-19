@@ -45,7 +45,7 @@ int make_kl_list(struct vtx_data **graph,     /* data structure for graph */
                  int *             bspace,    /* list of active vertices for bucketsort */
                  int **            dvals,     /* d-values for each transition */
                  int               maxdval    /* maximum d-value for a vertex */
-                 )
+)
 {
   struct bilist **list;        /* bucket to erase element from */
   struct bilist * vptr;        /* loops through movelist */

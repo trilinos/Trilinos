@@ -46,7 +46,7 @@ void map3d(struct vtx_data **graph,   /* graph data structure */
            int *             sets,    /* set each vertex gets assigned to */
            double *          goal,    /* desired set sizes */
            int               vwgt_max /* largest vertex weight */
-           )
+)
 {
   extern int DEBUG_BPMATCH;        /* debug flag for bipartite matching */
   extern int N_VTX_MOVES;          /* number of vertices moved between sets */

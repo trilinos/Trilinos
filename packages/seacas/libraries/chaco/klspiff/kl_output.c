@@ -42,7 +42,7 @@ void pbuckets(struct bilist ****buckets,   /* pointers to bucket lists */
               struct bilist **  listspace, /* elements within buckets */
               int               maxdeg,    /* maximum degree of a vertex */
               int               nsets      /* number of sets being divided into */
-              )
+)
 {
   struct bilist *lptr; /* points to correct listspace */
   int            i, j; /* loop counter */
@@ -70,7 +70,7 @@ void pbuckets(struct bilist ****buckets,   /* pointers to bucket lists */
 /*static*/ void p1bucket(struct bilist **bucket, /* buckets holding bucket list */
                          struct bilist * lptr,   /* elements within bucket */
                          int             maxdeg  /* maximum degree of a vertex */
-                         )
+)
 {
   struct bilist *bptr; /* loops through list at a bucket */
   int            val;  /* element in a bucket */

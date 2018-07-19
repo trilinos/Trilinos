@@ -51,7 +51,7 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
                      int               using_ewgts, /* are edge weights being used? */
                      int               vwgt_max,    /* largest vertex weight */
                      int *             total_vwgt   /* total vertex weight in each set */
-                     )
+)
 {
   struct bidint *move_list;          /* list of vertices changing sets */
   struct bidint *ptr, *ptr2;         /* loop through bidints */

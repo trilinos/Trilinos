@@ -179,7 +179,7 @@ void *srealloc(void *ptr, size_t n)
   void *                     p;            /* returned pointer */
   extern int                 DEBUG_MEMORY; /* use debug memory allocator? */
   struct smalloc_debug_data *dbptr;        /* loops through debug list */
-  void bail(char *msg, int status);
+  void                       bail(char *msg, int status);
 
   if (ptr == NULL) {
     if (n == 0) {

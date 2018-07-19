@@ -50,7 +50,7 @@ void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
                 int                igeom,       /* dimensions of geometric data */
                 float **           coords,      /* coordinates for vertices */
                 float **           ccoords      /* coordinates for coarsened vertices */
-                )
+)
 {
   extern double     make_cgraph_time;
   extern int        DEBUG_COARSEN;    /* debug flag for coarsening output */
@@ -251,7 +251,7 @@ static void makecv2v(int  nvtxs,     /* number of vertices in graph */
                      int *v2cv,      /* mapping from vtxs to coarsened vtxs */
                      int *cv2v_vals, /* vtxs corresponding to each cvtx */
                      int *cv2v_ptrs  /* indices into cv2c_vals */
-                     )
+)
 
 {
   int sum; /* cumulative offests into vals array */

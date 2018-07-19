@@ -36,7 +36,7 @@
 int make_sep_list(int *bspace,      /* list of vtxs to be moved */
                   int  list_length, /* current length of bspace */
                   int *sets         /* processor each vertex is assigned to */
-                  )
+)
 {
   int vtx;  /* vertex in list */
   int i, k; /* loop counters */

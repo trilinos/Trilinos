@@ -47,7 +47,7 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
                     double *          goal,        /* desired set sizes */
                     int               nsets_tot,   /* total number of sets */
                     int               npasses_max  /* number of passes to make */
-                    )
+)
 {
   extern int     DEBUG_TRACE;          /* trace main execution path? */
   extern int     DEBUG_INTERNAL;       /* turn on debugging code here? */

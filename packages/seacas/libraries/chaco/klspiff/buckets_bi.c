@@ -53,7 +53,7 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
                     struct bilist **  listspace,   /* list data structure for each vertex */
                     int **            dvals,       /* d-values for each vertex for removing */
                     int *             sets,        /* processor each vertex is assigned to */
-                    float *           term_wgts[], /* weights for terminal propogation */
+                    float *           term_wgts[], /* weights for terminal propagation */
                     int               maxdval,     /* maximum possible dvalue for a vertex */
                     int               nsets,       /* number of sets being divided into */
                     int               parity,      /* work in forward or backward direction? */
@@ -62,7 +62,7 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
                     int  list_length,              /* number of values in bspace to work with */
                     int  npass,                    /* which pass through KL is this? */
                     int  using_ewgts               /* are edge weights being used? */
-                    )
+)
 {
   extern int      KL_RANDOM;       /* use randomness in KL? */
   extern int      KL_UNDO_LIST;    /* only sort vertices who have moved. */
@@ -70,7 +70,7 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
   struct bilist **bptr  = NULL;    /* loops through set of buckets */
   struct bilist * lptr  = NULL;    /* pointer to an element in listspace */
   float *         ewptr = NULL;    /* loops through edge weights */
-  float *         twptr = NULL;    /* weights for terminal propogation */
+  float *         twptr = NULL;    /* weights for terminal propagation */
   int *           bsptr = NULL;    /* loops through bspace */
   int *           edges = NULL;    /* edge list for a vertex */
   int             myset;           /* set current vertex belongs to */
@@ -78,7 +78,7 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
   int             set;             /* set that neighboring vertex belongs to */
   int             weight;          /* edge weight for a particular edge */
   int             vtx;             /* vertex in graph */
-  int             val;             /* terminal propogation rounded value */
+  int             val;             /* terminal propagation rounded value */
   double          cut_cost;        /* relative cut/hop importance */
   double          hop_cost;        /* relative hop/cut importance */
   int             myhop;           /* hops associated with current vertex */
@@ -139,7 +139,7 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
 
     /* Initialize all the preference values. */
     if (twptr != NULL) {
-      /* Using terminal propogation.  Round to integer value. */
+      /* Using terminal propagation.  Round to integer value. */
       if (twptr[vtx] < 0) {
         val = -twptr[vtx] * hop_cost + .5;
         val = -val;
