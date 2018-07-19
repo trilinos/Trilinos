@@ -54,5 +54,6 @@ namespace Ioss {
     STRUCTUREDBLOCK = 8192,
     INVALID_TYPE    = 16384
   };
+  constexpr int entityTypeCount = 14;
 } // namespace Ioss
 #endif

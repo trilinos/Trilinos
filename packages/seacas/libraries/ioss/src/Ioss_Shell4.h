@@ -78,7 +78,7 @@ namespace Ioss {
   private:
     static Shell4 instance_;
 
-    Shell4(const Shell4 &); // Do not implement
+    Shell4(const Shell4 &) = delete;
   };
 } // namespace Ioss
 #endif

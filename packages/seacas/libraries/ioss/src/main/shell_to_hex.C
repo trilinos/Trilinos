@@ -33,6 +33,8 @@
 #include <Ioss_CodeTypes.h>
 
 #include <Ionit_Initializer.h>
+#include <Ioss_Hex8.h>
+#include <Ioss_Wedge6.h>
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -96,7 +98,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -221,7 +223,7 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, globals);
 
   std::cerr << "\n" << codename << " execution successful.\n";
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -316,7 +318,7 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      int num_nodes = (*i)->get_property("entity_count").get_int();
+      int num_nodes = (*i)->entity_count();
       int degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
         std::cerr << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
@@ -343,16 +345,16 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      int num_elem = (*i)->get_property("entity_count").get_int();
+      int num_elem = (*i)->entity_count();
       total_elements += num_elem;
 
       std::string type;
       int         num_node_per_elem = (*i)->topology()->number_nodes();
       if (num_node_per_elem == 4) {
-        type = "hex";
+        type = Ioss::Hex8::name;
       }
       else {
-        type = "wedge";
+        type = Ioss::Wedge6::name;
       }
       auto eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
       output_region.add(eb);
@@ -390,7 +392,7 @@ namespace {
     Ioss::NodeBlock *nbo = (*output_region.get_node_blocks().begin());
 
     // Get the nodal coordinates...
-    int num_nodes = nb->get_property("entity_count").get_int();
+    int num_nodes = nb->entity_count();
 
     {
       std::vector<int> ids(2 * num_nodes);
@@ -423,7 +425,7 @@ namespace {
       ++out_ib;
       std::string name = (*eb).name();
 
-      int num_elem          = eb->get_property("entity_count").get_int();
+      int num_elem          = eb->entity_count();
       int num_node_per_elem = eb->topology()->number_nodes();
 
       // Get the connectivity array...

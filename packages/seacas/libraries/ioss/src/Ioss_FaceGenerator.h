@@ -58,10 +58,10 @@ namespace Ioss {
       element[elementCount_++] = element_id;
     }
 
-    size_t         id_;
-    mutable size_t element[2]{};
-    mutable int    elementCount_; // Should be max of 2 solid elements...
-    mutable int    sharedWithProc_;
+    size_t                id_;
+    mutable size_t        element[2]{};
+    mutable int           elementCount_; // Should be max of 2 solid elements...
+    mutable int           sharedWithProc_;
     std::array<size_t, 4> connectivity_{};
   };
 
@@ -80,8 +80,8 @@ namespace Ioss {
       // Hash (id_) is equal
       // Check whether same vertices (can be in different order)
       for (auto lvert : left.connectivity_) {
-        if (std::find(right.connectivity_.begin(), right.connectivity_.end(), lvert) ==
-            right.connectivity_.end()) {
+        if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
+            right.connectivity_.cend()) {
           // Not found, therefore not the same.
           return false;
         }
@@ -98,6 +98,7 @@ namespace Ioss {
 
     template <typename INT> void generate_faces(INT /*dummy*/);
     FaceUnorderedSet &           faces() { return faces_; }
+
   private:
     Ioss::Region &   region_;
     FaceUnorderedSet faces_;

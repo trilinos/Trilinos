@@ -57,6 +57,7 @@
 /* 3-d elements */
 
 #define HEX8 108
+#define HEX16 116
 #define HEX20 120
 #define HEX27 127
 #define TET4 204
@@ -69,6 +70,7 @@
 #define SHELL9 309
 #define SPHERE 401
 #define WEDGE6 506
+#define WEDGE12 512
 #define WEDGE15 515
 #define WEDGE16 516
 #define WEDGE20 520

@@ -114,7 +114,7 @@ namespace Ioss {
 
   protected:
     EntityBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &entity_type,
-                size_t entity_count);
+                size_t entity_cnt);
 
     EntityBlock(const EntityBlock &) = delete;
     EntityBlock &operator=(const EntityBlock &) = delete;

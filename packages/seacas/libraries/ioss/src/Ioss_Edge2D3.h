@@ -75,7 +75,7 @@ namespace Ioss {
   private:
     static Edge2D3 instance_;
 
-    Edge2D3(const Edge2D3 &); // Do not implement
+    Edge2D3(const Edge2D3 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Edge2D3_h

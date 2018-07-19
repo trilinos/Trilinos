@@ -32,6 +32,7 @@
 
 #include "Ioss_DBUsage.h" // for DatabaseUsage
 #include <Ioss_IOFactory.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
 #include <cstddef>      // for nullptr
 #include <map>          // for _Rb_tree_iterator, etc
@@ -111,8 +112,11 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
     }
   }
   else {
+    auto                my_props(properties);
+    Ioss::ParallelUtils pu(communicator);
+    pu.add_environment_properties(my_props, false);
     Ioss::IOFactory *factory = (*iter).second;
-    db                       = factory->make_IO(filename, db_usage, communicator, properties);
+    db                       = factory->make_IO(filename, db_usage, communicator, my_props);
   }
   return db;
 }

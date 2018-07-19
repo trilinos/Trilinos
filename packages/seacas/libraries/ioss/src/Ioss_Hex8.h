@@ -78,7 +78,7 @@ namespace Ioss {
   private:
     static Hex8 instance_;
 
-    Hex8(const Hex8 &); // Do not implement
+    Hex8(const Hex8 &) = delete;
   };
 } // namespace Ioss
 #endif

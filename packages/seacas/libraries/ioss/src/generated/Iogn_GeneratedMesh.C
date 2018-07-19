@@ -31,10 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_EntityType.h> // for EntityType, etc
+#include <Ioss_Hex8.h>
+#include <Ioss_Shell4.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <cstdlib> // for strtod, nullptr, strtol, exit, etc
+#include <cstdlib> // for strtod, nullptr, exit, etc
 #include <cstring> // for memcpy
 #include <generated/Iogn_GeneratedMesh.h>
 #include <iomanip>  // for operator<<, setw
@@ -71,9 +73,9 @@ namespace Iogn {
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::strtol(tokens[0].c_str(), nullptr, 10);
-    numY = std::strtol(tokens[1].c_str(), nullptr, 10);
-    numZ = std::strtol(tokens[2].c_str(), nullptr, 10);
+    numX = std::stoi(tokens[0]);
+    numY = std::stoi(tokens[1]);
+    numZ = std::stoi(tokens[2]);
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
@@ -298,7 +300,7 @@ namespace Iogn {
         Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::strtol(tokens[j].c_str(), nullptr, 10));
+          Zs.push_back(std::stoi(tokens[j]));
           numZ += Zs[j];
         }
         myNumZ   = Zs[myProcessor];
@@ -334,7 +336,7 @@ namespace Iogn {
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::strtol(option[1].c_str(), nullptr, 10);
+        timestepCount = std::stoi(option[1]);
       }
 
       else if (option[0] == "tets") {
@@ -347,7 +349,7 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string type  = tokens[ir++];
-          int         count = std::strtol(tokens[ir++].c_str(), nullptr, 10);
+          int         count = std::stoi(tokens[ir++]);
           set_variable_count(type, count);
         }
         if (timestepCount == 0) {
@@ -608,9 +610,9 @@ namespace Iogn {
     }
 
     if (block_number == 1) {
-      return std::make_pair(std::string("hex8"), 8);
+      return std::make_pair(std::string(Ioss::Hex8::name), 8);
     }
-    return std::make_pair(std::string("shell4"), 4);
+    return std::make_pair(std::string(Ioss::Shell4::name), 4);
   }
 
   void GeneratedMesh::node_map(Ioss::Int64Vector &map) const
@@ -651,17 +653,14 @@ namespace Iogn {
     }
   }
 
-  int64_t GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc,
-                                        int64_t slab, size_t slabOffset, size_t adjacentProc,
-                                        int64_t startIndex)
+  void GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
+                                     size_t slabOffset, size_t adjacentProc, size_t index)
   {
-    int64_t index  = startIndex;
     int64_t offset = (myStartZ + slabOffset) * (numX + 1) * (numY + 1);
     for (int64_t i = 0; i < slab; i++) {
       map[index]    = offset + i + 1;
       proc[index++] = static_cast<int>(adjacentProc);
     }
-    return index;
   }
 
   void GeneratedMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)
@@ -677,12 +676,13 @@ namespace Iogn {
     map.resize(count);
     proc.resize(count);
 
-    int64_t j = 0;
+    size_t offset = 0;
     if (!isFirstProc) {
-      j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
+      build_node_map(map, proc, slab, 0, myProcessor - 1, offset);
+      offset += slab;
     }
     if (!isLastProc) {
-      j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
+      build_node_map(map, proc, slab, myNumZ, myProcessor + 1, offset);
     }
   }
 
@@ -1166,7 +1166,7 @@ namespace Iogn {
         INT    tet_vert[][3] = {{0, 3, 2}, {0, 2, 1}};
         INT    hex_vert[4];
         switch (loc) {
-        case MX: // Minumum X Face
+        case MX: // Minimum X Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numY; j++) {
@@ -1202,7 +1202,7 @@ namespace Iogn {
             }
           }
           break;
-        case MY: // Minumum Y Face
+        case MY: // Minimum Y Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numX; j++) {
@@ -1238,7 +1238,7 @@ namespace Iogn {
             }
           }
           break;
-        case MZ: // Minumum Z Face
+        case MZ: // Minimum Z Face
           if (myProcessor == 0) {
             for (size_t i = 0, k = 0; i < numY; i++) {
               for (size_t j = 0; j < numX; j++, k++) {
@@ -1282,7 +1282,7 @@ namespace Iogn {
         // Hex shells
         size_t cnt = 0;
         switch (loc) {
-        case MX: // Minumum X Face
+        case MX: // Minimum X Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numY; j++) {
@@ -1306,7 +1306,7 @@ namespace Iogn {
             }
           }
           break;
-        case MY: // Minumum Y Face
+        case MY: // Minimum Y Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numX; j++) {
@@ -1330,7 +1330,7 @@ namespace Iogn {
             }
           }
           break;
-        case MZ: // Minumum Z Face
+        case MZ: // Minimum Z Face
           if (myProcessor == 0) {
             for (size_t i = 0, k = 0; i < numY; i++) {
               for (size_t j = 0; j < numX; j++, k++) {
@@ -1375,7 +1375,7 @@ namespace Iogn {
     size_t k      = 0;
 
     switch (loc) {
-    case MX: // Minumum X Face
+    case MX: // Minimum X Face
       for (size_t i = 0; i < myNumZ + 1; i++) {
         size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
         for (size_t j = 0; j < numY + 1; j++) {
@@ -1391,7 +1391,7 @@ namespace Iogn {
         }
       }
       break;
-    case MY: // Minumum Y Face
+    case MY: // Minimum Y Face
       for (size_t i = 0; i < myNumZ + 1; i++) {
         size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
         for (size_t j = 0; j < numX + 1; j++) {
@@ -1407,7 +1407,7 @@ namespace Iogn {
         }
       }
       break;
-    case MZ: // Minumum Z Face
+    case MZ: // Minimum Z Face
       if (myProcessor == 0) {
         for (size_t i = 0; i < (numY + 1) * (numX + 1); i++) {
           nodes[i] = i + 1;
@@ -1548,7 +1548,6 @@ namespace Iogn {
       res[i][1] = rotmat[i][0] * by[0][1] + rotmat[i][1] * by[1][1] + rotmat[i][2] * by[2][1];
       res[i][2] = rotmat[i][0] * by[0][2] + rotmat[i][1] * by[1][2] + rotmat[i][2] * by[2][2];
     }
-
     rotmat = res;
   }
 } // namespace Iogn

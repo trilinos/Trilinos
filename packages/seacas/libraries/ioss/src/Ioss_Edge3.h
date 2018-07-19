@@ -75,7 +75,7 @@ namespace Ioss {
   private:
     static Edge3 instance_;
 
-    Edge3(const Edge3 &); // Do not implement
+    Edge3(const Edge3 &) = delete;
   };
 } // namespace Ioss
 #endif

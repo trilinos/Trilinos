@@ -280,7 +280,7 @@ c
 c  The end of the VAX FORTRAN DO Loop that I commented out.  jrr.
 c
 c      END DO
- 3000 FORMAT( E32.0 )
+ 3000 FORMAT( F32.0 )
  4000 FORMAT( I32 )
 C
       END

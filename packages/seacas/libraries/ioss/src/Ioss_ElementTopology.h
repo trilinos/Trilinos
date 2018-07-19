@@ -50,7 +50,7 @@ namespace Ioss {
   class ETRegistry
   {
   public:
-    void insert(const Ioss::ETM_VP &value, bool delete_me);
+    void                         insert(const Ioss::ETM_VP &value, bool delete_me);
     ElementTopologyMap::iterator begin() { return m_registry.begin(); }
     ElementTopologyMap::iterator end() { return m_registry.end(); }
     ElementTopologyMap::iterator find(const std::string &type) { return m_registry.find(type); }
@@ -74,6 +74,9 @@ namespace Ioss {
   public:
     void alias(const std::string &base, const std::string &syn);
     bool is_alias(const std::string &my_alias) const;
+
+    ElementTopology(const ElementTopology &) = delete;
+    ElementTopology &operator=(const ElementTopology &) = delete;
 
     virtual ~ElementTopology();
 
@@ -114,7 +117,7 @@ namespace Ioss {
     virtual int number_nodes_face(int face = 0) const = 0;
     virtual int number_edges_face(int face = 0) const = 0;
 
-    IntVector boundary_connectivity(int edge_number) const;
+    IntVector         boundary_connectivity(int edge_number) const;
     virtual IntVector edge_connectivity(int edge_number) const = 0;
     virtual IntVector face_connectivity(int face_number) const = 0;
     virtual IntVector element_connectivity() const             = 0;
@@ -125,24 +128,21 @@ namespace Ioss {
     // elements, 3d need to override.
     // For 'element_edge_connectivity', this works for all elements.
     virtual IntVector face_edge_connectivity(int face_number) const;
-    IntVector element_edge_connectivity() const;
+    IntVector         element_edge_connectivity() const;
 
-    ElementTopology *boundary_type(int face_number = 0) const;
+    ElementTopology *        boundary_type(int face_number = 0) const;
     virtual ElementTopology *face_type(int face_number = 0) const = 0;
     virtual ElementTopology *edge_type(int edge_number = 0) const = 0;
 
     static ElementTopology *factory(const std::string &type, bool ok_to_fail = false);
     static ElementTopology *factory(unsigned int unique_id);
-    static unsigned int get_unique_id(const std::string &type);
-    static int describe(NameList *names);
+    static unsigned int     get_unique_id(const std::string &type);
+    static int              describe(NameList *names);
 
   protected:
     ElementTopology(std::string type, std::string master_elem_name, bool delete_me = false);
 
   private:
-    ElementTopology(const ElementTopology &);            // Do not implement...
-    ElementTopology &operator=(const ElementTopology &); // Do not implement...
-
     const std::string name_;
     const std::string masterElementName_;
 

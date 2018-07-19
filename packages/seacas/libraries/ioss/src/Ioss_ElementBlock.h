@@ -62,7 +62,7 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string &my_name) const override;
 
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
+    void                   get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
     AxisAlignedBoundingBox get_bounding_box() const;
 
   protected:

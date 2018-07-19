@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "Ioss_CodeTypes.h"     // for HAVE_MPI
+#include "Ioss_CodeTypes.h"     // for SEACAS_HAVE_MPI
 #include <Ioss_DatabaseIO.h>    // for DatabaseIO
 #include <Ioss_ParallelUtils.h> // for ParallelUtils
 #include <Ioss_SerializeIO.h>
@@ -90,7 +90,7 @@ namespace Ioss {
 
     else if (s_groupFactor > 0) {
       if (m_manualOwner == -1) {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
         do {
           MPI_Barrier(util.communicator());
         } while (++s_owner != s_groupRank);
@@ -125,7 +125,7 @@ namespace Ioss {
       else if (s_groupFactor > 0) {
         if (m_manualOwner == -1) {
           m_databaseIO->closeDatabase();
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
           s_owner                        = s_groupRank;
           const Ioss::ParallelUtils util = m_databaseIO->util();
           do {

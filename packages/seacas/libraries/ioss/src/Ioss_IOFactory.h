@@ -63,7 +63,7 @@ namespace Ioss {
                               DatabaseUsage db_usage, MPI_Comm communicator = MPI_COMM_WORLD,
                               const Ioss::PropertyManager &properties = Ioss::PropertyManager());
 
-    static int describe(NameList *names);
+    static int  describe(NameList *names);
     static void clean();
 
   protected:

@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: rdnps.f,v 1.4 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDNPS (NTXT, NUMNPS, LNPSNL, LNPSDF,
      &   IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LSTNPS, FACNPS, *)
@@ -65,7 +64,7 @@ C   --upon entry; upon exit at end of node set information.
       INTEGER LSTNPS(*)
       REAL FACNPS(*)
 
-      CHARACTER*5 STRA, STRB
+      CHARACTER*32 STRA, STRB
 
       NN = 0
       ND = 0

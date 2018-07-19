@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static Quad9 instance_;
 
-    Quad9(const Quad9 &); // Do not implement
+    Quad9(const Quad9 &) = delete;
   };
 } // namespace Ioss
 #endif

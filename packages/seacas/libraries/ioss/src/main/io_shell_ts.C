@@ -56,7 +56,7 @@
 
 #include "shell_interface.h"
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -167,7 +167,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     int64_t             min, max, avg;
     Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
     parallel.memory_stats(min, max, avg);
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
   Kokkos::finalize();
 #endif
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -422,7 +422,7 @@ namespace {
 
       transfer_nodeblock(region, output_region, interface.debug);
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
       // This also assumes that the node order and count is the same for input
       // and output regions... (This is checked during nodeset output)
       if (output_region.get_database()->needs_shared_node_information()) {
@@ -739,7 +739,7 @@ namespace {
       if (debug) {
         OUTPUT << name << ", ";
       }
-      size_t num_nodes = inb->get_property("entity_count").get_int();
+      size_t num_nodes = inb->entity_count();
       size_t degree    = inb->get_property("component_degree").get_int();
       if (!debug) {
         OUTPUT << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
@@ -851,12 +851,12 @@ namespace {
       params[t].output_region = &output_region;
       params[t].interface     = &interface;
       params[t].role          = role;
-      pthread_create(&threads[t], NULL, transfer_fields_ts, (void *)(params.data() + t));
+      pthread_create(&threads[t], nullptr, transfer_fields_ts, (void *)(params.data() + t));
       t++;
     }
 
     for (t = 0; t < (int)threads.size(); t++) {
-      pthread_join(threads[t], NULL);
+      pthread_join(threads[t], nullptr);
     }
   }
 
@@ -894,12 +894,12 @@ namespace {
       params[t].output_region = &output_region;
       params[t].interface     = &interface;
       params[t].role          = role;
-      pthread_create(&threads[t], NULL, transfer_field_data_ts, (void *)(params.data() + t));
+      pthread_create(&threads[t], nullptr, transfer_field_data_ts, (void *)(params.data() + t));
       t++;
     }
 
     for (t = 0; t < (int)threads.size(); t++) {
-      pthread_join(threads[t], NULL);
+      pthread_join(threads[t], nullptr);
     }
   }
 
@@ -914,7 +914,7 @@ namespace {
           OUTPUT << name << ", ";
         }
         std::string type  = iblock->get_property("topology_type").get_string();
-        size_t      count = iblock->get_property("entity_count").get_int();
+        size_t      count = iblock->entity_count();
         total_entities += count;
 
         auto block = new T(output_region.get_database(), name, type, count);
@@ -971,7 +971,7 @@ namespace {
         }
         std::string fbtype   = fb->get_property("topology_type").get_string();
         std::string partype  = fb->get_property("parent_topology_type").get_string();
-        size_t      num_side = fb->get_property("entity_count").get_int();
+        size_t      num_side = fb->entity_count();
         total_sides += num_side;
 
         auto block =
@@ -1005,7 +1005,7 @@ namespace {
         if (debug) {
           OUTPUT << name << ", ";
         }
-        size_t count = set->get_property("entity_count").get_int();
+        size_t count = set->entity_count();
         total_entities += count;
         auto o_set = new T(output_region.get_database(), name, count);
         output_region.add(o_set);
@@ -1058,7 +1058,7 @@ namespace {
         OUTPUT << name << ", ";
       }
       std::string type  = ics->get_property("entity_type").get_string();
-      size_t      count = ics->get_property("entity_count").get_int();
+      size_t      count = ics->entity_count();
       auto        cs    = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
       transfer_properties(ics, cs);

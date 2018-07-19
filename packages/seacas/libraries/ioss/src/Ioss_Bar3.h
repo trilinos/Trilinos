@@ -47,6 +47,7 @@ namespace Ioss {
 
     static void factory();
     ~Bar3() override;
+    Bar3(const Bar3 &) = delete;
 
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
@@ -75,8 +76,6 @@ namespace Ioss {
 
   private:
     static Bar3 instance_;
-
-    Bar3(const Bar3 &); // Do not implement
   };
 } // namespace Ioss
 

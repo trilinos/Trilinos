@@ -62,5 +62,5 @@ namespace Ioss {
 
     int64_t internal_put_field_data(const Field &, void *, size_t) const { return 0; }
   };
-}
+} // namespace Ioss
 #endif

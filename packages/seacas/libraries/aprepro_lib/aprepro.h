@@ -39,6 +39,7 @@
 #define SEAMS_DRIVER_H
 
 #include <cstdlib>
+#include <iostream>
 #include <ostream>
 #include <sstream>
 #include <stack>
@@ -54,15 +55,14 @@
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {
 
-  /* Array structure */
   struct array
   {
     std::vector<double> data;
-    int                 rows;
-    int                 cols;
+    int                 rows{0};
+    int                 cols{0};
 
     array(int r, int c) : rows(r), cols(c) { data.resize(r * c); }
-    array() : rows(0), cols(0) {}
+    array()  = default;
     ~array() = default;
   };
 
@@ -75,48 +75,40 @@ namespace SEAMS {
     bool        isInternal;
     struct value
     {
-      double var;
-      double (*fnctptr)();
-      double (*fnctptr_d)(double);
-      double (*fnctptr_c)(char *);
-      double (*fnctptr_dc)(double, char *);
-      double (*fnctptr_cd)(char *, double);
-      double (*fnctptr_cc)(char *, char *);
-      double (*fnctptr_dd)(double, double);
-      double (*fnctptr_ddd)(double, double, double);
-      double (*fnctptr_ccd)(char *, char *, double);
-      double (*fnctptr_dddd)(double, double, double, double);
-      double (*fnctptr_ddddc)(double, double, double, double, char *);
-      double (*fnctptr_dddddd)(double, double, double, double, double, double);
-      double (*fnctptr_a)(const array *);
-      const char *svar;
-      const char *(*strfnct)();
-      const char *(*strfnct_c)(char *);
-      const char *(*strfnct_d)(double);
-      const char *(*strfnct_a)(const array *);
-      const char *(*strfnct_dd)(double, double);
-      const char *(*strfnct_ccc)(char *, char *, char *);
-      const char *(*strfnct_dcc)(double, char *, char *);
-      const char *(*strfnct_dcccc)(double, char *, char *, char *, char *);
-      array *avar; /* Array Variable */
-      array *(*arrfnct_c)(const char *);
-      array *(*arrfnct_cc)(const char *, const char *);
-      array *(*arrfnct_cd)(const char *, double);
-      array *(*arrfnct_dd)(double, double);
-      array *(*arrfnct_d)(double);
-      array *(*arrfnct_a)(const array *);
+      double var{0};
+      double (*fnctptr)(){nullptr};
+      double (*fnctptr_d)(double){nullptr};
+      double (*fnctptr_c)(char *){nullptr};
+      double (*fnctptr_dc)(double, char *){nullptr};
+      double (*fnctptr_cd)(char *, double){nullptr};
+      double (*fnctptr_cc)(char *, char *){nullptr};
+      double (*fnctptr_dd)(double, double){nullptr};
+      double (*fnctptr_ddd)(double, double, double){nullptr};
+      double (*fnctptr_ccc)(char *, char *, char *){nullptr};
+      double (*fnctptr_ccd)(char *, char *, double){nullptr};
+      double (*fnctptr_dddd)(double, double, double, double){nullptr};
+      double (*fnctptr_ddddc)(double, double, double, double, char *){nullptr};
+      double (*fnctptr_dddddd)(double, double, double, double, double, double){nullptr};
+      double (*fnctptr_a)(const array *){nullptr};
+      std::string svar;
+      const char *(*strfnct)(){nullptr};
+      const char *(*strfnct_c)(char *){nullptr};
+      const char *(*strfnct_d)(double){nullptr};
+      const char *(*strfnct_a)(const array *){nullptr};
+      const char *(*strfnct_dd)(double, double){nullptr};
+      const char *(*strfnct_cc)(char *, char *){nullptr};
+      const char *(*strfnct_ccc)(char *, char *, char *){nullptr};
+      const char *(*strfnct_dcc)(double, char *, char *){nullptr};
+      const char *(*strfnct_dcccc)(double, char *, char *, char *, char *){nullptr};
+      array *avar{nullptr}; /* Array Variable */
+      array *(*arrfnct_c)(const char *){nullptr};
+      array *(*arrfnct_cc)(const char *, const char *){nullptr};
+      array *(*arrfnct_cd)(const char *, double){nullptr};
+      array *(*arrfnct_dd)(double, double){nullptr};
+      array *(*arrfnct_d)(double){nullptr};
+      array *(*arrfnct_a)(const array *){nullptr};
 
-      value()
-          : var(0), fnctptr(nullptr), fnctptr_d(nullptr), fnctptr_c(nullptr), fnctptr_dc(nullptr),
-            fnctptr_cd(nullptr), fnctptr_cc(nullptr), fnctptr_dd(nullptr), fnctptr_ddd(nullptr),
-            fnctptr_ccd(nullptr), fnctptr_dddd(nullptr), fnctptr_ddddc(nullptr),
-            fnctptr_dddddd(nullptr), fnctptr_a(nullptr), svar(nullptr), strfnct(nullptr),
-            strfnct_c(nullptr), strfnct_d(nullptr), strfnct_a(nullptr), strfnct_dd(nullptr),
-            strfnct_ccc(nullptr), strfnct_dcc(nullptr), strfnct_dcccc(nullptr), avar(nullptr),
-            arrfnct_c(nullptr), arrfnct_cc(nullptr), arrfnct_cd(nullptr), arrfnct_dd(nullptr),
-            arrfnct_d(nullptr), arrfnct_a(nullptr)
-      {
-      }
+      value() = default;
     } value;
     symrec *next;
 
@@ -140,36 +132,32 @@ namespace SEAMS {
   {
     std::string include_path;
     std::string include_file;
-    bool        end_on_exit;
-    bool        warning_msg;
-    bool        info_msg;
-    bool        debugging;
-    bool        interactive;
-    bool        immutable;
-    bool        trace_parsing; // enable debug output in the bison parser
-    bool        one_based_index;
-    bool        keep_history; // Flag to keep a history of Aprepro substitutions
-    aprepro_options()
-        : end_on_exit(false), warning_msg(true), info_msg(false), debugging(false),
-          interactive(false), immutable(false), trace_parsing(false), one_based_index(false),
-          keep_history(false)
-    {
-    }
+    bool        end_on_exit{false};
+    bool        warning_msg{true};
+    bool        info_msg{false};
+    bool        debugging{false};
+    bool        dumpvars{false};
+    bool        interactive{false};
+    bool        immutable{false};
+    bool        trace_parsing{false}; // enable debug output in the bison parser
+    bool        one_based_index{false};
+    bool        keep_history{false}; // Flag to keep a history of Aprepro substitutions
+    aprepro_options() = default;
   };
 
   /* Structure for holding file names and line counters */
   struct file_rec
   {
-    std::string name;
-    int         lineno;
-    int         loop_count;
-    bool        tmp_file;
+    std::string name{"STDIN"};
+    int         lineno{0};
+    int         loop_count{0};
+    bool        tmp_file{false};
 
     file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)
         : name(my_name), lineno(line_num), loop_count(loop_cnt), tmp_file(is_temp)
     {
     }
-    file_rec() : name("STDIN"), lineno(0), loop_count(0), tmp_file(false) {}
+    file_rec() = default;
   };
 
   /* Structure for holding aprepro substitution info */
@@ -193,7 +181,7 @@ namespace SEAMS {
     Aprepro();
     ~Aprepro();
 
-    enum SYMBOL_TYPE {
+    enum class SYMBOL_TYPE {
       VARIABLE                  = 1,
       STRING_VARIABLE           = 2,
       UNDEFINED_VARIABLE        = 5,
@@ -218,7 +206,7 @@ namespace SEAMS {
 
     /** Invoke the scanner and parser for a stream.
      * @param in	input stream
-     * @param sname	stream name for error messages
+     * @param in_name	stream name for error messages
      * @return		true if successfully parsed
      */
     bool parse_stream(std::istream &in, const std::string &in_name = "stream input");
@@ -263,14 +251,18 @@ namespace SEAMS {
 
     std::stack<std::ostream *> outputStream;
 
-    SEAMS::symrec *getsym(const char * /*sym_name*/) const;
+    SEAMS::symrec *getsym(const char *sym_name) const;
+    SEAMS::symrec *getsym(const std::string &sym_name) const;
     SEAMS::symrec *putsym(const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal);
 
     void add_variable(const std::string &sym_name, const std::string &sym_value,
-                      bool immutable = false);
-    void add_variable(const std::string &sym_name, double sym_value, bool immutable = false);
+                      bool immutable = false, bool internal = false);
+    void add_variable(const std::string &sym_name, double sym_value, bool immutable = false,
+                      bool internal = false);
+    void add_variable(const std::string &sym_name, array *value);
+
     std::vector<std::string> get_variable_names(bool doInternal = false);
-    void remove_variable(const std::string &sym_name);
+    void                     remove_variable(const std::string &sym_name);
 
     int set_option(const std::string &option, const std::string &optional_value = std::string(""));
 
@@ -279,7 +271,7 @@ namespace SEAMS {
 
     /** Pointer to the current lexer instance, this is used to connect the
      * parser to the scanner. It is used in the yylex macro. */
-    class Scanner *lexer;
+    class Scanner *lexer{nullptr};
 
     /** Error handling. */
     int get_error_count() const
@@ -292,55 +284,56 @@ namespace SEAMS {
 
     // The info stream. To only print out info messages if the -M option was
     // specified, use info(...) instead.
-    std::ostream *infoStream;
+    std::ostream *infoStream{&std::cout};
 
     void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info);
 
     void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
+    void dumpsym(int type, const char *pre, bool doInternal) const;
 
   private:
-    void init_table(const char *comment);
+    void                  init_table(const char *comment);
     std::vector<symrec *> sym_table;
     std::ostringstream    parsingResults;
 
     // Input stream used with parse_string_interactive
     std::istringstream stringInput;
 
-    bool           stringInteractive;
-    class Scanner *stringScanner;
+    bool           stringInteractive{false};
+    class Scanner *stringScanner{nullptr};
 
     // For error handling
-    std::ostream *errorStream;
-    std::ostream *warningStream;
+    std::ostream *errorStream{&std::cerr};
+    std::ostream *warningStream{&std::cerr};
 
     // For substitution history.
     std::vector<history_data> history;
 
-    mutable int parseErrorCount;
+    mutable int parseErrorCount{0};
 
   public:
-    bool stateImmutable;
+    bool stateImmutable{false};
 
     // Flag to do Aprepro substitutions within loops. Default value is true. If set to
     // false, content within the loop will be treated as verbatim text.
-    bool doLoopSubstitution;
+    bool doLoopSubstitution{true};
 
     // Flag to do Aprepro substitutions when including a file. Default value is true.
     // If set to false, content within the file will be treated as verbatim text that
     // needs to be sent through Aprepro again later.
-    bool doIncludeSubstitution;
+    bool doIncludeSubstitution{true};
 
     // Flag to inidicate whether Aprepro is in the middle of collecting lines for a
     // loop.
-    bool isCollectingLoop;
+    bool isCollectingLoop{false};
 
     // Record the substitution of the current Aprepro statement. This function will also
     // reset the historyString and add an entry to the substitution map.
     void add_history(const std::string &original, const std::string &substitution);
 
     // Used to avoid undefined variable warnings in old ifdef/ifndef construct
-    mutable bool inIfdefGetvar;
+    mutable bool inIfdefGetvar{false};
 
     const std::vector<history_data> &get_history();
     void                             clear_history();

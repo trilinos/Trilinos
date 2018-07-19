@@ -309,7 +309,12 @@ namespace Iohb {
     return true;
   }
 
-  void DatabaseIO::flush_database__() const { logStream->flush(); }
+  void DatabaseIO::flush_database__() const
+  {
+    if (myProcessor == 0) {
+      logStream->flush();
+    }
+  }
 
   bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
   {

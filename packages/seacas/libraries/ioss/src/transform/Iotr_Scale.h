@@ -61,7 +61,7 @@ namespace Iotr {
 
   public:
     const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
-    int output_count(int in) const override;
+    int                       output_count(int in) const override;
 
     void set_property(const std::string &name, int value) override;
     void set_property(const std::string &name, double value) override;

@@ -78,7 +78,7 @@ void track_location(YYLTYPE *loc, char *txt)
 (?i:count)                                                           { yylval->string=strdup(yytext); return(TOKCOUNT); }
 (?i:threshold\ +values)                                              { return(TOKTHRESHOLDVALUES); }
 (?i:frames\ +after\ +trigger)                                        { return(TOKFRAMESAFTERTRIGGER); }
-(?i:maxiumum\ +triggers\ +per\ +threshold)                           { return(TOKMAXIMUMTRIGGERSPERTHRESHOLD); }
+(?i:maximum\ +triggers\ +per\ +threshold)                           { return(TOKMAXIMUMTRIGGERSPERTHRESHOLD); }
 
  /* On Off Criteria Block */
 

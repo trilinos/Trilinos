@@ -79,7 +79,7 @@ namespace Ioss {
     Wedge16();
 
   private:
-    Wedge16(const Wedge16 &); // Do not implement
+    Wedge16(const Wedge16 &) = delete;
   };
 } // namespace Ioss
 #endif

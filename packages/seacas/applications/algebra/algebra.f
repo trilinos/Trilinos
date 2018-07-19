@@ -410,6 +410,29 @@ C     selected element blocks
          GOTO 130
       END IF
 
+C ... See if the input database has any nodeset or sideset variables.
+C     If there are any, then output a warning message telling the user
+C     that these are not supported in algebra and will be stripped from
+C     output file.
+      call exgvp(ndbin, 'M', nvarns, ierr)
+      call exgvp(ndbin, 'S', nvarss, ierr)
+      if (nvarns .gt. 0) then
+         CALL PRTERR('WARNING',
+     $        'The Input Database contains NODESET VARIABLES')
+         CALL PRTERR('CMDSPEC',
+     $        '      NODESET VARIABLES are not supported by algebra')
+         CALL PRTERR('CMDSPEC',
+     $        '      These will NOT be saved to the output database')
+      end if
+      if (nvarss .gt. 0) then
+         CALL PRTERR('WARNING',
+     $        'The Input Database contains SIDESET VARIABLES')
+         CALL PRTERR('CMDSPEC',
+     $        '      SIDESET VARIABLES are not supported by algebra')
+         CALL PRTERR('CMDSPEC',
+     $        '      These will NOT be saved to the output database')
+      end if
+
 C     Read in the equations
 C     call rdeqns(DMarray, DCarray, coord_names, elem_names, db_var_names,
 C     qa_rec, info_rec, db_time_step, select_time_step,

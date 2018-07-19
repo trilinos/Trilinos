@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -49,7 +49,7 @@
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   assert(mr_size == numDOF * numDOF);
 
   OUTPUT << "\nSIERRA execution successful." << '\n';
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;

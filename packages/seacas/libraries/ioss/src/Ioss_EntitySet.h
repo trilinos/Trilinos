@@ -64,7 +64,7 @@ namespace Ioss {
     Property get_implicit_property(const std::string &my_name) const override = 0;
 
   protected:
-    EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_count);
+    EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_cnt);
     EntitySet(const EntitySet &) = delete;
     EntitySet &operator=(const EntitySet &) = delete;
     ~EntitySet() override                   = default;

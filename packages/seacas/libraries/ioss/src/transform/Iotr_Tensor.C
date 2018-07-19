@@ -149,7 +149,7 @@ namespace Iotr {
     case DEVIATOR:
     case SPHERICAL:
     case INVARIANTS: success = false; break;
-    default: success         = false;
+    default: success = false;
     }
 
     return success;

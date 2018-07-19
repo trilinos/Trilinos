@@ -78,7 +78,7 @@ namespace Ioss {
     Pyramid19();
 
   private:
-    Pyramid19(const Pyramid19 &); // Do not implement
+    Pyramid19(const Pyramid19 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Pyramid19_h

@@ -40,7 +40,7 @@ namespace Ioss {
   class CompositeVariableType : public VariableType
   {
   public:
-    static std::string composite_name(const std::string &base, int copies);
+    static std::string   composite_name(const std::string &base, int copies);
     static VariableType *composite_variable_type(const VariableType *inst, int copies);
 
     std::string label(int which, char suffix_sep = '_') const override;

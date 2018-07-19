@@ -78,7 +78,7 @@ namespace Ioss {
   private:
     static Tet11 instance_;
 
-    Tet11(const Tet11 &); // Do not implement
+    Tet11(const Tet11 &) = delete;
   };
 } // namespace Ioss
 #endif

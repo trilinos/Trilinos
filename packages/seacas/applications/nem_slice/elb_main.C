@@ -332,6 +332,19 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     problem.alloc_graph = ELB_FALSE;
   }
 
+  /* if fix_columns is on, we need the face adjacency graph. So if
+   * nothing else has asked for the full adjacency graph, ask for the
+   * face adjacency graph. If something else did ask for the adjacency
+   * graph, we don't know if its full or face adjacency only, so leave
+   * the option as is */
+
+  if (problem.fix_columns) {
+    if (problem.alloc_graph == ELB_FALSE) {
+      problem.alloc_graph = ELB_TRUE;
+      problem.face_adj    = ELB_TRUE;
+    }
+  }
+
   /* Allocate necessary memory */
   if (problem.type == NODAL) {
     problem.num_vertices = mesh.num_nodes;

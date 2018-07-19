@@ -85,7 +85,7 @@ namespace Ioss {
   private:
     int                        nodeCount;
     Ioss::ElementVariableType *storageType;
-    Super(const Super &); // Do not implement
+    Super(const Super &) = delete;
   };
 } // namespace Ioss
 #endif

@@ -119,7 +119,10 @@ alias install-targets
     Utst_superelement
     Utst_database_io
     Utst_sort
+    Utst_map
+    Utst_structured_decomp
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
@@ -179,8 +182,11 @@ alias install-targets
     Utst_superelement
     Utst_database_io
     Utst_sort
+    Utst_map
+    Utst_structured_decomp
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -292,6 +298,7 @@ install install-user-lib
     iopg
     iohb
     iogn
+    iogs
     ioinit
     ioss
     iotr
@@ -322,6 +329,7 @@ install install-user-lib
     iopg
     iohb
     iogn
+    iogs
     ioinit
     ioss
     iotr
@@ -365,6 +373,7 @@ install install-user-bin
     struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -421,6 +430,7 @@ install install-user-bin
     struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -487,7 +497,6 @@ lib iopx
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/exo_par/*.C ]
     ]
-    ioss
     ioex
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
@@ -508,7 +517,6 @@ lib iofx
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/exo_fpp/*.C ]
     ]
-    ioss
     ioex
     exodus
     /tpl/netcdf//netcdf
@@ -611,6 +619,23 @@ lib iogn
     ]
   ;
 
+lib iogs
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/gen_struc/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libiogs.a
+    ]
+  ;
+
 lib ioinit
   :
     [ ifdevbuild
@@ -626,7 +651,7 @@ lib ioinit
     iopg
     iohb
     iogn
-    ioss
+    iogs
     iotr
     iovs
     /mpi//mpi
@@ -734,13 +759,12 @@ lib exodus
         [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf//netcdf
-  :
+  : <define>EXODUS_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
         <include>$(seacas-root)/libraries/exodus/sierra
-	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -748,19 +772,17 @@ lib exodus
         <file>$(sierra-root)/seacas/lib/libexodus.a
     ]
   :
-  :
+  : <define>EXODUS_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
         <include>$(seacas-root)/libraries/exodus/sierra
-	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include/exodus
-	<define>PARALLEL_AWARE_EXODUS
     ]
   ;
 
@@ -1453,9 +1475,12 @@ lib aprepro_lib
             [ glob $(seacas-root)/libraries/aprepro_lib/*.cc ] 
             [ glob $(seacas-root)/libraries/aprepro_lib/*.c ] :
             [ glob $(seacas-root)/libraries/aprepro_lib/apr_test.cc ]
+            [ glob $(seacas-root)/libraries/aprepro_lib/strings.cc ]
         ]
     ]
-  :
+    exodus
+    /tpl/netcdf//netcdf
+  : <define>EXODUS_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1467,7 +1492,7 @@ lib aprepro_lib
         <file>$(sierra-root)/seacas/lib/libaprepro_lib.a
     ]
   :
-  :
+  : <define>EXODUS_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1571,7 +1596,6 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
     suplib_c
-    ioss
     ioinit
   : <include>$(seacas-root)/applications/ejoin
     <tag>@utility-exec-tag
@@ -1609,7 +1633,6 @@ exe exomatlab
   $(seacas-root)/applications/exomatlab/EML_SystemInterface.C
     suplib_cpp
     suplib_c
-    ioss
     ioinit
     exodus
   : <include>$(seacas-root)/applications/exomatlab
@@ -1872,13 +1895,26 @@ exe Utst_sort
   : <tag>@sierra-exec-tag
   ;
 
+exe Utst_map
+  :
+    $(seacas-root)/libraries/ioss/src/utest/Utst_map.C
+    ioss
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe Utst_structured_decomp
+  :
+    $(seacas-root)/libraries/ioss/src/utest/Utst_structured_decomp.C
+    iocgns
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
 exe Utst_superelement
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_superelement.C
     ioex
-    ioss
-    /mpi//mpi
-    /tpl/parmetis//parmetis
   : <tag>@sierra-exec-tag
   ;
   

@@ -48,8 +48,6 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
-static const std::string SCALAR("scalar");
-
 /** \brief Create a side set with no members initially.
  *
  *  \param[in] io_database The database associated with the region containing the side set.

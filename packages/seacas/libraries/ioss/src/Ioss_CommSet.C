@@ -43,8 +43,8 @@
 #include "Ioss_PropertyManager.h"
 
 Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                       const std::string &entity_type, size_t entity_count)
-    : Ioss::GroupingEntity(io_database, my_name, entity_count)
+                       const std::string &entity_type, size_t entity_cnt)
+    : Ioss::GroupingEntity(io_database, my_name, entity_cnt)
 {
   assert(entity_type == "node" || entity_type == "side");
   properties.add(Ioss::Property("entity_type", entity_type));
@@ -52,16 +52,16 @@ Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database, const std::string &my_name
   if (entity_type == "node") {
     // Field contains a pair of type [entity_id, shared_cpu]
     fields.add(Ioss::Field("entity_processor", field_int_type(), "pair", Ioss::Field::COMMUNICATION,
-                           entity_count));
+                           entity_cnt));
     fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "pair",
-                           Ioss::Field::COMMUNICATION, entity_count));
+                           Ioss::Field::COMMUNICATION, entity_cnt));
   }
   else {
     // Field contains a triplet of type [entity_id, local_side, shared_cpu]
     fields.add(Ioss::Field("entity_processor", field_int_type(), "Real[3]",
-                           Ioss::Field::COMMUNICATION, entity_count));
+                           Ioss::Field::COMMUNICATION, entity_cnt));
     fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "Real[3]",
-                           Ioss::Field::COMMUNICATION, entity_count));
+                           Ioss::Field::COMMUNICATION, entity_cnt));
   }
 }
 

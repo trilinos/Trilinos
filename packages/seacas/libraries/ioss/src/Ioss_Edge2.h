@@ -47,6 +47,7 @@ namespace Ioss {
 
     static void factory();
     ~Edge2() override;
+    Edge2(const Edge2 &) = delete;
 
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
@@ -74,8 +75,6 @@ namespace Ioss {
 
   private:
     static Edge2 instance_;
-
-    Edge2(const Edge2 &); // Do not implement
   };
 } // namespace Ioss
 #endif

@@ -73,61 +73,27 @@ namespace Ioex {
       std::map<std::pair<std::string, const Ioss::ElementTopology *>, int, TopologyMapCompare>;
 
   const char *Version();
-  bool check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
+  bool        check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
 
   void update_last_time_attribute(int exodusFilePtr, double value);
   bool read_last_time_attribute(int exodusFilePtr, double *value);
 
-  bool type_match(const std::string &type, const char *substring);
+  bool    type_match(const std::string &type, const char *substring);
   int64_t extract_id(const std::string &name_id);
-  bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset);
+  bool    set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset);
   int64_t get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset);
-  void decode_surface_name(Ioex::SideSetMap &fs_map, Ioex::SideSetSet &fs_set,
-                           const std::string &name);
-  void fix_bad_name(char *name);
+  void    decode_surface_name(Ioex::SideSetMap &fs_map, Ioex::SideSetSet &fs_set,
+                              const std::string &name);
+  void    fix_bad_name(char *name);
 
-  void exodus_error(int exoid, int lineno, const char *function, const char *filename);
-
-  void check_non_null(void *ptr, const char *type, const std::string &name);
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename,
+                    const std::string &extra = {});
 
   int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
                      size_t name_length);
 
   void add_coordinate_frames(int exoid, Ioss::Region *region);
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
-
-  inline int exodus_byte_size_api(int exoid)
-  {
-    // Check byte-size of integers stored on the database...
-    int mode = ex_int64_status(exoid) & EX_ALL_INT64_API;
-    if (mode != 0) {
-      return 8;
-    }
-
-    return 4;
-  }
-
-  template <typename T> bool check_block_order(const std::vector<T *> &blocks)
-  {
-#ifndef NDEBUG
-    // Verify that element blocks are defined in sorted offset order...
-    typename std::vector<T *>::const_iterator I;
-
-    int64_t eb_offset = -1;
-    for (I = blocks.begin(); I != blocks.end(); ++I) {
-      int64_t this_off = (*I)->get_offset();
-      if (this_off < eb_offset) {
-        {
-          {
-            return false;
-          }
-        }
-      }
-      eb_offset = this_off;
-    }
-#endif
-    return true;
-  }
 
   bool find_displacement_field(Ioss::NameList &fields, const Ioss::GroupingEntity *block, int ndim,
                                std::string *disp_name);

@@ -1086,7 +1086,7 @@ C=======================================================================
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
         if (.NOT. MATSTR (WORD2, 'VARIABLE', 2)) THEN
           call PRTERR('CMDERR',
-     *      'SYNTAX: RENAME [global|nodal|node|element|nodeset|nset|',
+     *      'SYNTAX: RENAME [global|nodal|node|element|nodeset|nset|'//
      *      'sideset|sset] VARIABLE [oldname] [newname]')
           go to 399
         end if
@@ -1584,20 +1584,32 @@ C ... Field is character
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
                   do i=1, nelblk
+#if defined(__XLF__)
+                    ebname(i) = " "
+#else
                     ebname(i) = ""
+#endif
                   end do
                   CALL PRTERR ('CMDSPEC',
      *              'All material block names deleted.')
                 ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &              MATSTR(WORD,'NSETS',   1) ) THEN
                   do i=1, numnps
+#if defined(__XLF__)
+                    nsname(i) = " "
+#else
                     nsname(i) = ""
+#endif
                   end do
                   CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
                 ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
      &              MATSTR(WORD,'SSETS',   1) ) THEN
                   do i=1, numess
+#if defined(__XLF__)
+                    ssname(i) = " "
+#else
                     ssname(i) = ""
+#endif
                   end do
                   CALL PRTERR ('CMDSPEC','All sideset names deleted.')
                 ELSE

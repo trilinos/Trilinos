@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static ShellLine2D2 instance_;
 
-    ShellLine2D2(const ShellLine2D2 &); // Do not implement
+    ShellLine2D2(const ShellLine2D2 &) = delete;
   };
 } // namespace Ioss
 

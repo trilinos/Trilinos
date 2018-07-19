@@ -78,7 +78,7 @@ namespace Ioss {
   private:
     static Hex27 instance_;
 
-    Hex27(const Hex27 &); // Do not implement
+    Hex27(const Hex27 &) = delete;
   };
 } // namespace Ioss
 #endif

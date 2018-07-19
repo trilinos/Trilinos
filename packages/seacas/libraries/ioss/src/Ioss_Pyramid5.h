@@ -78,7 +78,7 @@ namespace Ioss {
     Pyramid5();
 
   private:
-    Pyramid5(const Pyramid5 &); // Do not implement
+    Pyramid5(const Pyramid5 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Pyramid5_h

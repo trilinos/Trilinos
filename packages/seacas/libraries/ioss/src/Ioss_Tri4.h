@@ -77,7 +77,7 @@ namespace Ioss {
   private:
     static Tri4 instance_;
 
-    Tri4(const Tri4 &); // Do not implement
+    Tri4(const Tri4 &) = delete;
   };
 } // namespace Ioss
 #endif

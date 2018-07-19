@@ -70,9 +70,10 @@ void Skinner::Interface::enroll_options()
   options_.enroll("ignore_face_ids", Ioss::GetLongOption::NoValue,
                   "Ignore internal face ids and just use 1..num_face", nullptr);
 
-  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue, "Output database will be a netcdf4 "
-                                                           "hdf5-based file instead of the "
-                                                           "classical netcdf file format",
+  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
+                  "Output database will be a netcdf4 "
+                  "hdf5-based file instead of the "
+                  "classical netcdf file format",
                   nullptr);
 
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,

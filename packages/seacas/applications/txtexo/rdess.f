@@ -72,7 +72,7 @@ C   --upon entry; upon exit at end of side set information.
       INTEGER LTSESS(*)
       REAL FACESS(*)
 
-      CHARACTER*5 STRA, STRB
+      CHARACTER*32 STRA, STRB
 
 C ... Skip comment records
       READ (NTXT, *, END=120, ERR=120)

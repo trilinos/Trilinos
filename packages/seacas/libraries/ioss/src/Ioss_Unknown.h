@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static Unknown instance_;
 
-    Unknown(const Unknown &); // Do not implement
+    Unknown(const Unknown &) = delete;
   };
 } // namespace Ioss
 #endif

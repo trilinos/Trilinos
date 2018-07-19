@@ -94,7 +94,7 @@ namespace Ioss {
     }
 
     const EntityBlock *parent_block() const { return parentBlock_; }
-    void set_parent_block(const EntityBlock *block) { parentBlock_ = block; }
+    void               set_parent_block(const EntityBlock *block) { parentBlock_ = block; }
 
     // Describes the contained entities element block topology
     const ElementTopology *parent_element_topology() const { return parentTopology_; }

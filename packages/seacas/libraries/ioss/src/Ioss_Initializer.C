@@ -51,6 +51,7 @@ Ioss::Initializer::Initializer()
   Ioss::ShellLine2D3::factory();
 
   Ioss::Hex8::factory();
+  Ioss::Hex16::factory();
   Ioss::Hex20::factory();
   Ioss::Hex27::factory();
 
@@ -63,6 +64,7 @@ Ioss::Initializer::Initializer()
   Ioss::Pyramid19::factory();
 
   Ioss::Quad4::factory();
+  Ioss::Quad6::factory();
   Ioss::Quad8::factory();
   Ioss::Quad9::factory();
 
@@ -91,6 +93,7 @@ Ioss::Initializer::Initializer()
   Ioss::Unknown::factory();
 
   Ioss::Wedge6::factory();
+  Ioss::Wedge12::factory();
   Ioss::Wedge15::factory();
   Ioss::Wedge16::factory();
   Ioss::Wedge18::factory();

@@ -79,7 +79,7 @@ namespace Ioss {
   private:
     static TriShell3 instance_;
 
-    TriShell3(const TriShell3 &); // Do not implement
+    TriShell3(const TriShell3 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_TriShell3_h

@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static Sphere instance_;
 
-    Sphere(const Sphere &); // Do not implement
+    Sphere(const Sphere &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Sphere_h

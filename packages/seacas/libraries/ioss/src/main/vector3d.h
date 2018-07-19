@@ -46,10 +46,10 @@ public:
   double x{}, y{}, z{};
 
   vector3d &operator=(const vector3d &from);
-  bool operator==(const vector3d &from) const;
-  bool operator!=(const vector3d &from) const;
-  void set(double X, double Y, double Z);
-  void set(double location[3]);
+  bool      operator==(const vector3d &from) const;
+  bool      operator!=(const vector3d &from) const;
+  void      set(double X, double Y, double Z);
+  void      set(double location[3]);
   vector3d &reverse();
 
   vector3d operator-() const;
@@ -59,9 +59,9 @@ public:
   vector3d &operator*=(double scalar);
   vector3d &operator/=(double scalar);
 
-  double length() const;
-  double normalize(double tolerance = 1e-06);
-  vector3d cross(const vector3d &from) const;
+  double          length() const;
+  double          normalize(double tolerance = 1e-06);
+  vector3d        cross(const vector3d &from) const;
   static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3);
 };
 

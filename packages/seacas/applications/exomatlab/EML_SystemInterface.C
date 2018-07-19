@@ -149,13 +149,15 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("field_suffix");
-    if (strcmp("none", temp) == 0) {
-      // This is ASCII 1 which means it won't be found so
-      // vector/tensor won't be recognized by default.
-      fieldSuffix_ = 1;
-    }
-    else {
-      fieldSuffix_ = temp[0];
+    if (temp != nullptr) {
+      if (strcmp("none", temp) == 0) {
+        // This is ASCII 1 which means it won't be found so
+        // vector/tensor won't be recognized by default.
+        fieldSuffix_ = 1;
+      }
+      else {
+        fieldSuffix_ = temp[0];
+      }
     }
   }
 
@@ -319,4 +321,4 @@ namespace {
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
-}
+} // namespace

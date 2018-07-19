@@ -36,12 +36,12 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h> // for Property
 #include <cstddef>         // for size_t
-#include <map>             // for map, map<>::value_compare
 #include <string>          // for string, operator<
-#include <vector>          // for vector
+#include <unordered_map>
+#include <vector> // for vector
 
 namespace Ioss {
-  using PropMapType = std::map<std::string, Property, std::less<std::string>>;
+  using PropMapType = std::unordered_map<std::string, Property>;
   using ValuePair   = PropMapType::value_type;
 
   /** \brief A collection of Ioss::Property objects

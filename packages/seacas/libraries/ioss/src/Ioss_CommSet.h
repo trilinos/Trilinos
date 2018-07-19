@@ -52,7 +52,7 @@ namespace Ioss {
   {
   public:
     CommSet(DatabaseIO *io_database, const std::string &my_name, const std::string &entity_type,
-            size_t entity_count);
+            size_t entity_cnt);
 
     std::string type_string() const override { return "CommSet"; }
     std::string short_type_string() const override { return "commlist"; }

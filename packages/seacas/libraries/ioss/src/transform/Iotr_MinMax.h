@@ -61,7 +61,7 @@ namespace Iotr {
 
   public:
     const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
-    int output_count(int in) const override;
+    int                       output_count(int in) const override;
 
   protected:
     explicit MinMax(const std::string &type);

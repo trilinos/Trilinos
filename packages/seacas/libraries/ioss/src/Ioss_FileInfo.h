@@ -60,11 +60,11 @@ namespace Ioss {
     FileInfo();
 
     //! Create object referring to file with name \a filename
-    //! \param filename name of file
+    //! \param my_filename name of file
     explicit FileInfo(std::string my_filename);
 
     //! Create object referring to file with name \a filename
-    //! \param filename name of file
+    //! \param my_filename name of file
     explicit FileInfo(const char *my_filename);
 
     //! Copy constructor
@@ -72,14 +72,14 @@ namespace Ioss {
 
     //! Constructor
     //! \param dirpath Directory Path
-    //! \param filename base filename
+    //! \param my_filename base filename
     FileInfo(const std::string &dirpath, const std::string &my_filename);
 
     ~FileInfo();
 
     //! returns the number of processors that this file exists.
     //! 0: Exists nowhere
-    //! #proc: Exists everywhere
+    //! \#proc: Exists everywhere
     //! else: exists on some proc, but not all.
     //! In the last case, a list of processors where it is missing is returned in 'where' on
     //! processor 0.
@@ -116,9 +116,9 @@ namespace Ioss {
     bool remove_file();
 
   private:
-    std::string filename_;
-    bool        exists_{};   ///< this is used frequently, check on creation
-    bool        readable_{}; ///< this is used frequently, check on creation
+    std::string filename_{};
+    bool        exists_{false};   ///< this is used frequently, check on creation
+    bool        readable_{false}; ///< this is used frequently, check on creation
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_FileInfo_h

@@ -2397,7 +2397,7 @@ color_legend_maximum_range
       {
       if($3 > $4)
         {
-        yyerror(&yylloc, scanner, pd, "Error: color legend maxiumum range argument <min> must be less than argument <max>.");
+        yyerror(&yylloc, scanner, pd, "Error: color legend maximum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
       pd.d.clear();

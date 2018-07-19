@@ -75,7 +75,7 @@ namespace Ioss {
   private:
     static Node instance_;
 
-    Node(const Node &); // Do not implement
+    Node(const Node &) = delete;
   };
 } // namespace Ioss
 #endif
