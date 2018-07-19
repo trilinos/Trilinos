@@ -7,7 +7,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -23,25 +22,26 @@ typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> my_adapter_t;
 
 
-int main(int argc, char *argv[]){
+int main(int narg, char *arg[]){
+
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
   typedef my_adapter_t::part_t part_t;
 
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
   int nx = 2, ny = 2, nz = 2;
-  for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "NX" ) ) {
-      nx = atoi( argv[++i] );
+  for ( int i = 1 ; i < narg ; ++i ) {
+    if ( 0 == strcasecmp( arg[i] , "NX" ) ) {
+      nx = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NY" ) ) {
-      ny = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NY" ) ) {
+      ny = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NZ" ) ) {
-      nz = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NZ" ) ) {
+      nz = atoi( arg[++i] );
     }
     else{
-      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << arg[i] << std::endl ;
       return 1;
     }
   }

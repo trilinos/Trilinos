@@ -58,12 +58,8 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
-//Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
-
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // SCOREC includes
@@ -77,16 +73,12 @@
 #include <gmi_mesh.h>
 #endif
 
-using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-
 #ifdef HAVE_ZOLTAN2_PARMA
 
 void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action, 
@@ -99,15 +91,14 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   //int numProcs = CommT->getSize();
 
   if (me == 0){
-  cout 
+  std::cout 
     << "====================================================================\n" 
     << "|                                                                  |\n" 
     << "|                  Example: Partition APF Mesh                     |\n" 
@@ -126,11 +117,11 @@ int main(int narg, char *arg[]) {
 
 #ifdef HAVE_MPI
   if (me == 0) {
-    cout << "PARALLEL executable \n";
+    std::cout << "PARALLEL executable \n";
   }
 #else
   if (me == 0) {
-    cout << "SERIAL executable \n";
+    std::cout << "SERIAL executable \n";
   }
 #endif
 
@@ -179,7 +170,7 @@ int main(int narg, char *arg[]) {
 
 #ifdef HAVE_ZOLTAN2_PARMA
 
-  if (me == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) std::cout << "Generating mesh ... \n\n";
 
   //Setup for SCOREC
   PCU_Comm_Init();
@@ -200,7 +191,7 @@ int main(int narg, char *arg[]) {
   }
 
   // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) std::cout << "Deleting the mesh ... \n\n";
 
   //Delete APF Mesh;
   m->destroyNative();
@@ -236,7 +227,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   bool needSecondAdj=false;
   
   // Set parameters for partitioning
-  if (me == 0) cout << "Creating parameter list ... \n\n";
+  if (me == 0) std::cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
   params.set("timer_output_stream" , "std::cout");
@@ -291,7 +282,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   Parma_PrintPtnStats(m,output_title+"_before");
   
   // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) std::cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
@@ -303,18 +294,18 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   
 
   // create Partitioning problem
-  if (me == 0) cout << "Creating partitioning problem ... \n\n";
+  if (me == 0) std::cout << "Creating partitioning problem ... \n\n";
   double time_3=PCU_Time();
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
   // call the partitioner
-  if (me == 0) cout << "Calling the partitioner ... \n\n";
+  if (me == 0) std::cout << "Calling the partitioner ... \n\n";
 
   problem.solve();
 
 
   //apply the partitioning solution to the mesh
-  if (me==0) cout << "Applying Solution to Mesh\n\n";
+  if (me==0) std::cout << "Applying Solution to Mesh\n\n";
   apf::Mesh2** new_mesh = &m;
   ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
   new_mesh=NULL;

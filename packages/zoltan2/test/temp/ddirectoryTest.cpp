@@ -394,9 +394,8 @@ bool IDs<id_t>::ZoltanDDTest()
 //////////////////////////////////////////////////////////////////////////////
 int main(int narg, char **arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-                     Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Test with contiguous integer IDs
   {

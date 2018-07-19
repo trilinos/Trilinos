@@ -59,12 +59,9 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 #include <Zoltan2_HyperGraphModel.hpp>
-//Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Hashtable.hpp"
 
@@ -81,7 +78,6 @@
 
 #include <set>
 
-using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::ArrayView;
@@ -89,9 +85,6 @@ using Teuchos::ArrayView;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-
 
 // Computes and prints ghost metrics (takes in a Hyper graph model)
 template <typename Adapter>
@@ -169,15 +162,14 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   //int numProcs = CommT->getSize();
 
   if (me == 0){
-  cout 
+  std::cout 
     << "====================================================================\n" 
     << "|                                                                  |\n" 
     << "|                  Example: Partition APF Mesh                     |\n" 
@@ -195,11 +187,11 @@ int main(int narg, char *arg[]) {
 
 #ifdef HAVE_MPI
   if (me == 0) {
-    cout << "PARALLEL executable \n";
+    std::cout << "PARALLEL executable \n";
   }
 #else
   if (me == 0) {
-    cout << "SERIAL executable \n";
+    std::cout << "SERIAL executable \n";
   }
 #endif
 
@@ -252,7 +244,7 @@ int main(int narg, char *arg[]) {
 
 #ifdef HAVE_ZOLTAN2_PARMA
 
-  if (me == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) std::cout << "Generating mesh ... \n\n";
 
   //Setup for SCOREC
   PCU_Comm_Init();
@@ -272,7 +264,7 @@ int main(int narg, char *arg[]) {
   bool needSecondAdj=false;
   
   // Set parameters for partitioning
-  if (me == 0) cout << "Creating parameter list ... \n\n";
+  if (me == 0) std::cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
   params.set("timer_output_stream" , "std::cout");
@@ -354,7 +346,7 @@ int main(int narg, char *arg[]) {
   Parma_PrintPtnStats(m,"before");
 
   // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) std::cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
@@ -380,7 +372,7 @@ int main(int narg, char *arg[]) {
     Zoltan2::modelFlag_t graphFlags_;
     RCP<Zoltan2::Environment> env;
     try{
-      env = rcp(new Zoltan2::Environment(params, Teuchos::DefaultComm<int>::getComm()));
+      env = rcp(new Zoltan2::Environment(params, Tpetra::getDefaultComm()));
     }
     Z2_FORWARD_EXCEPTIONS
       
@@ -395,18 +387,18 @@ int main(int narg, char *arg[]) {
   // create Partitioning problem
   double time_3 = PCU_Time();
   if (do_partitioning) {
-    if (me == 0) cout << "Creating partitioning problem ... \n\n";
+    if (me == 0) std::cout << "Creating partitioning problem ... \n\n";
 
     Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
-    if (me == 0) cout << "Calling the partitioner ... \n\n";
+    if (me == 0) std::cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
 
 
 
-    if (me==0) cout << "Applying Solution to Mesh\n\n";
+    if (me==0) std::cout << "Applying Solution to Mesh\n\n";
     apf::Mesh2** new_mesh = &m;
     ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
     
@@ -419,12 +411,12 @@ int main(int narg, char *arg[]) {
     }
   }
   else {
-    if (me == 0) cout << "Creating coloring problem ... \n\n";
+    if (me == 0) std::cout << "Creating coloring problem ... \n\n";
 
     Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params);
 
     // call the partitioner
-    if (me == 0) cout << "Calling the coloring algorithm ... \n\n";
+    if (me == 0) std::cout << "Calling the coloring algorithm ... \n\n";
 
     problem.solve();
 
@@ -447,7 +439,7 @@ int main(int narg, char *arg[]) {
     Zoltan2::modelFlag_t graphFlags_;
     RCP<Zoltan2::Environment> env;
     try{
-      env = rcp(new Zoltan2::Environment(params, Teuchos::DefaultComm<int>::getComm()));
+      env = rcp(new Zoltan2::Environment(params, Tpetra::getDefaultComm()));
     }
     Z2_FORWARD_EXCEPTIONS
     RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
@@ -464,7 +456,7 @@ int main(int narg, char *arg[]) {
   }
 
   // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) std::cout << "Deleting the mesh ... \n\n";
   time_4-=time_3;
   time_2-=time_1;
   PCU_Max_Doubles(&time_2,1);

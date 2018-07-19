@@ -50,14 +50,12 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Galeri_XpetraMaps.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to partition a TPetra matrix
@@ -67,9 +65,8 @@ using namespace std;
 int main(int narg, char** arg)
 {
   // Establish session; works both for MPI and non-MPI builds
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Useful typedefs:  Tpetra types
@@ -107,7 +104,7 @@ int main(int narg, char** arg)
   cmdp.parse(narg, arg);
 
   if ((nx < 1) || (ny < 1) || (nz < 1)) {
-    cout << "Input error:  nx, ny and nz must be >= 1" << endl;
+    std::cout << "Input error:  nx, ny and nz must be >= 1" << std::endl;
     return -1;
   }
 
@@ -134,14 +131,14 @@ int main(int narg, char** arg)
     origMatrix = galeriProblem->BuildMatrix();
   }
   catch (std::exception &e) {
-    cout << "Exception in Galeri matrix generation. " << e.what() << endl;
+    std::cout << "Exception in Galeri matrix generation. " << e.what() << std::endl;
     return -1;
   }
   
   if (me == 0)
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl;
 
   // Create vectors to use with the matrix for sparse matvec.
   RCP<Vector_t> origVector, origProd;
@@ -166,19 +163,19 @@ int main(int narg, char** arg)
     problem.solve();
   }
   catch (std::exception &e) {
-    cout << "Exception returned from solve(). " << e.what() << endl;
+    std::cout << "Exception returned from solve(). " << e.what() << std::endl;
     return -1;
   }
 
   // Redistribute matrix and vector into new matrix and vector.
   // Can use PartitioningSolution from matrix to redistribute the vectors, too.
 
-  if (me == 0) cout << "Redistributing matrix..." << endl;
+  if (me == 0) std::cout << "Redistributing matrix..." << std::endl;
   RCP<Matrix_t> redistribMatrix;
   adapter.applyPartitioningSolution(*origMatrix, redistribMatrix,
                                     problem.getSolution());
 
-  if (me == 0) cout << "Redistributing vectors..." << endl;
+  if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
   RCP<Vector_t> redistribVector;
   MultiVectorAdapter_t adapterVector(origVector); 
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
@@ -192,38 +189,38 @@ int main(int narg, char** arg)
   // SANITY CHECK
   // A little output for small problems
   if (origMatrix->getGlobalNumRows() <= 50) {
-    cout << me << " ORIGINAL:  ";
+    std::cout << me << " ORIGINAL:  ";
     for (size_t i = 0; i < origVector->getLocalLength(); i++)
-      cout << origVector->getMap()->getGlobalElement(i) << " ";
-    cout << endl;
-    cout << me << " REDISTRIB: ";
+      std::cout << origVector->getMap()->getGlobalElement(i) << " ";
+    std::cout << std::endl;
+    std::cout << me << " REDISTRIB: ";
     for (size_t i = 0; i < redistribVector->getLocalLength(); i++)
-      cout << redistribVector->getMap()->getGlobalElement(i) << " ";
-    cout << endl;
+      std::cout << redistribVector->getMap()->getGlobalElement(i) << " ";
+    std::cout << std::endl;
   }
 
   // SANITY CHECK
   // check that redistribution is "correct"; perform matvec with
   // original and redistributed matrices/vectors and compare norms.
 
-  if (me == 0) cout << "Matvec original..." << endl;
+  if (me == 0) std::cout << "Matvec original..." << std::endl;
   origMatrix->apply(*origVector, *origProd);
   scalar_t origNorm = origProd->norm2();
   if (me == 0)
-    cout << "Norm of Original matvec prod:       " << origNorm << endl;
+    std::cout << "Norm of Original matvec prod:       " << origNorm << std::endl;
 
-  if (me == 0) cout << "Matvec redistributed..." << endl;
+  if (me == 0) std::cout << "Matvec redistributed..." << std::endl;
   redistribMatrix->apply(*redistribVector, *redistribProd);
   scalar_t redistribNorm = redistribProd->norm2();
   if (me == 0)
-    cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
+    std::cout << "Norm of Redistributed matvec prod:  " << redistribNorm << std::endl;
 
   if (me == 0) {
     const double epsilon = 0.00000001;
     if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon)
-      cout << "Mat-Vec product changed; FAIL" << std::endl;
+      std::cout << "Mat-Vec product changed; FAIL" << std::endl;
     else
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
   }
   
   return 0;

@@ -51,7 +51,6 @@
 // Some combinations should throw an error; 
 // for these, this test says it is GOOD if ASSIGN throws an error.
 
-#include <Teuchos_GlobalMPISession.hpp>   
 #include <Teuchos_RCP.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_TPLTraits.hpp>
@@ -84,9 +83,9 @@ extern "C"{
 #define PRINTMSG(s) \
   std::cout << (s) << " " << __FILE__ << ":" << __LINE__ << std::endl
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
+  Tpetra::ScopeGuard tscope(&narg, &arg);
 
   int ierr = 0;
 

@@ -55,7 +55,6 @@
 #include <vector>
 #include <cstdlib>
 
-using namespace std;
 using std::vector;
 using Teuchos::RCP;
 
@@ -160,7 +159,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0) {
-    metricObject1->printMetrics(cout);
+    metricObject1->printMetrics(std::cout);
   }
 
   if (rank == 0){
@@ -186,14 +185,14 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 input adapter that includes weights.
 
-  vector<const scalar_t *>coordVec(2);
-  vector<int> coordStrides(2);
+  std::vector<const scalar_t *>coordVec(2);
+  std::vector<int> coordStrides(2);
 
   coordVec[0] = x; coordStrides[0] = 1;
   coordVec[1] = y; coordStrides[1] = 1;
 
-  vector<const scalar_t *>weightVec(1);
-  vector<int> weightStrides(1);
+  std::vector<const scalar_t *>weightVec(1);
+  std::vector<int> weightStrides(1);
 
   weightVec[0] = weights; weightStrides[0] = 1;
 
@@ -222,7 +221,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0) {
-    metricObject2->printMetrics(cout);
+    metricObject2->printMetrics(std::cout);
   }
 
   if (rank == 0){
@@ -289,7 +288,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0) {
-    metricObject3->printMetrics(cout);
+    metricObject3->printMetrics(std::cout);
   }
 
   if (rank == 0){
@@ -316,7 +315,7 @@ int main(int argc, char *argv[])
   metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
                                 &problem3->getSolution());
   if (rank == 0){
-    metricObject3->printMetrics(cout);
+    metricObject3->printMetrics(std::cout);
     scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -335,7 +334,7 @@ int main(int argc, char *argv[])
   metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
                                 &problem3->getSolution());
   if (rank == 0){
-    metricObject3->printMetrics(cout);
+    metricObject3->printMetrics(std::cout);
     scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -407,7 +406,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0) {
-    metricObject1->printMetrics(cout);
+    metricObject1->printMetrics(std::cout);
   }
 
   if (rank == 0){

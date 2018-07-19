@@ -78,7 +78,6 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   
 /* Find the adjacency for a nodal based decomposition */
   if (ia->availAdjs(sourcetarget, through)) {
-    using Tpetra::DefaultPlatform;
     using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::RCP;

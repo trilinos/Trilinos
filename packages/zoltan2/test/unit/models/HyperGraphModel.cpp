@@ -57,12 +57,8 @@
 #include <Zoltan2_APFMeshAdapter.hpp>
 #include <Zoltan2_Environment.hpp>
 
-//Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
-
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // SCOREC includes
@@ -78,13 +74,11 @@
 
 using Teuchos::ParameterList;
 using Teuchos::RCP;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
 #ifdef HAVE_ZOLTAN2_PARMA
   //Setup for SCOREC
@@ -103,7 +97,7 @@ int main(int narg, char *arg[]) {
 
   RCP<Zoltan2::Environment> env;
   try{
-    env = rcp(new Zoltan2::Environment(params, Teuchos::DefaultComm<int>::getComm()));
+    env = rcp(new Zoltan2::Environment(params, Tpetra::getDefaultComm()));
   }
   Z2_FORWARD_EXCEPTIONS
 
