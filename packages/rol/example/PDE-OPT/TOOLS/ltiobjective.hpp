@@ -66,7 +66,7 @@ public:
                 const ROL::Vector<Real> &z,
                 ROL::ParameterList &parlist) :obj_(obj) {
     // Get time discretization parameters
-    theta_  = parlist.sublist("Time Discretization").get("Theta",                1.0);
+    theta_  = parlist.sublist("Time Discretization").get("Theta",1.0);
     zdual_ = z.dual().clone();
   }
 
