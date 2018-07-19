@@ -298,8 +298,8 @@ namespace FROSch {
             Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
             std::string excludeBlocks = coarseSpaceList->get("Exclude","0");
             LOVec indices = FROSch::GetIndicesFromString(excludeBlocks,(LO)0);
-            for (int i=0; i<indices.size(); i++) {
-                indices[i] -= 1;
+            for (int j=0; j<indices.size(); j++) {
+                indices[j] -= 1;
             }
             if (indices[0]>-1) {
                 for (UN j=0; j<(UN)indices.size(); j++) {
