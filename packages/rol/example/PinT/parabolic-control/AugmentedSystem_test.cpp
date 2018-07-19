@@ -57,6 +57,7 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_PinTConstraint.hpp"
+#include "ROL_GMRES.hpp"
 
 #include "dynamicConstraint.hpp"
 #include "dynamicObjective.hpp"
@@ -102,6 +103,35 @@ int main( int argc, char* argv[] )
 
   return 0;
 }
+
+class KKTOperator : public ROL::LinearOperator<RealT> {
+public:
+  ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con;
+  ROL::Ptr<ROL::Vector<RealT>> state;
+  ROL::Ptr<ROL::Vector<RealT>> control;
+
+  void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
+  {
+    pint_con->applyAugmentedKKT(Hv,v,*state,*control,tol);
+  }
+};
+
+class MGRITKKTOperator : public ROL::LinearOperator<RealT> {
+public:
+  ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con;
+  ROL::Ptr<ROL::Vector<RealT>> state;
+  ROL::Ptr<ROL::Vector<RealT>> control;
+
+  void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
+  {
+    assert(false);
+    pint_con->apply2LevelAugmentedKKT(Hv,v,*state,*control,tol);
+  }
+  void applyInverse( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
+  {
+    pint_con->apply2LevelAugmentedKKT(Hv,v,*state,*control,tol);
+  }
+};
 
 void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 {
@@ -166,8 +196,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
   // pint_con->setGlobalScale(1.0);
-  pint_con->applyMultigrid(numLevels+1);
-  // pint_con->applyMultigrid(2);
+  // pint_con->applyMultigrid(numLevels+1);
+  pint_con->applyMultigrid(2);
   pint_con->setSweeps(sweeps);
   pint_con->setRelaxation(omega);
 
@@ -233,9 +263,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     (*outStream) << std::endl;
 
   // check MG
-  MPI_Barrier(MPI_COMM_WORLD);
-  double t0 = MPI_Wtime();
-  {
+  if(false) {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
     auto kkt_err = kkt_vector->clone();
@@ -251,15 +279,30 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     if(myRank==0)
       (*outStream) << "Multigrid initial res = " << res0 << std::endl;
 
+    KKTOperator kktOperator;
+    kktOperator.pint_con = pint_con;
+    kktOperator.state = state;
+    kktOperator.control = state;
+
+    MGRITKKTOperator mgOperator;
+    mgOperator.pint_con = pint_con;
+    mgOperator.state = state;
+    mgOperator.control = state;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t0 = MPI_Wtime();
+
     for(int i=0;i<1000;i++) {
-      pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+      // pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+      mgOperator.applyInverse(*kkt_diff,*kkt_res,tol);
 
       kkt_x_out->axpy(1.0,*kkt_diff);
 
       kkt_err->set(*kkt_x_out);
       kkt_err->axpy(-1.0,*kkt_x_in);
    
-      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      // pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kktOperator.apply(*kkt_res,*kkt_x_out,tol);
       kkt_res->scale(-1.0);
       kkt_res->axpy(1.0,*kkt_b);
 
@@ -276,12 +319,54 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         break;
       }
     }
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-  double tf = MPI_Wtime();
 
-  if(myRank==0)
-    (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
+    MPI_Barrier(MPI_COMM_WORLD);
+    double tf = MPI_Wtime();
+
+    if(myRank==0)
+      (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
+  }
+
+  {
+    RealT res0 = kkt_b->norm();
+    kkt_b->scale(1.0/res0);
+    res0 = kkt_b->norm();
+
+    assert(std::fabs(res0-1.0) <= 1.0e-14);
+
+    auto kkt_x_out = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    KKTOperator kktOperator;
+    kktOperator.pint_con = pint_con;
+    kktOperator.state = state;
+    kktOperator.control = state;
+
+    MGRITKKTOperator mgOperator;
+    mgOperator.pint_con = pint_con;
+    mgOperator.state = state;
+    mgOperator.control = state;
+
+    Teuchos::ParameterList parlist;
+    parlist.set("Absolute Tolerance",1.e-1);
+    parlist.set("Relative Tolerance",1.e-4);
+ 
+    ROL::GMRES<RealT> krylov(parlist);
+
+    int flag = 0, iter = 0;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t0 = MPI_Wtime();
+
+    RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    double tf = MPI_Wtime();
+
+    if(myRank==0) {
+      (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
+    }
+  }
 }
 
 

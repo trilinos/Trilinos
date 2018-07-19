@@ -1478,8 +1478,10 @@ public:
 
      auto output_0 = part_output.get(0);
      auto output_1 = part_output.get(1);
+
      auto input_0  = part_input.get(0);
      auto input_1  = part_input.get(1);
+     auto input_2  = part_input.get(2);
 
      // objective
      applyAdjointJacobian_1_leveled(*output_0,*input_1,u,z,tol,level);
