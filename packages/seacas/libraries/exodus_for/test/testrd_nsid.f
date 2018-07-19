@@ -53,7 +53,7 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       integer cpu_ws,io_ws, mod_sz
 
       real x(100), y(100), z(100)
-      real*4 vers
+      real vers
 
       character*(MXSTLN) coord_names(3)
       character*(MXLNLN) titl

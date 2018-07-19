@@ -43,7 +43,7 @@ c
 
       integer iin, iout, exoid, exoid1, ierr, cpu_ws, io_ws
 
-      real*4 vers
+      real vers
 
       data iin /5/, iout /6/
 

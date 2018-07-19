@@ -1259,13 +1259,11 @@ C
         POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        integer*4 nsess4
-        integer*4 ndess4
+        INTEGER   NDESS
         INTEGER   NINCNT
 
         IDEXO4 = IDEXO
-        CALL EXGSP4 (IDEXO4, IDESS, NSESS4, NDESS4, IERR4)
-        NINCNT = NSESS4
+        CALL EXGSP4 (IDEXO4, IDESS, NINCNT, NDESS, IERR4)
         CALL I4ALLOC (NINCNT, PINCNT4)
 
         CALL EXGSSC4 (IDEXO4, IDESS, INCNT4, IERR4)
@@ -4031,12 +4029,16 @@ C
         INTEGER*4 I4 (1)
         POINTER (PI4, I4)
         INTEGER MALLOC
-        INTEGER NB
+        INTEGER*4 NB
 
         PI4 = 0
         IF (N .EQ. 0) RETURN
         NB = N * 4
+#if defined(__XLF__)
+        PI4 = MALLOC (%val(NB))
+#else
         PI4 = MALLOC (NB)
+#endif
         if (PI4 .EQ. 0) then
           write (*,*)
      *      'ERROR: Unable to allocate array of size ',N,' in I4ALLOC'
@@ -4053,8 +4055,8 @@ C
         POINTER (PI4, I4)
 
         IF (PI4 .EQ. 0) RETURN
-#ifndef __XLF__
-        CALL FREE (PI4)
+#if !defined(__XLF__)
+        CALL FREE(PI4)
 #endif
         PI4 = 0
         END

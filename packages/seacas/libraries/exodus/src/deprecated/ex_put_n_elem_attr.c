@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,7 +57,8 @@
 #include <stdint.h>   // for int64_t
 
 /*
- * \deprecated Use ex_put_partial_attr() instead.
+ * \deprecated Use ex_put_partial_attr()(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num,
+ * num_elems, attrib)
  */
 
 int ex_put_n_elem_attr(int exoid, ex_entity_id elem_blk_id, int64_t start_elem_num,

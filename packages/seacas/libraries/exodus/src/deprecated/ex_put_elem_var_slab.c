@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -65,7 +65,8 @@
  */
 
 /*!
- * \deprecated Use ex_put_partial_var() instead.
+ * \deprecated Use ex_put_partial_var()(exoid, time_step, EX_ELEM_BLOCK, elem_var_index,
+ elem_blk_id, start_pos, num_vals, elem_var_vals)
  */
 int ex_put_elem_var_slab(int exoid, int time_step, int elem_var_index, ex_entity_id elem_blk_id,
                          int64_t start_pos, int64_t num_vals, void *elem_var_vals)

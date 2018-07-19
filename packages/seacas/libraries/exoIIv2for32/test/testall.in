@@ -37,8 +37,16 @@
 # To run the tests with valgrind checking, uncomment the next line and comment the
 # following line. Can also define other prefixes if wanted.
 
+if [ "$1" == "" ]; then
+    mkdir -p nc3; cd nc3
+fi
 if [ "$1" == "netcdf4" ]; then
    export EXODUS_NETCDF4=quiet
+    mkdir -p nc4; cd nc4
+fi
+if [ "$1" == "netcdf5" ]; then
+   export EXODUS_NETCDF5=quiet
+    mkdir -p nc5; cd nc5
 fi
 
 #PREFIX = "valgrind --tool=memcheck"

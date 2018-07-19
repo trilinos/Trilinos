@@ -67,13 +67,6 @@ ${PREFIX} ${BINDIR}/f_testcp${SUFFIX} >> test.output
 echo "end testcp_ss" >> test.output
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
 
-# testcpln - single-to-single, large to normal copy test
-echo "testcpln ..."
-echo "begin testcpln" >> test.output
-${PREFIX} ${BINDIR}/f_testcpln${SUFFIX} >> test.output
-echo "end testcpln" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcpln.dmp | tee testcpln.res
-
 # testcpnl - single-to-single, normal to large copy test
 echo "testcpnl ..."
 echo "begin testcpnl" >> test.output

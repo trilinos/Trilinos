@@ -67,7 +67,7 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       real*8 time_value, time_values(10), var_values(10)
       real*8 x(8), y(8), dummy(1)
       real*8 attrib(1), dist_fact(8)
-      real*4 vers
+      real*8 vers
 
       character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
       character*(MXLNLN) inform(3), titl

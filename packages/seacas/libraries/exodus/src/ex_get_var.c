@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -106,7 +106,20 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
+
+  /* Verify that time_step is within bounds */
+  {
+    int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+    if (time_step <= 0 || time_step > num_time_steps) {
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: time_step is out-of-range. Value = %d, valid "
+               "range is 1 to %d in file id %d",
+               time_step, num_time_steps, exoid);
+      ex_err(__func__, errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+  }
 
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications,
@@ -130,13 +143,13 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: no %s variables for NULL block %" PRId64 " in file id %d",
                  ex_name_of_object(var_type), obj_id, exoid);
-        ex_err("ex_get_var", errmsg, EX_NULLENTITY);
+        ex_err(__func__, errmsg, EX_NULLENTITY);
         EX_FUNC_LEAVE(EX_WARN);
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s id %" PRId64 " in id variable in file id %d",
                ex_name_of_object(var_type), obj_id, exoid);
-      ex_err("ex_get_var", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -147,23 +160,9 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
                              &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " var %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, exoid);
-    ex_err("ex_get_var", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-
-/* Verify that time_step is within bounds */
-#ifndef NDEBUG
-  {
-    int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
-    if (time_step <= 0 || time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: time_step is out-of-range. Value = %d, valid "
-                                       "range is 1 to %d in file id %d",
-               time_step, num_time_steps, exoid);
-      ex_err("ex_get_var", errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
-  }
-#endif
 
   /* read values of element variable */
   start[0] = --time_step;
@@ -183,7 +182,7 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get %s %" PRId64 " variable %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, exoid);
-    ex_err("ex_get_var", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);
