@@ -34,17 +34,9 @@
 #include <vector> // for vector
 namespace Excn {
   struct Block;
-} // namespace Excn
-namespace Excn {
   struct CommunicationMetaData;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct Mesh;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct NodeSet;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct SideSet;
 } // namespace Excn
 

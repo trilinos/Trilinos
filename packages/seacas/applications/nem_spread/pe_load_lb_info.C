@@ -245,7 +245,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
                            &Integer_Vector[vec_indx + comm_vec[ijump + 1]], iproc) < 0) {
         /*
          * If there are disconnected mesh pieces, then it is
-         * possible that there is no comminication between the
+         * possible that there is no communication between the
          * pieces and there will be no communication maps.  Normally
          * this is a problem, so output a warning, but don't abort.
          */
@@ -328,7 +328,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     printf("\nFinished distributing load balance info\n");
   }
 
-  /* Output Detailed timing information for the progam */
+  /* Output Detailed timing information for the program */
   /*
    * Print out a Large table of Load Balance Information if the debug_flag
    * setting is large enough
@@ -754,7 +754,7 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
  * read_cmap_params:
  *
  *	This function reads the parameters for the communication maps.
- * Processor 0 reads each processors paramters and then a broadcast of
+ * Processor 0 reads each processors parameters and then a broadcast of
  * this information is performed and each processor extracts it's
  * information.
  */

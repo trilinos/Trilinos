@@ -161,7 +161,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
     printf("There are %d groups of blocks\n", prob->num_groups);
   }
 
-  /* finnished with the group designator string */
+  /* finished with the group designator string */
   free(prob->groups);
 
   return 1;

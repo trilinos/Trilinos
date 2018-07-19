@@ -508,7 +508,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    *
    *        The following information is defined as the mesh information:
    *
-   *            1 - Coodinate values of global nodes
+   *            1 - Coordinate values of global nodes
    *            2 - Element connectivity graph
    *            3 - Attributes of the elements
    *            4 - Composition of Node Sets
@@ -1852,16 +1852,16 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
    *                              (Global int vector of length globals.Num_Elem_Blk)
    */
 
-  /* Boolean vector of length globals.Num_Elem_Blk If the ith
-     element block exists on the current processor, the ith entry
+  /* Boolean vector of length globals.Num_Elem_Blk If the i'th
+     element block exists on the current processor, the i'th entry
      is set to TRUE  */
   std::vector<int> elem_in_blk(globals.Num_Elem_Blk);
 
   /* Vector of integer offsets into the vector globals.GElems.
-     It has a length of globals.Num_Elem_Blk+1.  The ith entry
+     It has a length of globals.Num_Elem_Blk+1.  The i'th entry
      points to the beginning of of the element map information
-     for the first element in the ith element block.  The
-     (i+1)th entry points to the last element for the ith block
+     for the first element in the i'th element block.  The
+     (i+1)th entry points to the last element for the i'th block
      in the vector globals.GElem. */
   std::vector<INT> elem_blk_point(globals.Num_Elem_Blk + 1);
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -689,7 +689,7 @@ namespace Iofx {
           return;
         }
 
-        // For an exodusII file, timesteps are global and are stored in the region.
+        // For an exodus file, timesteps are global and are stored in the region.
         // A history file only stores that last time / step
         // Read the timesteps and add them to the region.
         // Since we can't access the Region's stateCount directly, we just add
@@ -729,7 +729,7 @@ namespace Iofx {
           return;
         }
 
-        // For an exodusII file, timesteps are global and are stored in the region.
+        // For an exodus file, timesteps are global and are stored in the region.
         // Read the timesteps and add to the region
         tsteps.resize(timestep_count);
         int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));

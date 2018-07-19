@@ -400,7 +400,7 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
   *first    = i; /* Save this location */
 
   if (i != -1) {
-    /* Value is in vector, find first occurance */
+    /* Value is in vector, find first occurrence */
     while (i >= 0 && vector[i] == val) {
       i--;
     }
@@ -507,7 +507,7 @@ int roundfloat(float value)
 /*****************************************************************************/
 /* Function find_inter() begins:
  *----------------------------------------------------------------------------
- * This function finds the intersection between two lists of interger values,
+ * This function finds the intersection between two lists of integer values,
  * and returns the number of values in the intersection.
  *****************************************************************************/
 template <typename INT>

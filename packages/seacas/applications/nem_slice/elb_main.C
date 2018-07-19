@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     status = internal_main(argc, argv, int(0));
   }
 
-  /* Report any non-fatal errors that may have occured */
+  /* Report any non-fatal errors that may have occurred */
   error_report();
 
   /* Get ending time */

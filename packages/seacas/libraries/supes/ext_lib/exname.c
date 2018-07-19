@@ -62,7 +62,7 @@
  *        ENDIF
  *
  *   In fact, the same sort of thing happens in the UNIX world.
- *   To provide as least some compatiblity with the VAX world,  we test
+ *   To provide as least some compatibility with the VAX world,  we test
  *   for the ENVIRONMENT variables of the form FOR0NN.
  *
  */

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -85,7 +85,7 @@ namespace Ioex {
     // The "exodus" and "parallel_exodus" databases can both be accessed
     // from this factory.  The "parallel_exodus" is returned only if the following
     // are true:
-    // 0. The db_usage is 'READ_MODEL' (not officially suppported for READ_RESTART yet)
+    // 0. The db_usage is 'READ_MODEL' (not officially supported for READ_RESTART yet)
     // 1. Parallel run with >1 processor
     // 2. There is a DECOMPOSITION_METHOD specified in 'properties'
     // 3. The decomposition method is not "EXTERNAL"

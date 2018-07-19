@@ -36,7 +36,7 @@
  *
  * testrd_ss - read exodus file test.exo created by testwt_ss
  *
- * author - Sandia-2017 National Laboratories
+ * author - Sandia National Laboratories
  *          Larry A. Schoof - Original
  *
  *

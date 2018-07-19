@@ -139,7 +139,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       break;
 
     case 'y':
-      /* Should an ouput visualization file be output */
+      /* Should an output visualization file be output */
       prob->vis_out = 2;
       break;
 
@@ -383,7 +383,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             machine->type = HCUBE;
             max_dim       = 1;
           }
-        /* fall thru */
+          /* fall through */
 
         case MESH:
           if (machine->type < 0) {
@@ -393,7 +393,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
           cptr = value; /* want to set this for both mesh and hcube */
 
-        /* fall thru */
+          /* fall through */
 
         case CLUSTER:
           if (machine->type < 0) /* so, get the number of boxes */

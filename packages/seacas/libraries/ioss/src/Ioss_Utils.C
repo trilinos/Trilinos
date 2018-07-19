@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1301,7 +1301,7 @@ void Ioss::Utils::fixup_name(char *name)
  *
  *  The conversion is performed in place.
  *
- *  \param[in,out] On input, the string to convert. On output, the converted string.
+ *  \param[in,out] name On input, the string to convert. On output, the converted string.
  *
  */
 void Ioss::Utils::fixup_name(std::string &name)
@@ -1480,7 +1480,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
  *  "mesh" even though a history file is just a collection of global variables
  *  with no real mesh. This routine will add the mesh portion to a history file.
  *
- *  \param[in,out] The region on which the nominal mesh is to be defined.
+ *  \param[in,out] region The region on which the nominal mesh is to be defined.
  */
 void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
 {

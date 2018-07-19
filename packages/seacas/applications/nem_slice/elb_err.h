@@ -61,10 +61,10 @@ extern int error_lev;
 /* Function prototype for error functions */
 extern void error_add(int                level,
                       const std::string &message,  /* The message to add to the error list */
-                      const std::string &filename, /* The filename in which the error occured */
+                      const std::string &filename, /* The filename in which the error occurred */
                       int                line_no   /* The line number in filename where the error
-                                                 * was reported */
-                      );
+                                                    * was reported */
+);
 
 extern void error_report(void);
 

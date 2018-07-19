@@ -36,7 +36,7 @@
  *
  * testcp_lrg - copy file test.exo created by testwt, normal_model to large_model
  *
- * author - Sandia-2017 National Laboratories
+ * author - Sandia National Laboratories
  *          Larry A. Schoof - Original
  *
  *
