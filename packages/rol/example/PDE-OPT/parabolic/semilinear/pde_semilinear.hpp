@@ -391,10 +391,10 @@ private:
 
   Real evaluateLoad(const std::vector<Real> &x) const {
     const int dim = x.size();
-    const Real zero(0), half(0.5), one(1), rad(0.25);
+    const Real zero(0), center(0.1), one(1), rad(0.07);
     Real norm(0);
     for (int i = 0; i < dim; ++i) {
-      norm += std::pow(x[i]-half,2);
+      norm += std::pow(x[i]-center,2);
     }
     norm = std::sqrt(norm);
     return (norm < rad ? one : zero);

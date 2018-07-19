@@ -25,7 +25,6 @@ legend({'x=0.25, y=0.25',...
         'x=0.50, y=0.75',...
         'x=0.75, y=0.75'}, 'Location', 'northeastoutside');
 print('-depsc2','controls.eps');
-
 %data = control(1)*exp(-0.5*( (nodes(:,1)-0.25).^2./(0.05)^2 + (nodes(:,2)-0.25).^2./(0.05)^2)) + ...
 %       control(2)*exp(-0.5*( (nodes(:,1)-0.50).^2./(0.05)^2 + (nodes(:,2)-0.25).^2./(0.05)^2)) + ...
 %       control(3)*exp(-0.5*( (nodes(:,1)-0.75).^2./(0.05)^2 + (nodes(:,2)-0.25).^2./(0.05)^2)) + ...
@@ -43,3 +42,19 @@ print('-depsc2','controls.eps');
 %ylabel('y');
 %colorbar
 %set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
+
+figure('Position', [100 100 2*axsize 2*axsize]);
+for i=0:nt-1
+  data_state = importdata(['state.',int2str(i),'.txt'], ' ', 2);  %% we need to skip the first two lines
+  trisurf(adj, nodes(:,1), nodes(:,2), data_state.data);
+  shading interp;
+  view(2);
+  axis square;
+  title(['Time t = ',num2str(i/(nt-1))],'fontsize',16);
+  xlabel('x');
+  ylabel('y');
+  colorbar
+  caxis([0,1.25])
+  set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
+  drawnow
+end

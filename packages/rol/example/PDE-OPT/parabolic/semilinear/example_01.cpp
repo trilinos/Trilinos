@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<DynConstraint<RealT>>(pde,mass,meshMgr,comm,*parlist,*outStream);
     const ROL::Ptr<Assembler<RealT>> assembler = dyn_con->getAssembler();
     dyn_con->setSolveParameters(*parlist);
+    dyn_con->getAssembler()->printMeshData(*outStream);
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
