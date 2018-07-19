@@ -161,7 +161,7 @@ namespace smart_assert {
       // ignore All asserts
       return;
     typedef std::pair<std::string, int> file_and_line;
-    static std::set<file_and_line> ignorer;
+    static std::set<file_and_line>      ignorer;
     if (ignorer.find(file_and_line(context.get_context_file(), context.get_context_line())) !=
         ignorer.end())
       // this is Ignored Forever

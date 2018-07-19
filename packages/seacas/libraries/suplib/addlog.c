@@ -79,7 +79,7 @@ void addlog(char *name, int len)
 
   {
     int i;
-    for (i        = 0; i < len; i++)
+    for (i = 0; i < len; i++)
       codename[i] = name[i];
     codename[len] = '\0';
   }
