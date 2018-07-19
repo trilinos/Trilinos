@@ -40,9 +40,7 @@ namespace Ioss {
     /** \brief Initialization of the Ioss library.
      *
      *  An object of this type must be created before using any other
-     *  functions or methods in the Ioss library. If any input or output
-     *  database type is xdmf, then a separate xdmf initializer object
-     *  must additionally be created.
+     *  functions or methods in the Ioss library.
      */
     class Initializer
     {

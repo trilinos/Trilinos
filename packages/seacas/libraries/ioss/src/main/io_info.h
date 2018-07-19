@@ -79,10 +79,6 @@
 
 #include "info_interface.h"
 
-#ifndef NO_XDMF_SUPPORT
-#include <xdmf/Ioxf_Initializer.h>
-#endif
-
 #define OUTPUT std::cout
 
 namespace Ioss {

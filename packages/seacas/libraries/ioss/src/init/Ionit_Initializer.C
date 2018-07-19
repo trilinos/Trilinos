@@ -71,7 +71,7 @@ namespace Ioss {
      *
      *  Calls appropriate internal functions and methods to
      *  initialize the Ioss library. Initializes all database
-     *  types except xdmf.
+     *  types.
      */
     Initializer::Initializer()
     {

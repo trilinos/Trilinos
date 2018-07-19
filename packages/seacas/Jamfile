@@ -275,7 +275,6 @@ install install-user-lib
     ioinit
     ioss
     iotr
-    ioxf
     iovs
   : <target-os>bgq <location>$(install-root)/seacas/lib
   ;
@@ -306,7 +305,6 @@ install install-user-lib
     ioinit
     ioss
     iotr
-    ioxf
     iovs
   : <location>$(install-root)/seacas/lib
   ;
@@ -512,9 +510,6 @@ lib io_info_lib
         $(seacas-root)/libraries/ioss/src/main/info_interface.C
     ]
     ioinit
-    ioss
-    iotr
-    ioxf
     iocgns
     /mpi//mpi
   : <define>USE_CGNS
@@ -659,26 +654,6 @@ lib iotr
         <file>$(seacas-root)/lib/libiotr.a
     ]
   ;
-
-lib ioxf
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/xdmf/*.C ]
-    ]
-    ioss
-    /tpl/libxml2//xml
-    /tpl/xdmf//xdmf
-    /mpi//mpi
-  : 
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioxf.a
-    ]
-  ;
-
 
 lib iovs
   :
@@ -1818,13 +1793,9 @@ fexe txtexo
 
 exe io_shell
   :
-
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1834,10 +1805,6 @@ exe io_info
   :
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
-    ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1848,9 +1815,6 @@ exe shell_to_hex
     $(seacas-root)/libraries/ioss/src/main/shell_to_hex.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1860,9 +1824,6 @@ exe cth_pressure_map
     $(seacas-root)/libraries/ioss/src/main/cth_pressure_map.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1871,9 +1832,6 @@ exe struc_to_unstruc
   :
     $(seacas-root)/libraries/ioss/src/main/struc_to_unstruc.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1908,8 +1866,6 @@ exe Utst_superelement
 exe Utst_database_io
   :
   [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
-    iofx
-    ioss
     ioinit
     /tpl/netcdf//netcdf
     /tpl/gtest//gtest

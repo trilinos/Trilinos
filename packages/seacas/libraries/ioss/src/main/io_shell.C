@@ -53,10 +53,6 @@
 
 #include "shell_interface.h"
 
-#ifndef NO_XDMF_SUPPORT
-#include <xdmf/Ioxf_Initializer.h>
-#endif
-
 // ========================================================================
 
 namespace {
@@ -103,9 +99,6 @@ int main(int argc, char *argv[])
   mem_stats = interface.memory_statistics;
 
   Ioss::Init::Initializer io;
-#ifndef NO_XDMF_SUPPORT
-  Ioxf::Initializer ioxf;
-#endif
 
   std::string in_file  = interface.inputFile[0];
   std::string out_file = interface.outputFile;

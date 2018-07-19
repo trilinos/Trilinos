@@ -59,9 +59,6 @@ int main(int argc, char *argv[])
   }
 
   Ioss::Init::Initializer io;
-#ifndef NO_XDMF_SUPPORT
-  Ioxf::Initializer ioxf;
-#endif
 
   OUTPUT << "Input:    '" << interface.filename() << "', Type: " << interface.type() << '\n';
   OUTPUT << '\n';
