@@ -164,6 +164,13 @@ The following parameters are used in the block relaxation methods:
 
 \cccc{relaxation: type}
     {See~\ref{s:relaxation}.}
+\cccc{relaxation: container}
+    {string}
+    {``TriDi''}
+    {Containers are used to store and solve block matrices. These container
+     types are always available: ``Dense'', ``TriDi'', ``Banded'' and ``SparseILUT''.
+     If Amesos2 is enabled, ``SparseAmesos'' is available. If experimental kokkos-kernels
+     features are enabled (true by default), ``BlockTriDi'' is availabe.}
 \cccc{relaxation: sweeps}
     {See~\ref{s:relaxation}.}
 \cccc{relaxation: damping factor}
@@ -216,10 +223,10 @@ The following parameters are used in the block relaxation methods:
     {Teuchos::RCP<multi\_vector>}
     {null}
     {Coordinates of local nodes. Only valid for ``line'' partitioner type.}
-\ccc{partitioner: print level}
+\ccc{partitioner: maintain sparsity}
     {bool}
     {\false}
-    {If true, produce extra information about used blocks.}
+    {For OverlappingPartitioner, whether to sort the entries in each partition.}
 
 \section{Chebyshev}\label{s:Chebyshev}
 
