@@ -73,6 +73,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
+                                                            UNVecPtr dofsPerNodeVec,
+                                                            MapPtrVecPtr repeatedNodesMapVec,
+                                                            MapPtrVecPtr2D repeatedDofMapsVec,
+                                                            MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                            MultiVectorPtrVecPtr nodeListVec,
+                                                            GOVecPtr2D dirichletBoundaryDofsVec)
+    {
+        buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
+        this->IsInitialized_ = true;
+        this->IsComputed_ = false;
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     void IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                             const Teuchos::EVerbosityLevel verbLevel) const
     {
@@ -109,6 +124,32 @@ namespace FROSch {
         
         return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
     }
+    
+    template <class SC,class LO,class GO,class NO>
+    int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
+                                                                  UNVecPtr dofsPerNodeVec,
+                                                                  MapPtrVecPtr repeatedNodesMapVec,
+                                                                  MapPtrVecPtr2D repeatedDofMapsVec,
+                                                                  MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                                  GOVecPtr2D dirichletBoundaryDofsVec,
+                                                                  MultiVectorPtrVecPtr nodeListVec)
+    {
+        // Das könnte man noch ändern
+        // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
+        for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
+            this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+            
+            this->NumberOfBlocks_++;
+            resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],nullSpaceBasisVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
+        }
+        return 0;
+    }
+
     
     template <class SC,class LO,class GO,class NO>
     int  IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,

@@ -96,6 +96,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
   Tools/FROSch_SubdomainSolver_decl.hpp

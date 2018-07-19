@@ -52,9 +52,14 @@
 
 #include "Amesos2.hpp"
 
+#include <MueLu.hpp>
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <MueLu_Utilities.hpp>
+
 namespace FROSch {
 
-    template <class SC = Xpetra::Operator<>::scalar_type,
+    template <class SC = typename Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
@@ -88,6 +93,8 @@ namespace FROSch {
         typedef Teuchos::RCP<Amesos2::Solver<EpetraCrsMatrix,EpetraMultiVector> > Amesos2SolverEpetraPtr;
         typedef Teuchos::RCP<Amesos2::Solver<TpetraCrsMatrix,TpetraMultiVector> > Amesos2SolverTpetraPtr;
         
+        typedef Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > MueLuFactoryPtr;
+        typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
         
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList);
@@ -130,6 +137,9 @@ namespace FROSch {
         
         Amesos2SolverEpetraPtr Amesos2SolverEpetra_;
         Amesos2SolverTpetraPtr Amesos2SolverTpetra_;
+        
+        MueLuFactoryPtr MueLuFactory_;
+        MueLuHierarchyPtr MueLuHierarchy_;
         
         bool IsInitialized_;
         bool IsComputed_;        

@@ -94,12 +94,17 @@ namespace FROSch {
                                                                             MapPtr repeatedMap)
     {
         if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
+
+        if (this->Restricted_) {
+            this->RepeatedMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(repeatedMap,1);
+        }
+
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
-        
         for (int i=0; i<overlap; i++) {
             ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
         }
+        
         return 0;
     }
     

@@ -231,23 +231,10 @@ namespace FROSch {
             FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         }
         
-        //Epetra_SerialComm serialComm;
         MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
         
-        //int tmp=0;
-        
-        /*
-         Die Schleife ist noch nicht korrekt. Vermutlich muss man zweimal durchgehen: Einmal um herauszufinden welche Werte auf die Kanten und Flächen gesetzt werden müssen
-         und beim zweiten Mal, um die Werte zu setzen.
-         Außerdem sind im Moment noch zu viel Nullen im Vektor und die Länge des Vektors sollte man überprüfen... Wobei die Länge ist wahrscheinlich korrekt -> 3D
-         
-         PartMappings[itmp]->at(i) dann steht itmp für vertices (translation1=0, translation2=1, translation3=2, rotation1=3, rotation2=4, rotation3=5), edges (translation1=6, ...), faces (...)
-         und i für die Nummer des Vertex, der Edge, etc.
-         */
-        //vector<double> faceVert(faces->getNumEntities());
-        //vector<double> edgeValues(edges->getNumEntities());
-        
+
         LO itmp=0;
         SC x,y,z,rx,ry,rz;
         SC edgeValue;

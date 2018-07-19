@@ -67,6 +67,7 @@ namespace FROSch {
         typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
+        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
@@ -90,6 +91,14 @@ namespace FROSch {
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
 
+        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
+        
+        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
+        
+        typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
+        
+        typedef Teuchos::Array<GO>          GOVec;
+        typedef Teuchos::Array<GOVec>       GOVec2D;
         
         SchwarzPreconditioner(ParameterListPtr parameterList,
                               CommPtr comm);

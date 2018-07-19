@@ -53,6 +53,8 @@ namespace FROSch {
     ParameterList_ (parameterList),
     EpetraLinearProblem_ (),
     AmesosSolver_ (),
+    MueLuFactory_ (),
+    MueLuHierarchy_ (),
     IsInitialized_ (false),
     IsComputed_ (false)
     {
@@ -95,6 +97,32 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(0!=0,"This can't happen...");
             }
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
+            
+            MueLuFactory_ = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(parameterList->sublist("MueLu").sublist("MueLu Parameter")));
+            Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(K_->getRowMap(), 1);
+            nullspace->putScalar(1.);
+            
+            MueLuHierarchy_ = MueLuFactory_->CreateHierarchy();
+            MueLuHierarchy_->GetLevel(0)->Set("A",K_);
+            MueLuHierarchy_->GetLevel(0)->Set("Nullspace", nullspace);
+            
+//            if (K_->getRowMap()->lib()==Xpetra::UseEpetra) {
+//                Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+//                Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+//                EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
+//                
+//                EpetraMultiVectorPtr xTmp;
+//                EpetraMultiVectorPtr bTmp;
+//                Teuchos::RCP<MueLu::EpetraOperator> mueLuPreconditioner;
+//                std::string optionsFile = "mueluOptions.xml";
+//                mueLuPreconditioner = MueLu::CreateEpetraPreconditioner(epetraMat, optionsFile);
+//
+//            } else if (K_->getRowMap()->lib()==Xpetra::UseTpetra) {
+//                
+//            } else {
+//                FROSCH_ASSERT(0!=0,"This can't happen...");
+//            }
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
@@ -124,6 +152,9 @@ namespace FROSch {
                 IsComputed_ = false;
                 Amesos2SolverTpetra_->symbolicFactorization();
             }
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
+            IsInitialized_ = true;
+            IsComputed_ = false;
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
@@ -145,12 +176,20 @@ namespace FROSch {
                 IsComputed_ = true;
                 Amesos2SolverTpetra_->numericFactorization();
             }
+            
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
+            
+            MueLuFactory_->SetupHierarchy(*MueLuHierarchy_);
+            MueLuHierarchy_->IsPreconditioner(false);
+            IsComputed_ = true;
+            
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
         return 0;
     }
     
+
     // Y = alpha * A^mode * X + beta * Y
     template<class SC,class LO,class GO,class NO>
     void SubdomainSolver<SC,LO,GO,NO>::apply(const MultiVector &x,
@@ -205,6 +244,19 @@ namespace FROSch {
                 
                 Amesos2SolverTpetra_->solve(); // Was ist, wenn man mit der transponierten Matrix lösen will
             }
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
+            yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
+            *yTmp = y;
+            int mgridSweeps = ParameterList_->sublist("MueLu").get("mgridSweeps",-1);
+            if (mgridSweeps>0) {
+                MueLuHierarchy_->Iterate(x,*yTmp,mgridSweeps);
+            }
+            else{
+                typename Teuchos::ScalarTraits<SC>::magnitudeType tol = ParameterList_->sublist("MueLu").get("tol",1.e-6);
+                MueLuHierarchy_->Iterate(x,*yTmp,tol);
+            }
+        
+            
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }

@@ -775,7 +775,7 @@ namespace FROSch {
             Edges_->resetEntityType(EdgeType);
             Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
         }
-        
+
         return 0;
     }
     

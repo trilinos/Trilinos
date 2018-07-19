@@ -132,6 +132,13 @@ namespace FROSch {
                        GOVecPtr dirichletBoundaryDofs,
                        MultiVectorPtr nodeList);
         
+        int initialize(UN dimension,
+                       UNVecPtr dofsPerNodeVec,
+                       MapPtrVecPtr repeatedNodesMapVec,
+                       MapPtrVecPtr2D repeatedDofMapsVec,
+                       GOVecPtr2D dirichletBoundaryDofsVec,
+                       MultiVectorPtrVecPtr nodeListVec);
+        
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
@@ -169,6 +176,13 @@ namespace FROSch {
                              MapPtrVecPtr dofsMaps,
                              GOVecPtr dirichletBoundaryDofs,
                              MultiVectorPtr nodeList);
+        
+        int buildCoarseSpace(UN dimension,
+                             UNVecPtr dofsPerNodeVec,
+                             MapPtrVecPtr repeatedNodesMapVec,
+                             MapPtrVecPtr2D repeatedDofMapsVec,
+                             GOVecPtr2D dirichletBoundaryDofsVec,
+                             MultiVectorPtrVecPtr nodeListVec);
         
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
