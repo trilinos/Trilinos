@@ -55,9 +55,6 @@
 #include <vector>
 #include <cstdlib>
 
-using std::vector;
-using Teuchos::RCP;
-
 /*! \example rcb_C.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
 */
