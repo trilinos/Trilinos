@@ -120,7 +120,7 @@ int main(int narg, char** arg)
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
 
-  ////// Establish session.
+  // Initialize Tpetra and get default communicator.
   Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();

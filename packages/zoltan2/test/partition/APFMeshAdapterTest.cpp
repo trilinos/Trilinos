@@ -82,10 +82,6 @@ using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::ArrayView;
 
-/*********************************************************/
-/*                     Typedefs                          */
-/*********************************************************/
-
 // Computes and prints ghost metrics (takes in a Hyper graph model)
 template <typename Adapter>
 void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
@@ -104,7 +100,7 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
   ArrayView<const gno_t> pins;
   ArrayView<const offset_t> offsets;
   mdl.getPinList(pins,offsets,wgts);
-  
+
   std::set<gno_t> gids;
   for (size_t i=0;i<mdl.getLocalNumVertices();i++) {
     if (isOwner[i])
@@ -129,7 +125,7 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
   gno_t min_ghosts,min_u_ghosts;
   max_ghosts = min_ghosts = num_ghosts;
   max_u_ghosts = min_u_ghosts = unique_ghosts;
-  max_o_and_g = min_o_and_g = owned_and_ghosts;  
+  max_o_and_g = min_o_and_g = owned_and_ghosts;
   double avg_ghosts,avg_u_ghosts,avg_o_and_g;
   PCU_Add_Ints(&num_ghosts,1);
   PCU_Add_Ints(&unique_ghosts,1);
@@ -143,14 +139,14 @@ void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
   avg_ghosts = num_ghosts*1.0/PCU_Comm_Peers();
   avg_u_ghosts = unique_ghosts*1.0/PCU_Comm_Peers();
   avg_o_and_g = owned_and_ghosts*1.0/PCU_Comm_Peers();
-  if (!PCU_Comm_Self()) 
-    std::cout<< "[METRIC] Global ghosts in the hypergraph (tot max min avg imb): " 
+  if (!PCU_Comm_Self())
+    std::cout<< "[METRIC] Global ghosts in the hypergraph (tot max min avg imb): "
              << num_ghosts<<" "<<max_ghosts<<" "<<min_ghosts<<" "<<avg_ghosts<<" "
              <<max_ghosts/avg_ghosts << "\n"
-             << "[METRIC] Global unique ghosts (tot max min avg imb): " 
+             << "[METRIC] Global unique ghosts (tot max min avg imb): "
              << unique_ghosts<<" "<<max_u_ghosts<<" "<<min_u_ghosts<<" "<<avg_u_ghosts<<" "
              <<max_u_ghosts/avg_u_ghosts << "\n"
-             << "[METRIC] Global owned and ghosts  (tot max min avg imb): " 
+             << "[METRIC] Global owned and ghosts  (tot max min avg imb): "
              << owned_and_ghosts<<" "<<max_o_and_g<<" "<<min_o_and_g<<" "<<avg_o_and_g<<" "
              <<max_o_and_g/avg_o_and_g << "\n";
 
@@ -214,7 +210,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("meshfile", &meshFileName,
                  "Mesh file with APF specifications (.smb file(s))");
   cmdp.setOption("modelfile", &modelFileName,
-		 "Model file with APF specifications (.dmg file)");
+                 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
   cmdp.setOption("parma_method", &parma_method,
@@ -230,7 +226,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("ghost_metric", &ghost_metric,
                  "0 does not compute ghost metric otherwise compute both before and after");
   cmdp.parse(narg, arg);
-  
+
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
   /***************************************************************************/
@@ -248,12 +244,12 @@ int main(int narg, char *arg[]) {
 
   //Setup for SCOREC
   PCU_Comm_Init();
-  
+
   // Generate mesh with MDS
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   apf::verify(m);
-  
+
   //Data for APF MeshAdapter
   std::string primary="region";
   std::string adjacency="face";
@@ -262,7 +258,7 @@ int main(int narg, char *arg[]) {
     adjacency="edge";
   }
   bool needSecondAdj=false;
-  
+
   // Set parameters for partitioning
   if (me == 0) std::cout << "Creating parameter list ... \n\n";
 
@@ -350,22 +346,22 @@ int main(int narg, char *arg[]) {
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
-  
+
   double time_1=PCU_Time();
   inputAdapter_t *ia =
-    new inputAdapter_t(*CommT, m,primary,adjacency,needSecondAdj);  
+    new inputAdapter_t(*CommT, m,primary,adjacency,needSecondAdj);
   double time_2=PCU_Time();
- 
-  
+
+
   inputAdapter_t::scalar_t* arr =
     new inputAdapter_t::scalar_t[ia->getLocalNumOf(ia->getPrimaryEntityType())];
   for (size_t i=0;i<ia->getLocalNumOf(ia->getPrimaryEntityType());i++) {
     arr[i]=PCU_Comm_Self()+1;
   }
-  
+
   const inputAdapter_t::scalar_t* weights=arr;
   ia->setWeights(ia->getPrimaryEntityType(),weights,1);
-  
+
 
   if (ghost_metric) {
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(ia);
@@ -375,7 +371,7 @@ int main(int narg, char *arg[]) {
       env = rcp(new Zoltan2::Environment(params, Tpetra::getDefaultComm()));
     }
     Z2_FORWARD_EXCEPTIONS
-      
+
     RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
 
     RCP<const baseMeshAdapter_t> baseInputAdapter_(base_ia,false);
@@ -401,7 +397,7 @@ int main(int narg, char *arg[]) {
     if (me==0) std::cout << "Applying Solution to Mesh\n\n";
     apf::Mesh2** new_mesh = &m;
     ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
-    
+
     // create metric object
     RCP<quality_t> metricObject =
       rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
@@ -424,16 +420,16 @@ int main(int narg, char *arg[]) {
 
 
   }
-  
+
   double time_4=PCU_Time();
-  
+
   //Destroy the adapter
   ia->destroy();
   delete [] arr;
   //Parma_PrintPtnStats(m,"after");
-  
+
   if (ghost_metric) {
-    inputAdapter_t ia2(*CommT, m,primary,adjacency,true);  
+    inputAdapter_t ia2(*CommT, m,primary,adjacency,true);
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia2);
 
     Zoltan2::modelFlag_t graphFlags_;
@@ -450,7 +446,7 @@ int main(int narg, char *arg[]) {
     PrintGhostMetrics(model);
     ia2.destroy();
   }
-  
+
   if (output_loc!="") {
     m->writeNative(output_loc.c_str());
   }
@@ -463,7 +459,7 @@ int main(int narg, char *arg[]) {
   PCU_Max_Doubles(&time_4,1);
   if (!me) {
     std::cout<<"\nConstruction time: "<<time_2<<"\n"
-	     <<"Problem time: " << time_4<<"\n\n";
+             <<"Problem time: " << time_4<<"\n\n";
   }
   //Delete the APF Mesh
   m->destroyNative();

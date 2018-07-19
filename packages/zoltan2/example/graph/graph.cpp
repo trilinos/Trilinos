@@ -72,7 +72,7 @@ int main(int narg, char** arg)
   // Useful typedefs:  Tpetra types
   // In this example, we'll use Tpetra defaults for local/global ID type
   typedef double scalar_t;
-  typedef Tpetra::Map<> Map_t;  
+  typedef Tpetra::Map<> Map_t;
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
   typedef Tpetra::CrsMatrix<scalar_t, localId_t, globalId_t> Matrix_t;
@@ -125,7 +125,7 @@ int main(int narg, char** arg)
 
     typedef Galeri::Xpetra::Problem<Map_t,Matrix_t,MultiVector_t> Galeri_t;
     RCP<Galeri_t> galeriProblem =
-                  Galeri::Xpetra::BuildProblem<scalar_t, localId_t, globalId_t, 
+                  Galeri::Xpetra::BuildProblem<scalar_t, localId_t, globalId_t,
                                      Map_t, Matrix_t, MultiVector_t>
                                      ("Laplace3D", map, galeriList);
     origMatrix = galeriProblem->BuildMatrix();
@@ -134,7 +134,7 @@ int main(int narg, char** arg)
     std::cout << "Exception in Galeri matrix generation. " << e.what() << std::endl;
     return -1;
   }
-  
+
   if (me == 0)
     std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
@@ -177,7 +177,7 @@ int main(int narg, char** arg)
 
   if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
   RCP<Vector_t> redistribVector;
-  MultiVectorAdapter_t adapterVector(origVector); 
+  MultiVectorAdapter_t adapterVector(origVector);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 
@@ -222,6 +222,6 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
-  
+
   return 0;
 }

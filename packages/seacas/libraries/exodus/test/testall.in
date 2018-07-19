@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright (c) 2005 National Technology & Engineering Solutions
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -37,8 +37,16 @@
 # To run the tests with valgrind checking, uncomment the next line and comment the
 # following line. Can also define other prefixes if wanted.
 
+if [ "$1" == "" ]; then
+    mkdir -p nc3; cd nc3
+fi
 if [ "$1" == "netcdf4" ]; then
    export EXODUS_NETCDF4=quiet
+    mkdir -p nc4; cd nc4
+fi
+if [ "$1" == "netcdf5" ]; then
+   export EXODUS_NETCDF5=quiet
+    mkdir -p nc5; cd nc5
 fi
 
 
@@ -77,17 +85,17 @@ ${PREFIX} ${BINDIR}/testcpd${SUFFIX} >> test.output
 echo "end testcp_sd" >> test.output
 ${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_sd.dmp | tee testcp_sd.res
 
-echo "testcp_ln - large model to normal model single precision copy test..."
-echo "begin testcp_ln" >> test.output
-${PREFIX} ${BINDIR}/testcp_ln${SUFFIX} >> test.output
-echo "end testcp_ln" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ln.dmp | tee testcp_ln.res
-
 echo "testcp_nl - normal_model to large_model single precision copy test..."
 echo "begin testcp_nl" >> test.output
 ${PREFIX} ${BINDIR}/testcp_nl${SUFFIX} >> test.output
 echo "end testcp_nl" >> test.output
 ${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_nl.dmp | tee testcp_nl.res
+
+echo "testcp_transient - copy mesh and transient data..."
+echo "begin testcp_tran" >> test.output
+${PREFIX} ${BINDIR}/testcp_tran${SUFFIX} >> test.output
+echo "end testcp_tran" >> test.output
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_tran.dmp | tee testcp_tran.res
 
 echo "testwt_clb - single precision write test using concatenated puts..."
 echo "begin testwt_clb" >> test.output

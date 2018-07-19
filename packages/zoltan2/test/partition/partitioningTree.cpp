@@ -89,9 +89,6 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int myrank, part_t numparts,
 ////////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
-  //////////////////////////////////////////////////////////////////////
-  ////// Establish session.
-  //////////////////////////////////////////////////////////////////////
   Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -331,7 +328,7 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     problem.getSolution();
 
   solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
+                            splitRangeEnd,treeVertParents);
 
   comm->barrier(); // for tidy output...
   if(comm->getRank() == 0) { // for now just plot for rank 0

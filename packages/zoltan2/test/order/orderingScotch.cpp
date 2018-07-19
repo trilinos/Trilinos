@@ -394,7 +394,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     if (rank == 0 ) {
       std::cout << "Checking permutation" << std::endl;
     }
-    
+
     testReturn = soln->validatePerm();
     if (testReturn) return testReturn;
 

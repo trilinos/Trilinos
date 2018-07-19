@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,10 +33,10 @@
  *
  */
 /*****************************************************************************
-*
-* testrd - read exodus file test-nsided.exo created by testwt-nsided
-*
-*****************************************************************************/
+ *
+ * testrd - read exodus file test-nsided.exo created by testwt-nsided
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"
 #include "netcdf.h"
@@ -292,10 +292,13 @@ int main(int argc, char **argv)
     free(block_names[i]);
   }
   if (num_elem_blk > 0) {
+
     free(ids);
     free(num_nodes_per_elem);
     free(num_edges_per_elem);
     free(num_faces_per_elem);
+    free(num_elem_in_block);
+    free(num_face_in_block);
     free(num_attr);
   }
 

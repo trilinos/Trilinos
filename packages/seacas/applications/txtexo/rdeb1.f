@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -30,20 +30,6 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
-
-C $Id: rdeb1.f,v 1.2 2007/10/17 18:47:21 gdsjaar Exp $
-C $Log: rdeb1.f,v $
-C Revision 1.2  2007/10/17 18:47:21  gdsjaar
-C Added copyright notice to all files.
-C
-C extexo2 is licensed under the BSD license
-C
-C Revision 1.1.1.1  1991/02/22 19:22:30  gdsjaar
-C TxtExo - Convert Text File to EXODUS File
-C
-c Revision 1.1  1991/02/22  19:22:29  gdsjaar
-c Initial revision
-c
 
 C=======================================================================
       SUBROUTINE RDEB1 (NTXT, IELB, NUMELB, NUMLNK, NUMATR,

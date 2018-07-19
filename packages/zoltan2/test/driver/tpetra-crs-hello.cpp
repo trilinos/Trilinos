@@ -24,30 +24,29 @@ typedef Tpetra::CrsGraph<> crs_graph_type;
 
 template < class TpetraOperatorType>
 class PowerMethod{
-  
+
 public:
   typedef typename TpetraOperatorType::scalar_type scalar_type;
   typedef typename TpetraOperatorType::local_ordinal_type local_ordinal_type;
   typedef typename TpetraOperatorType::global_ordinal_type global_ordinal_type;
   typedef typename TpetraOperatorType::node_type node_type;
-  
+
   typedef typename Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vec_type;
-  
+
   typedef typename vec_type::mag_type mag_type;
-  
   
   static scalar_type run(const TpetraOperatorType & A, const int niters, const mag_type tolerance, std::ostream &out)
   {
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    
+
     // A * q = z
     vec_type q(A.getDomainMap());
     vec_type z(A.getRangeMap());
     vec_type resid(A.getRangeMap());
-    
+
     z.randomize();
-    
+
     // lambda: Current approximation of the eigenvalue of maximum magnitude.
     // normz: 2-norm of the current iteration vector z.
     // residual: 2-norm of the current residual vector 'resid'.
@@ -62,20 +61,20 @@ public:
     scalar_type lambda = STS::zero ();
     magnitude_type normz = STM::zero ();
     magnitude_type residual = STM::zero ();
-    
+
     const scalar_type one = STS::one();
     const scalar_type zero = STS::zero();
-    
+
     const int reportFreq = 10;
-    
+
     for(int iter = 0; iter < niters; iter++)
     {
       normz = z.norm2();
       q.scale(one/normz, z); // q := z/normz
       A.apply(q, z); // z := A*q
-      
+
       lambda = q.dot(z);
-      
+
       if(iter % reportFreq == 0 || iter+1 == niters)
       {
         resid.update(one, z, -lambda, q, zero);
@@ -84,7 +83,7 @@ public:
         out << "\nlambda: " << lambda;
         out <<"||A*q - lamda*a||_2: " << residual << std::endl;
       }
-      
+
       if(residual < tolerance)
       {
         out << "Converged after "<< iter << " iterations" << std::endl;
@@ -94,7 +93,7 @@ public:
         out << "Failed to converge after "<< iter << " iterations" << std::endl;
         break;
       }
-      
+
     }
     return lambda;
   }
@@ -105,35 +104,34 @@ public:
 
 void PowerMethdExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm<int>> &comm,std::ostream &out)
 {
-  
+
   // calculate dominate eigen mode via power method
   out <<"Setting " << global_N << "x" << global_N << " elements" << std::endl;
-  
   // construct a map that puts the same number
   // of equations on each processor
   const global_ordinal_type idxBase = 0;
   RCP<const map_type> map = rcp(new map_type(global_N,idxBase,comm));
-  
+
   const size_t myEls = map->getNodeNumElements();
   out << "Local els: " << myEls << std::endl;
   
   // lets see our local set of global indices
   ArrayView<const global_ordinal_type> myGlobalEls = map->getNodeElementList();
-  
+
   comm->barrier();
-  
+
 //  printf("proc %d global id:{", comm->getRank());
 //  for(auto &&gid : myGlobalEls)
 //    printf("%d ", gid);
 //  printf("}\n");
-  
+
   // lets make a matrix!
   comm->barrier();
   out << "Create a sparse matrix!" << std::endl;
-  
+
   // matrix has row distribution given by map
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(map,0));
-  
+
   // fill the sparse matrix one row at a time
   for(local_ordinal_type i = 0; i < (local_ordinal_type)myEls; i++)
   {
@@ -153,10 +151,10 @@ void PowerMethdExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::
                             Teuchos::tuple<scalar_type>(-1,2,-1));
     }
   }
-  
+
   // tell it that we are done adding etries to it
   A->fillComplete();
-  
+
   // what are we dealing with
 //  for(int i = 0; i < A->getNodeNumRows(); i++)
 //  {
@@ -164,49 +162,47 @@ void PowerMethdExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::
 //    ArrayView<const int> idxs;
 //    ArrayView<const scalar_type> vals;
 //    A->getLocalRowView(i, idxs, vals);
-//    
+//
 //    size_t c = 0;
 //    for(auto idx : idxs)
 //    {
 //      printf("[%d, %d, %f]\n", i, idx, vals[c++]);
 //    }
 //  }
-  
+
   // get estimate of dominate eigen value
   scalar_type lamb = PowerMethod<crs_matrix_type>::run(*A,500, 1e-2, out);
   out << "Lambda: " << lamb << std::endl;
-  
 }
 
 void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm<int>> &comm, std::ostream &out)
 {
   out <<"Setting " << global_N << "x" << global_N << " elements" << std::endl;
-  
   // construct a map that puts the same number
   // of equations on each processor
   const global_ordinal_type idxBase = 0;
   RCP<const map_type> map = rcp(new map_type(global_N,idxBase,comm));
-  
+
   const size_t myEls = map->getNodeNumElements();
   out << "Local els: " << myEls << std::endl;
-  
+
   // lets see our local set of global indices
   ArrayView<const global_ordinal_type> myGlobalEls = map->getNodeElementList();
-  
+
   comm->barrier();
-  
+
   //  printf("proc %d global id:{", comm->getRank());
   //  for(auto &&gid : myGlobalEls)
   //    printf("%d ", gid);
   //  printf("}\n");
-  
+
   // lets make a matrix!
   comm->barrier();
   out << "Create a sparse matrix!" << std::endl;
   
   // matrix has row distribution given by map
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(map,0));
-  
+
   // fill the sparse matrix one row at a time
   for(local_ordinal_type i = 0; i < (local_ordinal_type)myEls; i++)
   {
@@ -226,14 +222,14 @@ void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm
                             Teuchos::tuple<scalar_type>(1,1,1));
     }
   }
-  
+
   // tell it that we are done adding etries to it
   A->fillComplete();
   
   out << "A*A'" << std::endl;
   RCP<crs_matrix_type> B = rcp(new crs_matrix_type(map,0));
   Tpetra::MatrixMatrix::Multiply(*A, false, *A, true, *B);
-  
+
    //what are we dealing with
     for(int i = 0; i < B->getNodeNumRows(); i++)
     {
@@ -241,7 +237,7 @@ void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm
       ArrayView<const int> idxs;
       ArrayView<const scalar_type> vals;
       B->getLocalRowView(i, idxs, vals);
-  
+
       size_t c = 0;
       for(auto idx : idxs)
       {
@@ -272,14 +268,14 @@ void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm
 
   out << "\nGet graph..." << std::endl;
   ArrayView<const global_ordinal_type> ggid = gB->getRowMap()->getNodeElementList();
-  
+
   for(global_ordinal_type gid : ggid)
   {
     size_t numEntriesInRow = gB->getNumEntriesInGlobalRow(gid);
     Array<scalar_type>         rowvals (numEntriesInRow);
     Array<global_ordinal_type> rowinds (numEntriesInRow);
     gB->getGlobalRowCopy(gid,  rowinds, numEntriesInRow);
-    
+
     printf("Neighbors %d = {",gid);
     for (size_t i = 0; i < numEntriesInRow; i++) {
       printf("%d ", rowinds[i]);
@@ -290,6 +286,9 @@ void matrixExample( Tpetra::global_size_t global_N,const RCP<const Teuchos::Comm
 
 int main(int narg, char ** arg)
 {
+  // Initialize Tpetra and get the default communicator.  Tpetra works
+  // even if it was not built with MPI.  In that case, "comm" will be
+  // some object that behaves like MPI_COMM_SELF.
   Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   Teuchos::oblackholestream blackHole;
@@ -297,8 +296,9 @@ int main(int narg, char ** arg)
   // get my rank and set a reference to the output stream
   // all processors not 0 speak into the black hole!
   const int myRank = comm->getRank ();
+  Teuchos::oblackholestream blackHole;
   std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-  
+
   // print current version of tpetra
   out << Tpetra::version() << std::endl;
   

@@ -1,4 +1,4 @@
-C    Copyright(C) 1988 National Technology & Engineering Solutions
+C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -320,7 +320,7 @@ C
      *           SSQ(3,IBLK)/SSQ(3,ITSMN),
      *           LABEL(IBLK)(:LENSTR(LABEL(IBLK)))
  100     CONTINUE
- 110     FORMAT (I7,T11,1PE10.4,T23,I7,T30,A16,T48,I8,T60,0PF6.2,T70,A)
+ 110     FORMAT (I7,T11,1PE11.4,T23,I7,T30,A16,T48,I8,T60,0PF6.2,T70,A)
  120  CONTINUE
       WRITE (STRA, 130) MAT(1,ITSMN)
  130  FORMAT ('Minimum Time Step in Material ',I10)
@@ -331,6 +331,6 @@ C
      *        ENG1, INT(1.0E-3 / SSQ(3,ITSMN)),
      *        LABEL(ITSMN)(:LENSTR(LABEL(ITSMN)))
  140  CONTINUE
- 150  FORMAT (/5X,A,/,T11,1PE10.4,T23,I7,T30,A16,T48,I8,T60,A)
+ 150  FORMAT (/5X,A,/,T11,1PE11.4,T23,I7,T30,A16,T48,I8,T60,A)
       RETURN
       END

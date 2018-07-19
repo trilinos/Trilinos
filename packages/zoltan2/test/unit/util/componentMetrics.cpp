@@ -55,7 +55,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // Test program for componentMetrics code.
 // Usage:
-//     a.out 
+//     a.out
 // Karen Devine, 2017
 /////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +76,7 @@ int checkResult(
   size_t minAnswer,
   double avgAnswer
 )
-{ 
+{
   int ierr = 0;
 
   if (cc.getNumComponents() != nccAnswer) {
@@ -117,7 +117,7 @@ int test_every_third(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   // Test using a GraphAdapter.
 
   std::ostringstream namestream;
-  namestream << comm->getRank() << " every_third "; 
+  namestream << comm->getRank() << " every_third ";
   std::string name = namestream.str();
 
   int ierr = 0;
@@ -152,7 +152,7 @@ int test_every_third(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   typedef Zoltan2::perProcessorComponentMetrics<graphAdapter_t> cc_t;
   cc_t cc(ia, *comm);
 
-  // Check result:  
+  // Check result:
   size_t nccAnswer = std::min<size_t>(3, nVtx);
   size_t maxAnswer = nVtx/3 + ((nVtx%3)!=0);
   size_t minAnswer = (nVtx ? std::max<size_t>(nVtx/3, 1) : 0);
@@ -207,7 +207,7 @@ int test_dist_component(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   typedef Zoltan2::perProcessorComponentMetrics<graphAdapter_t> cc_t;
   cc_t cc(ia, *comm);
 
-  // Check result:  
+  // Check result:
   // one component with all local vertices
   size_t nccAnswer = size_t(nVtx > 0);
   size_t maxAnswer = nVtx;
@@ -227,7 +227,7 @@ int test_one_proc(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   // Test using a MatrixAdapter.
 
   std::ostringstream namestream;
-  namestream << comm->getRank() << " one_proc "; 
+  namestream << comm->getRank() << " one_proc ";
   std::string name = namestream.str();
 
   int ierr = 0;
@@ -267,7 +267,7 @@ int test_one_proc(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   typedef Zoltan2::perProcessorComponentMetrics<matrixAdapter_t> cc_t;
   cc_t cc(ia, *comm);
 
-  // Check result:  
+  // Check result:
   if (allOnThisProc) {
     // one component with all global vertices
     size_t nccAnswer = 1;
@@ -300,7 +300,7 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   // Test using an MPI communicator rather than Teuchos::Comm, if appropriate.
 
   std::ostringstream namestream;
-  namestream << comm->getRank() << " no_graph "; 
+  namestream << comm->getRank() << " no_graph ";
   std::string name = namestream.str();
 
   int ierr = 0;
@@ -333,7 +333,7 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   typedef Zoltan2::perProcessorComponentMetrics<matrixAdapter_t> cc_t;
   cc_t cc(ia, useThisComm);
 
-  // Check result:  
+  // Check result:
   // With no edges, every vertex should be a component
   size_t nccAnswer = nVtx;
   size_t maxAnswer = size_t(nVtx > 0);

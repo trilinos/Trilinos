@@ -147,7 +147,7 @@ int main(int narg, char** arg)
 
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
-  if (origMatrix->getGlobalNumRows() < 40) 
+  if (origMatrix->getGlobalNumRows() < 40)
   {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
     origMatrix->describe(out, Teuchos::VERB_EXTREME);
@@ -188,8 +188,8 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix, 0);
 
   // Zoltan2::TpetraRowMatrixAdapter< User, UserCoord >::TpetraRowMatrixAdapter(const RCP< const User > & inmatrix,
-  // 									     int nWeightsPerRow = 0 
-  // 									     )
+  //                                                                         int nWeightsPerRow = 0
+  //                                                                         )
 
   ////// Create and solve partitioning problem
   Zoltan2::MatrixPartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
@@ -202,7 +202,7 @@ int main(int narg, char** arg)
     if (me == 0) std::cout << "Done solve() " << std::endl;
   }
 
-  catch (std::runtime_error &e) 
+  catch (std::runtime_error &e)
   {
     std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {

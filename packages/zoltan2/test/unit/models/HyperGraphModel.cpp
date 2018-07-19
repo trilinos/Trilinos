@@ -83,7 +83,7 @@ int main(int narg, char *arg[]) {
 #ifdef HAVE_ZOLTAN2_PARMA
   //Setup for SCOREC
   PCU_Comm_Init();
-  
+
   // Generate mesh with MDS
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh("../partition/pumiTri14/plate.dmg","../partition/pumiTri14/2/");
@@ -102,8 +102,8 @@ int main(int narg, char *arg[]) {
   Z2_FORWARD_EXCEPTIONS
 
   RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
-  
-  
+
+
   inputAdapter_t* ia = new inputAdapter_t(*CommT, m,"vertex","edge",false);
   inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia->getLocalNumOf(ia->getPrimaryEntityType())];
   for (size_t i=0;i<ia->getLocalNumOf(ia->getPrimaryEntityType());i++) {
@@ -120,7 +120,7 @@ int main(int narg, char *arg[]) {
                                                  graphFlags_,Zoltan2::HYPEREDGE_CENTRIC);
   ia->destroy();
   delete ia;
-                                                 
+
   //Delete APF Mesh;
   m->destroyNative();
   apf::destroyMesh(m);

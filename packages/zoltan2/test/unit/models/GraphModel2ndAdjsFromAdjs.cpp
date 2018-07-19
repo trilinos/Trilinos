@@ -60,8 +60,7 @@ using Teuchos::RCP;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
+typedef Zoltan2::BasicUserTypes<double> basic_user_t;
 
 
 
