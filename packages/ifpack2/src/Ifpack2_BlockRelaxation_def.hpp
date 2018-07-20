@@ -177,8 +177,12 @@ setParameters (const Teuchos::ParameterList& List)
     // If its value does not match the currently registered Container types,
     // the ContainerFactory will throw with an informative message.
     containerType_ = List.get<std::string> ("relaxation: container");
+    // Intercept more human-readable aliases for the *TriDi containers
     if(containerType_ == "Tridiagonal") {
       containerType_ = "TriDi";
+    }
+    if(containerType_ == "Block Tridiagonal") {
+      containerType_ = "BlockTriDi";
     }
   }
 

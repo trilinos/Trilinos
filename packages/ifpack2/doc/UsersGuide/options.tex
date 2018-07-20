@@ -179,7 +179,7 @@ The following parameters are used in the block relaxation methods:
      ``Amesos2 solver name'' (see the Amesos2 documentation for all available solvers).
 
      If experimental kokkos-kernels features are enabled (true by default), the ``BlockTriDi''
-     container is available. This container's solver is the damped Jacobi method, using
+     container (equivalent to ``Block Tridiagonal'') is available. This container's solver is the damped Jacobi method, using
      block tridiagonal matrices as the diagonal D.
      For a block size of 1, this is equivalent to standard damped Jacobi.
      This container is designed for high performance on KNL and GPU.}
