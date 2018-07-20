@@ -48,14 +48,12 @@
  */
 
 #include <Kokkos_Core.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::RCP;
 
 /*! \example kokkosBlock.cpp
@@ -64,11 +62,10 @@ using Teuchos::RCP;
  *  \todo write some examples that don't use teuchos
  */
 
-int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize(argc, argv);
+int main(int narg, char *arg[]) {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
@@ -176,7 +173,5 @@ int main(int argc, char *argv[]) {
   }
 
   delete problem;
-
-  Kokkos::finalize();
 }
 

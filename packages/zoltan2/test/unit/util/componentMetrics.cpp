@@ -49,7 +49,6 @@
 #include <iostream>
 #include <Teuchos_RCP.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 
@@ -351,7 +350,7 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int main(int narg, char** arg)
 {
   // Establish session.
-  Tpetra::ScopeGuard mpiSession(&narg, &arg);
+  Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 

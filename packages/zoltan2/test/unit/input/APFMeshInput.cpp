@@ -59,7 +59,6 @@
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-using namespace std;
 using Teuchos::RCP;
 
 /*********************************************************/
@@ -97,8 +96,8 @@ enum Zoltan2::EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) {
 
 int main(int narg, char *arg[]) {
 
-  Tpetra::ScopeGuard mpiSession(&narg, &arg);
-  RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
 #ifdef HAVE_ZOLTAN2_PARMA
   //Open up PCU for communication required by all APF operations

@@ -56,12 +56,10 @@
 // #include <Teuchos_FancyOStream.hpp>
 // #include <Teuchos_CommandLineProcessor.hpp>
 // #include <Tpetra_CrsMatrix.hpp>
-// #include <Tpetra_Core.hpp>
 // #include <Tpetra_Vector.hpp>
 // #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to test Zoltan2 2D partitioning of a TPetra matrix
@@ -117,8 +115,8 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Tpetra::ScopeGuard mpiSession(&narg, &arg);
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
@@ -158,10 +156,10 @@ int main(int narg, char** arg)
 
   if (me == 0)
   {
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl
-         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl
+         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
   }
 
 
@@ -197,40 +195,40 @@ int main(int narg, char** arg)
   Zoltan2::MatrixPartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
 
   try {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
 
     problem.solve();
 
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
 
   catch (std::runtime_error &e)
   {
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e) {
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e) {
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e) {
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
 
@@ -240,7 +238,7 @@ int main(int narg, char** arg)
 //   // Don't distribute yet
 
 //   ////// Redistribute matrix and vector into new matrix and vector.
-//   if (me == 0) cout << "Redistributing matrix..." << endl;
+//   if (me == 0) std::cout << "Redistributing matrix..." << std::endl;
 //   SparseMatrix *redistribMatrix;
 //   SparseMatrixAdapter adapterMatrix(origMatrix);
 //   adapterMatrix.applyPartitioningSolution(*origMatrix, redistribMatrix,
@@ -250,7 +248,7 @@ int main(int narg, char** arg)
 //     redistribMatrix->describe(out, Teuchos::VERB_EXTREME);
 //   }
 
-//   if (me == 0) cout << "Redistributing vectors..." << endl;
+//   if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
 //   Vector *redistribVector;
 // //  std::vector<const zscalar_t *> weights;
 // //  std::vector<int> weightStrides;
@@ -288,17 +286,17 @@ int main(int narg, char** arg)
 //   ////// Verify that redistribution is "correct"; perform matvec with
 //   ////// original and redistributed matrices/vectors and compare norms.
 
-//   if (me == 0) cout << "Matvec original..." << endl;
+//   if (me == 0) std::cout << "Matvec original..." << std::endl;
 //   origMatrix->apply(*origVector, *origProd);
 //   z2TestScalar origNorm = origProd->norm2();
 //   if (me == 0)
-//     cout << "Norm of Original matvec prod:       " << origNorm << endl;
+//     std::cout << "Norm of Original matvec prod:       " << origNorm << std::endl;
 
-//   if (me == 0) cout << "Matvec redistributed..." << endl;
+//   if (me == 0) std::cout << "Matvec redistributed..." << std::endl;
 //   redistribMatrix->apply(*redistribVector, *redistribProd);
 //   z2TestScalar redistribNorm = redistribProd->norm2();
 //   if (me == 0)
-//     cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
+//     std::cout << "Norm of Redistributed matvec prod:  " << redistribNorm << std::endl;
 
 //   if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) {
 //     testReturn = 1;

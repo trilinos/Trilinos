@@ -72,7 +72,6 @@ using std::endl;
 using std::string;
 using std::map;
 using std::pair;
-using std::ostringstream;
 using Teuchos::reduceAll;
 using namespace Zoltan2_TestingFramework;
 
@@ -206,7 +205,7 @@ private:
                        const MetricAnalyzerInfo & metric,
                        const MetricAnalyzerInfo &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
-                       ostringstream &msg);
+                       std::ostringstream &msg);
   
   /* \brief Method that compares two timers and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -222,7 +221,7 @@ private:
                       const double time,
                       const double ref_time,
                       const Teuchos::ParameterList & metricPlist,
-                      ostringstream &msg);
+                      std::ostringstream &msg);
   
   /* \brief Method for inserting data from all timers to a map of clocked times
    * param[in] timers a map of timers
@@ -388,7 +387,7 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
                                                  const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
 
   if(sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs()
@@ -431,7 +430,7 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                                 const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
 
   // TO DO - implement coloring comparison
@@ -488,7 +487,7 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
                                                 const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
   
   // TO DO - implement ordering comparison
@@ -565,7 +564,7 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   
   while(!metrics.empty()) {
     // print their names...
-    ostringstream msg;
+    std::ostringstream msg;
     metric_name = metrics.front().name();
 
     if (metric_name == "Metrics") { // special key word means compare the metrics list
@@ -633,7 +632,7 @@ bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
                                        const MetricAnalyzerInfo & metric,
                                        const MetricAnalyzerInfo & ref_metric,
                                        const Teuchos::ParameterList & metricPlist,
-                                       ostringstream &msg)
+                                       std::ostringstream &msg)
 {
   // run a comparison of min and max against a given metric
   // return an error message on failure
@@ -680,7 +679,7 @@ bool ComparisonHelper::timerComparisonTest(const RCP<const Comm<int> > &comm,
                                            const double time,
                                            const double ref_time,
                                            const Teuchos::ParameterList & metricPlist,
-                                           ostringstream &msg)
+                                           std::ostringstream &msg)
 {
   // Reduce time from test
   double global_time;

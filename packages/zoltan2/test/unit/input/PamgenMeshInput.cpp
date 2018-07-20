@@ -45,8 +45,8 @@
 //
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
-#include <Zoltan2_PamgenMeshAdapter.hpp>
-#include <Zoltan2_componentMetrics.hpp>
+#include "Zoltan2_PamgenMeshAdapter.hpp"
+#include "Zoltan2_componentMetrics.hpp"
 
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -54,15 +54,10 @@
 // Pamgen includes
 #include "create_inline_mesh.h"
 
-using namespace std;
-using Teuchos::RCP;
-
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
 typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
-
-
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -70,8 +65,8 @@ typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
 
 int main(int narg, char *arg[]) {
 
-  Tpetra::ScopeGuard mpiSession(&narg, &arg);
-  RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
@@ -94,18 +89,18 @@ int main(int narg, char *arg[]) {
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
-      cout << "\nReading parameter list from the XML file \""
-           <<xmlMeshInFileName<<"\" ...\n\n";
+      std::cout << "\nReading parameter list from the XML file \""
+	   <<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,
                                          Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
-      inputMeshList.print(cout,2,true,true);
-      cout << "\n";
+      inputMeshList.print(std::cout,2,true,true);
+      std::cout << "\n";
     }
   }
   else {
-    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
     return 5;
   }
 
@@ -124,14 +119,14 @@ int main(int narg, char *arg[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (me == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) std::cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
 
   // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) std::cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<basic_user_t> inputAdapter_t;
 
@@ -208,7 +203,7 @@ int main(int narg, char *arg[]) {
     ia.getAdjsView(primaryEType, adjEType, offsets, adjacencyIds);
 
     if ((int)ia.getLocalNumOf(primaryEType) != num_elem) {
-      cout << "Number of elements do not match\n";
+      std::cout << "Number of elements do not match\n";
       return 2;
     }
 
@@ -241,7 +236,7 @@ int main(int narg, char *arg[]) {
     }
 
     if (telct != num_elem) {
-      cout << "Number of elements do not match\n";
+      std::cout << "Number of elements do not match\n";
       return 2;
     }
   }
@@ -270,7 +265,7 @@ int main(int narg, char *arg[]) {
     ia2.getAdjsView(primaryEType, adjEType, offsets, adjacencyIds);
 
     if ((int)ia2.getLocalNumOf(primaryEType) != num_nodes) {
-      cout << "Number of nodes do not match\n";
+      std::cout << "Number of nodes do not match\n";
       return 2;
     }
 
@@ -322,7 +317,7 @@ int main(int narg, char *arg[]) {
   }
 
   // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) std::cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
   // clean up - reduce the result codes

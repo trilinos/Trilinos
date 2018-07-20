@@ -47,7 +47,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -55,10 +54,10 @@
 
 int main(int narg, char **arg)
 {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int fail=0, gfail=0;
-  Teuchos::GlobalMPISession session(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-                     Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
 
