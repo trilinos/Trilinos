@@ -55,6 +55,7 @@
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
