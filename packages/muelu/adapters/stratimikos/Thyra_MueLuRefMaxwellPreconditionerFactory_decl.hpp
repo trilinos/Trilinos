@@ -372,7 +372,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> M1 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM1NonConst));
               paramList.set<RCP<XpMat> >("M1", M1);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("M1")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M1 has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
@@ -393,7 +396,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> D0 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsD0NonConst));
               paramList.set<RCP<XpMat> >("D0", D0);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("D0")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter D0 has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix D0.");
 
@@ -422,7 +428,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> M0inv = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM0invNonConst));
               paramList.set<RCP<XpMat> >("M0inv", M0inv);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("M0inv")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M0inv has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M0inv.");
 #else
@@ -464,7 +473,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> M1 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM1NonConst));
               paramList.set<RCP<XpMat> >("M1", M1);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("M1")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M1 has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
@@ -489,7 +501,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> D0 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsD0NonConst));
               paramList.set<RCP<XpMat> >("D0", D0);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("D0")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter D0 has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix D0.");
 
@@ -528,7 +543,10 @@ namespace Thyra {
               // wrap as an Xpetra::Matrix that MueLu can work with
               RCP<XpMat> M0inv = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM0invNonConst));
               paramList.set<RCP<XpMat> >("M0inv", M0inv);
-            }
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("M0inv")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M0inv has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M0inv.");
         }
