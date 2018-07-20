@@ -5,11 +5,12 @@
       <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
       <ParameterList name="Solver Types">
         <ParameterList name="Pseudo Block GMRES">
-          <Parameter name="Convergence Tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+          <Parameter name="Orthogonalization" type="string" value="ICGS"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Output Style" type="int" value="1"/>
           <Parameter name="Verbosity" type="int" value="33"/>
-          <Parameter name="Maximum Iterations" type="int" value="100"/>
+          <Parameter name="Maximum Iterations" type="int" value="300"/>
           <Parameter name="Block Size" type="int" value="1"/>
           <Parameter name="Num Blocks" type="int" value="100"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
@@ -36,9 +37,9 @@
           <Parameter name="Use discrete gradient" type="bool" value="false"/>
 
           <ParameterList name="Q_B Preconditioner">
-            <Parameter name="Prec Type" type="string" value="MueLu-Tpetra"/>
+            <Parameter name="Prec Type" type="string" value="MueLu"/>
             <ParameterList name="Prec Types">
-              <ParameterList name="MueLu-Tpetra">
+              <ParameterList name="MueLu">
                 <Parameter name="verbosity" type="string" value="high"/>
                 <Parameter name="hierarchy label" type="string" value="Q_B"/>
                 <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
@@ -51,7 +52,7 @@
                 <Parameter name="smoother: pre or post" type="string" value="both"/>
                 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                 <ParameterList name="smoother: params">
-                  <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
+                  <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
                   <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                   <Parameter name="relaxation: sweeps" type="int" value="4"/>
                   <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
@@ -69,7 +70,7 @@
                 </ParameterList>
 
                 <ParameterList name="Required Parameters">
-                  <Parameter name="Coordinates" type="string" value="B_face"/>
+                  <Parameter name="Coordinates-Epetra" type="string" value="B_face"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -77,7 +78,7 @@
 
 
           <ParameterList name="T_E Solve">
-            <Parameter name="Type" type="string" value="MueLu-Tpetra"/>
+            <Parameter name="Type" type="string" value="MueLu"/>
             <Parameter name="verbosity" type="string" value="high"/>
             <Parameter name="hierarchy label" type="string" value="T_E"/>
             <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
@@ -108,7 +109,7 @@
             </ParameterList>
 
             <ParameterList name="Required Parameters">
-              <Parameter name="Coordinates" type="string" value="E_edge"/>
+              <Parameter name="Coordinates-Epetra" type="string" value="E_edge"/>
             </ParameterList>
           </ParameterList>
 
