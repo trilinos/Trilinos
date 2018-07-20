@@ -47,12 +47,27 @@ from TribitsPackageFilePathUtils import *
 #
 
 usageHelp = \
-r"""filter-packages-list --deps-xml-file=<PROJECT_DEPS_FILE> \
-  --input-packages-list=<P1>,<P2>,... --keep-types=<T1>,<T2>,...
+r"""filter-packages-list.py --deps-xml-file=<PROJECT_DEPS_FILE> \
+  --input-packages-list=<P1>,<P2>,... --keep-test-test-categories=<T1>,<T2>,...
 
-This script takes in a comma-seprated list of TriBITS package name
-<P1>,<P2>,... and keeps the package names matching the categories listed in
-<T1>,<T2>,... given the TriBITS-generated project dependencies file.
+This script takes in a comma-seprated list of TriBITS package names
+<P1>,<P2>,... and then filters out the package names for packages that don't
+the package test test categories listed in <T1>,<T2>,... which are given the
+TriBITS-generated project dependencies file.
+
+For example, to keep only the Primary Tested (PT) packages, use:
+
+  filter-packages-list.py --keep-test-test-categories=PT [other args]
+
+To keep both Primary Tested and Secondary Tested packages, use:
+
+  filter-packages-list.py --keep-test-test-categories=PT,ST [other args]
+
+To keep all packages, use:
+
+  filter-packages-list.py --keep-test-test-categories=PT,ST,EX [other args]
+
+(or don't both running the script).
 
 The comma-seprated filtered list of packages is printed to STDOUT.
 """
@@ -62,22 +77,23 @@ from optparse import OptionParser
 clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
+  "--deps-xml-file", dest="depsXmlFile", type="string",
+  help="TriBITS generated XML file containing the listing of packages, dir names, dependencies, etc.")
+
+clp.add_option(
   "--input-packages-list", dest="inputPackagesList", type="string", default="",
   help="Comma-seprated List of packages that needs to be filtered (i.e. \"P1,P2,...\")." )
 
 clp.add_option(
-  "--keep-types", dest="keepTypes", type="string", default="",
+  "--keep-test-test-categories", dest="keepTestTestCategories", type="string", default="",
   help="List of package types to keep (i.e. \"PT,ST,EX\"." )
-
-clp.add_option(
-  "--deps-xml-file", dest="depsXmlFile", type="string",
-  help="TriBITS generated XML file containing the listing of packages, dir names, dependencies, etc.")
 
 (options, args) = clp.parse_args()
 
 trilinosDependencies = getProjectDependenciesFromXmlFile(options.depsXmlFile)
 
 inputPackagesList = options.inputPackagesList.split(",")
-keepTypesList = options.keepTypes.split(",")
-outputPackagesList = trilinosDependencies.filterPackageNameList(inputPackagesList, keepTypesList)
+keepTestTestCategoriesList = options.keepTestTestCategories.split(",")
+outputPackagesList = \
+  trilinosDependencies.filterPackageNameList(inputPackagesList, keepTestTestCategoriesList)
 print ','.join(outputPackagesList)
