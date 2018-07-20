@@ -28,6 +28,8 @@ APPEND_SET(HEADERS
   BelosEpetraOperator.h
   BelosEpetraUtils.h
   Belos_Details_Epetra_registerLinearSolverFactory.hpp
+  Belos_Details_Epetra_registerSolverFactory.hpp
+  BelosSolverFactory_Epetra.hpp
   )
 
 APPEND_SET(SOURCES
@@ -35,6 +37,7 @@ APPEND_SET(SOURCES
   BelosEpetraOperator.cpp
   BelosEpetraUtils.cpp
   Belos_Details_Epetra_registerLinearSolverFactory.cpp
+  Belos_Details_Epetra_registerSolverFactory.cpp
   )
 
 #

@@ -4,7 +4,6 @@
 // Problem appears to be in creation of Xpetra::EpetraMapT
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 
@@ -15,9 +14,8 @@
 
 int main(int narg, char **arg)
 {
-  Teuchos::GlobalMPISession session(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = 
-               Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
   Teuchos::RCP<const Epetra_Comm> ecomm = Xpetra::toEpetra(tcomm);
 
   const int nGlobRows = 50;

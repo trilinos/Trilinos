@@ -44,7 +44,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Tuple.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_TieBreak.hpp>
 
@@ -61,7 +61,6 @@ namespace {
 
   typedef Tpetra::Map<> Map;
   typedef Tpetra::Directory<> Directory;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
   typedef Map::local_ordinal_type LO;
   typedef Map::global_ordinal_type GO;
@@ -101,8 +100,7 @@ namespace {
     // single processor.  All processes share GIDs 41, 42, 51, and 52.
     // In the corresponding one-to-one Map, rank 1 should have GIDs 41
     // and 51; rank 0 should have the rest.
-    Platform& platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
 
     out << "Creating global index lists" << endl;

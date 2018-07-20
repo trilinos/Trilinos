@@ -31,7 +31,6 @@
 #ifndef __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
 #define __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -83,7 +82,7 @@ namespace TpetraIntrepidPoissonExample {
 typedef double ST;
 typedef int    LO;
 typedef int    GO;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+typedef Tpetra::Map<>::node_type  Node;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of

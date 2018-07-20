@@ -45,11 +45,10 @@
 #ifndef LOWER_BANDED_MATRIX_HPP
 #define LOWER_BANDED_MATRIX_HPP
 
-#include<vector>
 #include<iostream>
 #include<iomanip>
 
-#include "TankVector.hpp"
+#include "ROL_StdVector.hpp"
 
 namespace details {
 using namespace std;

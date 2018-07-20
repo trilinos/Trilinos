@@ -190,6 +190,11 @@ public:
 
   //! Destructor.
   virtual ~GmresPolySolMgr() {};
+
+  //! clone for Inverted Injection (DII)
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP>);
+  }
   //@}
 
   //! @name Accessor methods
@@ -197,17 +202,17 @@ public:
 
   /*! \brief Get current linear problem being solved for in this object.
    */
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+  const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
     return *problem_;
   }
 
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   /*! \brief Get a parameter list containing the current parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
   /*! \brief Return the timers for this object.
    *
@@ -219,14 +224,14 @@ public:
   }
 
   //! Get the iteration count for the most recent call to \c solve().
-  int getNumIters() const {
+  int getNumIters() const override {
     return numIters_;
   }
 
   /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
       \note This flag will be reset the next time solve() is called.
    */
-  bool isLOADetected() const { return loaDetected_; }
+  bool isLOADetected() const override { return loaDetected_; }
 
   //@}
 
@@ -234,10 +239,10 @@ public:
   //@{
 
   //! Set the linear problem that needs to be solved.
-  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; isSTSet_ = false; }
+  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; isSTSet_ = false; }
 
   //! Set the parameters the solver manager should use to solve the linear problem.
-  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
   //@}
   //! @name Reset methods
@@ -251,7 +256,7 @@ public:
   /// This clears out the stored coefficients, so that the next call
   /// to solve() actually computes a full block GMRES solve, instead
   /// of just reusing the coefficients from the first solve.
-  void reset( const ResetType type ) {
+  void reset( const ResetType type ) override {
     if ((type & Belos::Problem) && ! problem_.is_null ()) {
       problem_->setProblem ();
       isPolyBuilt_ = false;  // Rebuild the GMRES polynomial
@@ -279,7 +284,7 @@ public:
    *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
    *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
    */
-  ReturnType solve();
+  ReturnType solve() override;
 
   //@}
 
@@ -287,7 +292,7 @@ public:
   //@{
 
   /** \brief Method to return description of the hybrid block GMRES solver manager */
-  std::string description() const;
+  std::string description() const override;
 
   //@}
 

@@ -31,7 +31,7 @@ APPEND_SET(HEADERS
 
 #
 # compatibility headers (TODO: Move to compatibility/CMakeLists.txt)
-# 
+#
 
 GET_PROPERTY( PTR_STRING           GLOBAL PROPERTY PTR_IMPL )
 GET_PROPERTY( PTR_DIR              GLOBAL PROPERTY PTR_DIR  )
@@ -84,21 +84,25 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
 INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/dynamic
                     ${DIR}/boundconstraint
                     ${DIR}/constraint
                     ${DIR}/nlls
                     ${DIR}/objective
                     ${DIR}/operator
                     ${DIR}/simopt
+                    ${DIR}/sketching
                     ${DIR}/std)
 
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/dynamic/*.hpp
                     ${DIR}/boundconstraint/*.hpp
                     ${DIR}/constraint/*.hpp
                     ${DIR}/nlls/*.hpp
                     ${DIR}/objective/*.hpp
                     ${DIR}/operator/*.hpp
                     ${DIR}/simopt/*.hpp
+                    ${DIR}/sketching/*.hpp
                     ${DIR}/std/*.hpp)
 
 #
@@ -161,6 +165,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/randvarfunctional/regret
                     ${DIR}/function/randvarfunctional/deviation
                     ${DIR}/function/randvarfunctional/probability
+                    ${DIR}/function/progressivehedging
 #                    ${DIR}/function/riskmeasure
 #                    ${DIR}/function/riskmeasure/quadrangle
 #                    ${DIR}/function/riskmeasure/fdivergence
@@ -169,6 +174,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/vector
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM
+                    ${DIR}/status
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
@@ -182,6 +188,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/randvarfunctional/regret/*.hpp
                     ${DIR}/function/randvarfunctional/deviation/*.hpp
                     ${DIR}/function/randvarfunctional/probability/*.hpp
+                    ${DIR}/function/progressivehedging/*.hpp
 #                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
 #                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
 #                    ${DIR}/function/errormeasure/*.hpp
@@ -189,6 +196,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
                     ${DIR}/sampler/SROM/*.hpp
+                    ${DIR}/status/*.hpp
                    )
 
 #

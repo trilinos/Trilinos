@@ -44,9 +44,10 @@
 #ifndef IFPACK2_UNITTESTHELPERS_HPP
 #define IFPACK2_UNITTESTHELPERS_HPP
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
 #include "Ifpack2_Details_RowMatrix.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
@@ -55,12 +56,12 @@
 namespace tif_utest {
 using Tpetra::global_size_t;
 
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+typedef Tpetra::Map<>::node_type Node;
 
 inline
 Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
 {
-  return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  return Tpetra::getDefaultComm();
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>

@@ -3,18 +3,18 @@ Level 0
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother ->
+ smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 1   [unused]
   relaxation: damping factor = 1   [unused]
-
+ 
 Level 1
  Build (MueLu::TentativePFactory_kokkos)
   Build (MueLu::UncoupledAggregationFactory_kokkos)
    Build (MueLu::CoalesceDropFactory_kokkos)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-
+    
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
@@ -22,7 +22,7 @@ Level 1
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
    lightweight wrap = 1
-
+   
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
   aggregation: max selected neighbors = 0   [default]
@@ -36,46 +36,47 @@ Level 1
   aggregation: allow user-specified singletons = 0   [default]
   OnePt aggregate map name =    [default]
   OnePt aggregate map factory =    [default]
-
+  
   Nullspace factory (MueLu::NullspaceFactory_kokkos)
   Fine level nullspace = Nullspace
-
+  
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
-
+  
  tentative: calculate qr = 0
- matrixmatrix: kernel params ->
+ tentative: build coarse coordinates = 1   [default]
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Transpose P (MueLu::TransPFactory)
- matrixmatrix: kernel params ->
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- matrixmatrix: kernel params ->
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother ->
+ smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 1   [unused]
   relaxation: damping factor = 1   [unused]
-
+ 
 Level 2
  Build (MueLu::TentativePFactory_kokkos)
   Build (MueLu::UncoupledAggregationFactory_kokkos)
    Build (MueLu::CoalesceDropFactory_kokkos)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-
+    
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
@@ -83,7 +84,7 @@ Level 2
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
    lightweight wrap = 1
-
+   
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
   aggregation: max selected neighbors = 0   [default]
@@ -97,37 +98,38 @@ Level 2
   aggregation: allow user-specified singletons = 0   [default]
   OnePt aggregate map name =    [default]
   OnePt aggregate map factory =    [default]
-
+  
   Nullspace factory (MueLu::NullspaceFactory_kokkos)
   Fine level nullspace = Nullspace
-
+  
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
-
+  
  tentative: calculate qr = 0
- matrixmatrix: kernel params ->
+ tentative: build coarse coordinates = 1   [default]
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Transpose P (MueLu::TransPFactory)
- matrixmatrix: kernel params ->
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- matrixmatrix: kernel params ->
+ matrixmatrix: kernel params -> 
   [empty list]
-
+ 
  Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- presmoother ->
+ presmoother -> 
   [empty list]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

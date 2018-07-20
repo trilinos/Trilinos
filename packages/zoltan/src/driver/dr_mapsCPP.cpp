@@ -45,6 +45,7 @@
  */
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_maps_const.h"
 #include "dr_util_const.h"
 #include "dr_err_const.h"

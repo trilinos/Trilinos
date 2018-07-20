@@ -92,6 +92,8 @@
         
 \cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
         
+\cbb{aggregation: use interface aggregation}{bool}{false}{Allow an application to prescribe root nodes to uncoupled aggregation}
+        
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
         
 \cbb{aggregation: output filename}{string}{""}{Filename to write VTK visualization data to.}
@@ -182,6 +184,8 @@
         
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
+\cbb{tentative: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
         
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
@@ -214,7 +218,7 @@
         
 \cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
         
-\cba{matrixmatrix: kernel params}{parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+\cba{matrixmatrix: kernel params}{\parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
         
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
         

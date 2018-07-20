@@ -1037,8 +1037,8 @@ namespace { // (anonymous)
       testEntriesOfNonoverlappingCrsMatrix (out, success,
                                             *A_nonoverlapping,
                                             *colMap_expected);
-      const int lclSuccess = success ? 1 : 0;
-      int gblSuccess = 0; // output argument
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST( gblSuccess, 1 );
       if (gblSuccess != 1) {
@@ -1102,8 +1102,8 @@ namespace { // (anonymous)
       testEntriesOfNonoverlappingCrsMatrix (out, success,
                                             *A_nonoverlapping,
                                             *colMap_expected);
-      const int lclSuccess = success ? 1 : 0;
-      int gblSuccess = 0; // output argument
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST( gblSuccess, 1 );
       if (gblSuccess != 1) {

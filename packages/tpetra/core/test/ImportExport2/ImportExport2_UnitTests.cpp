@@ -39,11 +39,9 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include <map>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
@@ -51,7 +49,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
@@ -113,7 +111,6 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::DynamicProfile;
   using Tpetra::Export;
   using Tpetra::Import;
@@ -127,7 +124,7 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  using Node = Tpetra::Map<>::node_type;
 
   // Command-line argument values (initially set to defaults).
   bool testMpi = true;
@@ -165,7 +162,7 @@ namespace {
   getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform ().getComm ();
+      return Tpetra::getDefaultComm ();
     }
     else {
       return rcp (new Teuchos::SerialComm<int> ());
@@ -1761,8 +1758,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReverseImportExport, doImport, LO, GO, Scalar
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::Export<LO, GO> ExportType;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
-  typedef Tpetra::Vector<Scalar,LO, GO, Node> VectorType;
-  typedef Tpetra::CrsMatrix<Scalar,LO, GO> CrsMatrixType;
+  typedef Tpetra::Vector<Scalar, LO, GO> VectorType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
@@ -1847,7 +1844,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, GetPids, LO, GO )  {
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::Export<LO, GO> ExportType;
-  typedef Tpetra::Vector<int, LO, GO, Node> IntVectorType;
+  typedef Tpetra::Vector<int, LO, GO> IntVectorType;
   typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
   typedef Tpetra::global_size_t GST;
 
@@ -2303,7 +2300,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
 
     // Generate PID vector via getRemotePIDs
     Teuchos::Array<int> pids;
-    Tpetra::Import_Util::getRemotePIDs<LO, GO,Node>(*Import1,pids);
+    Tpetra::Import_Util::getRemotePIDs<LO, GO, Node>(*Import1,pids);
 
     // Build a new (identical) importer via the other constructor
     Import2 = rcp(new ImportType(Import1->getSourceMap(),Import1->getTargetMap(),pids));
@@ -2519,7 +2516,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<double, LO, GO, Node> VectorType;
+  typedef Tpetra::Vector<double, LO, GO> VectorType;
   typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,B;
 
@@ -2644,7 +2641,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<int,LO, GO, Node> IntVectorType;
+  typedef Tpetra::Vector<int, LO, GO> IntVectorType;
   RCP<const ImportType> ImportOwn, ImportXfer;
   RCP<MapType> Map0, Map1, Map2;
 

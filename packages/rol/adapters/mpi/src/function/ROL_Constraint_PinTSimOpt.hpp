@@ -505,7 +505,6 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    Ptr<Vector<Real>> scratch;
     for(int i=0;i<pint_ajv.numOwnedSteps();i++) {
       // pull out all the time steps required
       Ptr<const Vector<Real>> v_dual  = getVector(pint_v,i,CURRENT);
@@ -674,6 +673,215 @@ public:
                                       Real &tol) override {
     ahwv.zero();
   }
+
+  // Done in parallel, no blocking, solve a linear system on this processor
+  void invertTimeStepJacobian(PinTVector<Real>       & pint_pv,
+                              const PinTVector<Real> & pint_v,
+                              const PinTVector<Real> & pint_u,
+                              const PinTVector<Real> & pint_z,
+                              Real &tol) 
+  {
+    // apply the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_pv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_pv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));             // this is the local value
+      }
+    }
+
+    for(int i=0;i<pint_pv.numOwnedSteps();i++) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> v_now = getVector(pint_v,i,CURRENT);
+
+      Ptr<const Vector<Real>> u_old = getVector(pint_u,i,PAST);
+      Ptr<const Vector<Real>> u_now = getVector(pint_u,i,CURRENT);
+
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> pv_old = getNonconstVector(pint_pv,i,PAST);
+      Ptr<Vector<Real>> pv_now = getNonconstVector(pint_pv,i,CURRENT);
+
+      // need to compute: temp = J_old * pv_old
+      auto temp = pv_now->clone();
+      stepConstraint_->applyJacobian_1_old(*temp,*pv_old,
+                                           *u_old,*u_now,*z_all,tol);
+
+      temp->axpy(-1.0,*v_now); // temp = -v_now + J_old * pv_old
+      temp->scale(-1.0);       // temp = v_now - J_old * pv_old
+      
+      // need to compute: pv_now = inv(J_new) * temp
+      stepConstraint_->applyInverseJacobian_1_new(*pv_now,*temp, 
+                                                  *u_old,*u_now,*z_all,tol);
+    }
+  }
+
+  // Done in parallel, no blocking, solve a linear system on this processor
+  void invertAdjointTimeStepJacobian(PinTVector<Real>       & pint_pv,
+                                     const PinTVector<Real> & pint_v,
+                                     const PinTVector<Real> & pint_u,
+                                     const PinTVector<Real> & pint_z,
+                                     Real &tol) 
+  {
+    int last_step = pint_pv.numOwnedSteps()-1;
+   
+   
+    Ptr<Vector<Real>> temp = getVector(pint_v,last_step,CURRENT)->clone();
+    temp->set(*getVector(pint_v,last_step,CURRENT));
+    for(int i=last_step;i>=0;i--) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> v_old = getVector(pint_v,i,PAST);
+
+      Ptr<const Vector<Real>> u_old = getVector(pint_u,i,PAST);
+      Ptr<const Vector<Real>> u_now = getVector(pint_u,i,CURRENT);
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> pv_now = getNonconstVector(pint_pv,i,CURRENT);
+
+      // need to compute: pv_now = inv(J_new^T) * temp
+      stepConstraint_->applyInverseAdjointJacobian_1_new(*pv_now,*temp, 
+                                                         *u_old,*u_now,*z_all,tol);
+
+      
+      // temp = J_old^T * pv_now
+      stepConstraint_->applyAdjointJacobian_1_old(*temp,*pv_now, 
+                                                  *u_old,*u_now,*z_all,tol);
+
+      temp->axpy(-1.0,*v_old); // temp = -v_old + J_old^T * pv_now
+      temp->scale(-1.0);       // temp =  v_old - J_old^T * pv_now
+    }
+   
+    // apply the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_pv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_pv.getVectorPtr(offset)->set(*temp);
+          // NOT good enough for multi step!!!!
+      }
+    }
+  }
+
+  void blockJacobiSweep(PinTVector<Real>       & pint_pv,
+                        const PinTVector<Real> & pint_rhs,
+                        const PinTVector<Real> & pint_u,
+                        const PinTVector<Real> & pint_z,
+                        Real &tol) 
+  {
+    pint_rhs.boundaryExchange();
+
+    Ptr<Vector<Real>> scratch = pint_rhs.clone();
+    PinTVector<Real> pint_scratch  = dynamic_cast<const PinTVector<Real>&>(*scratch);
+
+    // do block Jacobi smoothing
+    invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol);
+
+    invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol);
+  }
+
+  void schurComplementAction(Vector<Real>       & sc_v,
+                             const Vector<Real> & v,
+                             const Vector<Real> & u,
+                             const Vector<Real> & z,
+                             Real &tol) 
+  {
+    auto scratch_u = u.clone(); 
+    auto scratch_z = z.clone(); 
+
+    // do boundary exchange
+    {
+      const PinTVector<Real>       & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
+      pint_v.boundaryExchange();
+    }
+
+    // compute J_1 * J_1^T
+    applyAdjointJacobian_1(*scratch_u,v,u,z,tol);
+    applyJacobian_1(sc_v,*scratch_u,u,z,tol);
+
+    // compute J_2 * J_2^T
+    applyAdjointJacobian_2(*scratch_z,v,u,z,tol);
+    applyJacobian_2(*scratch_u,*scratch_z,u,z,tol);
+    
+    // compute J_1 * J_1^T + J_2 * J_2^T
+    sc_v.axpy(1.0,*scratch_u);
+  }
+
+  virtual void weightedJacobiRelax(PinTVector<Real> &pint_pv,
+                                   const PinTVector<Real> & pint_v,
+                                   const PinTVector<Real> & pint_u,
+                                   const PinTVector<Real> & pint_z,
+                                   Real omega,
+                                   int numSweeps,
+                                   Real &tol) 
+  {
+    auto residual = pint_v.clone();
+    auto dx = pint_pv.clone();
+
+    // force intial guess to zero
+    pint_pv.scale(0.0);
+    dx->scale(0.0);
+    residual->set(pint_v);           
+
+    PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
+    PinTVector<Real> & pint_dx       = dynamic_cast<PinTVector<Real>&>(*dx);
+
+    for(int s=0;s<numSweeps;s++) {
+      blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol);
+
+      pint_pv.axpy(omega,pint_dx);
+
+      // now update the residual
+      if(s!=numSweeps-1) {
+        schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol); // A*x
+
+        pint_residual.scale(-1.0);                            // -A*x
+        pint_residual.axpy(-1.0,pint_v);                      // b - A*x
+      }
+    }
+
+    pint_pv.boundaryExchange();
+  }
+
+
+  virtual void applyPreconditioner(Vector<Real> &pv,
+                                   const Vector<Real> &v,
+                                   const Vector<Real> &x,
+                                   const Vector<Real> &g,
+                                   Real &tol) 
+  {
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    auto u = xs.get_1(); // sim
+    auto z = xs.get_2(); // opt
+
+    // update the solution vectors
+    this->update(x);
+
+    // apply inverse of state jacobian on a single time step
+    
+    PinTVector<Real>       & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
+    const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(*u);
+    const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(*z);
+      // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_pv.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_pv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // these don't change, do boundary exchange
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    // now we are going to do a relaxation sweep: x = xhat+omega * Minv * (b-A*xhat)
+    /////////////////////////////////////////////////////////////////////////////////////////
+    
+    int numSweeps = 4;
+    Real omega = 2.0/3.0;
+    
+    weightedJacobiRelax(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol);
+    
+    // pv.set(v.dual());
+  }
+
 
 }; // class Constraint_SimOpt
 

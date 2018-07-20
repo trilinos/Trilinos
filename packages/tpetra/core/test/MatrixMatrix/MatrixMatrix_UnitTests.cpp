@@ -40,19 +40,17 @@
 // ************************************************************************
 // @HEADER
 */
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -71,7 +69,6 @@ namespace {
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsMatrixMultiplyOp;
-  using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Tpetra::Import;
@@ -685,7 +682,7 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("openmp: algorithm","MSAK");
+      p.set("openmp: jacobi algorithm","MSAK");
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -693,7 +690,7 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_CUDA
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("cuda: algorithm","MSAK");
+      p.set("cuda: jacobi algorithm","MSAK");
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -787,7 +784,7 @@ mult_test_results jacobi_reuse_test(
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
@@ -1098,7 +1095,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   typedef Map<LO,GO,NT>         Map_t;
   typedef CrsMatrix<SC,LO,GO,NT> Matrix_t;
 
@@ -1297,7 +1294,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
  * KLN 23/06/2011
  */
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   typedef Map<LO,GO,NT>          Map_t;
   typedef CrsMatrix<SC,LO,GO,NT> Matrix_t;
 
@@ -1416,7 +1413,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   using Teuchos::RCP;
   //First, make two local, random, sorted Kokkos sparse matrices
   size_t nrows = 1000;
@@ -1531,7 +1528,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   using Teuchos::RCP;
   //First, make two local, random, unsorted Kokkos sparse matrices
   size_t nrows = 1000;
@@ -1652,7 +1649,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
  * KLN 28/06/2011
  */
 /*TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   ParameterList defaultParameters;
   RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile("matrices/denserATa.mtx", comm);
   RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile("matrices/denserATc.mtx", comm, true, true);

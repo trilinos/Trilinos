@@ -7,6 +7,8 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "Panzer_NodeType.hpp"
+
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 
@@ -50,8 +52,7 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
 void OperatorRequestCallback::writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op) const
 {
   using Teuchos::RCP;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  using NT = panzer::TpetraNodeType;
   const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
   if(tOp != Teuchos::null) {
     const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);

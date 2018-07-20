@@ -869,6 +869,15 @@ public:
     return dim;
   }
 
+  void randomize(const Real l = 0.0, const Real u = 1.0) {
+    if (vec1_ != ROL::nullPtr) {
+      vec1_->randomize(l,u);
+    }
+    if (vec2_ != ROL::nullPtr) {
+      vec2_->randomize(l,u);
+    }
+  }
+
   ROL::Ptr<const ROL::TpetraMultiVector<Real> > getField(void) const { 
     return vec1_;
   }

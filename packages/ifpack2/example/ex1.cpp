@@ -3,9 +3,8 @@
 #include <BelosSolverFactory.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -61,7 +60,7 @@ main (int argc, char* argv[])
   typedef Belos::SolverManager<scalar_type, MV, OP> solver_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   RCP<Time> totalTime = Teuchos::TimeMonitor::getNewTimer ("Total");
   RCP<Time> precSetupTime =
@@ -71,8 +70,7 @@ main (int argc, char* argv[])
   RCP<Time> solveTime = Teuchos::TimeMonitor::getNewTimer ("Solve");
 
   Teuchos::TimeMonitor totalTimeMon (*totalTime);
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   // Get command-line arguments.
   CmdLineArgs args;

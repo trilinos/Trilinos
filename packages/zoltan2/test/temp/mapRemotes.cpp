@@ -77,10 +77,9 @@ int searchIt(const map_t &myMap, const std::string &myName)
 
 int main(int narg, char **arg)
 {
-  // Usual Teuchos MPI stuff
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
-  Teuchos::RCP<const Teuchos::Comm<int> >
-  comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int me = comm->getRank();
   int np = comm->getSize();
   int nFail = 0;

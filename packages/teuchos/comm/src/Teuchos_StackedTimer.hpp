@@ -15,7 +15,7 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
-
+#include <climits>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
 namespace Kokkos {
@@ -506,12 +506,15 @@ public:
   /// Struct for controlling output options like histograms
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
-        output_minmax(false), num_histogram(10) {}
+                      output_minmax(false), num_histogram(10), max_levels(INT_MAX),
+                      print_warnings(true) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
     bool output_minmax;
     int num_histogram;
+    int max_levels;
+    bool print_warnings;
   };
 
   /**
@@ -558,7 +561,7 @@ protected:
     * Recursive call to print a level of timer data.
     */
   double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed,
-      double parent_time, const OutputOptions &options);
+                    double parent_time, const OutputOptions &options);
 
 };  //StackedTimer
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -195,9 +195,9 @@ int main(int argc, char **argv)
                              &num_iterations, &sleep_time));
   }
 
-/*
- *	Broadcast Input
- */
+    /*
+     *	Broadcast Input
+     */
 
 #ifdef HAVE_PARALLEL
   MPI_Bcast(&quit, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -685,7 +685,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
    *	Get File Sizes
    *
    *	Note: On ASCI Red, a specialized "stat", named "estat", was added to
-   *	accommodate file sizes upto 16GB.                          3/27/2002
+   *	accommodate file sizes up to 16GB.                          3/27/2002
    */
 
   if (stat(tmp_name, &file_status)) {
@@ -1151,8 +1151,9 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
     cum_open_close_time += raw_open_close_time;
 
-    raw_data_vol += sizeof(realtyp) * (((size_t)num_nodes * num_nodal_fields) +
-                                       (num_elems * num_element_fields) + (num_global_fields)) *
+    raw_data_vol += sizeof(realtyp) *
+                    (((size_t)num_nodes * num_nodal_fields) + (num_elems * num_element_fields) +
+                     (num_global_fields)) *
                     num_timesteps * files_per_domain;
 
   } /* end of for (iter...) */
@@ -1166,7 +1167,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
    *	Get File Sizes
    *
    *	Note: On ASCI Red, a specialized "stat", named "estat", was added to
-   *	accommodate file sizes upto 16GB.                          3/27/2002
+   *	accommodate file sizes up to 16GB.                          3/27/2002
    */
 
   if (stat(tmp_name, &file_status)) {

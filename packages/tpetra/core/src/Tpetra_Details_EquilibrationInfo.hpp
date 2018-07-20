@@ -83,7 +83,12 @@ struct EquilibrationInfo {
   using host_device_type = typename Kokkos::View<mag_type*, device_type>::HostMirror::device_type;
   using HostMirror = EquilibrationInfo<val_type, host_device_type>;
 
-  EquilibrationInfo () = default;
+  EquilibrationInfo () :
+    foundInf (false),
+    foundNan (false),
+    foundZeroDiag (false),
+    foundZeroRowNorm (false)
+  {}
 
   EquilibrationInfo (const std::size_t lclNumRows,
                      const std::size_t lclNumCols,
@@ -99,7 +104,11 @@ struct EquilibrationInfo {
                                                              assumeSymmetric_ ?
                                                              std::size_t (0) :
                                                              lclNumCols)),
-    assumeSymmetric (assumeSymmetric_)
+    assumeSymmetric (assumeSymmetric_),
+    foundInf (false),
+    foundNan (false),
+    foundZeroDiag (false),
+    foundZeroRowNorm (false)
   {}
 
   EquilibrationInfo (const Kokkos::View<mag_type*, device_type>& rowNorms_,
@@ -107,13 +116,21 @@ struct EquilibrationInfo {
                      const Kokkos::View<mag_type*, device_type>& colNorms_,
                      const Kokkos::View<val_type*, device_type>& colDiagonalEntries_,
                      const Kokkos::View<mag_type*, device_type>& rowScaledColNorms_,
-                     const bool assumeSymmetric_) :
+                     const bool assumeSymmetric_,
+                     const bool foundInf_,
+                     const bool foundNan_,
+                     const bool foundZeroDiag_,
+                     const bool foundZeroRowNorm_) :
     rowNorms (rowNorms_),
     rowDiagonalEntries (rowDiagonalEntries_),
     colNorms (colNorms_),
     colDiagonalEntries (colDiagonalEntries_),
     rowScaledColNorms (rowScaledColNorms_),
-    assumeSymmetric (assumeSymmetric_)
+    assumeSymmetric (assumeSymmetric_),
+    foundInf (foundInf_),
+    foundNan (foundNan_),
+    foundZeroDiag (foundZeroDiag_),
+    foundZeroRowNorm (foundZeroRowNorm_)
   {}
 
   //! Deep-copy src into *this.
@@ -138,6 +155,12 @@ struct EquilibrationInfo {
     else {
       Kokkos::deep_copy (rowScaledColNorms, src.rowScaledColNorms);
     }
+
+    assumeSymmetric = src.assumeSymmetric;
+    foundInf = src.foundInf;
+    foundNan = src.foundNan;
+    foundZeroDiag = src.foundZeroDiag;
+    foundZeroRowNorm = src.foundZeroRowNorm;
   }
 
   typename EquilibrationInfo<val_type, device_type>::HostMirror
@@ -150,7 +173,8 @@ struct EquilibrationInfo {
     auto rowScaledColNorms_h = Kokkos::create_mirror_view (rowScaledColNorms);
 
     return HostMirror {rowNorms_h, rowDiagonalEntries_h, colNorms_h,
-        colDiagonalEntries_h, rowScaledColNorms_h, assumeSymmetric};
+        colDiagonalEntries_h, rowScaledColNorms_h, assumeSymmetric,
+        foundInf, foundNan, foundZeroDiag, foundZeroRowNorm};
   }
 
   // We call a row a "diagonally dominant row" if the absolute value
@@ -194,6 +218,18 @@ struct EquilibrationInfo {
   /// This affects whether colDiagonalEntries and rowScaledColNorms
   /// are valid.
   bool assumeSymmetric;
+
+  //! Found an Inf somewhere in the matrix.
+  bool foundInf;
+
+  //! Found a NaN somewhere in the matrix.
+  bool foundNan;
+
+  //! Found a zero diagonal entry somewhere in the matrix.
+  bool foundZeroDiag;
+
+  //! At least one row of the matrix has a zero norm.
+  bool foundZeroRowNorm;
 };
 
 } // namespace Details

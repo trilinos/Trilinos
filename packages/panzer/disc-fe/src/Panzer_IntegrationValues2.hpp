@@ -127,6 +127,33 @@ namespace panzer {
 
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
+
+    /**
+     * \brief Using coordinate build an arrray that specifies a unique ordering.
+     *
+     * Used for side integration points. Compute a unique ordering in a cell and
+     * point offset.
+     *
+     * \param[in] coords Coordinates array (cell,IP,Dim)
+     * \param[in] cell   Cell index
+     * \param[in] offset Offset into the points
+     * \param[out] order Ordering array on output, correctly sized on input
+     *                   (offset + order.size() <= coords.extent(1))
+     */
+    static void uniqueCoordOrdering(Array_CellIPDim & coords,
+                                    int cell,
+                                    int offset,
+                                    std::vector<int> & order);
+
+    /**
+     * \brief Swap the ordering of quadrature points in a specified cell.
+     *
+     * \param[in] cell   Cell index
+     * \param[in] a      Quadrature point a
+     * \param[in] b      Quadrature point b
+     */
+    void swapQuadraturePoints(int cell,int a,int b);
+
   protected:
 
 

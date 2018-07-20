@@ -39,12 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Util.hpp> // sort2, merge2
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace { // anonymous
@@ -515,9 +513,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
       << indexBase << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   out << "Creating the row Map" << endl;
   const GST globalNumElts = 34;

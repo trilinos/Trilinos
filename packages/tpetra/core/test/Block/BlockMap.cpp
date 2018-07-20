@@ -41,9 +41,8 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_BlockMultiVector.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
 
 namespace {
 
@@ -57,8 +56,6 @@ namespace {
   // process.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, HilbertsHotel, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
@@ -71,15 +68,14 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef typename Array<GO>::size_type size_type;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     // Create a nonoverlapping, contiguous mesh Map.
     const size_t numLocalMeshPoints = 2;
     const LO blockSize = 5;
     const GO indexBase = 0;
-    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm, node);
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm);
 
     TEST_ASSERT( meshMap.isContiguous () );
     TEST_ASSERT( meshMap.isOneToOne () );
@@ -139,7 +135,7 @@ namespace {
     }
     ovrlpngGIDs[numLocalMeshPoints] = ovrlpngGIDs[numLocalMeshPoints-1] %
       static_cast<GO> (meshMap.getGlobalNumElements ());
-    map_type ovrlpngMeshMap (INVALID, ovrlpngGIDs (), indexBase, comm, node);
+    map_type ovrlpngMeshMap (INVALID, ovrlpngGIDs (), indexBase, comm);
 
     // If the communicator has more than one process, then the
     // overlapping mesh Map must overlap, that is, not be one to one.

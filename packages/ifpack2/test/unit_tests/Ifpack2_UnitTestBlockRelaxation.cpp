@@ -468,7 +468,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   out << "#local blocks = " << numLocalBlocks << std::endl;
 
   //out.setOutputToRootOnly(-1);
-  //Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   //const int myRank = comm->getRank ();
   for (int i=0,j=0; i<numLocalBlocks; ++i) {
     ArrayRCP<LocalOrdinal> block(3);
@@ -631,8 +630,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   out << "Ifpack2::BlockRelaxation diagonal block matrix test" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -738,8 +736,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
 
   out << "Ifpack2::BlockRelaxation lower triangular BlockCrsMatrix test" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -859,7 +856,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   const int num_rows_per_proc = 3;
   const int blockSize = 5;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  auto comm = Tpetra::getDefaultComm();
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =

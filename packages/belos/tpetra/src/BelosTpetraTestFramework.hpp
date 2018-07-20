@@ -58,32 +58,6 @@
 namespace Belos {
   namespace Tpetra {
 
-    /// \fn getNode
-    /// \brief Return a Kokkos Node instance.
-    ///
-    /// Use this template function to get an instance of a Kokkos Node
-    /// suitable for the type of Tpetra objects that you are using.
-    /// The NodeType template parameter of this function corresponds
-    /// to the Node(Type) parameter of Tpetra objects such as
-    /// Tpetra::MultiVector and Tpetra::Operator.
-    ///
-    /// \param params [in/out] On input: Any parameters that the Kokkos
-    ///   Node accepts.  On output, the list may (optionally) be
-    ///   modified to include missing parameters and their default
-    ///   values.  If params is null, default parameters will be used.
-    ///
-    /// Interpretation of parameters depends on the particular Kokkos
-    /// Node type.  Specializations of this function reserve the right
-    /// to introduce parameters (for example, to increase verbosity of
-    /// Node instantiation), which you can see if you pass in a non-null
-    /// ParameterList.  Thus, it's always better to pass in a non-null
-    /// ParameterList, so that you can see what this function did.
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode (Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
-      return Teuchos::rcp (new NodeType (params));
-    }
-
     /// \class HarwellBoeingReader
     /// \brief Read a Harwell-Boeing format file into a Tpetra::CrsMatrix.
     /// \author Mark Hoemmen
@@ -581,8 +555,8 @@ namespace Belos {
           *out << "Reading right-hand side(s) B from Matrix Market file" << endl;
           Teuchos::OSTab tab2 (out);
           typedef ::Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-          B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
-                                          rangeMap, tolerant_, debug_);
+          B = reader_type::readDenseFile (inRhsFilename, comm_, rangeMap,
+                                          tolerant_, debug_);
           TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::runtime_error, "Failed "
             "to read right-hand side(s) B from Matrix Market file \""
             << inRhsFilename << "\".");

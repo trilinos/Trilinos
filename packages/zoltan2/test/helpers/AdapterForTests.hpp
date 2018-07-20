@@ -78,7 +78,6 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
@@ -223,8 +222,8 @@ private:
    */
   template <typename T>
   void InitializeVectorData(const RCP<T> &data,
-                                   vector<const zscalar_t *> &coords,
-                                   vector<int> & strides,
+                                   std::vector<const zscalar_t *> &coords,
+                                   std::vector<int> & strides,
                                    int stride);
   
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -238,8 +237,8 @@ private:
    */
   template <typename T>
   void InitializeEpetraVectorData(const RCP<T> &data,
-                                         vector<const zscalar_t *> &coords,
-                                         vector<int> & strides,
+                                         std::vector<const zscalar_t *> &coords,
+                                         std::vector<int> & strides,
                                          int stride);
 #endif
 };
@@ -310,7 +309,7 @@ AdapterWithTemplateName
     return result;
   }
   
-  vector<const zscalar_t *> weights;
+  std::vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
   const zgno_t *globalIds = NULL;
   size_t localCount = 0;
@@ -441,7 +440,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
     return result;
   }
   
-  vector<const zscalar_t *> weights;
+  std::vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
   
   // get weights if any
@@ -535,10 +534,10 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     return adapters;
   }
   
-  vector<const zscalar_t *> vtx_weights;
-  vector<const zscalar_t *> edge_weights;
-  vector<int> vtx_weightStride;
-  vector<int> edge_weightStride;
+  std::vector<const zscalar_t *> vtx_weights;
+  std::vector<const zscalar_t *> edge_weights;
+  std::vector<int> vtx_weightStride;
+  std::vector<int> edge_weightStride;
 
   // get vtx weights if any
   if(uinput->hasUIWeights())
@@ -684,13 +683,13 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     return adapters;
   }
   
-  vector<const zscalar_t *> weights;
-  vector<int> strides;
+  std::vector<const zscalar_t *> weights;
+  std::vector<int> strides;
   
   // get weights if any
   if(uinput->hasUIWeights())
   {
-    if(comm->getRank() == 0) cout << "Have weights...." << endl;
+    if(comm->getRank() == 0) std::cout << "Have weights...." << std::endl;
     RCP<tMVector_t> vtx_weights = uinput->getUIWeights();
     
     // copy to weight
@@ -718,7 +717,7 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
   // set adapter
   if(input_type == "tpetra_crs_matrix")
   {
-    if(comm->getRank() == 0) cout << "Make tpetra crs matrix adapter...." << endl;
+    if(comm->getRank() == 0) std::cout << "Make tpetra crs matrix adapter...." << std::endl;
     
     // get pointer to data
     RCP<tcrsMatrix_t> data = uinput->getUITpetraCrsMatrix();
@@ -896,8 +895,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeVectorData(data,coords,entry_strides,stride);
     
     if(weights.empty())
@@ -923,8 +922,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeVectorData(data,coords,entry_strides,stride);
     
     result.adapter = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
@@ -939,8 +938,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeVectorData(data,coords,entry_strides,stride);
     
     if(weights.empty())
@@ -964,11 +963,11 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeVectorData(data,coords,entry_strides,stride);
-    if(comm->getRank() == 0) cout << "size of entry strides: " << entry_strides.size() << endl;
-    if(comm->getRank() == 0) cout << "size of coords: " << coords.size() << endl;
+    if(comm->getRank() == 0) std::cout << "size of entry strides: " << entry_strides.size() << std::endl;
+    if(comm->getRank() == 0) std::cout << "size of coords: " << coords.size() << std::endl;
     
     // make vector!
     result.adapter = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
@@ -984,8 +983,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     localCount = static_cast<zlno_t>(data->MyLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeEpetraVectorData(data,coords,entry_strides,stride);
     if(weights.empty())
     {
@@ -1009,8 +1008,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
     
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     InitializeEpetraVectorData(data,coords,entry_strides,stride);
     
     // make vector!
@@ -1026,8 +1025,8 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
 
 template <typename T>
 void AdapterFactory::InitializeVectorData(const RCP<T> &data,
-                                           vector<const zscalar_t *> &coords,
-                                           vector<int> & strides,
+                                           std::vector<const zscalar_t *> &coords,
+                                           std::vector<int> & strides,
                                            int stride)
 {
   // set up adapter data
@@ -1113,8 +1112,8 @@ void AdapterFactory::InitializeVectorData(const RCP<T> &data,
 
 template <typename T>
 void AdapterFactory::InitializeEpetraVectorData(const RCP<T> &data,
-                                                 vector<const zscalar_t *> &coords,
-                                                 vector<int> & strides,
+                                                 std::vector<const zscalar_t *> &coords,
+                                                 std::vector<int> & strides,
                                                  int stride){
   size_t localCount = data->MyLength();
   size_t nvecs = data->NumVectors();
@@ -1123,7 +1122,7 @@ void AdapterFactory::InitializeEpetraVectorData(const RCP<T> &data,
   //  printf("Number of vectors by data: %zu\n", nvecs);
   //  printf("Size of data: %zu\n", vecsize);
   
-  vector<zscalar_t *> epetravectors(nvecs);
+  std::vector<zscalar_t *> epetravectors(nvecs);
   zscalar_t ** arr;
   //  printf("get data from epetra vector..\n");
   data->ExtractView(&arr);
@@ -1200,7 +1199,7 @@ AdapterFactory::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
   {
     if(uinput->hasPamgenMesh())
     {
-//      if(comm->getRank() == 0) cout << "Have pamgen mesh, constructing adapter...." << endl;
+//      if(comm->getRank() == 0) std::cout << "Have pamgen mesh, constructing adapter...." << std::endl;
       result.adapter =
         new pamgen_adapter_t(*(comm.get()), "region");
       result.adapterType = AT_pamgen_adapter_t;

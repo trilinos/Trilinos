@@ -1,4 +1,4 @@
-C    Copyright(C) 2009 National Technology & Engineering Solutions of
+C    Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -32,7 +32,7 @@ C=======================================================================
       SUBROUTINE PRGLOB (OPTION, NOUT, NVARGL, LISGV, NAMEGV, VARGL)
 C=======================================================================
 
-C   --*** PRGLOB *** (GROPE) Display current database global variables
+C   --*** PRGLOB *** Display current database global variables
 C   --
 C   --PRGLOB displays the global data for a time step.
 C   --

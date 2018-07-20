@@ -79,7 +79,6 @@ namespace Galeri {
     typedef size_t global_size_t;
 
     // TODO: Epetra_Map trait not implemented
-    // TODO: add parameter 'const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode()' to Build()
 
     template <typename T>
     struct UndefinedMapTraits

@@ -137,7 +137,9 @@ namespace MueLu {
     //! This method requires you to have set this->coarseRate and this->startIndices.
     void computeMeshParameters();
 
-    virtual void getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseCoordMap,
+    virtual void computeGlobalCoarseParameters() = 0;
+
+    virtual void getGhostedNodesData(const RCP<const Map> fineMap,
                                      Array<LO>& ghostedNodeCoarseLIDs,
                                      Array<int>& ghostedNodeCoarsePIDs) const = 0;
 

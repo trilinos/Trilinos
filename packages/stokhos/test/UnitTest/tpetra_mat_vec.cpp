@@ -5,7 +5,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Tpetra
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -36,8 +36,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -131,8 +130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);

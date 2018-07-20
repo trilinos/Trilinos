@@ -113,13 +113,12 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-    Teuchos::RCP<Node> node = getNode<Node>();
 
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    //Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+    //Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm,node);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
        Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
@@ -170,9 +169,8 @@ namespace {
 
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
-    Teuchos::RCP<Node> node = getNode<Node>();
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm,node);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
        Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 

@@ -348,6 +348,9 @@ public:
     */
   const PinTCommunicators & communicators() const { return *communicators_; }
 
+  /** What is the communicators object used to build this vector?
+    */
+  Ptr<const PinTCommunicators> communicatorsPtr() const { return communicators_; }
 
   /** \brief Determine if an index is valid including the stencil.
 
@@ -394,7 +397,7 @@ public:
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
     assert(isValidIndex(i));
-    assert(i<0 and i>=numOwnedSteps());
+    assert(i<0 or i>=numOwnedSteps());
 
     int leftCount = leftVectors_.size();
     int rightCount = rightVectors_.size();

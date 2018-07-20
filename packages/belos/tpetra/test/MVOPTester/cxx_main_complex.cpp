@@ -42,7 +42,7 @@
 */
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 #include "BelosConfigDefs.hpp"
@@ -57,7 +57,6 @@ namespace {
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
-  using Tpetra::DefaultPlatform;
   using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
@@ -77,7 +76,7 @@ namespace {
   using Belos::Warnings;
   using Teuchos::tuple;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -98,7 +97,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

@@ -561,7 +561,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const local_graph_type& lclGraph,
               const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);

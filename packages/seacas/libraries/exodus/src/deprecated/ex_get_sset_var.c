@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,26 +33,26 @@
  *
  */
 /*****************************************************************************
-*
-* exgssv - ex_get_sset_var
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     time_step               time step number
-*       int     sset_var_index          sideset variable index
-*       int     sset_blk_id             sideset id
-*       int     num_side_this_sset       number of sides in this sideset
-*
-*
-* exit conditions -
-*       float*  sset_var_vals           array of sideset variable values
-*
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgssv - ex_get_sset_var
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     time_step               time step number
+ *       int     sset_var_index          sideset variable index
+ *       int     sset_blk_id             sideset id
+ *       int     num_side_this_sset       number of sides in this sideset
+ *
+ *
+ * exit conditions -
+ *       float*  sset_var_vals           array of sideset variable values
+ *
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_var, ex_entity_id, etc
 #include <stdint.h>   // for int64_t

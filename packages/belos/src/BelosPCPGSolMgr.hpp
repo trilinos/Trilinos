@@ -172,6 +172,11 @@ namespace Belos {
       base_type ()
     {}
     virtual ~PCPGSolMgr () {}
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    }
   };
 
   template<class ScalarType, class MV, class OP>
@@ -236,6 +241,11 @@ namespace Belos {
 
     //! Destructor.
     virtual ~PCPGSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods

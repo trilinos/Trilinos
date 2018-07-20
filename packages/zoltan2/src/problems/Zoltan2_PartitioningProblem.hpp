@@ -138,7 +138,7 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, ParameterList *p):
-  PartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  PartitioningProblem(A, p, Tpetra::getDefaultComm())
   {}
 
   /*! \brief Destructor

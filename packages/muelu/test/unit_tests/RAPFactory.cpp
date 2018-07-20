@@ -92,8 +92,14 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
+    GO nx = 27*comm->getSize();
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",Op);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory;
@@ -168,6 +174,7 @@ namespace MueLuTests {
 
     // build test-specific default factory manager
     RCP<FactoryManager> defManager = rcp(new FactoryManager());
+    defManager->SetKokkosRefactor(false);
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
@@ -180,8 +187,14 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
+    GO nx = 19*comm->getSize();
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",Op);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory;

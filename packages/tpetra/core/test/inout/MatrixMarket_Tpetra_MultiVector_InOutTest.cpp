@@ -40,11 +40,9 @@
 // @HEADER
 
 #include "MatrixMarket_Tpetra.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
 #include <algorithm>
 
 namespace {
@@ -138,13 +136,12 @@ namespace {
     using std::cout;
     using std::endl;
 
-    typedef typename MV::scalar_type scalar_type;
-    typedef typename MV::local_ordinal_type local_ordinal_type;
-    typedef typename MV::global_ordinal_type global_ordinal_type;
-    typedef typename MV::node_type node_type;
-
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>
-      map_type;
+    using scalar_type = typename MV::scalar_type;
+    using local_ordinal_type = typename MV::local_ordinal_type;
+    using global_ordinal_type = typename MV::global_ordinal_type;
+    using node_type = typename MV::node_type;
+    using map_type =
+      Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
 
     // The reader and writer classes are templated on the
     // Tpetra::CrsMatrix specialization, from which the
@@ -404,11 +401,10 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
-  typedef Tpetra::Details::DefaultTypes::node_type node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
 

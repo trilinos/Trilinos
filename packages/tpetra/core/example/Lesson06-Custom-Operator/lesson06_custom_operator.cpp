@@ -47,15 +47,12 @@
 \ref Tpetra_Lesson06 explains this example in detail.
 */
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_Vector.hpp>
-
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-
+#include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>
 
 // Define a class for our user-defined operator.
@@ -314,84 +311,82 @@ main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  //
-  // Initialize MPI.
-  //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-
-  //
-  // Get the default communicator and node
-  //
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  const int myRank = comm->getRank ();
-
-  //
-  // Get parameters from command-line processor
-  //
-  MyOp::global_ordinal_type n = 100;
-  Teuchos::CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("n", &n, "Number of rows of our operator.");
-  if (cmdp.parse (argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
-  }
-
-  // Construct the operator.  Note that the operator does not have to
-  // be an explicitly stored matrix.  Here, we are using our
-  // user-defined operator.
-  MyOp K (n, comm);
-
-  // Construct a Vector of all ones, using the above Operator's domain Map.
-  typedef Tpetra::Vector<MyOp::scalar_type, MyOp::local_ordinal_type,
-    MyOp::global_ordinal_type, MyOp::node_type> vec_type;
-  vec_type x (K.getDomainMap ());
-  x.putScalar (1.0);
-  // Construct an output Vector for K*x.
-  vec_type y (K.getRangeMap ());
-  K.apply (x, y); // Compute y := K*x.
-
-  // The operator has a stencil (-1, 2, -1), except for the
-  // boundaries.  At the left boundary (global row 0), the stencil is
-  // (2, -1), and at the right boundary (global row n-1), the stencil
-  // is (-1, 2).  Thus, we know that if all entries of the input
-  // Vector are 1, then all entries of the output Vector are 0, except
-  // for the boundary entries, which are both 1.
-  //
-  // To test this, construct the expected output vector y_expected,
-  // and compare y to y_expected using the max norm.  Even in single
-  // precision, the max norm of y - y_expected should be exactly zero.
-
-  typedef MyOp::map_type map_type;
-  RCP<const map_type> rangeMap = K.getRangeMap ();
-
-  vec_type y_expected (rangeMap);
-  y_expected.putScalar (0.0);
-
-  if (rangeMap->isNodeGlobalElement (0)) {
-    y_expected.replaceGlobalValue (0, 1.0);
-  }
-  if (rangeMap->isNodeGlobalElement (n - 1)) {
-    y_expected.replaceGlobalValue (n - 1, 1.0);
-  }
-
-  y_expected.update (1.0, y, -1.0); // y_expected := y - y_expected
-  typedef vec_type::mag_type mag_type; // type of a norm of vec_type
-  const mag_type diffMaxNorm = y_expected.normInf ();
-
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   bool success = true;
-  if (myRank == 0) {
-    if (diffMaxNorm == 0.0) {
-      // This tells the Trilinos test framework that the test passed.
-      cout << "Yay!  ||y - y_expected||_inf = 0." << endl
-           << "End Result: TEST PASSED" << endl;
-    } else {
-      success = false;
-      // This tells the Trilinos test framework that the test passed.
-      cout << "Oops!  ||y - y_expected||_inf = " << diffMaxNorm << " != 0."
-           << endl << "End Result: TEST FAILED" << endl;
+  {
+    auto comm = Tpetra::getDefaultComm ();
+    const int myRank = comm->getRank ();
+
+    //
+    // Get parameters from command-line processor
+    //
+    MyOp::global_ordinal_type n = 100;
+    Teuchos::CommandLineProcessor cmdp (false, true);
+    cmdp.setOption ("n", &n, "Number of rows of our operator.");
+    if (cmdp.parse (argc, argv) !=
+	Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return EXIT_FAILURE;
+    }
+
+    // Construct the operator.  Note that the operator does not have
+    // to be an explicitly stored matrix.  Here, we are using our
+    // user-defined operator.
+    MyOp K (n, comm);
+
+    // Construct a Vector of all ones, using the above Operator's
+    // domain Map.
+    typedef Tpetra::Vector<MyOp::scalar_type,
+			   MyOp::local_ordinal_type,
+			   MyOp::global_ordinal_type,
+			   MyOp::node_type> vec_type;
+    vec_type x (K.getDomainMap ());
+    x.putScalar (1.0);
+    // Construct an output Vector for K*x.
+    vec_type y (K.getRangeMap ());
+    K.apply (x, y); // Compute y := K*x.
+
+    // The operator has a stencil (-1, 2, -1), except for the
+    // boundaries.  At the left boundary (global row 0), the stencil is
+    // (2, -1), and at the right boundary (global row n-1), the stencil
+    // is (-1, 2).  Thus, we know that if all entries of the input
+    // Vector are 1, then all entries of the output Vector are 0, except
+    // for the boundary entries, which are both 1.
+    //
+    // To test this, construct the expected output vector y_expected,
+    // and compare y to y_expected using the max norm.  Even in single
+    // precision, the max norm of y - y_expected should be exactly zero.
+
+    using map_type = MyOp::map_type;
+    RCP<const map_type> rangeMap = K.getRangeMap ();
+
+    vec_type y_expected (rangeMap);
+    y_expected.putScalar (0.0);
+
+    if (rangeMap->isNodeGlobalElement (0)) {
+      y_expected.replaceGlobalValue (0, 1.0);
+    }
+    if (rangeMap->isNodeGlobalElement (n - 1)) {
+      y_expected.replaceGlobalValue (n - 1, 1.0);
+    }
+
+    y_expected.update (1.0, y, -1.0); // y_expected := y - y_expected
+    typedef vec_type::mag_type mag_type; // type of a norm of vec_type
+    const mag_type diffMaxNorm = y_expected.normInf ();
+
+    if (myRank == 0) {
+      if (diffMaxNorm == 0.0) {
+	// This tells the Trilinos test framework that the test passed.
+	cout << "Yay!  ||y - y_expected||_inf = 0." << endl
+	     << "End Result: TEST PASSED" << endl;
+      }
+      else {
+	success = false;
+	// This tells the Trilinos test framework that the test passed.
+	cout << "Oops!  ||y - y_expected||_inf = " << diffMaxNorm
+	     << " != 0." << endl
+	     << "End Result: TEST FAILED" << endl;
+      }
     }
   }
-
-  return success ? 0 : -1;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

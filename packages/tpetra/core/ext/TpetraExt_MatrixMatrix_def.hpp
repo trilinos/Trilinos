@@ -65,6 +65,8 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_spadd.hpp"
 
+#include <MatrixMarket_Tpetra.hpp>
+
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
@@ -3124,7 +3126,7 @@ void import_and_extract_views(
         remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+                                      rowMap->getIndexBase(), rowMap->getComm()));
       mode = 1;
 
     } else if (prototypeImporter.is_null()) {
@@ -3141,7 +3143,7 @@ void import_and_extract_views(
       }
       remoteRows.resize(numRemote);
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+                                      rowMap->getIndexBase(), rowMap->getComm()));
       mode = 2;
 
     } else {
@@ -3198,6 +3200,15 @@ void import_and_extract_views(
       labelList.set("compute global constants", params->get("compute global constants",false));
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
+
+#if 0
+    // Disabled code for dumping input matrices
+    static int count=0;
+    char str[80];
+    sprintf(str,"import_matrix.%d.dat",count);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(str,Aview.importMatrix);
+    count++;
+#endif
 
 #ifdef HAVE_TPETRA_MMM_STATISTICS
     printMultiplicationStatistics(importer, label + std::string(" I&X MMM"));

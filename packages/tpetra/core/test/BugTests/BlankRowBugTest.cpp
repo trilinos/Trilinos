@@ -41,9 +41,8 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -61,8 +60,7 @@ namespace {
     typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
     typedef Tpetra::Import<LO, GO>            import_type;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     // We run this test explicitly in MPI mode with 2 processors as described in
     // the CMakeLists.txt file. This is just asserting that fact.
     TEST_EQUALITY_CONST(comm->getSize(), 2)

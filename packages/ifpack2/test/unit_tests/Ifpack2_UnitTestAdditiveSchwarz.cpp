@@ -635,8 +635,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 
   // Generate the matrix using Galeri.  Galeri wraps it in an Xpetra
   // matrix, so after it finishes, ask it for the Tpetra matrix.
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   Teuchos::CommandLineProcessor clp;
   GO nx = 10, ny=10, nz=10;
   Galeri::Xpetra::Parameters<GO> GaleriParameters (clp, nx, ny, nz, "Laplace2D");
@@ -647,7 +646,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
     Galeri::Xpetra::CreateMap<LO, GO, Node> (xpetraParameters.GetLib (),
                                              "Cartesian2D", comm, GaleriList);
   RCP<Galeri::Xpetra::Problem<XMapType,XCrsType,XMVectorType> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,XMapType,XCrsType,XMVectorType> (std::string ("Laplace2D"),
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,XMapType,XCrsType,XMVectorType> (std::string("Laplace2D"),
                                                                            xmap, GaleriList);
 
   RCP<XCrsType> XA = Pr->BuildMatrix ();
@@ -984,8 +983,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_Overlap, Scalar, L
   typedef Teuchos::ScalarTraits<Scalar>          STS;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)
@@ -1052,8 +1050,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar
   typedef Teuchos::ScalarTraits<Scalar>          STS;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)
@@ -1124,8 +1121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar
   typedef Teuchos::ScalarTraits<Scalar>          STS;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)
@@ -1194,8 +1190,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, L
   typedef Teuchos::ScalarTraits<Scalar>          STS;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> Reader;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //this test can only be run on 4 procs
   if(comm->getSize() != 4)

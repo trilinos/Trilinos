@@ -67,7 +67,6 @@
  
 */
 
-
 namespace ROL {
 
 template<typename Real> 
@@ -75,21 +74,19 @@ class DynamicObjective {
 public:
 
   using V  = Vector<Real>;
-  using PV = PartitionedVector<Real>;
   using TS = TimeStamp<Real>;
 
   virtual ~DynamicObjective() {}
 
-  virtual void update( const V& uo, const V& un, const V& z ) {
-    update_uo( uo );
-    update_un( un );
-    update_z( z );
+  virtual void update( const V& uo, const V& un, const V& z, const TS& timeStamp ) {
+    update_uo( uo, timeStamp );
+    update_un( un, timeStamp );
+    update_z( z, timeStamp );
   }
 
-  virtual void update_uo( const V& uo ) { }
-  virtual void update_un( const V& un ) { }
-  virtual void update_z( const V& z ) { }
-
+  virtual void update_uo( const V& uo, const TS& timeStamp ) { }
+  virtual void update_un( const V& un, const TS& timeStamp ) { }
+  virtual void update_z(  const V& z,  const TS& timeStamp ) { }
 
   virtual Real value( const V& uo, const V& un, 
                       const V& z, const TS& timeStamp ) const = 0;
@@ -107,32 +104,33 @@ public:
 
   //----------------------------------------------------------------------------
   // Hessian-Vector product terms
-  virtual void hessVec_uo_uo( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_uo_uo( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_uo_un( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_uo_un( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_uo_z( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_uo_z( V& hv, const V& v, const V& uo, const V& un, 
                              const V& z, const TS& timeStamp ) const {}
 
   
-  virtual void hessVec_un_uo( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_un_uo( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_un_un( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_un_z( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_un_z( V& hv, const V& v, const V& uo, const V& un, 
                              const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_z_uo( V& hv, const V& vo, const V& uo, const V& un, 
+
+  virtual void hessVec_z_uo( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_z_un( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_z_un( V& hv, const V& v, const V& uo, const V& un, 
                               const V& z, const TS& timeStamp ) const {}
 
-  virtual void hessVec_z_z( V& hv, const V& vo, const V& uo, const V& un, 
+  virtual void hessVec_z_z( V& hv, const V& v, const V& uo, const V& un, 
                              const V& z, const TS& timeStamp ) const {}
 };
 

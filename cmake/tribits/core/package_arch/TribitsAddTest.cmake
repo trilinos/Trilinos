@@ -93,6 +93,7 @@ INCLUDE(TribitsAddTestHelpers)
 # * `Setting timeouts for tests (TRIBITS_ADD_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_TEST())`_
+# * `Adding extra commandline arguments externally (TRIBITS_ADD_TEST())`_
 #
 # .. _Formal Arguments (TRIBITS_ADD_TEST()):
 #
@@ -723,6 +724,38 @@ INCLUDE(TribitsAddTestHelpers)
 # way, TriBITS will always print a warning to the ``cmake`` stdout at
 # configure time warning that the test is being disabled.
 #
+# .. _Adding extra commandline arguments externally (TRIBITS_ADD_TEST()):
+#
+# **Adding extra commandline arguments externally (TRIBITS_ADD_TEST())**
+#
+# One can add additional command-line arguments for any ctest test added using
+# this function.  In order to do so, set the CMake cache variable::
+#
+#   SET(<fullTestName>_EXTRA_ARGS  "<earg0>;<earg1>;<earg2>;..."
+#     CACHE  STRING  "Extra args")
+#
+# in a ``*.cmake`` configure options fragment file or::
+#
+#   -D <fullTestName>_EXTRA_ARGS="<earg0>;<earg1>;<earg2>;..."
+#
+# on the CMake command-line.
+#
+# These extra command-line arguments are added after any arguments passed in
+# through ``ARGS "<oarg0> <oarg1> ..."`` or ``POSTFIX_AND_ARGS_<IDX> <oarg0>
+# <oarg1> ...``.  This allows these extra arguments to override the ealier
+# arguments.
+#
+# The primary motivating use case for ``<fullTestName>_EXTRA_ARGS`` is to
+# allow one to alter how a test runs on a specific platform or build.  For
+# example, this allows one to disable specific individual unit tests for a
+# GTest executable such as with::
+#
+#   SET(<fullTestName>_EXTRA_ARGS "--gtest_filter=-<unittest0>:<unittest1>:..."
+#     CACHE  STRING  "Disable specific unit tests" )  
+#
+# For example, this would be an alternative to disabling an entire unit
+# testing executable using ``-D<fullTestName>_DISABLE=ON`` as described above.
+#
 FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -911,7 +944,8 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}"  "${NUM_PROCS_USED}"
         "${NUM_TOTAL_CORES_USED}"
-        ${PARSE_RUN_SERIAL}  ADDED_TEST_NAME  ${INARGS} )
+        ${PARSE_RUN_SERIAL}  ADDED_TEST_NAME  ${INARGS}
+	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}" )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
       ENDIF()
@@ -943,9 +977,12 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
-        "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}" "${NUM_PROCS_USED}"  "${NUM_TOTAL_CORES_USED}"
+        "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}" "${NUM_PROCS_USED}" 
+        "${NUM_TOTAL_CORES_USED}"
         ${PARSE_CREATE_WORKING_DIR}
-        ${PARSE_RUN_SERIAL}   ADDED_TEST_NAME  ${INARGS} )
+        ${PARSE_RUN_SERIAL}   ADDED_TEST_NAME  ${INARGS}
+	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}"
+        )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
       ENDIF()

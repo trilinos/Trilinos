@@ -80,7 +80,7 @@ public:
   */
   Real value( const Vector<Real> &rol_x, Real &tol ) {
 
-    if(!x_hasChanged(rol_x))
+    if(!x_hasChanged(rol_x) &&  valueUpdated)
        return value_;
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
@@ -134,6 +134,14 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+
+    Teuchos::RCP< Thyra::VectorBase<Real> > g;
+
+    if(!valueUpdated) {
+      g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
+      outArgs.set_g(g_index, g);
+    }
+
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices[i]);
@@ -154,8 +162,12 @@ public:
     if (grad_ptr == Teuchos::null)
       grad_ptr = rol_g.clone();
     grad_ptr->set(rol_g);
-    
-    gradientUpdated = valueUpdated = true;
+
+    if(!valueUpdated) {
+      value_ = ::Thyra::get_ele(*g,0);
+      valueUpdated = true;
+    }
+    gradientUpdated = true;
   };
 
   void update( const Vector<Real> & /*x*/, bool flag, int iter) {

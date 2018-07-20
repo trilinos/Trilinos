@@ -1,0 +1,162 @@
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.  
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+#========================================================================
+# NOTE: This is unsupported and should only be used as a last resort
+#       if the CMake build does not work on your platform. Does not 
+#       build the Fortran API.
+#
+# A platform must define:
+#
+# CC == the C compiler
+# CCOPTIONS == non-optimization related flags for C compiling on this platform
+# RANLIB == ranlib or 'true' if no ranlib
+# AR == command to build an archive library.
+#
+#========================================================================
+
+SYSTEM := Linux
+
+# Set this to yes if your netcdf is compiled with the netcdf4 extensions
+# which require linking with hdf5.  It is assumed that the netcdf and hdf5
+# library and include paths are the same.
+
+#========================================================================
+#       Netcdf
+#========================================================================
+USING_NETCDF4 = "YES"
+
+NETCDF = /Users/gdsjaar/src/SEACAS
+NETCDF_INC = -I$(NETCDF)/include
+NETCDF_LIB = -L$(NETCDF)/lib -lnetcdf
+NCDUMP = ${NETCDF}/bin/ncdump
+
+ifeq ($(USING_NETCDF4), "YES")
+LDFLAGS = -L$(NETCDF)/lib -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+else
+NETCDF_YES_NO = -DNOT_NETCDF4
+LDFLAGS = -L$(NETCDF)/lib -lnetcdf
+endif
+
+#========================================================================
+#       Darwin (Apple OSX)
+#========================================================================
+ifeq ($(SYSTEM),Darwin)
+RANLIB = ranlib
+
+AR        = ar -crsv
+CC        = /opt/local/bin/gcc-mp-4.8
+FC        = /opt/local/bin/gfortran-mp-4.8
+CCOPTIONS  = 
+F77OPTIONS =
+F77PREC    = -fdefault-real-8 -fdefault-integer-8 
+endif
+#========================================================================
+
+#========================================================================
+#       Linux
+#========================================================================
+ifeq ($(SYSTEM),Linux)
+
+# Default Compiler:
+COMPILER = GNU
+
+RANLIB = ranlib
+
+AR        = ar -rv
+
+ifeq ($(COMPILER),Portland)
+CC       = pgcc
+FC       = pgf77
+CCOPTIONS  = -Mframe
+F77OPTIONS = -fast
+F77PREC    = -r8 -i8
+endif
+
+ifeq ($(COMPILER),Intel)
+CC       = icc
+FC       = ifort
+CCOPTIONS  = -Xc
+F77PREC    = -r8 -i8
+endif
+
+ifeq ($(COMPILER),GNU)
+CC	= gcc
+FC      = gfortran
+CCOPTIONS  = -O2 -Wall
+F77OPTIONS = -O2
+F77PREC    = -fdefault-real-8 -fdefault-integer-8 
+endif
+
+endif
+
+
+OPTIMIZE_FLAG = -O2
+STD_DEFINES = -DVERBOSE
+
+
+CFLAGS = $(OPTIMIZE_FLAG) $(CCOPTIONS) $(STD_DEFINES) $(LOC_EXOII_INC) $(NETCDF_INC) $(NETCDF_YES_NO)
+FFLAGS = $(OPTIMIZE_FLAG) $(F77OPTIONS) $(LOC_EXOII_INC)
+
+# Use include files locates in exodus/include
+LOC_EXOII_INC = -I../include 
+
+
+SUBDIRS = src test
+
+all:: libexodus.a 
+
+libexodus.a::
+	echo "making exodus in src"
+	(cd src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "RANLIB=$(RANLIB)" libexodus.a)
+	cp src/libexodus.a .
+	$(RANLIB) libexodus.a
+
+check: test
+test:: libexodus.a
+
+test::
+	echo "making test in test"
+	(cd test &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "LDFLAGS=$(LDFLAGS)" "RANLIB=$(RANLIB)" "NCDUMP=$(NCDUMP)" all)
+
+clean::
+	@for flag in $(MAKEFLAGS) ''; do \
+	case "$$flag" in *=*) ;; *[ik]*) set +e;; esac; done; \
+	for i in $(SUBDIRS) ;\
+	do \
+	if test -d $$i; then \
+	echo "cleaning" "in $(CURRENT_DIR)/$$i..."; \
+	(cd $$i &&  $(MAKE) -f Makefile.standalone $(MFLAGS) 	 clean); \
+	fi; \
+	done
+

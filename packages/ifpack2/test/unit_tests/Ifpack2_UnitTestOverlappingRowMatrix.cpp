@@ -128,8 +128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   int gblSuccess = 1;
   std::ostringstream errStrm; // for error collection
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -263,7 +262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   typedef Scalar scalar_type;
   typedef LO local_ordinal_type;
   typedef GO global_ordinal_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
@@ -288,7 +287,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
 
   // This test assumes indexBase == 0.
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Short circuit --- this test should only be run in parallel.
   if (comm->getSize() == 1) {

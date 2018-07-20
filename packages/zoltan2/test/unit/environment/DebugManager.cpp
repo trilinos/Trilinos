@@ -67,7 +67,6 @@
 #include <string>
 #include <ostream>
 
-using namespace std;
 using Zoltan2::DebugManager;
 using Zoltan2::NO_STATUS;
 using Zoltan2::BASIC_STATUS;
@@ -76,20 +75,19 @@ using Zoltan2::VERBOSE_DETAILED_STATUS;
 
 typedef Zoltan2::MessageOutputLevel level_t;
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   bool fail = false;
 
-  set<string> basicMsgs, detailedMsgs, verboseMsgs; 
-  set<string>::iterator next;
+  std::set<string> basicMsgs, detailedMsgs, verboseMsgs; 
+  std::set<string>::iterator next;
 
-  ostringstream oss;
+  std::ostringstream oss;
   oss << "Proc " << rank << ": This is a ";
 
   basicMsgs.insert(oss.str()+string(" basic message."));
@@ -102,7 +100,7 @@ int main(int argc, char *argv[])
   level_t numLevels = Zoltan2::NUM_STATUS_OUTPUT_LEVELS;
   DebugManager *dm = NULL;
 
-  // all print to cout
+  // all print to std::cout
 
   bool iPrint = (rank%2 == 0);
 
@@ -160,9 +158,9 @@ int main(int argc, char *argv[])
 
     level_t level = static_cast<level_t>(i);
 
-    ios_base::openmode flags = ios_base::out & ios_base::trunc;
+    std::ios_base::openmode flags = std::ios_base::out & std::ios_base::trunc;
 
-    ofstream outF("testFile.txt", flags);
+    std::ofstream outF("testFile.txt", flags);
   
     try {
       dm = new DebugManager(rank, iPrint, outF, level);
@@ -208,7 +206,7 @@ int main(int argc, char *argv[])
     comm->barrier();
 
     if (rank == 0){
-      ifstream inF("testFile.txt");
+      std::ifstream inF("testFile.txt");
       string s;
       while (getline(inF, s)){
         std::cout << s << std::endl;

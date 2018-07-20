@@ -56,40 +56,46 @@ main (int argc, char *argv[])
   // This code takes the place of whatever you do to get an MPI_Comm.
   MPI_Comm yourComm = MPI_COMM_WORLD;
 
-  // If your code plans to use MPI on its own, as well as through
-  // Trilinos, consider giving Trilinos a copy of your MPI_Comm
-  // (created via MPI_Comm_dup) rather than your MPI_Comm directly.
-  // Trilinos may in the future duplicate the MPI_Comm automatically,
-  // but it does not currently do this.  Duplicating the MPI_Comm is
-  // not necessary, but may make it easier for you to overlap
-  // asynchronous communication operations performed by Trilinos with
-  // those performed by your code.
+  {
+    // Never create Tpetra objects at main scope.  Their destructors
+    // must be called before MPI_Finalize and Kokkos::finalize are
+    // called.
 
-  // Wrap the MPI_Comm.  If you wrap it in this way, you are telling
-  // Trilinos that you are responsible for calling MPI_Comm_free on
-  // your MPI_Comm after use, if necessary.  (It's not necessary for
-  // MPI_COMM_WORLD.)  There is a way to tell Trilinos to call
-  // MPI_Comm_free itself; we don't show it here.  (It involves
-  // passing the result of Teuchos::opaqueWrapper to MpiComm's
-  // constructor.)
+    // If your code plans to use MPI on its own, as well as through
+    // Trilinos, consider giving Trilinos a copy of your MPI_Comm
+    // (created via MPI_Comm_dup) rather than your MPI_Comm directly.
+    // Trilinos may in the future duplicate the MPI_Comm
+    // automatically, but it does not currently do this.  Duplicating
+    // the MPI_Comm is not necessary, but may make it easier for you
+    // to overlap asynchronous communication operations performed by
+    // Trilinos with those performed by your code.
 
-  RCP<const Comm<int> > comm (new MpiComm<int> (yourComm));
+    // Wrap the MPI_Comm.  If you wrap it in this way, you are telling
+    // Trilinos that you are responsible for calling MPI_Comm_free on
+    // your MPI_Comm after use, if necessary.  (It's not necessary for
+    // MPI_COMM_WORLD.)  There is a way to tell Trilinos to call
+    // MPI_Comm_free itself; we don't show it here.  (It involves
+    // passing the result of Teuchos::opaqueWrapper to MpiComm's
+    // constructor.)
 
-  // Get my process' rank, and the total number of processes.
-  // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
-  const int myRank = comm->getRank ();
-  const int numProcs = comm->getSize ();
+    RCP<const Comm<int> > comm (new MpiComm<int> (yourComm));
 
-  if (myRank == 0) {
-    cout << "Total number of processes: " << numProcs << endl;
-  }
+    // Get my process' rank, and the total number of processes.
+    // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
 
-  // Do something with the new communicator.
-  exampleRoutine (comm);
+    if (myRank == 0) {
+      cout << "Total number of processes: " << numProcs << endl;
+    }
 
-  // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
-    cout << "End Result: TEST PASSED" << endl;
+    // Do something with the new communicator.
+    exampleRoutine (comm);
+
+    // This tells the Trilinos test framework that the test passed.
+    if (myRank == 0) {
+      cout << "End Result: TEST PASSED" << endl;
+    }
   }
 
   // If you need to call MPI_Comm_free on your MPI_Comm, now would be
