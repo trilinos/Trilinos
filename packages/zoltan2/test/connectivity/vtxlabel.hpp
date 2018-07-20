@@ -154,9 +154,11 @@ namespace Kokkos {
 // Teuchos::SerializationTraits are needed to copy vtxLabels into MPI buffers
 // Because sizeof(vtxLabel) works for struct vtxLabel, we'll use a 
 // provided serialization of vtxLabel into char*.
+namespace Teuchos {
 template<typename Ordinal>
-struct Teuchos::SerializationTraits<Ordinal, vtxLabel> :
+struct SerializationTraits<Ordinal, vtxLabel> :
        public Teuchos::DirectSerializationTraits<Ordinal, vtxLabel>
 {};
+}
 
 #endif
