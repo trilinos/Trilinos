@@ -208,6 +208,7 @@ namespace FROSch {
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::compute()
     {
         int ret = 0;
+
         if (0>this->OverlappingOperator_->compute()) ret -= 1;
         if (0>CoarseOperator_->compute()) ret -= 10;
         return ret;
@@ -230,8 +231,8 @@ namespace FROSch {
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
     {
         this->K_ = k;
-        CoarseOperator_->resetMatrix(K_);
-        OverlappingOperator_->resetMatrix(K_);
+        CoarseOperator_->resetMatrix(this->K_);
+        this->OverlappingOperator_->resetMatrix(this->K_);
         return 0;
     }
 
