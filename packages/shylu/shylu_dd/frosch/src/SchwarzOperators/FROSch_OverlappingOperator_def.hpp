@@ -60,6 +60,11 @@ namespace FROSch {
     SubdomainSolver_ (),
     Multiplicity_(),
     Restricted_(this->ParameterList_->get("Restricted",false))
+#ifdef OVERLAPPING_TIMER
+    ,OverlappingOperator_Init_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Initialize")),
+    OverlappingOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Compute")),
+    OverlappingOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Apply"))
+#endif
     {
         
     }
@@ -81,6 +86,7 @@ namespace FROSch {
     {
         FROSCH_ASSERT(this->IsComputed_,"ERROR: OverlappingOperator has to be computed before calling apply()");
 
+        Teuchos::TimeMonitor OverlappingOperator_Apply_TimeMonitor(*OverlappingOperator_Apply_Timer);
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
         
@@ -127,32 +133,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
-        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
-//        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));    
-//        Teuchos::ArrayView<const GO> ellist = OverlappingMatrix_->getRowMap()->getNodeElementList();
-//        std::vector<GO> list = Teuchos::createVector(ellist);
-//        Teuchos::RCP<Epetra_MpiComm> serialComm(new Epetra_MpiComm(MPI_COMM_SELF));
-//
-//        Epetra_Map mapEpetra(-1, list.size(), &(list.at(0)), 0, *serialComm);
-//        Teuchos::RCP<Epetra_CrsMatrix> mat(new Epetra_CrsMatrix(Copy,mapEpetra,5));
-//        for (unsigned i=0; i<mapEpetra.NumMyElements(); i++) {
-//            Teuchos::ArrayView<const LO> indices;
-//            Teuchos::ArrayView<const SC> values;
-//            OverlappingMatrix_->getLocalRowView((LO)i,indices,values);
-//            std::vector<SC> valuesStd = Teuchos::createVector(values);
-//            std::vector<GO> indicesStd(indices.size());
-//            for (unsigned j = 0 ; j<indices.size(); j++) {
-//                indicesStd.at(j) = mapEpetra.GID(indices[j]);
-//            }
-//            mat->InsertGlobalValues(mapEpetra.GID(i),indicesStd.size(),&(valuesStd.at(0)),&(indicesStd.at(0)));
-//        }
-//        mat->FillComplete();
-//        
-//        string outname_str = "Ki" + to_string(this->MpiComm_->getRank()) + "of" + to_string(this->MpiComm_->getSize()-1)+".dat";
-//        const char* outname = outname_str.c_str();
-//                cout << "test1"<< endl;
-//        // Sollte man so verändern, dass der Solver Type nicht mehr Eingabewert ist//        if (OverlappingMap_->Comm().MyPID()==0)
-//        EpetraExt::RowMatrixToMatlabFile(outname,*(mat));
+        Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
         
         if (Restricted_) {
             ScatterRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(RepeatedMap_,OverlappingMap_);
@@ -177,20 +158,26 @@ namespace FROSch {
             Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,Xpetra::ADD);
         }
         
-        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
-        SubdomainSolver_->initialize();
-
+//        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
+//        SubdomainSolver_->initialize();
         return 0; // RETURN VALUE
     }
     
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
-        int ret = FROSch::UpdateLocalSubdomainMatrix(this->K_,OverlappingMap_,OverlappingMatrix_);
-        FROSCH_ASSERT(ret==0,"UpdateLocalSubdomainMatrix failed");
+        Teuchos::TimeMonitor OverlappingOperator_Compute_TimeMonitor(*OverlappingOperator_Compute_Timer);
+        if (this->IsComputed_) {// already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+            OverlappingMatrix_ = this->K_;
+        }
         
-        ret = SubdomainSolver_->compute();
+        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
         
+        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
+        SubdomainSolver_->initialize();
+
+        int ret = SubdomainSolver_->compute();
+
         return ret; // RETURN VALUE
     }
     

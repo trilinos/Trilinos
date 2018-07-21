@@ -55,6 +55,8 @@ namespace FROSch {
     AmesosSolver_ (),
     MueLuFactory_ (),
     MueLuHierarchy_ (),
+    belosLinearProblem_(),
+    belosSoverManager_(),
     IsInitialized_ (false),
     IsComputed_ (false)
     {
@@ -71,8 +73,11 @@ namespace FROSch {
             EpetraLinearProblem_.reset(new Epetra_LinearProblem(epetraMat.get(),xTmp.get(),bTmp.get()));
             
             Amesos amesosFactory;
+
             AmesosSolver_.reset(amesosFactory.Create(ParameterList_->get("Solver","Mumps"),*EpetraLinearProblem_));
-            AmesosSolver_->SetParameters(ParameterList_->sublist("Amesos")); 
+
+            AmesosSolver_->SetParameters(ParameterList_->sublist("Amesos"));
+
         } else if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
             if (K_->getRowMap()->lib()==Xpetra::UseEpetra) {
                 Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
@@ -106,23 +111,23 @@ namespace FROSch {
             MueLuHierarchy_ = MueLuFactory_->CreateHierarchy();
             MueLuHierarchy_->GetLevel(0)->Set("A",K_);
             MueLuHierarchy_->GetLevel(0)->Set("Nullspace", nullspace);
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+            Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xSolution;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*this->solution_,TeuchosComm);
+            Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xRightHandSide;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*residualVec_,TeuchosComm);//hier residualVec. Bei linProb rhs_
             
-//            if (K_->getRowMap()->lib()==Xpetra::UseEpetra) {
-//                Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
-//                Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
-//                EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
-//                
-//                EpetraMultiVectorPtr xTmp;
-//                EpetraMultiVectorPtr bTmp;
-//                Teuchos::RCP<MueLu::EpetraOperator> mueLuPreconditioner;
-//                std::string optionsFile = "mueluOptions.xml";
-//                mueLuPreconditioner = MueLu::CreateEpetraPreconditioner(epetraMat, optionsFile);
-//
-//            } else if (K_->getRowMap()->lib()==Xpetra::UseTpetra) {
-//                
-//            } else {
-//                FROSCH_ASSERT(0!=0,"This can't happen...");
-//            }
+            Teuchos::RCP<Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpK = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(k));
+            
+            
+            belosLinearProblem_.reset(new Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
+            
+            Belos::SolverFactory<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > belosFactory;
+            ParameterListPtr solverParameterList = sublist(ParameterList_,"Belos");
+            
+            belosSoverManager_ = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
+            
+            belosSoverManager_->setProblem(belosLinearProblem_);
+            
+            
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
@@ -155,6 +160,9 @@ namespace FROSch {
         } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
             IsInitialized_ = true;
             IsComputed_ = false;
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+            IsInitialized_ = true;
+            IsComputed_ = false;
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
@@ -183,12 +191,33 @@ namespace FROSch {
             MueLuHierarchy_->IsPreconditioner(false);
             IsComputed_ = true;
             
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+            ParameterListPtr solverParameterList = sublist(ParameterList_,"Belos");
+            if (solverParameterList->get("OneLevelPreconditioner",false)) {
+                //set Prec here!
+                
+                //            Teuchos::RCP<Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpP = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(this->XpetraPrec_));
+                
+                if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
+//                    belosLinearProblem->setLeftPrec(OpP);
+                    
+                } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
+//                    belosLinearProblem->setRightPrec(OpP);
+                    
+                } else {
+                    MYASSERT(0!=0,"PreconditionerPosition unknown...");
+                }
+            }
+            IsComputed_ = true;
+            
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
         }
         return 0;
+        
+
     }
-    
+
 
     // Y = alpha * A^mode * X + beta * Y
     template<class SC,class LO,class GO,class NO>
@@ -256,6 +285,15 @@ namespace FROSch {
                 MueLuHierarchy_->Iterate(x,*yTmp,tol);
             }
         
+            
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+            
+            ConstMultiVectorPtr xPtr = Teuchos::rcpFromRef(x);
+            MultiVectorPtr yPtr = Teuchos::rcpFromRef(y);
+            belosLinearProblem_->setProblem(yPtr,xPtr);
+            
+            belosSoverManager_->solve();
+
             
         } else {
             FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");

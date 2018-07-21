@@ -114,6 +114,13 @@ namespace FROSch {
         return IsComputed_;
     }
     
+    template<class SC,class LO,class GO,class NO>
+    int SchwarzOperator<SC,LO,GO,NO>::resetMatrix(SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr &k) {
+    // Maybe set IsComputed_ = false ? -> Go through code to be saver/cleaner
+        K_ = k;
+        return 0;
+    }
+
 }
 
 #endif

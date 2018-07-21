@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
 #define _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
-
+#define OVERLAPPING_TIMER
 #include <FROSch_SchwarzOperator_def.hpp>
 
 namespace FROSch {
@@ -73,6 +73,9 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::Time_Type Time_Type;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::TimePtr_Type TimePtr_Type;
+
         
         OverlappingOperator(CrsMatrixPtr k,
                             ParameterListPtr parameterList);
@@ -111,6 +114,12 @@ namespace FROSch {
         MultiVectorPtr Multiplicity_;
         
         bool Restricted_;
+        
+#ifdef OVERLAPPING_TIMER
+        TimePtr_Type  OverlappingOperator_Init_Timer;
+        TimePtr_Type  OverlappingOperator_Compute_Timer;
+        TimePtr_Type  OverlappingOperator_Apply_Timer;
+#endif
     };
     
 }

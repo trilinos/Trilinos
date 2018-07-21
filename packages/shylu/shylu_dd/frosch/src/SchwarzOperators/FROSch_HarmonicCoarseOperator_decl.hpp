@@ -122,7 +122,7 @@ namespace FROSch {
         MapPtrVecPtr2D DofsMaps_; // notwendig??
 
         UN NumberOfBlocks_;
-        
+                
     };
     
 }

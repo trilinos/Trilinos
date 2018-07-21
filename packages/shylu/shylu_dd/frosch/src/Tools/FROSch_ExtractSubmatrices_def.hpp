@@ -147,6 +147,7 @@ namespace FROSch {
             }
         }
         localSubdomainMatrix->fillComplete();
+        
         return 0;
     }
     

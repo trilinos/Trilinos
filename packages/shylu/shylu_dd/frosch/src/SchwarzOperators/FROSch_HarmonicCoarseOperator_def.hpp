@@ -66,13 +66,23 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::compute()
     {
+        Teuchos::TimeMonitor CoarseOperator_Compute_TimeMonitor(*this->CoarseOperator_Compute_Timer);
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
             cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
         }
-        this->computeHarmonicExtensions();
-        this->setUpCoarseOperator();
-        this->IsComputed_ = true;
+        if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
+            this->setUpCoarseOperator();
+            this->IsComputed_ = true;
+        }
+        else if(!this->ParameterList_->get("Recycling","none").compare("all") && this->IsComputed_) {
+            // Maybe use some advanced settings in the future
+        }
+        else {
+            this->computeHarmonicExtensions();
+            this->setUpCoarseOperator();
+            this->IsComputed_ = true;
+        }
         return 0;
     }
 

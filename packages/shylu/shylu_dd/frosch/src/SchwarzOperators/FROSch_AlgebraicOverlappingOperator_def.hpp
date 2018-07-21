@@ -104,7 +104,6 @@ namespace FROSch {
         for (int i=0; i<overlap; i++) {
             ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
         }
-        
         return 0;
     }
     

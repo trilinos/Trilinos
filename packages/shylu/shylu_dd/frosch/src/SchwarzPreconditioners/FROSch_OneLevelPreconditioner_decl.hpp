@@ -96,6 +96,7 @@ namespace FROSch {
         
         virtual std::string description() const;
         
+        virtual int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         

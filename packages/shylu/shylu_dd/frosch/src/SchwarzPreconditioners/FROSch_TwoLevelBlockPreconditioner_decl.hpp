@@ -103,6 +103,7 @@ namespace FROSch {
         
         std::string description() const;
         
+        int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         

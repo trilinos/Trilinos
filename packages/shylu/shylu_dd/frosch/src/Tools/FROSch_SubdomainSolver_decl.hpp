@@ -52,6 +52,12 @@
 
 #include "Amesos2.hpp"
 
+#include <BelosXpetraAdapterOperator.hpp>
+#include <BelosOperatorT.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include <BelosSolverFactory.hpp>
+
+
 #include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
@@ -79,6 +85,7 @@ namespace FROSch {
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
         typedef Epetra_MultiVector EpetraMultiVector;
         typedef Teuchos::RCP<EpetraMultiVector> EpetraMultiVectorPtr;
         typedef Tpetra::MultiVector<SC,LO,GO,NO> TpetraMultiVector;
@@ -140,6 +147,10 @@ namespace FROSch {
         
         MueLuFactoryPtr MueLuFactory_;
         MueLuHierarchyPtr MueLuHierarchy_;
+        
+        Teuchos::RCP<Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > >  belosLinearProblem_;
+        Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > belosSoverManager_;
+        
         
         bool IsInitialized_;
         bool IsComputed_;        

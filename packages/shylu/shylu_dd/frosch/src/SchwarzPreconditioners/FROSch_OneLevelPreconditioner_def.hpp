@@ -141,6 +141,14 @@ namespace FROSch {
         return "One-Level Preconditioner";
     }
     
+    template <class SC,class LO,class GO,class NO>
+    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    {
+        K_ = k;
+        OverlappingOperator_->resetMatrix(K_);
+        return 0;
+    }
+    
 }
 
 #endif

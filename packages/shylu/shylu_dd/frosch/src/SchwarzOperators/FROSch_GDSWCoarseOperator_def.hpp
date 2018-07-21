@@ -279,6 +279,7 @@ namespace FROSch {
                                                                GOVecPtr dirichletBoundaryDofs,
                                                                MultiVectorPtr nodeList)
     {
+        
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
         
@@ -321,6 +322,8 @@ namespace FROSch {
         
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
+        
+        Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*this->CoarseOperator_InitInterface_Timer);
         
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
@@ -490,6 +493,8 @@ namespace FROSch {
                 }
             }
             
+            CoarseOperator_InitInterface_TimeMonitor.~TimeMonitor();
+            
             if (this->Verbose_) {
                 
                 std::cout << "\n\
@@ -520,6 +525,7 @@ namespace FROSch {
             ////////////////////
             // Build PhiGamma //
             ////////////////////
+            Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*this->CoarseOperator_InitPhi_Timer);
             phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
         }
         
