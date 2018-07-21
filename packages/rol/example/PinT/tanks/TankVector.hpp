@@ -44,6 +44,7 @@
 #ifndef TANKVECTOR_HPP
 #define TANKVECTOR_HPP
 
+#include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
 
 #include <iomanip>
@@ -74,6 +75,12 @@ public:
 
   TankStateVector( size_type rows, size_type cols, const string& name="anonynous" ) : 
     TankStateVector(ROL::makePtr<vector<Real>>(3*rows*cols),rows,cols,name) { 
+  }
+
+  static ROL::Ptr<TankStateVector> create( ROL::ParameterList& pl, const string& name="anonymous" ) {
+    auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
+    auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
+    return ROL::makePtr<TankStateVector>( nrows, ncols, name );
   }
 
   ROL::Ptr<ROL::Vector<Real>> clone() const { 
@@ -168,6 +175,13 @@ public:
 
   TankControlVector( size_type rows, size_type cols, const string& name="anonymous" ) : 
     TankControlVector(ROL::makePtr<vector<Real>>(rows*cols),rows,cols,name) {}
+
+  static ROL::Ptr<TankControlVector> create( ROL::ParameterList& pl, const string& name="anonymous" ) {
+    auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
+    auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
+    return ROL::makePtr<TankStateVector>( nrows, ncols, name );
+  }
+
 
   ROL::Ptr<ROL::Vector<Real>> clone() const { 
     return ROL::makePtr<TankControlVector>( rows_, cols_, "clone of " + name_ ); 

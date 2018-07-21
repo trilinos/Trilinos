@@ -76,7 +76,7 @@
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
 #include "Xpetra_ExportFactory_fwd.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Hiptmair.hpp"
 #endif
@@ -339,7 +339,7 @@ namespace MueLu {
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> Smoother_;
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;

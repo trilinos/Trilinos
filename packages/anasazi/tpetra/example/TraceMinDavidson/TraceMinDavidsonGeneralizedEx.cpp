@@ -56,7 +56,7 @@
 
 // Include header for Tpetra compressed-row storage matrix
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -86,8 +86,6 @@ int main(int argc, char *argv[]) {
   // Specify types used in this example
   //
   typedef double                                       Scalar;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Tpetra::Map<>::node_type                     Node;
   typedef Tpetra::CrsMatrix<Scalar>                    CrsMatrix;
   typedef Tpetra::MultiVector<Scalar>                  MV;
   typedef Tpetra::Operator<Scalar>                     OP;
@@ -98,15 +96,12 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   //
-  // Get the default communicator and node
+  // Get the default communicator
   //
-  Platform& platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-  RCP<Node>                      node = platform.getNode ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   //
@@ -138,6 +133,7 @@ int main(int argc, char *argv[]) {
   //
   // Read the matrices from a file
   //
+  RCP<Tpetra::Map<>::node_type> node; // can be null
   RCP<const CrsMatrix> K = Reader::readSparseFile(filenameA, comm, node);
   RCP<const CrsMatrix> M = Reader::readSparseFile(filenameB, comm, node);
 

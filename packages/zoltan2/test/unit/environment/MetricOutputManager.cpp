@@ -67,15 +67,13 @@
 #include <string>
 #include <ostream>
 
-using namespace std;
 using std::string;
 using Zoltan2::MetricOutputManager;
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -85,7 +83,7 @@ int main(int argc, char *argv[])
   MetricOutputManager<float> *floatmom = NULL;
   MetricOutputManager<double> *doublemom = NULL;
 
-  // Even ranks print to cout
+  // Even ranks print to std::cout
 
   bool iPrint = (rank%2 == 0);
   bool someOnePrints = true;
@@ -124,7 +122,7 @@ int main(int argc, char *argv[])
 
   delete intmom;
 
-  // All print to cout
+  // All print to std::cout
 
   iPrint = true;
   someOnePrints = true;
@@ -169,9 +167,9 @@ int main(int argc, char *argv[])
   someOnePrints = true;
   comm->barrier();
 
-  ios_base::openmode flags = ios_base::out & ios_base::trunc;
+  std::ios_base::openmode flags = std::ios_base::out & std::ios_base::trunc;
 
-  ofstream outF("testMetricFile.txt", flags);
+  std::ofstream outF("testMetricFile.txt", flags);
 
   try {
     doublemom = new MetricOutputManager<double>( rank, iPrint, outF, someOnePrints, string("microseconds"), 10);
@@ -204,7 +202,7 @@ int main(int argc, char *argv[])
   comm->barrier();
 
   if (rank == 0){
-    ifstream inF("testMetricFile.txt");
+    std::ifstream inF("testMetricFile.txt");
     string s;
     while (getline(inF, s)){
       std::cout << s << std::endl;

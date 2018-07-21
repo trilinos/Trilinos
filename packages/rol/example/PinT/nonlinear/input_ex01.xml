@@ -1,0 +1,20 @@
+<ParameterList name="Example 01">
+  <Parameter name="Derivative Check"        type="bool"     value="true"  />
+  <!--================================================================================--> 
+  <!-- Time Discretization                                                            --> 
+  <Parameter name="End Time"                type="double"   value="1.0"   />
+  <Parameter name="Temporal Discretization" type="int"      value="100"   />
+  <!--================================================================================--> 
+  <!-- Sketching Parameters                                                           --> 
+  <ParameterList name="Reduced Dynamic Objective">
+    <Parameter name="Use Sketching"                 type="bool"     value="false" />
+    <Parameter name="State Rank"                    type="int"      value="10"    />
+    <Parameter name="Adjoint Rank"                  type="int"      value="10"    />
+    <Parameter name="State Sensitvity Rank"         type="int"      value="10"    />
+    <Parameter name="Use Hessian"                   type="bool"     value="true"  />
+    <Parameter name="Use Only Sketched Sensitivity" type="bool"     value="true"  />
+  </ParameterList>
+  <!--================================================================================-->
+</ParameterList>
+
+

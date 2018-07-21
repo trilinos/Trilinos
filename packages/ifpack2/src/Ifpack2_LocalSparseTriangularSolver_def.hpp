@@ -44,7 +44,7 @@
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 
@@ -844,7 +844,7 @@ describe (Teuchos::FancyOStream& out,
     // somewhere, so we ask Tpetra for its default communicator.  If
     // MPI is enabled, this wraps MPI_COMM_WORLD or a clone thereof.
     auto comm = A_.is_null () ?
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm () :
+      Tpetra::getDefaultComm () :
       A_->getComm ();
 
     // Users aren't supposed to do anything with the matrix on

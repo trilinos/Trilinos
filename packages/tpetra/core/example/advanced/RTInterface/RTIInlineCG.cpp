@@ -42,6 +42,7 @@
 */
 
 #include "RTIInlineCG.hpp"
+#include "Tpetra_Core.hpp"
 
 int main (int argc, char *argv[])
 {
@@ -54,10 +55,8 @@ int main (int argc, char *argv[])
   //
   // Get the communicator
   //
-  RCP<Teuchos::oblackholestream> blackhole =
-    rcp (new Teuchos::oblackholestream ());
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, blackhole.getRawPtr ());
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  auto comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   //
@@ -81,6 +80,8 @@ int main (int argc, char *argv[])
   if (verbose) {
     driver.out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   } else {
+    RCP<Teuchos::oblackholestream> blackhole =
+      rcp (new Teuchos::oblackholestream ());
     driver.out = Teuchos::getFancyOStream (blackhole);
   }
 

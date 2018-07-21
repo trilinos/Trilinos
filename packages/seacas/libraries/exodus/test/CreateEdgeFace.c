@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -478,6 +478,11 @@ int cCreateEdgeFace(int argc, char *argv[])
   if (concatResult) {
     EXCHECK(ex_put_all_var_param_ext(exoid, &varParams),
             "Unable to write result variable parameter information.\n");
+
+    free(varParams.edge_var_tab);
+    free(varParams.face_var_tab);
+    free(varParams.elem_var_tab);
+    free(varParams.fset_var_tab);
   }
   else {
     EXCHECK(ex_put_variable_param(exoid, EX_GLOBAL, 2),

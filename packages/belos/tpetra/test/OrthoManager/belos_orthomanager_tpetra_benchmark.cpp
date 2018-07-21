@@ -47,9 +47,9 @@
 /// Tpetra::Operator as the operator implementation.
 ///
 #include "belos_orthomanager_tpetra_util.hpp"
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+#include "Tpetra_Core.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include <algorithm>
 
 using std::endl;
@@ -88,13 +88,12 @@ main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   bool success = false;
   bool verbose = false; // Verbosity of output
   try {
-    RCP<const Teuchos::Comm<int> > pComm =
-      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int> > pComm = Tpetra::getDefaultComm();
     // This factory object knows how to make a (Mat)OrthoManager
     // subclass, given a name for the subclass.  The name is not the
     // same as the class' syntactic name: e.g., "TSQR" is the name of

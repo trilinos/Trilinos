@@ -77,7 +77,7 @@ namespace Tpetra {
     /// If testMpi (see above in this header file) false, this
     /// function will return a Teuchos::SerialComm.  Otherwise, this
     /// fucntion will return the default communicator from
-    /// Tpetra::DefaultPlatform.  If Trilinos was built with MPI
+    /// Tpetra::getDefaultComm.  If Trilinos was built with MPI
     /// support, the resulting communicator will be a Teuchos::MpiComm
     /// that wraps <tt>MPI_COMM_WORLD</tt>.  Otherwise, it will be
     /// either a Teuchos::SerialComm, or a Teuchos::MpiComm that wraps

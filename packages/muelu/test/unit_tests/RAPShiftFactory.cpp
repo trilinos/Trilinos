@@ -93,12 +93,18 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
+    GO nx = 27*comm->getSize();
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",Op);
 
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
+
     // Set "K" and "M" to be copies of A
-    fineLevel.Set("K",Op); 
-    fineLevel.Set("M",Op); 
+    fineLevel.Set("K",Op);
+    fineLevel.Set("M",Op);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory;
@@ -190,10 +196,16 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
+    GO nx = 19*comm->getSize();
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",Op);
     fineLevel.Set("K",Op);
     fineLevel.Set("M",Op);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory;
@@ -273,10 +285,15 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(1999*comm->getSize());
+    GO nx = 1999*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // The ugly way of managing input decks
-    std::string myInputString = 
+    std::string myInputString =
 "<ParameterList name=\"MueLu\">"
 "  <ParameterList name=\"Factories\">"
 "   <ParameterList name=\"myFilteredAFact\">"
@@ -321,8 +338,7 @@ namespace MueLuTests {
     pLevel0.set("M",A);
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
-    
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params, coordinates, Teuchos::null);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -353,7 +369,7 @@ namespace MueLuTests {
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
-    
+
   }
 
 
@@ -375,8 +391,13 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(1999*comm->getSize());
-    
+    GO nx = 1999*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
     // The pretty way of managing input decks
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
     Params->set("rap: algorithm","shift");
@@ -390,8 +411,7 @@ namespace MueLuTests {
     pLevel0.set("M",A);
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
-    
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -422,7 +442,7 @@ namespace MueLuTests {
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
-    
+
   }
 
 

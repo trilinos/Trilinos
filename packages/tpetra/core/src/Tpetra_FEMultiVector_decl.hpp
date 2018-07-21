@@ -167,6 +167,9 @@ namespace Tpetra {
     // Precondition: Source MultiVector must be active
     void doSourceToTarget(const CombineMode CM=Tpetra::ADD);
 
+    //! Switches which Multivector is active (without migrating data)
+    void switchActiveMultiVector();
+
   private:
     /// \brief Default c'tor (private so it does not get used)
     ///
@@ -186,8 +189,6 @@ namespace Tpetra {
       FE_ACTIVE_SOURCE
     };
 
-    // Switches which Multivector is active (without migrating data)
-    void switchActiveMultiVector();
 
     // This is whichever multivector isn't currently active
     Teuchos::RCP< MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;

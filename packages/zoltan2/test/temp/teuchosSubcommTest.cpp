@@ -18,8 +18,8 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayView.hpp"
-#include "Zoltan2_config.h"
-#include "Zoltan2_Util.hpp"
+//#include "Zoltan2_config.h"
+//#include "Zoltan2_Util.hpp"
 
 
 int main(int narg, char **arg)

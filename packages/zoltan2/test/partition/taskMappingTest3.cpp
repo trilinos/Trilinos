@@ -1,8 +1,8 @@
 #include "Zoltan2_TaskMapping.hpp"
-#include <Zoltan2_TestHelpers.hpp>
+#include "Zoltan2_TestHelpers.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
-#include <GeometricGenerator.hpp>
+#include "GeometricGenerator.hpp"
 #include <string>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 //#include "Teuchos_MPIComm.hpp"
@@ -115,7 +115,7 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 
 template <typename part_t>
 void getArgVals(
-        int argc,
+        int narg,
         char **argv,
         std::string &procF,
         part_t &nx,
@@ -125,7 +125,7 @@ void getArgVals(
     bool isprocset = false;
     int ispartset = 0;
 
-    for(int i = 0; i < argc; ++i){
+    for(int i = 0; i < narg; ++i){
         string tmp = convert_to_string(argv[i]);
         string tmp2 = "";
         string identifier = "";
@@ -203,15 +203,16 @@ void getArgVals(
     }
 
 }
-int main(int argc, char *argv[]){
+int main(int narg, char *arg[]){
+
+    Tpetra::ScopeGuard tscope(&narg, &arg);
 
     typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     typedef inputAdapter_t::part_t part_t;
 
-    Teuchos::GlobalMPISession session(&argc, &argv);
-    //if (argc != 3){
-    //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
+    //if (narg != 3){
+    //    cout << "Usage: " << arg[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
     //    exit(1);
     //}
     part_t numParts = 0;
@@ -240,8 +241,8 @@ int main(int argc, char *argv[]){
     try {
 
         getArgVals<part_t>(
-                argc,
-                argv,
+                narg,
+                arg,
                 procfile ,
                 jobX, jobY, jobZ, divide_prime, rank_per_node, taskGraphFile, taskCoordFile);
 
@@ -369,7 +370,7 @@ int main(int argc, char *argv[]){
                 new Zoltan2::CoordinateTaskMapper<inputAdapter_t,int>(env, cm);
 
         */
-        RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+        Teuchos::RCP<const Teuchos::Comm<int> > tcomm =Tpetra::getDefaultComm();
         part_t *proc_to_task_xadj_ = new part_t[numProcs+1];
         part_t *proc_to_task_adj_ = new part_t[numParts];
 /*

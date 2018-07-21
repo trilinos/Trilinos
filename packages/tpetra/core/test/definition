@@ -5,7 +5,7 @@ PACKAGE_NAME=Tpetra
 #
 
 (FRAMEWORK, INSTALL, TpetraTests) {
-    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector, CrsGraph;
+    DIRS = Behavior, Blas, Block, BugTests, Comm, Core, CrsGraph, CrsMatrix, Directory, Distributor, EpetraRowMatrix, FEMultiVector, HashTable, ImportExport, ImportExport2, Map, MatrixMatrix, Merge, MultiVector, MultiVectorFiller, Node, RowMatrixTransposer, Sort, TypeStack, Utils, inout;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;

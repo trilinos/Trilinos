@@ -91,11 +91,8 @@ The following fragment of code shows the basic usage of this class.
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 typedef double Scalar;
-typedef int    LocalOrdinal;
-typedef int    GlobalOrdinal;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec_type;
+typedef Tpetra::CrsMatrix<Scalar> crs_matrix_type;
+typedef Ifpack2::Preconditioner<Scalar> prec_type;
 // ...
 
 Ifpack2::Factory factory;
