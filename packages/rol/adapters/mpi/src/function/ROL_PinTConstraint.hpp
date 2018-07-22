@@ -1476,19 +1476,27 @@ public:
 
      part_output.zero();
 
-     auto output_0 = part_output.get(0);
-     auto output_1 = part_output.get(1);
+     auto output_u = part_output.get(0);
+     auto output_z = part_output.get(1);
+     auto output_v = part_output.get(2);
+     auto output_v_tmp = output_v->clone();
 
-     auto input_0  = part_input.get(0);
-     auto input_1  = part_input.get(1);
-     auto input_2  = part_input.get(2);
+     auto input_u  = part_input.get(0); // state
+     auto input_z  = part_input.get(1); // control
+     auto input_v  = part_input.get(2); // lagrange multiplier
 
      // objective
-     applyAdjointJacobian_1_leveled(*output_0,*input_1,u,z,tol,level);
-     output_0->axpy(1.0,*input_0);
+     applyAdjointJacobian_1_leveled(*output_u,*input_v,u,z,tol,level);
+     output_u->axpy(1.0,*input_u);
+
+     applyAdjointJacobian_2_leveled(*output_z,*input_v,u,z,tol,level);
+     output_z->axpy(1.0,*input_z);
 
      // constraint
-     applyJacobian_1_leveled(*output_1,*input_0,u,z,tol,level);
+     applyJacobian_1_leveled(*output_v_tmp,*input_u,u,z,tol,level);
+     applyJacobian_2_leveled(*output_v,*input_z,u,z,tol,level);
+
+     output_v->axpy(1.0,*output_v_tmp);
    }
 
    void applyAugmentedInverseKKT(Vector<Real> & output, 
@@ -1506,61 +1514,73 @@ public:
  
      part_output.zero();
  
-     auto output_0 = part_output.get(0);
-     auto output_1 = part_output.get(1);
-     auto temp_0 = output_0->clone();
-     auto temp_1 = output_1->clone();
+     auto output_u = part_output.get(0);
+     auto output_z = part_output.get(1);
+     auto output_v = part_output.get(2);
+     auto temp_u = output_u->clone();
+     auto temp_z = output_z->clone();
+     auto temp_v = output_v->clone();
  
-     auto input_0  = part_input.get(0);
-     auto input_1  = part_input.get(1);
+     auto input_u  = part_input.get(0);
+     auto input_z  = part_input.get(1);
+     auto input_v  = part_input.get(2);
  
-     temp_0->zero();
-     temp_1->zero();
+     temp_u->zero();
+     temp_z->zero();
+     temp_v->zero();
  
-     // [ I   J' * inv(J*J') ] [  I     ]
-     // [         -inv(J*J') ] [ -J  I  ]
+     // [ I   0  J' * inv(J*J') ] [  I        ]
+     // [     I  K' * inv(J*J') ] [  0  I     ]
+     // [            -inv(J*J') ] [ -J -K  I  ]
     
      // L Factor
      /////////////////////
-     temp_0->axpy(1.0,*input_0);
+     temp_u->axpy(1.0,*input_u);
+     temp_z->axpy(1.0,*input_z);
  
+     // apply -J
      if(not approx)
-       applyJacobian_1_leveled(*temp_1,*input_0,u,z,tol,level);
+       applyJacobian_1_leveled(*temp_v,*input_u,u,z,tol,level);
      else
-       applyJacobian_1_leveled_approx(*temp_1,*input_0,u,z,tol,level);
+       applyJacobian_1_leveled_approx(*temp_v,*input_u,u,z,tol,level);
+
+     // apply -K ???? (not yet)
  
-     temp_1->scale(-1.0);
-     temp_1->axpy(1.0,*input_1);
+     temp_v->scale(-1.0);
+     temp_v->axpy(1.0,*input_v);
  
      // U Factor
      /////////////////////
      
-     // schur complement
+     // schur complement (Wathen style)
      {
-       auto temp = output_1->clone();
+       auto temp = output_v->clone();
        temp->zero();
  
        if(not approx) {
-         applyInverseJacobian_1_leveled(*temp, *temp_1, u,z,tol,level);
-         applyInverseAdjointJacobian_1_leveled(*output_1,*temp,u,z,tol,level);
+         applyInverseJacobian_1_leveled(*temp, *temp_v, u,z,tol,level);
+         applyInverseAdjointJacobian_1_leveled(*output_v,*temp,u,z,tol,level);
        }
        else {
-         invertTimeStepJacobian(*temp, *temp_1, u,z,tol,level);
-         invertAdjointTimeStepJacobian(*output_1,*temp,u,z,tol,level);
+         invertTimeStepJacobian(*temp, *temp_v, u,z,tol,level);
+         invertAdjointTimeStepJacobian(*output_v,*temp,u,z,tol,level);
        }
-       output_1->scale(-1.0);
+       output_v->scale(-1.0);
      }
+
+     output_z->set(*temp_z);
  
      if(not approx)
-       applyAdjointJacobian_1_leveled(*output_0,*output_1,u,z,tol,level); 
+       applyAdjointJacobian_1_leveled(*output_u,*output_v,u,z,tol,level); 
      else 
-       applyAdjointJacobian_1_leveled_approx(*output_0,*output_1,u,z,tol,level); 
+       applyAdjointJacobian_1_leveled_approx(*output_u,*output_v,u,z,tol,level); 
  
-     output_0->scale(-1.0);
-     output_0->axpy(1.0,*temp_0);
+     output_u->scale(-1.0);
+     output_u->axpy(1.0,*temp_u);
+
    }
 
-   void apply2LevelAugmentedKKT(Vector<Real> & x, 
+   void applyMultigridAugmentedKKT(Vector<Real> & x, 
                                 const Vector<Real> & b,
                                 const Vector<Real> & u, 
                                 const Vector<Real> & z,
@@ -1596,31 +1616,40 @@ public:
        auto pint_u = dynamic_cast<const PinTVector<Real>&>(u);
        auto pint_z = dynamic_cast<const PinTVector<Real>&>(z);
 
-       auto dx_0 = dynamic_cast<PartitionedVector&>(*dx).get(0);
-       auto dx_1 = dynamic_cast<PartitionedVector&>(*dx).get(1);
-       auto residual_0 = dynamic_cast<PartitionedVector&>(*residual).get(0);
-       auto residual_1 = dynamic_cast<PartitionedVector&>(*residual).get(1);
+       auto dx_u = dynamic_cast<PartitionedVector&>(*dx).get(0);
+       auto dx_z = dynamic_cast<PartitionedVector&>(*dx).get(1);
+       auto dx_v = dynamic_cast<PartitionedVector&>(*dx).get(2);
+
+       auto residual_u = dynamic_cast<PartitionedVector&>(*residual).get(0);
+       auto residual_z = dynamic_cast<PartitionedVector&>(*residual).get(1);
+       auto residual_v = dynamic_cast<PartitionedVector&>(*residual).get(2);
 
        auto crs_u            = allocateSimVector(pint_u,level+1);
        auto crs_z            = allocateOptVector(pint_z,level+1);
-       auto crs_residual_0   = allocateSimVector(pint_u,level+1);
-       auto crs_residual_1   = allocateSimVector(pint_u,level+1);
-       auto crs_correction_0 = allocateSimVector(pint_u,level+1);
-       auto crs_correction_1 = allocateSimVector(pint_u,level+1);
 
-       restrictSimVector(*residual_0,*crs_residual_0);
-       restrictSimVector(*residual_1,*crs_residual_1);
+       auto crs_residual_u   = allocateSimVector(pint_u,level+1);
+       auto crs_residual_z   = allocateOptVector(pint_z,level+1);
+       auto crs_residual_v   = allocateSimVector(pint_u,level+1);
+
+       auto crs_correction_u = allocateSimVector(pint_u,level+1);
+       auto crs_correction_z = allocateOptVector(pint_z,level+1);
+       auto crs_correction_v = allocateSimVector(pint_u,level+1);
+
+       restrictSimVector(*residual_u,*crs_residual_u);
+       restrictOptVector(*residual_z,*crs_residual_z);
+       restrictSimVector(*residual_v,*crs_residual_v);
+
        restrictSimVector(u,*crs_u);               // restrict the control to the coarse level
        restrictOptVector(z,*crs_z);               // restrict the state to the coarse level
 
-       auto crs_correction = makePtr<PartitionedVector>({crs_correction_0,crs_correction_1});
-       auto crs_residual   = makePtr<PartitionedVector>({crs_residual_0,crs_residual_1});
+       auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
+       auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
 
-       // applyAugmentedInverseKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,false,level+1);
-       apply2LevelAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
+       applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
 
-       prolongSimVector(*crs_correction_0,*dx_0);
-       prolongSimVector(*crs_correction_1,*dx_1);
+       prolongSimVector(*crs_correction_u,*dx_u);
+       prolongOptVector(*crs_correction_z,*dx_z);
+       prolongSimVector(*crs_correction_v,*dx_v);
 
        x.axpy(1.0,*dx);
      }

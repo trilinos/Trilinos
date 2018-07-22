@@ -690,7 +690,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       (*outStream) << "Multigrid initial res = " << res0 << std::endl;
 
     for(int i=0;i<100;i++) {
-      pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+      pint_con->applyMultigridAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
 
       kkt_x_out->axpy(omega,*kkt_diff);
 

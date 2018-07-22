@@ -125,11 +125,11 @@ public:
   void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
     assert(false);
-    pint_con->apply2LevelAugmentedKKT(Hv,v,*state,*control,tol);
+    pint_con->applyMultigridAugmentedKKT(Hv,v,*state,*control,tol);
   }
   void applyInverse( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
-    pint_con->apply2LevelAugmentedKKT(Hv,v,*state,*control,tol);
+    pint_con->applyMultigridAugmentedKKT(Hv,v,*state,*control,tol);
   }
 };
 
@@ -196,8 +196,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
   // pint_con->setGlobalScale(1.0);
-  // pint_con->applyMultigrid(numLevels+1);
-  pint_con->applyMultigrid(2);
+  pint_con->applyMultigrid(3);
+  // pint_con->applyMultigrid(2);
   pint_con->setSweeps(sweeps);
   pint_con->setRelaxation(omega);
 
@@ -207,7 +207,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   state->boundaryExchange();
   control->boundaryExchange();
 
-  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),state->clone()});
+  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),control->clone(),state->clone()});
   auto kkt_x_in  = kkt_vector->clone();
   auto kkt_b     = kkt_vector->clone();
 
@@ -262,71 +262,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   if(myRank==0)
     (*outStream) << std::endl;
 
-  // check MG
-  if(false) {
-    auto kkt_x_out = kkt_vector->clone();
-    auto kkt_diff = kkt_vector->clone();
-    auto kkt_err = kkt_vector->clone();
-    auto kkt_res = kkt_vector->clone();
-    kkt_x_out->zero();
-
-    pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
-    kkt_res->scale(-1.0);
-    kkt_res->axpy(1.0,*kkt_b);
-
-    RealT res0 = kkt_res->norm();
-
-    if(myRank==0)
-      (*outStream) << "Multigrid initial res = " << res0 << std::endl;
-
-    KKTOperator kktOperator;
-    kktOperator.pint_con = pint_con;
-    kktOperator.state = state;
-    kktOperator.control = state;
-
-    MGRITKKTOperator mgOperator;
-    mgOperator.pint_con = pint_con;
-    mgOperator.state = state;
-    mgOperator.control = state;
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    double t0 = MPI_Wtime();
-
-    for(int i=0;i<1000;i++) {
-      // pint_con->apply2LevelAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
-      mgOperator.applyInverse(*kkt_diff,*kkt_res,tol);
-
-      kkt_x_out->axpy(1.0,*kkt_diff);
-
-      kkt_err->set(*kkt_x_out);
-      kkt_err->axpy(-1.0,*kkt_x_in);
-   
-      // pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
-      kktOperator.apply(*kkt_res,*kkt_x_out,tol);
-      kkt_res->scale(-1.0);
-      kkt_res->axpy(1.0,*kkt_b);
-
-      RealT res = kkt_res->norm();
-      if(myRank==0)
-        (*outStream) << " " << i+1 << ". " << res/res0 << std::endl;
-
-      // check the residual
-      if(res/res0 < 1e-9) {
-        // how many iterations
-        if(myRank==0)
-          (*outStream) << "\nIterations = " << i+1 << std::endl;
-        
-        break;
-      }
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    double tf = MPI_Wtime();
-
-    if(myRank==0)
-      (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
-  }
-
   {
     RealT res0 = kkt_b->norm();
     kkt_b->scale(1.0/res0);
@@ -340,12 +275,12 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     KKTOperator kktOperator;
     kktOperator.pint_con = pint_con;
     kktOperator.state = state;
-    kktOperator.control = state;
+    kktOperator.control = control;
 
     MGRITKKTOperator mgOperator;
     mgOperator.pint_con = pint_con;
     mgOperator.state = state;
-    mgOperator.control = state;
+    mgOperator.control = control;
 
     Teuchos::ParameterList parlist;
     parlist.set("Absolute Tolerance",1.e-1);
