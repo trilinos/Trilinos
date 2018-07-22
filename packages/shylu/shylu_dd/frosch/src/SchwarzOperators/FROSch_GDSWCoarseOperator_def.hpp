@@ -51,6 +51,10 @@ namespace FROSch {
                                                         ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     DDInterface_ ()
+#ifdef COARSE_TIMER
+    ,CoarseOperator_InitInterface_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Interface")),
+    CoarseOperator_InitPhi_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Phi"))
+#endif
     {
         
     }
@@ -322,9 +326,10 @@ namespace FROSch {
         
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
-        
-        Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*this->CoarseOperator_InitInterface_Timer);
-        
+
+#ifdef COARSE_TIMER
+        Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*CoarseOperator_InitInterface_Timer);
+#endif
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
 
@@ -492,9 +497,9 @@ namespace FROSch {
                     numEntitiesGlobal[i] = 0;
                 }
             }
-            
+#ifdef COARSE_TIMER
             CoarseOperator_InitInterface_TimeMonitor.~TimeMonitor();
-            
+#endif
             if (this->Verbose_) {
                 
                 std::cout << "\n\
@@ -525,7 +530,10 @@ namespace FROSch {
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-            Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*this->CoarseOperator_InitPhi_Timer);
+#ifdef COARSE_TIMER
+            Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*CoarseOperator_InitPhi_Timer);
+            CoarseOperator_InitPhi_TimeMonitor.setStackedTimer(Teuchos::null);
+#endif
             phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
         }
         

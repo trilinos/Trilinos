@@ -86,7 +86,9 @@ namespace FROSch {
     {
         FROSCH_ASSERT(this->IsComputed_,"ERROR: OverlappingOperator has to be computed before calling apply()");
 
+#ifdef OVERLAPPING_TIMER
         Teuchos::TimeMonitor OverlappingOperator_Apply_TimeMonitor(*OverlappingOperator_Apply_Timer);
+#endif
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
         
@@ -133,8 +135,9 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
+#ifdef OVERLAPPING_TIMER
         Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
-        
+#endif
         if (Restricted_) {
             ScatterRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(RepeatedMap_,OverlappingMap_);
             Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),RepeatedMap_);
@@ -166,7 +169,9 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
+#ifdef OVERLAPPING_TIMER
         Teuchos::TimeMonitor OverlappingOperator_Compute_TimeMonitor(*OverlappingOperator_Compute_Timer);
+#endif
         if (this->IsComputed_) {// already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
             OverlappingMatrix_ = this->K_;
         }

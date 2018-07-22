@@ -84,9 +84,10 @@ namespace FROSch {
         
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
-        
-        Teuchos::TimeMonitor CoarseOperator_InitInterface_Timer(*this->CoarseOperator_InitInterface_Timer);
-        
+#ifdef COARSE_TIMER
+        Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*this->CoarseOperator_InitInterface_Timer);
+        CoarseOperator_InitInterface_TimeMonitor.setStackedTimer(Teuchos::null);
+#endif
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
         
@@ -190,9 +191,9 @@ namespace FROSch {
                     numEntitiesGlobal[i] = 0;
                 }
             }
-            
-            CoarseOperator_InitInterface_Timer.~TimeMonitor();
-            
+#ifdef COARSE_TIMER
+            CoarseOperator_InitInterface_TimeMonitor.~TimeMonitor();
+#endif
             if (this->MpiComm_->getRank() == 0) {
                 std::cout << "\n\
                 --------------------------------------------\n\
@@ -213,8 +214,11 @@ namespace FROSch {
             ////////////////////
             // Build PhiGamma //
             ////////////////////
+#ifdef COARSE_TIMER
             Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*this->CoarseOperator_InitPhi_Timer);
-            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);            
+            CoarseOperator_InitPhi_TimeMonitor.setStackedTimer(Teuchos::null);
+#endif
+            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);
         }
         
         return 0;

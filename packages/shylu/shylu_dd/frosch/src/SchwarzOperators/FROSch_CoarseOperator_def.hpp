@@ -64,10 +64,7 @@ namespace FROSch {
     DistributionList_ (sublist(parameterList,"Distribution")),
     CoarseSolveExporters_ (0)
 #ifdef COARSE_TIMER
-    ,CoarseOperator_InitInterface_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Interface")),
-    CoarseOperator_InitPhi_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Phi")),
-    CoarseOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Compute")),
-    CoarseOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Apply"))
+    ,CoarseOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Apply"))
 #endif
     {
         
@@ -88,7 +85,10 @@ namespace FROSch {
                                             SC beta) const
     {
         static int i = 0;
+#ifdef COARSE_TIMER
         Teuchos::TimeMonitor CoarseOperator_Apply_TimeMonitor(*CoarseOperator_Apply_Timer);
+        CoarseOperator_Apply_TimeMonitor.setStackedTimer(Teuchos::null);
+#endif
         if (this->IsComputed_) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
             *xTmp = x;

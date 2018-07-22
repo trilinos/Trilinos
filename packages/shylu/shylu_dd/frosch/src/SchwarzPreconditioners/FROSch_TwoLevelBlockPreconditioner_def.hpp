@@ -60,7 +60,6 @@ namespace FROSch {
             this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",false);
             CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
-            FROSCH_ASSERT(false,"not implemented for block.");
             this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",false);
             CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         } else {
