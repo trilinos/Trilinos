@@ -198,15 +198,15 @@ namespace FROSch {
                 
                 //            Teuchos::RCP<Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpP = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(this->XpetraPrec_));
                 
-                if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
-//                    belosLinearProblem->setLeftPrec(OpP);
-                    
-                } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
-//                    belosLinearProblem->setRightPrec(OpP);
-                    
-                } else {
-                    MYASSERT(0!=0,"PreconditionerPosition unknown...");
-                }
+//                if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
+////                    belosLinearProblem->setLeftPrec(OpP);
+//                    
+//                } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
+////                    belosLinearProblem->setRightPrec(OpP);
+//                    
+//                } else {
+//                    FROSCH_ASSERT(0!=0,"PreconditionerPosition unknown...");
+//                }
             }
             IsComputed_ = true;
             
