@@ -45,16 +45,17 @@
 // Test for Github Issue #114.
 //
 
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
+
 
 int
 main (int argc, char *argv[])
@@ -65,20 +66,18 @@ main (int argc, char *argv[])
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Map<>::global_ordinal_type GO;
-  typedef Tpetra::global_size_t GST;
-  typedef Tpetra::Map<LO, GO> map_type;
-  typedef Tpetra::Import<LO, GO> import_type;
+  using map_type = Tpetra::Map<>;
+  using import_type = Tpetra::Import<>;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  using GST = Tpetra::global_size_t;
+
   // mfh 09 Aug 2017: Tpetra instantiates Vector with Scalar=int even
   // if GO=int is disabled, because users (e.g., in MueLu and Zoltan2)
   // want to be able to communicate MPI process ranks.
-  typedef Tpetra::Vector<int, LO, GO> IntVector;
+  using IntVector = Tpetra::Vector<int>;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-
-  auto comm = Teuchos::DefaultComm<int>::getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  auto comm = Tpetra::getDefaultComm ();
   auto outPtr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   auto& out = *outPtr;
   out.setOutputToRootOnly (0);

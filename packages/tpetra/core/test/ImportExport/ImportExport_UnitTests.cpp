@@ -91,7 +91,7 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::createContigMapWithNode;
 
-  bool testMpi = true;
+  // bool testMpi = true;
   double errorTolSlack = 1e+1;
 
   TEUCHOS_STATIC_SETUP()

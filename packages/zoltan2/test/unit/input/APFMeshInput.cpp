@@ -59,14 +59,12 @@
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-using namespace std;
 using Teuchos::RCP;
 
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
 //Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 
 //Topology type helper function
@@ -87,9 +85,9 @@ enum Zoltan2::EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) {
     return Zoltan2::PRISM;
   else if (ttype==apf::Mesh::PYRAMID)
     return Zoltan2::PYRAMID;
-  else 
+  else
     throw "No such APF topology type";
-    
+
 }
 
 /*****************************************************************************/
@@ -98,14 +96,13 @@ enum Zoltan2::EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) {
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
 #ifdef HAVE_ZOLTAN2_PARMA
   //Open up PCU for communication required by all APF operations
   PCU_Comm_Init();
-  
+
   //Open up the mesh
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh("pumiTri14/plate.dmg","pumiTri14/2/");
@@ -126,7 +123,7 @@ int main(int narg, char *arg[]) {
     adj=pri;
     pri="region";
   }
-  
+
   Zoltan2::APFMeshAdapter<apf::Mesh2*> ia(*CommT,m,pri,adj,true);
 
   Zoltan2::MeshEntityType ents[4] = {Zoltan2::MESH_VERTEX,
@@ -143,14 +140,14 @@ int main(int narg, char *arg[]) {
       has[i]=false;
       continue;
     }
-    if (ia.getLocalNumOf(ents[i])!=m->count(i)) {      
+    if (ia.getLocalNumOf(ents[i])!=m->count(i)) {
       std::cerr<<"Local number of entities does not match in dimension "<<i<<"\n";
       return 1;
     }
 
   }
 
-  
+
   //Check the coordinate dimension
   apf::GlobalNumbering** gnums = new apf::GlobalNumbering*[dim];
   apf::Numbering** lnums = new apf::Numbering*[dim];
@@ -204,7 +201,7 @@ int main(int narg, char *arg[]) {
       if (apf::getNumber(lnums[i],ent,0,0)!=j) {
         std::cerr<<"Local numbering does not match in dimension "<<i<<" on entity "<<j<<"\n";
         return 2;
-      } 
+      }
       //Check Global Id numbers
       if (apf::getNumber(gnums[i],apf::Node(ent,0))!=gids[j]) {
         std::cerr<<"Global numbering does not match in dimension "<<i<<" on entity "<<j<<"\n";
@@ -216,7 +213,7 @@ int main(int narg, char *arg[]) {
         std::cerr<<"Topology types do not match in dimension "<<i<<" on entity "<<j<<"\n";
         return 3;
       }
-      
+
       //Check the coordinates
       apf::Vector3 pnt;
       if (i==0)
@@ -235,8 +232,8 @@ int main(int narg, char *arg[]) {
       if (fabs(pnt[2] - z_coords[j*z_stride])>eps) {
         std::cerr<<"Z coordinate do not match in dimension "<<i<<" on entity "<<j<<"\n";
         return 4;
-      }  
-      
+      }
+
       //Check first adjacencies
       for (int k=0;k<=dim;k++) {
         if (!has[k])
@@ -247,7 +244,7 @@ int main(int narg, char *arg[]) {
             std::cerr<<"[WARNING] First adjacency to self is not set to NULL in dimension "<<i
                      <<" to dimension "<<k<<"\n";
           }
-            
+
           continue;
         }
         apf::Adjacent adjs;
@@ -267,7 +264,7 @@ int main(int narg, char *arg[]) {
           return 8;
         }
         numAdjs[k]+=adjs.getSize();
-        
+
       }
       j++;
     }
@@ -285,20 +282,20 @@ int main(int narg, char *arg[]) {
       }
     }
     delete [] numAdjs;
-   
+
   }
   delete [] lnums;
   delete [] gnums;
   const Adapter::scalar_t arr[] = {1,2,1,3,1,5,1,2,1,6,1,7,1,8};
   ia.setWeights(Zoltan2::MESH_FACE,arr,2);
-  
+
   if (ia.getNumWeightsPerOf(Zoltan2::MESH_FACE)!=1) {
     std::cerr<<"Number of weights incorrect\n";
     return 9;
-    
+
   }
 
-  
+
   const Adapter::scalar_t* arr2;
   int stride;
   ia.getWeightsViewOf(Zoltan2::MESH_FACE,arr2,stride);
@@ -306,7 +303,7 @@ int main(int narg, char *arg[]) {
     if (arr[i*stride]!=arr2[i*stride]) {
       std::cerr<<"Weights do not match the original input\n";
       return 10;
-    
+
     }
   }
   bool ifIdontfeellikeit = false;
@@ -321,34 +318,34 @@ int main(int narg, char *arg[]) {
     ifIdontfeellikeit=!ifIdontfeellikeit;
   }
   m->end(itr);
-  
+
 
 
   ia.setWeights(Zoltan2::MESH_VERTEX,m,weights);
   if (ia.getNumWeightsPerOf(Zoltan2::MESH_VERTEX)!=2) {
     std::cerr<<"Number of weights incorrect\n";
     return 9;
-    
+
   }
-  
+
   ia.getWeightsViewOf(Zoltan2::MESH_VERTEX,arr2,stride,0);
-  
+
   itr = m->begin(0);
-  
+
   int i=0;
   while ((ent=m->iterate(itr))) {
     double w=1;
     if (w!=arr2[i*stride]) {
       std::cerr<<"Weights do not match the original input\n";
       return 10;
-    
+
     }
     i++;
   }
   m->end(itr);
 
   ia.getWeightsViewOf(Zoltan2::MESH_VERTEX,arr2,stride,1);
-  
+
   itr = m->begin(0);
   i=0;
   while ((ent=m->iterate(itr))) {
@@ -360,21 +357,21 @@ int main(int narg, char *arg[]) {
     if (w[1]!=arr2[i*stride]) {
       std::cerr<<"Weights do not match the original input\n";
       return 10;
-    
+
     }
     i++;
   }
   m->end(itr);
-  
+
   //ia.print(PCU_Comm_Self(),5);
-  
+
   //Delete the MeshAdapter
   ia.destroy();
 
   //Delete the APF Mesh
   m->destroyNative();
   apf::destroyMesh(m);
-  
+
   //End PCU communications
   PCU_Comm_Free();
 #endif

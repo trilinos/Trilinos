@@ -63,7 +63,6 @@
 #include <Teuchos_LAPACK.hpp>
 #include <fstream>
 #include <string>
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -74,45 +73,45 @@ using Teuchos::rcp;
 #endif
 #define CATCH_EXCEPTIONS_AND_RETURN(pp) \
         catch (std::runtime_error &e) { \
-            cout << "Runtime exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Runtime exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             return -1; \
         } \
         catch (std::logic_error &e) { \
-            cout << "Logic exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Logic exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             return -1; \
         } \
         catch (std::bad_alloc &e) { \
-            cout << "Bad_alloc exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Bad_alloc exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             return -1; \
         } \
         catch (std::exception &e) { \
-            cout << "Unknown exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Unknown exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             return -1; \
         }
 
 #define CATCH_EXCEPTIONS_WITH_COUNT(ierr, pp) \
         catch (std::runtime_error &e) { \
-            cout << "Runtime exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Runtime exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             (ierr)++; \
         } \
         catch (std::logic_error &e) { \
-            cout << "Logic exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Logic exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             (ierr)++; \
         } \
         catch (std::bad_alloc &e) { \
-            cout << "Bad_alloc exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Bad_alloc exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             (ierr)++; \
         } \
         catch (std::exception &e) { \
-            cout << "Unknown exception returned from " << pp << ": " \
-            << e.what() << " FAIL" << endl; \
+            std::cout << "Unknown exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << std::endl; \
             (ierr)++; \
         }
 
@@ -229,7 +228,7 @@ int run_pointAssign_tests(
     }
 
     {
-      const vector<Zoltan2::coordinateModelPartBox<zscalar_t,
+      const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
                                                    typename Adapter::part_t> >
             pBoxes = problem->getSolution().getPartBoxesView();
       for (size_t i = 0; i < pBoxes.size(); i++) {
@@ -315,7 +314,7 @@ int run_boxAssign_tests(
     sprintf(mechar, "%d", problem->getComm()->getRank());
     string me(mechar);
 
-    const vector<Zoltan2::coordinateModelPartBox<zscalar_t,
+    const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
                                                  typename Adapter::part_t> >
           pBoxes = problem->getSolution().getPartBoxesView();
     size_t nBoxes = pBoxes.size();
@@ -501,7 +500,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     bool fail = false;
     if(comm->getRank() == 0){
 
-        fstream inParam(paramFileName.c_str());
+        std::fstream inParam(paramFileName.c_str());
         if (inParam.fail())
         {
             fail = true;
@@ -537,7 +536,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         throw "File " + paramFileName + " cannot be opened.";
     }
     comm->broadcast(0, size, inp);
-    istringstream inParam(inp);
+    std::istringstream inParam(inp);
     string str;
     getline (inParam,str);
     while (!inParam.eof()){
@@ -618,13 +617,13 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     RCP<const tMVector_t> coordsConst =
                           Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
-    vector<const zscalar_t *> weights;
+    std::vector<const zscalar_t *> weights;
     if(numWeightsPerCoord){
         for (int i = 0; i < numWeightsPerCoord;++i){
           weights.push_back(weight[i]);
         }
     }
-    vector <int> stride;
+    std::vector<int> stride;
 
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
@@ -734,7 +733,7 @@ int testFromDataFile(
 {
     int ierr = 0;
     //std::string fname("simple");
-    //cout << "running " << fname << endl;
+    //cout << "running " << fname << std::endl;
 
     UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
@@ -857,11 +856,11 @@ int testFromDataFile(
     for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
       if (problem->getSolution().getPartListView()[i] !=
           bvproblem->getSolution().getPartListView()[i])
-        cout << bvme << " " << i << " "
+        std::cout << bvme << " " << i << " "
              << coords->getMap()->getGlobalElement(i) << " " << bvgids[i]
              << ": XMV " << problem->getSolution().getPartListView()[i]
              << "; BMV " << bvproblem->getSolution().getPartListView()[i]
-             << "  :  FAIL" << endl;
+             << "  :  FAIL" << std::endl;
     }
 
     delete [] bvgids;
@@ -875,10 +874,10 @@ int testFromDataFile(
         const inputAdapter_t::part_t *zparts =
               problem->getSolution().getPartListView();
         for (int i = 0; i < len; i++)
-            cout << comm->getRank()
+            std::cout << comm->getRank()
             << " lid " << i
             << " gid " << coords->getMap()->getGlobalElement(i)
-            << " part " << zparts[i] << endl;
+            << " part " << zparts[i] << std::endl;
     }
 
     // create metric object
@@ -888,7 +887,7 @@ int testFromDataFile(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        cout << "testFromDataFile is done " << endl;
+        std::cout << "testFromDataFile is done " << std::endl;
     }
 
     problem->printTimers();
@@ -910,7 +909,7 @@ template <typename zscalar_t, typename zlno_t>
 void getCoords(zscalar_t **&coords, zlno_t &numLocal, int &dim, string fileName){
     FILE *f = fopen(fileName.c_str(), "r");
     if (f == NULL){
-        cout << fileName << " cannot be opened" << endl;
+        std::cout << fileName << " cannot be opened" << std::endl;
         exit(1);
     }
     fscanf(f, "%d", &numLocal);
@@ -947,11 +946,11 @@ int testFromSeparateDataFiles(
 )
 {
     //std::string fname("simple");
-    //cout << "running " << fname << endl;
+    //cout << "running " << fname << std::endl;
 
     int ierr = 0;
     int mR = comm->getRank();
-    if (mR == 0) cout << "size of zscalar_t:" << sizeof(zscalar_t) << endl;
+    if (mR == 0) std::cout << "size of zscalar_t:" << sizeof(zscalar_t) << std::endl;
     string tFile = fname +"_" + Teuchos::toString<int>(mR) + ".mtx";
     zscalar_t **double_coords;
     zlno_t numLocal = 0;
@@ -1063,9 +1062,9 @@ int testFromSeparateDataFiles(
         const inputAdapter_t::part_t *zparts =
                                       problem->getSolution().getPartListView();
         for (int i = 0; i < len; i++)
-            cout << comm->getRank()
+            std::cout << comm->getRank()
             << " gid " << coords->getMap()->getGlobalElement(i)
-            << " part " << zparts[i] << endl;
+            << " part " << zparts[i] << std::endl;
     }
 
     //create metric object
@@ -1075,7 +1074,7 @@ int testFromSeparateDataFiles(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        cout << "testFromDataFile is done " << endl;
+        std::cout << "testFromDataFile is done " << std::endl;
     }
 
     problem->printTimers();
@@ -1101,7 +1100,7 @@ string convert_to_string(char *args){
     return tmp;
 }
 bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
-    stringstream stream(stringstream::in | stringstream::out);
+    std::stringstream stream(std::stringstream::in | std::stringstream::out);
     stream << argumentline;
     getline(stream, argumentid, '=');
     if (stream.eof()){
@@ -1112,8 +1111,8 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 }
 
 void getArgVals(
-        int argc,
-        char **argv,
+        int narg,
+        char **arg,
         int &numParts,
         float &imbalance ,
         string &pqParts,
@@ -1137,8 +1136,8 @@ void getArgVals(
     bool isFset = false;
     bool isPFset = false;
 
-    for(int i = 0; i < argc; ++i){
-        string tmp = convert_to_string(argv[i]);
+    for(int i = 0; i < narg; ++i){
+        string tmp = convert_to_string(arg[i]);
         string identifier = "";
         long long int value = -1; double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
@@ -1152,7 +1151,7 @@ void getArgVals(
                 throw  "Invalid argument at " + tmp;
             }
         } else if(identifier == "P"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             string ttmp;
             getline(stream, ttmp, '=');
@@ -1215,7 +1214,7 @@ void getArgVals(
             }
         }
         else if(identifier == "F"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, fname, '=');
 
@@ -1223,7 +1222,7 @@ void getArgVals(
             isFset = true;
         }
         else if(identifier == "PF"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, pfname, '=');
 
@@ -1271,29 +1270,27 @@ void getArgVals(
 }
 
 void print_usage(char *executable){
-    cout << "\nUsage:" << endl;
-    cout << executable << " arglist" << endl;
-    cout << "arglist:" << endl;
-    cout << "\tC=numParts: numParts > 0" << endl;
-    cout << "\tP=MultiJaggedPart: Example: P=512,512" << endl;
-    cout << "\tI=imbalance: Example I=1.03 (ignored for now.)" << endl;
-    cout << "\tF=filePath: When O=0 the path of the coordinate input file, for O>1 the path to the geometric generator parameter file." << endl;
-    cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << endl;
-    cout << "\tK=concurrent part calculation input: K>0." << endl;
-    cout << "\tMI=migration_imbalance_cut_off: MI=1.35. " << endl;
-    cout << "\tMT=migration_all_to_all_type: 0 for alltoallv, 1 for Zoltan_Comm, 2 for Zoltan2 Distributor object(Default 1)." << endl;
-    cout << "\tMO=migration_check_option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-0)" << endl;
-    cout << "\tAT=migration_processor_assignment_type. 0-for assigning procs with respect to proc ownment, otherwise, assignment with respect to proc closeness." << endl;
-    cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << endl;
+    std::cout << "\nUsage:" << std::endl;
+    std::cout << executable << " arglist" << std::endl;
+    std::cout << "arglist:" << std::endl;
+    std::cout << "\tC=numParts: numParts > 0" << std::endl;
+    std::cout << "\tP=MultiJaggedPart: Example: P=512,512" << std::endl;
+    std::cout << "\tI=imbalance: Example I=1.03 (ignored for now.)" << std::endl;
+    std::cout << "\tF=filePath: When O=0 the path of the coordinate input file, for O>1 the path to the geometric generator parameter file." << std::endl;
+    std::cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << std::endl;
+    std::cout << "\tK=concurrent part calculation input: K>0." << std::endl;
+    std::cout << "\tMI=migration_imbalance_cut_off: MI=1.35. " << std::endl;
+    std::cout << "\tMT=migration_all_to_all_type: 0 for alltoallv, 1 for Zoltan_Comm, 2 for Zoltan2 Distributor object(Default 1)." << std::endl;
+    std::cout << "\tMO=migration_check_option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-0)" << std::endl;
+    std::cout << "\tAT=migration_processor_assignment_type. 0-for assigning procs with respect to proc ownment, otherwise, assignment with respect to proc closeness." << std::endl;
+    std::cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << std::endl;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-    Teuchos::GlobalMPISession session(&argc, &argv);
-    Kokkos::initialize (argc, argv);
-    //cout << argv << endl;
+    Tpetra::ScopeGuard tscope(&narg, &arg);
+    Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
-    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
     int rank = tcomm->getRank();
 
 
@@ -1321,8 +1318,8 @@ int main(int argc, char *argv[])
     try{
         try {
             getArgVals(
-                    argc,
-                    argv,
+                    narg,
+                    arg,
                     numParts,
                     imbalance ,
                     pqParts,
@@ -1340,14 +1337,14 @@ int main(int argc, char *argv[])
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
-                print_usage(argv[0]);
+                print_usage(arg[0]);
             }
             throw s;
         }
 
         catch(char * s){
             if(tcomm->getRank() == 0){
-                print_usage(argv[0]);
+                print_usage(arg[0]);
             }
             throw s;
         }
@@ -1396,14 +1393,13 @@ int main(int argc, char *argv[])
 
     catch(std::string &s){
         if (rank == 0)
-            cerr << s << endl;
+            cerr << s << std::endl;
     }
 
     catch(char * s){
         if (rank == 0)
-            cerr << s << endl;
+            cerr << s << std::endl;
     }
 
-    Kokkos::finalize ();
     return 0;
 }

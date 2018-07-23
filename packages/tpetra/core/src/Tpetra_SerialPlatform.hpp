@@ -52,34 +52,18 @@ namespace Tpetra {
 
   /// \brief Implementation of the Platform concept for non-MPI platforms.
   ///
-  /// \warning This class will be DEPRECATED, in favor of the
-  ///   initialize() functions in Tpetra_Core.hpp.  Please use those
-  ///   functions for safe, consistent initialization Kokkos, on which
-  ///   Tpetra depends.  If you must use this class, please prefer the
-  ///   constructors that take \c argc and \c argv.  Those
-  ///   constructors will call initialize() for you.
-  ///
-  /// SerialPlatform is an implementation of Tpetra's Platform
-  /// concept.  Classes implementing the Platform concept are
-  /// templated on the Kokkos Node type.  They have at least the
-  /// following public interface:
-  /// \code
-  /// // This is not a real class; it just illustrates the concept.
-  /// template<class Node>
-  /// class Platform {
-  /// public:
-  ///   typedef Node NodeType;
-  ///   explicit Platform (const RCP<Node>& node);
-  ///   RCP<const Comm<int> > getComm() const;
-  ///   RCP<Node> getNode() const;
-  /// };
-  /// \endcode
-  /// SerialPlatform uses a "communicator" containing one process.  It
-  /// is available whether or not Trilinos was built with MPI (the
-  /// Message-Passing Interface which provides a distributed-memory
-  /// parallel programming model).
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <class Node>
-  class SerialPlatform : public Teuchos::Describable {
+  class TPETRA_DEPRECATED SerialPlatform : public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
@@ -170,7 +154,7 @@ namespace Tpetra {
   ///   may have a different type, depending on Trilinos' build
   ///   options.
   template <>
-  class SerialPlatform<Tpetra::Details::DefaultTypes::node_type> :
+  class TPETRA_DEPRECATED SerialPlatform<Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs

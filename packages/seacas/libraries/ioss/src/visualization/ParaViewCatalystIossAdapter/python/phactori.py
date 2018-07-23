@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2010 National Technology & Engineering Solutions
+# Copyright(C) 1999-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -44,9 +44,8 @@ except: from paraview.simple import *
 from paraview import coprocessing
 
 global gParaViewCatalystVersionFlag
-#gParaViewCatalystVersionFlag = 40300
+gParaViewCatalystVersionFlag = 40300
 #gParaViewCatalystVersionFlag = 40100
-gParaViewCatalystVersionFlag = 50400
 
 global gPointsString
 if gParaViewCatalystVersionFlag <= 40100:
@@ -1125,16 +1124,12 @@ def PhactoriDbg(inPriority = 450, inOneProcessFlag = False, inOneProcessId = 0):
   if inOneProcessFlag:
     if inOneProcessId != SmartGetLocalProcessId():
       return False
-  #for parallel compatibility, we do everything on all processes _except_
-  #do the output--so if we test for debugging then do something that requires
-  #mpi communication, we go ahead and do it even if this process will have
-  #no oputput
-  #else:
-  #  global gMdp3RestrictToProcessListFlag
-  #  if gMdp3RestrictToProcessListFlag:
-  #    global gMdp3ProcessIdList
-  #    if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
-  #      return False
+  else:
+    global gMdp3RestrictToProcessListFlag
+    if gMdp3RestrictToProcessListFlag:
+      global gMdp3ProcessIdList
+      if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
+        return False
 
   return True
 
@@ -1146,15 +1141,6 @@ def PrintOnProcessZero(strToPrint):
 def myDebugPrint3(inMsg, inPriority = 450, inOneProcessFlag = False, inOneProcessId = 0):
   if PhactoriDbg(inPriority, inOneProcessFlag, inOneProcessId) == False:
     return
-
-  global gMdp3RestrictToProcessListFlag
-  if gMdp3RestrictToProcessListFlag:
-    if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
-      #if we are only outputting some processes and this isn't one of those
-      #we don't do any output--but we still deal with exception
-      if inPriority >= 10000:
-        raise Exception(inMsg)
-      return
 
   global gMaxDebugPrintOutputLines
   global gDebugPrintOutputLineCount
@@ -1179,7 +1165,7 @@ def myDebugPrint3(inMsg, inPriority = 450, inOneProcessFlag = False, inOneProces
 
   gDebugPrintOutputLineCount += 1
 
-  if inPriority >= 10000:
+  if inPriority >= 1000:
     raise Exception(inMsg)
 
 def myDebugPrint3AndException(inMsg, inOneProcessFlag = False,
@@ -1543,7 +1529,7 @@ def SetCameraViewExplicitly(theRenderView, EyePosition,
                             inPhactoriCamera = None,
                             inUseParallelProjection = False,
                             inParallelScale = 1.0):
-  "Sets the camera view explicitly by specifing the camera position " \
+  "Sets the camera view explicitly by specifying the camera position " \
   "(EyePosition), focal point (LookAtPoint), clipping range min/man " \
   "(ClippingRange), up view vector (ViewUpVector) " \
   "example:  SetCameraViewExplicitly(oneRenderView, [100.0, 90.0, 70.0], " \
@@ -2296,7 +2282,7 @@ def CalcRelativeCameraDistance2(inFocalPoint, inLookDirection, inUpVector,
                          inXyPixelSize[1] - 2 * int(vertPixBrdrY)]
 
   #we are special casing when the pixel ratio is the same for both
-  #X and Y for backwards compatability of test images;  We should
+  #X and Y for backwards compatibility of test images;  We should
   #take out this special case and update the test images.  The
   #difference is very minor, but detectable
   if inImageSettings.mPixelBorderRatioXY[0] == \
@@ -2601,6 +2587,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag):
 
+  if inPvDataRepresentation.Opacity != inPhactoriRepresentation.mOpacitySetting:
+      inPvDataRepresentation.Opacity = inPhactoriRepresentation.mOpacitySetting
   if PhactoriDbg():
     if inPhactoriOperation != None:
         opStr = inPhactoriOperation.mName
@@ -2613,8 +2601,6 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
       "inInitializeColorLegendFlag: " + str(inInitializeColorLegendFlag) + "\n")
   #color by variable
   if inPhactoriRepresentation != None:
-    if inPvDataRepresentation.Opacity != inPhactoriRepresentation.mOpacitySetting:
-        inPvDataRepresentation.Opacity = inPhactoriRepresentation.mOpacitySetting
     SetForCorrectColorByVariable(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag)
@@ -4729,9 +4715,8 @@ class PhactoriRepresentationBlock:
     self.mName = ""
     self.mColorVariableInfo = PhactoriVariableInfo()
     self.mColorLegendFlag = True
-    #self.mColorLegendPositionAndSize = ['bottom', 1.0]
+    self.mColorLegendPositionAndSize = ['bottom', 1.0]
     #self.mColorLegendPositionAndSize = ['right', 1.0]
-    self.mColorLegendPositionAndSize = ['bottom right', 1.0]
     self.mTimeAnnotationSettings = PhactoriAnnotationViewSettings(
         'time', 'time')
     self.mDataCubeAxesFlag = False
@@ -5112,7 +5097,7 @@ class PhactoriAddPointSetOperation(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3(
           "filename: " + str(self.mInternalPvCSVReader.FileName) + "\n"
-          "delimeter: -->" + str(self.mInternalPvCSVReader.FieldDelimiterCharacters) + "<--\n"
+          "delimiter: -->" + str(self.mInternalPvCSVReader.FieldDelimiterCharacters) + "<--\n"
           "x column: " + str(self.mInternalPvTableToPoints.XColumn) + "\n"
           "y column: " + str(self.mInternalPvTableToPoints.YColumn) + "\n"
           "z column: " + str(self.mInternalPvTableToPoints.ZColumn) + "\n"
@@ -5424,7 +5409,7 @@ class PhactoriExtractBlockOperation(PhactoriOperationSpecifics):
     self.mIncludeBlockList = None
     self.mExcludeBlockList = None
 
-    #this will be list of included block indicies, and is calculated from
+    #this will be list of included block indices, and is calculated from
     #mIncludeBlockList / mExcludeBlockList and passed directly to
     #ExcludeBlockFilter.BlockIndices
     self.mBlockIndices = []
@@ -6211,7 +6196,7 @@ class BlockRecursionControlItem:
     self.mParameters = None
 
 class PhactoriOperationBlock:
-  """manages one stage of the data pipeline, analagous to ParaView Filter
+  """manages one stage of the data pipeline, analogous to ParaView Filter
 
   An instance of this class represents and manages one stage of the data
   pipeline which has been set up for management by phatori.  It creates and
@@ -6222,7 +6207,7 @@ class PhactoriOperationBlock:
   input, so a tree structure is allowed rather than just a linear pipe.
   Operations with multiple inputs and outputs are conceiveable, and may be
   added pending user requirements.
-  The instance is presumed to contain a name unique amound the operation
+  The instance is presumed to contain a name unique among the operation
   blocks and keeps a reference to the input operation (by name), the 
   ParaView/Catalyst filter which is built, and some flags determining where
   we are in the construction process.
@@ -7424,9 +7409,7 @@ class PhactoriPlot1Base:
     pvDataRep = self.mPvDataRepresentation2
 
     #image size
-    #pvRenderView.ViewSize = self.mImageSettings.mImageSize
-    pvRenderView.ViewSize = [int(self.mImageSettings.mImageSize[0]),
-                             int(self.mImageSettings.mImageSize[1])]
+    pvRenderView.ViewSize = self.mImageSettings.mImageSize
 
     #background color, text color, etc.
     theColorSettings = self.mColorSettings
@@ -7986,9 +7969,7 @@ class PhactoriImagesetBlock:
     pvDataRep = self.mPvDataRepresentation2
 
     #image size
-    #pvRenderView.ViewSize = self.mImageSettings.mImageSize
-    pvRenderView.ViewSize = [int(self.mImageSettings.mImageSize[0]),
-                             int(self.mImageSettings.mImageSize[1])]
+    pvRenderView.ViewSize = self.mImageSettings.mImageSize
 
     #background color, text color, etc.
 
@@ -8203,7 +8184,7 @@ class PhactoriImagesetBlock:
     if inRepresentationKey in ioJson:
       representationName = ioJson[inRepresentationKey]
       if representationName not in ioPipeAndViewsState.mRepresentationBlocks:
-        errStr = "ParseOperationAndRepresentationPair::exeception/error\n" + \
+        errStr = "ParseOperationAndRepresentationPair::exception/error\n" + \
             "  imageset (" + str(self.mName) + \
             ") calls for representation (" + \
             str(representationName) + ") which does not exist\n"
@@ -8239,10 +8220,10 @@ class PhactoriPipeAndViewsState:
   imageset blocks, the scatter plot blocks, and the plot over time blocks.
   A set for each type of block is kept, with the block name (assigned by the
   json author) as a key for that block.  The Operation blocks are basically
-  analagous to the ParaView/Catalyst Filters, the imagesets are roughly
-  analagous to the ParaView Views (but with image endpoints rather than
+  analogous to the ParaView/Catalyst Filters, the imagesets are roughly
+  analogous to the ParaView Views (but with image endpoints rather than
   interactive rendering endpoints), the Representation blocks plus the
-  camera blocks are analagous to the ParaView Representations.  The
+  camera blocks are analogous to the ParaView Representations.  The
   scatter plot and plot over time blocks are simply specialized descriptions
   of requested plots, which are converted into ParaView filters and views
   to create plots which can be calculated and/or rendered in parallel at
@@ -8251,7 +8232,7 @@ class PhactoriPipeAndViewsState:
   contains some additional parameters (e.g. image size and file basename)
   which will describe a view to be rendered--repeatedly at different times
   when using insitu.  The camera blocks describe 3-D viewpoints, sometimes in
-  absoulte 3D terms, sometimes dependent on the data.  The representation
+  absolute 3D terms, sometimes dependent on the data.  The representation
   blocks control how the view looks, e.g. if element surface and edges are
   rendered or just surfaces and if we show axes and color legends.  The
   operation blocks can describe a potentially complex data pipeline which can
@@ -8349,7 +8330,7 @@ class PhactoriPipeAndViewsState:
     from WriteImages immediately before we start looping through the
     imagesets and plots to render images in order to basically set all
     paraview Representations to Visibility=0 so that we can turn them
-    visible approriately as we do a WriteImage for each one."""
+    visible appropriately as we do a WriteImage for each one."""
 
     for imagesetName, imagesetInstance in self.mImagesetBlocks.iteritems():
       imagesetInstance.ClearPvViewAndPvRepAfterWriteImage()
@@ -8495,7 +8476,7 @@ def UpdateRepresentationColorBySub1(inPvView, inPvRep,
 
 def DuringRestartUseJsonToSetUp(jsonIn, ioPipeAndViewsState):
   """used by process zero (broadcast send process) as well as other processes
-     (broadcast recieve processes) to actually take the info in json format
+     (broadcast receive processes) to actually take the info in json format
      and set the system up for proper behavior after restart, particularly
      data ranges and plots over time"""
   #go through representations and have each add it's state info to jsonOut
@@ -9001,7 +8982,7 @@ def HandleOperationShortcuts2(inBlockName, inJson, ioOperationBlocks, inCount):
     myDebugPrint3('HandleOperationShortcuts returning\n', 100)
 
 #go through imageset json, and locate operation shortcuts.  If found, create
-#json defintion of operations and add them to the structure for later
+#json definition of operations and add them to the structure for later
 #creation, and add reference to the new operations in the imageblock json
 def HandleOperationShortcuts(ioImagesetBlocks, ioOperationBlocks):
   if PhactoriDbg(100):
@@ -9511,7 +9492,7 @@ def CreateViewSetFromPhactoriViewMapC(inViewMapC):
   over time.  From these, we will construct ParaView/Catalyst data structures
   to do the data management and rendering.  See the class
   PhactoriPipeAndViewsState and the lower level related classes for more
-  explaination.
+  explanation.
   """
 
   if PhactoriDbg(100):
@@ -9576,7 +9557,7 @@ def CreateViewSetFromPhactoriViewMapC(inViewMapC):
     myDebugPrint3("  " + str(textannotationBlocks) + "\n")
 
   #go through imageset json, and locate operation shortcuts.  If found, create
-  #json defintion of operations and add them to the structure for later
+  #json definition of operations and add them to the structure for later
   #creation, and add reference to the new operations in the imageblock json
   HandleOperationShortcuts(imagesetBlocks, operationBlocks)
 
@@ -9692,7 +9673,7 @@ def CreateViewSetFromPhactoriViewMapC(inViewMapC):
 
   #parse scatter plot blocks
 
-  #special case; check for 'all variables' in a scatter plot and contruct all
+  #special case; check for 'all variables' in a scatter plot and construct all
   #plot json blocks if necessary
   TestForAndConstructAllScatterPlots(scatterplotBlocks)
 
@@ -9703,7 +9684,7 @@ def CreateViewSetFromPhactoriViewMapC(inViewMapC):
   ParseBlocksC2(gPipeAndViewsState.mScatterPlotBlocks, scatterplotBlocks,
       PhactoriScatterPlotBlock, gPipeAndViewsState)
 
-  #special case; check for 'all variables' in a plot over time and contruct all
+  #special case; check for 'all variables' in a plot over time and construct all
   #plot json blocks if necessary
   TestForAndConstructAllPlotsOverTime(timeplotBlocks)
 
@@ -10362,7 +10343,7 @@ def CalculateColorMapRGBPointsWithSubranges(inBaseRgbPoints,
   if minHlRatio >= 1.0 or maxHlRatio <= 0.0:
       if PhactoriDbg(100):
         myDebugPrint3("subrange is above or below overall range, returning\n"
-          "CalculateColorMapRGBPointsWithSubranges returing \n", 100)
+          "CalculateColorMapRGBPointsWithSubranges returning \n", 100)
       return inBaseRgbPoints
 
   if minHlRatio < 0.0:
@@ -10454,7 +10435,7 @@ def CalculateColorMapRGBPointsWithSubranges(inBaseRgbPoints,
       'myRGBPoints: \n' + str(myRgbPoints) + '\n')
 
   if PhactoriDbg(100):
-    myDebugPrint3("CalculateColorMapRGBPointsWithSubranges returing \n", 100)
+    myDebugPrint3("CalculateColorMapRGBPointsWithSubranges returning \n", 100)
 
   return myRgbPoints
 
@@ -10681,7 +10662,7 @@ def ShowDataColorLegendXX(inPvView,
           " now 0: " + str(inColorLegendRepRef) + "\n")
       inColorLegendRepRef.Visibility = 0
     myDebugPrint3(
-        'phactori.ShowDataColorLegendXX returing with none rep: ' + \
+        'phactori.ShowDataColorLegendXX returning with none rep: ' + \
         inOnOffSetting + '\n', 100)
     return None
 
@@ -10708,7 +10689,7 @@ def ShowDataColorLegendXX(inPvView,
       #    inColorSettings.mTextColor
       if PhactoriDbg(100):
         myDebugPrint3(
-            'phactori.ShowDataColorLegendXX returing with old rep: ' + \
+            'phactori.ShowDataColorLegendXX returning with old rep: ' + \
             inOnOffSetting + '\n', 100)
       return inColorLegendRepRef
   #else:
@@ -10746,100 +10727,56 @@ def ShowDataColorLegendXX(inPvView,
   xPosForBottomTop = 0.5 - 0.5 * colorLegendAdjustedLongSize
   yPosForLeftRight = 0.5 - 0.5 * colorLegendAdjustedShortSize
 
-  if gParaViewCatalystVersionFlag < 50400:
-    if inColorLegendPositionAndSize[0] == 'top':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      legendPosition=[xPosForBottomTop, 0.85]
-    elif inColorLegendPositionAndSize[0] == 'bottom':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      legendPosition=[xPosForBottomTop, 0.02]
-    elif inColorLegendPositionAndSize[0] == 'left':
-      legendOrientation = 'Vertical'
-      legendSize = verticalLegendSize
-      legendPosition=[0.065, yPosForLeftRight]
-    elif inColorLegendPositionAndSize[0] == 'right':
-      legendOrientation = 'Vertical'
-      legendSize = verticalLegendSize
-      legendPosition=[0.9, yPosForLeftRight]
-    elif inColorLegendPositionAndSize[0] == 'top left':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      legendPosition=[0.065, 0.85]
-    elif inColorLegendPositionAndSize[0] == 'top right':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      legendPosition=[0.7, 0.85]
-    elif inColorLegendPositionAndSize[0] == 'bottom left':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      #legendPosition=[0.065, 0.85]
-      legendPosition=[0.065, 0.01]
-    elif inColorLegendPositionAndSize[0] == 'bottom right':
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      #legendPosition=[0.7, 0.05]
-      legendPosition=[0.7, 0.01]
-    elif inColorLegendPositionAndSize[0] == 'parameters':
-      legendOrientation = inColorLegendPositionAndSize[1]
-      legendSize = horizontalLegendSize
-      legendPosition = inColorLegendPositionAndSize[2]
-    else:
-      legendOrientation = 'Horizontal'
-      legendSize = horizontalLegendSize
-      #legendPosition=[xPosForBottomTop, 0.05]
-      legendPosition=[xPosForBottomTop, 0.01]
-
-    if PhactoriDbg():
-      myDebugPrint3("legend info:\n  legendSizeMultiplier: " + str(legendSizeMultiplier) + "\n" \
-        "  legendSize: " + str(legendSize) + "\n" \
-        "  legendPos: " + str(legendPosition) + "\n"\
-        "  legendOrientation: " + str(legendOrientation) + "\n"\
-        "  legendFontSize: " + str(legendFontSize) + "\n")
-
+  if inColorLegendPositionAndSize[0] == 'top':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    legendPosition=[xPosForBottomTop, 0.85]
+  elif inColorLegendPositionAndSize[0] == 'bottom':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    legendPosition=[xPosForBottomTop, 0.05]
+    legendPosition=[xPosForBottomTop, 0.01]
+  elif inColorLegendPositionAndSize[0] == 'left':
+    legendOrientation = 'Vertical'
+    legendSize = verticalLegendSize
+    legendPosition=[0.065, yPosForLeftRight]
+  elif inColorLegendPositionAndSize[0] == 'right':
+    legendOrientation = 'Vertical'
+    legendSize = verticalLegendSize
+    legendPosition=[0.9, yPosForLeftRight]
+  elif inColorLegendPositionAndSize[0] == 'top left':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    legendPosition=[0.065, 0.85]
+  elif inColorLegendPositionAndSize[0] == 'top right':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    legendPosition=[0.7, 0.85]
+  elif inColorLegendPositionAndSize[0] == 'bottom left':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    #legendPosition=[0.065, 0.85]
+    legendPosition=[0.065, 0.01]
+  elif inColorLegendPositionAndSize[0] == 'bottom right':
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    #legendPosition=[0.7, 0.05]
+    legendPosition=[0.7, 0.01]
+  elif inColorLegendPositionAndSize[0] == 'parameters':
+    legendOrientation = inColorLegendPositionAndSize[1]
+    legendSize = horizontalLegendSize
+    legendPosition = inColorLegendPositionAndSize[2]
   else:
-    defaultLegendLength = 0.33
-    defaultMidPos = 0.5 - 0.5*defaultLegendLength
-    #legendFontSize = 16
-    #legendSize = 1.0
-    #validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
-    #    'LowerLeftCorner', 'LowerRightCorner',
-    #    'UpperCenter', 'LowerCenter']
-    legendPosition=[0.0, 0.0]
-    if inColorLegendPositionAndSize[0] == 'top':
-      legendOrientation = 'Horizontal'
-      legendWindowLocation = 'UpperCenter'
-    elif inColorLegendPositionAndSize[0] == 'bottom':
-      legendOrientation = 'Horizontal'
-      legendWindowLocation = 'LowerCenter'
-    elif inColorLegendPositionAndSize[0] == 'left':
-      legendOrientation = 'Vertical'
-      legendPosition=[0.02, defaultMidPos]
-      legendWindowLocation = 'AnyLocation'
-    elif inColorLegendPositionAndSize[0] == 'right':
-      legendOrientation = 'Vertical'
-      legendPosition=[0.89, defaultMidPos]
-      legendWindowLocation = 'AnyLocation'
-    elif inColorLegendPositionAndSize[0] == 'top left':
-      legendOrientation = 'Vertical'
-      legendWindowLocation = 'UpperLeftCorner'
-    elif inColorLegendPositionAndSize[0] == 'top right':
-      legendOrientation = 'Vertical'
-      legendWindowLocation = 'UpperRightCorner'
-    elif inColorLegendPositionAndSize[0] == 'bottom left':
-      legendOrientation = 'Vertical'
-      legendWindowLocation = 'LowerLeftCorner'
-    elif inColorLegendPositionAndSize[0] == 'bottom right':
-      legendOrientation = 'Vertical'
-      legendWindowLocation = 'LowerRightCorner'
-    elif inColorLegendPositionAndSize[0] == 'parameters':
-      legendOrientation = inColorLegendPositionAndSize[1]
-      legendPosition = inColorLegendPositionAndSize[2]
-      legendWindowLocation = 'AnyLocation'
-    else:
-      legendOrientation = 'Vertical'
-      legendWindowLocation = 'LowerRightCorner'
+    legendOrientation = 'Horizontal'
+    legendSize = horizontalLegendSize
+    #legendPosition=[xPosForBottomTop, 0.05]
+    legendPosition=[xPosForBottomTop, 0.01]
+
+  if PhactoriDbg():
+    myDebugPrint3("legend info:\n  legendSizeMultiplier: " + str(legendSizeMultiplier) + "\n" \
+      "  legendSize: " + str(legendSize) + "\n" \
+      "  legendPos: " + str(legendPosition) + "\n"\
+      "  legendFontSize: " + str(legendFontSize) + "\n")
 
     #newScalarBarWidgetRepresentation = CreateScalarBar( Title=inPvDataRep.ColorArrayName, Position2=[0.13, 0.5], TitleOpacity=1.0, TitleShadow=0, AutomaticLabelFormat=1, TitleFontSize=12, TitleColor=[1.0, 1.0, 1.0], AspectRatio=20.0, NumberOfLabels=5, ComponentTitle='', Resizable=1, TitleFontFamily='Arial', Visibility=myVisibility, LabelFontSize=12, LabelFontFamily='Arial', TitleItalic=0, Selectable=0, LabelItalic=0, Enabled=0, LabelColor=[1.0, 1.0, 1.0], Position=[0.9, 0.31396255850234012], LabelBold=0, UseNonCompositedRenderer=1, LabelOpacity=1.0, TitleBold=0, LabelFormat='%-#6.3g', Orientation='Vertical', LabelShadow=0, LookupTable=inPvDataRep.LookupTable, Repositionable=1 )
   if gParaViewCatalystVersionFlag <= 40100:
@@ -10873,7 +10810,7 @@ def ShowDataColorLegendXX(inPvView,
       LabelFormat='%-#6.3g',
       LabelShadow=0,
       Repositionable=1)
-  elif gParaViewCatalystVersionFlag < 50400:
+  if gParaViewCatalystVersionFlag > 40100:
     newScalarBarWidgetRepresentation = CreateScalarBar(Title=localColorArrayName,
       Orientation=legendOrientation,
       Position=legendPosition,
@@ -10905,31 +10842,6 @@ def ShowDataColorLegendXX(inPvView,
       #LabelShadow=0,
       #Repositionable=1
       )
-  else:
-    newScalarBarWidgetRepresentation = CreateScalarBar(
-        Title=localColorArrayName, ComponentTitle='')
-    newScalarBarWidgetRepresentation.Orientation = legendOrientation
-    newScalarBarWidgetRepresentation.WindowLocation = legendWindowLocation
-    if legendWindowLocation == 'AnyLocation':
-      newScalarBarWidgetRepresentation.Position = legendPosition
-    if PhactoriDbg():
-      nbwr = newScalarBarWidgetRepresentation
-      myDebugPrint3("newScalarBarWidgetRepresentation:\n" +\
-        str(nbwr) + "\n" +\
-        "  Title: " + str(nbwr.Title) + "\n" +\
-        "  ComponentTitle: " + str(nbwr.ComponentTitle) + "\n" +\
-        "  WindowLocation: " + str(nbwr.WindowLocation) + "\n" +\
-        #"  LockPosition: " + str(nbwr.LockPosition) + "\n" +\
-        #"  Repositionable: " + str(nbwr.Repositionable) + "\n" +\
-        #"  AutoOrient: " + str(nbwr.AutoOrient) + "\n" +\
-        "  Position: " + str(nbwr.Position) + "\n" +\
-        "  ScalarBarLength: " + str(nbwr.ScalarBarLength) + "\n" +\
-        "  ScalarBarThickness: " + str(nbwr.ScalarBarThickness) + "\n" +\
-        "  Orientation: " + str(nbwr.Orientation) + "\n" +\
-        "  LabelFontSize: " + str(nbwr.LabelFontSize) + "\n" +\
-        "  TitleFontSize: " + str(nbwr.TitleFontSize) + "\n" +\
-        "  LabelFontFamily: " + str(nbwr.LabelFontFamily) + "\n" +\
-        "  TitleFontFamily: " + str(nbwr.TitleFontSize) + "\n")
 
   inPvView.OrientationAxesLabelColor = inColorSettings.mTextColor
   inPvView.Representations.append(newScalarBarWidgetRepresentation)
@@ -10955,7 +10867,7 @@ def ShowDataColorLegendXX(inPvView,
     myDebugPrint3(str(newScalarBarWidgetRepresentation) + '\n')
 
   if PhactoriDbg(100):
-    myDebugPrint3('phactori.ShowDataColorLegendXX returing with new rep: ' + \
+    myDebugPrint3('phactori.ShowDataColorLegendXX returning with new rep: ' + \
         inOnOffSetting + '\n', 100)
 
   return newScalarBarWidgetRepresentation
@@ -10972,7 +10884,7 @@ gThresholdFilterNameCounter = 0
 
 def ThresholdFilter(inVariableName, inType, inRange, inThresholdFilterName = None):
   "Apply a threshold filter.  inVariableName is the variable to use for "
-  "thresholding, inType is 'POINTS' or 'CELLS', inRange is the threhold "
+  "thresholding, inType is 'POINTS' or 'CELLS', inRange is the threshold "
   "range, such as [0.5, 1.5] or [-10.0, 10.0]"
   if PhactoriDbg(100):
     myDebugPrint3('phactori.ThresholdFilter entered, setting:' + inVariableName + ' ' + inType + ' ' + str(inRange) + '\n', 100)
@@ -12300,7 +12212,7 @@ def SetPlotPointsFromOneBlock(inInputCsData, ioPlotInfo, ioIndex):
     myDebugPrint3('SetPlotPointsFromOneBlock entered\n', 100)
   if PhactoriDbg():
     myDebugPrint3(' x axis variable: ' + ioPlotInfo.m_XAxisVariableInfo.mVariableName + \
-       '\n y axis varaible: ' + ioPlotInfo.m_YAxisVariableInfo.mVariableName + '\n')
+       '\n y axis variable: ' + ioPlotInfo.m_YAxisVariableInfo.mVariableName + '\n')
 
   #detect variable type (node/element) if necessary, and save info if detected
   detectResult = ioPlotInfo.m_YAxisVariableInfo.DetectVariableType(
@@ -13343,10 +13255,10 @@ def UpdatePlotViewLook(inPlotInfo):
 
   dr = inPlotInfo.m_PhactoriRenderViewInfo.DataRepresentation1
 
-  #dr.CustomBoundsActive = [1,1,0]
-  #dr.CustomBounds = [xmin, xmax, ymin, ymax, 0.0, 0.0]
-  #dr.CustomRangeActive = [1,1,0]
-  #dr.CustomRange = [xmin, xmax, dataymin, dataymax, 0.0, 0.0]
+  dr.CustomBoundsActive = [1,1,0]
+  dr.CustomBounds = [xmin, xmax, ymin, ymax, 0.0, 0.0]
+  dr.CustomRangeActive = [1,1,0]
+  dr.CustomRange = [xmin, xmax, dataymin, dataymax, 0.0, 0.0]
   #dr.CubeAxesVisibility = 1
   SetAxesGridVisibility(rv, 1)
 
@@ -14227,7 +14139,7 @@ class PhactoriImagesetOnOffFilter:
     #criteriaIndex = 0
     #for oneCriteria in self.mStartCriteriaList:
     #  criteriaIndex += 1
-    #  myDebugPrint3("trying critera: " + str(criteriaIndex))
+    #  myDebugPrint3("trying criteria: " + str(criteriaIndex))
     #  if oneCriteria.TestForTruth(ioPipeAndViewsState):
     #    myDebugPrint3("criteria returned true")
     #  else:

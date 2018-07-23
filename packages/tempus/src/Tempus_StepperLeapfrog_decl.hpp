@@ -103,6 +103,10 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
+    
     virtual std::string getStepperType() const
      { return stepperPL_->get<std::string>("Stepper Type"); }
 
@@ -160,6 +164,9 @@ protected:
 
   Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 } // namespace Tempus

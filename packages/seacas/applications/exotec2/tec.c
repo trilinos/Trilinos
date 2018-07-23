@@ -1,36 +1,36 @@
 /*
-* Copyright(C) 2008 National Technology & Engineering Solutions of
-* Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-* NTESS, the U.S. Government retains certain rights in this software.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-* * Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-*
-* * Redistributions in binary form must reproduce the above
-*   copyright notice, this list of conditions and the following
-*   disclaimer in the documentation and/or other materials provided
-*   with the distribution.
-*
-* * Neither the name of NTESS nor the names of its
-*   contributors may be used to endorse or promote products derived
-*   from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * * Neither the name of NTESS nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <assert.h>
 #include <stdio.h>
@@ -49,7 +49,6 @@
 */
 void tec(int exoid, const char *filename)
 {
-
   int     i, j, k, idum;
   int     ndim, nnode, nelem, nblk, nnset, neset, nvar, ntime, itime;
   char    title[MAX_LINE_LENGTH + 1];
@@ -108,15 +107,15 @@ void tec(int exoid, const char *filename)
   attr_per_blk  = (int *)malloc(nblk * sizeof(int));
   elem_type     = (char **)malloc(nblk * sizeof(char *));
   icon          = (int **)malloc(nblk * sizeof(int *));
-  for (i         = 0; i < nblk; i++)
+  for (i = 0; i < nblk; i++)
     elem_type[i] = (char *)malloc((name_size + 1) * sizeof(char));
-  ex_get_elem_blk_ids(exoid, elem_id);
+  ex_get_ids(exoid, EX_ELEM_BLOCK, elem_id);
   for (i = 0; i < nblk; i++) {
-    ex_get_elem_block(exoid, elem_id[i], elem_type[i], &elem_per_blk[i], &node_per_elem[i],
-                      &attr_per_blk[i]);
+    ex_get_block(exoid, EX_ELEM_BLOCK, elem_id[i], elem_type[i], &elem_per_blk[i],
+                 &node_per_elem[i], NULL, NULL, &attr_per_blk[i]);
 
     icon[i] = (int *)malloc(elem_per_blk[i] * node_per_elem[i] * sizeof(int));
-    ex_get_elem_conn(exoid, elem_id[i], icon[i]);
+    ex_get_conn(exoid, EX_ELEM_BLOCK, elem_id[i], icon[i], NULL, NULL);
   }
 
   /*
@@ -132,7 +131,7 @@ void tec(int exoid, const char *filename)
    *  Read number of nodal variables and save space
    */
   nvar = 0;
-  ex_get_var_param(exoid, "n", &nvar);
+  ex_get_variable_param(exoid, EX_NODAL, &nvar);
   if (nvar > 0) {
     varnames = (char **)malloc(nvar * sizeof(char *));
     q        = (double **)malloc(nvar * sizeof(double *));
@@ -140,7 +139,7 @@ void tec(int exoid, const char *filename)
       varnames[i] = (char *)malloc((name_size + 1) * sizeof(char));
       q[i]        = (double *)malloc(nnode * sizeof(double));
     }
-    ex_get_var_names(exoid, "n", nvar, varnames);
+    ex_get_variable_names(exoid, EX_NODAL, nvar, varnames);
   }
 
   /* /////////////////////////////////////////////////////////////////////
@@ -231,14 +230,14 @@ void tec(int exoid, const char *filename)
     ic = (int *)malloc(nelem * node_per_elem[0] * sizeof(int));
     k  = 0;
     for (j = 0; j < nblk; j++)
-      for (i    = 0; i < node_per_elem[j] * elem_per_blk[j]; i++)
+      for (i = 0; i < node_per_elem[j] * elem_per_blk[j]; i++)
         ic[k++] = icon[j][i];
     assert(k == nelem * node_per_elem[0]);
 
     if (itime == 0) {
       for (j = 0; j < ntime; j++) {
         for (i = 0; i < nvar; i++)
-          ex_get_nodal_var(exoid, j + 1, i + 1, nnode, q[i]);
+          ex_get_var(exoid, j + 1, EX_NODAL, i + 1, 1, nnode, q[i]);
 
         i = 0;
         teczone(1, nnode, j + 1, elem_type[i], node_per_elem[i], nelem, ic, ndim, x, nvar, q,
@@ -255,7 +254,7 @@ void tec(int exoid, const char *filename)
       ||  Write out each zone individually
     */
     for (i = 0; i < nvar; i++)
-      ex_get_nodal_var(exoid, itime, i + 1, nnode, q[i]);
+      ex_get_var(exoid, itime, EX_NODAL, i + 1, 1, nnode, q[i]);
 
     for (i = 0; i < nblk; i++)
       teczone(nblk, nnode, elem_id[i], elem_type[i], node_per_elem[i], elem_per_blk[i], icon[i],
@@ -349,7 +348,7 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
     ic    = (int *)malloc(ifac * node_per_elem * elem_per_blk * sizeof(int));
     isort = (int *)malloc(node_per_elem * elem_per_blk * sizeof(int));
 
-    for (j     = 0; j < node_per_elem * elem_per_blk; j++)
+    for (j = 0; j < node_per_elem * elem_per_blk; j++)
       isort[j] = icon[j];
 
 #ifdef DEBUG
@@ -410,20 +409,20 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
     /*
      *  Copy local data
      */
-    for (i  = 0; i < ndim; i++)
+    for (i = 0; i < ndim; i++)
       xx[i] = (double *)malloc(inode * sizeof(double));
 
     for (j = 0; j < ndim; j++)
-      for (i     = 0; i < inode; i++)
+      for (i = 0; i < inode; i++)
         xx[j][i] = x[j][isort[i] - 1];
 
     if (nvar > 0)
       qq = (double **)malloc(nvar * sizeof(double *));
-    for (i  = 0; i < nvar; i++)
+    for (i = 0; i < nvar; i++)
       qq[i] = (double *)malloc(inode * sizeof(double));
 
     for (j = 0; j < nvar; j++)
-      for (i     = 0; i < inode; i++)
+      for (i = 0; i < inode; i++)
         qq[j][i] = q[j][isort[i] - 1];
   }
   else {
@@ -439,12 +438,12 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
     inode = nnode;
     ic    = icon;
 
-    for (i  = 0; i < ndim; i++)
+    for (i = 0; i < ndim; i++)
       xx[i] = x[i];
 
     if (nvar > 0)
       qq = (double **)malloc(nvar * sizeof(double *));
-    for (i  = 0; i < nvar; i++)
+    for (i = 0; i < nvar; i++)
       qq[i] = q[i];
   }
 

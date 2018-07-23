@@ -44,6 +44,7 @@
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Experimental_BlockView.hpp>
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Experimental {

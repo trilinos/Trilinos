@@ -21,7 +21,7 @@
 #include "Panzer_Constant.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
-#include "Panzer_TpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_ReorderADValues_Evaluator.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
@@ -142,39 +142,51 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    typedef panzer::Traits::Jacobian EvalT;
 
+   typedef double Scalar;
+   typedef int LocalOrdinalEpetra;
+   typedef int GlobalOrdinalEpetra;
+   typedef int LocalOrdinalTpetra;
+   typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+
+   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> blockedTpetraLinObjFactory;
+   typedef typename panzer::TpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraLinObjFactory;
+   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> blockedEpetraLinObjFactory;
+   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraLinObjFactory;
+
    std::string fieldStr = (*this->m_dof_names)[0];
    const std::string residualField = "AUX_MASS_RESIDUAL_"+dof_name; 
    int pFieldNum;
    int blockIndex;
 
-   // must be able to cast to a block linear object factory 
-   Teuchos::RCP<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > tblof
-      = Teuchos::rcp_dynamic_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(Teuchos::rcpFromRef(lof)); 
-
    std::string outPrefix = "ScatterReordered_";
-
 
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > nlof;
 
-   if(tblof != Teuchos::null){
-     Teuchos::RCP<const panzer::BlockedDOFManager<int,panzer::Ordinal64> > blockedDOFMngr = tblof->getGlobalIndexer();
-     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
+   // must be able to cast to a block linear object factory
+   Teuchos::RCP<const blockedTpetraLinObjFactory> tblof
+      = Teuchos::rcp_dynamic_cast<const blockedTpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
+   Teuchos::RCP<const blockedEpetraLinObjFactory> eblof
+      = Teuchos::rcp_dynamic_cast<const blockedEpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
+
+   if(tblof != Teuchos::null) {
+     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalTpetra,GlobalOrdinalTpetra> > blockedDOFMngr = tblof->getGlobalIndexer();
+     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
      pFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
- 
-     // build a new tpetra linear object factory 
-     nlof = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Teuchos::rcp(new Teuchos::MpiComm<int>(tblof->getComm())).getConst(),ugi));
+     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalTpetra,GlobalOrdinalTpetra> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+
+     // build a new linear object factory
+     nlof = Teuchos::rcp(new tpetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(tblof->getComm())).getConst(),ugi));
 
      // first build a reordering evaluator to take it to the new sub global indexer
      {
-        std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts; 
+        std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts;
         fieldLayouts.push_back(field_library.lookupBasis(fieldStr)->functional);
 
-        std::vector<std::string> resNames; 
+        std::vector<std::string> resNames;
         resNames.push_back(residualField);
 
         RCP< PHX::Evaluator<panzer::Traits> > op = Teuchos::rcp(
@@ -188,9 +200,39 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
         fm.registerEvaluator<EvalT>(op);
      }
 
-   } else
-     TEUCHOS_ASSERT(false); 
+   } else if(eblof != Teuchos::null) {
+     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalEpetra,GlobalOrdinalEpetra> > blockedDOFMngr = eblof->getGlobalIndexer();
+     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
+     pFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
+     blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
+
+     // get the unique global indexer for just this field
+     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalEpetra,GlobalOrdinalEpetra> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+
+     // build a new linear object factory
+     nlof = Teuchos::rcp(new epetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(eblof->getComm())).getConst(),ugi));
+
+     // first build a reordering evaluator to take it to the new sub global indexer
+     {
+        std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts;
+        fieldLayouts.push_back(field_library.lookupBasis(fieldStr)->functional);
+
+        std::vector<std::string> resNames;
+        resNames.push_back(residualField);
+
+        RCP< PHX::Evaluator<panzer::Traits> > op = Teuchos::rcp(
+              new panzer::ReorderADValues_Evaluator<EvalT,panzer::Traits>(outPrefix,
+                                                    resNames,
+                                                    fieldLayouts,
+                                                    this->getElementBlockId(),
+                                                    *blockedDOFMngr,
+                                                    *ugi));
+
+        fm.registerEvaluator<EvalT>(op);
+     }
+   } else
+     TEUCHOS_ASSERT(false);
 
    {
       RCP<std::map<std::string,std::string> > resToField 

@@ -72,11 +72,9 @@
 #include <Teuchos_ArrayView.hpp>
 
 const int SMALL_NUMBER_OF_ROWS = 5;
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> simpleUser_t;
@@ -730,11 +728,10 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 

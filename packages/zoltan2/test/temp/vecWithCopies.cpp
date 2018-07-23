@@ -9,6 +9,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 
@@ -25,10 +26,8 @@ int main(int narg, char **arg)
   typedef map_t::global_ordinal_type gno_t;
   typedef int scalar_t;
 
-  // Usual Teuchos MPI stuff
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
-  Teuchos::RCP<const Teuchos::Comm<int> >
-  comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Create a map with duplicated entries (mapWithCopies)

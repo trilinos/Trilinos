@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -280,7 +280,7 @@ c
 c  The end of the VAX FORTRAN DO Loop that I commented out.  jrr.
 c
 c      END DO
- 3000 FORMAT( E32.0 )
+ 3000 FORMAT( F32.0 )
  4000 FORMAT( I32 )
 C
       END

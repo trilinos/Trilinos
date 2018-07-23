@@ -52,14 +52,12 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 //#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to order a TPetra matrix
@@ -122,10 +120,9 @@ int main(int narg, char** arg)
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
 
-  ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  // Initialize Tpetra and get default communicator.
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
@@ -183,9 +180,9 @@ int main(int narg, char** arg)
   }
 
   if (me == 0)
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl;
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
@@ -222,8 +219,8 @@ int main(int narg, char** arg)
   checkPerm = soln->getPermutationView();
 
   for (size_t ii = 0; ii < checkLength; ii++)
-      cout << checkPerm[ii] << " ";
-  cout << endl;
+      std::cout << checkPerm[ii] << " ";
+  std::cout << std::endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
 

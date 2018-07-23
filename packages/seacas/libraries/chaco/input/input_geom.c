@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ int input_geom(FILE *  fingeom,                /* geometry input file */
                int     nvtxs,                  /* number of coordinates to read */
                int *   igeom,                  /* dimensionality of geometry */
                float **x, float **y, float **z /* coordiates of vertices */
-               )
+)
 {
   extern int CHECK_INPUT; /* print any warning messages? */
   extern int DEBUG_INPUT; /* echo that read was successful? */

@@ -1,0 +1,63 @@
+{exodus_meta("exodus.g")}
+
+        Title = {ex_title}
+    Dimension = {ex_dimension}
+   Node Count = {ex_node_count}
+Element Count = {ex_element_count}
+
+{ifdef(ex_block_count)}
+Element Block Info:
+        Count = {ex_block_count}
+        Names = {ex_block_names}
+     Topology = {ex_block_topology}
+          Ids = {print_array(transpose(ex_block_ids))}
+{print_array(ex_block_info)}
+{endif}
+
+{ifdef(ex_nodeset_count)}
+Nodeset Info:
+        Count = {ex_nodeset_count}
+        Names = {ex_nodeset_names}
+          Ids = {print_array(transpose(ex_nodeset_ids))}
+{print_array(ex_nodeset_info)}
+{endif}
+
+{ifdef(ex_sideset_count)}
+Sideset Info:
+        Count = {ex_sideset_count}
+        Names = {ex_sideset_names}
+          Ids = {print_array(transpose(ex_sideset_ids))}
+{print_array(ex_sideset_info)}
+{endif}
+
+{ifdef(ex_timestep_count)}
+Timestep Info:
+        Count = {ex_timestep_count}
+        Times = {print_array(transpose(ex_timestep_times))}
+{endif}
+
+NOTE: Array index are 0-based by default; get_word is 1-based...
+{loop(ex_block_count)}
+Element block {ex_block_ids[_i]} named '{get_word(++_i,ex_block_names,",")}' has topology '{get_word(_i,ex_block_topology,",")}'
+{endloop}
+
+{info1 = exodus_info("exodus.g", "start extract", "end extract")}
+{rescan(info1)}
+
+{info2 = exodus_info("exodus.g", "PRE: ")}
+{rescan(info2)}
+
+{_i=0}
+{loop(ex_block_count)}
+{_name = get_word(++_i,ex_block_names,",")}
+{_indx = find_word(_name, ex_block_names, ",")}
+{if(_indx != _i)}
+ERROR found in get_word() find_word() symmetry -- {_i} {_indx} {_name}
+{endif}
+{endloop}
+
+Check for name not in list:
+{indx = find_word("Greg", ex_block_names, ",")}
+{if (indx != 0)}
+ERROR: Incorrect return from find_word() function
+{endif}

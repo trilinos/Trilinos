@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ void add_edges(struct vtx_data **graph,      /* graph data structure */
                struct ilists **  old_edges,  /* edges data overwritten for connecting */
                struct flists **  old_ewgts,  /* weights of edges overwritten */
                int               using_ewgts /* are edge weights being used? */
-               )
+)
 {
   struct ilists *   save_list;  /* space to save old edge list */
   struct flists *   save_ewgts; /* space to save old edge weights */

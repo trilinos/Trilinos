@@ -75,7 +75,6 @@ using Teuchos::rcp;
 using Teuchos::tuple;
 
 using std::string;
-using std::ostringstream;
 using std::endl;
 using std::cout;
 
@@ -90,7 +89,7 @@ int main()
     RCP<const Teuchos::StringValidator> strValidatorP =
       rcp(new Teuchos::StringValidator(
         tuple<string>("speed", "balance", "quality")));
-    ostringstream docString;
+    std::ostringstream docString;
     strValidatorP->printDoc(
       "When algorithm choices exist, opt for speed or solution quality?\n"
       "(Default is a balance of speed and quality)\n",
@@ -102,7 +101,7 @@ int main()
     string parameterName("debug_output_file");
     RCP<const Teuchos::FileNameValidator > fnameValidatorP =
       fnameValidatorP = rcp(new Teuchos::FileNameValidator(false));
-    ostringstream docString;
+    std::ostringstream docString;
     fnameValidatorP->printDoc(
       "name of file to which debug/status messages should be written\n"
       "(process rank will be included in file name)\n",
@@ -115,7 +114,7 @@ int main()
     string parameterName("random_seed");
     RCP<const Teuchos::AnyNumberParameterEntryValidator> anyNumValidatorP =
       rcp(new Teuchos::AnyNumberParameterEntryValidator);
-    ostringstream docString;
+    std::ostringstream docString;
     anyNumValidatorP->printDoc("random seed\n", docString);
     pl.set<string>(parameterName, "0.5", docString.str(), anyNumValidatorP);
   }
@@ -144,7 +143,7 @@ int main()
     info.append("(If the compile flag Z2_OMIT_ALL_STATUS_MESSAGES was set,\n");
     info.append("then message output code is not executed at runtime.)\n");
 
-    ostringstream docString;
+    std::ostringstream docString;
     str2intValidatorP->printDoc(info, docString);
     pl.set<string>(parameterName, "basic_status", docString.str(), 
       str2intValidatorP);
@@ -154,7 +153,7 @@ int main()
     string parameterName("debug_procs");
     typedef Zoltan2::IntegerRangeListValidator<int> irl_t;
     RCP<const irl_t> intRangeValidatorP = rcp(new irl_t);
-    ostringstream docString;
+    std::ostringstream docString;
     intRangeValidatorP->printDoc(
       "list of ranks that output debugging/status messages (default \"0\")\n",
        docString);

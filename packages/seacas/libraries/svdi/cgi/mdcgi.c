@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -69,7 +69,11 @@ static anything *oldest_surfs[MAX_SURFACES]; /* states of oldest surfaces */
 /*	initialized. 							      */
 /*									      */
 /******************************************************************************/
+#if defined(ADDC_)
 void xcoon_(anything **surface_id) /* which surface to turn output on for*/
+#else
+void xcoon(anything **surface_id) /* which surface to turn output on for*/
+#endif
 {
   /* does surface_id point to a valid surface? */
   /* if not, do error action */
@@ -118,7 +122,11 @@ void xcoon_(anything **surface_id) /* which surface to turn output on for*/
 /*	xcact - initialize and activate a cgi display surface		      */
 /*									      */
 /******************************************************************************/
+#if defined(ADDC_)
 void xcact_(void (*device_fn)(), anything **p_surface_id)
+#else
+void xcact(void (*device_fn)(), anything **p_surface_id)
+#endif
 {
   short     arg1; /* arg passed to device routine */
   short     i;
@@ -203,7 +211,11 @@ void xcact_(void (*device_fn)(), anything **p_surface_id)
 /*	xcsol - set solicitation surface				      */
 /*									      */
 /******************************************************************************/
+#if defined(ADDC_)
 void xcsol_(anything **surface_id)
+#else
+void xcsol(anything **surface_id)
+#endif
 {
   /* does surface_id point to a valid surface? */
   /* if not, do error action */

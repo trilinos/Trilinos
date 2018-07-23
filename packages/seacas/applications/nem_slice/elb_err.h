@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -61,10 +61,10 @@ extern int error_lev;
 /* Function prototype for error functions */
 extern void error_add(int                level,
                       const std::string &message,  /* The message to add to the error list */
-                      const std::string &filename, /* The filename in which the error occured */
+                      const std::string &filename, /* The filename in which the error occurred */
                       int                line_no   /* The line number in filename where the error
-                                                 * was reported */
-                      );
+                                                    * was reported */
+);
 
 extern void error_report(void);
 

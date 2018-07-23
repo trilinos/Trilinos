@@ -80,7 +80,6 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
-using namespace std;
 using std::string;
 using std::vector;
 using std::cout;
@@ -173,7 +172,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         throw "File " + paramFileName + " cannot be opened.";
     }
     comm->broadcast(0, size, inp);
-    istringstream inParam(inp);
+    std::istringstream inParam(inp);
     string str;
     getline (inParam,str);
     while (!inParam.eof()){
@@ -436,12 +435,12 @@ tMVector_t* makeMeshCoordinates(
 }
 
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
   // MEMORY_CHECK(true, "Before initializing MPI");
 
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   DOTS dots;
@@ -509,7 +508,7 @@ int main(int argc, char *argv[])
   commandLine.setOption("objective", &objective,  doc.c_str());
 
   CommandLineProcessor::EParseCommandLineReturn rc =
-    commandLine.parse(argc, argv);
+    commandLine.parse(narg, arg);
 
 
 
@@ -637,7 +636,7 @@ int main(int argc, char *argv[])
   // Now call Zoltan to partition the problem.
 
   float ver;
-  int aok = Zoltan_Initialize(argc, argv, &ver);
+  int aok = Zoltan_Initialize(narg, arg, &ver);
 
   if (aok != 0){
     printf("Zoltan_Initialize failed\n");

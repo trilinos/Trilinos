@@ -1081,7 +1081,7 @@ namespace {
                 TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
 
                 out << "On Proc 0:" << endl;
-                Teuchos::OSTab tab2 (out);
+                Teuchos::OSTab tab5 (out);
                 out << "numinds: " << numinds << endl
                     << "inds(0,numinds): " << inds (0, numinds) << endl
                     << "numunique: " << numunique << endl

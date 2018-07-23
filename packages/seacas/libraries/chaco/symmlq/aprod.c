@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,9 +36,9 @@
 #include "structs.h"
 #include <stdio.h> // for NULL
 
-int aprod_(long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work,
-           double *dorthlist /* vectors to orthogonalize against */
-           )
+int aprod(long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work,
+          double *dorthlist /* vectors to orthogonalize against */
+)
 {
   int               nvtxs; /* int copy of long_nvtxs */
   struct vtx_data **A;

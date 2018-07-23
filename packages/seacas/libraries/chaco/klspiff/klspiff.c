@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,13 +54,13 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
              int               nsets, /* number of sets at each level */
              int (*hops)[MAXSETS],    /* hop cost between sets */
              double *goal,            /* desired set sizes */
-             float * term_wgts[],     /* weights for terminal propogation */
+             float * term_wgts[],     /* weights for terminal propagation */
              int     max_dev,         /* largest deviation from balance allowed */
              double  maxdeg,          /* largest weighted vertex degree */
              int     using_ewgts,     /* are edge weights being used? */
              int **  bndy_list,       /* list of vertices on boundary (0 ends) */
              double *weights          /* vertex weights in each set */
-             )
+)
 {
   extern FILE *     Output_File;     /* output file or null */
   extern double     CUT_TO_HOP_COST; /* relative importance of cuts/hops */
@@ -75,7 +75,7 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
   int **            dvals;       /* change in penalty for each possible move */
   int **            tops;        /* starting dval for each type of move */
   double            time, time1; /* timing variables */
-  float             maxterm;     /* largest terminal propogation preference */
+  float             maxterm;     /* largest terminal propagation preference */
   int               maxhop;      /* maximum hops between sets */
   int               maxdval;     /* largest transition cost for a vertex */
   double            cut_cost;    /* relative importance of cuts/hops */
@@ -170,7 +170,7 @@ static void free_kl(
     struct bilist **  listspace, /* space for all bidirectional elements */
     int **            dvals,     /* change in penalty for each possible move */
     int **            tops       /* starting dval for each type of move */
-    )
+)
 {
 
   sfree(dvals);

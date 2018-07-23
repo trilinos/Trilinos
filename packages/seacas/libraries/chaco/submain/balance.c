@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -59,9 +59,9 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
              int               ndims,         /* number of eigenvectors (2^d sets) */
              double            eigtol,        /* tolerance on eigenvectors */
              int (*hops)[MAXSETS]             /* between-set hop cost for KL */
-             )
+)
 {
-  extern int        TERM_PROP;                      /* invoking terminal propogation? */
+  extern int        TERM_PROP;                      /* invoking terminal propagation? */
   extern int        DEBUG_TRACE;                    /* trace the execution of the code */
   extern int        MATCH_TYPE;                     /* type of matching to use when coarsening */
   struct vtx_data **subgraph    = NULL;             /* data structure for subgraph */
@@ -69,7 +69,7 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   struct set_info **set_buckets = NULL;             /* buckets for sorting processor sets */
   struct set_info * set         = NULL;             /* current processor set information */
   int               hops_special[MAXSETS][MAXSETS]; /* hop mtx for nonstandard cases */
-  float *           term_wgts;                      /* net pull of terminal propogation */
+  float *           term_wgts;                      /* net pull of terminal propagation */
   float *           save_term_wgts;                 /* saved location of term_wgts */
   float *           all_term_wgts[MAXSETS];         /* net pull on all sets */
   int *             loc2glob;                       /* mapping from subgraph to graph numbering */

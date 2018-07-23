@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ void coarsen_kl(
     int               nedges,       /* number of edges in graph */
     int               using_vwgts,  /* are vertices weights being used? */
     int               using_ewgts,  /* are edge weights being used? */
-    float *           term_wgts[],  /* weights for terminal propogation */
+    float *           term_wgts[],  /* weights for terminal propagation */
     int               igeom,        /* dimension for geometric information */
     float **          coords,       /* coordinates for vertices */
     int               vwgt_max,     /* largest vertex weight */
@@ -63,13 +63,13 @@ void coarsen_kl(
     int     vmax,                   /* largest subgraph to stop coarsening */
     int     mediantype,             /* flag for different assignment strategies */
     int     mkconnected,            /* make graph connected before eigensolver? */
-    double  eigtol,                 /* tolerence in eigen calculation */
+    double  eigtol,                 /* tolerance in eigen calculation */
     int     nstep,                  /* number of coarsenings between RQI steps */
     int     step,                   /* current step number */
     int **  pbndy_list,             /* pointer to returned boundary list */
     double *weights,                /* weights of vertices in each set */
     int     give_up                 /* has coarsening bogged down? */
-    )
+)
 {
   extern FILE *        Output_File;            /* output file or null */
   extern int           DEBUG_TRACE;            /* trace the execution of the code */

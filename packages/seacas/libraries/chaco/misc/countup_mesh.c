@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void countup_mesh(struct vtx_data **graph,        /* graph data structure */
                   int               print_lev,    /* level of output */
                   FILE *            outfile,      /* output file if not NULL */
                   int               using_ewgts   /* are edge weights being used? */
-                  )
+)
 {
   double *hopsize;            /* number of hops for each set */
   double *cutsize;            /* number of cuts for each set */

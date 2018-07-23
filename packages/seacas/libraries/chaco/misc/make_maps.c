@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@ int make_maps(int *setlists,  /* linked list of set vertices */
               int  set,       /* set value denoting subgraph */
               int *glob2loc,  /* graph -> subgraph numbering map */
               int *loc2glob   /* subgraph -> graph numbering map */
-              )
+)
 {
   int i, j; /* loop counter */
 
@@ -70,7 +70,7 @@ void make_maps2(int *assignment, /* set assignments for graph */
                 int  set,        /* set value denoting subgraph */
                 int *glob2loc,   /* graph -> subgraph numbering map */
                 int *loc2glob    /* subgraph -> graph numbering map */
-                )
+)
 {
   int i, j; /* loop counter */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,7 +54,7 @@ int get_ritzvals(double *alpha,         /* vector of Lanczos scalars */
                  int     right_goodlim, /* number of ritz pairs checked on right end */
                  double  eigtol,        /* tolerance on eigenpair */
                  double  bis_safety     /* bisection tolerance function divisor */
-                 )
+)
 {
   extern int DEBUG_EVECS;     /* debug flag for eigen computation */
   extern int WARNING_EVECS;   /* warning flag for eigen computation */

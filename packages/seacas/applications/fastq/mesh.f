@@ -1,4 +1,4 @@
-C    Copyright(C) 2014 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -104,7 +104,7 @@ C
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
 C
       CHARACTER*72 SCHEME, DEFSCH, TITLE, DEV1*3, CIN(MCOM)
-      CHARACTER*1024 FNAME
+      CHARACTER*2048 FNAME
       CHARACTER*80 NUMBER, HOLD, VERSN*10
       CHARACTER*8 NAMEHI(MAXNAM), NAMEGL(MAXNAM)
       CHARACTER*8 NAMENV(MAXNAM), NAMEEV(MAXNAM)

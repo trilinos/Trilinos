@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ void clear_dvals(struct vtx_data **graph,      /* data structure for graph */
                  int *             rdvals,     /* d-values for each transition */
                  int *             bspace,     /* list of activated vertices */
                  int               list_length /* number of activated vertices */
-                 )
+)
 {
   int *edges;    /* loops through edge list */
   int  vtx;      /* vertex in bspace */

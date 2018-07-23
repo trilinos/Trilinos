@@ -102,7 +102,12 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
+    /// Pass initial guess to Newton solver (for implicit schemes) 
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null) = 0; 
+
     virtual std::string getStepperType() const = 0;
+    
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
       getDefaultStepperState() = 0;
     virtual Scalar getOrder() const = 0;

@@ -63,7 +63,7 @@ namespace Zoltan2{
 // GraphMetrics and ImbalanceMetrics calculations
 template <typename metric_t, typename scalar_t>
 RCP<metric_t> addNewMetric(const RCP<const Environment> &env,
-  ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &metrics)
+  ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > &metrics)
 {
   metrics.resize(metrics.size() + 1); // increase array size by 1
   metric_t * newMetric = new metric_t;  // allocate

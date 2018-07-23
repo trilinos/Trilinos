@@ -233,8 +233,19 @@ void StepperHHTAlpha<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
-      Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      if (initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
+        //Throw an exception if initial_guess is not compatible with solution 
+        bool is_compatible = (a_init->space())->isCompatible(*initial_guess_->space()); 
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            is_compatible != true, std::logic_error,
+              "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
+              << "for Newton is not compatible with solution vector!\n"); 
+        Thyra::copy(*initial_guess_, a_init.ptr());
+      }
+      else { //if no initial_guess_ provide, set 0 initial guess 
+        Thyra::put_scalar(0.0, a_init.ptr());
+      }
+      wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -262,7 +273,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictVelocity_alpha_f(*v_pred, *v_old);
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);

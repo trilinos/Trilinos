@@ -65,10 +65,9 @@ long pageSize;
 
 int main(int narg, char **arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  Teuchos::RCP<const Teuchos::Comm<int> >
-    comm = Teuchos::DefaultComm<int>::getComm();
   int me = comm->getRank();
   int nprocs = comm->getSize();
 

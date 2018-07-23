@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void check_internal(struct vtx_data **graph,      /* graph data structure */
                     int *             total_vwgt, /* total weight in each set */
                     int *             assign,     /* current assignment */
                     int               nsets_tot   /* total number of sets */
-                    )
+)
 {
   struct bidint *ptr, *ptr2;         /* elements in int_list */
   struct bidint *old_ptr, *old_ptr2; /* elements in set_list */
