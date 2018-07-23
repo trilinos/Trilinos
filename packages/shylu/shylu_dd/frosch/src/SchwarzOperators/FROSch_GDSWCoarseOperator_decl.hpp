@@ -207,7 +207,10 @@ namespace FROSch {
         
         
         DDInterfacePtr DDInterface_;
-        
+#ifdef COARSE_TIMER
+        TimePtr_Type  CoarseOperator_InitInterface_Timer;
+        TimePtr_Type  CoarseOperator_InitPhi_Timer;
+#endif
     };
     
 }

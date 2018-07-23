@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_COARSEOPERATOR_DECL_HPP
 #define _FROSCH_COARSEOPERATOR_DECL_HPP
-//#define COARSE_TIMER
+#define COARSE_TIMER
 #include <FROSch_SchwarzOperator_def.hpp>
 
 // TODO: Member sortieren!?
@@ -147,10 +147,7 @@ namespace FROSch {
         ExporterPtrVecPtr CoarseSolveExporters_;
         
 #ifdef COARSE_TIMER
-        TimePtr_Type  CoarseOperator_InitPhi_Timer;
-        TimePtr_Type  CoarseOperator_Compute_Timer;
         TimePtr_Type  CoarseOperator_Apply_Timer;
-        TimePtr_Type  CoarseOperator_InitInterface_Timer;
 #endif
     };
     

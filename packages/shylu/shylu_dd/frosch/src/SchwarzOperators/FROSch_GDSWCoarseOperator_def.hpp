@@ -329,6 +329,7 @@ namespace FROSch {
 
 #ifdef COARSE_TIMER
         Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*CoarseOperator_InitInterface_Timer);
+        CoarseOperator_InitInterface_TimeMonitor.setStackedTimer(Teuchos::null);
 #endif
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);

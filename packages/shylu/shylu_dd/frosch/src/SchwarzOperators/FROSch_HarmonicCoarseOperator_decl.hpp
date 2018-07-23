@@ -122,7 +122,10 @@ namespace FROSch {
         MapPtrVecPtr2D DofsMaps_; // notwendig??
 
         UN NumberOfBlocks_;
-                
+#ifdef COARSE_TIMER
+        TimePtr_Type  CoarseOperator_Compute_Timer;
+#endif
+        
     };
     
 }
