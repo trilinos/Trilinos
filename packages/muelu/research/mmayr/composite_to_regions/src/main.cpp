@@ -924,7 +924,7 @@ int main(int argc, char *argv[]) {
     while (fscanf(fp, "%d", &i) != EOF)
       fileData.push_back(i);
 
-    mapComp = Teuchos::rcp(new Epetra_Map(-1, (int) fileData.size(), fileData.data(), 0, Comm));
+    mapComp = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) fileData.size(), fileData.data(), 0, Comm));
 //    mapComp->Print(std::cout);
   }
 
@@ -1075,12 +1075,12 @@ int main(int argc, char *argv[]) {
         if (tempRegIDs[idx[i]] != -1)
           rowGIDsReg.push_back(colGIDsComp[idx[i]]);
       }
-      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1, (int) rowGIDsReg.size(),
+      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) rowGIDsReg.size(),
           rowGIDsReg.data(), 0, Comm));
     }
 
     for (int k=(int) myRegions.size(); k < maxRegPerProc; k++) {
-      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
   }
 
@@ -1094,11 +1094,11 @@ int main(int argc, char *argv[]) {
       // clone rowMap
       for (int j=0; j < maxRegPerProc; j++) {
         if (j < (int) myRegions.size()) {
-          colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(-1,
+          colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),
               rowMapPerGrp[j]->NumMyElements(),
               rowMapPerGrp[j]->MyGlobalElements(), 0, Comm));
         }
-        else colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+        else colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
       }
     }
     else if (whichCase == RegionsSpanProcs) {//so maxRegPerProc = 1
@@ -1128,10 +1128,10 @@ int main(int argc, char *argv[]) {
         }
       }
       if ((int) myRegions.size() > 0) {
-       colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(-1, (int) colIDsReg.size(),
+       colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) colIDsReg.size(),
            colIDsReg.data(), 0, Comm));
       }
-      else colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      else colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
     else { fprintf(stderr,"whichCase not set properly\n"); exit(1); }
   }
@@ -1225,7 +1225,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,(int) revisedGIDs.size(),
+      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),(int) revisedGIDs.size(),
                                           revisedGIDs.data(),0,Comm));
       // now append more stuff to handle ghosts ... needed for
       // revised version of column map
@@ -1248,12 +1248,12 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1, (int) revisedGIDs.size(),
+      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) revisedGIDs.size(),
           revisedGIDs.data(), 0, Comm));
     }
     for (int k = (int) myRegions.size(); k < maxRegPerProc; k++) {
-      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
-      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
+      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
 
     // Setup importers
