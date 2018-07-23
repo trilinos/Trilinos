@@ -81,7 +81,7 @@ public:
   double              value;
   double              floor;
 
-  // If true, use the older defintion of the floor tolerance which was
+  // If true, use the older definition of the floor tolerance which was
   // |a-b| < floor.  The new definition is |a| < floor && |b| < floor
   static bool use_old_floor;
 

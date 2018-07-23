@@ -44,7 +44,7 @@ double opt2d(
     double **         yvecs,  /* eigenvectors */
     int               nvtxs,  /* total number of vertices */
     int               nmyvtxs /* number of vertices I own */
-    )
+)
 {
   extern int DEBUG_OPTIMIZE; /* debug flag for optimization */
   double *   aptr, *bptr;    /* loop through yvecs */

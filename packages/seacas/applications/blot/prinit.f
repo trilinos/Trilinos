@@ -69,7 +69,7 @@ C   --   NVARSS - IN - the number of sideset variables (if OPTION)
       CHARACTER*(*) OPTION
       CHARACTER*80 TITLE
 
-      CHARACTER*132 FILNAM
+      CHARACTER*2048 FILNAM
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'I') .GT. 0)) THEN
          IF (NOUT .GT. 0) WRITE (NOUT, 10000)

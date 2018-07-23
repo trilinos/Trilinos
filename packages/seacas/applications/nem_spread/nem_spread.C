@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
       printf("%s version %s\n", UTIL_NAME, VER_STR);
       exit(0);
       break;
-    case 'p': /* Which proc to use? Also for compatability */ break;
-    case 'r': /* raid number.  Seems to be unused; left around for compatability */ break;
+    case 'p': /* Which proc to use? Also for compatibility */ break;
+    case 'r': /* raid number.  Seems to be unused; left around for compatibility */ break;
     case 's': /* Start with processor <x> */ sscanf(optarg, "%d", &start_proc); break;
     case 'n': /* Number of processors to output files for */ sscanf(optarg, "%d", &num_proc); break;
     case '6':
@@ -142,8 +142,9 @@ int main(int argc, char *argv[])
   // needed to instantiate the templates...
   if (read_mesh_file_name(salsa_cmd_file) < 0) {
     static char yo[] = "nem_spread";
-    fprintf(stderr, "%s ERROR: Could not read in the the I/O command file"
-                    " \"%s\"!\n",
+    fprintf(stderr,
+            "%s ERROR: Could not read in the the I/O command file"
+            " \"%s\"!\n",
             yo, salsa_cmd_file);
     exit(1);
   }
@@ -232,8 +233,9 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
    */
   printf("Reading the command file, %s\n", salsa_cmd_file);
   if (read_pexoII_info(spreader, salsa_cmd_file) < 0) {
-    fprintf(stderr, "%s ERROR: Could not read in the the I/O command file"
-                    " \"%s\"!\n",
+    fprintf(stderr,
+            "%s ERROR: Could not read in the the I/O command file"
+            " \"%s\"!\n",
             yo, salsa_cmd_file);
     exit(1);
   }

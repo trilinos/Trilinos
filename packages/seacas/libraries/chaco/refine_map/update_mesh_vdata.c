@@ -44,7 +44,7 @@ void update_mesh_vdata(int    old_loc, /* previous node for moved vertex in move
                        int                  mesh_dims[3], /* size of processor mesh */
                        int                  neighbor,     /* vertex impacted by flip */
                        int *vtx2node /* mapping from comm_graph vtxs to processors */
-                       )
+)
 {
   struct refine_vdata *vptr          = NULL; /* correct element in vdata */
   int                  offset        = 0;    /* index into vdata array */

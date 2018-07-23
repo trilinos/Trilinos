@@ -56,7 +56,7 @@ void reflect_input(int    nvtxs,         /* number of vertices in graph */
                    int    ndims,         /* partitioning level */
                    double eigtol,        /* tolerance on eigenvectors */
                    long   seed,          /* random number seed */
-                   FILE * outfile)       /* file to write output to */
+                   FILE * outfile)        /* file to write output to */
 {
   extern int DEBUG_TRACE;    /* trace main execution path? */
   extern int ECHO;           /* copy input parameters back to screen? */
@@ -113,7 +113,7 @@ void reflect_input(int    nvtxs,         /* number of vertices in graph */
     else if (global_method == 6) {
       fprintf(tempfile, "Scattered\n");
     }
-    else if (global_method == 6) {
+    else if (global_method == 7) {
       fprintf(tempfile, "Read-From-File ");
       if (IN_ASSIGN_INV) {
         printf("(inverted format)\n");
@@ -209,7 +209,7 @@ static void reflect_params(FILE *tempfile,      /* file or stdout */
                            int   global_method, /* global partitioning algorithm */
                            int   local_method,  /* local partitioning algorithm */
                            int   rqi_flag,      /* use RQI/SYMMLQ eigensolver? */
-                           int   ndims)         /* number of eigenvectors to generate */
+                           int   ndims)           /* number of eigenvectors to generate */
 {
   extern int CHECK_INPUT;    /* check the input for consistency? */
   extern int OUTPUT_METRICS; /* controls formatting of output */

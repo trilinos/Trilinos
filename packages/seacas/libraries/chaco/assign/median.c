@@ -45,7 +45,7 @@ void median_assign(struct vtx_data **graph,       /* data structure with vertex 
                    double            wlow,        /* sum of weights below guess */
                    double            whigh,       /* sum of weights above guess */
                    double            guess        /* median value */
-                   )
+)
 {
   int i; /* loop counter */
 
@@ -91,7 +91,7 @@ void median(struct vtx_data **graph,       /* data structure with vertex weights
             double *          goal,        /* desired sizes for sets */
             int               using_vwgts, /* are vertex weights being used? */
             int *             sets         /* set each vertex gets assigned to */
-            )
+)
 {
   double *vptr;      /* loops through vals array */
   double  val;       /* value in vals array */

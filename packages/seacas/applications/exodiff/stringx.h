@@ -35,7 +35,7 @@
 #define STRINGX_H
 
 #include "terminal_color.h" // for operator<<, normal, red
-#include "util.h"           // for TOPTR, free_name_array, etc
+#include "util.h"           // for free_name_array, etc
 
 //! Compare a string against another "master" string, where the string, str,
 //! can be abbreiviated to as little as min_length characters.  Returns true

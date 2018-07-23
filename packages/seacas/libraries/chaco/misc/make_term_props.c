@@ -56,7 +56,7 @@ void make_term_props(struct vtx_data **graph,        /* data structure for graph
                      int *             subsets,      /* subsets being created */
                      float *           term_wgts[],  /* set of terminal weights for each vertex */
                      int               using_ewgts   /* are edge weights being used? */
-                     )
+)
 {
   double term_wgt[MAXSETS]; /* terminal weights */
   float *twptr;             /* one of the term_wgts vectors */
@@ -124,7 +124,7 @@ static void avg_dists_cube(int              ndims_tot, /* total number of hyperc
                            int              set_max,   /* largest set created so far */
                            int *            subsets,   /* subsets being created */
                            float *dists[MAXSETS]       /* distances from my subsets to other sets */
-                           )
+)
 {
   float *dist0;      /* first of dists vectors */
   float *dist;       /* one of dists vectors */
@@ -187,7 +187,7 @@ static void avg_dists_mesh(int              architecture, /* dimensions of mesh 
                            int              set_max,      /* largest set created so far */
                            int *            subsets,      /* subsets being created */
                            float *dists[MAXSETS] /* distances from my subsets to other sets */
-                           )
+)
 {
   float *dist0; /* first of dists vectors */
   float *dist;  /* one of dists vectors */
@@ -225,7 +225,7 @@ static void avg_dists_mesh(int              architecture, /* dimensions of mesh 
 static double avg_dist_mesh(struct set_info *set1,        /* data about all first set */
                             struct set_info *set2,        /* data about all second set */
                             int              architecture /* dimension of mesh */
-                            )
+)
 {
   double val; /* distance returned */
   int    i;   /* loop counter */
@@ -245,7 +245,7 @@ static double avg_dist_interval(int set1_low,  /* lowest point for first interva
                                 int set1_span, /* highest point for first interval */
                                 int set2_low,  /* lowest point for second interval */
                                 int set2_span  /* highest point for second interval */
-                                )
+)
 {
   double set1_high; /* length of first interval */
   double set1_avg;  /* average value in first interval */

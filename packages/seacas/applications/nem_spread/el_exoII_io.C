@@ -56,12 +56,6 @@
 #include <vector>              // for vector
 template <typename T, typename INT> class Globals;
 
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
-
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -288,14 +282,16 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   /* Check for a problem which has too many processors for a given mesh */
 
   if (globals.Num_Node / Proc_Info[0] < 1) {
-    fprintf(stderr, "%sERROR: Problem divided among too many "
-                    "processors.\n",
+    fprintf(stderr,
+            "%sERROR: Problem divided among too many "
+            "processors.\n",
             yo);
     exit(1);
   }
   else if (globals.Num_Elem / Proc_Info[0] < 1) {
-    fprintf(stderr, "%sERROR: Problem divided among too many "
-                    "processors.\n",
+    fprintf(stderr,
+            "%sERROR: Problem divided among too many "
+            "processors.\n",
             yo);
     exit(1);
   }
@@ -413,7 +409,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     Elem_Blk_Ids       = Num_Attr_Per_Elem + globals.Num_Elem_Blk;
     Elem_Blk_Types     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                           MAX_STR_LENGTH + 1, sizeof(char));
-    Elem_Blk_Names = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
+    Elem_Blk_Names     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                           max_name_length + 1, sizeof(char));
     Elem_Blk_Attr_Names =
         (char ***)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(char **));
@@ -508,7 +504,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    *
    *        The following information is defined as the mesh information:
    *
-   *            1 - Coodinate values of global nodes
+   *            1 - Coordinate values of global nodes
    *            2 - Element connectivity graph
    *            3 - Attributes of the elements
    *            4 - Composition of Node Sets
@@ -1072,9 +1068,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
 
   for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
-    proc_elem_blk = (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] +
-                                                                  globals.Num_Border_Elems[iproc],
-                                       sizeof(INT));
+    proc_elem_blk = (INT *)array_alloc(
+        __FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
+        sizeof(INT));
 
     /* Find out which element block each element in this processor belongs to.
      * Fill this information into the temporary vector, proc_elem_blk.  Also,
@@ -1259,7 +1255,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         (INT *)array_alloc(__FILE__, __LINE__, 1, iconnect_length, sizeof(INT));
 
 #ifdef DEBUG
-    for (size_t i                         = 0; i < iconnect_length; i++)
+    for (size_t i = 0; i < iconnect_length; i++)
       globals.Proc_Elem_Connect[iproc][i] = -1111111;
 #endif
 
@@ -1852,16 +1848,16 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
    *                              (Global int vector of length globals.Num_Elem_Blk)
    */
 
-  /* Boolean vector of length globals.Num_Elem_Blk If the ith
-     element block exists on the current processor, the ith entry
+  /* Boolean vector of length globals.Num_Elem_Blk If the i'th
+     element block exists on the current processor, the i'th entry
      is set to TRUE  */
   std::vector<int> elem_in_blk(globals.Num_Elem_Blk);
 
   /* Vector of integer offsets into the vector globals.GElems.
-     It has a length of globals.Num_Elem_Blk+1.  The ith entry
+     It has a length of globals.Num_Elem_Blk+1.  The i'th entry
      points to the beginning of of the element map information
-     for the first element in the ith element block.  The
-     (i+1)th entry points to the last element for the ith block
+     for the first element in the i'th element block.  The
+     (i+1)th entry points to the last element for the i'th block
      in the vector globals.GElem. */
   std::vector<INT> elem_blk_point(globals.Num_Elem_Blk + 1);
 
@@ -1906,8 +1902,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       }
       if (!found) {
         fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr, "\tElement " ST_ZU " not found in any element "
-                        "block.\n",
+        fprintf(stderr,
+                "\tElement " ST_ZU " not found in any element "
+                "block.\n",
                 (size_t)i);
         exit(1);
       }
@@ -1943,8 +1940,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       }
       if (!found) {
         fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr, "\tElement " ST_ZU " not found in any element "
-                        "block.\n",
+        fprintf(stderr,
+                "\tElement " ST_ZU " not found in any element "
+                "block.\n",
                 (size_t)i);
         exit(1);
       }
@@ -2172,13 +2170,13 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
 
         /* Read in the part of the node set that will fit in the message */
         check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
-                                              num_node_per_message, TOPTR(node_set), nullptr),
+                                              num_node_per_message, node_set.data(), nullptr),
                            "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i],
                                                           (istart_ns + 1), num_node_per_message,
-                                                          TOPTR(node_set_df)),
+                                                          node_set_df.data()),
                              "ex_get_partial_node_set_df");
         }
 
@@ -2573,8 +2571,8 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
         /* Read in the part of the side set that will fit in the message. */
 
         check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
-                                              num_elem_per_message, TOPTR(ss_elem_list),
-                                              TOPTR(ss_side_list)),
+                                              num_elem_per_message, ss_elem_list.data(),
+                                              ss_side_list.data()),
                            "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
@@ -2750,7 +2748,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
           /* Read in the part of the side set df's that will fit in the msg. */
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i],
                                                           (istart_ss + 1), num_elem_per_message,
-                                                          TOPTR(ss_dist_fact)),
+                                                          ss_dist_fact.data()),
                              "ex_get_partial_set_dist_fact");
 
           /*
@@ -2921,10 +2919,11 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
        * globals.Proc_Num_Side_Sets[] due to the fact that nullptr entities are
        * stored on processors not having a particular side set.
        */
-      globals.Proc_SS_Ids[iproc] = (INT *)array_alloc(
-          __FILE__, __LINE__, 1, (3 * globals.Num_Side_Set + 3 * globals.Proc_Num_Side_Sets[iproc] +
-                                  2 * elem_list_length[iproc] + 1),
-          sizeof(INT));
+      globals.Proc_SS_Ids[iproc] =
+          (INT *)array_alloc(__FILE__, __LINE__, 1,
+                             (3 * globals.Num_Side_Set + 3 * globals.Proc_Num_Side_Sets[iproc] +
+                              2 * elem_list_length[iproc] + 1),
+                             sizeof(INT));
       globals.Proc_SS_Elem_Count[iproc] = globals.Proc_SS_Ids[iproc] + globals.Num_Side_Set;
       globals.Proc_SS_Elem_Pointers[iproc] =
           globals.Proc_SS_Elem_Count[iproc] + globals.Num_Side_Set;

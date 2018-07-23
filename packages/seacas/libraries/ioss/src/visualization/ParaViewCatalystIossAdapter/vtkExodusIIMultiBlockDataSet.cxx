@@ -1,4 +1,4 @@
-// Copyright(C) 1999 - 2010 National Technology &Engineering Solutions
+// Copyright(C) 1999 - 2010-2017 National Technology &Engineering Solutions
 // of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
 // NTESS, the U.S.Government retains certain rights in this software.
 //
@@ -808,7 +808,7 @@ void vtkExodusIIMultiBlockDataSet::CreateSideSet(/*const char* side_set_name,*/
   vtkUnstructuredGrid *ug     = NULL;
   unsigned int         bid    = -1;
 
-  Ve2mSideSetInfo *ssinfo = NULL;
+  Ve2mSideSetInfo *                          ssinfo = NULL;
   std::map<int, Ve2mSideSetInfo *>::iterator ssinfomapiter;
   ssinfomapiter = this->ssinfomap.find(side_set_id);
   if (ssinfomapiter != ssinfomap.end()) {
@@ -824,7 +824,7 @@ void vtkExodusIIMultiBlockDataSet::CreateSideSet(/*const char* side_set_name,*/
 
     points = ug->GetPoints();
     // std::cerr << "prior bid: " << bid << "\n"
-    //    "number of prexisting points: " << points->GetNumberOfPoints() << "\n"
+    //    "number of preexisting points: " << points->GetNumberOfPoints() << "\n"
     //    "prior num of unique points: " << ssinfo->unique_points.size() << "\n"
     //    "prior num of object_ids: " << ssinfo->object_ids.size() << "\n";
   }
@@ -841,7 +841,7 @@ void vtkExodusIIMultiBlockDataSet::CreateSideSet(/*const char* side_set_name,*/
     this->ssidmap[side_set_id] = bid;
     // std::cerr << "side_set_id not ssinfomap, creating new side set\n"
     //    "new bid: " << bid << "\n"
-    //    "number of prexisting points: " << points->GetNumberOfPoints() << "\n"
+    //    "number of preexisting points: " << points->GetNumberOfPoints() << "\n"
     //    "new num of unique points: " << ssinfo->unique_points.size() << "\n"
     //    "new num of object_ids: " << ssinfo->object_ids.size() << "\n";
   }

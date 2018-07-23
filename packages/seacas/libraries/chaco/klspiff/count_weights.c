@@ -41,7 +41,7 @@ void count_weights(struct vtx_data **graph,      /* data structure for graph */
                    int               nsets,      /* number of sets in this division */
                    double *          weights,    /* vertex weights in each set */
                    int               using_vwgts /* are vertex weights being used? */
-                   )
+)
 
 {
   int i; /* loop counters */

@@ -46,7 +46,7 @@ void makeccoords(struct vtx_data **graph,     /* array of vtx data for graph */
                  int               igeom,     /* dimensions of geometric data */
                  float **          coords,    /* coordinates for vertices */
                  float **          ccoords    /* coordinates for coarsened vertices */
-                 )
+)
 {
   double mass; /* total mass of merged vertices */
   float *cptr; /* loops through ccoords */

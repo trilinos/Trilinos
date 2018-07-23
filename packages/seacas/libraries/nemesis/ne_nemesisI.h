@@ -77,14 +77,14 @@ extern int ne_get_init_global(int       neid,            /* NemesisI file ID */
                               void_int *num_elem_blks_g, /* Number of global elem blocks */
                               void_int *num_node_sets_g, /* Number of global node sets */
                               void_int *num_side_sets_g  /* Number of global side sets */
-                              );
+);
 extern int ne_put_init_global(int     neid,            /* NemesisI file ID */
                               int64_t num_nodes_g,     /* Number of global FEM nodes */
                               int64_t num_elems_g,     /* Number of global FEM elements */
                               int64_t num_elem_blks_g, /* Number of global elem blocks */
                               int64_t num_node_sets_g, /* Number of global node sets */
                               int64_t num_side_sets_g  /* Number of global side sets */
-                              );
+);
 
 extern int ne_put_version(int neid);
 
@@ -100,7 +100,7 @@ extern int ne_get_loadbal_param(int       neid,           /* NetCDF/Exodus file 
                                 void_int *num_node_cmaps, /* Number of nodal comm maps */
                                 void_int *num_elem_cmaps, /* Number of elemental comm maps */
                                 int       processor       /* Processor ID */
-                                );
+);
 
 extern int ne_put_loadbal_param(int     neid,           /* NemesisI file ID  */
                                 int64_t num_int_nodes,  /* Number of internal FEM nodes */
@@ -111,7 +111,7 @@ extern int ne_put_loadbal_param(int     neid,           /* NemesisI file ID  */
                                 int64_t num_node_cmaps, /* Number of nodal comm maps */
                                 int64_t num_elem_cmaps, /* Number of elemental comm maps */
                                 int     processor       /* Processor ID */
-                                );
+);
 
 extern int ne_put_loadbal_param_cc(int       neid,           /* NetCDF/Exodus file ID */
                                    void_int *num_int_nodes,  /* Number of internal node IDs */
@@ -121,7 +121,7 @@ extern int ne_put_loadbal_param_cc(int       neid,           /* NetCDF/Exodus fi
                                    void_int *num_bor_elems,  /* Number of border elem IDs */
                                    void_int *num_node_cmaps, /* Number of nodal comm maps */
                                    void_int *num_elem_cmaps  /* Number of elem comm maps */
-                                   );
+);
 
 /*=============================================================================
  *     NS, SS & EB Global Parameter Routines
@@ -130,20 +130,20 @@ extern int ne_get_ns_param_global(int       neid,          /* NetCDF/Exodus file
                                   void_int *ns_ids_glob,   /* Global IDs of node sets */
                                   void_int *ns_n_cnt_glob, /* Count of nodes in node sets */
                                   void_int *ns_df_cnt_glob /* Count of dist. factors in ns */
-                                  );
+);
 
 extern int
 ne_put_ns_param_global(int       neid,          /* NemesisI file ID */
                        void_int *global_ids,    /* Vector of global node-set IDs */
                        void_int *global_n_cnts, /* Vector of node counts in node-sets */
                        void_int *global_df_cnts /* Vector of dist factor counts in node-sets */
-                       );
+);
 
 extern int ne_get_ss_param_global(int       neid,          /* NetCDF/Exodus file ID */
                                   void_int *ss_ids_glob,   /* Global side-set IDs */
                                   void_int *ss_s_cnt_glob, /* Global side count */
                                   void_int *ss_df_cnt_glob /* Global dist. factor count */
-                                  );
+);
 
 extern int ne_put_ss_param_global(int       neid,           /* NemesisI file ID */
                                   void_int *global_ids,     /* Vector of global side-set IDs */
@@ -151,17 +151,17 @@ extern int ne_put_ss_param_global(int       neid,           /* NemesisI file ID 
                                                             /* counts in each side set */
                                   void_int *global_df_cnts  /* Vector of dist. factor */
                                                             /* counts in each side set */
-                                  );
+);
 
 extern int ne_get_eb_info_global(int       neid,       /* NemesisI file ID                 */
                                  void_int *el_blk_ids, /* Vector of global element IDs     */
                                  void_int *el_blk_cnts /* Vector of global element counts  */
-                                 );
+);
 
 extern int ne_put_eb_info_global(int       neid,       /* NemesisI file ID */
                                  void_int *el_blk_ids, /* Vector of global element IDs     */
                                  void_int *el_blk_cnts /* Vector of global element counts  */
-                                 );
+);
 
 /*=============================================================================
  *     NS, SS & EB Subset Routines
@@ -172,7 +172,7 @@ extern int ne_get_n_side_set(int          neid,               /* NetCDF/Exodus f
                              int64_t      num_sides,          /* Number of sides to read */
                              void_int *   side_set_elem_list, /* List of element IDs */
                              void_int *   side_set_side_list  /* List of side IDs */
-                             );
+);
 
 extern int ne_put_n_side_set(int             neid,               /* NetCDF/Exodus file ID */
                              ex_entity_id    side_set_id,        /* Side-set ID to write */
@@ -180,49 +180,49 @@ extern int ne_put_n_side_set(int             neid,               /* NetCDF/Exodu
                              int64_t         num_sides,          /* Number of sides to write */
                              const void_int *side_set_elem_list, /* List of element IDs */
                              const void_int *side_set_side_list  /* List of side IDs */
-                             );
+);
 
 extern int ne_get_n_side_set_df(int          neid,          /* NetCDF/Exodus file ID */
                                 ex_entity_id side_set_id,   /* Side-set ID */
                                 int64_t      start_num,     /* Starting df number */
                                 int64_t      num_df_to_get, /* Number of df's to read */
                                 void *       side_set_df    /* Distribution factors */
-                                );
+);
 
 extern int ne_put_n_side_set_df(int          neid,          /* NetCDF/Exodus file ID */
                                 ex_entity_id side_set_id,   /* Side-set ID */
                                 int64_t      start_num,     /* Starting df number */
                                 int64_t      num_df_to_get, /* Number of df's to write */
                                 void *       side_set_df    /* Distribution factors */
-                                );
+);
 
 extern int ne_get_n_node_set(int          neid,              /* NetCDF/Exodus file ID */
                              ex_entity_id node_set_id,       /* Node set ID */
                              int64_t      start_node_num,    /* Node index to start reading at */
                              int64_t      num_node,          /* Number of nodes to read */
                              void_int *   node_set_node_list /* List of nodes in node set */
-                             );
+);
 
 extern int ne_put_n_node_set(int             neid,              /* NetCDF/Exodus file ID */
                              ex_entity_id    node_set_id,       /* Node set ID */
                              int64_t         start_node_num,    /* Node index to start writing at */
                              int64_t         num_node,          /* Number of nodes to write */
                              const void_int *node_set_node_list /* List of nodes in node set */
-                             );
+);
 
 extern int ne_get_n_node_set_df(int          neid,          /* NetCDF/Exodus file ID */
                                 ex_entity_id node_set_id,   /* Node-set ID */
                                 int64_t      start_num,     /* Starting df number */
                                 int64_t      num_df_to_get, /* Number of df's to read */
                                 void *       node_set_df    /* Distribution factors */
-                                );
+);
 
 extern int ne_put_n_node_set_df(int          neid,          /* NetCDF/Exodus file ID */
                                 ex_entity_id node_set_id,   /* Node-set ID */
                                 int64_t      start_num,     /* Starting df number */
                                 int64_t      num_df_to_get, /* Number of df's to write */
                                 void *       node_set_df    /* Distribution factors */
-                                );
+);
 
 extern int ne_get_n_coord(int     neid,           /* NetCDF/Exodus file ID */
                           int64_t start_node_num, /* Starting position to read from */
@@ -230,7 +230,7 @@ extern int ne_get_n_coord(int     neid,           /* NetCDF/Exodus file ID */
                           void *  x_coor,         /* Vector of X coordinates */
                           void *  y_coor,         /* Vector of Y coordinates */
                           void *  z_coor          /* Vector of Z coordinates */
-                          );
+);
 
 extern int ne_put_n_coord(int     neid,           /* NetCDF/Exodus file ID */
                           int64_t start_node_num, /* Starting position to write to */
@@ -238,40 +238,40 @@ extern int ne_put_n_coord(int     neid,           /* NetCDF/Exodus file ID */
                           void *  x_coor,         /* Vector of X coordinates */
                           void *  y_coor,         /* Vector of Y coordinates */
                           void *  z_coor          /* Vector of Z coordinates */
-                          );
+);
 
 extern int ne_get_n_elem_conn(int          neid,           /* NetCDF/Exodus file ID */
                               ex_entity_id elem_blk_id,    /* Element block ID */
                               int64_t      start_elem_num, /* Starting position to read from */
                               int64_t      num_elems,      /* Number of elements to read */
                               void_int *   connect         /* Connectivity vector */
-                              );
+);
 
 extern int ne_put_n_elem_conn(int             neid,           /* NetCDF/Exodus file ID */
                               ex_entity_id    elem_blk_id,    /* Element block ID */
                               int64_t         start_elem_num, /* Starting position to write to */
                               int64_t         num_elems,      /* Number of elements to write */
                               const void_int *connect         /* Connectivity vector */
-                              );
+);
 
 extern int ne_get_n_elem_attr(int          neid,           /* NetCDF/Exodus file ID */
                               ex_entity_id elem_blk_id,    /* Element block ID */
                               int64_t      start_elem_num, /* Starting position to read from */
                               int64_t      num_elems,      /* Number of elements to read */
                               void *       attrib          /* Attribute */
-                              );
+);
 
 extern int ne_put_n_elem_attr(int          neid,           /* NetCDF/Exodus file ID */
                               ex_entity_id elem_blk_id,    /* Element block ID */
                               int64_t      start_elem_num, /* Starting position to write to */
                               int64_t      num_elems,      /* Number of elements to write */
                               void *       attrib          /* Attribute */
-                              );
+);
 
 extern int ne_get_elem_type(int          neid,        /* NetCDF/Exodus file ID */
                             ex_entity_id elem_blk_id, /* Element block ID */
                             char *       elem_type    /* The name of the element type */
-                            );
+);
 
 /*=============================================================================
  *     Variable Routines
@@ -284,7 +284,7 @@ extern int ne_get_n_elem_var(int          neid,              /* NetCDF/Exodus fi
                              int64_t      start_elem_num,    /* Starting position for read */
                              int64_t      num_elem,          /* Number of elements to read */
                              void *       elem_var_vals      /* variable values */
-                             );
+);
 
 extern int ne_put_elem_var_slab(int          neid,           /* NetCDF/Exodus file ID */
                                 int          time_step,      /* time index */
@@ -293,7 +293,7 @@ extern int ne_put_elem_var_slab(int          neid,           /* NetCDF/Exodus fi
                                 int64_t      start_pos,      /* Starting position to write to */
                                 int64_t      num_vals,       /* Number of elements to write */
                                 void *       elem_var_vals   /* variable values */
-                                );
+);
 
 extern int ne_get_n_nodal_var(int     neid,            /* NetCDF/Exodus file ID */
                               int     time_step,       /* whole time step number */
@@ -301,7 +301,7 @@ extern int ne_get_n_nodal_var(int     neid,            /* NetCDF/Exodus file ID 
                               int64_t start_node_num,  /* starting node number */
                               int64_t num_nodes,       /* number of nodes to read */
                               void *  nodal_vars       /* array of nodal var values */
-                              );
+);
 
 extern int ne_put_nodal_var_slab(int     neid,            /* NetCDF/Exodus file ID */
                                  int     time_step,       /* The time step index */
@@ -309,7 +309,7 @@ extern int ne_put_nodal_var_slab(int     neid,            /* NetCDF/Exodus file 
                                  int64_t start_pos,       /* Start position for write */
                                  int64_t num_vals,        /* Number of nodal variables */
                                  void *  nodal_var_vals   /* Nodal variable values */
-                                 );
+);
 
 /*=============================================================================
  *     Number Map Routines
@@ -318,51 +318,51 @@ extern int ne_get_n_elem_num_map(int       neid,      /* NetCDF/Exodus file ID *
                                  int64_t   start_ent, /* Starting position to read from */
                                  int64_t   num_ents,  /* Number of elements to read */
                                  void_int *elem_map   /* element map numbers */
-                                 );
+);
 
 extern int ne_put_n_elem_num_map(int             neid,      /* NetCDF/Exodus file ID */
                                  int64_t         start_ent, /* Starting position to read from */
                                  int64_t         num_ents,  /* Number of elements to read */
                                  const void_int *elem_map   /* element map numbers */
-                                 );
+);
 
 extern int ne_get_n_node_num_map(int       neid,      /* NetCDF/Exodus file ID */
                                  int64_t   start_ent, /* starting node number */
                                  int64_t   num_ents,  /* number of nodes to read */
                                  void_int *node_map   /* vector for node map */
-                                 );
+);
 
 extern int ne_put_n_node_num_map(int             neid,      /* NetCDF/Exodus file ID */
                                  int64_t         start_ent, /* starting node number */
                                  int64_t         num_ents,  /* number of nodes to read */
                                  const void_int *node_map   /* vector for node map */
-                                 );
+);
 
 extern int ne_get_node_map(int       neid,      /* NetCDF/Exodus file ID */
                            void_int *node_mapi, /* Internal FEM node IDs */
                            void_int *node_mapb, /* Border FEM node IDs */
                            void_int *node_mape, /* External FEM node IDs */
                            int       processor  /* Processor IDs */
-                           );
+);
 
 extern int ne_put_node_map(int       neid,      /* NetCDF/Exodus file ID */
                            void_int *node_mapi, /* Internal FEM node IDs */
                            void_int *node_mapb, /* Border FEM node IDs */
                            void_int *node_mape, /* External FEM node IDs */
                            int       processor  /* This processor ID */
-                           );
+);
 
 extern int ne_get_elem_map(int       neid,      /* NetCDF/Exodus file ID */
                            void_int *elem_mapi, /* Internal element IDs */
                            void_int *elem_mapb, /* Border element IDs */
                            int       processor  /* Processor ID */
-                           );
+);
 
 extern int ne_put_elem_map(int       neid,      /* NetCDF/Exodus file ID */
                            void_int *elem_mapi, /* Internal FEM element IDs */
                            void_int *elem_mapb, /* Border FEM element IDs */
                            int       processor  /* This processor ID */
-                           );
+);
 
 /*=============================================================================
  *     Communications Maps Routines
@@ -374,7 +374,7 @@ extern int ne_get_cmap_params(int       neid,                /* NetCDF/Exodus fi
                               void_int *elem_cmap_ids,       /* Elemental comm. map IDs */
                               void_int *elem_cmap_elem_cnts, /* Number of elems in each map */
                               int       processor            /* This processor ID */
-                              );
+);
 
 extern int ne_put_cmap_params(int       neid,               /* NetCDF/Exodus file ID */
                               void_int *node_map_ids,       /* Node map IDs */
@@ -382,7 +382,7 @@ extern int ne_put_cmap_params(int       neid,               /* NetCDF/Exodus fil
                               void_int *elem_map_ids,       /* Elem map IDs */
                               void_int *elem_map_elem_cnts, /* Elems in elemental comm */
                               int64_t   processor           /* This processor ID */
-                              );
+);
 
 extern int ne_put_cmap_params_cc(int       neid,               /* NetCDF/Exodus file ID */
                                  void_int *node_map_ids,       /* Node map IDs */
@@ -393,21 +393,21 @@ extern int ne_put_cmap_params_cc(int       neid,               /* NetCDF/Exodus 
                                  void_int *elem_map_elem_cnts, /* Elems in elemental comm */
                                  void_int *elem_proc_ptrs      /* Pointer into array for */
                                                                /* elem maps		  */
-                                 );
+);
 
 extern int ne_get_node_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             ex_entity_id map_id,   /* Map ID */
                             void_int *   node_ids, /* FEM node IDs */
                             void_int *   proc_ids, /* Processor IDs */
                             int          processor /* This processor ID */
-                            );
+);
 
 extern int ne_put_node_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             ex_entity_id map_id,   /* Nodal comm map ID */
                             void_int *   node_ids, /* FEM node IDs */
                             void_int *   proc_ids, /* Processor IDs */
                             int          processor /* This processor ID */
-                            );
+);
 
 extern int ne_get_elem_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             ex_entity_id map_id,   /* Elemental comm map ID */
@@ -415,7 +415,7 @@ extern int ne_get_elem_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             void_int *   side_ids, /* Element side IDs */
                             void_int *   proc_ids, /* Processor IDs */
                             int          processor /* This processor ID */
-                            );
+);
 
 extern int ne_put_elem_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             ex_entity_id map_id,   /* Elemental comm map ID */
@@ -423,7 +423,7 @@ extern int ne_put_elem_cmap(int          neid,     /* NetCDF/Exodus file ID */
                             void_int *   side_ids, /* Vector of side IDs */
                             void_int *   proc_ids, /* Vector of processor IDs */
                             int          processor /* This processor ID */
-                            );
+);
 
 /* Should be internal use only, but was in external include file for
    nemesis and some codes are using the function
@@ -432,7 +432,7 @@ int ne_get_idx(int         neid,        /* NetCDF/Exodus file ID */
                const char *ne_var_name, /* Nemesis index variable name */
                int64_t *   index,       /* array of length 2 to hold results */
                int         pos          /* position of this proc/cmap in index */
-               );
+);
 
 #ifdef __cplusplus
 }

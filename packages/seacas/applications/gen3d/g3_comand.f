@@ -413,8 +413,16 @@ C        Intervals command
             DEGR = DEGR + D3TRAN(IBLK)
    40    CONTINUE
 
-         NDEGR = NINT(DEGR)
-         IF (NDEGR .GT. 360) THEN
+C     ... Give tolerance of 1.0e-5
+         deg_min = 360.0 - 1.0e-5
+         deg_max = 360.0 + 1.0e-5
+
+         if (degr .gt. deg_min .and. degr .lt. deg_max) then
+            degr = 360.0
+         end if
+         NDEGR = NINT (degr)
+
+         IF (DEGR .GT. 360.0) THEN
             CALL PRTERR ('CMDERR',
      &         'Total number of degrees exceeds 360')
             GOTO 170
@@ -432,13 +440,13 @@ C        Intervals command
      &         'Single rotation cannot cover 180 degrees')
             GOTO 170
          END IF
-         IF (NDEGR .LT. 360) THEN
+         IF (DEGR .LT. 360.0) THEN
             NNREPL = NEREPL + 1
          ELSE
             NNREPL = NEREPL
          END IF
 
-         IF (NDEGR .EQ. 360) THEN
+         IF (DEGR .EQ. 360.0) THEN
             IF (IDNSET(0,2) .GT. 0) THEN
                CALL PRTERR ('CMDWARN',
      &            'Back node sets are deleted'

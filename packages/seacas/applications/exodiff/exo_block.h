@@ -62,8 +62,8 @@ public:
   const INT *Connectivity() const { return conn; }  // 1-offset connectivity
   const INT *Connectivity(size_t elmt_index) const; // 1-offset connectivity
 
-  std::string Give_Connectivity(size_t &num_e,      // Moves connectivity matrix
-                                size_t &npe,        // to conn pointer and sets
+  std::string Give_Connectivity(size_t &num_e,    // Moves connectivity matrix
+                                size_t &npe,      // to conn pointer and sets
                                 INT *&  recv_conn); // its own to null.
 
   // Misc:

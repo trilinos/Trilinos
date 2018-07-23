@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -64,10 +64,6 @@
 #include "Ioss_State.h"
 #include "Ioss_VariableType.h"
 #include "vector3d.h"
-
-#ifndef NO_XDMF_SUPPORT
-#include <xdmf/Ioxf_Initializer.h>
-#endif
 
 // ========================================================================
 
@@ -140,7 +136,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -168,9 +164,6 @@ int main(int argc, char *argv[])
   }
 
   Ioss::Init::Initializer io;
-#ifndef NO_XDMF_SUPPORT
-  Ioxf::Initializer ioxf;
-#endif
 
   globals.debug = false;
 
@@ -330,7 +323,7 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, sset_file, globals);
 
   std::cerr << "\n" << codename << " execution successful.\n";
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -643,7 +636,7 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      int num_nodes = (*i)->get_property("entity_count").get_int();
+      int num_nodes = (*i)->entity_count();
       int degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
         std::cerr << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
@@ -675,7 +668,7 @@ namespace {
         std::cerr << name << ", ";
       }
       std::string type     = (*i)->get_property("topology_type").get_string();
-      int         num_elem = (*i)->get_property("entity_count").get_int();
+      int         num_elem = (*i)->entity_count();
       total_elements += num_elem;
 
       auto eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
@@ -717,7 +710,7 @@ namespace {
         }
         std::string fbtype   = (*j)->get_property("topology_type").get_string();
         std::string partype  = (*j)->get_property("parent_topology_type").get_string();
-        int         num_side = (*j)->get_property("entity_count").get_int();
+        int         num_side = (*j)->entity_count();
         total_sides += num_side;
 
         auto block =
@@ -753,7 +746,7 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      int count = (*i)->get_property("entity_count").get_int();
+      int count = (*i)->entity_count();
       total_nodes += count;
       auto ns = new Ioss::NodeSet(output_region.get_database(), name, count);
       output_region.add(ns);
@@ -781,7 +774,7 @@ namespace {
         std::cerr << name << ", ";
       }
       std::string type  = (*i)->get_property("entity_type").get_string();
-      int         count = (*i)->get_property("entity_count").get_int();
+      int         count = (*i)->entity_count();
       auto        cs    = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
       transfer_properties(*i, cs);
@@ -932,7 +925,7 @@ namespace {
         if (globals.debug) {
           std::cerr << name << ", ";
         }
-        int         num_elem = (*i)->get_property("entity_count").get_int();
+        int         num_elem = (*i)->entity_count();
         std::string type     = (*i)->get_property("topology_type").get_string();
 
         // Should be able to get this from the input mesh element blocks...
@@ -1276,7 +1269,7 @@ namespace {
       const Ioss::VariableType *v3d = Ioss::VariableType::factory("vector_3d");
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
       Ioss::NodeBlock *nb        = (*output_region.get_node_blocks().begin());
-      int              num_nodes = nb->get_property("entity_count").get_int();
+      int              num_nodes = nb->entity_count();
       Ioss::Field      node_normal("node_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
                               num_nodes);
       nb->field_add(node_normal);
@@ -1287,7 +1280,7 @@ namespace {
       while (ib != ebs.end()) {
         Ioss::ElementBlock *eb = *ib;
         ++ib;
-        int         num_elem = eb->get_property("entity_count").get_int();
+        int         num_elem = eb->entity_count();
         Ioss::Field face_normal("face_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
                                 num_elem);
         eb->field_add(face_normal);
@@ -1303,7 +1296,7 @@ namespace {
     Ioss::NodeBlock *nbo = (*output_region.get_node_blocks().begin());
 
     // Get the nodal coordinates...
-    int num_nodes  = nb->get_property("entity_count").get_int();
+    int num_nodes  = nb->entity_count();
     int coord_size = nb->get_field("mesh_model_coordinates").get_size();
 
     std::vector<double> coord(3 * num_nodes);
@@ -1332,7 +1325,7 @@ namespace {
         std::exit(EXIT_FAILURE);
       }
 
-      int num_elem          = eb->get_property("entity_count").get_int();
+      int num_elem          = eb->entity_count();
       int num_node_per_elem = eb->topology()->number_nodes();
 
       // Get the connectivity array...

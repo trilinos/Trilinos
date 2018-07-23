@@ -48,7 +48,7 @@ void countup(struct vtx_data **graph,        /* graph data structure */
              int               print_lev,    /* level of output */
              FILE *            outfile,      /* output file if not NULL */
              int               using_ewgts   /* are edge weights being used? */
-             )
+)
 {
   extern int VERTEX_SEPARATOR; /* vertex instead of edge separator? */
   extern int VERTEX_COVER;     /* make/improve vtx separator via matching? */

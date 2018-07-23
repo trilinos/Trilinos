@@ -45,7 +45,7 @@ int maxmatch2(struct vtx_data **graph,      /* array of vtx data for graph */
               int               nvtxs,      /* number of vertices in graph */
               int *             mflag,      /* flag indicating vtx selected or not */
               int               using_ewgts /* are edge weights being used? */
-              )
+)
 {
   extern int HEAVY_MATCH; /* encourage heavy matching edges? */
   float      ewgt_max;    /* heaviest edge seen so far */

@@ -46,7 +46,7 @@ void check_internal(struct vtx_data **graph,      /* graph data structure */
                     int *             total_vwgt, /* total weight in each set */
                     int *             assign,     /* current assignment */
                     int               nsets_tot   /* total number of sets */
-                    )
+)
 {
   struct bidint *ptr, *ptr2;         /* elements in int_list */
   struct bidint *old_ptr, *old_ptr2; /* elements in set_list */

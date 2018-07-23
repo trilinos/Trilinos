@@ -38,8 +38,8 @@ void vecran(double *vec, int beg, int end)
 {
   int     i;
   double *pntr;
-  double ch_normalize(double *vec, int beg, int end);
-  double drandom(void);
+  double  ch_normalize(double *vec, int beg, int end);
+  double  drandom(void);
 
   pntr = vec + beg;
   for (i = end - beg + 1; i; i--) {

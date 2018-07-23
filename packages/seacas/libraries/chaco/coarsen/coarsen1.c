@@ -47,7 +47,7 @@ void coarsen1(struct vtx_data ** graph,      /* array of vtx data for graph */
               float **           coords,     /* coordinates for vertices */
               float **           ccoords,    /* coordinates for coarsened vertices */
               int                using_ewgts /* are edge weights being used? */
-              )
+)
 {
   extern double coarsen_time;
   extern double match_time;

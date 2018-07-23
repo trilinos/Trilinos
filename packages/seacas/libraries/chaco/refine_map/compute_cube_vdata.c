@@ -41,7 +41,7 @@ void compute_cube_vdata(struct refine_vdata *vdata,      /* preference data for 
                         int                  vtx,        /* current vertex */
                         int                  mask,    /* bit set in current hypercube dimension */
                         int *                vtx2node /* maps graph vtxs to mesh nodes */
-                        )
+)
 {
   float same;        /* my preference to stay where I am */
   float change;      /* my preference to change this bit */

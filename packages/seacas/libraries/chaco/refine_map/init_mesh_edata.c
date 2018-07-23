@@ -38,7 +38,7 @@
 /* Initialize the mapping of sets to endpoints of wires in the mesh. */
 void init_mesh_edata(struct refine_edata *edata,       /* desire data for all edges */
                      int                  mesh_dims[3] /* dimensions of mesh */
-                     )
+)
 {
   int wire;    /* loops through wires */
   int i, j, k; /* loop counters */

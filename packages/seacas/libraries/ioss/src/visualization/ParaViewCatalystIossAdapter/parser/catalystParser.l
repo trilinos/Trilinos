@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2010 National Technology & Engineering Solutions
+# Copyright(C) 1999-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -78,7 +78,7 @@ void track_location(YYLTYPE *loc, char *txt)
 (?i:count)                                                           { yylval->string=strdup(yytext); return(TOKCOUNT); }
 (?i:threshold\ +values)                                              { return(TOKTHRESHOLDVALUES); }
 (?i:frames\ +after\ +trigger)                                        { return(TOKFRAMESAFTERTRIGGER); }
-(?i:maxiumum\ +triggers\ +per\ +threshold)                           { return(TOKMAXIMUMTRIGGERSPERTHRESHOLD); }
+(?i:maximum\ +triggers\ +per\ +threshold)                           { return(TOKMAXIMUMTRIGGERSPERTHRESHOLD); }
 
  /* On Off Criteria Block */
 

@@ -4,7 +4,7 @@ This directory contains the source code for the Sierra IO
 subsystem. This can be compiled into a standalone version which does
 not require any other Sierra Framework code.
 
-This code includes database readers/writers for the exodusII and xdmf
+This code includes database readers/writers for the exodusII and cgns
 database formats.  There is also a unit test code which can function
 as a translator.  
 
@@ -18,26 +18,22 @@ The io_shell executable can also be run directly.  If the code is given
 a single argument, it is assumed to be an input file which contains
 two lines.  The first line is the filename and filetype of the input
 file and the second line is the filename and filetype of the file to
-be created.  Valid options for filetype are 'exodusII' and 'xdmf'.
+be created.  Valid options for filetype are 'exodusII' and 'cgns'.
 
 NOTES:
 
 0. For exodus support, you will need the exodusII, nemesis, and netcdf
 libraries.
 
-1. The xdmf support is optional and can be omitted by defining the
-symbol NO_XDMF_SUPPORT during the compile.  If xdmf is included, then
-you will also need the HDF5 library.
-
-2. The io_system/src/main/Main_io_shell.C file can serve as minimal
+1. The io_system/src/main/Main_io_shell.C file can serve as minimal
 documentation of how to use the Sierra IO system and also the
 conventions used in the Sierra IO system. 
 
-3. There is also some documentation in the io_system/documents
+2. There is also some documentation in the io_system/documents
 directory. Typing "make" in that directory should build the
 IOSystem.pdf file containing low-level documentation of the code.
 
-4. The file io_system/scripts/ioss.cfg is a doxygen configuration
+3. The file io_system/scripts/ioss.cfg is a doxygen configuration
 file. To generate the doxygen output type "doxygen
 io_system/scripts/ioss.cfg". It will create the html output in the
 directory "html"

@@ -41,7 +41,7 @@ void sorts3d(
     double *vals[8][MAXSETS],    /* lists of values to sort */
     int *   indices[8][MAXSETS], /* indices of sorted lists */
     int     nvtxs                /* number of vertices */
-    )
+)
 {
   int *space;       /* space for mergesort routine */
   int  nsets  = 8;  /* number of sets */

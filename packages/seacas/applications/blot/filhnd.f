@@ -128,10 +128,10 @@ c          if < 0, the logical unit of the file to close.
 c          if = 0, close all files
       logical ecodei             
 c          On input, .TRUE., if program should abort
-c          if an error on opening the file occured.
+c          if an error on opening the file occurred.
 c          .FALSE. otherwise.
       logical ecodeo             
-c          On output, .TRUE. if the file opening occured successfully.
+c          On output, .TRUE. if the file opening occurred successfully.
 c          .FALSE. otherwise.
       integer frecl              
 c          If a file is to be opened and it is a direct access file,
@@ -161,7 +161,7 @@ c
 c
 c        declarations
 c
-      character*132 filnam       
+      character*2048 filnam       
 c           filename associated with unit
       integer lname              
 c           length of string filnam (less trailing blanks)

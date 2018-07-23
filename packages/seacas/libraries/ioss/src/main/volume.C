@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -224,7 +224,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
 void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates)
 {
 
-  size_t nelem = block->get_property("entity_count").get_int();
+  size_t nelem = block->entity_count();
   if (block->get_database()->int_byte_size_api() == 8) {
     std::vector<int64_t> connectivity(nelem);
     block->get_field_data("connectivity_raw", connectivity);

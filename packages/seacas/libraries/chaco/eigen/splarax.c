@@ -43,7 +43,7 @@ void splarax(double *          result, /* result of matrix vector multiplication
              double *          vec,    /* vector being multiplied by matrix */
              double *          vwsqrt, /* square roots of vertex weights */
              double *          work    /* work vector from 1-n */
-             )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */
@@ -148,7 +148,7 @@ void splarax_float(float *           result, /* result of matrix vector multipli
                    float *           vec,    /* vector being multiplied by matrix */
                    float *           vwsqrt, /* square roots of vertex weights */
                    float *           work    /* work vector from 1-n */
-                   )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */

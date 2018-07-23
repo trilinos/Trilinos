@@ -33,10 +33,11 @@
  *
  */
 
-#include "defs.h"   // for FALSE, TRUE
-#include "params.h" // for LINE_LENGTH
-#include <ctype.h>  // for isspace
-#include <stdio.h>  // for fgets, FILE, NULL, getc
+#include "defs.h"
+#include "params.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static char line[LINE_LENGTH];       /* space to hold values */
 static int  offset    = 0;           /* offset into line for next data */
@@ -47,7 +48,7 @@ static void flush_line();
 
 double read_val(FILE *infile,  /* file to read value from */
                 int * end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
-                )
+)
 {
   double val;         /* return value */
   char * ptr;         /* ptr to next string to read */
@@ -142,7 +143,7 @@ double read_val(FILE *infile,  /* file to read value from */
 
 int read_int(FILE *infile,  /* file to read value from */
              int * end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
-             )
+)
 {
   int   val;         /* return value */
   char *ptr;         /* ptr to next string to read */
@@ -152,7 +153,6 @@ int read_int(FILE *infile,  /* file to read value from */
   int   white_seen;  /* have I detected white space yet? */
   int   done;        /* checking for end of scan */
   int   i;           /* loop counter */
-  long  strtol();
 
   *end_flag = 0;
 

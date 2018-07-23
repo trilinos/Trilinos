@@ -905,9 +905,9 @@ static void gl_addchar(int c)
   if (gl_cnt >= GL_BUF_SIZE - 1)
     gl_error("\n*** Error: getline(): input buffer overflow\n");
   if (gl_overwrite == 0 || gl_pos == gl_cnt) {
-    for (i          = gl_cnt; i >= gl_pos; i--)
+    for (i = gl_cnt; i >= gl_pos; i--)
       gl_buf[i + 1] = gl_buf[i];
-    gl_buf[gl_pos]  = (char)c;
+    gl_buf[gl_pos] = (char)c;
     gl_fixup(gl_prompt, gl_pos, gl_pos + 1);
   }
   else {
@@ -927,9 +927,9 @@ static void gl_yank(void)
     if (gl_overwrite == 0) {
       if (gl_cnt + len >= GL_BUF_SIZE - 1)
         gl_error("\n*** Error: getline(): input buffer overflow\n");
-      for (i            = gl_cnt; i >= gl_pos; i--)
+      for (i = gl_cnt; i >= gl_pos; i--)
         gl_buf[i + len] = gl_buf[i];
-      for (i               = 0; i < len; i++)
+      for (i = 0; i < len; i++)
         gl_buf[gl_pos + i] = gl_killbuf[i];
       gl_fixup(gl_prompt, gl_pos, gl_pos + len);
     }
@@ -939,9 +939,9 @@ static void gl_yank(void)
           gl_error("\n*** Error: getline(): input buffer overflow\n");
         gl_buf[gl_pos + len] = 0;
       }
-      for (i               = 0; i < len; i++)
+      for (i = 0; i < len; i++)
         gl_buf[gl_pos + i] = gl_killbuf[i];
-      gl_extent            = len;
+      gl_extent = len;
       gl_fixup(gl_prompt, gl_pos, gl_pos + len);
     }
   }
@@ -1166,7 +1166,7 @@ static void gl_fixup(const char *prompt, int change, int cursor)
   if (off_right || (off_left && cursor < gl_shift + gl_width - gl_scroll / 2))
     extra = 2; /* shift the scrolling boundary */
   else
-    extra   = 0;
+    extra = 0;
   new_shift = cursor + extra + gl_scroll - gl_width;
   if (new_shift > 0) {
     new_shift /= gl_scroll;
@@ -1240,12 +1240,12 @@ static int gl_tab(char *buf, int offset, int *loc, size_t bufsize)
   for (i = 0; i < count; i++)
     if (*loc + i < (int)bufsize)
       buf[*loc + i] = ' ';
-  i                 = *loc;
-  *loc              = i + count;
+  i    = *loc;
+  *loc = i + count;
   return i;
 }
 
-/******************* History stuff **************************************/
+  /******************* History stuff **************************************/
 
 #ifndef HIST_SIZE
 #define HIST_SIZE 100
@@ -1260,7 +1260,7 @@ static void hist_init(void)
   int i;
 
   hist_buf[0] = hist_empty_elem;
-  for (i        = 1; i < HIST_SIZE; i++)
+  for (i = 1; i < HIST_SIZE; i++)
     hist_buf[i] = (char *)0;
 }
 
@@ -1363,7 +1363,7 @@ void gl_histsavefile(const char *const path)
 #else
              "w"
 #endif
-             );
+  );
   if (fp != NULL) {
     for (i = 2; i < HIST_SIZE; i++) {
       j = (hist_pos + i) % HIST_SIZE;
@@ -1387,7 +1387,7 @@ void gl_histloadfile(const char *const path)
 #else
              "r"
 #endif
-             );
+  );
   if (fp != NULL) {
     memset(line, 0, sizeof(line));
     while (fgets(line, sizeof(line) - 2, fp) != NULL) {
@@ -1505,7 +1505,7 @@ static void search_back(int new_search)
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;
-        found         = 1;
+        found = 1;
       }
     }
   }
@@ -1540,7 +1540,7 @@ static void search_forw(int new_search)
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;
-        found         = 1;
+        found = 1;
       }
     }
   }
@@ -1655,7 +1655,7 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
   }
   gl_matchlist = newgl_matchlist;
   nalloced     = ntoalloc;
-  for (i            = nused; i <= nalloced; i++)
+  for (i = nused; i <= nalloced; i++)
     gl_matchlist[i] = NULL;
 
   gl_completion_exact_match_extra_char = ' ';
@@ -1676,7 +1676,7 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
       }
       gl_matchlist = newgl_matchlist;
       nalloced     = ntoalloc;
-      for (i            = nused; i <= nalloced; i++)
+      for (i = nused; i <= nalloced; i++)
         gl_matchlist[i] = NULL;
     }
     cp                  = gl_completion_proc(matchpfx, nused);
@@ -1782,7 +1782,7 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
 void gl_tab_completion(gl_tab_completion_proc proc)
 {
   if (proc == NULL)
-    proc             = gl_local_filename_completion_proc; /* default proc */
+    proc = gl_local_filename_completion_proc; /* default proc */
   gl_completion_proc = proc;
 } /* gl_tab_completion */
 
@@ -1813,7 +1813,7 @@ void gl_set_home_dir(const char *homedir)
   char        wdir[64];
 #else
   struct passwd *pw;
-  char *         cp;
+  char *cp;
 #endif
 
   if (gl_home_dir != NULL) {

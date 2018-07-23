@@ -33,34 +33,29 @@
  *
  */
 /* tinvit.f -- translated by f2c (version of 16 May 1991  13:06:06).
-   You must link the resulting object file with the libraries:
-        -link <S|C|M|L>f2c.lib   (in that order)
-*/
+ */
 
-#include "f2c.h"
+#include <float.h>
+#include <math.h>
 
-int tinvit_(integer *nm, integer *n, doublereal *d, doublereal *e, doublereal *e2, integer *m,
-            doublereal *w, integer *ind, doublereal *z, integer *ierr, doublereal *rv1,
-            doublereal *rv2, doublereal *rv3, doublereal *rv4, doublereal *rv6)
+int tinvit(long int *nm, long int *n, double *d, double *e, double *e2, long int *m, double *w,
+           long int *ind, double *z, long int *ierr, double *rv1, double *rv2, double *rv3,
+           double *rv4, double *rv6)
 {
   /* System generated locals */
-  integer    z_dim1, z_offset, i__1, i__2, i__3;
-  doublereal d__1, d__2, d__3, d__4;
-
-  /* Builtin functions */
-  double sqrt();
+  long int z_dim1, z_offset, i__1, i__2, i__3;
+  double   d__1, d__2, d__3, d__4;
 
   /* Local variables */
-  static doublereal norm;
-  static integer    i, j, p, q, r, s;
-  static doublereal u, v, order;
-  static integer    group;
-  static doublereal x0, x1;
-  static integer    ii, jj, ip;
-  static doublereal uk, xu;
-  extern doublereal pythag_(), epslon_();
-  static integer    tag, its;
-  static doublereal eps2, eps3, eps4;
+  static double   norm;
+  static long int i, j, p, q, r, s;
+  static double   u, v, order;
+  static long int group;
+  static double   x0, x1;
+  static long int ii, jj, ip;
+  static double   uk, xu;
+  static long int tag, its;
+  static double   eps2, eps3, eps4;
 
   /*     this subroutine is a translation of the inverse iteration tech- */
   /*     nique in the algol procedure tristurm by peters and wilkinson. */
@@ -96,13 +91,13 @@ int tinvit_(integer *nm, integer *n, doublereal *d, doublereal *e, doublereal *e
   /*        m is the number of specified eigenvalues. */
 
   /*        w contains the m eigenvalues in ascending or descending order.
-  */
+   */
 
   /*        ind contains in its first m positions the submatrix indices */
   /*          associated with the corresponding eigenvalues in w -- */
   /*          1 for eigenvalues belonging to the first submatrix from */
   /*          the top, 2 for those belonging to the second submatrix, etc.
-  */
+   */
 
   /*     on output */
 
@@ -118,16 +113,16 @@ int tinvit_(integer *nm, integer *n, doublereal *d, doublereal *e, doublereal *e
 
   /*        rv1, rv2, rv3, rv4, and rv6 are temporary storage arrays. */
 
-  /*     calls pythag for  dsqrt(a*a + b*b) . */
+  /*     calls hypot for  dsqrt(a*a + b*b) . */
 
   /*     questions and comments should be directed to burton s. garbow, */
   /*     mathematics and computer science div, argonne national laboratory
-  */
+   */
 
   /*     this version dated august 1983. */
 
   /*     ------------------------------------------------------------------
-  */
+   */
 
   /* Parameter adjustments */
   --rv6;
@@ -189,15 +184,15 @@ L140:
     rv6[p] = 1.;
     goto L870;
   L490:
-    norm = (d__1 = d[p], abs(d__1));
-    ip = p + 1;
+    norm = (d__1 = d[p], fabs(d__1));
+    ip   = p + 1;
 
     i__2 = q;
     for (i = ip; i <= i__2; ++i) {
       /* L500: */
       /* Computing MAX */
-      d__3 = norm, d__4 = (d__1 = d[i], abs(d__1)) + (d__2 = e[i], abs(d__2));
-      norm = max(d__3, d__4);
+      d__3 = norm, d__4 = (d__1 = d[i], fabs(d__1)) + (d__2 = e[i], fabs(d__2));
+      norm = d__3 > d__4 ? d__3 : d__4;
     }
     /*     .......... eps2 is the criterion for grouping, */
     /*                eps3 replaces zero pivots and equal */
@@ -205,8 +200,8 @@ L140:
     /*                eps4 is taken very small to avoid overflow .........
     . */
     eps2 = norm * .001;
-    eps3 = epslon_(&norm);
-    uk   = (doublereal)(q - p + 1);
+    eps3 = DBL_EPSILON * fabs(norm);
+    uk   = (double)(q - p + 1);
     eps4 = uk * eps3;
     uk   = eps4 / sqrt(uk);
     s    = p;
@@ -215,7 +210,7 @@ L140:
     goto L520;
   /*     .......... look for close or coincident roots .......... */
   L510:
-    if ((d__1 = x1 - x0, abs(d__1)) >= eps2) {
+    if ((d__1 = x1 - x0, fabs(d__1)) >= eps2) {
       goto L505;
     }
     ++group;
@@ -233,7 +228,7 @@ L140:
       if (i == p) {
         goto L560;
       }
-      if ((d__1 = e[i], abs(d__1)) < abs(u)) {
+      if ((d__1 = e[i], fabs(d__1)) < fabs(u)) {
         goto L540;
       }
       /*     .......... warning -- a divide check may occur here if */
@@ -318,7 +313,7 @@ L140:
     i__2 = q;
     for (i = p; i <= i__2; ++i) {
       /* L720: */
-      norm += (d__1 = rv6[i], abs(d__1));
+      norm += (d__1 = rv6[i], fabs(d__1));
     }
 
     if (norm >= 1.) {
@@ -366,7 +361,7 @@ L140:
 
     ++its;
     goto L600;
-  /*     .......... set error -- non-converged eigenvector .......... */
+    /*     .......... set error -- non-converged eigenvector .......... */
 
   L830:
     *ierr = -r;
@@ -380,7 +375,7 @@ L140:
     i__2 = q;
     for (i = p; i <= i__2; ++i) {
       /* L860: */
-      u = pythag_(&u, &rv6[i]);
+      u = hypot(u, rv6[i]);
     }
 
     xu = 1. / u;

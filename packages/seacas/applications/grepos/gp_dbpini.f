@@ -68,7 +68,7 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
 
       include 'gp_params.blk'
 
-      CHARACTER*(132) FILNAM
+      CHARACTER*(2048) FILNAM
       CHARACTER*(*) OPTION
       CHARACTER*(MXLNLN) TITLE
       INTEGER NDB

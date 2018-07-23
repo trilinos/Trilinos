@@ -491,6 +491,15 @@ C store default values of search box tolerances per element type
       TOLHEC = TOLHEX
       TOLTEC = TOLTET
       
+c      
+C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
+C
+      CALL MDRSRV ('GVAR',   NAGV, NVARGP)
+C
+      call debug('WRTC')
+      CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
+C
+C
       DO 50 IM = 1, IMP
         IMOFF = IM * 3
         IDBLKA = IA(NMAP-3+IMOFF)
@@ -1427,15 +1436,6 @@ C
 C
 c
  50   CONTINUE
-c      
-C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
-C
-      CALL MDRSRV ('GVAR',   NAGV, NVARGP)
-C
-      call debug('WRTC')
-      CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
-C
-C
 C
 C     *****************************************************************
 C     STOP COMMAND

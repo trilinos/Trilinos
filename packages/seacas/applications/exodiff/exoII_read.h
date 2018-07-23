@@ -102,12 +102,12 @@ public:
   const std::vector<std::string> &Elmt_Att_Names() const { return elmt_atts; }
   const std::vector<std::string> &NS_Var_Names() const { return ns_vars; }
   const std::vector<std::string> &SS_Var_Names() const { return ss_vars; }
-  const std::string &Global_Var_Name(int index) const;
-  const std::string &Nodal_Var_Name(int index) const;
-  const std::string &Elmt_Var_Name(int index) const;
-  const std::string &Elmt_Att_Name(int index) const;
-  const std::string &NS_Var_Name(int index) const;
-  const std::string &SS_Var_Name(int index) const;
+  const std::string &             Global_Var_Name(int index) const;
+  const std::string &             Nodal_Var_Name(int index) const;
+  const std::string &             Elmt_Var_Name(int index) const;
+  const std::string &             Elmt_Att_Name(int index) const;
+  const std::string &             NS_Var_Name(int index) const;
+  const std::string &             SS_Var_Name(int index) const;
 
   // Element blocks:
   int Num_Elmt_Blocks() const { return num_elmt_blocks; }
@@ -127,9 +127,9 @@ public:
   std::string Load_Elmt_Map();
   std::string Free_Elmt_Map();
   const INT * Get_Elmt_Map() { return elmt_map; }
-  inline INT Node_Map(size_t node_num) const;   // numbers are global, 1-offset
-  inline INT Elmt_Map(size_t elmt_num) const;   // numbers are global, 1-offset
-  inline INT Elmt_Order(size_t elmt_num) const; // numbers are global, 1-offset
+  inline INT  Node_Map(size_t node_num) const;   // numbers are global, 1-offset
+  inline INT  Elmt_Map(size_t elmt_num) const;   // numbers are global, 1-offset
+  inline INT  Elmt_Order(size_t elmt_num) const; // numbers are global, 1-offset
 
   // Nodal data:
 
@@ -152,19 +152,19 @@ public:
   void Free_Nodal_Coordinates();
 
   // (First time step = 1.)
-  std::string Load_Nodal_Results(int time_step_num, int var_index);
+  std::string   Load_Nodal_Results(int time_step_num, int var_index);
   const double *Get_Nodal_Results(int var_index) const;
   const double *Get_Nodal_Results(int t1, int t2, double proportion,
                                   int var_index) const; // Interpolated results
-  void Free_Nodal_Results();
-  void Free_Nodal_Results(int var_index);
+  void          Free_Nodal_Results();
+  void          Free_Nodal_Results(int var_index);
 
   // Global data:  (NOTE:  Global and Nodal data are always stored at the same
   //                       time step.  Therefore, if current time step number
   //                       is changed, the results will all be deleted.)
 
-  std::string Load_Global_Results(int time_step_num);
-  std::string Load_Global_Results(int t1, int t2, double proportion); // Interpolated results
+  std::string   Load_Global_Results(int time_step_num);
+  std::string   Load_Global_Results(int t1, int t2, double proportion); // Interpolated results
   const double *Get_Global_Results() const { return global_vals; }
 
   // Node/Side sets:
@@ -173,7 +173,7 @@ public:
   Exo_Entity *Get_Entity_by_Id(EXOTYPE type, size_t id) const;
   Exo_Entity *Get_Entity_by_Name(EXOTYPE type, const std::string &name) const;
 
-  size_t Block_Id(size_t block_index) const; // Returns associated block id.
+  size_t          Block_Id(size_t block_index) const; // Returns associated block id.
   Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t id) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Index(size_t block_index) const;
   Exo_Block<INT> *Get_Elmt_Block_by_Name(const std::string &name) const;
@@ -190,11 +190,11 @@ public:
 
   virtual void Display(std::ostream & /*s*/ = std::cout) const;
   virtual void Display_Maps(std::ostream & /*s*/ = std::cout) const;
-  virtual int  Check_State() const;                          // Checks state of obj (not the file).
-  int          File_ID() const { return file_id; }           // This is temporary.
-  std::string Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
-                                    int &   block_index,     // 0-offset
-                                    size_t &local_elmt_index) const; // 0-offset
+  virtual int  Check_State() const;                           // Checks state of obj (not the file).
+  int          File_ID() const { return file_id; }            // This is temporary.
+  std::string  Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
+                                     int &   block_index,     // 0-offset
+                                     size_t &local_elmt_index) const; // 0-offset
 
 protected:
   std::string file_name;

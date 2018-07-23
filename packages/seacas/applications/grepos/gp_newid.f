@@ -50,7 +50,7 @@ C=======================================================================
          RETURN
       END IF
 
-C ... Check for existance of new id in old list - not allowed
+C ... Check for existence of new id in old list - not allowed
 
       IF (NUMID .LE. 0) RETURN
 

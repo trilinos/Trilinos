@@ -38,7 +38,7 @@
 #define TRUE 1
 #define FALSE 0
 
-/* Input and ouput control parameters */
+/* Input and output control parameters */
 
 int CHECK_INPUT    = TRUE;  /* Check input for consistency? (TRUE/FALSE) */
 int ECHO           = 2;     /* Print input/param options? to file? (-2..2) */

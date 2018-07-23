@@ -45,7 +45,7 @@ int klv_init(struct bilist ***lbucket_ptr, /* space for left bucket sorts */
              int **           rdvals,      /* change in separator for right moves */
              int              nvtxs,       /* number of vertices in the graph */
              int              maxchange    /* maximum change by moving a vertex */
-             )
+)
 {
   int sizeb; /* size of set of buckets */
   int sizel; /* size of set of pointers for all vertices */

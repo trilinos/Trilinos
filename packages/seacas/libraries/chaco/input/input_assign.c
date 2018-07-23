@@ -148,7 +148,7 @@ static int input_assign_inv(FILE *finassign,    /* input assignment file */
                             char *inassignname, /* name of input assignment file */
                             int   nvtxs,        /* number of vertices to output */
                             int * assignment    /* values to be printed */
-                            )
+)
 {
   extern int DEBUG_TRACE; /* trace main execution path */
   int        set;         /* set number being read */

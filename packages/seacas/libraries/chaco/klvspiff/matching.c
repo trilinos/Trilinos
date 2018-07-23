@@ -59,7 +59,7 @@ void bpcover(int  n_left,   /* number of vertices on left side */
              int *indices,  /* adjacency list for each vertex */
              int *sep_size, /* returned size of separator */
              int *sep_nodes /* list of separator nodes */
-             )
+)
 {
   extern int DEBUG_COVER; /* controls debugging output in this routine */
   int *      matching;    /* array to encode matching */
@@ -112,7 +112,7 @@ static void bpmatching(int  n_left,   /* number of vertices on left side */
                        int *indices,  /* adjacency list for each vertex */
                        int *matching, /* array to encode matching */
                        int *touched   /* flags for each vertex */
-                       )
+)
 {
   int *seen; /* space for list of encountered vertices */
   int  i, j; /* loop counters */
@@ -155,7 +155,7 @@ static void augment(int  node,     /* start node in augmenting path */
                     int *matching, /* array to encode matching */
                     int *touched,  /* flags for each vertex */
                     int *seen      /* keeps list of vertices encountered */
-                    )
+)
 {
   int nseen;    /* number of vertices encountered */
   int enlarged; /* was matching enlarged? */
@@ -184,7 +184,7 @@ static int touch(int node, int *pointers, /* start/stop of adjacency lists */
                  int *touched,            /* flags for each vertex */
                  int *seen,               /* list of vertices encountered */
                  int *nseen               /* number of vertices encountered */
-                 )
+)
 {
   int neighbor; /* neighbor of a vertex */
   int result;   /* return node number (or -1) */
@@ -221,7 +221,7 @@ static void reachability(int  n_left,   /* number of vertices on left side */
                          int *indices,  /* adjacency list for each vertex */
                          int *matching, /* array to encode matching */
                          int *touched   /* flags for each vertex */
-                         )
+)
 {
   int i; /* loop counter */
 
@@ -243,7 +243,7 @@ static int touch2(int node, int *pointers, /* start/stop of adjacency lists */
                   int *indices,            /* adjacency list for each vertex */
                   int *matching,           /* array to encode matching */
                   int *touched             /* flags for each vertex */
-                  )
+)
 {
   int neighbor; /* neighbor of a vertex */
   int result;   /* return node number (or -1) */
@@ -274,7 +274,7 @@ void confirm_match(int  n_left,   /* number of vertices on left side */
                    int *matching, /* array to encode matching */
                    int  sep_size, /* returned size of separator */
                    int *sep_nodes /* list of separator nodes */
-                   )
+)
 {
   int *marked;
   int  neighbor;

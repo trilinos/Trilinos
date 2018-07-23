@@ -58,9 +58,9 @@ void map2d(struct vtx_data **graph,   /* data structure with vertex weights */
            int *             sets,    /* set each vertex gets assigned to */
            double *          goal,    /* desired set sizes */
            int               vwgt_max /* largest vertex weight */
-           )
+)
 {
-  extern int DEBUG_BPMATCH;        /* turn on debuging for bipartite matching */
+  extern int DEBUG_BPMATCH;        /* turn on debugging for bipartite matching */
   extern int N_VTX_MOVES;          /* total number of vertex moves */
   extern int N_VTX_CHECKS;         /* total number of moves contemplated */
   double *   vals[4][MAXSETS];     /* values in sorted lists */

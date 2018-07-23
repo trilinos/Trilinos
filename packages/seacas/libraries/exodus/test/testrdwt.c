@@ -37,7 +37,7 @@
  * testrdwt - test reading from one ExodusII file and writing to another
  *            ExodusII file open concurrently
  *
- * author - Sandia-2017 National Laboratories
+ * author - Sandia National Laboratories
  *          Larry A. Schoof - Original
  *
  * environment - UNIX

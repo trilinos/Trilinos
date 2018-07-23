@@ -47,7 +47,7 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
                 double            maxdesire,  /* largest possible desire to flip an edge */
                 int *             vtx2node,   /* mapping from comm_graph vtxs to processors */
                 int *             node2vtx    /* mapping from processors to comm_graph vtxs */
-                )
+)
 {
   struct refine_vdata * vdata = NULL;      /* desire data for vertices */
   struct refine_vdata * vptr;              /* loops through vdata */

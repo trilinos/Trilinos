@@ -50,8 +50,8 @@ static void banner()
   time_structure = localtime(&time_val);
   asc_time       = asctime(time_structure);
 
-  printf("                           *** EXOTEC Version 2.02 ***\n");
-  printf("                                Revised 2011/07/01\n\n");
+  printf("                           *** EXOTEC Version 2.03 ***\n");
+  printf("                                Revised 2017/08/10\n\n");
   printf("                          EXODUS --> TECPLOT TRANSLATOR\n\n");
   printf("                         Run on %s\n\n", asc_time);
 }

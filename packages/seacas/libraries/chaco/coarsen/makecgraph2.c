@@ -50,7 +50,7 @@ void makecgraph2(struct vtx_data ** graph,       /* array of vtx data for graph 
                  int                igeom,       /* dimensions of geometric data */
                  float **           coords,      /* coordinates for vertices */
                  float **           ccoords      /* coordinates for coarsened vertices */
-                 )
+)
 {
   extern double     make_cgraph_time;
   extern int        DEBUG_COARSEN;   /* debug flag for coarsening output */

@@ -41,7 +41,7 @@ void genvals3d(
     double **xvecs,            /* vectors to partition */
     double * vals[8][MAXSETS], /* ptrs to lists of values */
     int      nvtxs             /* number of values */
-    )
+)
 {
   int     nsets  = 8;  /* number of sets */
   int     nlists = 13; /* number of lists to generate */

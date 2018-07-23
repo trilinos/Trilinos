@@ -38,16 +38,16 @@ namespace SEAMS {
   class Stats
   {
   public:
-    Stats();
+    Stats() = default;
 
-    void   newsample(int /*n*/);
+    void   newsample(int n);
     double mean() const;
     double deviation() const;
     double variance() const;
 
   private:
-    size_t Numnums;
-    double Mean;
-    double StdDev;
+    size_t Numnums{0};
+    double Mean{0.0};
+    double StdDev{0.0};
   };
-} // namespace SEAMS  // namespace SEAMS
+} // namespace SEAMS

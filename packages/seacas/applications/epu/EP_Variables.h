@@ -57,7 +57,7 @@ namespace Excn {
     {
       int ret_val = 0;
       switch (in_out) {
-      case IN: ret_val  = index_.size() - (addProcessorId ? 1 : 0); break;
+      case IN: ret_val = index_.size() - (addProcessorId ? 1 : 0); break;
       case OUT: ret_val = outputCount; break;
       }
       return ret_val;

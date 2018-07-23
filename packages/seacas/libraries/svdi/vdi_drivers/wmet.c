@@ -99,7 +99,7 @@ void vdgnam(name) char *name;
 /*
 Open file for sequential access.  FORTRAN unit number is ignored.
  */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatability */
+void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
 {
   char *fname;
 

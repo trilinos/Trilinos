@@ -45,7 +45,7 @@ void make_terms_ref(struct vtx_data **graph,       /* data structure for graph *
                     int    architecture,           /* 0 => hypercube, 1 => mesh */
                     int    mesh_dims[3],           /* if mesh, size of mesh */
                     float *term_wgts[]             /* terminal weights for each vertex */
-                    )
+)
 {
   double term_wgt;             /* terminal weight */
   float  edge_wgt;             /* weight of an edge */

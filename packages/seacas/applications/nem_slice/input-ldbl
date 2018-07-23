@@ -146,14 +146,14 @@ SOLVER SPECIFICATIONS		= TOLERANCE=2.0e-3,USE_RQI,VMAX=200
 #				  description can be given as a 1, 2, or
 #				  three dimensional mesh by giving the
 #				  number of processors in each dimension
-#				  seperated by an "x". For example, a 2d
+#				  separated by an "x". For example, a 2d
 #				  mesh with 10 processors on each side is
 #				  designated be "10x10"
 #	cluster=<cluster desc>	- Set the machine type to a Cluster machine.
 #				  This causes nem_slice to slice first on
 #				  the number of boxes, and then call Chaco
 #				  for each box. The hope is that this will
-#				  minimize the communication accross the boxes.
+#				  minimize the communication across the boxes.
 #				  The machine description is as follows:
 #					<# boxes><m|h><description>
 #					# boxes     - number of boxes, integer
@@ -221,7 +221,7 @@ WEIGHTING SPECIFICATIONS	= READ=testa-out-r.exoII,Var_Name=Temp,time_index=5
 #				  face. The default is for elements to be
 #				  adjacent if the share at least one node.
 #	groups {group designator} - Define groups that will be passed into
-#				  Chaco seperately. The groups are designated
+#				  Chaco separately. The groups are designated
 #				  by element block ids. This option should be
 #				  used when there is a problem handling
 #				  elements from different blocks on the same

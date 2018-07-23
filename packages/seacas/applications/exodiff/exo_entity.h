@@ -70,23 +70,23 @@ public:
 
   void initialize(int file_id, size_t id);
 
-  bool is_valid_var(size_t var_index) const;
+  bool        is_valid_var(size_t var_index) const;
   size_t      var_count() const { return numVars; }
   std::string Load_Results(int time_step, int var_index);
   std::string Load_Results(int t1, int t2, double proportion, int var_index); // Interpolation
 
   const double *Get_Results(int var_index) const;
-  void Free_Results();
+  void          Free_Results();
 
-  int         attr_count() const { return numAttr; }
-  std::string Load_Attributes(int attr_index);
+  int           attr_count() const { return numAttr; }
+  std::string   Load_Attributes(int attr_index);
   const double *Get_Attributes(int attr_index) const;
-  void Free_Attributes();
+  void          Free_Attributes();
 
-  const std::string &Get_Attribute_Name(int attr_index) const;
+  const std::string &             Get_Attribute_Name(int attr_index) const;
   const std::string &             Name() const { return name_; }
   const std::vector<std::string> &Attribute_Names() const { return attributeNames; }
-  int Find_Attribute_Index(const std::string &name) const;
+  int                             Find_Attribute_Index(const std::string &name) const;
 
 protected:
   std::string  name_;

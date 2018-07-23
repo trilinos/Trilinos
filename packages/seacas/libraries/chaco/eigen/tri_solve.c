@@ -54,7 +54,7 @@ void tri_solve(double *alpha,  /* vector of Lanczos scalars */
                double  b,      /* scalar multiple of e1 specifying the rhs */
                double *d,      /* work vec. for diagonal of Cholesky factor */
                double *e       /* work vec. for off diagonal of Cholesky factor */
-               )
+)
 {
   extern int DEBUG_EVECS; /* debug flag for eigen computation */
   int        i;           /* loop index */

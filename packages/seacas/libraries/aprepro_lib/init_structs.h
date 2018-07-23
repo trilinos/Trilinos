@@ -39,6 +39,14 @@ namespace SEAMS {
   struct array;
 } // namespace SEAMS
 
+struct init
+{
+  const char *fname;
+  double (*fnct)();
+  const char *syntax;
+  const char *description;
+};
+
 struct init_d
 {
   const char *fname;
@@ -83,6 +91,14 @@ struct init_dddddd
 {
   const char *fname;
   double (*fnct)(double, double, double, double, double, double);
+  const char *syntax;
+  const char *description;
+};
+
+struct init_ccc
+{
+  const char *fname;
+  double (*fnct)(char *, char *, char *);
   const char *syntax;
   const char *description;
 };
@@ -147,6 +163,14 @@ struct str_dcc_init
 {
   const char *fname;
   const char *(*fnct)(double, char *, char *);
+  const char *syntax;
+  const char *description;
+};
+
+struct str_cc_init
+{
+  const char *fname;
+  const char *(*fnct)(char *, char *);
   const char *syntax;
   const char *description;
 };

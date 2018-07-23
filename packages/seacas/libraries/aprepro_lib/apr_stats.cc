@@ -44,8 +44,6 @@
 #include <cmath>
 
 namespace SEAMS {
-  Stats::Stats() : Numnums(0), Mean(0.0), StdDev(0.0) {}
-
   void Stats::newsample(int n)
   {
     double TMean;

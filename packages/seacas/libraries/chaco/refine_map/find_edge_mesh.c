@@ -42,7 +42,7 @@ find_edge_mesh(int                  vertex,    /* vertex in comm_graph */
                struct refine_edata *edata,     /* data structure for edge preferences */
                int *                mesh_dims, /* dimensions of mesh */
                int *                vtx2node   /* maps comm_graph vtxs to processors */
-               )
+)
 {
   struct refine_edata *eguy;      /* returned pointer to edge info */
   int                  dir;       /* higher or lower direction? */

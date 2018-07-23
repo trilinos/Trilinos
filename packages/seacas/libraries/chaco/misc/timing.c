@@ -80,7 +80,7 @@ double median_time        = 0;
 double sim_time = 0;
 
 void time_out(FILE *outfile /* file to print output to */
-              )
+)
 {
   FILE *     tempfile;    /* file name for two passes */
   extern int ECHO;        /* parameter for different output styles */

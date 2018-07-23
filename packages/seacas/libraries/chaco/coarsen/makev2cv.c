@@ -38,7 +38,7 @@ void makev2cv(
     int *mflag, /* flag indicating vtx selected or not */
     int  nvtxs, /* number of vtxs in original graph */
     int *v2cv   /* mapping from vtxs to coarsened vtxs */
-    )
+)
 {
   int i, j; /* loop counters */
 
