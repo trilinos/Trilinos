@@ -30,7 +30,7 @@ end"
   <ParameterList name="Avatar-MueLu">
     <Parameter name="avatar: decision tree files" type="Array(string)" value="{avatar.trees}"/>
     <Parameter name="avatar: names files" type="Array(string)" value="{avatar.names}"/>
-    <Parameter name="avatar: args" type="Array(string)" value="{--seed=24601}"/>
+    <Parameter name="avatar: filestem" type="Array(string)" value="{avatar}"/>
     <ParameterList name="avatar: muelu parameter mapping">
       <ParameterList name="param0">
         <Parameter name="muelu parameter" type="string"      value="aggregation: theshold"/>
