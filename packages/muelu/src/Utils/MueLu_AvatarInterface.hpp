@@ -105,6 +105,7 @@ namespace MueLu {
     mutable Teuchos::ParameterList params_; // The mutable is a hack to deal with issues in Teuchos
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
+    Teuchos::Array<std::string> filestem_;
 
     // RCP's don't handle opaque pointers well
     Avatar_handle * avatarHandle_;

@@ -57,9 +57,9 @@
 
 // ***********************************************************************
 /* Notional Parameterlist Structure
-   "avatar: decision tree files"   "{'mytree1.dat','mytree2.dat'}"
-   "avatar: names files"           "{'mynames1.dat','mynames2.dat'}"
-   "avatar: args"                  "{'-s','23','-y','14'}"
+   "avatar: filestem"              "{'mystem1','mystem2'}"
+   "avatar: decision tree files"   "{'mystem1.trees','mystem2.trees'}"
+   "avatar: names files"           "{'mystem1.names','mystem2.names'}"
 
    "avatar: muelu parameter mapping"
      - "param0'
@@ -110,8 +110,8 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // Files from which to read Avatar names
   validParamList->set<Teuchos::Array<std::string> >("avatar: names files",ar_dummy,"Names of Avatar decision names files");
 
-  // Avatar command line args
-  validParamList->set<Teuchos::Array<std::string> >("avatar: args",ar_dummy,"Arguments to control the execution of Avatar");
+  // Filestem arg for Avatar
+  validParamList->set<Teuchos::Array<std::string> >("avatar: filestem",ar_dummy,"Filestem for the files Avatar requires");
 
   // This should be a MueLu parameter-to-Avatar parameter mapping (e.g. if Avatar doesn't like spaces)
   validParamList->set<Teuchos::ParameterList>("avatar: muelu parameter mapping",pl_dummy,"Mapping of MueLu to Avatar Parameters");
@@ -150,23 +150,15 @@ void AvatarInterface::Setup() {
   // Get the avatar strings (NOTE: Only exist on proc 0)
   avatarStrings_ = ReadFromFiles("avatar: decision tree files");
   namesStrings_  = ReadFromFiles("avatar: names files");
+  filestem_ = params_.get<Teuchos::Array<std::string>>("avatar: filestem");
 
 
   if(comm_->getRank() == 0) {
-    // Process avatar command line args
-    const Teuchos::Array<std::string> & avatarArgs = params_.get<Teuchos::Array<std::string> >("avatar: args");
-    int argc = (int) avatarArgs.size() +1;
-    const char * argv0 = "avatardt";    
-    std::vector<char*> argv(argc);
-    argv[0] = const_cast<char*>(argv0);
-    for(int i=1; i<argc; i++) 
-      argv[i] = const_cast<char*>(avatarArgs[i-1].c_str());
-    
     // Now actually set up avatar - Avatar's cleanup routine will free the pointer
     //    Avatar_handle* avatar_train(int argc, char **argv, char* names_file, int names_file_is_a_string, char* train_file, int train_file_is_a_string);
     const int namesfile_is_a_string = 1;
-    const int trainfile_is_a_string = 1;
-    avatarHandle_ = avatar_train(argc,argv.data(),const_cast<char*>(namesStrings_[0].c_str()),namesfile_is_a_string,const_cast<char*>(avatarStrings_[0].c_str()),trainfile_is_a_string);
+    const int treesfile_is_a_string = 1;
+    avatarHandle_ = avatar_load(const_cast<char*>(filestem_[0].c_str()),const_cast<char*>(namesStrings_[0].c_str()),namesfile_is_a_string,const_cast<char*>(avatarStrings_[0].c_str()),treesfile_is_a_string);
 
   }
 
@@ -186,7 +178,6 @@ void AvatarInterface::Cleanup() {
 // ***********************************************************************
 void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const {
   // NOTE: Assumes that the features are in the same order Avatar wants them.
-  // FIXME: This ordering should be checked against the names file
   std::stringstream ss;
   for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
     //    const std::string& name = problemFeatures.name(i);
@@ -222,7 +213,7 @@ void AvatarInterface::UnpackMueLuMapping() {
       avatarParameterName_[idx] = sublist.get<std::string>("avatar parameter");
 
       // Get the values
-      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are ints
+      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are ints (Why?)
       mueluParameterValues_[idx]  = sublist.get<Teuchos::Array<double> >("muelu values");
       avatarParameterValues_[idx] = sublist.get<Teuchos::Array<int> >("avatar values");            
     }
@@ -329,6 +320,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     }
     else {
       // As a placeholder, we'll choose the first acceptable combination.  Later we can do something smarter
+      //TODO: Look at other options to choose best possible combination
       chosen_option_id = acceptableCombos[0];
     }
 
