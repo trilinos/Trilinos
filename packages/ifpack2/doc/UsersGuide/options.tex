@@ -467,8 +467,12 @@ The following parameters are used in the ILUTP method:
     {Type of modified ILU to use. Accepted values: ``SILU'', ``SMILU\_1'', ``SMILU\_2'', or ``SMILU\_3''.}
 
 \subsection{ShyLU FastILU}\label{s:FastILU}
-\ifpacktwo{} provides an interface to the FastILU family of factorizations provided by ShyLU. There are
-three values of ``Preconditioner type:'' that use FastILU:
+\ifpacktwo{} provides an interface to the FastILU family of factorizations provided by ShyLU.
+They are available if Trilinos was configured with the
+
+\texttt{-D Trilinos\_ENABLE\_ShyLU\_Node=ON}
+
+option. There are three values of ``Preconditioner type:'' that use the FastILU subpackage:
 
 \begin{table}[h!]
 \centering
@@ -481,12 +485,16 @@ FAST\_ILDL               & Incomplete LDL*     \\ \hline
 \end{tabular}
 \end{table}
 
-FAST\_ILU, FAST\_IC, and FAST\_ILDL all accept the same set of parameters:
+FAST\_ILU, FAST\_IC, and FAST\_ILDL all use iterative factorization algorithms in compute(). \texttt{"sweeps"} controls
+this iteration count. A higher number of sweeps improves the quality of the factorization. All three
+preconditioners also use an triangular block Jacobi solver in apply().
+The Jacobi iteration count is controlled by \texttt{"triangular solve iterations"}.
+The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
 
 \ccc{sweeps}
     {int}
     {5}
-    {Number of applications of the FastILU/IC/ILDL algorithm.}
+    {Number of iterations of ILU/IC/ILDL factorization algorithm.}
 \ccc{triangular solve iterations}
     {int}
     {1}
@@ -506,7 +514,7 @@ FAST\_ILU, FAST\_IC, and FAST\_ILDL all accept the same set of parameters:
 \ccc{guess}
     {bool}
     {true}
-    {Whether to run a few sweeps of FastILU with a lower level of fill to create initial guess (only has an effect if level of fill $> 0$).} 
+    {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
 \ccc{block size}
     {int}
     {1}
@@ -582,9 +590,9 @@ Table~\ref{t:schwarz_inner}.
     ``CHEBYSHEV''           & Chebyshev iteration (see~\ref{s:Chebyshev}) \\
     ``RILUK''               & ILU($k$) (see~\ref{s:ILU}) \\
     ``ILUT''                & ILUT (see~\ref{s:ILUT}) \\
-    ``FastILU''             & FastILU (see~\ref{s:FastILU}) \\
-    ``FastIC''              & FastIC (see~\ref{s:FastIC}) \\
-    ``FastILDL''            & FastILDL(see~\ref{s:FastILDL}) \\
+    ``FAST\_ILU''             & FastILU (see~\ref{s:FastILU}) \\
+    ``FAST\_IC''              & FastIC (see~\ref{s:FastILU}) \\
+    ``FAST\_ILDL''            & FastILDL(see~\ref{s:FastILU}) \\
     ``AMESOS2''             & \amesostwo's interface to sparse direct solvers \\
     ``DENSE'' or ``LAPACK'' & LAPACK's LU factorization for a dense representation of a subdomain matrix \\
     ``CUSTOM''              & User provided inner solver \\
