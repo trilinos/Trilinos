@@ -79,35 +79,42 @@ namespace {
     std::string do_grouping() const { return "\3"; }
   };
 
-  // Data space shared by most field input/output routines...
-  std::vector<int>     data_int;
-  std::vector<int64_t> data_int64;
-  std::vector<double>  data_double;
-  std::vector<Complex> data_complex;
+  struct DataPool
+  {
+    // Data space shared by most field input/output routines...
+    std::vector<char>    data;
+    std::vector<int>     data_int;
+    std::vector<int64_t> data_int64;
+    std::vector<double>  data_double;
+    std::vector<Complex> data_complex;
 #ifdef SEACAS_HAVE_KOKKOS
-  Kokkos::View<char *>    data_view_char;
-  Kokkos::View<int *>     data_view_int;
-  Kokkos::View<int64_t *> data_view_int64;
-  Kokkos::View<double *>  data_view_double;
-  // Kokkos::View<Kokkos_Complex *> data_view_complex cannot be a global variable,
-  // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
-  // have type std::complex entities.
-  Kokkos::View<char **>    data_view_2D_char;
-  Kokkos::View<int **>     data_view_2D_int;
-  Kokkos::View<int64_t **> data_view_2D_int64;
-  Kokkos::View<double **>  data_view_2D_double;
-  // Kokkos::View<Kokkos_Complex **> data_view_2D_complex cannot be a global variable,
-  // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
-  // have type std::complex entities.
-  Kokkos::View<char **, Kokkos::LayoutRight, Kokkos::HostSpace>    data_view_2D_char_layout_space;
-  Kokkos::View<int **, Kokkos::LayoutRight, Kokkos::HostSpace>     data_view_2D_int_layout_space;
-  Kokkos::View<int64_t **, Kokkos::LayoutRight, Kokkos::HostSpace> data_view_2D_int64_layout_space;
-  Kokkos::View<double **, Kokkos::LayoutRight, Kokkos::HostSpace>  data_view_2D_double_layout_space;
-// Kokkos::View<Kokkos_Complex **, Kokkos::LayoutRight, Kokkos::HostSpace>
-// data_view_2D_complex_layout_space cannot be a global variable,
-// Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
-// have type std::complex entities.
+    Kokkos::View<char *>    data_view_char;
+    Kokkos::View<int *>     data_view_int;
+    Kokkos::View<int64_t *> data_view_int64;
+    Kokkos::View<double *>  data_view_double;
+    // Kokkos::View<Kokkos_Complex *> data_view_complex cannot be a global variable,
+    // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
+    // have type std::complex entities.
+    Kokkos::View<char **>    data_view_2D_char;
+    Kokkos::View<int **>     data_view_2D_int;
+    Kokkos::View<int64_t **> data_view_2D_int64;
+    Kokkos::View<double **>  data_view_2D_double;
+    // Kokkos::View<Kokkos_Complex **> data_view_2D_complex cannot be a global variable,
+    // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
+    // have type std::complex entities.
+    Kokkos::View<char **, Kokkos::LayoutRight, Kokkos::HostSpace> data_view_2D_char_layout_space;
+    Kokkos::View<int **, Kokkos::LayoutRight, Kokkos::HostSpace>  data_view_2D_int_layout_space;
+    Kokkos::View<int64_t **, Kokkos::LayoutRight, Kokkos::HostSpace>
+        data_view_2D_int64_layout_space;
+    Kokkos::View<double **, Kokkos::LayoutRight, Kokkos::HostSpace>
+        data_view_2D_double_layout_space;
+    // Kokkos::View<Kokkos_Complex **, Kokkos::LayoutRight, Kokkos::HostSpace>
+    // data_view_2D_complex_layout_space cannot be a global variable,
+    // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
+    // have type std::complex entities.
 #endif
+  };
+
   int  rank      = 0;
   bool mem_stats = false;
 
@@ -759,12 +766,12 @@ namespace {
         if (inb->field_exists("owning_processor")) {
           size_t            isize = inb->get_field("ids").get_size();
           std::vector<char> data(isize);
-          inb->get_field_data("ids", &data[0], isize);
-          nb->put_field_data("ids", &data[0], isize);
+          inb->get_field_data("ids", data.data(), isize);
+          nb->put_field_data("ids", data.data(), isize);
           isize = inb->get_field("owning_processor").get_size();
           data.resize(isize);
-          inb->get_field_data("owning_processor", &data[0], isize);
-          nb->put_field_data("owning_processor", &data[0], isize);
+          inb->get_field_data("owning_processor", data.data(), isize);
+          nb->put_field_data("owning_processor", data.data(), isize);
         }
       }
 
@@ -1152,24 +1159,25 @@ namespace {
       size_t osize = oge->get_field(out_field_name).get_size();
       assert(isize == osize);
 
-      std::vector<char> data(isize);
+      DataPool pool;
+      pool.data.resize(isize);
       switch (interface.data_storage_type) {
-      case 1: ige->get_field_data(field_name, &data[0], isize); break;
+      case 1: ige->get_field_data(field_name, pool.data.data(), isize); break;
       case 2:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          ige->get_field_data(field_name, data);
+          ige->get_field_data(field_name, pool.data.data(), isize);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          ige->get_field_data(field_name, data_int);
+          ige->get_field_data(field_name, pool.data_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          ige->get_field_data(field_name, data_int64);
+          ige->get_field_data(field_name, pool.data_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          ige->get_field_data(field_name, data_double);
+          ige->get_field_data(field_name, pool.data_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
-          ige->get_field_data(field_name, data_complex);
+          ige->get_field_data(field_name, pool.data_complex);
         }
         else {
         }
@@ -1177,40 +1185,40 @@ namespace {
 #ifdef SEACAS_HAVE_KOKKOS
       case 3:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          ige->get_field_data<char>(field_name, data_view_char);
+          ige->get_field_data<char>(field_name, pool.data_view_char);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          ige->get_field_data<int>(field_name, data_view_int);
+          ige->get_field_data<int>(field_name, pool.data_view_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          ige->get_field_data<int64_t>(field_name, data_view_int64);
+          ige->get_field_data<int64_t>(field_name, pool.data_view_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          ige->get_field_data<double>(field_name, data_view_double);
+          ige->get_field_data<double>(field_name, pool.data_view_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          ige->get_field_data(field_name, &data[0], isize);
+          ige->get_field_data(field_name, pool.data.data(), isize);
         }
         else {
         }
         break;
       case 4:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          ige->get_field_data<char>(field_name, data_view_2D_char);
+          ige->get_field_data<char>(field_name, pool.data_view_2D_char);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          ige->get_field_data<int>(field_name, data_view_2D_int);
+          ige->get_field_data<int>(field_name, pool.data_view_2D_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          ige->get_field_data<int64_t>(field_name, data_view_2D_int64);
+          ige->get_field_data<int64_t>(field_name, pool.data_view_2D_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          ige->get_field_data<double>(field_name, data_view_2D_double);
+          ige->get_field_data<double>(field_name, pool.data_view_2D_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          ige->get_field_data(field_name, &data[0], isize);
+          ige->get_field_data(field_name, pool.data.data(), isize);
         }
         else {
         }
@@ -1218,23 +1226,23 @@ namespace {
       case 5:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
           ige->get_field_data<char, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_char_layout_space);
+              field_name, pool.data_view_2D_char_layout_space);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
           ige->get_field_data<int, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_int_layout_space);
+              field_name, pool.data_view_2D_int_layout_space);
         }
         else if (basic_type == Ioss::Field::INT64) {
           ige->get_field_data<int64_t, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_int64_layout_space);
+              field_name, pool.data_view_2D_int64_layout_space);
         }
         else if (basic_type == Ioss::Field::REAL) {
           ige->get_field_data<double, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_double_layout_space);
+              field_name, pool.data_view_2D_double_layout_space);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          ige->get_field_data(field_name, &data[0], isize);
+          ige->get_field_data(field_name, pool.data.data(), isize);
         }
         else {
         }
@@ -1248,22 +1256,22 @@ namespace {
       }
 
       switch (interface.data_storage_type) {
-      case 1: oge->put_field_data(out_field_name, &data[0], osize); break;
+      case 1: oge->put_field_data(out_field_name, pool.data.data(), osize); break;
       case 2:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          oge->put_field_data(field_name, data);
+          oge->put_field_data(field_name, pool.data.data(), osize);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          oge->put_field_data(field_name, data_int);
+          oge->put_field_data(field_name, pool.data_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          oge->put_field_data(field_name, data_int64);
+          oge->put_field_data(field_name, pool.data_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          oge->put_field_data(field_name, data_double);
+          oge->put_field_data(field_name, pool.data_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
-          oge->put_field_data(field_name, data_complex);
+          oge->put_field_data(field_name, pool.data_complex);
         }
         else {
         }
@@ -1271,40 +1279,40 @@ namespace {
 #ifdef SEACAS_HAVE_KOKKOS
       case 3:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          oge->put_field_data<char>(field_name, data_view_char);
+          oge->put_field_data<char>(field_name, pool.data_view_char);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          oge->put_field_data<int>(field_name, data_view_int);
+          oge->put_field_data<int>(field_name, pool.data_view_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          oge->put_field_data<int64_t>(field_name, data_view_int64);
+          oge->put_field_data<int64_t>(field_name, pool.data_view_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          oge->put_field_data<double>(field_name, data_view_double);
+          oge->put_field_data<double>(field_name, pool.data_view_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          oge->put_field_data(out_field_name, &data[0], osize);
+          oge->put_field_data(out_field_name, pool.data.data(), osize);
         }
         else {
         }
         break;
       case 4:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-          oge->put_field_data<char>(field_name, data_view_2D_char);
+          oge->put_field_data<char>(field_name, pool.data_view_2D_char);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-          oge->put_field_data<int>(field_name, data_view_2D_int);
+          oge->put_field_data<int>(field_name, pool.data_view_2D_int);
         }
         else if (basic_type == Ioss::Field::INT64) {
-          oge->put_field_data<int64_t>(field_name, data_view_2D_int64);
+          oge->put_field_data<int64_t>(field_name, pool.data_view_2D_int64);
         }
         else if (basic_type == Ioss::Field::REAL) {
-          oge->put_field_data<double>(field_name, data_view_2D_double);
+          oge->put_field_data<double>(field_name, pool.data_view_2D_double);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          oge->put_field_data(out_field_name, &data[0], osize);
+          oge->put_field_data(out_field_name, pool.data.data(), osize);
         }
         else {
         }
@@ -1312,23 +1320,23 @@ namespace {
       case 5:
         if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
           oge->put_field_data<char, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_char_layout_space);
+              field_name, pool.data_view_2D_char_layout_space);
         }
         else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
           oge->put_field_data<int, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_int_layout_space);
+              field_name, pool.data_view_2D_int_layout_space);
         }
         else if (basic_type == Ioss::Field::INT64) {
           oge->put_field_data<int64_t, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_int64_layout_space);
+              field_name, pool.data_view_2D_int64_layout_space);
         }
         else if (basic_type == Ioss::Field::REAL) {
           oge->put_field_data<double, Kokkos::LayoutRight, Kokkos::HostSpace>(
-              field_name, data_view_2D_double_layout_space);
+              field_name, pool.data_view_2D_double_layout_space);
         }
         else if (basic_type == Ioss::Field::COMPLEX) {
           // Since data_view_complex cannot be a global variable.
-          oge->put_field_data(out_field_name, &data[0], osize);
+          oge->put_field_data(out_field_name, pool.data.data(), osize);
         }
         else {
         }
@@ -1428,24 +1436,25 @@ namespace {
       return;
     }
 
-    std::vector<char> data(isize);
+    DataPool pool;
+    pool.data.resize(isize);
     switch (interface.data_storage_type) {
-    case 1: ige->get_field_data(field_name, &data[0], isize); break;
+    case 1: ige->get_field_data(field_name, pool.data.data(), isize); break;
     case 2:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        ige->get_field_data(field_name, data);
+        ige->get_field_data(field_name, pool.data.data(), isize);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        ige->get_field_data(field_name, data_int);
+        ige->get_field_data(field_name, pool.data_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        ige->get_field_data(field_name, data_int64);
+        ige->get_field_data(field_name, pool.data_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        ige->get_field_data(field_name, data_double);
+        ige->get_field_data(field_name, pool.data_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
-        ige->get_field_data(field_name, data_complex);
+        ige->get_field_data(field_name, pool.data_complex);
       }
       else {
       }
@@ -1453,40 +1462,40 @@ namespace {
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        ige->get_field_data<char>(field_name, data_view_char);
+        ige->get_field_data<char>(field_name, pool.data_view_char);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        ige->get_field_data<int>(field_name, data_view_int);
+        ige->get_field_data<int>(field_name, pool.data_view_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        ige->get_field_data<int64_t>(field_name, data_view_int64);
+        ige->get_field_data<int64_t>(field_name, pool.data_view_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        ige->get_field_data<double>(field_name, data_view_double);
+        ige->get_field_data<double>(field_name, pool.data_view_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        ige->get_field_data(field_name, &data[0], isize);
+        ige->get_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
       break;
     case 4:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        ige->get_field_data<char>(field_name, data_view_2D_char);
+        ige->get_field_data<char>(field_name, pool.data_view_2D_char);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        ige->get_field_data<int>(field_name, data_view_2D_int);
+        ige->get_field_data<int>(field_name, pool.data_view_2D_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        ige->get_field_data<int64_t>(field_name, data_view_2D_int64);
+        ige->get_field_data<int64_t>(field_name, pool.data_view_2D_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        ige->get_field_data<double>(field_name, data_view_2D_double);
+        ige->get_field_data<double>(field_name, pool.data_view_2D_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        ige->get_field_data(field_name, &data[0], isize);
+        ige->get_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
@@ -1494,23 +1503,23 @@ namespace {
     case 5:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
         ige->get_field_data<char, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_char_layout_space);
+            field_name, pool.data_view_2D_char_layout_space);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
         ige->get_field_data<int, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_int_layout_space);
+            field_name, pool.data_view_2D_int_layout_space);
       }
       else if (basic_type == Ioss::Field::INT64) {
         ige->get_field_data<int64_t, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_int64_layout_space);
+            field_name, pool.data_view_2D_int64_layout_space);
       }
       else if (basic_type == Ioss::Field::REAL) {
         ige->get_field_data<double, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_double_layout_space);
+            field_name, pool.data_view_2D_double_layout_space);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        ige->get_field_data(field_name, &data[0], isize);
+        ige->get_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
@@ -1524,22 +1533,22 @@ namespace {
     }
 
     switch (interface.data_storage_type) {
-    case 1: oge->put_field_data(field_name, &data[0], isize); break;
+    case 1: oge->put_field_data(field_name, pool.data.data(), isize); break;
     case 2:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        oge->put_field_data(field_name, data);
+        oge->put_field_data(field_name, pool.data.data(), isize);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        oge->put_field_data(field_name, data_int);
+        oge->put_field_data(field_name, pool.data_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        oge->put_field_data(field_name, data_int64);
+        oge->put_field_data(field_name, pool.data_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        oge->put_field_data(field_name, data_double);
+        oge->put_field_data(field_name, pool.data_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
-        oge->put_field_data(field_name, data_complex);
+        oge->put_field_data(field_name, pool.data_complex);
       }
       else {
       }
@@ -1547,40 +1556,40 @@ namespace {
 #ifdef SEACAS_HAVE_KOKKOS
     case 3:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        oge->put_field_data<char>(field_name, data_view_char);
+        oge->put_field_data<char>(field_name, pool.data_view_char);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        oge->put_field_data<int>(field_name, data_view_int);
+        oge->put_field_data<int>(field_name, pool.data_view_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        oge->put_field_data<int64_t>(field_name, data_view_int64);
+        oge->put_field_data<int64_t>(field_name, pool.data_view_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        oge->put_field_data<double>(field_name, data_view_double);
+        oge->put_field_data<double>(field_name, pool.data_view_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        oge->put_field_data(field_name, &data[0], isize);
+        oge->put_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
       break;
     case 4:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
-        oge->put_field_data<char>(field_name, data_view_2D_char);
+        oge->put_field_data<char>(field_name, pool.data_view_2D_char);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
-        oge->put_field_data<int>(field_name, data_view_2D_int);
+        oge->put_field_data<int>(field_name, pool.data_view_2D_int);
       }
       else if (basic_type == Ioss::Field::INT64) {
-        oge->put_field_data<int64_t>(field_name, data_view_2D_int64);
+        oge->put_field_data<int64_t>(field_name, pool.data_view_2D_int64);
       }
       else if (basic_type == Ioss::Field::REAL) {
-        oge->put_field_data<double>(field_name, data_view_2D_double);
+        oge->put_field_data<double>(field_name, pool.data_view_2D_double);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        oge->put_field_data(field_name, &data[0], isize);
+        oge->put_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
@@ -1588,23 +1597,23 @@ namespace {
     case 5:
       if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
         oge->put_field_data<char, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_char_layout_space);
+            field_name, pool.data_view_2D_char_layout_space);
       }
       else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
         oge->put_field_data<int, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_int_layout_space);
+            field_name, pool.data_view_2D_int_layout_space);
       }
       else if (basic_type == Ioss::Field::INT64) {
         oge->put_field_data<int64_t, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_int64_layout_space);
+            field_name, pool.data_view_2D_int64_layout_space);
       }
       else if (basic_type == Ioss::Field::REAL) {
         oge->put_field_data<double, Kokkos::LayoutRight, Kokkos::HostSpace>(
-            field_name, data_view_2D_double_layout_space);
+            field_name, pool.data_view_2D_double_layout_space);
       }
       else if (basic_type == Ioss::Field::COMPLEX) {
         // Since data_view_complex cannot be a global variable.
-        oge->put_field_data(field_name, &data[0], isize);
+        oge->put_field_data(field_name, pool.data.data(), isize);
       }
       else {
       }
