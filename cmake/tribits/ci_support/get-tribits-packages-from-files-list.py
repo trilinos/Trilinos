@@ -59,17 +59,18 @@ having to test all of the TriBITS packages in the project.  The logic for
 which file changes should trigger testing all packages can be specialized for
 the project through the Python module:
 
-  <projectDir>/cmake/ProjectCiFileChangeLogic.py.
+  <projectDir>/cmake/ProjectCiFileChangeLogic.py
 
-if that file exists.
+(if that file exists).
 
 This script is used in continuous integration testing workflows involving
-TriBITS projects.  For such a scenario, the list files can come from:
+TriBITS projects where only packages impacted by the changes are tested.  For
+such a scenario, the list of changed files can come from:
 
   git diff --name-only <upstream>..<branch-tip>  >  changed-files.txt
 
-where <upstream> is the commit reference that the local branch was created
-from and <branch-tip> is the tip of the local branch.
+where <upstream> (e.g. origin/master) is the commit reference that the local
+branch was created from and <branch-tip> is the tip of the topic branch.
 """
 
 from optparse import OptionParser
