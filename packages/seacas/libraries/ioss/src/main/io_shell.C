@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_KOKKOS
   if (rank == 0)
     std::cerr << "Kokkos default execution space configuration:\n";
-  Kokkos::DefaultExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
   if (rank == 0)
     std::cerr << '\n';
 #endif
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   try {
     file_copy(interface, rank);
   }
-  catch(std::exception &e) {
+  catch (std::exception &e) {
     if (rank == 0) {
       std::cerr << "\n" << e.what() << "\n\nio_shell terminated due to exception\n";
     }

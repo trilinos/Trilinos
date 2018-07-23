@@ -113,6 +113,27 @@ namespace {
     // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
     // have type std::complex entities.
 #endif
+    DataPool()
+    {
+      data_view_char                 = Kokkos::View<char *>("view_char", 0);
+      data_view_int                  = Kokkos::View<int *>("view_int", 0);
+      data_view_int64                = Kokkos::View<int64_t *>("view_int64", 0);
+      data_view_double               = Kokkos::View<double *>("view_double", 0);
+      data_view_2D_char              = Kokkos::View<char **>("view_2D_char", 0, 0);
+      data_view_2D_int               = Kokkos::View<int **>("view_2D_int", 0, 0);
+      data_view_2D_int64             = Kokkos::View<int64_t **>("view_2D_int64", 0, 0);
+      data_view_2D_double            = Kokkos::View<double **>("view_2D_double", 0, 0);
+      data_view_2D_char_layout_space = Kokkos::View<char **, Kokkos::LayoutRight, Kokkos::HostSpace>(
+												     "view_2D_char_layout_space", 0, 0);
+      data_view_2D_int_layout_space = Kokkos::View<int **, Kokkos::LayoutRight, Kokkos::HostSpace>(
+												   "view_2D_int_layout_space", 0, 0);
+      data_view_2D_int64_layout_space =
+	Kokkos::View<int64_t **, Kokkos::LayoutRight, Kokkos::HostSpace>("view_2D_int64_layout_space",
+									 0, 0);
+      data_view_2D_double_layout_space =
+	Kokkos::View<double **, Kokkos::LayoutRight, Kokkos::HostSpace>("view_2D_double_layout_space",
+									0, 0);
+    }
   };
 
   int  rank      = 0;
@@ -184,25 +205,6 @@ int main(int argc, char *argv[])
 
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::initialize(argc, argv);
-
-  data_view_char                 = Kokkos::View<char *>("view_char", 0);
-  data_view_int                  = Kokkos::View<int *>("view_int", 0);
-  data_view_int64                = Kokkos::View<int64_t *>("view_int64", 0);
-  data_view_double               = Kokkos::View<double *>("view_double", 0);
-  data_view_2D_char              = Kokkos::View<char **>("view_2D_char", 0, 0);
-  data_view_2D_int               = Kokkos::View<int **>("view_2D_int", 0, 0);
-  data_view_2D_int64             = Kokkos::View<int64_t **>("view_2D_int64", 0, 0);
-  data_view_2D_double            = Kokkos::View<double **>("view_2D_double", 0, 0);
-  data_view_2D_char_layout_space = Kokkos::View<char **, Kokkos::LayoutRight, Kokkos::HostSpace>(
-      "view_2D_char_layout_space", 0, 0);
-  data_view_2D_int_layout_space = Kokkos::View<int **, Kokkos::LayoutRight, Kokkos::HostSpace>(
-      "view_2D_int_layout_space", 0, 0);
-  data_view_2D_int64_layout_space =
-      Kokkos::View<int64_t **, Kokkos::LayoutRight, Kokkos::HostSpace>("view_2D_int64_layout_space",
-                                                                       0, 0);
-  data_view_2D_double_layout_space =
-      Kokkos::View<double **, Kokkos::LayoutRight, Kokkos::HostSpace>("view_2D_double_layout_space",
-                                                                      0, 0);
 #endif
 
   IOShell::Interface interface;
