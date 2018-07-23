@@ -273,38 +273,38 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
     if(1) {
-    for(uint i=0;i<NumRecvs;++i) {
-	RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
-	assert(RSB[i].size() == NumExportLIDs);
-    }
-  
-  
-    // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
-    for(size_t i=0; i < NumExportLIDs; i++) {
-	LO lid = ExportLIDs[i];
-	GO exp_pid = ExportPIDs[i];
-	for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
-	    int pid_order = RemotePIDOrder[colind[j]];
+	for(uint i=0;i<NumRecvs;++i) {
+	    RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
+	    assert(RSB[i].size() == NumExportLIDs);
+	}
+	// note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
+	for(size_t i=0; i < NumExportLIDs; i++) {
+	    LO lid = ExportLIDs[i];
+	    GO exp_pid = ExportPIDs[i];
+	    for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
+		int pid_order = RemotePIDOrder[colind[j]];
 
-	    if(pid_order!=-1) {
-		GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
-		auto tpair = pidgidpair_t(exp_pid,gid);
-		// don't use a set here
-		// NOTE: This would be more efficient if Reverse Iterators were used in the find, as
-		// gid order tends to follow lid order, generally. 
-		if(std::find(RSB[pid_order].begin(),RSB[pid_order][ReverseSendSizes[pid_order]],tpair) == RSB[pid_order][ReverseSendSizes[pid_order]]) {
-		    RSB[pid_order][ReverseSendSizes[pid_order]]=tpair;
-		    ReverseSendSizes[pid_order]++;
-		    if(ReverseSendSizes[pid_order] == RSB[pid_order].size()) {
-			int newsize = RSB[pid_order].size()*2;
-			auto tmp = Teuchos::arcp(new pidgidpair_t[newsize],0,newsize,true);
-			std::copy(RSB[pid_order],RSB[pid_order]+RSB[pid_order].size(),tmp);
-			RSB[pid_order]=tmp;
+		if(pid_order!=-1) {
+		    GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
+		    auto tpair = pidgidpair_t(exp_pid,gid);
+		    // don't use a set here
+		    // NOTE: This would be more efficient if Reverse Iterators were used in the find, as
+		    // gid order tends to follow lid order, generally. 
+		    if(std::find(RSB[pid_order].begin(),RSB[pid_order].begin()+ReverseSendSizes[pid_order],tpair) 
+		       == RSB[pid_order].begin()+ReverseSendSizes[pid_order]) 
+		    {
+			RSB[pid_order][ReverseSendSizes[pid_order]]=tpair;
+			ReverseSendSizes[pid_order]++;
+			if(ReverseSendSizes[pid_order] == RSB[pid_order].size()) {
+			    int newsize = RSB[pid_order].size()*2;
+			    auto tmp = Teuchos::arcp(new pidgidpair_t[newsize],0,newsize,true);
+			    std::copy(RSB[pid_order],RSB[pid_order]+RSB[pid_order].size(),tmp);
+			    RSB[pid_order]=tmp;
+			}
 		    }
 		}
 	    }
 	}
-    }
     }
     else{
 	Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
