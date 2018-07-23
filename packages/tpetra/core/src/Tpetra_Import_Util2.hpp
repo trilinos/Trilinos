@@ -195,7 +195,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 			 Teuchos::ArrayRCP<const size_t> & rowptr,
 			 Teuchos::ArrayRCP<const LocalOrdinal> & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
-                         Teuchos::ArrayView<const GlobalOrdinal> tgtRemoteGIDs,
+
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
                          Teuchos::Array<int>& reversePIDs,
