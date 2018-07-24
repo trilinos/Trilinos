@@ -48,6 +48,7 @@
 
 // use for Teuchos:Comm<T>
 #include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
@@ -116,6 +117,7 @@ namespace MueLu {
 
     GO minGlobalIndex;                  ///< lowest GID of any node in the local process
     Array<LO> offsets;                  ///< distance between lowest (resp. highest) index to the lowest (resp. highest) ghostedNodeIndex in that direction.
+    Array<LO> coarseNodeOffsets;        ///< distance between lowest (resp. highest) index to the lowest (resp. highest) coarseNodeIndex in that direction.
     Array<GO> startIndices;             ///< lowest global tuple (i,j,k) of a node on the local process
     Array<GO> startGhostedCoarseNode;   ///< lowest coarse global tuple (i,j,k) of a node remaing on the local process after coarsening.
 
@@ -140,9 +142,13 @@ namespace MueLu {
     virtual void computeGlobalCoarseParameters() = 0;
 
     virtual void getGhostedNodesData(const RCP<const Map> fineMap,
-                                     Array<LO>& ghostedNodeCoarseLIDs,
+                                     Array<LO>&  ghostedNodeCoarseLIDs,
                                      Array<int>& ghostedNodeCoarsePIDs,
-                                     Array<GO>& ghostedNodeCoarseGIDs) const = 0;
+                                     Array<GO>&  ghostedNodeCoarseGIDs) const = 0;
+
+    virtual void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                                    Array<GO>& coarseNodeCoarseGIDs,
+                                    Array<GO>& coarseNodeFineGIDs) const = 0;
 
     bool isAggregationCoupled() const {return coupled_;}
 
@@ -175,6 +181,10 @@ namespace MueLu {
     Array<LO> getOffsets() const {return offsets;}
 
     LO getOffset(int const dim) const {return offsets[dim];}
+
+    Array<LO> getCoarseNodeOffsets() const {return coarseNodeOffsets;}
+
+    LO getCoarseNodeOffset(int const dim) const {return coarseNodeOffsets[dim];}
 
     Array<GO> getStartIndices() const {return startIndices;}
 

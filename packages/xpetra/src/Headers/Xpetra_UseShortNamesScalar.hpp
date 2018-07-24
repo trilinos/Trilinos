@@ -63,7 +63,6 @@ typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorO
 
 #ifdef XPETRA_VECTOR_SHORT
 typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
-typedef Xpetra::Vector<double, LocalOrdinal, GlobalOrdinal, Node> RealValuedVector;
 #endif
 
 #ifdef XPETRA_BLOCKEDVECTOR_SHORT
@@ -72,7 +71,6 @@ typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Blocked
 
 #ifdef XPETRA_MULTIVECTOR_SHORT
 typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> RealValuedMultiVector;
 #endif
 
 #ifdef XPETRA_MATRIX_SHORT
