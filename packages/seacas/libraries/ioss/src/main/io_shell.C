@@ -36,6 +36,7 @@
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
+#include <Ioss_ScopeGuard.h>
 #include <Ioss_SerializeIO.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
@@ -80,10 +81,12 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::initialize(argc, argv);
+  ON_BLOCK_EXIT(Kokkos::finalize);
 #endif
 
   std::cout.imbue(std::locale(std::locale(), new my_numpunct));
@@ -114,7 +117,7 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_KOKKOS
   if (rank == 0)
     std::cerr << "Kokkos default execution space configuration:\n";
-  Kokkos::DefaultExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
   if (rank == 0)
     std::cerr << '\n';
 #endif
@@ -123,7 +126,7 @@ int main(int argc, char *argv[])
   try {
     file_copy(interface, rank);
   }
-  catch(std::exception &e) {
+  catch (std::exception &e) {
     if (rank == 0) {
       std::cerr << "\n" << e.what() << "\n\nio_shell terminated due to exception\n";
     }
@@ -164,14 +167,6 @@ int main(int argc, char *argv[])
   if (rank == 0) {
     std::cerr << "\n" << codename << " execution successful.\n";
   }
-#ifdef SEACAS_HAVE_KOKKOS
-  Kokkos::finalize();
-#endif
-
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
-
   return EXIT_SUCCESS;
 }
 
