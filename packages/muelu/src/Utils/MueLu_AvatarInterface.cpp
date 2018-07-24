@@ -164,7 +164,7 @@ void AvatarInterface::Setup() {
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
-  throw std::runtime_error("End of AvatarInterface::Setup()");//FIXME: Get rid of this
+  //throw std::runtime_error("End of AvatarInterface::Setup()");//FIXME: Get rid of this
 
 }
 
@@ -183,7 +183,7 @@ void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & probl
     //    const std::string& name = problemFeatures.name(i);
     const Teuchos::ParameterEntry& entry = problemFeatures.entry(i);
     if(i!=problemFeatures.begin()) ss<<",";
-    ss<<entry;
+    entry.leftshift(ss,false);  // Because ss<<entry prints out '[unused]' and we don't want that.
   }
   featureString = ss.str();
 }
@@ -213,16 +213,17 @@ void AvatarInterface::UnpackMueLuMapping() {
       avatarParameterName_[idx] = sublist.get<std::string>("avatar parameter");
 
       // Get the values
-      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are ints (Why?)
+      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are doubles
       mueluParameterValues_[idx]  = sublist.get<Teuchos::Array<double> >("muelu values");
-      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<int> >("avatar values");            
+      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<double> >("avatar values");            
+
+      idx++;
     }
     else {
       done=true;
     }
-    idx++;
   }
-  
+
   if(idx!=numParams) 
     throw std::runtime_error("MueLu::AvatarInterface::UnpackMueLuMapping(): 'avatar: muelu parameter mapping' has unknown fields");
 }
@@ -258,7 +259,7 @@ void AvatarInterface::GenerateMueLuParametersFromIndex(int id,Teuchos::Parameter
   for(int i=0; i<numParams; i++) {
     int div = avatarParameterValues_[i].size();
     int mod = curr_id % div;
-    pl.set(mueluParameterName_[i],mueluParameterValues_[mod]);
+    pl.set(mueluParameterName_[i],mueluParameterValues_[i][mod]);
     curr_id = (curr_id - mod)/div;
   }
 }
@@ -296,7 +297,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       for(int i=0; i<num_combos; i++) {
         SetIndices(i,indices);
         // Now we add the MueLu parameters into one, enormous Avatar trial string and run avatar once
-        testString += trialString + ParamsToString(indices) + "\n";
+        testString += trialString + ParamsToString(indices) + ",0\n";
       }
       
       // FIXME: Only send in first tree's string
@@ -308,7 +309,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == 1) acceptableCombos.push_back(i);      
+      if(avatarOutput[i] == 2) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
@@ -328,9 +329,8 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
 
     // Cleanup
-    free(avatarOutput);  
+    free(avatarOutput);
   }
-
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
 }

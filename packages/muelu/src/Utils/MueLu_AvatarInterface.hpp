@@ -114,7 +114,7 @@ namespace MueLu {
     Teuchos::Array<std::string> avatarParameterName_;
 
     Teuchos::ArrayRCP<Teuchos::Array<double> > mueluParameterValues_;
-    Teuchos::ArrayRCP<Teuchos::Array<int> > avatarParameterValues_;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > avatarParameterValues_;
 
   };
 

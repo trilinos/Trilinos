@@ -33,7 +33,7 @@ end"
     <Parameter name="avatar: filestem" type="Array(string)" value="{avatar}"/>
     <ParameterList name="avatar: muelu parameter mapping">
       <ParameterList name="param0">
-        <Parameter name="muelu parameter" type="string"      value="aggregation: theshold"/>
+        <Parameter name="muelu parameter" type="string"      value="aggregation: drop tol"/>
         <Parameter name="avatar parameter" type="string"     value="_DROP_TOL_"/>
         <Parameter name="muelu values" type="Array(double)"  value="{0,0.001,0.005,0.01,0.025,0.05,0.075,0.1}"/>
         <Parameter name="avatar values" type="Array(double)" value="{0,0.001,0.005,0.01,0.025,0.05,0.075,0.1}"/>
@@ -51,7 +51,6 @@ end"
       <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
     </ParameterList>
     <Parameter name="coarse: max size"                     type="int"      value="500"/>
-    <Parameter name="aggregation: mode"                    type="string"   value="new"/>
 
 
   </ParameterList>
