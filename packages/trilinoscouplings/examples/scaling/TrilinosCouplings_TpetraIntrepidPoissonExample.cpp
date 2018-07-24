@@ -68,6 +68,11 @@
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
+
+// Disable the full set of problem statistics
+const bool use_new_problem_stats = false;
+
+
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
@@ -1398,20 +1403,22 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   problemStatistics.set("Stretch min", global_stat_min[3]);
   problemStatistics.set("Stretch mean", global_stat_sum[3] / numElemsGlobal);
 
-  // 4 - Diagonal Ratio
-  problemStatistics.set("Diagonal Ratio max", global_stat_max[4]);
-  problemStatistics.set("Diagonal Ratio min", global_stat_min[4]);
-  problemStatistics.set("Diagonal Ratio mean", global_stat_sum[4]/numElemsGlobal);
+  if(use_new_problem_stats) {
+    // 4 - Diagonal Ratio
+    problemStatistics.set("Diagonal Ratio max", global_stat_max[4]);
+    problemStatistics.set("Diagonal Ratio min", global_stat_min[4]);
+    problemStatistics.set("Diagonal Ratio mean", global_stat_sum[4]/numElemsGlobal);
 
-  // 5 - Inverse Taper
-  problemStatistics.set("Inverse Taper max", global_stat_max[5]);
-  problemStatistics.set("Inverse Taper min", global_stat_min[5]);
-  problemStatistics.set("Inverse Taper mean", global_stat_sum[5] / numElemsGlobal);
-
-  // 6 - Skew
-  problemStatistics.set("Skew max", global_stat_max[6]);
-  problemStatistics.set("Skew min", global_stat_min[6]);
-  problemStatistics.set("Skew mean", global_stat_sum[6] / numElemsGlobal);
+    // 5 - Inverse Taper
+    problemStatistics.set("Inverse Taper max", global_stat_max[5]);
+    problemStatistics.set("Inverse Taper min", global_stat_min[5]);
+    problemStatistics.set("Inverse Taper mean", global_stat_sum[5] / numElemsGlobal);
+    
+    // 6 - Skew
+    problemStatistics.set("Skew max", global_stat_max[6]);
+    problemStatistics.set("Skew min", global_stat_min[6]);
+    problemStatistics.set("Skew mean", global_stat_sum[6] / numElemsGlobal);
+  }
   //////////////////////////////////////////////////////////////////////////////
   // Export sparse matrix and right-hand side from overlapping row Map
   // to owned (nonoverlapping) row Map.

@@ -324,8 +324,11 @@ main (int argc, char *argv[])
             *out<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
 
             MueLu::AvatarInterface avatar(comm,avatarParams);
+            *out<<"*** Avatar Setup ***"<<std::endl;
             avatar.Setup();
             avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
+
+            *out<<"*** Updated MueLu Parameters ***\n"<<mueluParams<<std::endl;
             avatar.Cleanup();
           }
 #endif

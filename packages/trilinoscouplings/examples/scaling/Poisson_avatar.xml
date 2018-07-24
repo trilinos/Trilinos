@@ -2,24 +2,27 @@
 
   <Parameter name="meshInput" type="string" value="
 mesh
-  radial trisection
-    trisection blocks, 3
-    transition radius, 0.5
-    zmin -1.0
-    numz 1
-       zblock 1 2.0 interval 10
-    numr 2
-       rblock 1 1.0 interval 10 
-       rblock 2 1.0 interval 10 
-    numa 1
-       ablock 1 90.0 interval 30
-  end
-  set assign
-     sideset, ihi, 1
-     sideset, klo, 3
-     sideset, khi, 6
-  end
-end"
+       brick 
+       numx 3
+        xblock 1 1.0, interval 10
+        xblock 2 1.0, interval 10
+        xblock 3 1.0, interval 10
+       numy 3 
+        yblock 1 1.0, interval 10
+        yblock 2 1.0, interval 10
+        yblock 3 1.0, interval 10
+       numz 1
+        zblock 1 1.0, interval 30
+       end
+       set assign
+          sideset, ilo, 1
+          sideset, jlo, 2
+          sideset, klo, 3
+          sideset, ihi, 4
+          sideset, jhi, 5
+          sideset, khi, 6
+       end
+     end"
   />
 
   <Parameter name="Preconditioner" type="string" value="MueLu"/>
@@ -44,6 +47,10 @@ end"
 
   <ParameterList name="MueLu">
     <Parameter name="max levels"       type="int"     value="2"/>
+    <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+    <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+    <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+    <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>    
     <Parameter name="smoother: type"   type="string"  value="CHEBYSHEV"/>
     <ParameterList name="smoother: params">
       <Parameter      name="chebyshev: degree"                    type="int"      value="3"/>
