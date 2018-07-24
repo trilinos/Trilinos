@@ -164,7 +164,6 @@ void AvatarInterface::Setup() {
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
-  //throw std::runtime_error("End of AvatarInterface::Setup()");//FIXME: Get rid of this
 
 }
 
@@ -299,6 +298,8 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
         // Now we add the MueLu parameters into one, enormous Avatar trial string and run avatar once
         testString += trialString + ParamsToString(indices) + ",0\n";
       }
+
+      std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
       
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);

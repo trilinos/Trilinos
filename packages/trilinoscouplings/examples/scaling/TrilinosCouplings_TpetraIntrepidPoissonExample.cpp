@@ -1398,12 +1398,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   problemStatistics.set("element det jacobian: min/mean",global_stat_min[2]/global_stat_sum[2]*numElemsGlobal);
   problemStatistics.set("element det jacobian: max/mean",global_stat_max[2]/global_stat_sum[2]*numElemsGlobal);
 
-  // 3 - Stretch
-  problemStatistics.set("Stretch max", global_stat_max[3]);
-  problemStatistics.set("Stretch min", global_stat_min[3]);
-  problemStatistics.set("Stretch mean", global_stat_sum[3] / numElemsGlobal);
-
   if(use_new_problem_stats) {
+    // 3 - Stretch
+    problemStatistics.set("Stretch max", global_stat_max[3]);
+    problemStatistics.set("Stretch min", global_stat_min[3]);
+    problemStatistics.set("Stretch mean", global_stat_sum[3] / numElemsGlobal);
+
     // 4 - Diagonal Ratio
     problemStatistics.set("Diagonal Ratio max", global_stat_max[4]);
     problemStatistics.set("Diagonal Ratio min", global_stat_min[4]);
