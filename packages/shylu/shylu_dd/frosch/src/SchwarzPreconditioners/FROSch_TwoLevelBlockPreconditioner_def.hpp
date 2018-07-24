@@ -52,20 +52,22 @@ namespace FROSch {
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseOperator_ ()
     {
-        if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
-            FROSCH_ASSERT(false,"not implemented for block.");
-            this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").set("Test Unconnected Interface",false);
-            CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"IPOUHarmonicCoarseOperator")));
-        } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
-            this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",false);
-            CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
-        } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
-            this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",false);
-            CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
-        } else {
-            FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
-        } // Todo: Möglichkeit die einzelnen Level auszuschalten
-        this->SumOperator_->addOperator(CoarseOperator_);
+        if (this->ParameterList_->get("TwoLevel",true)) {            
+            if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
+                FROSCH_ASSERT(false,"not implemented for block.");
+                this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").set("Test Unconnected Interface",false);
+                CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"IPOUHarmonicCoarseOperator")));
+            } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
+                this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",false);
+                CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
+            } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
+                this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",false);
+                CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
+            } else {
+                FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
+            } // Todo: Möglichkeit die einzelnen Level auszuschalten
+            this->SumOperator_->addOperator(CoarseOperator_);
+        }
     }
     
     
@@ -172,34 +174,35 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(0!=0,"OverlappingOperator Type unkown.");
         }
-        ////////////////////////////////////
-        // Initialize OverlappingOperator //
-        ////////////////////////////////////
-        if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
-            // Build Null Space
-            if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Stokes")) {
-                nullSpaceBasisVec.resize(2);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
-                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
-            } else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Input")) {
-                FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
-            } else {
-                FROSCH_ASSERT(0!=0,"Null Space Type unknown.");
+        ///////////////////////////////
+        // Initialize CoarseOperator //
+        ///////////////////////////////
+        if (this->ParameterList_->get("TwoLevel",true)) {
+            if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
+                // Build Null Space
+                if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Stokes")) {
+                    nullSpaceBasisVec.resize(2);
+                    nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+                    nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
+                } else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Input")) {
+                    FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
+                } else {
+                    FROSCH_ASSERT(0!=0,"Null Space Type unknown.");
+                }
+                IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = Teuchos::rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+                if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,nullSpaceBasisVec,nodeListVec,dirichletBoundaryDofsVec)) ret -=10;
+            } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
+                GDSWCoarseOperatorPtr gDSWCoarseOperator = Teuchos::rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+                if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,dirichletBoundaryDofsVec,nodeListVec)) ret -=10;
             }
-            IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = Teuchos::rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
-            if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,nullSpaceBasisVec,nodeListVec,dirichletBoundaryDofsVec)) ret -=10;
-        } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
-            GDSWCoarseOperatorPtr gDSWCoarseOperator = Teuchos::rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
-            if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,dirichletBoundaryDofsVec,nodeListVec)) ret -=10;
+            else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
+                RGDSWCoarseOperatorPtr rGDSWCoarseOperator = Teuchos::rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+                if (0>rGDSWCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,dirichletBoundaryDofsVec,nodeListVec)) ret -=10;
+            }
+            else {
+                FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
+            }
         }
-        else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
-            RGDSWCoarseOperatorPtr rGDSWCoarseOperator = Teuchos::rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
-            if (0>rGDSWCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,dirichletBoundaryDofsVec,nodeListVec)) ret -=10;
-        }
-        else {
-            FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
-        }
-
         return ret;
     }
     
@@ -209,7 +212,9 @@ namespace FROSch {
         int ret = 0;
 
         if (0>this->OverlappingOperator_->compute()) ret -= 1;
-        if (0>CoarseOperator_->compute()) ret -= 10;
+        if (this->ParameterList_->get("TwoLevel",true)) {
+            if (0>CoarseOperator_->compute()) ret -= 10;
+        }
         return ret;
     }
     
@@ -230,8 +235,10 @@ namespace FROSch {
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
     {
         this->K_ = k;
-        CoarseOperator_->resetMatrix(this->K_);
         this->OverlappingOperator_->resetMatrix(this->K_);
+        if (this->ParameterList_->get("TwoLevel",true)) {
+            CoarseOperator_->resetMatrix(this->K_);
+        }
         return 0;
     }
 

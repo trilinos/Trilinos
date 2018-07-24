@@ -95,7 +95,7 @@ namespace FROSch {
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            DDInterface_->divideUnconnectedEntities(this->K_);
+            this->DDInterface_->divideUnconnectedEntities(this->K_);
         }
         
         EntitySetPtr vertices,edges,faces,interface,interior,AncestorVertices,AncestorEdges,AncestorFaces;

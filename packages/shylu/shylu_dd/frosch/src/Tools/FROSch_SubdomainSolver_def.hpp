@@ -147,7 +147,6 @@ namespace FROSch {
         
         belosLinearProblem_.reset();
         belosSoverManager_.reset();
-        
     }
     
     template<class SC,class LO,class GO,class NO>
