@@ -34,7 +34,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace mini_em {
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node=Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node=Tpetra::Map<>::node_type>
   RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >  get_Tpetra_CrsMatrix(const Thyra::LinearOpBase<double> & op) {
     const RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(op),true);
     RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp->getConstTpetraOperator(),true);
@@ -99,7 +99,7 @@ void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
 void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op,Teuchos::RCP<Teuchos::FancyOStream> out)
 {
   using Teuchos::RCP;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  using NT = Tpetra::Map<>::node_type;
   if (out!=Teuchos::null) {
     const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
     const RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
