@@ -106,6 +106,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
     Teuchos::Array<std::string> filestem_;
+    int avatarGoodClass_;
 
     // RCP's don't handle opaque pointers well
     Avatar_handle * avatarHandle_;
