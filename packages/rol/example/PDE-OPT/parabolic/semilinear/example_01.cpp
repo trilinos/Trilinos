@@ -66,8 +66,7 @@
 #include "../../TOOLS/ltiobjective.hpp"
 #include "../../TOOLS/meshmanager.hpp"
 #include "../../TOOLS/pdevector.hpp"
-#include "pde_mass.hpp"
-#include "pde_semilinear.hpp"
+#include "dynpde_semilinear.hpp"
 #include "obj_semilinear.hpp"
 
 
@@ -101,17 +100,14 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<MeshManager<RealT>> meshMgr
       = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
     // Initialize PDE describe semilinear equation
-    ROL::Ptr<PDE_Semilinear<RealT>> pde
-      = ROL::makePtr<PDE_Semilinear<RealT>>(*parlist);
-    // Initialize PDE describing mass matrix
-    ROL::Ptr<PDE_mass<RealT>> mass
-      = ROL::makePtr<PDE_mass<RealT>>(*parlist);
+    ROL::Ptr<DynamicPDE_Semilinear<RealT>> pde
+      = ROL::makePtr<DynamicPDE_Semilinear<RealT>>(*parlist);
 
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
     /*************************************************************************/
     ROL::Ptr<DynConstraint<RealT> > dyn_con
-      = ROL::makePtr<DynConstraint<RealT>>(pde,mass,meshMgr,comm,*parlist,*outStream);
+      = ROL::makePtr<DynConstraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     const ROL::Ptr<Assembler<RealT>> assembler = dyn_con->getAssembler();
     dyn_con->setSolveParameters(*parlist);
     dyn_con->getAssembler()->printMeshData(*outStream);
@@ -125,11 +121,11 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<Tpetra::MultiVector<>> ck_ptr = assembler->createResidualVector();
     ROL::Ptr<Tpetra::MultiVector<>> zk_ptr = assembler->createControlVector();
     ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck, zk;
-    u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,assembler,*parlist);
-    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,assembler,*parlist);
-    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,assembler,*parlist);
-    ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,assembler,*parlist);
-    zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,assembler,*parlist);
+    u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,*assembler,*parlist);
+    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,*assembler,*parlist);
+    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,*assembler,*parlist);
+    ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,*assembler,*parlist);
+    zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,*assembler,*parlist);
     ROL::Ptr<ROL::PartitionedVector<RealT>> z
       = ROL::PartitionedVector<RealT>::create(*zk, nt);
 

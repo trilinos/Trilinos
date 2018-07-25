@@ -67,16 +67,8 @@ private:
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs_;
   // Cell cubature information
   ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
-  ROL::Ptr<Intrepid::Cubature<Real>> bdryCub_;
-  // Cell node information
-  ROL::Ptr<Intrepid::FieldContainer<Real>> volCellNodes_;
-  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellNodes_;
-  std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
   ROL::Ptr<FE<Real>> fe_vol_;
-  std::vector<std::vector<ROL::Ptr<FE<Real>>>> fe_bdry_;
-  // Local degrees of freedom on boundary, for each side of the reference cell (first index).
-  std::vector<std::vector<int>> fidx_;
 
   int type_;
 
@@ -96,11 +88,6 @@ public:
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                                   // create cubature factory
     int cubDegree = parlist.sublist("Semilinear").get("Cubature Degree",2);              // set cubature degree, e.g., 2
     cellCub_ = cubFactory.create(cellType, cubDegree);                                   // create default cubature
-
-    int d = cellType.getDimension();
-    shards::CellTopology bdryCellType = cellType.getCellTopologyData(d-1, 0);
-    int bdryCubDegree = parlist.sublist("Semilinear").get("Boundary Cubature Degree",2); // set cubature degree, e.g., 2
-    bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
 
     type_ = parlist.sublist("Semilinear").get("Nonlinearity Type",0);
   }
@@ -340,41 +327,12 @@ public:
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
-    volCellNodes_ = volCellNodes;
-    bdryCellNodes_ = bdryCellNodes;
-    bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
-    // Set local boundary DOFs.
-    fidx_ = fe_vol_->getBoundaryDofs();
-    // Construct boundary FEs
-    const int numSidesets = bdryCellNodes.size();
-    fe_bdry_.resize(numSidesets);
-    for(int i = 0; i < numSidesets; ++i) {
-      int numLocSides = bdryCellNodes[i].size();
-      fe_bdry_[i].resize(numLocSides);
-      for (int j = 0; j < numLocSides; ++j) {
-        if (bdryCellNodes_[i][j] != ROL::nullPtr) {
-          fe_bdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes_[i][j],basisPtr_,bdryCub_,j);
-        }
-      }
-    }
+    fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes,basisPtr_,cellCub_);
   }
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
     return fe_vol_;
-  }
-
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getBdryFE(void) const {
-    return fe_bdry_;
-  }
-
-  const ROL::Ptr<Intrepid::FieldContainer<Real>> getCellNodes(void) const {
-    return volCellNodes_;
-  }
-
-  const std::vector<std::vector<std::vector<int>>> getBdryCellLocIds(void) const {
-    return bdryCellLocIds_;
   }
 
 private:
