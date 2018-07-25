@@ -9,342 +9,183 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 
 #include "vtxlabel.hpp"
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Class to test 
-// (1) how FEMultiVector works and 
-// (2) whether it works with user-defined scalar type (vtxLabel).
-// Each processor owns ten vertices and copies five from another processor.
-// Each processor contributes values to all fifteen vertices it stores.
-// Tpetra::FEMultiVector pushes the copies to their owning processors, and 
-// ADDs them to the owned values.
-
-class FEMultiVectorTest {
-public:
-
-  typedef Tpetra::Map<> map_t;
-  typedef map_t::local_ordinal_type lno_t;
-  typedef map_t::global_ordinal_type gno_t;
-
-  // Constructor assigns vertices to processors and builds maps with and 
-  // without copies
-  FEMultiVectorTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm_) :
-    me(comm_->getRank()), np(comm_->getSize()),
-    nLocalOwned(10), nLocalCopy( np > 1 ? 5 : 0), 
-    nVec(2), comm(comm_)
-  {
-    // Each rank has 15 IDs, the last five of which overlap with the next rank.
-    // (IDs and owning processors wrap-around from processor np-1 to 0.)
-    const Tpetra::global_size_t nGlobal = np * nLocalOwned;
-    lno_t offset = me * nLocalOwned;
-
-    Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
-    for (lno_t i = 0 ; i < nLocalOwned + nLocalCopy; i++)
-      gids[i] = static_cast<gno_t> (offset + i) % nGlobal;
-
-    // Create Map of owned + copies (a.k.a. overlap map); analagous to ColumnMap
-    Tpetra::global_size_t dummy =
-            Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    mapWithCopies = rcp(new map_t(dummy, gids(), 0, comm));
-
-    // Create Map of owned only (a.k.a. one-to-one map); analagous to RowMap
-    mapOwned = rcp(new map_t(dummy, gids(0, nLocalOwned), 0, comm));
-
-    // Print the entries of each map
-    std::cout << me << " MAP WITH COPIES ("
-                    << mapWithCopies->getGlobalNumElements() << "):  ";
-    lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
-    for (lno_t i = 0; i < nlocal; i++)
-      std::cout << mapWithCopies->getGlobalElement(i) << " ";
-    std::cout << std::endl;
-
-    std::cout << me << " ONE TO ONE MAP  ("
-                    << mapOwned->getGlobalNumElements() << "):  ";
-    nlocal = lno_t(mapOwned->getNodeNumElements());
-    for (lno_t i = 0; i < nlocal; i++)
-      std::cout << mapOwned->getGlobalElement(i) << " ";
-    std::cout << std::endl;
-  }
-
-  // Create a Tpetra::FEMultiVector of type femv_t with two vectors
-  // FEMultiVector length is number of owned vertices + number of copies of 
-  //               off-processor vertices (as indicated by mapWithCopies)
-  // Fill first vector with GIDs of vertices
-  // Fill second vector with processor rank (me)
-  // Perform communication to add copies' contributions to their owned vertices
-  template <typename femv_t>
-  Teuchos::RCP<femv_t> getFEMV()
-  {
-    // Create FEMultiVector
-    typedef Tpetra::Import<lno_t, gno_t> import_t;
-    Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned,
-                                                       mapWithCopies));
-    Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, importer,
-                                               nVec, true));
+#include "graph.h"
+void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int *&dsts, int*& grounded_flags, int ground_sensitivity){
+  std::ifstream infile;
+  std::string line;
+  infile.open(filename);
   
-    // Store contributions to owned vertices and copies of off-processor 
-    // vertices
-    femv->beginFill();
-    for (lno_t i = 0; i < nLocalOwned + nLocalCopy; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      femv->replaceGlobalValue(gid, 0, gid);
-      femv->replaceGlobalValue(gid, 1, me);
-      // Other useful calls for filling may be:
-      //   replaceLocalValue -- may be more efficient if storing edges using
-      //                        LIDs rather than GIDs
-      //   sumInto{Global,Local}Value -- may be able to exploit the overloaded
-      //                                 addition to propagate local labels
-    }
-    femv->endFill(); // communication and summation of copies is done in endFill
-                     // "Sums" contributions from all copies into the owned
-                     // vertex on the owning processor
-
-    printFEMV(femv, "AfterFill");
-
-    // Now update copied vertices from their owners
-    femv->doSourceToTarget(Tpetra::REPLACE);
-
-    // For the ice-sheet problem, 
-    // would a Tpetra::ADD work here (consistently update the non-owned vertex's
-    // values and add the non-owned vertex to the frontier if it has 
-    // significant change)?  Consider changing REPLACE to ADD.
-    // Sends the owner's result for each vertex to all of the copies of the
-    // vertex.  After this, all copies will have the same value as the owned
-    // vertex.
-
-    printFEMV(femv, "AfterReplace");
-
-    return femv;
+  //ignore first line
+  std::getline(infile, line);
+  
+  std::getline(infile, line);
+  int x = atoi(line.c_str());
+  line = line.substr(line.find(" "));
+  int y = atoi(line.c_str());
+  line = line.substr(line.find(" ", line.find_first_not_of(" ")));
+  int z = atoi(line.c_str());
+  
+  //initialize
+  n = x;
+  m = y*8;
+  //z is the number of floating boundary edges
+  
+  srcs = new int[m];
+  dsts = new int[m];
+  //ignore the next x lines
+  while(x-- > 0){
+    std::getline(infile,line);
   }
+  std::getline(infile,line);
 
-  template <typename femv_t>
-  void printFEMV(femv_t &femv, const char *msg) 
-  {
-    for (int v = 0; v < nVec; v++) {
-      std::cout << me << " OWNED " << msg << " FEMV[" << v << "] Owned: ";
-      auto value = femv->getData(v);
-      for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
-      std::cout << std::endl;
-    }
-    femv->switchActiveMultiVector();  // Needed to print copies
-    for (int v = 0; v < nVec; v++) {
-      std::cout << me << " WITHCOPIES " << msg << " FEMV[" << v << "] Owned: ";
-      auto value = femv->getData(v);
-      for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
-      std::cout << " Copies: ";
-      for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++) 
-        std::cout << value[i] << " ";
-      std::cout << std::endl;
-    }
-    femv->switchActiveMultiVector();  // Restore state
+  //create the final_ground_flags array, initially everything is floating
+  int* final_ground_flags = new int[n];
+  for(int i = 0; i < n; i++){
+    final_ground_flags[i] = 0;
   }
+  int edge_index = 0; 
+  //for the next y lines
+  //read in the first 4 ints
+  //create 8 edges from those ints, subtracting one from all values for 0-indexing
+  while(y-- > 0){
+    int node1 = atoi(line.c_str()) - 1;
+    line = line.substr(line.find(" "));
+    int node2 = atoi(line.c_str()) - 1;
+    line = line.substr(line.find(" ", line.find_first_not_of(" ")));
+    int node3 = atoi(line.c_str()) - 1;
+    line = line.substr(line.find(" ", line.find_first_not_of(" ")));
+    int node4 = atoi(line.c_str()) - 1;
 
-  // Test using scalar_t=int to exercise push capability of FEMultiVector
-  int intTest();
-
-  // Test using scalar_t=custom data type (vtxLabel)
-  int vtxLabelTest();
-
-private:
-  int me;           // my processor rank
-  int np;           // number of processors
-  int nLocalOwned;  // number of vertices owned by this processor
-  int nLocalCopy;   // number of copies of off-processor vertices on this proc
-  int nVec;         // number of vectors in multivector
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;  // MPI communicator
-
-  Teuchos::RCP<const map_t> mapWithCopies;  // Tpetra::Map including owned
-                                            // vertices and copies
-  Teuchos::RCP<const map_t> mapOwned;       // Tpetra::Map including only owned
-};
-
-
-// Test using scalar_t=int to exercise push capability of FEMultiVector
-// Create FEMultiVector and verify correct results with integer addition
-int FEMultiVectorTest::intTest()
-{
-  typedef int scalar_t;
-  typedef Tpetra::FEMultiVector<scalar_t, lno_t, gno_t> femv_t;
-  int ierr = 0;
-
-  Teuchos::RCP<femv_t> femv = getFEMV<femv_t>();
-
-  // Check results:  after ADD in endFill, 
-  // -  overlapping entries of vec 0 should be 2 * gid
-  //    nonoverlapping entries of vec 0 should be gid
-  // -  overlapping entries of vec 1 should be me + (np + me-1) % np;
-  //    nonoverlapping entries of vec 1 should be me
-
-  // Check vector 0
-  {
-    auto value = femv->getData(0);
-    for (lno_t i = 0; i < nLocalCopy; i++){
-      gno_t gid = femv->getMap()->getGlobalElement(i);
-      if (value[i] != 2*gid) {
-        std::cout << me << " Error in vec 0 overlap: gid=" << gid 
-                        << " value= " << value[i] << " should be " << 2*gid
-                        << std::endl;
-        ierr++;
-      }
-    }
-    for (lno_t i = nLocalCopy; i < nLocalOwned; i++) {
-      gno_t gid = femv->getMap()->getGlobalElement(i);
-      if (value[i] != gid) {
-        std::cout << me << " Error in vec 0:  gid=" << gid
-                        << " value= " << value[i] << " should be " << gid
-                        << std::endl;
-        ierr++;
-      }
+    // set the final grounding
+    int grounding = grounded_flags[node1] + grounded_flags[node2] + grounded_flags[node3] + grounded_flags[node4];
+    if(grounding >= ground_sensitivity){
+      final_ground_flags[node1] += grounded_flags[node1];
+      final_ground_flags[node2] += grounded_flags[node2];
+      final_ground_flags[node3] += grounded_flags[node3];
+      final_ground_flags[node4] += grounded_flags[node4];
     }
 
-    femv->switchActiveMultiVector();  // Needed to view copies
-    value = femv->getData(0);
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = femv->getMap()->getGlobalElement(i);
-      if (value[i] != 2*gid) {
-        std::cout << me << " Error in vec 0 copies:  gid=" << gid
-                        << " value= " << value[i] << " should be " << 2*gid
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Restore state 
+    srcs[edge_index] = node1;
+    dsts[edge_index++] = node2;
+    srcs[edge_index] = node2;
+    dsts[edge_index++] = node1;
+    srcs[edge_index] = node2;
+    dsts[edge_index++] = node3;
+    srcs[edge_index] = node3;
+    dsts[edge_index++] = node2;
+    srcs[edge_index] = node3;
+    dsts[edge_index++] = node4;
+    srcs[edge_index] = node4;
+    dsts[edge_index++] = node3;
+    srcs[edge_index] = node4;
+    dsts[edge_index++] = node1;
+    srcs[edge_index] = node1;
+    dsts[edge_index++] = node4;
+    
+    std::getline(infile, line);
   }
+  assert(edge_index == m);
+  
+  infile.close();
 
-  // Check vector 1
-  {
-    auto value = femv->getData(1);
-    int tmp = me + (np + me - 1) % np;
-    for (lno_t i = 0; i < nLocalCopy; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != tmp) {
-        std::cout << me << " Error in vec 1 overlap:  gid=" << gid
-                        << " value= " << value[i] << " should be " << tmp
-                        << std::endl;
-        ierr++;
-      }
-    }
-    for (lno_t i = nLocalCopy; i < nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != me) {
-        std::cout << me << " Error in vec 1:  gid=" << gid
-                        << " value= " << value[i] << " should be " << me
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Needed to view copies
-    value = femv->getData(1);
-    tmp = me + (me + 1) % np;
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (value[i] != tmp)  {
-        std::cout << me << " Error in vec 1:  gid=" << gid
-                        << " value= " << value[i] << " should be " << tmp
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Restore State
+  //delete old grounding flags, and swap them for the new ones
+  if(ground_sensitivity > 1){
+    delete[] grounded_flags;
+    grounded_flags = final_ground_flags;
+  } else {
+    delete [] final_ground_flags;
   }
-  return ierr;
+  return;
 }
 
-// Test using scalar_t = custom data type vtxLabel
-// Create FEMultiVector and verify correct results with vtxlabel "addition" 
-int FEMultiVectorTest::vtxLabelTest()
-{
-  typedef vtxLabel scalar_t;
-  typedef Tpetra::FEMultiVector<scalar_t, lno_t, gno_t> femv_t;
-  int ierr = 0;
-
-  Teuchos::RCP<femv_t> femv = getFEMV<femv_t>();
-
-  // Check results:  after ADD in endFill, 
-  // -  overlapping entries of vec 0 should be -2 * gid
-  //    nonoverlapping entries of vec 0 should be gid
-  // -  overlapping entries of vec 1 should be -me - ((np + me-1) % np)
-  //    nonoverlapping entries of vec 1 should be me
-  
-  // Check vector 0
-  {
-    auto value = femv->getData(0);
-    for (lno_t i = 0; i < nLocalCopy; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (!(value[i] == -2*gid)) {
-        std::cout << me << " Error in vec 0 overlap:  gid=" << gid
-                        << " value= " << value[i] << " should be " << -2*gid
-                        << std::endl;
-        ierr++;
-      }
-    }
-    for (lno_t i = nLocalCopy; i < nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (!(value[i] == gid)) {
-        std::cout << me << " Error in vec 0:  gid=" << gid
-                        << " value= " << value[i] << " should be " << gid
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Needed to view copies
-    value = femv->getData(0);
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = femv->getMap()->getGlobalElement(i);
-      if (!(value[i] == -2*gid)) {
-        std::cout << me << " Error in vec 0 copies:  gid=" << gid
-                        << " value= " << value[i] << " should be " << -2*gid
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Restore state 
+void read_boundary_file(char* filename, int n, int*& boundary_flags){
+  std::ifstream fin(filename);
+  if(!fin){
+    std::cout<<"Unable to open file "<<filename<<"\n";
+    exit(0);
   }
-
-  // Check vector 1
-  {
-    auto value = femv->getData(1);
-    int tmp = -me - (np + me - 1) % np;
-    for (lno_t i = 0; i < nLocalCopy; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (!(value[i] == tmp)) {
-        std::cout << me << " Error in vec 1 overlap:  gid=" << gid
-                        << " value= " << value[i] << " should be " << tmp
-                        << std::endl;
-        ierr++;
-      }
-    }
-    for (lno_t i = nLocalCopy; i < nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (!(value[i] == me)) {
-        std::cout << me << " Error in vec 1:  gid=" << gid
-                        << " value= " << value[i] << " should be " << me
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Needed to view copies
-    value = femv->getData(1);
-    tmp = -me - (me + 1) % np;
-    for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
-      gno_t gid = mapWithCopies->getGlobalElement(i);
-      if (!(value[i] == tmp))  {
-        std::cout << me << " Error in vec 1:  gid=" << gid
-                        << " value= " << value[i] << " should be " << tmp
-                        << std::endl;
-        ierr++;
-      }
-    }
-    femv->switchActiveMultiVector();  // Restore State
+  std::string throwaway;
+  fin>>throwaway>>throwaway;
+  int nodes, skip2, arrlength;
+  fin>>nodes>>skip2>>arrlength;
+  for(int i = 0; i <= nodes; i++){
+    std::getline(fin, throwaway);
   }
-  return ierr;
+  for(int i = 0; i < skip2; i++){
+    std::getline(fin,throwaway);
+  }
+  boundary_flags = new int[n];
+  for(int i = 0; i < n; i++){
+    boundary_flags[i] = 0;
+  }
+  int a, b;
+  //nodes that we see more than twice are potential articulation points.
+  while(fin>>a>>b>>throwaway){
+    boundary_flags[a-1] += 1;
+    boundary_flags[b-1] += 1;
+  }
 }
 
-/////////////////////////////////////////////////////////////////////
+void read_grounded_file(char* filename, int& n, int*& grounded_flags){
+  std::ifstream fin(filename);
+  if(!fin) {
+    std::cout<<"Unable to open "<<filename<<"\n";
+    exit(0);
+  }
+  //the first number is the number of vertices
+  fin>>n;
+  grounded_flags = new int[n];
+  //the rest of the numbers are basal friction data
+  for(int i = 0; i < n; i++){
+    float gnd;
+    fin>>gnd;
+    grounded_flags[i] = (gnd > 0.0);
+  }
+}
+
+void create_csr(int n, unsigned m, int* srcs, int* dsts, int*& out_array, unsigned*& out_degree_list, int& max_degree_vert, double& avg_out_degree){
+  out_array = new int[m];
+  out_degree_list = new unsigned[n+1];
+  unsigned* temp_counts = new unsigned[n];
+  
+  for(unsigned i = 0; i < m; ++i)
+    out_array[i] = 0;
+  for(int i = 0; i < n+1; ++i)
+    out_degree_list[i] = 0;
+  for(int i = 0; i < n; ++i)
+    temp_counts[i] = 0;
+
+  for(unsigned i = 0; i < m; ++i)
+    ++temp_counts[srcs[i]];
+  for(int i = 0; i < n; ++i)
+    out_degree_list[i+1] = out_degree_list[i] + temp_counts[i];
+  memcpy(temp_counts, out_degree_list, n*sizeof(int));
+  for(unsigned i = 0; i < m; ++i)
+    out_array[temp_counts[srcs[i]]++] = dsts[i];
+  delete [] temp_counts;
+
+  unsigned max_degree = 0;
+  max_degree_vert = -1;
+  avg_out_degree = 0.0;
+  for(int i = 0; i < n; ++i){
+    unsigned degree = out_degree_list[i+1] - out_degree_list[i];
+    avg_out_degree += (double) degree;
+    if(degree > max_degree) {
+      max_degree = degree;
+      max_degree_vert = i;
+    }
+  }
+  avg_out_degree /= (double)n;
+  assert(max_degree_vert >= 0);
+  assert(avg_out_degree >= 0.0);
+}
+
+typedef Tpetra::Map<> map_t;
+typedef map_t::local_ordinal_type lno_t;
+typedef map_t::global_ordinal_type gno_t;
 
 int main(int narg, char **arg)
 {
@@ -354,27 +195,157 @@ int main(int narg, char **arg)
   int ierr = 0;
 
   // Test that the vtxLabel struct correctly overloads operators
-  if (me == 0) 
+  if (me == 0){ 
     ierr += vtxLabelUnitTest();
+    std::cout<<"# args = "<<narg<<"\n";
+  }
+  //declare all necessary variables
+  int n;
+  int* grounded_flags;
+  int *srcs, *dsts;
+  unsigned m;
+  int* boundary_flags;
+ 
+  //read in the input files, and construct the global problem instance
+  if(me == 0){
 
-  // Now test Tpetra::FEMultiVector
-  FEMultiVectorTest femvTest(comm);
-
-  if (me == 0) std::cout << "Testing with int" << std::endl;
-  ierr = femvTest.intTest();
-
-  if (me == 0) std::cout << "Testing with vtxLabel" << std::endl;
-  ierr = femvTest.vtxLabelTest();
-
-  // Sum up across all processors the number of errors that occurred.
-  int gerr = 0;
-  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-
-  // Print PASS/FAIL
-  if (me == 0) {
-    if (gerr == 0) std::cout << "PASS" << std::endl;
-    else std::cout << "FAIL:  " << gerr << " failures" << std::endl;
+    read_grounded_file(arg[3],n,grounded_flags);
+    
+    int ground_sensitivity = 4;
+    read_edge_mesh(arg[1],n,m,srcs,dsts,grounded_flags, ground_sensitivity);
+    
+    read_boundary_file(arg[2],n,boundary_flags);
+    std::cout<<"n = "<<n<<"\n";
   }
   
+  //broadcast n and m, so other processors can initialize memory.
+
+  Teuchos::broadcast<int,int>(*comm,0,1,&n); 
+  Teuchos::broadcast<int,unsigned>(*comm,0,1,&m);
+  
+  //allocate memory to the arrays
+  if(me != 0){
+    grounded_flags = new int[n];
+    srcs = new int[m];
+    dsts = new int[m];
+    boundary_flags = new int[n];
+  }
+  
+  //broadcast global src/dst/grounding/boundary arrays
+  Teuchos::broadcast<int,int>(*comm,0,n,grounded_flags);
+  Teuchos::broadcast<int,int>(*comm,0,n,boundary_flags);
+  Teuchos::broadcast<int,int>(*comm,0,m,srcs);
+  Teuchos::broadcast<int,int>(*comm,0,m,dsts);
+
+  //select locally owned vertices (build maps?)
+  int nLocalOwned = 0;
+  int np = comm->getSize();
+  //the next two lines are garbage, but they work.
+  nLocalOwned = n/np + (me < (n%np));
+  int vtxOffset = std::min(me,n%np)*(n/np + 1) + std::max(0,me - (n%np))*(n/np);
+  std::cout<<me<<" : vertices go from "<<vtxOffset<<" to "<<vtxOffset + nLocalOwned-1<<"\n";
+  
+  //cut the global arrays down to local instances, keeping neighbors of owned vertices in the csr,
+  //note them as copies.
+  
+  
+  int *copies = new int[n];
+  int *localOwned = new int[n];
+  int *newId = new int[n];
+  int newIdCounter = 0;
+  for(int i = 0; i < n; i++){
+    copies[i] = 0;
+    if(i>= vtxOffset && i < vtxOffset+nLocalOwned){
+      localOwned[i] = 1;
+      newId[i] = newIdCounter++; 
+    } else {
+      localOwned[i] = 0;
+      newId[i] = -1;
+    }
+  } 
+  
+  int *localSrcs = new int[m];
+  int *localDsts = new int[m];
+  int localEdgeCounter = 0;
+  int numcopies = 0;
+   
+  for(int i = 0; i < m; i++){
+    if(localOwned[srcs[i]]){
+      localSrcs[localEdgeCounter] = newId[srcs[i]];
+      if(!localOwned[dsts[i]]){
+        if(copies[dsts[i]] == 0){
+          copies[dsts[i]] = 1;
+          numcopies++;
+        }
+        if(newId[dsts[i]] < 0) newId[dsts[i]] = newIdCounter++;
+      }
+      localDsts[localEdgeCounter++] = newId[dsts[i]];
+    } else if(localOwned[dsts[i]]){
+      localDsts[localEdgeCounter] = newId[dsts[i]];
+      if(!localOwned[srcs[i]]){
+        if(copies[srcs[i]] == 0){
+          copies[srcs[i]] = 1;
+          numcopies++;
+        }
+        if(newId[srcs[i]] < 0) newId[srcs[i]] = newIdCounter++;
+      }
+      localSrcs[localEdgeCounter++] = newId[srcs[i]];
+    }
+  }
+  
+  //make new grounding/boundary arrays for just the local vertices (owned+copies)
+  int* localGrounding = new int[nLocalOwned+numcopies];
+  int* localBoundaries = new int[nLocalOwned+numcopies];
+  for(int i = 0; i < nLocalOwned+numcopies; i++){
+    localGrounding[i] = 0;
+    localBoundaries[i] = 0;
+  }
+  for(int i = 0; i < n; i++){
+    if(newId[i] > 0) {
+      localGrounding[newId[i]] = grounded_flags[i];
+      localBoundaries[newId[i]] = boundary_flags[i];
+    }
+  }
+  
+  //create the gids array for the maps
+  Teuchos::Array<gno_t> gids(nLocalOwned + numcopies);
+  int gidsCounter = 0;
+  for(int i = 0; i < n; i++){
+    if(localOwned[i]) {
+      gids[gidsCounter++] = i;
+    }
+  }
+  for(int i = 0; i < n; i++) {
+    if(copies[i]) {
+      gids[gidsCounter++] = i;
+    }
+  }
+  Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,gids(),0,comm));
+  Teuchos::RCP<const map_t> mapOwned = rcp(new map_t(dummy,gids(0,nLocalOwned),0,comm));
+  
+  
+  //create local csr graph instances from the local src/dst arrays
+  int* out_array;
+  unsigned * out_degree_list;
+  int max_degree_vert;
+  double avg_out_degree;
+  create_csr(newIdCounter,localEdgeCounter, localSrcs, localDsts, out_array, out_degree_list, max_degree_vert, avg_out_degree);
+  
+  graph* g = new graph({newIdCounter,localEdgeCounter,out_array,out_degree_list,max_degree_vert,avg_out_degree});
+  //create an instance of iceProp::iceSheetPropagation
+  iceProp::iceSheetPropagation prop(comm, mapOwned, mapWithCopies, g, localBoundaries, localGrounding,nLocalOwned, numcopies); 
+  //run iceSheetPropagation::propagate  
+  
+  int* remove = prop.propagate();
+  /*for(int i = 0; i < g->n; i++){
+    if(remove[i]){
+      for(int j = 0; j < n; j++){
+        if(newId[j] == i){
+          std::cout<<me<<": removed vertex "<<j<<"\n";
+        }
+      }
+    }
+  } */
   return 0;
 }
