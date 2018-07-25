@@ -49,7 +49,6 @@
 #define ROL_PDEOPT_LINDYNCONSTRAINT_H
 
 #include "ROL_DynamicConstraint.hpp"
-#include "pde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
 #include "pdevector.hpp"
@@ -80,39 +79,24 @@ namespace ROL {
 template<class Real>
 class LinDynConstraint : public ROL::DynamicConstraint<Real> {
 private:
-  const ROL::Ptr<PDE<Real>>       pde_;
-  const ROL::Ptr<PDE<Real>>      mass_;
-  ROL::Ptr<Solver<Real>>       solver_;
-  ROL::Ptr<Assembler<Real>> assembler_;
-
-  Real theta_;
+  const ROL::Ptr<DynamicPDE<Real>>    pde_;
+  ROL::Ptr<Solver<Real>>           solver_;
+  ROL::Ptr<Assembler<Real>>     assembler_;
 
   ROL::Ptr<Tpetra::MultiVector<>> uvec_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>   matM_;
 
   mutable ROL::Ptr<Tpetra::MultiVector<>> zvec_;
   mutable ROL::Ptr<std::vector<Real>>     zpar_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matA_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJuo_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJun_;
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecR_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecRtmp_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf1_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf2_;
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzp_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzptmp_;
   mutable ROL::Ptr<Tpetra::MultiVector<>> cvec_;
 
   const bool isLTI_;
   mutable bool isAssembled_;
   mutable bool initialize_;
-
-  void assembleMass(void) {
-    // Assemble mass matrix.
-    assembler_->assemblePDEJacobian1(matM_,mass_,uvec_,zvec_,zpar_);
-  }
-
 
   void initialize(const ROL::Vector<Real> &z) const {
     if (initialize_) {
@@ -134,43 +118,18 @@ private:
   void assemble(const ROL::Vector<Real> &z, const ROL::TimeStamp<Real> &ts) const {
     initialize(z);
     if (!isAssembled_) {
-      const Real one(1);
-      Real timeOld = ts.t[0], timeNew = ts.t[1];
-      Real dt = timeNew - timeOld;
-
-      pde_->setTime(timeOld);
       // Assemble uold Jacobian.
-      assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
-      matJuo_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(-dt*(one-theta_),
-                  *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
+      assembler_->assembleDynPDEJacobian_uo(matJuo_,pde_,ts,uvec_,uvec_,zvec_,zpar_);
+      // Assemble unew Jacobian and initialize linear solver.
+      assembler_->assembleDynPDEJacobian_un(matJun_,pde_,ts,uvec_,uvec_,zvec_,zpar_);
       // Assemble old affine term.
-      assembler_->assemblePDEResidual(vecR_,pde_,uvec_,zvec_,zpar_);
+      assembler_->assembleDynPDEResidual(vecR_,pde_,ts,uvec_,uvec_,zvec_,zpar_);
       // Assemble old control Jacobian.
       if (zvec_ != ROL::nullPtr) {
-        assembler_->assemblePDEJacobian2(matJzf1_,pde_,uvec_,zvec_,zpar_);
+        assembler_->assembleDynPDEJacobian_zf(matJzf_,pde_,ts,uvec_,uvec_,zvec_,zpar_);
       }
       if (zpar_ != ROL::nullPtr) {
-        assembler_->assemblePDEJacobian3(vecJzp_,pde_,uvec_,zvec_,zpar_);
-      }
-
-      pde_->setTime(timeNew);
-      // Assemble unew Jacobian and initialize linear solver.
-      assembler_->assemblePDEJacobian1(matA_,pde_,uvec_,zvec_,zpar_);
-      matJun_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt*theta_,
-                  *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
-      // Assemble new affine term.
-      assembler_->assemblePDEResidual(vecRtmp_,pde_,uvec_,zvec_,zpar_);
-      vecR_->update(-dt * theta_, *vecRtmp_, -dt * (one-theta_));
-      // Assemble new control Jacobian.
-      if (zvec_ != ROL::nullPtr) {
-        assembler_->assemblePDEJacobian2(matJzf2_,pde_,uvec_,zvec_,zpar_);
-        matJzf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matJzf1_->add(-dt*theta_,
-                    *matJzf2_, -dt*(one-theta_), matJzf1_->getDomainMap(),
-                    matJzf1_->getRangeMap(), Teuchos::null));
-      }
-      if (zpar_ != ROL::nullPtr) {
-        assembler_->assemblePDEJacobian3(vecJzptmp_,pde_,uvec_,zvec_,zpar_);
-        vecJzp_->update(-dt * theta_, *vecJzptmp_, -dt * (one-theta_));
+        assembler_->assembleDynPDEJacobian_zp(vecJzp_,pde_,ts,uvec_,uvec_,zvec_,zpar_);
       }
       // Set solver with unew Jacobian
       setSolver();
@@ -284,39 +243,32 @@ private:
 
 public:
 
-  LinDynConstraint(const ROL::Ptr<PDE<Real>> &pde,
-                   const ROL::Ptr<PDE<Real>> &mass,
+  LinDynConstraint(const ROL::Ptr<DynamicPDE<Real>> &pde,
                    const ROL::Ptr<MeshManager<Real>> &meshMgr,
                    const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                    Teuchos::ParameterList &parlist,
                    const bool isLTI = false,
                    std::ostream &outStream = std::cout)
     : pde_         (   pde ),
-      mass_        (  mass ),
       isLTI_       ( isLTI ),
       isAssembled_ ( false ),
       initialize_  (  true ) {
-    // Get time discretization parameters
-    theta_  = parlist.sublist("Time Discretization").get("Theta", 1.0);
     // Construct assembler.
     assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
-    assembler_->setCellNodes(*mass_);
     // Construct solver.
     solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
     // Initialize state and constraint vectors.
     cvec_ = assembler_->createResidualVector();
     uvec_ = assembler_->createStateVector();
     uvec_->putScalar(static_cast<Real>(0));
-    // Assemble matrices
-    assembleMass();
   }
 
   const ROL::Ptr<Assembler<Real>> getAssembler(void) const {
     return assembler_;
   }
 
-  const ROL::Ptr<PDE<Real>> getPDE(void) const {
+  const ROL::Ptr<DynamicPDE<Real>> getPDE(void) const {
     return pde_;
   }
 
@@ -324,7 +276,7 @@ public:
               const ROL::Vector<Real>    &un,
               const ROL::Vector<Real>    &z,
               const ROL::TimeStamp<Real> &ts) {
-    isAssembled_ = isLTI_;
+    isAssembled_ = (!isAssembled_ ? isAssembled_ : isLTI_);
     assemble(z,ts);
   }
 
@@ -358,7 +310,7 @@ public:
     }
     // Add new state contribution
     applyJacobian_un(cvec_, unf, false);
-    cf->update(one, *cvec_, -one);
+    cf->update(one, *cvec_, one);
   }
 
   void solve(ROL::Vector<Real> &c,
@@ -391,9 +343,10 @@ public:
     }
     // Apply inverse of new state jacobian
     solveForward(unf,cf);
+    unf->scale(static_cast<Real>(-1));
     // Compute residual
     applyJacobian_un(cvec_,unf,false);
-    cf->update(one,*cvec_,-one);
+    cf->update(one,*cvec_,one);
   }
 
   void applyJacobian_uo(ROL::Vector<Real>    &jv,
@@ -408,7 +361,6 @@ public:
     const Real one(1);
     assemble(z,ts);
     applyJacobian_uo(jvf,vf,false);
-    jvf->scale(-one);
   }
 
   void applyJacobian_un(ROL::Vector<Real>    &jv,
@@ -439,13 +391,13 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     if (vf != ROL::nullPtr) {
       applyJacobian_zf(cvec_,vf,false);
-      jvf->update(-one,*cvec_,one);
+      jvf->update(one,*cvec_,one);
     }
     ROL::Ptr<const std::vector<Real>>     vp = getConstParameter(v);
     bool zeroOut = (vf == ROL::nullPtr);
     if (vp != ROL::nullPtr) {
       applyJacobian_zp(cvec_,vp,zeroOut);
-      jvf->update(-one,*cvec_,one);
+      jvf->update(one,*cvec_,one);
     }
   }
 
@@ -462,7 +414,6 @@ public:
     const Real one(1);
     assemble(z,ts);
     applyJacobian_uo(ajvf,vf,true);
-    ajvf->scale(-one);
   }
 
 
@@ -500,7 +451,6 @@ public:
     if (zp != ROL::nullPtr) {
       applyAdjointJacobian_zp(ajvp,vf);
     }
-    ajv.scale(-one);
   }
 
 
@@ -639,20 +589,20 @@ public:
 
   void outputTpetraData() const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> matWriter;
-    if (matM_ != ROL::nullPtr) {
-      matWriter.writeSparseFile("mass.txt", matM_);
+    if (matJuo_ != ROL::nullPtr) {
+      matWriter.writeSparseFile("jacobian_uo.txt", matJuo_);
     }
     else {
       std::ofstream emptyfile;
-      emptyfile.open("mass.txt");
+      emptyfile.open("jacobian_uo.txt");
       emptyfile.close();
     }
-    if (matA_ != ROL::nullPtr) {
-      matWriter.writeSparseFile("stiffness.txt", matA_);
+    if (matJun_ != ROL::nullPtr) {
+      matWriter.writeSparseFile("jacobian_un.txt", matJun_);
     }
     else {
       std::ofstream emptyfile;
-      emptyfile.open("stiffness.txt");
+      emptyfile.open("jacobian_un.txt");
       emptyfile.close();
     }
     if (matJzf_ != ROL::nullPtr) {

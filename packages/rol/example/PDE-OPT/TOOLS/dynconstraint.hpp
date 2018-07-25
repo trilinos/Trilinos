@@ -49,7 +49,7 @@
 #define ROL_PDEOPT_DYNCONSTRAINT_H
 
 #include "ROL_DynamicConstraint.hpp"
-#include "pde.hpp"
+#include "dynpde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
 #include "pdevector.hpp"
@@ -96,26 +96,14 @@ namespace ROL {
 template<class Real>
 class DynConstraint : public ROL::DynamicConstraint<Real> {
 private:
-  const ROL::Ptr<PDE<Real>>       pde_;
-  const ROL::Ptr<PDE<Real>>      mass_;
-  ROL::Ptr<Solver<Real>>       solver_;
-  ROL::Ptr<Assembler<Real>> assembler_;
+  const ROL::Ptr<DynamicPDE<Real>>   pde_;
+  ROL::Ptr<Solver<Real>>          solver_;
+  ROL::Ptr<Assembler<Real>>    assembler_;
 
-  Real theta_;
-
-  ROL::Ptr<Tpetra::MultiVector<>> uvec_;
-  ROL::Ptr<Tpetra::CrsMatrix<>>   matM_;
-
-  mutable ROL::Ptr<Tpetra::MultiVector<>> zvec_;
-  mutable ROL::Ptr<std::vector<Real>>     zpar_;
-  mutable bool initialize_;
-
-  // Storage for spatial PDE jacobian
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matA_;
+  mutable ROL::Ptr<Tpetra::MultiVector<>> cvec_;
 
   // Storage for spatial PDE residual
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecR_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecRtmp_;
   mutable bool isResAssembled_;
 
   // Storage for spatial PDE jacobian at old time
@@ -128,13 +116,10 @@ private:
 
   // Storage for field control jacobian
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf1_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matJzf2_;
   mutable bool isJzfAssembled_, isJzfZero_, isJzfNotImplemented_;
 
   // Storage for parameter control jacobian
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzp_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecJzptmp_;
   mutable bool isJzpAssembled_, isJzpZero_, isJzpNotImplemented_;
 
   // Storage for spatial PDE old/old hessian
@@ -152,6 +137,12 @@ private:
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecHzp_uo_;
   mutable bool isHuo_zpAssembled_, isHuo_zpZero_, isHuo_zpNotImplemented_;
   mutable bool isHzp_uoAssembled_, isHzp_uoZero_, isHzp_uoNotImplemented_;
+
+  // Storage for spatial PDE new/old hessian
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHuo_un_;
+  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHun_uo_;
+  mutable bool isHuo_unAssembled_, isHuo_unZero_, isHuo_unNotImplemented_;
+  mutable bool isHun_uoAssembled_, isHun_uoZero_, isHun_uoNotImplemented_;
 
   // Storage for spatial PDE new/new hessian
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHun_un_;
@@ -171,70 +162,29 @@ private:
 
   // Storage for field/field hessian
   mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHzf_zf_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHzf_zf1_;
-  mutable ROL::Ptr<Tpetra::CrsMatrix<>>   matHzf_zf2_;
   mutable bool isHzf_zfAssembled_, isHzf_zfZero_, isHzf_zfNotImplemented_;
 
   // Storage for parameter/parameter hessian
   mutable ROL::Ptr<std::vector<std::vector<Real>>> matHzp_zp_;
-  mutable ROL::Ptr<std::vector<std::vector<Real>>> matHzp_zptmp_;
   mutable bool isHzp_zpAssembled_, isHzp_zpZero_, isHzp_zpNotImplemented_;
 
   // Storage for field/parameter hessian
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecHzf_zp_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecHzf_zptmp_;
   mutable ROL::Ptr<Tpetra::MultiVector<>> vecHzp_zf_;
-  mutable ROL::Ptr<Tpetra::MultiVector<>> vecHzp_zftmp_;
   mutable bool isHzf_zpAssembled_, isHzf_zpZero_, isHzf_zpNotImplemented_;
   mutable bool isHzp_zfAssembled_, isHzp_zfZero_, isHzp_zfNotImplemented_;
-
-  mutable ROL::Ptr<Tpetra::MultiVector<>> cvec_;
-
-  void initialize(const ROL::Vector<Real> &z) const {
-    if (initialize_) {
-      // Initialize control vectors
-      ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-      ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-      if (zf != ROL::nullPtr) {
-        zvec_ = assembler_->createControlVector();
-        zvec_->putScalar(static_cast<Real>(0));
-      }
-      if (zp != ROL::nullPtr) {
-        zpar_ = ROL::makePtr<std::vector<Real>>(zp->size(),static_cast<Real>(0));
-      }
-      initialize_ = false;
-    }
-  }
-
-  void assembleMass(void) {
-    // Assemble mass matrix.
-    assembler_->assemblePDEJacobian1(matM_,mass_,uvec_,zvec_,zpar_);
-  }
 
   void assembleResidual(const ROL::Vector<Real> &uo,
                         const ROL::Vector<Real> &un,
                         const ROL::Vector<Real> &z,
                         const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
     if (!isResAssembled_) {
       ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
       ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
       ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
       ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
-      const Real one(1);
-      Real timeOld = ts.t[0], timeNew = ts.t[1];
-      Real dt = timeNew - timeOld;
-
-      // Assemble old affine term.
-      pde_->setTime(timeOld);
-      assembler_->assemblePDEResidual(vecR_,pde_,uof,zf,zp);
-
-      // Assemble unew Jacobian and initialize linear solver.
-      pde_->setTime(timeNew);
-      assembler_->assemblePDEResidual(vecRtmp_,pde_,unf,zf,zp);
-
-      vecR_->update(dt * theta_, *vecRtmp_, dt * (one-theta_));
+      assembler_->assembleDynPDEResidual(vecR_,pde_,ts,uof,unf,zf,zp);
       isResAssembled_ = true;
     }
   }
@@ -247,55 +197,44 @@ private:
   }
 
   // Assemble the PDE Jacobian.
-  void assembleJuo(const ROL::Vector<Real> &u,
+  void assembleJuo(const ROL::Vector<Real> &uo,
+                   const ROL::Vector<Real> &un,
                    const ROL::Vector<Real> &z,
                    const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
     if ( !isJuoZero_ && !isJuoNotImplemented_ ) {
       try {
         if (!isJuoAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
+	  ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+	  ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+	  ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
+	  ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
 
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEJacobian1(matA_,pde_,uf,zf,zp);
-          matJuo_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt*(one-theta_),
-                      *matA_,-one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
-          isJuoAssembled_ = true;
-        }
+	  assembler_->assembleDynPDEJacobian_uo(matJuo_,pde_,ts,uof,unf,zf,zp);
+	  isJuoAssembled_ = true;
+	}
       }
       catch ( Exception::Zero & ez ) {
-        isJuoZero_ = true;
+	isJuoZero_ = true;
       }
       catch ( Exception::NotImplemented & eni ) {
-        isJuoNotImplemented_ = true;
+	isJuoNotImplemented_ = true;
       }
     }
   }
-  void assembleJun(const ROL::Vector<Real> &u,
-                   const ROL::Vector<Real> &z,
-                   const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+
+  void assembleJun(const ROL::Vector<Real> &uo,
+        	   const ROL::Vector<Real> &un,
+        	   const ROL::Vector<Real> &z,
+        	   const ROL::TimeStamp<Real> &ts) const {
     if ( !isJunZero_ && !isJunNotImplemented_ ) {
       try {
         if (!isJunAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEJacobian1(matA_,pde_,uf,zf,zp);
-          matJun_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matM_->add(dt*theta_,
-                      *matA_,one,matM_->getDomainMap(),matM_->getRangeMap(),Teuchos::null));
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
+  
+          assembler_->assembleDynPDEJacobian_un(matJun_,pde_,ts,uof,unf,zf,zp);
           isJunAssembled_ = true;
           setSolver();
         }
@@ -308,13 +247,12 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE Jacobian.
   void assembleJzf(const ROL::Vector<Real> &uo,
-                   const ROL::Vector<Real> &un,
-                   const ROL::Vector<Real> &z,
-                   const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	   const ROL::Vector<Real> &un,
+        	   const ROL::Vector<Real> &z,
+        	   const ROL::TimeStamp<Real> &ts) const {
     if ( !isJzfZero_ && !isJzfNotImplemented_ ) {
       try {
         if (!isJzfAssembled_) {
@@ -322,20 +260,8 @@ private:
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
           ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
           ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEJacobian2(matJzf1_,pde_,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEJacobian2(matJzf2_,pde_,unf,zf,zp);
-
-          matJzf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matJzf1_->add(dt*theta_,
-                      *matJzf2_, dt*(one-theta_), matJzf1_->getDomainMap(),
-                      matJzf1_->getRangeMap(), Teuchos::null));
+  
+          assembler_->assembleDynPDEJacobian_zf(matJzf_,pde_,ts,uof,unf,zf,zp);
           isJzfAssembled_ = true;
         }
       }
@@ -347,13 +273,12 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE Jacobian.
   void assembleJzp(const ROL::Vector<Real> &uo,
-                   const ROL::Vector<Real> &un,
-                   const ROL::Vector<Real> &z,
-                   const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	   const ROL::Vector<Real> &un,
+        	   const ROL::Vector<Real> &z,
+        	   const ROL::TimeStamp<Real> &ts) const {
     if ( !isJzpZero_ && !isJzpNotImplemented_ ) {
       try {
         if (!isJzpAssembled_) {
@@ -361,18 +286,8 @@ private:
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
           ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
           ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEJacobian3(vecJzp_,pde_,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEJacobian3(vecJzptmp_,pde_,unf,zf,zp);
-
-          vecJzp_->update(dt * theta_, *vecJzptmp_, dt * (one-theta_));
+  
+          assembler_->assembleDynPDEJacobian_zp(vecJzp_,pde_,ts,uof,unf,zf,zp);
           isJzpAssembled_ = true;
         }
       }
@@ -384,30 +299,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHuo_uo(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHuo_uoZero_ && !isHuo_uoNotImplemented_ ) {
       try {
         if (!isHuo_uoAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian11(matHuo_uo_,pde_,wf,uf,zf,zp);
-          matHuo_uo_->resumeFill();
-          matHuo_uo_->scale(dt * (one-theta_));
-          matHuo_uo_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_uo_uo(matHuo_uo_,pde_,ts,wf,uof,unf,zf,zp);
           isHuo_uoAssembled_ = true;
         }
       }
@@ -419,30 +327,51 @@ private:
       }
     }
   }
-
+  
+  // Assemble the PDE adjoint Hessian.
+  void assembleHuo_un(const ROL::Vector<Real> &w,
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
+    if ( !isHuo_unZero_ && !isHuo_unNotImplemented_ ) {
+      try {
+        if (!isHuo_uoAssembled_) {
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_uo_un(matHuo_uo_,pde_,ts,wf,uof,unf,zf,zp);
+          isHuo_unAssembled_ = true;
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        isHuo_unZero_ = true;
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        isHuo_unNotImplemented_ = true;
+      }
+    }
+  }
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHuo_zf(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHuo_zfZero_ && !isHuo_zfNotImplemented_ ) {
       try {
         if (!isHuo_zfAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian12(matHuo_zf_,pde_,wf,uf,zf,zp);
-          matHuo_zf_->resumeFill();
-          matHuo_zf_->scale(dt * (one-theta_));
-          matHuo_zf_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_uo_zf(matHuo_zf_,pde_,ts,wf,uof,unf,zf,zp);
           isHuo_zfAssembled_ = true;
         }
       }
@@ -454,30 +383,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzf_uo(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzf_uoZero_ && !isHzf_uoNotImplemented_ ) {
       try {
         if (!isHzf_uoAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian21(matHzf_uo_,pde_,wf,uf,zf,zp);
-          matHzf_uo_->resumeFill();
-          matHzf_uo_->scale(dt * (one-theta_));
-          matHzf_uo_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zf_uo(matHzf_uo_,pde_,ts,wf,uof,unf,zf,zp);
           isHzf_uoAssembled_ = true;
         }
       }
@@ -489,28 +411,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHuo_zp(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHuo_zpZero_ && !isHuo_zpNotImplemented_ ) {
       try {
         if (!isHuo_zpAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian13(vecHuo_zp_,pde_,wf,uf,zf,zp);
-          vecHuo_zp_->scale(dt * (one-theta_));
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_uo_zp(vecHuo_zp_,pde_,ts,wf,uof,unf,zf,zp);
           isHuo_zpAssembled_ = true;
         }
       }
@@ -522,28 +439,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzp_uo(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzp_uoZero_ && !isHzp_uoNotImplemented_ ) {
       try {
         if (!isHzp_uoAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian31(vecHzp_uo_,pde_,wf,uf,zf,zp);
-          vecHzp_uo_->scale(dt * (one-theta_));
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zp_uo(vecHzp_uo_,pde_,ts,wf,uof,unf,zf,zp);
           isHzp_uoAssembled_ = true;
         }
       }
@@ -555,29 +467,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHun_un(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHun_unZero_ && !isHun_unNotImplemented_ ) {
       try {
         if (!isHun_unAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian11(matHun_un_,pde_,wf,uf,zf,zp);
-          matHun_un_->resumeFill();
-          matHun_un_->scale(dt * theta_);
-          matHun_un_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_un_un(matHun_un_,pde_,ts,wf,uof,unf,zf,zp);
           isHun_unAssembled_ = true;
         }
       }
@@ -589,29 +495,51 @@ private:
       }
     }
   }
-
+  
+  // Assemble the PDE adjoint Hessian.
+  void assembleHun_uo(const ROL::Vector<Real> &w,
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
+    if ( !isHun_uoZero_ && !isHun_uoNotImplemented_ ) {
+      try {
+        if (!isHun_uoAssembled_) {
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_un_uo(matHun_un_,pde_,ts,wf,uof,unf,zf,zp);
+          isHun_uoAssembled_ = true;
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        isHun_uoZero_ = true;
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        isHun_uoNotImplemented_ = true;
+      }
+    }
+  }
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHun_zf(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHun_zfZero_ && !isHun_zfNotImplemented_ ) {
       try {
         if (!isHun_zfAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian12(matHun_zf_,pde_,wf,uf,zf,zp);
-          matHun_zf_->resumeFill();
-          matHun_zf_->scale(dt * theta_);
-          matHun_zf_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_un_zf(matHun_zf_,pde_,ts,wf,uof,unf,zf,zp);
           isHun_zfAssembled_ = true;
         }
       }
@@ -623,29 +551,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzf_un(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzf_unZero_ && !isHzf_unNotImplemented_ ) {
       try {
         if (!isHzf_unAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian21(matHzf_un_,pde_,wf,uf,zf,zp);
-          matHzf_un_->resumeFill();
-          matHzf_un_->scale(dt * theta_);
-          matHzf_un_->fillComplete();
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zf_un(matHzf_un_,pde_,ts,wf,uof,unf,zf,zp);
           isHzf_unAssembled_ = true;
         }
       }
@@ -657,27 +579,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHun_zp(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHun_zpZero_ && !isHun_zpNotImplemented_ ) {
       try {
         if (!isHun_zpAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian13(vecHun_zp_,pde_,wf,uf,zf,zp);
-          vecHun_zp_->scale(dt * theta_);
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_un_zp(vecHun_zp_,pde_,ts,wf,uof,unf,zf,zp);
           isHun_zpAssembled_ = true;
         }
       }
@@ -689,27 +607,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzp_un(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzp_unZero_ && !isHzp_unNotImplemented_ ) {
       try {
         if (!isHzp_unAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
-          ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian31(vecHzp_un_,pde_,wf,uf,zf,zp);
-          vecHzp_un_->scale(dt * theta_);
+          ROL::Ptr<const Tpetra::MultiVector<>> wf  = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
+          ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
+          ROL::Ptr<const Tpetra::MultiVector<>> zf  = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>     zp  = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zp_un(vecHzp_un_,pde_,ts,wf,uof,unf,zf,zp);
           isHzp_unAssembled_ = true;
         }
       }
@@ -721,14 +635,13 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzf_zf(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &uo,
-                      const ROL::Vector<Real> &un,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzf_zfZero_ && !isHzf_zfNotImplemented_ ) {
       try {
         if (!isHzf_zfAssembled_) {
@@ -737,20 +650,8 @@ private:
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
           ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
           ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian22(matHzf_zf1_,pde_,wf,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian22(matHzf_zf2_,pde_,wf,unf,zf,zp);
-
-          matHzf_zf_ = ROL::dynamicPtrCast<Tpetra::CrsMatrix<>>(matHzf_zf1_->add(dt*theta_,
-                        *matHzf_zf2_, dt*(one-theta_), matHzf_zf1_->getDomainMap(),
-                        matHzf_zf1_->getRangeMap(), Teuchos::null));
+  
+          assembler_->assembleDynPDEHessian_zf_zf(matHzf_zf_,pde_,ts,wf,uof,unf,zf,zp);
           isHzf_zfAssembled_ = true;
         }
       }
@@ -762,14 +663,13 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzf_zp(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &uo,
-                      const ROL::Vector<Real> &un,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzf_zpZero_ && !isHzf_zpNotImplemented_ ) {
       try {
         if (!isHzf_zpAssembled_) {
@@ -778,18 +678,8 @@ private:
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
           ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
           ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian23(vecHzf_zp_,pde_,wf,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian23(vecHzf_zptmp_,pde_,wf,unf,zf,zp);
-
-          vecHzf_zp_->update(dt * theta_, *vecHzf_zptmp_, dt * (one-theta_));
+  
+          assembler_->assembleDynPDEHessian_zf_zp(vecHzf_zp_,pde_,ts,wf,uof,unf,zf,zp);
           isHzf_zpAssembled_ = true;
         }
       }
@@ -801,34 +691,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzp_zf(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &uo,
-                      const ROL::Vector<Real> &un,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzp_zfZero_ && !isHzp_zfNotImplemented_ ) {
       try {
         if (!isHzp_zfAssembled_) {
           ROL::Ptr<const Tpetra::MultiVector<>>  wf = getConstField(w);
           ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian32(vecHzp_zf_,pde_,wf,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian32(vecHzp_zftmp_,pde_,wf,unf,zf,zp);
-
-          vecHzp_zf_->update(dt * theta_, *vecHzp_zftmp_, dt * (one-theta_));
+          ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zp_zf(vecHzp_zf_,pde_,ts,wf,uof,unf,zf,zp);
           isHzp_zfAssembled_ = true;
         }
       }
@@ -840,40 +719,23 @@ private:
       }
     }
   }
-
+  
   // Assemble the PDE adjoint Hessian.
   void assembleHzp_zp(const ROL::Vector<Real> &w,
-                      const ROL::Vector<Real> &uo,
-                      const ROL::Vector<Real> &un,
-                      const ROL::Vector<Real> &z,
-                      const ROL::TimeStamp<Real> &ts) const {
-    initialize(z);
+        	      const ROL::Vector<Real> &uo,
+        	      const ROL::Vector<Real> &un,
+        	      const ROL::Vector<Real> &z,
+        	      const ROL::TimeStamp<Real> &ts) const {
     if ( !isHzp_zpZero_ && !isHzp_zpNotImplemented_ ) {
       try {
         if (!isHzp_zpAssembled_) {
-          ROL::Ptr<const Tpetra::MultiVector<>> wf = getConstField(w);
+          ROL::Ptr<const Tpetra::MultiVector<>>  wf = getConstField(w);
           ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
           ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
-          ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
-          ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
-
-          const Real one(1);
-          Real timeOld = ts.t[0], timeNew = ts.t[1];
-          Real dt = timeNew - timeOld;
-
-          pde_->setTime(timeOld);
-          assembler_->assemblePDEHessian33(matHzp_zp_,pde_,wf,uof,zf,zp);
-
-          pde_->setTime(timeNew);
-          assembler_->assemblePDEHessian33(matHzp_zptmp_,pde_,wf,unf,zf,zp);
-
-          const size_t size = static_cast<size_t>(matHzp_zp_->size());
-          for (size_t i = 0; i < size; ++i) {
-            for (size_t j = 0; j < size; ++j) {
-              (*matHzp_zp_)[i][j] *= dt * (one-theta_);
-              (*matHzp_zp_)[i][j] += dt * theta_ * (*matHzp_zptmp_)[i][j];
-            }
-          }
+          ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
+          ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
+  
+          assembler_->assembleDynPDEHessian_zp_zp(matHzp_zp_,pde_,ts,wf,uof,unf,zf,zp);
           isHzp_zpAssembled_ = true;
         }
       }
@@ -885,31 +747,26 @@ private:
       }
     }
   }
-
+  
   void solveForward(ROL::Ptr<Tpetra::MultiVector<>> &x,
-                    const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
+        	    const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintSolverSolve_Jacobian_un);
     #endif
     solver_->solve(x,b,false);
   }
-
+  
   void solveAdjoint(ROL::Ptr<Tpetra::MultiVector<>> &x,
-                    const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
+        	    const ROL::Ptr<const Tpetra::MultiVector<>> &b) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintSolverSolve_AdjointJacobian_un);
     #endif
     solver_->solve(x,b,true);
   }
-
-  void applyMass(const ROL::Ptr<Tpetra::MultiVector<>> &Jv,
-                 const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
-    matM_->apply(*v,*Jv);
-  }
-
+  
   void applyJacobian_uo(const ROL::Ptr<Tpetra::MultiVector<>> &Jv,
-                        const ROL::Ptr<const Tpetra::MultiVector<>> &v,
-                        const bool trans = false) const {
+        		const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+        		const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyJacobian_uo);
@@ -923,10 +780,10 @@ private:
       matJuo_->apply(*v,*Jv,Teuchos::TRANS);
     }
   }
-
+  
   void applyJacobian_un(const ROL::Ptr<Tpetra::MultiVector<>> &Jv,
-                        const ROL::Ptr<const Tpetra::MultiVector<>> &v,
-                        const bool trans = false) const {
+        		const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+        		const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyJacobian_un);
@@ -940,10 +797,10 @@ private:
       matJun_->apply(*v,*Jv,Teuchos::TRANS);
     }
   }
-
+  
   void applyJacobian_zf(const ROL::Ptr<Tpetra::MultiVector<>> &Jv,
-                        const ROL::Ptr<const Tpetra::MultiVector<>> &v,
-                        const bool trans = false) const {
+        		const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+        		const bool trans = false) const {
     if (!trans) {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyJacobian_zf);
@@ -957,10 +814,10 @@ private:
       matJzf_->apply(*v,*Jv,Teuchos::TRANS);
     }
   }
-
+  
   void applyJacobian_zp(const ROL::Ptr<Tpetra::MultiVector<>> &Jv,
-                        const ROL::Ptr<const std::vector<Real>> &v,
-                        const bool zeroOut = true) const {
+        		const ROL::Ptr<const std::vector<Real>> &v,
+        		const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyJacobian_zp);
     #endif
@@ -973,9 +830,9 @@ private:
       Jv->update((*v)[i],*(vecJzp_->subView(col)),static_cast<Real>(1));
     }
   }
-
+  
   void applyAdjointJacobian_zp(const ROL::Ptr<std::vector<Real>> &Jv,
-                               const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		       const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyAdjointJacobian_zp);
     #endif
@@ -987,9 +844,9 @@ private:
       (*Jv)[i] = val[0];
     }
   }
-
+  
   void applyHessian_uo_uo(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_uo_uo);
     #endif
@@ -1005,9 +862,45 @@ private:
       throw ROL::Exception::NotImplemented(">>> DynConstraint<Real>::applyHessian_uo_uo: Not Implemented!");
     }
   }
-
+  
+  void applyHessian_uo_un(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_uo_un);
+    #endif
+    if (!isHuo_unNotImplemented_) {
+      if ( isHuo_unZero_ ) {
+        Hv->putScalar(static_cast<Real>(0));
+      }
+      else {
+        matHuo_un_->apply(*v,*Hv);
+      }
+    }
+    else {
+      throw ROL::Exception::NotImplemented(">>> DynConstraint<Real>::applyHessian_uo_un: Not Implemented!");
+    }
+  }
+  
+  void applyHessian_un_uo(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_un_uo);
+    #endif
+    if (!isHun_uoNotImplemented_) {
+      if ( isHun_uoZero_ ) {
+        Hv->putScalar(static_cast<Real>(0));
+      }
+      else {
+        matHun_uo_->apply(*v,*Hv);
+      }
+    }
+    else {
+      throw ROL::Exception::NotImplemented(">>> DynConstraint<Real>::applyHessian_un_uo: Not Implemented!");
+    }
+  }
+  
   void applyHessian_un_un(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_un_un);
     #endif
@@ -1023,9 +916,9 @@ private:
       throw ROL::Exception::NotImplemented(">>> DynConstraint<Real>::applyHessian_un_un: Not Implemented!");
     }
   }
-
+  
   void applyHessian_uo_zf(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_uo_zf);
     #endif
@@ -1043,9 +936,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_un_zf(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_un_zf);
     #endif
@@ -1063,9 +956,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_uo_zp(const ROL::Ptr<std::vector<Real>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_uo_zp);
     #endif
@@ -1089,9 +982,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_un_zp(const ROL::Ptr<std::vector<Real>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_un_zp);
     #endif
@@ -1115,9 +1008,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zf_uo(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zf_uo);
     #endif
@@ -1135,9 +1028,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zf_un(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zf_un);
     #endif
@@ -1155,10 +1048,10 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zp_uo(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const std::vector<Real>> &v,
-                          const bool zeroOut = true) const {
+        		  const ROL::Ptr<const std::vector<Real>> &v,
+        		  const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zp_uo);
     #endif
@@ -1180,10 +1073,10 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zp_un(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const std::vector<Real>> &v,
-                          const bool zeroOut = true) const {
+        		  const ROL::Ptr<const std::vector<Real>> &v,
+        		  const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zp_un);
     #endif
@@ -1205,9 +1098,9 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zf_zf(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zf_zf);
     #endif
@@ -1225,10 +1118,10 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zf_zp(const ROL::Ptr<std::vector<Real>> &Hv,
-                          const ROL::Ptr<const Tpetra::MultiVector<>> &v,
-                          const bool zeroOut = true) const {
+        		  const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+        		  const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zf_zp);
     #endif
@@ -1252,10 +1145,10 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zp_zf(const ROL::Ptr<Tpetra::MultiVector<>> &Hv,
-                          const ROL::Ptr<const std::vector<Real>> &v,
-                          const bool zeroOut = true) const {
+        		  const ROL::Ptr<const std::vector<Real>> &v,
+        		  const bool zeroOut = true) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zp_zf);
     #endif
@@ -1277,10 +1170,10 @@ private:
       }
     }
   }
-
+  
   void applyHessian_zp_zp(const ROL::Ptr<std::vector<Real>> &Hv,
-                          const ROL::Ptr<const std::vector<Real>> &v,
-                          const bool zeroOut = true ) const {
+        		  const ROL::Ptr<const std::vector<Real>> &v,
+        		  const bool zeroOut = true ) const {
     #ifdef ROL_TIMERS
       Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::DynConstraintApplyHessian_zp_zp);
     #endif
@@ -1303,18 +1196,15 @@ private:
       }
     }
   }
-
+  
 public:
-
-  DynConstraint(const ROL::Ptr<PDE<Real>> &pde,
-                const ROL::Ptr<PDE<Real>> &mass,
-                const ROL::Ptr<MeshManager<Real>> &meshMgr,
-                const ROL::Ptr<const Teuchos::Comm<int>> &comm,
-                Teuchos::ParameterList &parlist,
-                std::ostream &outStream = std::cout)
+  
+  DynConstraint(const ROL::Ptr<DynamicPDE<Real>> &pde,
+        	const ROL::Ptr<MeshManager<Real>> &meshMgr,
+        	const ROL::Ptr<const Teuchos::Comm<int>> &comm,
+        	Teuchos::ParameterList &parlist,
+        	std::ostream &outStream = std::cout)
     : pde_                    (   pde ),
-      mass_                   (  mass ),
-      initialize_             (  true ),
       isResAssembled_         ( false ),
       isJuoAssembled_         ( false ),
       isJunAssembled_         ( false ),
@@ -1326,6 +1216,8 @@ public:
       isHzf_uoAssembled_      ( false ),
       isHzp_uoAssembled_      ( false ),
       isHun_unAssembled_      ( false ),
+      isHuo_unAssembled_      ( false ),
+      isHun_uoAssembled_      ( false ),
       isHun_zfAssembled_      ( false ),
       isHun_zpAssembled_      ( false ),
       isHzf_unAssembled_      ( false ),
@@ -1344,6 +1236,8 @@ public:
       isHzf_uoNotImplemented_ ( false ),
       isHzp_uoNotImplemented_ ( false ),
       isHun_unNotImplemented_ ( false ),
+      isHuo_unNotImplemented_ ( false ),
+      isHun_uoNotImplemented_ ( false ),
       isHun_zfNotImplemented_ ( false ),
       isHun_zpNotImplemented_ ( false ),
       isHzf_unNotImplemented_ ( false ),
@@ -1362,6 +1256,8 @@ public:
       isHzf_uoZero_           ( false ),
       isHzp_uoZero_           ( false ),
       isHun_unZero_           ( false ),
+      isHuo_unZero_           ( false ),
+      isHun_uoZero_           ( false ),
       isHun_zfZero_           ( false ),
       isHun_zpZero_           ( false ),
       isHzf_unZero_           ( false ),
@@ -1370,27 +1266,20 @@ public:
       isHzf_zpZero_           ( false ),
       isHzp_zfZero_           ( false ),
       isHzp_zpZero_           ( false ) {
-    // Get time discretization parameters
-    theta_  = parlist.sublist("Time Discretization").get("Theta", 1.0);
     // Construct assembler.
     assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
-    assembler_->setCellNodes(*mass_);
     // Construct solver.
     solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
     // Initialize state and constraint vectors.
     cvec_ = assembler_->createResidualVector();
-    uvec_ = assembler_->createStateVector();
-    uvec_->putScalar(static_cast<Real>(0));
-    // Assemble matrices
-    assembleMass();
   }
 
   const ROL::Ptr<Assembler<Real>> getAssembler(void) const {
     return assembler_;
   }
 
-  const ROL::Ptr<PDE<Real>> getPDE(void) const {
+  const ROL::Ptr<DynamicPDE<Real>> getPDE(void) const {
     return pde_;
   }
 
@@ -1409,6 +1298,8 @@ public:
     isHzf_uoAssembled_ = false;
     isHzp_uoAssembled_ = false;
     isHun_unAssembled_ = false;
+    isHuo_unAssembled_ = false;
+    isHun_uoAssembled_ = false;
     isHun_zfAssembled_ = false;
     isHun_zpAssembled_ = false;
     isHzf_unAssembled_ = false;
@@ -1424,24 +1315,10 @@ public:
        const ROL::Vector<Real>    &un,
        const ROL::Vector<Real>    &z,
        const ROL::TimeStamp<Real> &ts) const {
-    ROL::Ptr<Tpetra::MultiVector<>>        cf = getField(c);
-    ROL::Ptr<const Tpetra::MultiVector<>> uof = getConstField(uo);
-    ROL::Ptr<const Tpetra::MultiVector<>> unf = getConstField(un);
-    ROL::Ptr<const Tpetra::MultiVector<>>  zf = getConstField(z);
-    ROL::Ptr<const std::vector<Real>>      zp = getConstParameter(z);
-
-    const Real one(1);
+    const Real zero(0), one(1);
+    ROL::Ptr<Tpetra::MultiVector<>> cf = getField(c);
     assembleResidual(uo,un,z,ts);
-    c.zero();
-    cvec_->putScalar(static_cast<Real>(0));
-
-    // Apply old/new state contribution
-    applyMass(cf, uof);
-    // Add affine/control terms
-    cf->update(one, *vecR_, -one);
-    // Add new state contribution
-    applyMass(cvec_,unf);
-    cf->update(one, *cvec_, one);
+    cf->update(one, *vecR_, zero);
   }
 
   void solve(ROL::Vector<Real> &c,
@@ -1460,7 +1337,7 @@ public:
                   const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJuo(uo,z,ts);
+    assembleJuo(uo,un,z,ts);
     applyJacobian_uo(jvf,vf,false);
   }
 
@@ -1472,7 +1349,7 @@ public:
                   const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJun(un,z,ts);
+    assembleJun(uo,un,z,ts);
     applyJacobian_un(jvf,vf,false);
   }
 
@@ -1506,7 +1383,7 @@ public:
                          const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>     ajvf = getField(ajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJuo(uo,z,ts);
+    assembleJuo(uo,un,z,ts);
     applyJacobian_uo(ajvf,vf,true);
   }
 
@@ -1519,7 +1396,7 @@ public:
                          const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>     ajvf = getField(ajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJun(un,z,ts);
+    assembleJun(uo,un,z,ts);
     applyJacobian_un(ajvf,vf,true);
   }
 
@@ -1552,7 +1429,7 @@ public:
                          const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>     ijvf = getField(ijv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJun(un,z,ts);
+    assembleJun(uo,un,z,ts);
     solveForward(ijvf,vf);
   }
 
@@ -1565,7 +1442,7 @@ public:
                                 const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>    iajvf = getField(iajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleJun(un,z,ts);
+    assembleJun(uo,un,z,ts);
     solveAdjoint(iajvf,vf);
   }
 
@@ -1579,7 +1456,7 @@ public:
                            const ROL::TimeStamp<Real> &ts) const {
     ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
-    assembleHuo_uo(w,uo,z,ts);
+    assembleHuo_uo(w,uo,un,z,ts);
     applyHessian_uo_uo(ahwvf,vf);
   }
 
@@ -1591,7 +1468,10 @@ public:
                            const ROL::Vector<Real>    &un,
                            const ROL::Vector<Real>    &z,
                            const ROL::TimeStamp<Real> &ts) const {
-    ahwv.zero();
+    ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
+    ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
+    assembleHuo_un(w,uo,un,z,ts);
+    applyHessian_uo_un(ahwvf,vf);
   }
 
 
@@ -1606,11 +1486,11 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     if (ahwvf != ROL::nullPtr) {
-      assembleHuo_zf(w,uo,z,ts);
+      assembleHuo_zf(w,uo,un,z,ts);
       applyHessian_uo_zf(ahwvf,vf);
     }
     if (ahwvp != ROL::nullPtr) {
-      assembleHuo_zp(w,uo,z,ts);
+      assembleHuo_zp(w,uo,un,z,ts);
       applyHessian_uo_zp(ahwvp,vf);
     }
   }
@@ -1623,7 +1503,10 @@ public:
                            const ROL::Vector<Real>    &un,
                            const ROL::Vector<Real>    &z,
                            const ROL::TimeStamp<Real> &ts) const {
-    ahwv.zero();
+    assembleHun_uo(w,uo,un,z,ts);
+    ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
+    ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
+    applyHessian_un_uo(ahwvf,vf);
   }
 
 
@@ -1634,7 +1517,7 @@ public:
                            const ROL::Vector<Real>    &un,
                            const ROL::Vector<Real>    &z,
                            const ROL::TimeStamp<Real> &ts) const {
-    assembleHun_un(w,un,z,ts);
+    assembleHun_un(w,uo,un,z,ts);
     ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     applyHessian_un_un(ahwvf,vf);
@@ -1652,11 +1535,11 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>    ahwvf = getField(ahwv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     if (ahwvf != ROL::nullPtr) {
-      assembleHun_zf(w,un,z,ts);
+      assembleHun_zf(w,uo,un,z,ts);
       applyHessian_un_zf(ahwvf,vf);
     }
     if (ahwvp != ROL::nullPtr) {
-      assembleHun_zp(w,un,z,ts);
+      assembleHun_zp(w,uo,un,z,ts);
       applyHessian_un_zp(ahwvp,vf);
     }
   }
@@ -1673,12 +1556,12 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     ROL::Ptr<const std::vector<Real>>     vp = getConstParameter(v);
     if (vf != ROL::nullPtr) {
-      assembleHzf_uo(w,uo,z,ts);
+      assembleHzf_uo(w,uo,un,z,ts);
       applyHessian_zf_uo(ahwvf,vf);
     }
     if (vp != ROL::nullPtr) {
       bool zeroOut = (vf == ROL::nullPtr);
-      assembleHzp_uo(w,uo,z,ts);
+      assembleHzp_uo(w,uo,un,z,ts);
       applyHessian_zp_uo(ahwvf,vp,zeroOut);
     }
   }
@@ -1695,12 +1578,12 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
     ROL::Ptr<const std::vector<Real>>     vp = getConstParameter(v);
     if (vf != ROL::nullPtr) {
-      assembleHzf_un(w,un,z,ts);
+      assembleHzf_un(w,uo,un,z,ts);
       applyHessian_zf_un(ahwvf,vf);
     }
     if (vp != ROL::nullPtr) {
       bool zeroOut = (vf == ROL::nullPtr);
-      assembleHzp_un(w,un,z,ts);
+      assembleHzp_un(w,uo,un,z,ts);
       applyHessian_zp_un(ahwvf,vp,zeroOut);
     }
   }
@@ -1744,20 +1627,20 @@ public:
 
   void outputTpetraData() const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> matWriter;
-    if (matM_ != ROL::nullPtr) {
-      matWriter.writeSparseFile("mass.txt", matM_);
+    if (matJuo_ != ROL::nullPtr) {
+      matWriter.writeSparseFile("jacobian_uo.txt", matJuo_);
     }
     else {
       std::ofstream emptyfile;
-      emptyfile.open("mass.txt");
+      emptyfile.open("jacobian_uo.txt");
       emptyfile.close();
     }
-    if (matA_ != ROL::nullPtr) {
-      matWriter.writeSparseFile("stiffness.txt", matA_);
+    if (matJun_ != ROL::nullPtr) {
+      matWriter.writeSparseFile("jacobian_un.txt", matJun_);
     }
     else {
       std::ofstream emptyfile;
-      emptyfile.open("stiffness.txt");
+      emptyfile.open("jacobian_un.txt");
       emptyfile.close();
     }
     if (matJzf_ != ROL::nullPtr) {
