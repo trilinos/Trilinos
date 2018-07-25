@@ -60,7 +60,7 @@
    "avatar: filestem"              "{'mystem1','mystem2'}"
    "avatar: decision tree files"   "{'mystem1.trees','mystem2.trees'}"
    "avatar: names files"           "{'mystem1.names','mystem2.names'}"
-
+   "avatar: good class"            "1"
    "avatar: muelu parameter mapping"
      - "param0'
        - "muelu parameter"          "aggregation: threshold"
@@ -72,6 +72,7 @@
        - "avatar parameter"         "SWEEPS"
        - "muelu values"             "{1,2,3}"
        - "avatar values"            "{1,2,3}"
+
 
    Notional SetMueLuParameters "problemFeatures"  Structure
    "my feature #1"                "246.01"
@@ -103,6 +104,7 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   Teuchos::ParameterList pl_dummy;
   Teuchos::Array<std::string> ar_dummy;
+  int int_dummy;
 
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
@@ -115,6 +117,10 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   // This should be a MueLu parameter-to-Avatar parameter mapping (e.g. if Avatar doesn't like spaces)
   validParamList->set<Teuchos::ParameterList>("avatar: muelu parameter mapping",pl_dummy,"Mapping of MueLu to Avatar Parameters");
+
+  // "Good" Class ID for Avatar
+  validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
+
   
   return validParamList;
 }
@@ -161,6 +167,9 @@ void AvatarInterface::Setup() {
     avatarHandle_ = avatar_load(const_cast<char*>(filestem_[0].c_str()),const_cast<char*>(namesStrings_[0].c_str()),namesfile_is_a_string,const_cast<char*>(avatarStrings_[0].c_str()),treesfile_is_a_string);
 
   }
+
+  // Which class does Avatar consider "good"
+  avatarGoodClass_ = params_.get<int>("avatar: good class");
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
@@ -310,7 +319,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == 1) acceptableCombos.push_back(i);      
+      if(avatarOutput[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
