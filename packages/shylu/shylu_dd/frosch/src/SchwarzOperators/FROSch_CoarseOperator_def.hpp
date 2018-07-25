@@ -484,7 +484,7 @@ namespace FROSch {
             
             GOVec elementList(tmpCoarseMap->getNodeElementList());
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
-                CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),tmpCoarseMap->getMaxAllGlobalIndex()+1,elementList,0,CoarseSolveComm_);
+            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,elementList,0,CoarseSolveComm_);
             
         } else {
             FROSCH_ASSERT(0!=0,"Distribution type not defined...");
