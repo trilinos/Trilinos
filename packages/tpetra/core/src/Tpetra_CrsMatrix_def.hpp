@@ -8902,7 +8902,7 @@ namespace Tpetra {
 	// Combine all type1/2/3 lists, [filter them], then call the expert import constructor. 
 	Teuchos::Array<size_t> ReverseSendSizes;
 	Teuchos::Array<std::pair<int, GlobalOrdinal> > ReverseSendBuffer;
-//	Teuchos::Array<GO>           type3GIDs;
+
 	Teuchos::Array<LocalOrdinal> type3LIDs;
 	Teuchos::Array<int>          type3PIDs;
    
@@ -9063,7 +9063,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	    auto esfc = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMdestMat->expertStaticFillComplete"))));
 #endif 
-	    esfc_params->set("Timer Label",prefix+std::string("isMM eSFC"));
+	    esfc_params.set("Timer Label",prefix+std::string("isMM eSFC"));
 	    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
 	}
     }  // if(isMM)
@@ -9079,7 +9079,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	    auto esfcnotmm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete"))));
 #endif
-	    esfc_params->set("Timer Label",prefix+std::string("notMM eSFC"));
+	    esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
 	    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
 	}
     }
