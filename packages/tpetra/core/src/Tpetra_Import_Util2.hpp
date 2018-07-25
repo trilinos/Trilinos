@@ -200,7 +200,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
                          Teuchos::Array<int>& reversePIDs,
                          Teuchos::Array<LocalOrdinal>& reverseLIDs,
-                         Teuchos::Array<GlobalOrdinal>& reverseGIDs,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
     using ::Tpetra::Details::Behavior;
@@ -470,16 +469,13 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     
     reversePIDs.clear();
     reverseLIDs.clear();
-    reverseGIDs.clear();
     
     reversePIDs.reserve(AllReverseRecv.size());
     reverseLIDs.reserve(AllReverseRecv.size());
-    reverseGIDs.reserve(AllReverseRecv.size());
     
     for(auto itr = AllReverseRecv.begin();  itr!=newEndOfPairs; ++itr ) {
 	if((int)(itr->first) != MyPID) {
 	    reversePIDs.push_back((int)itr->first);
-	    reverseGIDs.push_back(itr->second);
 	    LocalOrdinal lid = MyDomainMap->getLocalElement(itr->second);
 	    reverseLIDs.push_back(lid);
 	}
