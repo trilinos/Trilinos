@@ -310,7 +310,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == 2) acceptableCombos.push_back(i);      
+      if(avatarOutput[i] == 1) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
