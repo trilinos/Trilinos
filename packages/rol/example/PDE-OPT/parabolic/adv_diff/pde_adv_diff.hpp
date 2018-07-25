@@ -63,21 +63,12 @@ template <class Real>
 class PDE_adv_diff : public PDE<Real> {
 private:
   // Finite element basis information
-  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
-  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtr_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs_;
   // Cell cubature information
-  ROL::Ptr<Intrepid::Cubature<Real> > cellCub_;
-  // Cell node information
-  ROL::Ptr<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
-  std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
+  ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
   // Finite element definition
-  ROL::Ptr<FE<Real> > fe_vol_;
-  // Local degrees of freedom on boundary, for each side of the reference cell (first index).
-  std::vector<std::vector<int> > fidx_;
-  // Coordinates of degrees freedom on boundary cells.
-  // Indexing:  [sideset number][local side id](cell number, value at dof)
-  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
+  ROL::Ptr<FE<Real>> fe_vol_;
 
   bool isLTI_;
   Real T_;
@@ -87,10 +78,10 @@ public:
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
-      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
+      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     else if (basisOrder == 2) {
-      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
+      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
@@ -103,10 +94,10 @@ public:
     T_     = parlist.sublist("Time Discretization").get("End Time",1.0);
   }
 
-  void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
-                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
@@ -115,16 +106,16 @@ public:
     // INITIALIZE RESIDUAL
     res = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
     // COMPUTE PDE COEFFICIENTS
-    ROL::Ptr<Intrepid::FieldContainer<Real> > kappa
+    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > V
+    ROL::Ptr<Intrepid::FieldContainer<Real>> V
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > rhs
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rhs
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(kappa,V,rhs);
     // COMPUTE DIFFUSION TERM
     // Compute grad(U)
-    ROL::Ptr<Intrepid::FieldContainer<Real> > gradU_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradU_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     // Multiply kappa * grad(U)
@@ -156,7 +147,7 @@ public:
 
     // ADD CONTROL TERM TO RESIDUAL
     int size = z_param->size();
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ctrl
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ctrl
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < size; ++i) {
       computeControlOperator(ctrl,(*z_param)[i],i);
@@ -165,25 +156,12 @@ public:
                                                     *(fe_vol_->NdetJ()),
                                                     Intrepid::COMP_CPP, true);
     }
-    // APPLY DIRICHLET CONDITIONS
-//    int numLocalSideIds = bdryCellLocIds_[0].size();
-//    for (int j = 0; j < numLocalSideIds; ++j) {
-//      int numCellsSide = bdryCellLocIds_[0][j].size();
-//      int numBdryDofs = fidx_[j].size();
-//      for (int k = 0; k < numCellsSide; ++k) {
-//        int cidx = bdryCellLocIds_[0][j][k];
-//        for (int l = 0; l < numBdryDofs; ++l) {
-//          (*res)(cidx,fidx_[j][l])
-//            = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[0][j])(k,fidx_[j][l]);
-//        }
-//      }
-//    }
   }
 
-  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
@@ -192,11 +170,11 @@ public:
     // INITILAIZE JACOBIAN
     jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
     // COMPUTE PDE COEFFICIENTS
-    ROL::Ptr<Intrepid::FieldContainer<Real> > kappa
+    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > V
+    ROL::Ptr<Intrepid::FieldContainer<Real>> V
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > rhs
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rhs
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(kappa,V,rhs);
     // COMPUTE DIFFUSION TERM
@@ -221,42 +199,26 @@ public:
                                                   *(fe_vol_->NdetJ()),
                                                   V_gradN,
                                                   Intrepid::COMP_CPP, true);
-    // APPLY DIRICHLET CONDITIONS
-//    int numLocalSideIds = bdryCellLocIds_[0].size();
-//    for (int j = 0; j < numLocalSideIds; ++j) {
-//      int numCellsSide = bdryCellLocIds_[0][j].size();
-//      int numBdryDofs = fidx_[j].size();
-//      for (int k = 0; k < numCellsSide; ++k) {
-//        int cidx = bdryCellLocIds_[0][j][k];
-//        for (int l = 0; l < numBdryDofs; ++l) {
-//          //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-//          for (int m = 0; m < f; ++m) {
-//            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-//          }
-//          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
-//        }
-//      }
-//    }
   }
 
-  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Jacobian_2): Jacobian is zero.");
   }
 
-  void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     // ADD CONTROL TERM TO RESIDUAL
     int size = z_param->size();
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ctrl
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ctrl
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < size; ++i) {
       jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
@@ -265,94 +227,82 @@ public:
                                                     *ctrl,
                                                     *(fe_vol_->NdetJ()),
                                                     Intrepid::COMP_CPP, false);
-      // APPLY DIRICHLET CONDITIONS
-//      int numLocalSideIds = bdryCellLocIds_[0].size();
-//      for (int j = 0; j < numLocalSideIds; ++j) {
-//        int numCellsSide = bdryCellLocIds_[0][j].size();
-//        int numBdryDofs = fidx_[j].size();
-//        for (int k = 0; k < numCellsSide; ++k) {
-//          int cidx = bdryCellLocIds_[0][j][k];
-//          for (int l = 0; l < numBdryDofs; ++l) {
-//            (*(jac[i]))(cidx,fidx_[j][l]) = static_cast<Real>(0);
-//          }
-//        }
-//      }
     }
   }
 
-  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_11): Hessian is zero.");
   }
 
-  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_12): Hessian is zero.");
   }
 
-  void Hessian_13(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_13(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_13): Hessian is zero.");
   }
 
-  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_21): Hessian is zero.");
   }
 
-  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_22): Hessian is zero.");
   }
 
-  void Hessian_23(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_23(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_23): Hessian is zero.");
   }
 
-  void Hessian_31(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_31(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_31): Hessian is zero.");
   }
 
-  void Hessian_32(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_32(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_32): Hessian is zero.");
   }
 
-  void Hessian_33(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_33(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_adv_diff::Hessian_33): Hessian is zero.");
   }
 
-  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
     // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
@@ -362,7 +312,7 @@ public:
     Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
   }
 
-  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
     // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
@@ -371,59 +321,22 @@ public:
     *riesz = *fe_vol_->massMat();
   }
 
-  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
-                    const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
-    volCellNodes_ = volCellNodes;
-    bdryCellNodes_ = bdryCellNodes;
-    bdryCellLocIds_ = bdryCellLocIds;
+  void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
+                    const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
+                    const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
     // Finite element definition.
-    fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
-    // Set local boundary DOFs.
-    fidx_ = fe_vol_->getBoundaryDofs();
-    // Compute Dirichlet values at DOFs.
-    int d = basisPtr_->getBaseCellTopology().getDimension();
-    int numSidesets = bdryCellLocIds_.size();
-    bdryCellDofValues_.resize(numSidesets);
-    for (int i=0; i<numSidesets; ++i) {
-      int numLocSides = bdryCellLocIds_[i].size();
-      bdryCellDofValues_[i].resize(numLocSides);
-      for (int j=0; j<numLocSides; ++j) {
-        int c = bdryCellLocIds_[i][j].size();
-        int f = basisPtr_->getCardinality();
-        bdryCellDofValues_[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
-        ROL::Ptr<Intrepid::FieldContainer<Real> > coords =
-          ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, d);
-        if (c > 0) {
-          fe_vol_->computeDofCoords(coords, bdryCellNodes_[i][j]);
-        }
-        for (int k=0; k<c; ++k) {
-          for (int l=0; l<f; ++l) {
-            std::vector<Real> dofpoint(d);
-            for (int m=0; m<d; ++m) {
-              dofpoint[m] = (*coords)(k, l, m);
-            }
-            (*bdryCellDofValues_[i][j])(k, l) = evaluateDirichlet(dofpoint, i, j);
-          }
-        }
-      }
-    }
+    fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes,basisPtr_,cellCub_);
   }
 
-  const ROL::Ptr<FE<Real> > getFE(void) const {
+  const ROL::Ptr<FE<Real>> getFE(void) const {
     return fe_vol_;
   }
 
 private:
-
-  Real evaluateDirichlet(const std::vector<Real> & coords, int sideset, int locSideId) const {
-    return static_cast<Real>(0);
-  }
-
   Real evaluateDiffusivity(const std::vector<Real> &x) const {
     return static_cast<Real>(1e-1);
   }
@@ -488,9 +401,9 @@ private:
     return source;
   }
 
-  void computeCoefficients(ROL::Ptr<Intrepid::FieldContainer<Real> > &kappa,
-                           ROL::Ptr<Intrepid::FieldContainer<Real> > &V,
-                           ROL::Ptr<Intrepid::FieldContainer<Real> > &rhs) const {
+  void computeCoefficients(ROL::Ptr<Intrepid::FieldContainer<Real>> &kappa,
+                           ROL::Ptr<Intrepid::FieldContainer<Real>> &V,
+                           ROL::Ptr<Intrepid::FieldContainer<Real>> &rhs) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int p = fe_vol_->gradN()->dimension(2);
@@ -522,7 +435,7 @@ private:
                      - half*(x[1]-yl[i])*(x[1]-yl[i]) / (sy*sy));
   }
   
-  void computeControlOperator(ROL::Ptr<Intrepid::FieldContainer<Real> > &ctrl,
+  void computeControlOperator(ROL::Ptr<Intrepid::FieldContainer<Real>> &ctrl,
                               const Real z, const int I) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
