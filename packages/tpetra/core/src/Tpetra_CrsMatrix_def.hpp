@@ -8159,12 +8159,12 @@ namespace Tpetra {
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
     const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();
     using Teuchos::as;
-  
+
     int MyPID = getComm ()->getRank ();
     //
     // Get the caller's parameters
     //
-    bool isMM = false; // optimize for matrix-matrix ops. 
+    bool isMM = false; // optimize for matrix-matrix ops.
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
@@ -8173,7 +8173,7 @@ namespace Tpetra {
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       matrixparams = sublist (params, "CrsMatrix");
       isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
-      
+
       int mm_optimization_core_count=0; // ~800 for serrano
       mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       int commSize = getComm() -> getSize();
@@ -8183,26 +8183,26 @@ namespace Tpetra {
 
 // cbl debug only, REMOVE before checkin.
     if(isMM && ::isMMOverride) {
-    	isMM=false;
+        isMM=false;
     }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;
-    if(!params.is_null()) 
-	label = params->get("Timer Label",label);
+    if(!params.is_null())
+        label = params->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     std::string tlstr;
     {
 
-	std::ostringstream os;
-	if(isMM) os<<":MM";
-	else os<<":notMM";
-	if(::isMMOverride) os<<"Over";
-	else os<<"NOver";
-	tlstr=os.str();
+        std::ostringstream os;
+        if(isMM) os<<":MM";
+        else os<<":notMM";
+        if(::isMMOverride) os<<"Over";
+        else os<<"NOver";
+        tlstr=os.str();
     }
-	Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
-    
+        Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
+
 #endif
 
     // Make sure that the input argument rowTransfer is either an
@@ -8254,7 +8254,7 @@ namespace Tpetra {
     // FIXME (mfh 15 May 2014) Wouldn't communication still be needed,
     // if the source Map is not distributed but the target Map is?
     const bool communication_needed = rowTransfer.getSourceMap ()->isDistributed ();
-    
+
     // Get the new domain and range Maps.  We need some of them for
     // error checking, now that we have the reverseMode parameter.
     RCP<const map_type> MyRowMap = reverseMode ?
@@ -8366,9 +8366,6 @@ namespace Tpetra {
       rowTransfer.getPermuteToLIDs () : rowTransfer.getPermuteFromLIDs ();
     Distributor& Distor = rowTransfer.getDistributor ();
 
-    // we use this in isMM neighbor discovery, for which reverseMode == false
-    ArrayView<const int> neigDiscExportPIDs =  rowTransfer.getExportPIDs (); 
-
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
     Teuchos::Array<int> TargetPids;
@@ -8393,14 +8390,14 @@ namespace Tpetra {
         Teuchos::null :
         ReducedRowMap->getComm ();
       destMat->removeEmptyProcessesInPlace (ReducedRowMap);
-    
+
       ReducedDomainMap = MyRowMap.getRawPtr () == MyDomainMap.getRawPtr () ?
         ReducedRowMap :
         MyDomainMap->replaceCommWithSubset (ReducedComm);
       ReducedRangeMap = MyRowMap.getRawPtr () == MyRangeMap.getRawPtr () ?
         ReducedRowMap :
         MyRangeMap->replaceCommWithSubset (ReducedComm);
-    
+
       // Reset the "my" maps
       MyRowMap    = ReducedRowMap;
       MyDomainMap = ReducedDomainMap;
@@ -8417,7 +8414,7 @@ namespace Tpetra {
     else {
       ReducedComm = MyRowMap->getComm ();
     }
-  
+
 
     /***************************************************/
     /***** 2) From Tpera::DistObject::doTransfer() ****/
@@ -8504,7 +8501,7 @@ namespace Tpetra {
       IntVectorType SourceRow_pids (getRowMap ());
       IntVectorType SourceCol_pids (getColMap ());
 
-      TargetRow_pids.putScalar (MyPID);     
+      TargetRow_pids.putScalar (MyPID);
       if (! reverseMode && xferAsImport != NULL) {
         SourceRow_pids.doExport (TargetRow_pids, *xferAsImport, INSERT);
       }
@@ -8535,7 +8532,7 @@ namespace Tpetra {
         "getDomainMap (), or (domainMap == rowTransfer.getTargetMap () and "
         "getDomainMap () == getRowMap ()).");
     }
-    
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
@@ -8575,12 +8572,12 @@ namespace Tpetra {
         destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        packCrsMatrixWithOwningPIDs (*this, 
+        packCrsMatrixWithOwningPIDs (*this,
                                      destMat->exports_,
-                                     numExportPacketsPerLID, 
+                                     numExportPacketsPerLID,
                                      ExportLIDs,
-                                     SourcePids, 
-                                     constantNumPackets, 
+                                     SourcePids,
+                                     constantNumPackets,
                                      Distor);
       }
       catch (std::exception& e) {
@@ -8612,21 +8609,21 @@ namespace Tpetra {
     }
 
 #else
-   
+
 
 
     // CBL packAndPrepare* methods modify numExportPacketsPerLID_.
       destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-      packCrsMatrixWithOwningPIDs (*this, 
+      packCrsMatrixWithOwningPIDs (*this,
                                    destMat->exports_,
-                                   numExportPacketsPerLID, 
+                                   numExportPacketsPerLID,
                                    ExportLIDs,
-                                   SourcePids, 
-                                   constantNumPackets, 
+                                   SourcePids,
+                                   constantNumPackets,
                                    Distor);
-  
+
 #endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
@@ -8732,7 +8729,7 @@ namespace Tpetra {
         }
       }
     }
-  
+
     /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
@@ -8750,15 +8747,15 @@ namespace Tpetra {
       getArrayViewFromDualView (destMat->imports_);
 
     size_t mynnz =
-      unpackAndCombineWithOwningPIDsCount (*this, 
-                                           RemoteLIDs, 
+      unpackAndCombineWithOwningPIDsCount (*this,
+                                           RemoteLIDs,
                                            hostImports,
                                            numImportPacketsPerLID,
-                                           constantNumPackets, 
-                                           Distor, 
+                                           constantNumPackets,
+                                           Distor,
                                            INSERT,
-                                           NumSameIDs, 
-                                           PermuteToLIDs, 
+                                           NumSameIDs,
+                                           PermuteToLIDs,
                                            PermuteFromLIDs);
 
     size_t N = BaseRowMap->getNodeNumElements ();
@@ -8785,23 +8782,23 @@ namespace Tpetra {
     // in a huge list of arrays is icky.  Can't we have a bit of an
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
-    unpackAndCombineIntoCrsArrays (*this, 
-                                   RemoteLIDs, 
+    unpackAndCombineIntoCrsArrays (*this,
+                                   RemoteLIDs,
                                    hostImports,
-                                   numImportPacketsPerLID, 
+                                   numImportPacketsPerLID,
                                    constantNumPackets,
-                                   Distor, 
-                                   INSERT, 
-                                   NumSameIDs, 
+                                   Distor,
+                                   INSERT,
+                                   NumSameIDs,
                                    PermuteToLIDs,
-                                   PermuteFromLIDs, 
-                                   N, 
-                                   mynnz, 
+                                   PermuteFromLIDs,
+                                   N,
+                                   mynnz,
                                    MyPID,
-                                   CSR_rowptr (), 
+                                   CSR_rowptr (),
                                    CSR_colind_GID (),
                                    Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
-                                   SourcePids (), 
+                                   SourcePids (),
                                    TargetPids);
 
     /**************************************************************/
@@ -8818,7 +8815,7 @@ namespace Tpetra {
                                                        CSR_colind_LID (),
                                                        CSR_colind_GID (),
                                                        BaseDomainMap,
-                                                       TargetPids, 
+                                                       TargetPids,
                                                        RemotePids,
                                                        MyColMap);
 
@@ -8843,7 +8840,7 @@ namespace Tpetra {
     if (ReducedComm.is_null ()) {
       return;
     }
-   
+
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
@@ -8889,199 +8886,204 @@ namespace Tpetra {
     // Pre-build the importer using the existing PIDs
     Teuchos::ParameterList esfc_params;
 
-    RCP<import_type> MyImport;   
+    RCP<import_type> MyImport;
 
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",true));
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Tail"))));
+#endif
     if( isMM && !MyImporter.is_null()) {
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	Teuchos::RCP<Teuchos::TimeMonitor> MMisMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMM Block"))));
+        Teuchos::TimeMonitor MMisMM (*TimeMonitor::getNewTimer(prefix + std::string("isMM Block")));
 #endif
-	// Combine all type1/2/3 lists, [filter them], then call the expert import constructor. 
-	Teuchos::Array<size_t> ReverseSendSizes;
-	Teuchos::Array<std::pair<int, GlobalOrdinal> > ReverseSendBuffer;
+        // Combine all type1/2/3 lists, [filter them], then call the expert import constructor.
 
-	Teuchos::Array<LocalOrdinal> type3LIDs;
-	Teuchos::Array<int>          type3PIDs;
-   
-	Teuchos::ArrayRCP<const size_t> rowptr;
-	Teuchos::ArrayRCP<const LO> colind;
-	Teuchos::ArrayRCP<const Scalar> vals;   
-	{
-	    
+        Teuchos::Array<LocalOrdinal> type3LIDs;
+        Teuchos::Array<int>          type3PIDs;
 
+        Teuchos::ArrayRCP<const size_t> rowptr;
+        Teuchos::ArrayRCP<const LO> colind;
+        Teuchos::ArrayRCP<const Scalar> vals;
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto gavMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMgetAllValues"))));
+            TimeMonitor tm_getAllValues (*TimeMonitor::getNewTimer(prefix + std::string("isMMgetAllValues")));
 #endif
-	    getAllValues(rowptr,colind,vals);
-	}
-	
-	{
+            getAllValues(rowptr,colind,vals);
+        }
+
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto aMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMrevNeighDis"))));
+            TimeMonitor tm_rnd (*TimeMonitor::getNewTimer(prefix + std::string("isMMrevNeighDis")));
 #endif
-	    Import_Util::reverseNeighborDiscovery(*this,
-						  rowptr,
-						  colind,
-						  rowTransfer,
+            Import_Util::reverseNeighborDiscovery(*this,
+                                                  rowptr,
+                                                  colind,
+                                                  rowTransfer,
 
-						  MyImporter,
-						  MyDomainMap,
-						  type3PIDs,
-						  type3LIDs,
-						  ReducedComm);
-	}
-       
-	Teuchos::ArrayView<const int>  EPID1 =  MyImporter->getExportPIDs();// SourceMatrix->graph->importer
-	Teuchos::ArrayView<const LO>   ELID1 =  MyImporter->getExportLIDs();
+                                                  MyImporter,
+                                                  MyDomainMap,
+                                                  type3PIDs,
+                                                  type3LIDs,
+                                                  ReducedComm);
+        }
 
-	Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
-	Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();
-	
-	const int numCols = getGraph()->getColMap()->getNodeNumElements(); // may be dup
-	// from EpetraExt_MMHelpers.cpp: build_type2_exports
-	std::vector<bool> IsOwned(numCols,true);
-	std::vector<int>  SentTo(numCols,-1);
-	if(!MyImporter.is_null()) 
-	    for(auto && rlid : MyImporter->getRemoteLIDs() ) // the remoteLIDs must be from sourcematrix
-		IsOwned[rlid]=false;
-	
-	std::vector<std::pair<int,GO> > usrtg;
-	usrtg.reserve(TEPID2.size());
-	
-	for(uint i=0;i<TEPID2.size() ;++i) {
-	    const LO  row = TELID2[i];
-	    const int pid = TEPID2[i];
-	    // skip sort, it'll be done later. 
-	    for(uint j=rowptr[row]; j<rowptr[row+1]; j++) {
-		    int col=colind[j];
-		    if(IsOwned[col] && SentTo[col]!=pid){
-			SentTo[col]    = pid;
-			GO gid = this->getColMap()->getGlobalElement(col); // *this is sourcematrix
-			usrtg.push_back(std::pair<int,GO>(pid,gid));
-		    }
-	    }
-	}
-// This sort can _not_ be omitted. 
-	std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order  
-	auto eopg = std ::unique(usrtg.begin(),usrtg.end());
-	usrtg.erase(eopg,usrtg.end());
-	
-	const uint type2_us_size= usrtg.size();
-	Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);;
-	Teuchos::ArrayRCP< LO>  ELID2=Teuchos::arcp(new  LO[type2_us_size],0,type2_us_size,true);;
-	
-	int pos=0;
-	for(auto && p : usrtg) {
-	    EPID2[pos]= p.first;
-	    ELID2[pos]= this->getDomainMap()->getLocalElement(p.second); 
-	    pos++;
-	}
+        Teuchos::ArrayView<const int>  EPID1 =  MyImporter->getExportPIDs();// SourceMatrix->graph->importer
+        Teuchos::ArrayView<const LO>   ELID1 =  MyImporter->getExportLIDs();
 
-	Teuchos::Array<int> & EPID3  = type3PIDs;
-	Teuchos::Array< LO> & ELID3  = type3LIDs;
-	GO InfGID = std::numeric_limits<GO>::max();
-	int InfPID = INT_MAX;
-#define MIN(x,y)    ((x)<(y)?(x):(y))
-#define MIN3(x,y,z) ((x)<(y)?(MIN(x,z)):(MIN(y,z)))
-	int i1=0, i2=0, i3=0;
-	int Len1 = EPID1.size();
-	int Len2 = EPID2.size();
-	int Len3 = EPID3.size();
-      
-	int MyLen=Len1+Len2+Len3;
+        Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
+        Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();
 
-	Teuchos::ArrayRCP<LO>  userExportLIDs = Teuchos::arcp(new LO[MyLen],0,MyLen,true);
-	Teuchos::ArrayRCP<int> userExportPIDs = Teuchos::arcp(new int[MyLen],0,MyLen,true);
-	int iloc = 0; // will be the size of the userExportLID/PIDs
-	{
+        const int numCols = getGraph()->getColMap()->getNodeNumElements(); // may be dup
+        // from EpetraExt_MMHelpers.cpp: build_type2_exports
+        std::vector<bool> IsOwned(numCols,true);
+        std::vector<int>  SentTo(numCols,-1);
+        if(!MyImporter.is_null())
+            for(auto && rlid : MyImporter->getRemoteLIDs() ) // the remoteLIDs must be from sourcematrix
+                IsOwned[rlid]=false;
+
+        // 25 Jul 2018: Change usrtg to ArrayRCP.
+        std::vector<std::pair<int,GO> > usrtg;
+        usrtg.reserve(TEPID2.size());
+
+        for(uint i=0;i<TEPID2.size() ;++i) {
+            const LO  row = TELID2[i];
+            const int pid = TEPID2[i];
+            // skip sort, it'll be done later.
+            for(uint j=rowptr[row]; j<rowptr[row+1]; j++) {
+                    int col=colind[j];
+                    if(IsOwned[col] && SentTo[col]!=pid){
+                        SentTo[col]    = pid;
+                        GO gid = this->getColMap()->getGlobalElement(col); // *this is sourcematrix
+                        usrtg.push_back(std::pair<int,GO>(pid,gid));
+                    }
+            }
+        }
+// This sort can _not_ be omitted.[
+        std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
+        auto eopg = std ::unique(usrtg.begin(),usrtg.end());
+        // 25 Jul 2018: Could just ignore the entries at and after eopg.
+        usrtg.erase(eopg,usrtg.end());
+
+        const uint type2_us_size= usrtg.size();
+        Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);
+        Teuchos::ArrayRCP< LO>  ELID2=Teuchos::arcp(new  LO[type2_us_size],0,type2_us_size,true);
+
+        int pos=0;
+        for(auto && p : usrtg) {
+            EPID2[pos]= p.first;
+            ELID2[pos]= this->getDomainMap()->getLocalElement(p.second);
+            pos++;
+        }
+
+        Teuchos::Array<int> & EPID3  = type3PIDs;
+        Teuchos::Array< LO> & ELID3  = type3LIDs;
+        GO InfGID = std::numeric_limits<GO>::max();
+        int InfPID = INT_MAX;
+#ifdef TPETRA_MIN3
+#  undef TPETRA_MIN3
+#endif // TPETRA_MIN3
+#define TPETRA_MIN3(x,y,z) ((x)<(y)?(std::min(x,z)):(std::min(y,z)))
+        int i1=0, i2=0, i3=0;
+        int Len1 = EPID1.size();
+        int Len2 = EPID2.size();
+        int Len3 = EPID3.size();
+
+        int MyLen=Len1+Len2+Len3;
+
+        Teuchos::ArrayRCP<LO>  userExportLIDs = Teuchos::arcp(new LO[MyLen],0,MyLen,true);
+        Teuchos::ArrayRCP<int> userExportPIDs = Teuchos::arcp(new int[MyLen],0,MyLen,true);
+        int iloc = 0; // will be the size of the userExportLID/PIDs
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto ssortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort"))));
-#endif
-
-	    while(i1 < Len1 || i2 < Len2 || i3 < Len3){
-		int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
-		int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
-		int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
-            
-		GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
-		GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
-		GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
-            
-		int MIN_PID = MIN3(PID1,PID2,PID3);
-		GO  MIN_GID = MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
-		bool added_entry=false;
-
-		if(PID1 == MIN_PID && GID1 == MIN_GID){
-		    userExportLIDs[iloc]=ELID1[i1];
-		    userExportPIDs[iloc]=EPID1[i1];
-		    i1++;
-		    added_entry=true;
-		    iloc++;
-		}
-		if(PID2 == MIN_PID && GID2 == MIN_GID){
-		    if(!added_entry) {
-			userExportLIDs[iloc]=ELID2[i2];
-			userExportPIDs[iloc]=EPID2[i2];
-			added_entry=true;
-			iloc++;
-		    }
-		    i2++;
-		}
-		if(PID3 == MIN_PID && GID3 == MIN_GID){
-		    if(!added_entry) {
-			userExportLIDs[iloc]=ELID3[i3];
-			userExportPIDs[iloc]=EPID3[i3];
-			iloc++;
-		    }
-		    i3++;
-		}
-	    }// end while
-	} // for type123sort
-	
-	{
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto ismmIctor = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor"))));
+            auto ssortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort"))));
 #endif
 
-	    Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
-	    // plist->set ("Debug", true);
+            while(i1 < Len1 || i2 < Len2 || i3 < Len3){
+                int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
+                int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
+                int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
 
-	    MyImport = rcp ( new import_type (MyDomainMap,
-					      MyColMap,
-					      RemotePids,
-					      userExportLIDs.view(0,iloc).getConst(),
-					      userExportPIDs.view(0,iloc).getConst(),
-					      plist) 
-		);
-	}
+                GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
+                GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
+                GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
 
+                int MIN_PID = TPETRA_MIN3(PID1,PID2,PID3);
+                GO  MIN_GID = TPETRA_MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+                bool added_entry=false;
 
-	{
+                if(PID1 == MIN_PID && GID1 == MIN_GID){
+                    userExportLIDs[iloc]=ELID1[i1];
+                    userExportPIDs[iloc]=EPID1[i1];
+                    i1++;
+                    added_entry=true;
+                    iloc++;
+                }
+                if(PID2 == MIN_PID && GID2 == MIN_GID){
+                    if(!added_entry) {
+                        userExportLIDs[iloc]=ELID2[i2];
+                        userExportPIDs[iloc]=EPID2[i2];
+                        added_entry=true;
+                        iloc++;
+                    }
+                    i2++;
+                }
+                if(PID3 == MIN_PID && GID3 == MIN_GID){
+                    if(!added_entry) {
+                        userExportLIDs[iloc]=ELID3[i3];
+                        userExportPIDs[iloc]=EPID3[i3];
+                        iloc++;
+                    }
+                    i3++;
+                }
+            }// end while
+        } // for type123sort
+
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto esfc = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMdestMat->expertStaticFillComplete"))));
-#endif 
-	    esfc_params.set("Timer Label",prefix+std::string("isMM eSFC"));
-	    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
-	}
+            auto ismmIctor = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor"))));
+#endif
+
+            Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
+            // plist->set ("Debug", true);
+
+            // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
+            MyImport = rcp ( new import_type (MyDomainMap,
+                                              MyColMap,
+                                              RemotePids,
+                                              userExportLIDs.view(0,iloc).getConst(),
+                                              userExportPIDs.view(0,iloc).getConst(),
+                                              plist)
+                );
+        }
+
+
+        {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+            TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMMdestMat->expertStaticFillComplete")));
+            esfc_params.set("Timer Label",prefix+std::string("isMM eSFC"));
+#endif
+            destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
+        }
     }  // if(isMM)
     else {
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	Teuchos::RCP<Teuchos::TimeMonitor> MMnotMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter"))));
+            TimeMonitor MMnotMM (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
 #endif
-	Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
-	mypars->set("Timer Label","notMMFrom_tAFC");
+            Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
+            mypars->set("Timer Label","notMMFrom_tAFC");
 
-	MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
-	{
+            MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
+        }
+        {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto esfcnotmm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete"))));
+            TimeMonitor esfcnotmm (*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
+            esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
 #endif
-	    esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
-	    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
-	}
+            destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
+        }
     }
   }
 

@@ -152,7 +152,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
     auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -173,7 +173,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -185,7 +185,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:postSetupExport: ");
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -212,17 +212,17 @@ namespace Tpetra {
     Teuchos::Array<int> dummy;
     // static int first = true;
     // if(first && :: isMMdump) {
-    // 	first = false;
-    // 	Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-    // 	cerrptr->setTabIndentStr(std::string("T"));
-    // 	Teuchos::FancyOStream& fancyCERR = *cerrptr;
-	
-    // 	fancyCERR<<std::flush;
-    // 	source->describe(fancyCERR,Teuchos::VERB_EXTREME);
-    // 	fancyCERR<<std::flush;
-    // 	cerrptr->setTabIndentStr(std::string("S"));
-    // 	target->describe(fancyCERR,Teuchos::VERB_EXTREME);
-    // 	fancyCERR<<std::flush;
+    //  first = false;
+    //  Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
+    //  cerrptr->setTabIndentStr(std::string("T"));
+    //  Teuchos::FancyOStream& fancyCERR = *cerrptr;
+
+    //  fancyCERR<<std::flush;
+    //  source->describe(fancyCERR,Teuchos::VERB_EXTREME);
+    //  fancyCERR<<std::flush;
+    //  cerrptr->setTabIndentStr(std::string("S"));
+    //  target->describe(fancyCERR,Teuchos::VERB_EXTREME);
+    //  fancyCERR<<std::flush;
     // }
 
 
@@ -230,7 +230,7 @@ namespace Tpetra {
     Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
     mypars->set("Timer Label","Naive_tAFC");
     init(source, target, false, dummy, mypars);
-#elif
+#else
     init(source, target, false, dummy, Teuchos::null);
 #endif
   }
@@ -276,8 +276,8 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import(const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
-	 Teuchos::Array<int> & remotePIDs,
-	 const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+         Teuchos::Array<int> & remotePIDs,
+         const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     debug_(tpetraImportDebugDefault)
   {
     init(source, target, true, remotePIDs, plist);
@@ -303,7 +303,7 @@ namespace Tpetra {
   }
   // cblcbl
   // This is the "createExpert" version of the constructor to be used with pid/gid pairs obtained from
-  // the reverse round of communication. 
+  // the reverse round of communication.
 
    template <class LocalOrdinal, class GlobalOrdinal, class Node>
    Import<LocalOrdinal,GlobalOrdinal,Node>::
@@ -329,7 +329,7 @@ namespace Tpetra {
     typedef Teuchos::Array<int>::size_type size_type;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
-    // Read "Debug" parameter from the input ParameterList.  
+    // Read "Debug" parameter from the input ParameterList.
     bool debug = tpetraImportDebugDefault;
     if (! plist.is_null ()) {
       try {
@@ -343,7 +343,7 @@ namespace Tpetra {
     //   os << myRank << ": constructExpert " << std::endl;
     //   *out_ << os.str ();
     // }
-   
+
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
     const size_type numSrcGids = sourceGIDs.size ();
@@ -354,7 +354,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
     auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -364,7 +364,7 @@ namespace Tpetra {
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
     Array<GO>  tRemoteGIDs;
-   
+
     setupSamePermuteRemote(tRemoteGIDs);
 
     Array<LO>& tRemoteLIDs = ImportData_->remoteLIDs_;
@@ -378,13 +378,13 @@ namespace Tpetra {
                          << "Importing to a submap of the target map.");
     TEUCHOS_TEST_FOR_EXCEPTION
       ( !(tRemotePIDs.size() == tRemoteGIDs.size() &&
-          tRemoteGIDs.size() == tRemoteLIDs.size()), 
+          tRemoteGIDs.size() == tRemoteLIDs.size()),
         std::runtime_error,
         "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:presort ");
     auto MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -394,7 +394,7 @@ namespace Tpetra {
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),
            tRemoteLIDs.begin ());
-    
+
   //Get rid of IDs that don't exist in SourceMap
     int cnt = 0;
     int indexIntoRemotePIDs = tRemotePIDs.size();
@@ -439,7 +439,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:cFSAR ");
     auto MM3 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -1126,7 +1126,7 @@ namespace Tpetra {
   setupExport(Teuchos::Array<GlobalOrdinal>& remoteGIDs,
               bool useRemotePIDs,
               Teuchos::Array<int>& userRemotePIDs,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist )
+              const Teuchos::RCP<Teuchos::ParameterList>& plist )
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -1232,7 +1232,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
     auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -1283,7 +1283,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:2 ");
     auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -1308,7 +1308,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
 
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
      prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
@@ -1333,7 +1333,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
 
-    if(!plist.is_null()) 
+    if(!plist.is_null())
       label = plist->get("Timer Label",label);
      prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
