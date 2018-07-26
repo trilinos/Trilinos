@@ -494,13 +494,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         tm = Teuchos::null;
       }
 
-      int* tempVector;
+      std::vector<int> tempVector;
       int min = 0, max = 10;
       int numInts = 0;
       if (cacheSize > 0) {
         cacheSize *= 1024; //convert to bytes
         numInts = cacheSize/sizeof(int) + 1;
-        tempVector = new int[numInts];
+        tempVector.reserve(numInts);
       }
 
       for(int solveno = 0; solveno<=numResolves; solveno++) {
@@ -519,7 +519,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined(HAVE_MUELU_EPETRA)
           if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
 #endif
-          //clear the cache
+          //clear the cache (and don't time it)
+          tm = Teuchos::null;
           int ttt = rand();
           for (int i=0; i<numInts; ++i)
             tempVector[i] += (min + (ttt % static_cast<int>(max - min + 1)));
@@ -615,10 +616,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
         }
       }// end resolves
-
-      if (cacheSize > 0) {
-        delete[] tempVector;
-      }
 
       comm->barrier();
       tm = Teuchos::null;
