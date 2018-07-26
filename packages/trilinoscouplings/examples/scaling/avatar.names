@@ -20,4 +20,4 @@
 18 skew_min        : continuous 
 19 skew_mean       : continuous 
 20 _DROP_TOL_      : continuous 
-21 Good            : class 0,1
+21 CostEst         : class -1,0,1
