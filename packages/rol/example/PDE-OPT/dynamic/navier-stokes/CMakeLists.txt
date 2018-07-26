@@ -20,7 +20,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     DynamicNavierStokesDataCopy
     SOURCE_FILES
-      input.xml plotresults.m channel.txt
+      input.xml plotresults.m plotFlow.m channel.txt
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
