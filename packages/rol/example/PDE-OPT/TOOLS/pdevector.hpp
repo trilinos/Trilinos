@@ -168,7 +168,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       #endif
       useRiesz_       = parlist.sublist("Vector").sublist("Sim").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Sim").get("Lump Riesz Map", false);
-      assembler.assemblePDERieszMap1(RieszMap_, pde);
+      assembler.assembleDynPDERieszMap1(RieszMap_, pde);
       useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
@@ -340,7 +340,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       #endif
       useRiesz_       = parlist.sublist("Vector").sublist("Sim").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Sim").get("Lump Riesz Map", false);
-      assembler.assemblePDERieszMap1(RieszMap_, pde);
+      assembler.assembleDynPDERieszMap1(RieszMap_, pde);
       useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
@@ -521,7 +521,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       #endif
       useRiesz_       = parlist.sublist("Vector").sublist("Opt").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Opt").get("Lump Riesz Map", false);
-      assembler.assemblePDERieszMap2(RieszMap_, pde);
+      assembler.assembleDynPDERieszMap2(RieszMap_, pde);
       useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
@@ -693,7 +693,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       #endif
       useRiesz_       = parlist.sublist("Vector").sublist("Opt").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Opt").get("Lump Riesz Map", false);
-      assembler.assemblePDERieszMap2(RieszMap_, pde);
+      assembler.assembleDynPDERieszMap2(RieszMap_, pde);
       useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {

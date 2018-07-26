@@ -1765,8 +1765,8 @@ void Assembler<Real>::assemblePDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
   }
 }
 template<class Real>
-void Assembler<Real>::assemblePDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
-                                     const ROL::Ptr<DynamicPDE<Real>> &pde) {
+void Assembler<Real>::assembleDynPDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
+                                        const ROL::Ptr<DynamicPDE<Real>> &pde) {
   try {
     // Initialize Riesz matrix if not done so already
     if ( R1 == ROL::nullPtr ) {
@@ -1813,8 +1813,8 @@ void Assembler<Real>::assemblePDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
   }
 }
 template<class Real>
-void Assembler<Real>::assemblePDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
-                                     const ROL::Ptr<DynamicPDE<Real>> &pde) {
+void Assembler<Real>::assembleDynPDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
+                                        const ROL::Ptr<DynamicPDE<Real>> &pde) {
   try {
     // Initialize Riesz matrix if not done so already
     if ( R2 == ROL::nullPtr ) {

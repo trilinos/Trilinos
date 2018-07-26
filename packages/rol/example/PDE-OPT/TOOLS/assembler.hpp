@@ -598,8 +598,8 @@ public:
   /***************************************************************************/
   void assemblePDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
                             const ROL::Ptr<PDE<Real>> &pde);
-  void assemblePDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
-                            const ROL::Ptr<DynamicPDE<Real>> &pde);
+  void assembleDynPDERieszMap1(ROL::Ptr<Tpetra::CrsMatrix<>> &R1,
+                               const ROL::Ptr<DynamicPDE<Real>> &pde);
   /***************************************************************************/
   /* End of functions for Riesz operator of simulation variables.            */
   /***************************************************************************/
@@ -610,8 +610,8 @@ public:
   /***************************************************************************/
   void assemblePDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
                             const ROL::Ptr<PDE<Real>> &pde);
-  void assemblePDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
-                            const ROL::Ptr<DynamicPDE<Real>> &pde);
+  void assembleDynPDERieszMap2(ROL::Ptr<Tpetra::CrsMatrix<>> &R2,
+                               const ROL::Ptr<DynamicPDE<Real>> &pde);
   /***************************************************************************/
   /* End of functions for Riesz operator of optimization variables.          */
   /***************************************************************************/
