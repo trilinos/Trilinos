@@ -29,6 +29,7 @@ minUy = min(min([Uy{:}])); maxUy = max(max([Uy{:}]));
 minUm = min(min([Um{:}])); maxUm = max(max([Um{:}]));
 minP  = min(min([P{:}]));  maxP  = max(max([P{:}]));
 
+axsize = 400;
 figure('Position', [100 100 4*axsize 4*axsize]);
 for i=1:nt-1
   subplot(3,2,1)
