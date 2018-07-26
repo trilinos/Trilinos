@@ -4820,9 +4820,9 @@ namespace Tpetra {
       label = params->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     using Teuchos::TimeMonitor;
-    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph"))));
+    
+    Teuchos::TimeMonitor all(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-all")))));
 #endif
-
 
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
@@ -4831,25 +4831,29 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::logic_error, "myGraph_ is null.  This is not allowed.");
 
-
-    // We will presume globalAssemble is not needed, so we do the ESFC on the graph
-    myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
-
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
+	Teuchos::TimeMonitor  graph(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph")))));
 #endif
-      this->computeGlobalConstants ();
+	// We will presume globalAssemble is not needed, so we do the ESFC on the graph
+	myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
     }
+
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM"))));
+	TimeMonitor  cgc(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC")));
 #endif
-
-    // Fill the local graph and matrix
-    fillLocalGraphAndMatrix (params);
-
+	if(params.is_null() || params->get("compute global constants",true))
+	    computeGlobalConstants ();
+    }
+    
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	TimeMonitor  fLGAM(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM")));
+#endif
+	// Fill the local graph and matrix
+	fillLocalGraphAndMatrix (params);
+    }
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
     // Now we're fill complete!
@@ -4866,7 +4870,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS"))));
+    TimeMonitor cIS(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS")));
 #endif
 
     checkInternalState();
@@ -8900,8 +8904,8 @@ namespace Tpetra {
 #endif
         // Combine all type1/2/3 lists, [filter them], then call the expert import constructor.
 
-        Teuchos::Array<LocalOrdinal> type3LIDs;
-        Teuchos::Array<int>          type3PIDs;
+        Teuchos::ArrayRCP<LocalOrdinal> type3LIDs;
+        Teuchos::ArrayRCP<int>          type3PIDs;
 
         Teuchos::ArrayRCP<const size_t> rowptr;
         Teuchos::ArrayRCP<const LO> colind;
@@ -8977,8 +8981,8 @@ namespace Tpetra {
             pos++;
         }
 
-        Teuchos::Array<int> & EPID3  = type3PIDs;
-        Teuchos::Array< LO> & ELID3  = type3LIDs;
+        Teuchos::ArrayView<int>  EPID3  = type3PIDs();
+        Teuchos::ArrayView< LO>  ELID3  = type3LIDs();
         GO InfGID = std::numeric_limits<GO>::max();
         int InfPID = INT_MAX;
 #ifdef TPETRA_MIN3
@@ -9046,8 +9050,6 @@ namespace Tpetra {
 #endif
 
             Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
-            // plist->set ("Debug", true);
-
             // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
             MyImport = rcp ( new import_type (MyDomainMap,
                                               MyColMap,

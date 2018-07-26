@@ -200,8 +200,8 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
-                         Teuchos::Array<int>& reversePIDs,
-                         Teuchos::Array<LocalOrdinal>& reverseLIDs,
+                         Teuchos::ArrayRCP<int>& reversePIDs,
+                         Teuchos::ArrayRCP<LocalOrdinal>& reverseLIDs,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
     using Teuchos::TimeMonitor;
@@ -274,7 +274,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
-    if(1) {
+    if(0) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	TimeMonitor rsb(*TimeMonitor::getNewTimer(prefix + std::string("isMMallaRCPbuild")));
 #endif
@@ -510,19 +510,28 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // ArrayRCP, we could return owning subviews via
     // ArrayRCP::persistingView.
 
-    reversePIDs.clear();
-    reverseLIDs.clear();
+    // reversePIDs.clear();
+    // reverseLIDs.clear();
 
-    reversePIDs.reserve(AllReverseRecv.size());
-    reverseLIDs.reserve(AllReverseRecv.size());
+    // reversePIDs.reserve(AllReverseRecv.size());
+    // reverseLIDs.reserve(AllReverseRecv.size());
 
+    int ARRsize = std::distance(AllReverseRecv.begin(),newEndOfPairs);
+    auto rPIDs = Teuchos::arcp(new int[ARRsize],0,ARRsize,true);
+    auto rLIDs = Teuchos::arcp(new LocalOrdinal[ARRsize],0,ARRsize,true);
+
+    int tsize=0;
     for(auto itr = AllReverseRecv.begin();  itr!=newEndOfPairs; ++itr ) {
         if((int)(itr->first) != MyPID) {
-            reversePIDs.push_back((int)itr->first);
+            reversePIDs[tsize]=(int)itr->first;
             LocalOrdinal lid = MyDomainMap->getLocalElement(itr->second);
-            reverseLIDs.push_back(lid);
+            reverseLIDs[tsize++]=lid;
+	    tsize++;
         }
     }
+
+    reversePIDs=rPIDs.persistingView(0,tsize);
+    reverseLIDs=rLIDs.persistingView(0,tsize);
 
     if(error){
         std::cerr<<errstr.str()<<std::flush;
