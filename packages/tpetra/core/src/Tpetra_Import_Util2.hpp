@@ -62,6 +62,8 @@
 #include <unistd.h>
 #include <tuple>
 #include <set> // debug only, remove CBL
+#include <unordered_set>// debug only, remove CBL
+#include <functional>// debug only, remove CBL
 
 namespace Tpetra {
 namespace Import_Util {
@@ -202,6 +204,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                          Teuchos::Array<LocalOrdinal>& reverseLIDs,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
+    using Teuchos::TimeMonitor;
     using ::Tpetra::Details::Behavior;
     using Kokkos::AllowPadding;
     using Kokkos::view_alloc;
@@ -210,7 +213,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     typedef GlobalOrdinal GO;
     typedef std::pair<GO,GO> pidgidpair_t;
     using Teuchos::RCP;
-    const std::string pfx {" Import_Util2::pAPRC:: "};
+    const std::string prefix {" Import_Util2::ReverseND:: "};
 
     typedef typename Tpetra::MultiVector< pidgidpair_t, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
     typedef typename dual_view_type::t_dev dev_view_type;
@@ -272,6 +275,10 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
     if(1) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	TimeMonitor rsb(*TimeMonitor::getNewTimer(prefix + std::string("isMMallaRCPbuild")));
+#endif
+
         for(uint i=0;i<NumRecvs;++i) {
             RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
             assert(RSB[i].size() == NumExportLIDs);
@@ -305,10 +312,21 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
             }
         }
     }
-    else{
+    else {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	TimeMonitor set_all(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSB")));
+#endif
+	
         // 25 Jul 2018: Consider std::unordered_set (hash table),
         // with an adequate prereservation ("bucket count").
+
         Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
+	{
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
+#endif	
+	
+
         for(size_t i=0; i < NumExportLIDs; i++) {
             LO lid = ExportLIDs[i];
             GO exp_pid = ExportPIDs[i];
@@ -318,18 +336,20 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                 if(pid_order!=-1) {
                     GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
                     auto tpair = pidgidpair_t(exp_pid,gid);
-                    // don't use a set here
-                    // NOTE: This would be more efficient if Reverse Iterators were used in the find, as
-                    // gid order tends to follow lid order, generally.
-                    //
                     // Even with a set, you could use insert hints.
                     // One of the insert() overloads takes an
                     // additional iterator argument, that is "near"
                     // the place where the thing will live.
-                    pidsets[pid_order].insert(tpair);
+                    pidsets[pid_order].insert(pidsets[pid_order].end(),tpair);
                 }
             }
         }
+	}
+
+	{
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	    TimeMonitor set_cpy(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBcpy")));
+#endif  
         int ii = 0;
         for(auto && s: ReverseSendSizes){
             s = pidsets.size();
@@ -340,16 +360,20 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
             std::copy(ps.begin(),ps.end(),RSB[jj]);
             ++jj;
         }
+	}
     } // end of set based packing.
 
     Teuchos::Array<int> ReverseRecvSizes(NumSends,-1);
 
-    Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
-    Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
+    // Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
+    // Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
+
+    Teuchos::Array<MPI_Request> rawBreq(ProcsFrom.size()+ProcsTo.size(), MPI_REQUEST_NULL);
 
     // 25 Jul 2018: MPI_TAG_UB is the largest tag value; could be < 32768.
-    const int mpi_tag_base_ = 135700000;
+    const int mpi_tag_base_ = 3;
 
+    int mpireq_idx=0;
     for(int i=0;i<ProcsTo.size();++i) {
         int Rec_Tag = mpi_tag_base_ + ProcsTo[i];
         int * thisrecv = (int *) (&ReverseRecvSizes[i]);
@@ -361,7 +385,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                   Rec_Tag,
                   rawComm,
                   &rawRequest);
-        rawRreq[i]=rawRequest;
+        rawBreq[mpireq_idx++]=rawRequest;
     }
     for(int i=0;i<ProcsFrom.size();++i) {
         int Send_Tag = mpi_tag_base_ + MyPID;
@@ -374,28 +398,40 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                   Send_Tag,
                   rawComm,
                   &rawRequest);
-        rawSreq[i]=rawRequest;
+        rawBreq[mpireq_idx++]=rawRequest;
     }
 
     // 25 Jul 2018: Can wait on both sends and receives in the same MPI_Waitall.
 
-    Teuchos::Array<MPI_Status> rawRstatus(rawRreq.size());
-    Teuchos::Array<MPI_Status> rawSstatus(rawSreq.size());
+ //    Teuchos::Array<MPI_Status> rawRstatus(rawRreq.size());
+//     Teuchos::Array<MPI_Status> rawSstatus(rawSreq.size());
 
-    const int err1 = MPI_Waitall (rawRreq.size(), rawRreq.getRawPtr(),
-                                  rawRstatus.getRawPtr());
+//     const int err1 = MPI_Waitall (rawRreq.size(), rawRreq.getRawPtr(),
+//                                   rawRstatus.getRawPtr());
 
-    if(err1) {
-        errstr <<MyPID<< "rE1 reverseNeighborDiscovery Mpi_Waitall error on receive ";
-        error=true;
-    }
+//     if(err1) {
+//         errstr <<MyPID<< "rE1 reverseNeighborDiscovery Mpi_Waitall error on receive ";
+//         error=true;
+//     }
 
 
-    const int errss = MPI_Waitall (rawSreq.size(),
-                                   rawSreq.getRawPtr(),
-                                   rawSstatus.getRawPtr());
+//     const int errss = MPI_Waitall (rawSreq.size(),
+//                                    rawSreq.getRawPtr(),
+//                                    rawSstatus.getRawPtr());
+// #ifdef HAVE_TPETRA_DEBUG
+//     if(errss) {
+//         errstr <<MyPID<< "sE1 reverseNeighborDiscovery Mpi_Waitall error on send ";
+//         error=true;
+//         std::cerr<<errstr.str()<<std::flush;
+//     }
+// #endif
+
+    Teuchos::Array<MPI_Status> rawBstatus(rawBreq.size());
+    const int err1 = MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
+				  rawBstatus.getRawPtr());
+
 #ifdef HAVE_TPETRA_DEBUG
-    if(errss) {
+    if(err1) {
         errstr <<MyPID<< "sE1 reverseNeighborDiscovery Mpi_Waitall error on send ";
         error=true;
         std::cerr<<errstr.str()<<std::flush;
@@ -414,6 +450,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     }
     Teuchos::ArrayRCP<pidgidpair_t >AllReverseRecv= Teuchos::arcp(new pidgidpair_t[totalexportpairrecsize],0,totalexportpairrecsize,true);
     int offset = 0;
+    mpireq_idx=0;
     for(int i=0;i<ProcsTo.size();++i) {
         int recv_data_size =    ReverseRecvSizes[i]*2;
         int recvData_MPI_Tag = mpi_tag_base_*2 + ProcsTo[i];
@@ -427,7 +464,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                   recvData_MPI_Tag,
                   rawComm,
                   &rawRequest);
-        rawRreq[i]=rawRequest;
+        rawBreq[mpireq_idx++]=rawRequest;
     }
 
     for(int ii=0;ii<ProcsFrom.size();++ii) {
@@ -438,19 +475,18 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         MPI_Isend(send_bptr,
                   send_data_size,
                   MPI_LONG_LONG_INT,
-                  ProcsFrom[ii],
+		  ProcsFrom[ii],
                   sendData_MPI_Tag,
                   rawComm,
                   &rawSequest);
 
-        rawSreq[ii]=rawSequest;
+        rawBreq[mpireq_idx++]=rawSequest;
     }
 
-    rawRstatus.clear(); rawRstatus.resize(ProcsTo.size());
 
-    const int err = MPI_Waitall (rawRreq.size(),
-                                 rawRreq.getRawPtr(),
-                                 rawRstatus.getRawPtr());
+    const int err = MPI_Waitall (rawBreq.size(),
+                                 rawBreq.getRawPtr(),
+                                 rawBstatus.getRawPtr());
 #ifdef HAVE_TPETRA_DEBUG
     if(err) {
         errstr <<MyPID<< "E3.r reverseNeighborDiscovery Mpi_Waitall error on receive ";
@@ -458,18 +494,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         std::cerr<<errstr.str()<<std::flush;
     }
 #endif
-    const int errs = MPI_Waitall (rawSreq.size(),
-                                  rawSreq.getRawPtr(),
-                                  rawSstatus.getRawPtr());
-
-#ifdef HAVE_TPETRA_DEBUG
-    if(errs) {
-        errstr <<MyPID<< "E3.s reverseNeighborDiscovery Mpi_Waitall error on receive ";
-        error=true;
-        std::cerr<<errstr.str()<<std::flush;
-    }
-#endif
-
+ 
     // 25 Jul 2018: Time the sort and unique, but not the "auto itr" loop.
 
     std::sort(AllReverseRecv.begin(), AllReverseRecv.end(), Tpetra::Import_Util::sort_PID_then_GID<GlobalOrdinal, GlobalOrdinal>);
