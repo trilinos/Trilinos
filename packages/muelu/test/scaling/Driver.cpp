@@ -500,7 +500,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if (cacheSize > 0) {
         cacheSize *= 1024; //convert to bytes
         numInts = cacheSize/sizeof(int) + 1;
-        tempVector.reserve(numInts);
+        tempVector.resize(numInts);
       }
 
       for(int solveno = 0; solveno<=numResolves; solveno++) {
