@@ -55,14 +55,6 @@ for i=1:nt-1
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
   subplot(3,2,2)
-  quiver(nodes(:,1), nodes(:,2), Ux{i+1}, Uy{i+1});
-  axis('equal','tight');
-  xlabel('x');
-  ylabel('y');
-  title(['Time/T = ',num2str(i/(nt-1))],'fontsize',16);
-  set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
-
-  subplot(3,2,4)
   trisurf(adj, nodes(:,1), nodes(:,2), Um{i+1});
   shading interp;
   view(0,90)
@@ -73,7 +65,7 @@ for i=1:nt-1
   title('Velocity Magnitude','fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
-  subplot(3,2,5)
+  subplot(3,2,4)
   trisurf(adj, nodes(:,1), nodes(:,2), P{i+1});
   shading interp;
   view(0,90)
@@ -82,6 +74,14 @@ for i=1:nt-1
   ylabel('y');
   %caxis([minP,maxP])
   title('Pressure','fontsize',16);
+  set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
+
+  subplot(3,2,[5 6])
+  quiver(nodes(:,1), nodes(:,2), Ux{i+1}, Uy{i+1});
+  axis('equal','tight');
+  xlabel('x');
+  ylabel('y');
+  title(['Time/T = ',num2str(i/(nt-1))],'fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
   drawnow
