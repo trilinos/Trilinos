@@ -105,7 +105,6 @@ public:
   }
 
   void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
     //con_->update_un(u,*ts_);
     con_->update(*uo_,u,*z_,*ts_);
     con_->value(*c1_,*uo_,u,*z_,*ts_);

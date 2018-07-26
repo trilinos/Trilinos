@@ -358,7 +358,6 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>      jvf = getField(jv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    const Real one(1);
     assemble(z,ts);
     applyJacobian_uo(jvf,vf,false);
   }
@@ -411,7 +410,6 @@ public:
     ROL::Ptr<Tpetra::MultiVector<>>     ajvf = getField(ajv);
     ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
 
-    const Real one(1);
     assemble(z,ts);
     applyJacobian_uo(ajvf,vf,true);
   }
@@ -443,7 +441,6 @@ public:
     ROL::Ptr<const Tpetra::MultiVector<>> zf = getConstField(z);
     ROL::Ptr<const std::vector<Real>>     zp = getConstParameter(z);
 
-    const Real one(1);
     assemble(z,ts);
     if (zf != ROL::nullPtr) {
       applyJacobian_zf(ajvf,vf,true);

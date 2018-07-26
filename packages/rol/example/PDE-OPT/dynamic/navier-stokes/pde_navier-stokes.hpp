@@ -465,7 +465,6 @@ public:
     int c  = u_coeff->dimension(0);
     int fv = basisPtrVel_->getCardinality();
     int fp = basisPtrPrs_->getCardinality();
-    int d  = cellCub_->getDimension();
 
     // Initialize residuals.
     Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
@@ -487,7 +486,6 @@ public:
     J[2][0] = ROL::makePtrFromRef(presvelX_jac); J[2][1] = ROL::makePtrFromRef(presvelY_jac); J[2][2] = ROL::makePtrFromRef(prespres_jac);
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(jac, J);
-
   }
 
   void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
@@ -501,7 +499,6 @@ public:
     int p  = cellCub_->getNumPoints();
     int fv = basisPtrVel_->getCardinality();
     int fp = basisPtrPrs_->getCardinality();
-    int d  = cellCub_->getDimension();
  
     // Initialize residuals.
     Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);

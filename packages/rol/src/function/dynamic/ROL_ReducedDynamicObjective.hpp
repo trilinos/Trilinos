@@ -484,7 +484,6 @@ private:
         //stateSketch_->advance(one,*uhist_[0],0,one);
       }
       // Run time stepper
-      Real valk(0);
       size_type index;
       for (size_type k = 1; k < Nt_; ++k) {
         index = (useSketch_ ? 1 : k);

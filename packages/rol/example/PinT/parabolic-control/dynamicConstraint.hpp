@@ -133,7 +133,7 @@ private:
   }
 
   void apply_pde_jacobian(std::vector<Real> &jv, const std::vector<Real> &v, const std::vector<Real> &u) const {
-    const Real zero(0), half(0.5), two(2), three(3), four(4), six(6);
+    const Real zero(0), half(0.5), two(2), six(6);
     jv.clear();
     jv.resize(nx_,zero);
     Real phi1(0), phi2(0), f(0), x(0), w(0);

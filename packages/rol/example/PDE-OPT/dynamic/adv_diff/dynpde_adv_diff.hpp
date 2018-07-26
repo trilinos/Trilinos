@@ -195,7 +195,6 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    const Real one(1);
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
@@ -250,9 +249,6 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     const Real one(1);
-    // GET DIMENSIONS
-    int c = fe_vol_->gradN()->dimension(0);
-    int f = fe_vol_->gradN()->dimension(1);
     // GET TIME STEP INFORMATION
     Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
     // ADD CONTROL TERM TO RESIDUAL

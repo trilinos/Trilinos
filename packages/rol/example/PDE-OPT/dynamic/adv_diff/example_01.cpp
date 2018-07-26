@@ -228,6 +228,9 @@ int main(int argc, char *argv[]) {
     std::stringstream ufile;
     ufile << "state." << nt-1 << ".txt";
     dyn_con->outputTpetraVector(uo_ptr, ufile.str());
+    *outStream << "Output time: "
+               << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

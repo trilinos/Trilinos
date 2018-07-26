@@ -196,7 +196,6 @@ public:
     // Get relevant dimensions
     const int c = fe_->gradN()->dimension(0);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
     // Initialize output val
     val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
     // Evaluate control on FE basis
@@ -225,7 +224,6 @@ public:
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
     // Initialize output grad
     grad = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
     // Evaluate state on FE basis
@@ -271,7 +269,6 @@ public:
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
     ROL::Ptr<Intrepid::FieldContainer<Real>> valV_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
