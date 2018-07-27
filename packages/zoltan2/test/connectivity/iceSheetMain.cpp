@@ -194,6 +194,14 @@ int main(int narg, char **arg)
   int me = comm->getRank();
   int ierr = 0;
 
+  // Initialize Teuchos timer
+  Teuchos::RCP<Teuchos::Time>
+         timeFileRead(Teuchos::TimeMonitor::getNewTimer("00 FILE READ")),
+         timeDistribute(Teuchos::TimeMonitor::getNewTimer("01 DISTRIBUTE")),
+         timeConstruct(Teuchos::TimeMonitor::getNewTimer("02 CONSTRUCT")),
+         timeSolve(Teuchos::TimeMonitor::getNewTimer("03 SOLVE"));
+
+
   // Test that the vtxLabel struct correctly overloads operators
   //declare all necessary variables
   int n;
@@ -203,6 +211,7 @@ int main(int narg, char **arg)
   int* boundary_flags;
  
   //read in the input files, and construct the global problem instance
+  timeFileRead->start();
   if(me == 0){
 
     read_grounded_file(arg[3],n,grounded_flags);
@@ -214,7 +223,11 @@ int main(int narg, char **arg)
     std::cout<<"n = "<<n<<"\n";
   }
   
+  timeFileRead->stop();
+
   //broadcast n and m, so other processors can initialize memory.
+
+  timeDistribute->start();
 
   Teuchos::broadcast<int,int>(*comm,0,1,&n); 
   Teuchos::broadcast<int,unsigned>(*comm,0,1,&m);
@@ -321,6 +334,7 @@ int main(int narg, char **arg)
   Teuchos::RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,gids(),0,comm));
   Teuchos::RCP<const map_t> mapOwned = rcp(new map_t(dummy,gids(0,nLocalOwned),0,comm));
   
+  timeDistribute->stop();
   
   //create local csr graph instances from the local src/dst arrays
   int* out_array;
@@ -354,6 +368,19 @@ int main(int narg, char **arg)
   }
 
   std::cout<<me<<":\tremoved "<<lnum_removed<<" local owned vertices\n";
+
+  // Test results versus accepted answer
+  // Proc 0 reads file of accepted answers into buffer
+  // Proc 0 broadcasts that buffer
+  // Every processor checks its locally owned vertices' answers with the
+  // appropriate entries of the buffer (as determined by mapOwned).
+  // Count how many differ from expected
+  // Allreduce differ counts
+  // if anyone differed, print FAIL; else print PASS
+
+  // Report the timers
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 
   return 0;
 }
