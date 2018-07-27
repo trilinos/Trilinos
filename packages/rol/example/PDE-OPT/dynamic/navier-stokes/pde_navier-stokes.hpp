@@ -64,23 +64,23 @@ template <class Real>
 class PDE_NavierStokes : public PDE<Real> {
 private:
   // Finite element basis information
-  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrVel_;
-  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrPrs_;
-  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtrVel_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtrPrs_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs_;
   // Cell cubature information
-  ROL::Ptr<Intrepid::Cubature<Real> > cellCub_;
-  ROL::Ptr<Intrepid::Cubature<Real> > bdryCub_;
+  ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
+  ROL::Ptr<Intrepid::Cubature<Real>> bdryCub_;
   // Cell node information
-  std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
+  std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
-  ROL::Ptr<FE<Real> > feVel_;
-  ROL::Ptr<FE<Real> > fePrs_;
-  std::vector<ROL::Ptr<FE<Real> > > feVelBdry_;
+  ROL::Ptr<FE<Real>> feVel_;
+  ROL::Ptr<FE<Real>> fePrs_;
+  std::vector<ROL::Ptr<FE<Real>>> feVelBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
-  std::vector<std::vector<int> > fvidx_;
-  std::vector<std::vector<int> > fpidx_;
+  std::vector<std::vector<int>> fvidx_;
+  std::vector<std::vector<int>> fpidx_;
   // Field pattern, offsets, etc.
-  std::vector<std::vector<int> > fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
+  std::vector<std::vector<int>> fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
   int numFields_;                                // number of fields (equations in the PDE)
   int numDofs_;                                  // total number of degrees of freedom for all (local) fields
   std::vector<int> offset_;                      // for each field, a counting offset
@@ -89,13 +89,13 @@ private:
   // Reynolds number.
   Real Re_;
 
-  ROL::Ptr<FieldHelper<Real> > fieldHelper_;
+  ROL::Ptr<FieldHelper<Real>> fieldHelper_;
 
   Real viscosityFunc(const std::vector<Real> & coords) const {
     return static_cast<Real>(1)/Re_;
   }
 
-  void computeViscosity(ROL::Ptr<Intrepid::FieldContainer<Real> > &nu) const {
+  void computeViscosity(ROL::Ptr<Intrepid::FieldContainer<Real>> &nu) const {
     int c = feVel_->gradN()->dimension(0);
     int p = feVel_->gradN()->dimension(2);
     int d = feVel_->gradN()->dimension(3);
@@ -114,8 +114,8 @@ private:
 public:
   PDE_NavierStokes(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
-    basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
+    basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
     basisPtrs_.clear();
     basisPtrs_.push_back(basisPtrVel_);  // Velocity X
     basisPtrs_.push_back(basisPtrVel_);  // Velocity Y
@@ -150,10 +150,10 @@ public:
     }
   }
 
-  void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
-                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
     int p  = cellCub_->getNumPoints();
@@ -165,42 +165,40 @@ public:
     Intrepid::FieldContainer<Real> velX_res(c, fv);
     Intrepid::FieldContainer<Real> velY_res(c, fv);
     Intrepid::FieldContainer<Real> pres_res(c, fp);
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > R;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> R;
     R.resize(numFields_);
     R[0] = ROL::makePtrFromRef(velX_res);
     R[1] = ROL::makePtrFromRef(velY_res);
     R[2] = ROL::makePtrFromRef(pres_res);
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U;
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nu =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nu =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nuGradVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nuGradVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nuGradVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nuGradVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVel_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVel_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valPres_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valPres_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > gradVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > gradVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > divVel_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> divVel_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelDotgradVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelDotgradVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelDotgradVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelDotgradVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     feVel_->evaluateValue(valVelX_eval, U[0]);
     feVel_->evaluateValue(valVelY_eval, U[1]);
@@ -276,10 +274,10 @@ public:
     fieldHelper_->combineFieldCoeff(res, R);
   }
 
-  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
     int p  = cellCub_->getNumPoints();
@@ -297,7 +295,7 @@ public:
     Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J;
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
     J.resize(numFields_);
     J[0].resize(numFields_);
     J[1].resize(numFields_);
@@ -307,45 +305,45 @@ public:
     J[2][0] = ROL::makePtrFromRef(presvelX_jac); J[2][1] = ROL::makePtrFromRef(presvelY_jac); J[2][2] = ROL::makePtrFromRef(prespres_jac);  
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nu =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nu =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nuGradPhiX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nuGradPhiX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > nuGradPhiY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> nuGradPhiY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVel_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVel_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > gradVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddxVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddxVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddyVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddyVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddxVelXPhiX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddxVelXPhiX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddyVelXPhiY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddyVelXPhiY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > gradVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddxVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddxVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddyVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddyVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddyVelYPhiY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddyVelYPhiY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > ddxVelYPhiX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> ddxVelYPhiX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelDotgradPhiX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelDotgradPhiX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelDotgradPhiY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelDotgradPhiY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
     feVel_->evaluateValue(valVelX_eval, U[0]);
     feVel_->evaluateValue(valVelY_eval, U[1]);
@@ -457,12 +455,19 @@ public:
   }
 
 
-  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
-    // Retrieve dimensions.
-    int c  = u_coeff->dimension(0);
+  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    if (z_coeff != ROL::nullPtr) {
+      // Retrieve dimensions.
+      int c  = u_coeff->dimension(0);
+      jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_, numDofs_);
+    }
+    else {
+      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_2): Jacobian is zero.");
+    }
+/*
     int fv = basisPtrVel_->getCardinality();
     int fp = basisPtrPrs_->getCardinality();
 
@@ -476,7 +481,7 @@ public:
     Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J;
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
     J.resize(numFields_);
     J[0].resize(numFields_);
     J[1].resize(numFields_);
@@ -486,13 +491,32 @@ public:
     J[2][0] = ROL::makePtrFromRef(presvelX_jac); J[2][1] = ROL::makePtrFromRef(presvelY_jac); J[2][2] = ROL::makePtrFromRef(prespres_jac);
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(jac, J);
+*/
   }
 
-  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    if (z_param != ROL::nullPtr) {
+      // Retrieve dimensions.
+      int size = z_param->size();
+      int c    = u_coeff->dimension(0);
+      jac.resize(size,ROL::nullPtr);
+      for (int i = 0; i < size; ++i) {
+        jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
+      }
+    }
+    else {
+      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_3): Jacobian is zero.");
+    }
+  }
+
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
 //    throw Exception::NotImplemented("");
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
@@ -510,7 +534,7 @@ public:
     Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J;
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
     J.resize(numFields_);
     J[0].resize(numFields_);
     J[1].resize(numFields_);
@@ -520,17 +544,17 @@ public:
     J[2][0] = ROL::makePtrFromRef(presvelX_jac); J[2][1] = ROL::makePtrFromRef(presvelY_jac); J[2][2] = ROL::makePtrFromRef(prespres_jac);  
 
     // Split l_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > L;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> L;
     fieldHelper_->splitFieldCoeff(L, l_coeff);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelX_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelX_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelY_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelY_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelXPhi_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelXPhi_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelYPhi_eval =
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valVelYPhi_eval =
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
     feVel_->evaluateValue(valVelX_eval, L[0]);
     feVel_->evaluateValue(valVelY_eval, L[1]);
@@ -588,31 +612,85 @@ public:
 
   }
 
-  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_12): Hessian is zero.");
   }
 
-  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_13(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_13): Hessian is zero.");
+  }
+
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_21): Hessian is zero.");
   }
 
-  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_22): Hessian is zero.");
   }
 
-  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+  void Hessian_23(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_23): Hessian is zero.");
+  }
+
+  void Hessian_31(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_31): Hessian is zero.");
+  }
+
+  void Hessian_32(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_32): Hessian is zero.");
+  }
+
+  void Hessian_33(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    if (z_param != ROL::nullPtr) {
+      // Retrieve dimensions.
+      int size = z_param->size();
+      int c    = u_coeff->dimension(0);
+      std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> tmp(size,ROL::nullPtr);
+      hess.resize(size,tmp);
+      for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+          hess[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
+        }
+      }
+    }
+    else {
+      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_3): Jacobian is zero.");
+    }
+  }
+
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
     // Retrieve dimensions.
     int c  = feVel_->N()->dimension(0);
     int fv = basisPtrVel_->getCardinality();
@@ -628,7 +706,7 @@ public:
     Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J;
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
     J.resize(numFields_);
     J[0].resize(numFields_);
     J[1].resize(numFields_);
@@ -647,7 +725,7 @@ public:
     fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
-  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
     // Retrieve dimensions.
     int c  = feVel_->N()->dimension(0);
     int fv = basisPtrVel_->getCardinality();
@@ -663,7 +741,7 @@ public:
     Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
     Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J;
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
     J.resize(numFields_);
     J[0].resize(numFields_);
     J[1].resize(numFields_);
@@ -682,7 +760,7 @@ public:
     fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
-  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {
     return basisPtrs_;
   }
 
@@ -706,24 +784,24 @@ public:
     }
   }
 
-  void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
+  void setFieldPattern(const std::vector<std::vector<int>> & fieldPattern) {
     fieldPattern_ = fieldPattern;
     fieldHelper_ = ROL::makePtr<FieldHelper<Real>>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
   }
 
-  const ROL::Ptr<FE<Real> > getVelocityFE(void) const {
+  const ROL::Ptr<FE<Real>> getVelocityFE(void) const {
     return feVel_;
   }
 
-  const ROL::Ptr<FE<Real> > getPressureFE(void) const {
+  const ROL::Ptr<FE<Real>> getPressureFE(void) const {
     return fePrs_;
   }
 
-  const std::vector<ROL::Ptr<FE<Real> > > getVelocityBdryFE(void) const {
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(void) const {
     return feVelBdry_;
   }
 
-  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset = -1) const {
+  const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
     int side = sideset;
     if ( sideset < 0 ) {
       side = 4;
@@ -731,7 +809,7 @@ public:
     return bdryCellLocIds_[side];
   }
 
-  const ROL::Ptr<FieldHelper<Real> > getFieldHelper(void) const {
+  const ROL::Ptr<FieldHelper<Real>> getFieldHelper(void) const {
     return fieldHelper_;
   }
 

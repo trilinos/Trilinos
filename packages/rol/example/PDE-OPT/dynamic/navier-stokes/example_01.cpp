@@ -94,6 +94,10 @@ int main(int argc, char *argv[]) {
     int nt         = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
     RealT T        = parlist->sublist("Time Discretization").get("End Time",             1.0);
     RealT dt       = T/static_cast<RealT>(nt);
+    int verbosity  = parlist->sublist("General").get("Print Verbosity", 0);
+    verbosity      = (myRank==0 ? verbosity : 0);
+    parlist->sublist("General").set("Print Verbosity", verbosity);
+    bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", false);
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -121,32 +125,40 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<Tpetra::MultiVector<>> uo_ptr = assembler->createStateVector();
     ROL::Ptr<Tpetra::MultiVector<>> un_ptr = assembler->createStateVector();
     ROL::Ptr<Tpetra::MultiVector<>> ck_ptr = assembler->createResidualVector();
-    ROL::Ptr<Tpetra::MultiVector<>> zk_ptr = assembler->createControlVector();
     ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck, zk;
     u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,*assembler,*parlist);
     uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,*assembler,*parlist);
     un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,*assembler,*parlist);
     ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,*assembler,*parlist);
-    zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,*assembler,*parlist);
+    if (!useParametricControl) {
+      ROL::Ptr<Tpetra::MultiVector<>> zk_ptr = assembler->createControlVector();
+      zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,*assembler,*parlist);
+    }
+    else {
+      zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(1));
+    }
     ROL::Ptr<ROL::PartitionedVector<RealT>> z
       = ROL::PartitionedVector<RealT>::create(*zk, nt);
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
-    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(1,ROL::nullPtr);
+    RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
+    std::vector<RealT> wts = {w1};
     qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(*parlist,
                                                               pde->getVelocityFE(),
                                                               pde->getPressureFE(),
                                                               pde->getFieldHelper());
-    qoi_vec[1] = ROL::makePtr<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
-                                                                 pde->getPressureFE(),
-                                                                 pde->getVelocityBdryFE(),
-                                                                 pde->getBdryCellLocIds(),
-                                                                 pde->getFieldHelper());
-    RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
-    RealT w2 = parlist->sublist("Problem").get("Control Cost",1e-2);
-    std::vector<RealT> wts = {w1, w2};
+    if (!useParametricControl) {
+      qoi_vec.push_back(ROL::makePtr<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
+                                                                        pde->getPressureFE(),
+                                                                        pde->getVelocityBdryFE(),
+                                                                        pde->getBdryCellLocIds(),
+                                                                        pde->getFieldHelper()));
+      RealT w2 = parlist->sublist("Problem").get("Control Cost",1e-2);
+      wts.push_back(w2);
+    }
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
     ROL::Ptr<LTI_Objective<RealT>> dyn_obj
@@ -230,9 +242,24 @@ int main(int argc, char *argv[]) {
       ufile << "state." << k-1 << ".txt";
       dyn_con->outputTpetraVector(uo_ptr, ufile.str());
       // Print current control
-      std::stringstream zfile;
-      zfile << "control." << k-1 << ".txt";
-      dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(k-1))->getVector(),zfile.str());
+      if (!useParametricControl) {
+        std::stringstream zfile;
+        zfile << "control." << k-1 << ".txt";
+        dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(k-1))->getVector(),zfile.str());
+      }
+      else {
+        if (myRank == 0) {
+          std::stringstream zname;
+          zname << "control." << k-1 << ".txt";
+          std::ofstream zfile;
+          zfile.open(zname.str());
+          zfile << std::scientific << std::setprecision(15);
+          ROL::Ptr<std::vector<RealT>> zn
+            = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k-1))->getParameter()->getVector();
+          zfile << std::right << std::setw(25) << (*zn)[0];
+          zfile.close();
+        }
+      }
       // Advance time stepper
       dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
       uo->set(*un);
@@ -242,9 +269,24 @@ int main(int argc, char *argv[]) {
     ufile << "state." << nt-1 << ".txt";
     dyn_con->outputTpetraVector(uo_ptr, ufile.str());
     // Print current control
-    std::stringstream zfile;
-    zfile << "control." << nt-1 << ".txt";
-    dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(nt-1))->getVector(),zfile.str());
+    if (!useParametricControl) {
+      std::stringstream zfile;
+      zfile << "control." << nt-1 << ".txt";
+      dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(nt-1))->getVector(),zfile.str());
+    }
+    else {
+      if (myRank == 0) {
+        std::stringstream zname;
+        zname << "control." << nt-1 << ".txt";
+        std::ofstream zfile;
+        zfile.open(zname.str());
+        zfile << std::scientific << std::setprecision(15);
+        ROL::Ptr<std::vector<RealT>> zn
+          = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(nt-1))->getParameter()->getVector();
+        zfile << std::right << std::setw(25) << (*zn)[0];
+        zfile.close();
+      }
+    }
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;

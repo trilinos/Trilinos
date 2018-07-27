@@ -72,7 +72,9 @@ private:
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
   // Steady PDE without Dirichlet BC
   ROL::Ptr<PDE_NavierStokes<Real>> pde_;
-  Real theta_;
+  Real theta_;   // Time integration factor
+  Real cx_, cy_; // Cylinder center
+  bool useParametricControl_;
 
   ROL::Ptr<FieldHelper<Real> > fieldHelper_;
 
@@ -80,7 +82,10 @@ public:
   DynamicPDE_NavierStokes(Teuchos::ParameterList &parlist) {
     pde_ = ROL::makePtr<PDE_NavierStokes<Real>>(parlist);
     // Problem data
-    theta_                   = parlist.sublist("Time Discretization").get("Theta",         1.0);
+    theta_ = parlist.sublist("Time Discretization").get("Theta", 1.0);
+    useParametricControl_ = parlist.sublist("Problem").get("Use Parametric Control", false);
+    cx_ = static_cast<Real>(-4);
+    cy_ = static_cast<Real>(0);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -149,8 +154,8 @@ public:
     Intrepid::RealSpaceTools<Real>::add(*R[0], velX_res);
     Intrepid::RealSpaceTools<Real>::add(*R[1], velY_res);
     // Apply boundary conditions
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
     int numSideSets = bdryCellLocIds_.size();
+    Real bv(0);
     if (numSideSets > 0) {
       // APPLY DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
@@ -180,7 +185,8 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                  bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - bv;
                 }
               }
             }
@@ -188,6 +194,10 @@ public:
         }
         // Apply Dirichlet control on cylinder
         if (i==4) {
+          Real omega(0);
+          if (!useParametricControl_) {
+            fieldHelper_->splitFieldCoeff(Z, z_coeff);
+          }
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -196,7 +206,13 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*Z[m])(cidx,fvidx_[j][l]);
+                  if (!useParametricControl_) {
+                    (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*Z[m])(cidx,fvidx_[j][l]);
+                  }
+                  else {
+                    bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                    (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*z_param)[0] * bv;
+                  }
                 }
               }
             }
@@ -355,75 +371,45 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    const Real zero(0), one(1);
-    // GET DIMENSIONS
-    int  c = feVel_->gradN()->dimension(0);
-    int fv = feVel_->gradN()->dimension(1);
-    int fp = fePrs_->gradN()->dimension(1);
-    int  d = feVel_->gradN()->dimension(3);
-    // GET TIME STEP INFORMATION
-    Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
-    // INITILAIZE JACOBIAN
-    ROL::Ptr<Intrepid::FieldContainer<Real>> j1, j2;
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
-    // ASSEMBLE JACOBIAN
-    pde_->setTime(told);
-    pde_->Jacobian_2(j1,uo_coeff,z_coeff,z_param);
-    pde_->setTime(tnew);
-    pde_->Jacobian_2(j2,un_coeff,z_coeff,z_param);
-    Intrepid::RealSpaceTools<Real>::scale(*j1, (one-theta_)*dt);
-    Intrepid::RealSpaceTools<Real>::scale(*j2, theta_*dt);
-    Intrepid::RealSpaceTools<Real>::add(*j1, *j2);
-    fieldHelper_->splitFieldCoeff(J, j1);
-    // APPLY DIRICHLET CONDITIONS
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        // Apply no-slip and inflow conditions
-        if (i==0 || i==2 || i==3) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fvidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < fv; ++m) {
-                  for (int n=0; n < d; ++n) {
-                    (*J[n][n])(cidx,fvidx_[j][l],m) = zero;
+    if (!useParametricControl_) {
+      const Real one(1);
+      // GET DIMENSIONS
+      int fv = feVel_->gradN()->dimension(1);
+      int fp = fePrs_->gradN()->dimension(1);
+      int  d = feVel_->gradN()->dimension(3);
+      // GET TIME STEP INFORMATION
+      Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
+      // INITILAIZE JACOBIAN
+      pde_->Jacobian_2(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
+      std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
+      fieldHelper_->splitFieldCoeff(J, jac);
+      // APPLY DIRICHLET CONDITIONS
+      int numSideSets = bdryCellLocIds_.size();
+      if (numSideSets > 0) {
+        for (int i = 0; i < numSideSets; ++i) {
+          if (i==4) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  for (int m=0; m < d; ++m) {
+                    (*J[m][m])(cidx,fvidx_[j][l],fvidx_[j][l]) = -one;
                   }
-                }
-              }
-            }
-          }
-        }
-        // Apply Dirichlet controls
-        if (i==4) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fvidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < fv; ++m) {
-                  for (int n=0; n < d; ++n) {
-                    (*J[n][n])(cidx,fvidx_[j][l],m) = zero;
-                  }
-                }
-                for (int n=0; n < d; ++n) {
-                  (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = -one;
                 }
               }
             }
           }
         }
       }
+      // Combine the jacobians.
+      fieldHelper_->combineFieldCoeff(jac, J);
     }
-    // Combine the jacobians.
-    fieldHelper_->combineFieldCoeff(jac, J);
+    else {
+      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_zf): Jacobian is zero.");
+    }
   }
 
   void Jacobian_zp(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
@@ -432,7 +418,48 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_zp): Jacobian is zero.");
+    if (useParametricControl_) {
+      const Real one(1);
+      // GET DIMENSIONS
+      int fv = feVel_->gradN()->dimension(1);
+      int fp = fePrs_->gradN()->dimension(1);
+      int  d = feVel_->gradN()->dimension(3);
+      // GET TIME STEP INFORMATION
+      Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
+      // INITILAIZE JACOBIAN
+      pde_->Jacobian_3(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
+      std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J;
+      fieldHelper_->splitFieldCoeff(J, jac[0]);
+      // APPLY DIRICHLET CONDITIONS
+      int numSideSets = bdryCellLocIds_.size();
+      if (numSideSets > 0) {
+        for (int i = 0; i < numSideSets; ++i) {
+          // Apply Dirichlet controls
+          if (i==4) {
+            Real bv(0);
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  for (int m=0; m < d; ++m) {
+                    bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                    (*J[m])(cidx,fvidx_[j][l]) = - bv;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      // Combine the jacobians.
+      fieldHelper_->combineFieldCoeff(jac[0], J);
+    }
+    else {
+      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_zp): Jacobian is zero.");
+    }
   }
 
   void Hessian_uo_uo(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
@@ -725,6 +752,9 @@ private:
     Real val(0);
     if ((sideset==3) && (dir==0)) {
       val = (one + coords[1]) * (one - coords[1]);
+    }
+    if (sideset==4) {
+      val = (dir==0 ? -(coords[1]-cy_) : (coords[0]-cx_));
     }
     return val;
   }

@@ -62,8 +62,7 @@ private:
   const Real eps_;
 
   Real weightFunc(const std::vector<Real> & x) const {
-    return (((x[1] <= 0.5+eps_)&&(x[0] >= 1.0-eps_)&&(x[0] <= 4.0+eps_)) ?
-                static_cast<Real>(1) : static_cast<Real>(0));
+    return static_cast<Real>(1);
   }
 
 public:
@@ -190,7 +189,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c  = z_coeff->dimension(0);
+    int c  = u_coeff->dimension(0);
     int p  = feVel_->cubPts()->dimension(1);
     int fv = feVel_->N()->dimension(1);
     int fp = fePrs_->N()->dimension(1);
@@ -273,8 +272,7 @@ private:
   const Real eps_;
 
   Real weightFunc(const std::vector<Real> & x) const {
-    return (((x[1] <= 1.0+eps_)&&(x[0] >= 1.0-eps_)&&(x[0] <= 4.0+eps_)) ?
-                static_cast<Real>(1) : static_cast<Real>(0));
+    return static_cast<Real>(1);
   }
 
 public:
@@ -413,8 +411,7 @@ private:
   const Real eps_;
 
   Real weightFunc(const std::vector<Real> & x) const {
-    return (((x[1] <= 0.5+eps_)&&(x[0] >= 1.0-eps_)&&(x[0] <= 4.0+eps_)) ?
-                static_cast<Real>(1) : static_cast<Real>(0));
+    return static_cast<Real>(1);
   }
 
 public:

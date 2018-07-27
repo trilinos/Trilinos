@@ -160,7 +160,7 @@ public:
     value(c,uo,un,z,ts);
     Real cnorm = c.norm();
     const Real ctol = std::min(atol_, rtol_*cnorm);
-    if (solverType_==0) {
+    if (solverType_==0 || solverType_==3 || solverType_==4) {
       if ( firstSolve_ ) {
         unew_ = un.clone();
         jv_   = un.clone();
