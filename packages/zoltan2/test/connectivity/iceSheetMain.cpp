@@ -195,10 +195,6 @@ int main(int narg, char **arg)
   int ierr = 0;
 
   // Test that the vtxLabel struct correctly overloads operators
-  if (me == 0){ 
-    ierr += vtxLabelUnitTest();
-    std::cout<<"# args = "<<narg<<"\n";
-  }
   //declare all necessary variables
   int n;
   int* grounded_flags;
@@ -237,6 +233,7 @@ int main(int narg, char **arg)
   Teuchos::broadcast<int,int>(*comm,0,m,srcs);
   Teuchos::broadcast<int,int>(*comm,0,m,dsts);
 
+  
   //select locally owned vertices (build maps?)
   int nLocalOwned = 0;
   int np = comm->getSize();
@@ -301,7 +298,7 @@ int main(int narg, char **arg)
     localBoundaries[i] = 0;
   }
   for(int i = 0; i < n; i++){
-    if(newId[i] > 0) {
+    if(newId[i] > -1) {
       localGrounding[newId[i]] = grounded_flags[i];
       localBoundaries[newId[i]] = boundary_flags[i];
     }
@@ -335,17 +332,28 @@ int main(int narg, char **arg)
   graph* g = new graph({newIdCounter,localEdgeCounter,out_array,out_degree_list,max_degree_vert,avg_out_degree});
   //create an instance of iceProp::iceSheetPropagation
   iceProp::iceSheetPropagation prop(comm, mapOwned, mapWithCopies, g, localBoundaries, localGrounding,nLocalOwned, numcopies); 
-  //run iceSheetPropagation::propagate  
   
+  //run vtxLabel unit tests
+  if (me == 0){ 
+    //ierr += prop.vtxLabelUnitTest();
+  }
+  
+  //run iceSheetPropagation::propagate  
+  int lnum_removed = 0; 
+  int gnum_removed = 0;
   int* remove = prop.propagate();
-  /*for(int i = 0; i < g->n; i++){
-    if(remove[i]){
-      for(int j = 0; j < n; j++){
-        if(newId[j] == i){
-          std::cout<<me<<": removed vertex "<<j<<"\n";
-        }
-      }
+  for(int i = 0; i < nLocalOwned; i++){
+    if(remove[i]>-2){
+      lnum_removed++;
+      //for(int j = 0; j < n; j++){
+      //  if(newId[j] == i){
+      //    std::cout<<me<<": removed vertex "<<j<<"\n";
+      //  }
+      //}
     }
-  } */
+  }
+
+  std::cout<<me<<":\tremoved "<<lnum_removed<<" local owned vertices\n";
+
   return 0;
 }
