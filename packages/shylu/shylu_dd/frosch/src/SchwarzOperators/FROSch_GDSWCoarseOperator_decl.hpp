@@ -76,7 +76,7 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
-        
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
@@ -145,6 +145,8 @@ namespace FROSch {
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
         std::string description() const;
+        
+        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings);
         
     protected:
         

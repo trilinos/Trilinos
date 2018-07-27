@@ -60,7 +60,7 @@ namespace FROSch {
     DofsMaps_ (0),
     NumberOfBlocks_ (0)
 #ifdef COARSE_TIMER
-    ,CoarseOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Compute"))
+    ,CoarseOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Compute"))
 #endif
     {
         
@@ -71,7 +71,6 @@ namespace FROSch {
     {
 #ifdef COARSE_TIMER
         Teuchos::TimeMonitor CoarseOperator_Compute_TimeMonitor(*CoarseOperator_Compute_Timer);
-        CoarseOperator_Compute_TimeMonitor.setStackedTimer(Teuchos::null);
 #endif
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
@@ -237,7 +236,7 @@ namespace FROSch {
         this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
         MultiVectorPtr mVPhiI = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        
+        SC thresholdPhi = (SC) this->ParameterList_->get("Threshold Phi",1.e-8);
         //Build mVPhiGamma
         MultiVectorPtr mVPhiGamma = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
         LO jj=0;
@@ -273,7 +272,7 @@ namespace FROSch {
             values.resize(0);
             for (UN j=0; j<mVPhiGamma->getNumVectors(); j++) {
                 valueTmp=mVPhiGamma->getData(j)[i];
-                if (fabs(valueTmp) > 1.0e-8) {
+                if (fabs(valueTmp) > thresholdPhi) {
                     indices.push_back(j);
                     values.push_back(valueTmp);
                 }
@@ -387,7 +386,7 @@ namespace FROSch {
                 }
                 if (use) {
                     valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
-                    if (fabs(valueTmp) > 1.0e-8) {
+                    if (fabs(valueTmp) > thresholdPhi) {
                         indices.push_back(j);
                         values.push_back(valueTmp);
                     }

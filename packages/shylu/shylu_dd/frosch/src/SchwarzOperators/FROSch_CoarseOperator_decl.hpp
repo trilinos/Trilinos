@@ -77,8 +77,10 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
 
@@ -116,6 +118,8 @@ namespace FROSch {
         
         virtual void applyPhi(MultiVector& x,
                              MultiVector& y) const;
+
+        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings) = 0;
         
     protected:
         
@@ -139,6 +143,8 @@ namespace FROSch {
         MapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
         MapPtr CoarseSolveRepeatedMap_;
+        MapPtrVecPtr CoarseDofMaps_;
+        GOVecPtr BlockCoarseSize_;
         
         SubdomainSolverPtr CoarseSolver_;
         
@@ -147,7 +153,8 @@ namespace FROSch {
         ExporterPtrVecPtr CoarseSolveExporters_;
         
 #ifdef COARSE_TIMER
-        TimePtr_Type  CoarseOperator_Apply_Timer;
+        TimePtr_Type CoarseOperator_Apply_Timer;
+        TimePtr_Type CoarseOperator_BuildMat_Timer;
 #endif
     };
     

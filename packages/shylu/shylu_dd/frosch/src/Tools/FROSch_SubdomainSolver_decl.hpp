@@ -64,17 +64,28 @@
 #include <MueLu_Utilities.hpp>
 
 namespace FROSch {
-
+    
+    template <class SC = typename Xpetra::Operator<>::scalar_type,
+    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
+    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    class OneLevelPreconditioner;
+    
     template <class SC = typename Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
     class SubdomainSolver : public Xpetra::Operator<SC,LO,GO,NO> {
-        
+                
     public:
         
         typedef Xpetra::Map<LO,GO,NO> Map;
+        typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::RCP<const Map> ConstMapPtr;
+        typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
+
+        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
+
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
@@ -104,7 +115,8 @@ namespace FROSch {
         typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
         
         SubdomainSolver(CrsMatrixPtr k,
-                        ParameterListPtr parameterList);
+                        ParameterListPtr parameterList,
+                        GOVecPtr blockCoarseSize=Teuchos::null);
         
         virtual ~SubdomainSolver();
         
@@ -149,8 +161,7 @@ namespace FROSch {
         MueLuHierarchyPtr MueLuHierarchy_;
         
         Teuchos::RCP<Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > >  belosLinearProblem_;
-        Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > belosSoverManager_;
-        
+        Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > belosSolverManager_;        
         
         bool IsInitialized_;
         bool IsComputed_;        

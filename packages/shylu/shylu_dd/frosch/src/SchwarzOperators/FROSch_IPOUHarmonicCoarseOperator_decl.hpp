@@ -132,6 +132,8 @@ namespace FROSch {
         
         std::string description() const;
         
+        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings);
+        
     protected:
         
         int buildCoarseSpace(UN dimension,

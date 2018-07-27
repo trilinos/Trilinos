@@ -209,16 +209,15 @@ namespace FROSch {
                 vertices: rotations         --- " << 1 << "\n\
                 --------------------------------------------\n";
             }
-            
+            this->BlockCoarseSize_[blockId] = numEntitiesGlobal[0];
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-            
+//            this->AddCoarseDofMaps(partMappings);//important for MueLu nullspace. maps saved in CoarseDofMaps_
             ////////////////////
             // Build PhiGamma //
             ////////////////////
 #ifdef COARSE_TIMER
             Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*this->CoarseOperator_InitPhi_Timer);
-            CoarseOperator_InitPhi_TimeMonitor.setStackedTimer(Teuchos::null);
 #endif
             phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);
         }

@@ -61,10 +61,13 @@ namespace FROSch {
     CoarseSolveMap_ (),
     CoarseSolveRepeatedMap_ (),
     CoarseSolver_ (),
+    CoarseDofMaps_(),
+    BlockCoarseSize_(),
     DistributionList_ (sublist(parameterList,"Distribution")),
     CoarseSolveExporters_ (0)
 #ifdef COARSE_TIMER
-    ,CoarseOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Apply"))
+    ,CoarseOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Apply")),
+    CoarseOperator_BuildMat_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Build Coarse Matrix (RAP)"))
 #endif
     {
         
@@ -87,7 +90,6 @@ namespace FROSch {
         static int i = 0;
 #ifdef COARSE_TIMER
         Teuchos::TimeMonitor CoarseOperator_Apply_TimeMonitor(*CoarseOperator_Apply_Timer);
-        CoarseOperator_Apply_TimeMonitor.setStackedTimer(Teuchos::null);
 #endif
         if (this->IsComputed_) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
@@ -199,41 +201,6 @@ namespace FROSch {
                 
                 tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],Xpetra::INSERT);
             }
-            {
-//                    tmpCoarseMatrix->fillComplete();
-//                    Teuchos::ArrayView<const GO> ellist = tmpCoarseMatrix->getRowMap()->getNodeElementList();
-//                    std::vector<GO> list = Teuchos::createVector(ellist);
-//                    Teuchos::RCP<Epetra_MpiComm> serialComm(new Epetra_MpiComm(MPI_COMM_WORLD));
-//                    Teuchos::RCP<Epetra_Map> mapEpetra;
-//                if (list.size()>0) {
-//                    mapEpetra.reset(new Epetra_Map(-1, list.size(), &(list.at(0)), 0, *serialComm));
-//                }
-//                else{
-//                    mapEpetra.reset(new Epetra_Map(-1, list.size(), NULL, 0, *serialComm));
-//                }
-//                Teuchos::RCP<Epetra_CrsMatrix> mat(new Epetra_CrsMatrix(Copy,*mapEpetra,5));
-//                    for (unsigned i=0; i<mapEpetra->NumMyElements(); i++) {
-//                        Teuchos::ArrayView<const LO> indices;
-//                        Teuchos::ArrayView<const SC> values;
-//                        tmpCoarseMatrix->getLocalRowView((LO)i,indices,values);
-//                        std::vector<SC> valuesStd = Teuchos::createVector(values);
-//                        std::vector<GO> indicesStd(indices.size());
-//                        for (unsigned j = 0 ; j<indices.size(); j++) {
-//                            indicesStd.at(j) = tmpCoarseMatrix->getColMap()->getGlobalElement(indices[j]);
-//                        }
-//                        if (indicesStd.size()>0) {
-//                            mat->InsertGlobalValues(mapEpetra->GID(i),indicesStd.size(),&(valuesStd.at(0)),&(indicesStd.at(0)));
-//                        }
-//                    }
-//                    mat->FillComplete();
-//            
-//                    string outname_str = "K0linear.dat";
-//                    const char* outname = outname_str.c_str();
-//                    EpetraExt::RowMatrixToMatlabFile(outname,*(mat));
-            }
-
-            
-            
             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
@@ -260,44 +227,10 @@ namespace FROSch {
                 
             }
 
-            //------------------------------------------------------------------------------------------------------------------------
-        }
-        else{//coarse matrix already communicated with Zoltan2. Communicate to CoarseSolveComm.
-            //------------------------------------------------------------------------------------------------------------------------
-            {
-
-//                Teuchos::ArrayView<const GO> ellist = k0->getRowMap()->getNodeElementList();
-//                std::vector<GO> list = Teuchos::createVector(ellist);
-//                Teuchos::RCP<Epetra_MpiComm> serialComm(new Epetra_MpiComm(MPI_COMM_WORLD));
-//                Teuchos::RCP<Epetra_Map> mapEpetra;
-//                if (list.size()>0) {
-//                    mapEpetra.reset(new Epetra_Map(-1, list.size(), &(list.at(0)), 0, *serialComm));
-//                }
-//                else{
-//                    mapEpetra.reset(new Epetra_Map(-1, list.size(), NULL, 0, *serialComm));
-//                }
-//                Teuchos::RCP<Epetra_CrsMatrix> mat(new Epetra_CrsMatrix(Copy,*mapEpetra,5));
-//                for (unsigned i=0; i<mapEpetra->NumMyElements(); i++) {
-//                    Teuchos::ArrayView<const LO> indices;
-//                    Teuchos::ArrayView<const SC> values;
-//                    k0->getLocalRowView((LO)i,indices,values);
-//                    std::vector<SC> valuesStd = Teuchos::createVector(values);
-//                    std::vector<GO> indicesStd(indices.size());
-//                    for (unsigned j = 0 ; j<indices.size(); j++) {
-//                        indicesStd.at(j) = k0->getColMap()->getGlobalElement(indices[j]);
-//                    }
-//                    if (indicesStd.size()>0) {
-//                        mat->InsertGlobalValues(mapEpetra->GID(i),indicesStd.size(),&(valuesStd.at(0)),&(indicesStd.at(0)));
-//                    }
-//                }
-//                mat->FillComplete();
-//                
-//                string outname_str = "K0zoltan.dat";
-//                const char* outname = outname_str.c_str();
-//                EpetraExt::RowMatrixToMatlabFile(outname,*(mat));
-            }
-
             
+        }    //------------------------------------------------------------------------------------------------------------------------
+        else{//coarse matrix already communicated with Zoltan2. Communicate to CoarseSolveComm.
+             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
                 CoarseMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,k0->getGlobalMaxNumRowEntries());
@@ -323,7 +256,12 @@ namespace FROSch {
                 
                 CoarseMatrix_->fillComplete(); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
 
-                CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
+                if (!this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos").compare("MueLu")) {
+                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver"),BlockCoarseSize_));
+                }
+                else{
+                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
+                }
 
                 CoarseSolver_->initialize();
 
@@ -342,9 +280,12 @@ namespace FROSch {
     typename CoarseOperator<SC,LO,GO,NO>::CrsMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseMatrix()
     {
         
+#ifdef COARSE_TIMER
+        Teuchos::TimeMonitor CoarseOperator_BuildMat_TimeMonitor(*CoarseOperator_BuildMat_Timer);
+#endif
         CoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(Phi_->getDomainMap(),1);
         CrsMatrixPtr k0 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseMap_,CoarseMap_->getNodeNumElements());
-
+        
         if (this->ParameterList_->get("Use Triple MatrixMultiply",false)) {
             Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::MultiplyRAP(*Phi_,true,*this->K_,false,*Phi_,false,*k0);
         }

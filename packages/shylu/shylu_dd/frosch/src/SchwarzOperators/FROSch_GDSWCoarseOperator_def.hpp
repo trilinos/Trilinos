@@ -52,8 +52,8 @@ namespace FROSch {
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     DDInterface_ ()
 #ifdef COARSE_TIMER
-    ,CoarseOperator_InitInterface_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Interface")),
-    CoarseOperator_InitPhi_Timer(Teuchos::TimeMonitor::getNewCounter("Coarse Operator: Initialize Phi"))
+    ,CoarseOperator_InitInterface_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Initialize Interface")),
+    CoarseOperator_InitPhi_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Initialize Phi"))
 #endif
     {
         
@@ -239,7 +239,7 @@ namespace FROSch {
         this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
         this->DofsMaps_.resize(this->DofsMaps_.size()+1);
         this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-        
+        this->BlockCoarseSize_.resize(this->BlockCoarseSize_.size()+1);
         this->NumberOfBlocks_++;
         
         resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
@@ -266,7 +266,7 @@ namespace FROSch {
             this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
             this->DofsMaps_.resize(this->DofsMaps_.size()+1);
             this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-            
+            this->BlockCoarseSize_.resize(this->BlockCoarseSize_.size()+1);
             this->NumberOfBlocks_++;
             resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
         }
@@ -524,16 +524,21 @@ namespace FROSch {
                 faces: rotations            --- " << coarseSpaceFunctions[8] << "\n\
                 --------------------------------------------\n";
             }
+            this->BlockCoarseSize_[blockId] = 0;
+            for (UN i=0; i<numEntitiesGlobal.size(); i++) {
+                this->BlockCoarseSize_[blockId] += numEntitiesGlobal[i];
+            }
 
+            
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-
+//            AddCoarseDofMaps(partMappings);//important for MueLu nullspace. maps saved in CoarseDofMaps_
+            
             ////////////////////
             // Build PhiGamma //
             ////////////////////
 #ifdef COARSE_TIMER
             Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*CoarseOperator_InitPhi_Timer);
-            CoarseOperator_InitPhi_TimeMonitor.setStackedTimer(Teuchos::null);
 #endif
             phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
         }
@@ -859,10 +864,20 @@ namespace FROSch {
             }
             ii++;
         }
-        //cout << *this->MVPhiGamma_[blockId];
+//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//        std::cout << "mv:!!!!!"<< std::endl;
+//                this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//        this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);
+//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
         return 0;
     }
     
+    template <class SC,class LO,class GO,class NO>
+    void GDSWCoarseOperator<SC,LO,GO,NO>::AddCoarseDofMaps(LOVecPtr2D &partMappings){
+        // for later use in MueLu
+        
+    }
 }
 
 #endif

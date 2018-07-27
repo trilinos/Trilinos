@@ -51,7 +51,7 @@ namespace FROSch {
     class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class OverlappingOperator : public SchwarzOperator<SC,LO,GO,NO> {
-        
+    
     public:
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
@@ -114,6 +114,8 @@ namespace FROSch {
         MultiVectorPtr Multiplicity_;
         
         bool Restricted_;
+        
+        int levelID_;
         
 #ifdef OVERLAPPING_TIMER
         TimePtr_Type  OverlappingOperator_Init_Timer;

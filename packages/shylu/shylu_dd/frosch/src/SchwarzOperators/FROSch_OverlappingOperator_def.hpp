@@ -59,11 +59,12 @@ namespace FROSch {
     ScatterRestricted_(),
     SubdomainSolver_ (),
     Multiplicity_(),
-    Restricted_(this->ParameterList_->get("Restricted",false))
+    Restricted_(this->ParameterList_->get("Restricted",false)),
+    levelID_(this->ParameterList_->get("Level ID",96))
 #ifdef OVERLAPPING_TIMER
-    ,OverlappingOperator_Init_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Initialize")),
-    OverlappingOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Compute")),
-    OverlappingOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("Overlapping Operator: Apply"))
+    ,OverlappingOperator_Init_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Init" )),
+    OverlappingOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Compute" )),
+    OverlappingOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Apply" ))
 #endif
     {
         
@@ -135,6 +136,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
+
 #ifdef OVERLAPPING_TIMER
         Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
 #endif

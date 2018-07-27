@@ -184,7 +184,7 @@ namespace FROSch {
         
         bool isComputed() const;
         
-        virtual int resetMatrix(CrsMatrixPtr &k);
+        int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         

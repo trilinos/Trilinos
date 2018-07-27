@@ -90,6 +90,8 @@ namespace FROSch {
                 
         int compute();
 
+        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings) = 0;
+        
     protected:
         
         int computeHarmonicExtensions();

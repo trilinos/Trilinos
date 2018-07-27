@@ -218,12 +218,18 @@ namespace FROSch {
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
             
             InterfaceCoarseSpace_ = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
-            
+            if (this->Verbose_) std::cout<<"WARNING! Need to build block coarse sizes for use in MueLu nullspace."<< std::endl;
+
             this->BlockCoarseMaps_[blockId] = InterfaceCoarseSpace_->getBasisMap();
             this->MVPhiGamma_[blockId] = InterfaceCoarseSpace_->getLocalBasis(); //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
         }
         
         return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    void IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::AddCoarseDofMaps(LOVecPtr2D &partMappings){
+        FROSCH_ASSERT(0!=0,"AddCoarseDofMaps not implemented yet...");
     }
 }
 
