@@ -263,7 +263,7 @@ int main(int narg, char **arg)
   
   int *localSrcs = new int[m];
   int *localDsts = new int[m];
-  int localEdgeCounter = 0;
+  unsigned int localEdgeCounter = 0;
   int numcopies = 0;
    
   for(int i = 0; i < m; i++){
