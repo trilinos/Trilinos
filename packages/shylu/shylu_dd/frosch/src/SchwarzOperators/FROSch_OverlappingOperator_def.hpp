@@ -57,6 +57,7 @@ namespace FROSch {
     RepeatedMap_(),
     Scatter_(),
     ScatterRestricted_(),
+    GatherRestricted_(),
     SubdomainSolver_ (),
     Multiplicity_(),
     Restricted_(this->ParameterList_->get("Restricted",false)),
@@ -97,11 +98,18 @@ namespace FROSch {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }
         
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        
+        
         MultiVectorPtr xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
         MultiVectorPtr yOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
-        
+
+//        xTmp->describe(*fancy,Teuchos::VERB_EXTREME);
+//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
         xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+
         
+//        xOverlap->describe(*fancy,Teuchos::VERB_EXTREME);
         xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
         
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
@@ -110,9 +118,27 @@ namespace FROSch {
         yOverlap->replaceMap(OverlappingMap_);
 
         if (Restricted_){
+            
+                            
+//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//            yOverlap->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//            yOverlap->describe(*fancy,Teuchos::VERB_EXTREME);
             MultiVectorPtr yOverlapRestricted = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(RepeatedMap_,x.getNumVectors());
-            yOverlapRestricted->doExport(*yOverlap,*ScatterRestricted_,Xpetra::INSERT);
-            xTmp->doExport(*yOverlapRestricted,*Scatter_,Xpetra::ADD);
+
+//            yOverlapRestricted->doExport(*yOverlap,*ScatterRestricted2_,Xpetra::INSERT);
+            yOverlapRestricted->doImport(*yOverlap,*GatherRestricted_,Xpetra::INSERT);
+//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//            yOverlapRestricted->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//            yOverlapRestricted->describe(*fancy,Teuchos::VERB_EXTREME);
+//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+//            xTmp->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
+
+            xTmp->doExport(*yOverlapRestricted,*ScatterRestricted_,Xpetra::ADD);
+//            xTmp->describe(*fancy,Teuchos::VERB_EXTREME);
+            
         }
         else{
             xTmp->doExport(*yOverlap,*Scatter_,Xpetra::ADD);
@@ -141,12 +167,11 @@ namespace FROSch {
         Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
 #endif
         if (Restricted_) {
-            ScatterRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(RepeatedMap_,OverlappingMap_);
-            Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),RepeatedMap_);
+            ScatterRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),RepeatedMap_);
+            GatherRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(OverlappingMap_,RepeatedMap_);
+
         }
-        else{
-            Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
-        }
+        Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
         if (this->ParameterList_->get("Averaging",false)) {
             Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
             MultiVectorPtr multiplicityRepeated;

@@ -108,6 +108,7 @@ namespace FROSch {
         ImporterPtr Scatter_;
         
         ImporterPtr ScatterRestricted_;
+        ImporterPtr GatherRestricted_;
         
         SubdomainSolverPtr SubdomainSolver_;
         
