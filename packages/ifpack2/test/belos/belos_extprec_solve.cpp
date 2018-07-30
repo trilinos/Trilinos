@@ -75,11 +75,11 @@ int main(int argc, char*argv[])
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   typedef dd_real Scalar;
-  typedef int LO; //LocalOrdinal
-  typedef int GO; //GlobalOrdinal
-  typedef Tpetra::Map<LO, GO>::node_type Node;
-  typedef Tpetra::MultiVector<Scalar,LO,GO> TMV;
-  typedef Tpetra::Operator<Scalar,LO,GO>    TOP;
+  typedef Tpetra::Map<>::local_ordinal_type LO; //LocalOrdinal
+  typedef Tpetra::Map<>::global_ordinal_type GO; //GlobalOrdinal
+  typedef Tpetra::Map<>::node_type Node;
+  typedef Tpetra::MultiVector<Scalar> TMV;
+  typedef Tpetra::Operator<Scalar>    TOP;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
   typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
 

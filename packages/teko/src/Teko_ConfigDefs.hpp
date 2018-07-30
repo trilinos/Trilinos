@@ -48,7 +48,8 @@
 #define __Teko_ConfigDefs_hpp__
 
 #include "Teko_Config.h"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map_decl.hpp"
 
 namespace Teko {
 
@@ -69,7 +70,7 @@ typedef unsigned GO;
 #else
 #  error "Teko wants to use a GlobalOrdinal type which Tpetra does not enable.  None of the following types are enabled: int, long, long long, unsigned long, unsigned."
 #endif
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+typedef Tpetra::Map<>::node_type NT;
 
 }
 
