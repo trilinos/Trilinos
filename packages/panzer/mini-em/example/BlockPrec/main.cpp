@@ -33,6 +33,8 @@
 #include "Panzer_Response_Functional.hpp"
 
 #include "Panzer_STK_MeshFactory.hpp"
+#include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -131,6 +133,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     double epsilon = 8.854187817e-12;
     double mu = 1.2566370614e-6;
     bool build_tet_mesh = false;
+    int dim = 3;
+    int numberOfPeriodicBCs = 0;
     bool doSolveTimings = false;
     int numReps = 0;
     std::string linAlgebra = "Tpetra";
@@ -150,6 +154,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("solver",&solver);
     clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
+    clp.setOption("spatialDim",&dim);
+    clp.setOption("numberOfPeriodicBCs",&numberOfPeriodicBCs);
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("epsilon",&epsilon);
@@ -199,27 +205,45 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         // set mesh factory parameters
         RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
         pl->set("X Blocks",1);
-        pl->set("Y Blocks",1);
-        pl->set("Z Blocks",1);
         pl->set("X Elements",x_elements);
-        pl->set("Y Elements",y_elements);
-        pl->set("Z Elements",z_elements);
         pl->set("X Procs",x_procs);
+        pl->set("Y Blocks",1);
+        pl->set("Y Elements",y_elements);
         pl->set("Y Procs",y_procs);
-        pl->set("Z Procs",z_procs);
+        if (dim==3) {
+          pl->set("Z Blocks",1);
+          pl->set("Z Elements",z_elements);
+          pl->set("Z Procs",z_procs);
+        }
 
         // periodic boundaries
-        //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-        //      per_pl.set("Count", 3);
-        //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-        //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-        //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+        if (numberOfPeriodicBCs>0) {
+          Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+          per_pl.set("Count", numberOfPeriodicBCs);
+          if (dim==3) {
+            per_pl.set("Periodic Condition 1", "xz-all 1e-8: top;bottom");
+            if (numberOfPeriodicBCs>1)
+              per_pl.set("Periodic Condition 2", "yz-all 1e-8: left;right");
+            if (numberOfPeriodicBCs>2)
+              per_pl.set("Periodic Condition 3", "xy-all 1e-8: front;back");
+          } else if (dim==2) {
+            per_pl.set("Periodic Condition 1", "x-all 1e-8: top;bottom");
+            if (numberOfPeriodicBCs>1)
+              per_pl.set("Periodic Condition 2", "y-all 1e-8: left;right");
+          }
+        }
 
         // build mesh
-        if (build_tet_mesh) {
-          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-        } else {
-          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+        if (dim == 3) {
+          if (build_tet_mesh)
+            mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+          else
+            mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+        } else if (dim == 2) {
+          if (build_tet_mesh)
+            mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
+          else
+            mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
         }
         mesh_factory->setParameterList(pl);
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
@@ -228,7 +252,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // compute dt from cfl
     double c  = std::sqrt(1.0/epsilon/mu);
-    double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
+    double min_dx = dim == 3 ? 1.0/std::max(x_elements,std::max(y_elements,z_elements)) : 1.0/std::max(x_elements,y_elements);
     double dt = cfl*min_dx/c;
 
     std::string xml;
@@ -238,9 +262,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       else
         xml = "solverAugmentationEpetra.xml";
     else if (solver == "MueLu-RefMaxwell") {
-      if (linAlgebra == "Tpetra")
-        xml = "solverMueLuRefMaxwell.xml";
-      else
+      if (linAlgebra == "Tpetra") {
+        if (dim == 3)
+          xml = "solverMueLuRefMaxwell.xml";
+        else
+          xml = "solverMueLuRefMaxwell2D.xml";
+      } else
         xml = "solverMueLuRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {

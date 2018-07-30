@@ -7,6 +7,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+#include "Panzer_Product.hpp"
 #include "Panzer_DotProduct.hpp"
 #include "Panzer_Sum.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
@@ -114,15 +115,29 @@ buildClosureModels(const std::string& model_id,
 
         // compute ||B||^2
         {
-          Teuchos::ParameterList input;
-          input.set("Result Name", "B_SQUARED");
-          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
-          input.set("Vector A Name", "B_face");
-          input.set("Vector B Name", "B_face");
+          if (ir->spatial_dimension == 3) {
+            Teuchos::ParameterList input;
+            input.set("Result Name", "B_SQUARED");
+            input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+            input.set("Vector A Name", "B_face");
+            input.set("Vector B Name", "B_face");
 
-          RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
-	  evaluators->push_back(e);
+            RCP< Evaluator<panzer::Traits> > e =
+              rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          } else if (ir->spatial_dimension == 2) {
+            Teuchos::ParameterList input;
+            input.set("Product Name", "B_SQUARED");
+            RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+            valuesNames->push_back("B_face");
+            valuesNames->push_back("B_face");
+            input.set("Values Names",valuesNames);
+            input.set("Data Layout",ir->dl_scalar);
+
+            RCP< Evaluator<panzer::Traits> > e =
+              rcp(new panzer::Product<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          }
         }
 
         // compute epsilon/2*||E||^2 + 1/(2*mu)*||B||^2
