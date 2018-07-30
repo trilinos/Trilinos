@@ -90,3 +90,5 @@ SET(EXTRA_CONFIGURE_OPTIONS
 #
 
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+
+# WCMCLEN: Trivial change for Autotesting purposes
