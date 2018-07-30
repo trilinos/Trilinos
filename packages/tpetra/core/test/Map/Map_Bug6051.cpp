@@ -41,12 +41,12 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Tpetra_Core.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_TieBreak.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_TieBreak.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_Tuple.hpp"
 
 #define NUM_GLOBAL_ELEMENTS 100
 

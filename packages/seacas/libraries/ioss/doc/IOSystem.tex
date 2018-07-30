@@ -78,7 +78,7 @@ available.
 The IO Subsystem has been designed to support multiple database formats
 simultaneously. It is possible to have the finite element model read
 from an ExodusII database; two results files being written to an
-ExodusII file with a third results file being written to an XDMF file;
+ExodusII file with a third results file being written to a CGNS file;
 and the restart file being written to yet another ExodusII file. Each of
 these output databases can have a different schedule for when to write
 and what data is to be written.
@@ -122,8 +122,8 @@ The current inheritance structure of
 \includegraphics[scale=0.75]{DatabaseIO__inherit__graph.png}
 \caption{\code{Ioss::DatabaseIO} Inheritance Diagram}\label{fig:dbio_inherit}
 \end{figure}
-Currently the concrete database types are ExodusII (\code{Ioex}), XDMF
-(\code{Ioxf}), and Heartbeat (\code{Iohb}). The
+Currently the concrete database types are ExodusII (\code{Ioex}), CGNS
+(\code{Iocgns}), and Heartbeat (\code{Iohb}). The
 \code{Ioss::DatabaseIO} class has a pointer to an \code{Ioss::Region
 }which is the root of the generic model representation.
 
@@ -803,7 +803,7 @@ lib ioex
     /tpl/netcdf//netcdf
   ;
 \end{source}
-The specification of what library versions will be used is specfied in the \file{Nbtools/Jamroot} file:
+The specification of what library versions will be used is specified in the \file{Nbtools/Jamroot} file:
 \begin{source}
 \ldots
   register-product tpl : exodus  : exodusii : 4.72 ;
@@ -846,7 +846,7 @@ exe io_shell
     ioinit
     ioss
     iotr
-    ioxf
+    iocgns
     /sierra/utility//utility
   : <tag>@runtest-tag
   ;
@@ -855,7 +855,7 @@ exe io_shell
 Using this information, the build system should be able to generate
 compile flags and correctly order the libraries on the link line for
 the linker. A new database type can be added by following the
-patterns for the Ioex, Ioxf, and Iohb database types.
+patterns for the Ioex, Iocgns, and Iohb database types.
 
 \section{Testing}
 The Sierra unit test system contains an executable called

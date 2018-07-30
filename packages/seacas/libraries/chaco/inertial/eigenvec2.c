@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,10 +40,10 @@
 void evals2(double  H[2][2], /* symmetric matrix for eigenvalues */
             double *eval1,   /* smallest eigenvalue */
             double *eval2    /* middle eigenvalue */
-            )
+)
 {
   double M[2][2];      /* normalized version of matrix */
-  double b, c;         /* coefficents of cubic equation */
+  double b, c;         /* coefficients of cubic equation */
   double root1, root2; /* roots of quadratic */
   double xmax;         /* largest matrix element */
   int    i, j;         /* loop counters */
@@ -82,7 +82,7 @@ void eigenvec2(double  A[2][2], /* matrix */
                double  eval,    /* eigenvalue */
                double  evec[2], /* eigenvector returned */
                double *res      /* normalized residual */
-               )
+)
 {
   double norm;       /* norm of eigenvector */
   double res1, res2; /* components of residual vector */

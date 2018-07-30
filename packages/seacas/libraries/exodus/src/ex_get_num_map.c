@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* exgnm - ex_get_map
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     map_type                type of map (node, edge, face, element)
-*       int     map_id                  map id
-*
-* exit conditions -
-*       int*    map                     map
-*
-* revision history -
-*   20060930 - David Thompson - Adapted from ex_get_node_map
-*
-*****************************************************************************/
+ *
+ * exgnm - ex_get_map
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     map_type                type of map (node, edge, face, element)
+ *       int     map_id                  map id
+ *
+ * exit conditions -
+ *       int*    map                     map
+ *
+ * revision history -
+ *   20060930 - David Thompson - Adapted from ex_get_node_map
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
@@ -68,7 +68,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   const char *dim_num_maps;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -89,7 +89,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
     break;
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "Bad map type (%d) specified", map_type);
-    ex_err("ex_get_num_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -102,7 +102,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   if ((status = nc_inq_dimid(exoid, dim_num_maps, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_get_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -112,7 +112,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate %s id %" PRId64 " in id variable in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_get_num_map", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -120,7 +120,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   if ((status = nc_inq_varid(exoid, ex_name_of_map(map_type, id_ndx), &var_id)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_get_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -135,7 +135,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_get_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

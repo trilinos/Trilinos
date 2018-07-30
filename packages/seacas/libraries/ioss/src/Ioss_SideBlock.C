@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,7 +51,7 @@
  *  \param[in] io_database The database associated with the region containing the side block.
  *  \param[in] my_name The side block's name.
  *  \param[in] side_type The name of the side topology type for the side block.
- *  \parem[in] element_type The name of the element topology of the parent element type for the side
+ *  \param[in] element_type The name of the element topology of the parent element type for the side
  * block.
  *  \param[in] side_count The number of sides in the side block.
  */
@@ -95,7 +95,7 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
   if (my_name == "distribution_factor_count") {
     if (field_exists("distribution_factors")) {
       int64_t nnodes = topology()->number_nodes();
-      int64_t nside  = get_property("entity_count").get_int();
+      int64_t nside  = entity_count();
       return Ioss::Property(my_name, nnodes * nside);
     }
     return Ioss::Property(my_name, 0);

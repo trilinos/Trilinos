@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -133,7 +133,7 @@ void lanczos_SO(struct vtx_data **A,            /* sparse matrix in row linked l
                 int               mediantype,   /* which partitioning strategy to use */
                 double *          goal,         /* desired set sizes */
                 int               vwgt_max      /* largest vertex weight */
-                )
+)
 {
   extern FILE *     Output_File;              /* output file or null */
   extern int        LANCZOS_SO_INTERVAL;      /* interval between orthogonalizations */
@@ -151,13 +151,13 @@ void lanczos_SO(struct vtx_data **A,            /* sparse matrix in row linked l
   extern double     evec_time;                /* time to generate eigenvectors */
   extern double     ql_time;                  /* time tridiagonal eigenvalue work */
   extern double     blas_time;                /* time for blas. linear algebra */
-  extern double     init_time;                /* time to allocate, intialize variables */
+  extern double     init_time;                /* time to allocate, initialize variables */
   extern double     scan_time;                /* time for scanning eval and bound lists */
   extern double     debug_time;               /* time for (some of) debug computations */
   extern double     ritz_time;                /* time to generate ritz vectors */
   extern double     pause_time;               /* time to compute whether to pause */
   double            bis_safety;               /* real safety factor for bisection alg. */
-  int               i, j, k;                  /* indicies */
+  int               i, j, k;                  /* indices */
   int               maxj;                     /* maximum number of Lanczos iterations */
   double *          u, *r;                    /* Lanczos vectors */
   double *          alpha, *beta;             /* the Lanczos scalars from each step */

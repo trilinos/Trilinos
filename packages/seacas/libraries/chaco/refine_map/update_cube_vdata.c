@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@ void update_cube_vdata(int    old_side,      /* previous side for moved vertex i
                        int    neighbor_node, /* node neighbor vertex assigned to */
                        double ewgt,          /* weight of edge */
                        struct refine_vdata *vdata /* neighbor connected by that edge */
-                       )
+)
 {
   int neighbor_side; /* side of cube neighbor is on */
 

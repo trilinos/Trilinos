@@ -55,7 +55,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -80,23 +79,23 @@ void testFromDataFile(
 {
   int me = comm->getRank();
   if (me == 0)
-    cout << "Parallel partitioning of " << filename << ".mtx: "
-         << nParts << " parts." << endl;
+    std::cout << "Parallel partitioning of " << filename << ".mtx: "
+         << nParts << " parts." << std::endl;
 
   std::string fname(filename);
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
   RCP<tMVector_t> coords = uinput.getUICoordinates();
   if (me == 0)
-    cout << "Multivector length = " << coords->getGlobalLength()
-         << " Num vectors = " << coords->getNumVectors() << endl;
+    std::cout << "Multivector length = " << coords->getGlobalLength()
+         << " Num vectors = " << coords->getNumVectors() << std::endl;
 
   RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
   typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(coordsConst);
   if (me == 0)
-    cout << "Adapter constructed" << endl;
+    std::cout << "Adapter constructed" << std::endl;
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -112,12 +111,12 @@ void testFromDataFile(
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
   if (me == 0)
-    cout << "Problem constructed" << endl;
+    std::cout << "Problem constructed" << std::endl;
 
 
   problem.solve();
   if (me == 0)
-    cout << "Problem solved" << endl;
+    std::cout << "Problem solved" << std::endl;
 }
 
 void serialTest(int numParts, bool doRemap)
@@ -125,7 +124,7 @@ void serialTest(int numParts, bool doRemap)
   int numCoords = 1000;
   numParts *= 8;
 
-  cout << "Serial partitioning: " << numParts << " parts." << endl;
+  std::cout << "Serial partitioning: " << numParts << " parts." << std::endl;
 
   zgno_t *ids = new zgno_t [numCoords];
   if (!ids)
@@ -194,10 +193,11 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   problem.solve();
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
+
   int rank = tcomm->getRank();
   int nParts = tcomm->getSize();
   bool doRemap = false;
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("file", &filename, "Name of the Matrix Market file to read");
   cmdp.setOption("nparts", &nParts, "Number of parts.");
   cmdp.setOption("remap", "no-remap", &doRemap, "Remap part numbers.");
-  cmdp.parse(argc, argv);
+  cmdp.parse(narg, arg);
 
   meshCoordinatesTest(tcomm);
 

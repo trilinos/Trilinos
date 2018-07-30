@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -42,12 +42,6 @@
 #include "Ioss_FieldManager.h"
 #include "Ioss_PropertyManager.h"
 
-namespace {
-  const std::string SCALAR() { return std::string("scalar"); }
-  const std::string VECTOR_2D() { return std::string("vector_2d"); }
-  const std::string VECTOR_3D() { return std::string("vector_3d"); }
-} // namespace
-
 /** \brief Create a node block.
  *
  *  \param[in] io_database The database associated with the region containing the node block.
@@ -65,32 +59,32 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
   assert(degrees_of_freedom == 1 || degrees_of_freedom == 2 || degrees_of_freedom == 3);
 
   if (degrees_of_freedom == 1) {
-    vector_name = SCALAR();
+    vector_name = IOSS_SCALAR();
   }
   else if (degrees_of_freedom == 2) {
-    vector_name = VECTOR_2D();
+    vector_name = IOSS_VECTOR_2D();
   }
   else if (degrees_of_freedom == 3) {
-    vector_name = VECTOR_3D();
+    vector_name = IOSS_VECTOR_3D();
   }
 
   fields.add(Ioss::Field("mesh_model_coordinates", Ioss::Field::REAL, vector_name,
                          Ioss::Field::MESH, node_count));
 
   // Permit access 1-coordinate at a time
-  fields.add(Ioss::Field("mesh_model_coordinates_x", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
-                         node_count));
+  fields.add(Ioss::Field("mesh_model_coordinates_x", Ioss::Field::REAL, IOSS_SCALAR(),
+                         Ioss::Field::MESH, node_count));
   if (degrees_of_freedom > 1) {
-    fields.add(Ioss::Field("mesh_model_coordinates_y", Ioss::Field::REAL, SCALAR(),
+    fields.add(Ioss::Field("mesh_model_coordinates_y", Ioss::Field::REAL, IOSS_SCALAR(),
                            Ioss::Field::MESH, node_count));
   }
 
   if (degrees_of_freedom > 2) {
-    fields.add(Ioss::Field("mesh_model_coordinates_z", Ioss::Field::REAL, SCALAR(),
+    fields.add(Ioss::Field("mesh_model_coordinates_z", Ioss::Field::REAL, IOSS_SCALAR(),
                            Ioss::Field::MESH, node_count));
   }
 
-  fields.add(Ioss::Field("node_connectivity_status", Ioss::Field::CHARACTER, SCALAR(),
+  fields.add(Ioss::Field("node_connectivity_status", Ioss::Field::CHARACTER, IOSS_SCALAR(),
                          Ioss::Field::MESH, node_count));
 
   // The 1..global_node_count id.  In a parallel-decomposed run,
@@ -98,10 +92,10 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
   // undecomposed mesh file.  This is ONLY provided for backward-
   // compatibility and should not be used unless absolutely required.
   fields.add(
-      Ioss::Field("implicit_ids", field_int_type(), SCALAR(), Ioss::Field::MESH, node_count));
+      Ioss::Field("implicit_ids", field_int_type(), IOSS_SCALAR(), Ioss::Field::MESH, node_count));
 
-  fields.add(
-      Ioss::Field("owning_processor", Ioss::Field::INT32, SCALAR(), Ioss::Field::MESH, node_count));
+  fields.add(Ioss::Field("owning_processor", Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MESH,
+                         node_count));
 }
 
 Ioss::NodeBlock::~NodeBlock() = default;

@@ -1,7 +1,7 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <GetLongOpt.h>
-#include <sstream>
 #include <cstring>
+#include <sstream>
 
 GetLongOption::GetLongOption(const char optmark)
     : table(nullptr), ustring(nullptr), pname(nullptr), last(nullptr), enroll_done(0),
@@ -28,9 +28,10 @@ char *GetLongOption::basename(char *const pathname)
   s = strrchr(pathname, '/');
   if (s == 0) {
     s = pathname;
-  } else {
+  }
+  else {
     ++s;
-}
+  }
 
   return s;
 }
@@ -40,7 +41,7 @@ int GetLongOption::enroll(const char *const opt, const OptType t, const char *co
 {
   if (enroll_done != 0) {
     return 0;
-}
+  }
 
   Cell *c        = new Cell;
   c->option      = opt;
@@ -67,7 +68,7 @@ const char *GetLongOption::retrieve(const char *const opt) const
   for (t = table; t != 0; t = t->next) {
     if (strcmp(opt, t->option) == 0) {
       return t->value;
-}
+    }
   }
   std::cerr << "GetLongOption::retrieve - unenrolled option ";
   std::cerr << optmarker << opt << "\n";
@@ -82,7 +83,7 @@ int GetLongOption::parse(int argc, char *const *argv)
   enroll_done = 1;
   if (argc-- <= 1) {
     return my_optind;
-}
+  }
 
   while (argc >= 1) {
     char *token = *++argv;
@@ -91,17 +92,17 @@ int GetLongOption::parse(int argc, char *const *argv)
     // '--' signifies end of options if followed by space
     if (token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
       break; /* end of options */
-}
+    }
 
     ++my_optind;
     char *tmptoken = ++token;
     if (token[0] == optmarker) { // Handle a double '--'
       tmptoken = ++token;
-}
+    }
 
     while ((*tmptoken != 0) && *tmptoken != '=') {
       ++tmptoken;
-}
+    }
     /* (tmptoken - token) is now equal to the command line option
        length. */
 
@@ -117,7 +118,8 @@ int GetLongOption::parse(int argc, char *const *argv)
           int stat = setcell(t, tmptoken, *(argv + 1), pname);
           if (stat == -1) {
             return -1;
-          } if (stat == 1) {
+          }
+          if (stat == 1) {
             ++argv;
             --argc;
             ++my_optind;
@@ -151,7 +153,8 @@ int GetLongOption::parse(int argc, char *const *argv)
       int stat = setcell(pc, tmptoken, *(argv + 1), pname);
       if (stat == -1) {
         return -1;
-      } if (stat == 1) {
+      }
+      if (stat == 1) {
         ++argv;
         --argc;
         ++my_optind;
@@ -188,7 +191,7 @@ int GetLongOption::parse(char *const str, char *const p)
     char *tmptoken = ++token;
     while ((*tmptoken != 0) && *tmptoken != '=') {
       ++tmptoken;
-}
+    }
     /* (tmptoken - token) is now equal to the command line option
        length. */
 
@@ -203,7 +206,8 @@ int GetLongOption::parse(char *const str, char *const p)
           int stat = setcell(t, tmptoken, ladtoken, name);
           if (stat == -1) {
             return -1;
-	  } if (stat == 1) {
+          }
+          if (stat == 1) {
             ladtoken = 0;
           }
           matchStatus = ExactMatch;
@@ -222,7 +226,8 @@ int GetLongOption::parse(char *const str, char *const p)
       int stat = setcell(pc, tmptoken, ladtoken, name);
       if (stat == -1) {
         return -1;
-      } if (stat == 1) {
+      }
+      if (stat == 1) {
         ladtoken = 0;
       }
     }
@@ -249,7 +254,7 @@ int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char 
 {
   if (c == 0) {
     return -1;
-}
+  }
 
   switch (c->type) {
   case GetLongOption::NoValue:
@@ -272,10 +277,9 @@ int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char 
         c->value = nexttoken;
         return 1;
       }
-      
-        c->value = c->opt_value;
-        return 0;
-      
+
+      c->value = c->opt_value;
+      return 0;
     }
   case GetLongOption::MandatoryValue:
     if (*valtoken == '=') {
@@ -289,11 +293,10 @@ int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char 
         c->value = nexttoken;
         return 1;
       }
-      
-        std::cerr << name << ": mandatory value for ";
-        std::cerr << optmarker << c->option << " not specified\n";
-        return -1; /* mandatory value not specified */
-      
+
+      std::cerr << name << ": mandatory value for ";
+      std::cerr << optmarker << c->option << " not specified\n";
+      return -1; /* mandatory value not specified */
     }
   default: break;
   }
@@ -309,10 +312,11 @@ void GetLongOption::usage(std::ostream &outfile) const
     outfile << "\t" << optmarker << t->option;
     if (t->type == GetLongOption::MandatoryValue) {
       outfile << " <$val>";
-    } else if (t->type == GetLongOption::OptionalValue) {
+    }
+    else if (t->type == GetLongOption::OptionalValue) {
       outfile << " [$val]";
-    
-}outfile << " (" << t->description << ")\n";
+    }
+    outfile << " (" << t->description << ")\n";
   }
   outfile.flush();
 }

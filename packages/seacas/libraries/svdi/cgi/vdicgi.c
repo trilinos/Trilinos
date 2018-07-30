@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -65,20 +65,20 @@ static float get_devid_num(char *string)
   return (0.);
 }
 
-/* ifdefv.h - ifdef file for svdi routines
- * This file is used to define the system dependent ways C is
- * called from FORTRAN.  Underscores are used by default.
- *
- * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
- * SGI CONVEX             : C routines must have underscores
- *
- * VAX HP IBM/aix         : C routines do not have underscores
- *
- * CRAY/UNICOS            : C routines must be capitalized,
- *                            and no underscores
- *
- * This include file is used by VDICGI.C
- */
+  /* ifdefv.h - ifdef file for svdi routines
+   * This file is used to define the system dependent ways C is
+   * called from FORTRAN.  Underscores are used by default.
+   *
+   * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
+   * SGI CONVEX             : C routines must have underscores
+   *
+   * VAX HP IBM/aix         : C routines do not have underscores
+   *
+   * CRAY/UNICOS            : C routines must be capitalized,
+   *                            and no underscores
+   *
+   * This include file is used by VDICGI.C
+   */
 
 #if defined(ADDC_)
 #endif
@@ -236,23 +236,23 @@ static float get_devid_num(char *string)
 #endif
 #endif
 
-/* end ifdefv.h */
-/* ifdefc.h - ifdef file for cgi routines
- * This file is used to define the system dependent ways C is
- * called from FORTRAN.  Underscores are used by default.
- *
- * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
- * SGI CONVEX             : C routines must have underscores
- *
- * VAX HP IBM/aix         : C routines do not have underscores
- *
- * CRAY/UNICOS            : C routines must be capitalized,
- *                            and no underscores
- *
- * This file also defines the system dependent macro "f2cchar".
- *
- * This include file is used by SDCGI.C and VDICGI.C
- */
+  /* end ifdefv.h */
+  /* ifdefc.h - ifdef file for cgi routines
+   * This file is used to define the system dependent ways C is
+   * called from FORTRAN.  Underscores are used by default.
+   *
+   * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
+   * SGI CONVEX             : C routines must have underscores
+   *
+   * VAX HP IBM/aix         : C routines do not have underscores
+   *
+   * CRAY/UNICOS            : C routines must be capitalized,
+   *                            and no underscores
+   *
+   * This file also defines the system dependent macro "f2cchar".
+   *
+   * This include file is used by SDCGI.C and VDICGI.C
+   */
 
 #if defined(ADDC_)
 #endif
@@ -591,7 +591,7 @@ void vbinq(void)
   if (vstat == CVAL) {
     dev_cap[3]  = (float)nsimul - 2; /* Simultaneous colors    */
     dev_cap[26] = (float)navail - 2; /* Available colors       */
-    dev_cap[2]  = (float)nint;       /* Availabe intensities   */
+    dev_cap[2]  = (float)nint;       /* Available intensities   */
     dev_cap[31] = 1.;                /* Color or monochrome    */
     if (monoc == CYES) {
       dev_cap[31] = 0.;

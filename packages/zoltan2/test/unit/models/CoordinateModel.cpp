@@ -61,10 +61,8 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using std::cout;
 using std::endl;
 
@@ -278,11 +276,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
     printFailureCode(comm, fail);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
   string fname("simple");   // reader will seek coord file

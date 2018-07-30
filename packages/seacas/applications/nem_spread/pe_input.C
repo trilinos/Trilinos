@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -166,8 +166,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if (sscanf(cptr, "%d", &(spreader.Proc_Info[0])) != 1) {
-            fprintf(stderr, "%s: ERROR, can\'t interpret int for number of"
-                            " Processors.\n",
+            fprintf(stderr,
+                    "%s: ERROR, can\'t interpret int for number of"
+                    " Processors.\n",
                     yo);
             exit(1);
           }

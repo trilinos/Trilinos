@@ -143,6 +143,27 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   update_if_different  is_checkin_tested_commit.txt  tmp
 
   echo
+  echo "Generating output for 'get-tribits-packages-from-files-list.py --help' ..."
+  echo
+  ../../ci_support/get-tribits-packages-from-files-list.py --help \
+    &> get-tribits-packages-from-files-list.txt.tmp
+  update_if_different  get-tribits-packages-from-files-list.txt  tmp
+
+  echo
+  echo "Generating output for 'get-tribits-packages-from-last-tests-failed.py --help' ..."
+  echo
+  ../../ci_support/get-tribits-packages-from-last-tests-failed.py --help \
+    &> get-tribits-packages-from-last-tests-failed.txt.tmp
+  update_if_different  get-tribits-packages-from-last-tests-failed.txt  tmp
+
+  echo
+  echo "Generating output for 'filter-packages-list.py --help' ..."
+  echo
+  ../../ci_support/filter-packages-list.py --help \
+    &> filter-packages-list.txt.tmp
+  update_if_different  filter-packages-list.txt  tmp
+
+  echo
   echo "Generating output for 'install_devtools.py --help' ..."
   echo
   ../../devtools_install/install_devtools.py --help \

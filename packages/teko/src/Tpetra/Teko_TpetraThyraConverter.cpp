@@ -45,7 +45,7 @@
 */
 
 #include "Teko_TpetraThyraConverter.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"
@@ -283,10 +283,11 @@ const RCP<Tpetra::Map<LO,GO,NT> > thyraVSToTpetraMap(const Thyra::VectorSpaceBas
 
    TEUCHOS_ASSERT(myGIDs.size() == (size_t) localDim);
 
-   const RCP<const Teuchos::Comm<int> > tpetraComm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
+   // FIXME (mfh 12 Jul 2018) This ignores the input comm, so it can't
+   // be right.
+   
    // create the map
-   return rcp(new Tpetra::Map<LO,GO,NT>(vs.dim(), Teuchos::ArrayView<const GO>(myGIDs), 0, tpetraComm));
+   return rcp(new Tpetra::Map<LO,GO,NT>(vs.dim(), Teuchos::ArrayView<const GO>(myGIDs), 0, Tpetra::getDefaultComm()));
 }
 
 } // end namespace Tpetra

@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -491,6 +491,15 @@ C store default values of search box tolerances per element type
       TOLHEC = TOLHEX
       TOLTEC = TOLTET
       
+c      
+C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
+C
+      CALL MDRSRV ('GVAR',   NAGV, NVARGP)
+C
+      call debug('WRTC')
+      CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
+C
+C
       DO 50 IM = 1, IMP
         IMOFF = IM * 3
         IDBLKA = IA(NMAP-3+IMOFF)
@@ -1427,15 +1436,6 @@ C
 C
 c
  50   CONTINUE
-c      
-C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
-C
-      CALL MDRSRV ('GVAR',   NAGV, NVARGP)
-C
-      call debug('WRTC')
-      CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
-C
-C
 C
 C     *****************************************************************
 C     STOP COMMAND

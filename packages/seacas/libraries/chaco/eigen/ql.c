@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,7 +34,7 @@
  */
 
 /* Eigensolution of real symmetric tridiagonal matrix using the algorithm
-   of Numerical Recipies p. 380. Removed eigenvector calculation and added
+   of Numerical Recipes p. 380. Removed eigenvector calculation and added
    return codes: 1 if maximum number of iterations is exceeded, 0 otherwise.
    NOTE CAREFULLY: the vector e is used as workspace, the eigenvals are
    returned in the vector d. */

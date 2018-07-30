@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -78,7 +78,7 @@ namespace Ioss {
     Pyramid5();
 
   private:
-    Pyramid5(const Pyramid5 &); // Do not implement
+    Pyramid5(const Pyramid5 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Pyramid5_h

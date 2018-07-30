@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,7 +43,7 @@
 int check_graph(struct vtx_data **graph, /* graph data structure */
                 int               nvtxs, /* number of vertices */
                 int               nedges /* number of edges */
-                )
+)
 {
   extern FILE *Output_File;    /* output file or null */
   float        eweight;        /* edge weight */
@@ -153,7 +153,7 @@ int check_graph(struct vtx_data **graph, /* graph data structure */
 int is_an_edge(struct vtx_data *vertex, /* data for a vertex */
                int              v2,     /* neighbor to look for */
                float *          weight2 /* weight of edge if found */
-               )
+)
 {
   int i; /* loop counter */
 

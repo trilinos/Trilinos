@@ -170,6 +170,9 @@ public:
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
 
+  //! Set initial guess for Newton method
+  void setInitialGuess( Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null); 
+
   //! Return RCP to Tempus::SolutionHistory
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
   getSolutionHistory() const; 

@@ -674,6 +674,7 @@ ${PROJECT_SOURCE_DIR}``) are::
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Rarely used
        ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
+       ProjectCiFileChangeLogic.py     # [Optional] CI global change/test logic
        ProjectCompilerPostConfig.cmake # [Optional] Override/tweak build flags
        ProjectDependenciesSetup.cmake  # [Optional] Project deps overrides
        CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
@@ -690,6 +691,7 @@ These TriBITS Project files are documented in more detail below:
 * `<projectDir>/project-checkin-test-config.py`_
 * `<projectDir>/cmake/NativeRepositoriesList.cmake`_
 * `<projectDir>/cmake/ExtraRepositoriesList.cmake`_
+* `<projectDir>/cmake/ProjectCiFileChangeLogic.py`_
 * `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_
 * `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_
 * `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_
@@ -843,7 +845,7 @@ behavior.
 
 **<projectDir>/project-checkin-test-config.py**: [Optional] Used to define the
 ``--default-builds`` and other project-level configuration options for the
-project's usage of the `checkin-test.py`_ script.  Machine or package-specific
+project's usage of the `checkin-test.py`_ tool.  Machine or package-specific
 options should **not** be placed in this file.  An example of this file for
 `TribitsExampleProject`_/``project-checkin-test-config.py`` is shown below:
 
@@ -924,6 +926,26 @@ NOTE: This file can be overridden by setting the cache variable
 .. looks like only the selected repos will be cloned.  I need to add some unit
 .. tests that really show what the real behavior is and then document that
 .. behavior here.
+
+
+.. _<projectDir>/cmake/ProjectCiFileChangeLogic.py:
+
+**<projectDir>/cmake/ProjectCiFileChangeLogic.py**: [Optional] If present,
+then this Python module is imported and the Python class defined there
+ProjectCiFileChangeLogic there is used to determine which files need to
+trigger a global rebuild of the project enabling all packages.
+
+An example of this given in the file
+``TribitsExampleProject/cmake/ProjectCiFileChangeLogic.py``:
+
+.. include:: ../../examples/TribitsExampleProject/cmake/ProjectCiFileChangeLogic.py
+   :literal:
+
+This logic is used in all code that is used in CI testing including
+`checkin-test.py`_, `TRIBITS_CTEST_DRIVER()`_ and
+`get-tribits-packages-from-files-list.py`_.  If this file does not exist, then
+TriBITS has some default logic which may or may not be sufficient for the
+needs of a given project.
 
 
 .. _<projectDir>/cmake/ProjectCompilerPostConfig.cmake:
@@ -2361,13 +2383,14 @@ In addition to the full processing that occurs as part of the `Full TriBITS
 Project Configuration`_, there are also TriBITS tools that only process as
 subset of project's files.  This reduced processing is performed in order to
 build up the project's package dependencies data-structure and to write the
-file `<Project>PackageDependencies.xml`_.  For example, the script
+file `<Project>PackageDependencies.xml`_.  For example, the tool
 `checkin-test.py`_ and the function `TRIBITS_CTEST_DRIVER()`_ both drive this
 type of processing.  In particular, the CMake -P script
-``TribitsDumpDepsXmlScript.cmake`` reads all of the project's
+`TribitsDumpDepsXmlScript.cmake`_ reads all of the project's
 dependency-related files and dumps out the `<Project>PackageDependencies.xml`_
-file.  This reduced processing (as executed in ``cmake -P
-TribitsDumpDepsXmlScript.cmake``) is described below.
+file (see `TriBITS Project Dependencies XML file and tools`_).  This reduced
+processing (e.g. as executed in ``cmake -P TribitsDumpDepsXmlScript.cmake``)
+is described below.
 
 .. _Reduced Dependency Processing of TriBITS Project Files:
 
@@ -3608,7 +3631,7 @@ In more detail, these rules/behaviors are:
     In this case, when ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=TRUE`` a warning
     will be printed and configuration will complete.  However, if
     ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=FALSE``, then the configure will die
-    with an error message.  For example, the ``checkin-test.py`` script sets
+    with an error message.  For example, the ``checkin-test.py`` tool sets
     ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=OFF`` to make sure that something gets
     enabled and tested in order to accept the results of the test and allow a
     push.  For an example, see `Default configure with no packages enabled on
@@ -4024,7 +4047,7 @@ not in Epetra.
 ToDo: Set Trilinos_ENABLE_RTOp=ON,
 Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON, and Trilinos_ENABLE_TESTS=ON and
 show what packages and tests/examples get enabled.  This is the use case for
-the checkin-test.py script for PT enabled code.
+the checkin-test.py tool for PT enabled code.
 
 .. _Enable all packages:
 
@@ -4049,9 +4072,11 @@ As shown above, only the ``PT`` SE packages get enabled.  To also enable the
 ``ST`` packages as well, one additionally set
 ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON`` at configure time.
 
+.. _<Project>PackageDependencies.xml:
 
-<Project>PackageDependencies.xml
---------------------------------
+
+TriBITS Project Dependencies XML file and tools
+-----------------------------------------------
 
 The TriBITS CMake configure system can write out the project's package
 dependencies into a file ``<Project>Dependencies.xml`` (or any name one wants
@@ -4078,16 +4103,68 @@ packages from the `MockTrilinos`_ project is shown below::
     ...
   </PackageDependencies>
 
-This XML file contains the names, directories, testing groups (``type``),
-CDash email address, and all of the SE package and TPL dependencies for every
-SE package in the TriBITS project.  There are several python tools under
+This XML file contains the names, directories, `Test Test Category`_
+(i.e. ``type``), CDash email address, and all of the SE package and TPL
+dependencies for every SE package in the TriBITS project (including add-on
+repositories if specified).  There are several python tools under
 ``tribits/ci_support/`` that read in this file and use the created
-data-structure for various tasks.  A TriBITS project configure can create this
-file as a byproduct (see ???), or the CMake -P script
-``TribitsDumpDepsXmlScript.cmake`` can be used to create this file on the fly
-without having to configure a TriBITS project (see the ``checkin-test.out``
-log file generated by `checkin-test.py`_ for an example of how to run this
-script to generate the ``<Project>Dependencies.xml`` file).
+data-structure for various tasks.  This file and these tools are used by
+`checkin-test.py`_ and `TRIBITS_CTEST_DRIVER()`_.  But these tools can also be
+used to construct other workflows and tools.
+
+.. _TribitsDumpDepsXmlScript.cmake:
+
+A TriBITS project configure can create this file as a byproduct of
+configuration by setting the configure option (see `Outputting package
+dependency information`_), or the CMake -P script
+**TribitsDumpDepsXmlScript.cmake** can be used to create this file on the fly
+without having to configure a TriBITS project.  To create this file outside of
+configuration, one can run::
+
+  cmake \
+    [-D PROJECT_SOURCE_DIR=<projectSourceDir>] \
+    [-D <Project>_PRE_REPOSITORIES=<prepo0>,<prepo1>,...] \
+    [-D <Project>_EXTRA_REPOSITORIES=<erepo0>,<erepo1>,...] \
+    -D <Project>_DEPS_XML_OUTPUT_FILE=<projectDepsFileOut> \
+    -P <tribitsDir>/ci_support/TribitsDumpDepsXmlScript.cmake
+
+If TriBITS is snashotted into the project in the standard location
+``<projectDir>/cmake/tribits`` or the entire TriBITS repo is cloned under
+``<projectDir>/TriBITS`` (so that the ``tribits`` dir is
+``<projectDir>/TriBITS/tribits``) then one can leave off
+``-DPROJECT_SOURCE_DIR=<projectSourceDir>`` and (if not wanting to include
+extra repos) just run::
+
+  cmake \
+    -D <Project>_DEPS_XML_OUTPUT_FILE=<projectDepsFileOut> \
+    -P <projectSourceDir>/cmake/tribits/ci_support/TribitsDumpDepsXmlScript.cmake
+
+Once the XML file ``<projectDepsFileOut>`` is created, it can be used in
+various types of analysis and used with different tools and commands.
+
+The tool `get-tribits-packages-from-files-list.py`_ can be used to determine
+the list of TriBITS SE packages that need to be tested given a list of changed
+files (e.g. as returned from ``git diff --name-only <from>..<to> >
+changed-files.txt``).  This is used in the `checkin-test.py`_ tool and the
+`TRIBITS_CTEST_DRIVER()`_ function to determine what TriBITS packages need to
+be tested based on what files have been changed.
+
+The tool `get-tribits-packages-from-last-tests-failed.py`_ can be used to
+extract the list of TriBITS SE packages that correspond to the failings tests
+listed in the CTest-generated
+``<build-dir>/Testing/Temporary/LastTestsFailed*.log`` file.  This tool is
+used in the `TRIBITS_CTEST_DRIVER()`_ function in CI-testing mode to determine
+what packages must be re-tested if they failed in the last CI iteration.
+
+The tool `filter-packages-list.py`_ takes in a list of TriBITS SE package
+names and then filters the list according the `Test Test Category`_ of the
+packages.  This is used in testing workflows that only test a subset of
+packages according to the Test Test Category at different stages in the
+workflow.  For example, the `checkin-test.py`_ tool and the
+`TRIBITS_CTEST_DRIVER()`_ function use this filtering to only test Primary
+Tested (PT) or Secondary Tested (ST) packages for a given set of changed files
+in a continuous integration workflow (see `Nested Layers of TriBITS Project
+Testing`_).
 
 
 TriBITS Automated Testing
@@ -4249,7 +4326,7 @@ More detailed descriptions of the test groups are given below.
   it is required by a ``PT`` SE package.  Every project developer is expected
   to have every ``PT`` TPL installed on every machine where they do
   development on and from which they push to the global repo (see
-  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the foundation
+  `checkin-test.py`_ tool).  ``PT`` SE packages and TPLs are the foundation
   for `Pre-Push CI Testing`_.
 
 .. _ST:
@@ -4435,7 +4512,7 @@ components.  However, detailed descriptions of these processes are deferred to
 the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
 CTest/CDash Driver`_.
 
-The standard TriBITS-defined project testing processes are:
+The standard TriBITS-suupported project testing processes are:
 
 * `Pre-Push CI Testing`_
 * `Post-Push CI Testing`_
@@ -4460,9 +4537,9 @@ how the different test-related categories are used to define each of these.
 The first level of testing is *Pre-Push CI Testing* that is performed before
 changes to the project are pushed to the master branch(es) in the global
 repository(s).  With TriBITS, this type of testing and the following push is
-typically done using the `checkin-test.py`_ script.  This category of testing
-is described in much more detail in `Pre-push Testing using checkin-test.py`_.
-All of the "default builds" used with the ``checkin-test.py`` script select
+typically done using the `checkin-test.py`_ tool.  This category of testing is
+described in much more detail in `Pre-push Testing using checkin-test.py`_.
+All of the "default builds" used with the ``checkin-test.py`` tool select
 repositories, SE packages and code, and individual tests using the following
 test-related classifications:
 
@@ -4581,7 +4658,7 @@ Project developer teams should strive to limit the number of test cases that
 are marked as ``HEAVY`` since these tests will typically *not* get run in very
 may builds or may not be run every day and developers will tend to never
 enable them when doing more extensive testing using ``--st-extra-builds`` with
-the `checkin-test.py`_ script in extended pre-push testing.
+the `checkin-test.py`_ tool in extended pre-push testing.
 
 .. _Performance Testing:
 
@@ -4644,8 +4721,8 @@ process of:
    message with the test results, then pushing local commits to the remove VC
    repo(s) and sending out summary emails.
 
-There are several advantages to using a project's ``checkin-test.py`` script
-for pushing changes to the main development branch which include:
+There are several advantages to using a project's ``checkin-test.py`` tool for
+pushing changes to the main development branch which include:
 
 a) provides a consistent definition for "okay to push" for all developers
 
@@ -4660,11 +4737,11 @@ d) avoids developer mistakes in performing repetitive tasks and forgetting
 e) marks a set of working commits that are safe to search with ``git bisect``
    to find problems (see `Using Git Bisect with checkin-test.py workflows`_)
 
-When using the ``checkin-test.py`` script, every TriBITS project defines one
-or more "default builds" (specified through the ``--default-builds`` argument)
+When using the ``checkin-test.py`` tool, every TriBITS project defines one or
+more "default builds" (specified through the ``--default-builds`` argument)
 for pre-push CI testing that form the criteria for if it is okay to push code
 changes or not.  The "default builds" select repositories, SE packages and
-code, and individual test as described in `Pre-Push CI Testing`_.  A TriBITS
+code, and individual tests as described in `Pre-Push CI Testing`_.  A TriBITS
 project defines its default pre-push builds using the file
 `<projectDir>/project-checkin-test-config.py`_.  For an example, the file
 `TribitsExampleProject`_/``project-checkin-test-config.py`` is shown below:
@@ -4677,9 +4754,7 @@ two default builds are defined so that various options can be toggled between
 the two builds.  Typical options to toggle include enabling/disabling MPI and
 enabling/disabling run-time debug mode checking (i.e. toggle
 ``${PROJECT_NAME}_ENABLE_DEBUG``).  Typically, other important options will
-also be toggled between these two builds.  For example, Trilinos toggles the
-enable/disable of C++ explicit template instantiation support between these
-two builds.
+also be toggled between these two builds.
 
 Note that both of the default builds shown above, including the ``MPI_DEBUG``
 build, actually set optimized compiler flags with
@@ -4687,8 +4762,9 @@ build, actually set optimized compiler flags with
 "debug" build is turning on optional run-time debug-mode checking, not
 disabling optimized code.  This is important so that the defined tests run
 fast.  For most projects, the default pre-push builds should **not** be used
-to debug code by running a debugger.  Instead, they are designed to test
-changes to the project's code efficiently before pushing changes.  A
+to debug-enabled code which is suitable to run through a debugger
+(e.g. ``gdb``).  Instead, these "debug" builds are designed to test changes to
+the project's code efficiently before pushing changes.  Typically, a
 development team should not have to test the chosen compiler's ability to
 generate non-optimized debug code and suffer slower test times before pushing.
 
@@ -4699,23 +4775,23 @@ The `TribitsExampleProject`_ default builds do not depend on any C++ TPLs that
 might use the C++ STL so enabling this option adds additional positive
 debug-mode checking for C++ code.
 
-The ``checkin-test.py`` script is a fairly sophisticated piece of software
-that is well tested and very robust.  The level of testing of this tool is
-likely greater than any of the software that it will be used to test (unless
-the project is a real-time flight control system or nuclear reactor control
-system or something).  This is needed so as to provide confidence in the
-developers that the tool will only push their changes if everything checks out
-as it should.  There are a lot of details and boundary cases that one has to
+The ``checkin-test.py`` tool is a fairly sophisticated piece of software that
+is well tested and very robust.  The level of testing of this tool is likely
+greater than any of the software that it will be used to test (unless the
+project is a real-time flight control system or nuclear reactor control system
+or something).  This is needed so as to provide confidence in the developers
+that the tool will only push their changes if everything checks out as it
+should.  There are a lot of details and boundary cases that one has to
 consider and a number of use cases that need to be supported by such a tool.
 For more detailed documentation, see `checkin-test.py --help`_.
 
-Note that the ``checkin-test.py`` script can also be used to implement
+Note that the ``checkin-test.py`` tool can also be used to implement
 "poor-man's" post-push testing processes as described in `Post-Push CI and
 Nightly Testing using checkin-test.py`_.  However, most software projects will
 want to go with the more elaborate and more feature-full CTest/CDash system
 described in `TriBITS CTest/CDash Driver`_.
 
-.. ToDo: Describe the standard workflow for using the checkin-test.py script.
+.. ToDo: Describe the standard workflow for using the checkin-test.py tool.
 
 .. ToDo: Describe why the --default-builds must only include PT code and not
 .. ST due to changing the behavior of the PT software.  As an example, discuss
@@ -4981,9 +5057,9 @@ TriBITS packages, one must perform the following actions**:
 
 1) Change the TriBITS CMake files as described above that will result in the
    desired email addresses in the ``CDashSubprojectDependencies.xml``
-   file. One can debug this by running the `checkin-test.py`_ script and
-   seeing what gets written in the generated
-   `<Project>PackageDependencies.xml`_ file in the ``CHECKIN`` directory.
+   file. One can debug this by generating the file
+   `<Project>PackageDependencies.xml`_ as using the cmake -P script
+   `TribitsDumpDepsXmlScript.cmake`_.
 
 2) Log onto the CDash server using an administrator account and then remove
    the auto-generated account for the CDash user email address for which
@@ -5027,7 +5103,7 @@ basic configure, build, test, and install) for TriBITS projects with multiple
 repositories, TriBITS provides some extra development tools implemented using
 Python which are provided in the "extended" parts of TriBITS (see
 `TriBITS/tribits/ Directory Contents`_).  The primary tools supporting
-multi-repository projects are the Python scripts `clone_extra_repos.py`_,
+multi-repository projects are the Python tools `clone_extra_repos.py`_,
 `gitdist`_, and `checkin-test.py`_.
 
 To demonstrate, consider the TriBITS meta-project with the following
@@ -5127,16 +5203,16 @@ Some of the aggregate commands that one would typically run under the base
   # Push local commits to tracking branches
   gitdist push
 
-The script ``gitdist`` is provided under TriBITS directory::
+The tool ``gitdist`` is provided under TriBITS directory::
 
   cmake/tribits/python_utils/gitidst   
 
-and can be installed by the `install_devtools.py`_ script (see `TriBITS
+and can be installed by the `install_devtools.py`_ tool (see `TriBITS
 Development Toolset`_).  See `gitdist documentation`_ for more details.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
-``checkin-test.py`` script only requires passing in the option
+``checkin-test.py`` tool only requires passing in the option
 ``--extra-repos-file=project`` and ``--extra-repos-type=Continuous`` (or
 ``Nightly``, see `Repository Test Classification`_) and it will automatically
 perform all of the various actions for all of the selected repositories.  See
@@ -5205,9 +5281,9 @@ with any other CMake project that uses CTest to define and run tests.  One
 pulls updates from the master VC repo then configures with ``cmake``, and
 iteratively builds, runs tests, adds files, changes files, does a final test,
 then pushes updates.  The major difference is that a well constructed
-development process will use the `checkin-test.py`_ script to test and push
-all changes that affect the build or the tests.  The basic steps in
-configuring, building, running tests, etc., are given in the project's
+development process will use the `checkin-test.py`_ tool to test and push all
+changes that affect the build or the tests.  The basic steps in configuring,
+building, running tests, etc., are given in the project's
 `<Project>BuildReference`_. file (see `Project-Specific Build Reference`_).
 
 Multi-Repository Development Workflow
@@ -5218,7 +5294,7 @@ to a project with just a single VC repo if the project provides a standard
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  The major difference
 is in making changes, creating commits, etc.  The `gitdist`_ tool makes these
 steps easier and has been shown to work fairly well for up to 20 extra VC
-repos (as used in the CASL VERA project).  The `checkin-test.py`_ script
+repos (as used in the CASL VERA project).  The `checkin-test.py`_ tool
 automatically handles all of the details of pulling, diffing, pushing etc. to
 all the VC repos.
 
@@ -5900,9 +5976,9 @@ extra repos
       ExtraRepo3  ""  GIT  git@someurl.com:ExtraRepo3  ""  Nightly
       )
 
-  NOTE: If one will not be using the `checkin-test.py`_ script, or
-  `clone_extra_repos.py`_ script, or the `TriBITS CTest/CDash Driver`_ system, then
-  one can leave the **REPO_VCTYPE** and **REPO_URL** fields empty (see
+  NOTE: If one will not be using the `checkin-test.py`_ tool, or
+  `clone_extra_repos.py`_ tool, or the `TriBITS CTest/CDash Driver`_ system,
+  then one can leave the **REPO_VCTYPE** and **REPO_URL** fields empty (see
   `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_ for details).  (TriBITS Core
   does not have any dependencies on any specific VC tool.  These fields are
   listed here to avoid duplicating the list of repos in another file when
@@ -5941,7 +6017,7 @@ extra repos
     SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT  TRUE)
 
 4) If wanting a clone tool with git repos, set up a link to the
-`clone_extra_repos.py`_ script in the base ``<projectDir>/`` directory
+`clone_extra_repos.py`_ tool in the base ``<projectDir>/`` directory
 
   Create a symlink to the script `clone_extra_repos.py`_ in the base project
   repo, for example with::
@@ -5989,7 +6065,7 @@ The following steps describe how to submit results to a CDash site using the
   perform an experimental submission by just configuring the project as normal
   (except configuring additionally with ``-DCTEST_BUILD_FLAGS=-j8`` and
   ``-DCTEST_PARALLEL_LEVEL=8`` to use parallelism in the build and testing in
-  the ``ctest -S`` script) and then runningq the build target::
+  the ``ctest -S`` script) and then running the build target::
 
     make dashboard
 
@@ -6478,12 +6554,12 @@ of detailed testing of each and every individual commit can give rise to false
 "bad" commits which will result in ``git bisect`` reporting the wrong first
 "bad" commit.
 
-Projects that use the `checkin-test.py`_ script to push sets of commits to the
+Projects that use the `checkin-test.py`_ tool to push sets of commits to the
 main development branch have an advantage in the usage of ``git bisect``.
 This is because the default mode of the ``checkin-test.py`` script is to amend
 the top commit message with a summary of what was tested and therefore marks a
 set of commits that are known to have more complete testing.  For example, the
-``checkin-test.py`` script amends the top commit (after the final pull and
+``checkin-test.py`` tool amends the top commit (after the final pull and
 rebase by default) as shown in the following Trilinos commit::
 
   commit 71ce56bd2d268922fda7b8eca74fad0ffbd7d807
@@ -6506,10 +6582,10 @@ Therefore, these special known-tested commits can be flagged by grepping the
 bisecting on these commits, one has a lower chance of encountering false "bad"
 commits and has a higher chance of finding a smaller range of commits where
 the first true "bad" commit might be found.  To aid in performing ``git
-bisect`` and only checking ``checkin-test.py``-tested commits, the script
+bisect`` and only checking ``checkin-test.py``-tested commits, the tool
 `is_checkin_tested_commit.py`_ is provided.
 
-To demonstrate how the ``is_checkin_tested_commit.py`` script can be used with
+To demonstrate how the ``is_checkin_tested_commit.py`` tool can be used with
 ``git bisect``, suppose that someone writes a customized script
 ``build_and_test_customer_code.sh`` that will build the upstream project and
 the downstream customer's code and then run a set of tests to see if the "bad"
@@ -6547,7 +6623,7 @@ follows::
   ./build_and_test_customer_code.sh  # Rtn 0 "good", or [1, 124] if "bad"
 
 The above test script ``safe_build_and_test_customer_code.sh`` will skip the
-testing of commits that are not marked by the ``checkin-test.py`` script.
+testing of commits that are not marked by the ``checkin-test.py`` tool.
 
 To demonstrate how to use the ``is_checkin_tested_commit.py`` script with
 ``git bisect``, an example from Trilinos is used below.  (Note that the
@@ -6581,10 +6657,10 @@ shown by::
 However, as described above, it is likely that doing ``git bisect`` on that
 full set of 2257 commits may result in hitting false "bad" commits and
 therefore result in a false bracketing of the first "bad" commit.  This is
-where the usage of the ``checkin-test.py`` script helps which is used by many
+where the usage of the ``checkin-test.py`` tool helps which is used by many
 (but not currently all) Trilinos developers to push changes to the Trilinos
 'master' branch in the current single-branch workflow.  The commits marked
-with the ``checkin-test.py`` script are known (with some caveats mentioned
+with the ``checkin-test.py`` tool are known (with some caveats mentioned
 below) to be working commits and for this the range of commits
 ``d44c17d..605b91b`` yields 166 commits as shown by::
 
@@ -6592,7 +6668,7 @@ below) to be working commits and for this the range of commits
   166
 
 That is an average of 2257/166 = 13.6 commits between commits pushed with the
-``checkin-test.py`` script.  So bisecting on just the commits marked by
+``checkin-test.py`` tool.  So bisecting on just the commits marked by
 ``checkin-test.py`` should bound the "bad" commit in a set of 13.6 commits on
 average.  Bisecting on this set of 166 commits should likely give no false
 “bad” commits, and therefore result in the correct bracketing of the first
@@ -6690,8 +6766,8 @@ marked commits which is out of the total set of 2257 possible commits.  With
 just 9 build/test cycles, it bounded the first "bad" commit in a set of 3
 commits in this case.  And it does not matter how sloppy or broken the
 intermediate commits are in Trilinos.  All that matters is the usage of the
-``checkin-test.py`` script (another motivation for the usage of the
-``checkin-test.py`` script, see `Pre-push Testing using checkin-test.py`_ for
+``checkin-test.py`` tool (another motivation for the usage of the
+``checkin-test.py`` tool, see `Pre-push Testing using checkin-test.py`_ for
 others as well).
  
 Note that above, we grep the output from ``git bisect log`` for the set of
@@ -6722,7 +6798,7 @@ doing a further manual bisection or even manual inspection of these commits
 may be enough to find the change that is causing the problem for the
 downstream customer application.
 
-Without the usage of the ``checkin-test.py`` script, one would not have an
+Without the usage of the ``checkin-test.py`` tool, one would not have an
 automated way to ensure that ``git bisect`` avoids false "bad" commits.  This
 allows for less experienced developers to create commits and push to the main
 development branch but still ensure effective usage of ``git bisect``.  (This
@@ -6733,8 +6809,8 @@ developer experience and discipline.)
 Multi-Repository Almost Continuous Integration
 ----------------------------------------------
 
-The `checkin-test.py`_ script can be used to the implement staged integration
-of the various repositories in a multi-repo TriBITS project (see
+The `checkin-test.py`_ tool can be used to the implement staged integration of
+the various repositories in a multi-repo TriBITS project (see
 `Multi-Repository Support`_) .  This is referred to here as Almost Continuous
 Integration (ACI).  The basic concept of Almost Continuous Integration (ACI)
 is defined and described in the paper [`Integration Strategies for CSE,
@@ -6756,20 +6832,20 @@ ACI Introduction
 The TriBITS system allows for setting up composite meta-builds of large
 collections of software pulled in from many different git/TriBITS code
 repositories as described in the section `Multi-Repository Support`_.  The
-`checkin-test.py`_ script is a key tool to enable the testing of a set of
+`checkin-test.py`_ tool is a key tool to enable the testing of a set of
 packages in different git/TriBITS repos before pushing to remote tracking
 branches for the set of git repos; all in one robust command invocation.
 
-While the ``checkin-test.py`` script was originally designed and its default
+While the ``checkin-test.py`` tool was originally designed and its default
 behavior is to test a set of local commits created by a developer before
 pushing changes to one or more (public) git repos, it can also be used to set
 up an Almost Continuous Integration (ACI) process to keep these various
 git/TriBITS repos in sync thereby integrating the work of various disconnected
-development teams and projects.  To use the ``checkin-test.py`` script for ACI
-requires some setup and changing what the script does a little by passing in
+development teams and projects.  To use the ``checkin-test.py`` tool for ACI
+requires some setup and changing what the tool does a little by passing in
 additional options that a regular developer typically never uses.
 
-The following subsections describe how to use the `checkin-test.py`_ script to
+The following subsections describe how to use the `checkin-test.py`_ tool to
 implement an ACI process for a given set of git/TriBITS repositories and also
 provides a little background and context behind ACI.
 
@@ -6840,7 +6916,7 @@ repos on ``url4.gov`` do not break any builds or tests of the integrated
 software.
 
 In order to describe how to set up an ACI process using the
-``checkin-test.py`` script, the following subsections will focus on the update
+``checkin-test.py`` tool, the following subsections will focus on the update
 of the git/TriBITS ``ExtraRepo1`` repo keeping the other two git/TriBITS repos
 ``BaseProj`` and ``ExtraRepo2`` constant as the ACI use case.
 
@@ -6946,60 +7022,60 @@ NOTE, in the above example ``sync_ExtraRepo1.sh`` script, the variable
 
    BaseProj/sampleScripts/checkin-test-foo.sh
 
-which would be set up to call the project's `checkin-test.py`_ script with
+which would be set up to call the project's `checkin-test.py`_ tool with
 configure options for the specific machine.  The location and the nature of
 the wrapper script will vary from project to project and machine to machine.
 In some simple cases, ``CHECKIN_TEST_WRAPPER`` might just be set to be the raw
-machine-independent ``checkin-test.py`` script for the project.
+machine-independent ``checkin-test.py`` tool for the project.
 
 A description of each option passed into this invocation of the
-`checkin-test.py`_ script is given below (see `checkin-test.py --help`_ for
-more details):
+`checkin-test.py`_ tool is given below (see `checkin-test.py --help`_ for more
+details):
 
   ``--extra-pull-from=ExtraRepo1:public:master``
   
-    This option instructs the ``checkin-test.py`` script to pull and merge in
+    This option instructs the ``checkin-test.py`` tool to pull and merge in
     commits that define the integration.  One could do the pull(s) manually of
     doing so has the disadvantage that if they fail for some reason, they will
-    not be seen by the ``checkin-test.py`` script and no notification email
+    not be seen by the ``checkin-test.py`` tool and no notification email
     would go out.
   
   ``--abort-gracefully-if-no-changes-to-push``
   
     The option ``--abort-gracefully-if-no-changes-to-push`` makes the
-    ``checkin-test.py`` script gracefully terminate without sending out any
+    ``checkin-test.py`` tool gracefully terminate without sending out any
     emails if after all the pulls, there are no local changes to push to the
     'origin' repos.  This can happen, for example, if no commits were pushed
     to the main development git repo for ``ExtraRepo1`` at
     ``url2.gov:/git/ExtraRepo1`` since the last time this sync process was
     run.  This avoids getting confusing and annoying emails like ``"PUSH
     FAILED"``.  The reason this option is not generally needed for local
-    developer usage of the ``checkin-test.py`` script is that in general a
-    developer will not run the ``checkin-test.py`` script with ``--push``
-    unless they have made local changes; it just does not make any sense at
-    all to do that and if they do by accident, they should get an error email.
-    However, for an automated ACI sync process, there is no easy way to know a
-    priori if changes need to be synced so the script supports this option to
-    deal with that case gracefully.
+    developer usage of the ``checkin-test.py`` tool is that in general a
+    developer will not run the ``checkin-test.py`` tool with ``--push`` unless
+    they have made local changes; it just does not make any sense at all to do
+    that and if they do by accident, they should get an error email.  However,
+    for an automated ACI sync process, there is no easy way to know a-priori
+    if changes need to be synced so the script supports this option to deal
+    with that case gracefully.
 
   ``--enable-extra-packages=Package1A``
 
     This option should be set if one wants to ensure that all commits get
     synced, even when these changes don't impact the build or the tests of the
     project.  If not setting ``--enable-extra-packages=<some-package>`` , then
-    the ``checkin-test.py`` script will only decide on its own what packages
-    to test just based on what packages have changed files in the
-    ``ExtraRepo1`` repo and if no modified files map to a package, then no
-    packages will be auto-enabled and therefore no packages will be enabled at
-    all.  For example, if a top-level README file in the base ``ExtraRepo1``
-    repo gets modified that does not sit under a package directory, then the
-    automatic logic in the checkin-test.py script will not trigger a package
-    enable. In that case, no configure, build, testing, or push will take
-    place (must run at least some tests in order to assume it is safe to push)
-    and therefore the sync will not occur.  Therefore, if one wants to ensure
-    that every commit gets safely synced over on every invocation, then the
-    safest way to that is to always enable at least one or more packages by
-    specify ``--enable-extra-packages=<pkg0>,<pkg1>``.  **WARNING:** it is not
+    the ``checkin-test.py`` tool will only decide on its own what packages to
+    test just based on what packages have changed files in the ``ExtraRepo1``
+    repo and if no modified files map to a package, then no packages will be
+    auto-enabled and therefore no packages will be enabled at all.  For
+    example, if a top-level README file in the base ``ExtraRepo1`` repo gets
+    modified that does not sit under a package directory, then the automatic
+    logic in the checkin-test.py tool will not trigger a package enable. In
+    that case, no configure, build, testing, or push will take place (must run
+    at least some tests in order to assume it is safe to push) and therefore
+    the sync will not occur.  Therefore, if one wants to ensure that every
+    commit gets safely synced over on every invocation, then the safest way to
+    that is to always enable at least one or more packages by specify
+    ``--enable-extra-packages=<pkg0>,<pkg1>``.  **WARNING:** it is not
     advisable to manually set ``--enable-packages=<package-list>`` since it
     turns off the auto-enable logic for changed files.  This is because if
     there are changes to other packages, then these packages will not get
@@ -7014,12 +7090,12 @@ more details):
 
   ``--send-build-case-email=only-on-failure``
 
-    This makes the checkin-test.py script skip sending email about a build
-    case (e.g. ``MPI_DEBUG``) unless it fails.  That way, if everything
-    passes, then only a final ``DID PUSH`` email will go out.  But if a build
-    case does fail (i.e. configure, build, or tests fail), then an "early
-    warning" email will still go out.  However, if one wants to never get the
-    early build-case emails, one can turn this off by setting
+    This makes the checkin-test.py tool skip sending email about a build case
+    (e.g. ``MPI_DEBUG``) unless it fails.  That way, if everything passes,
+    then only a final ``DID PUSH`` email will go out.  But if a build case
+    does fail (i.e. configure, build, or tests fail), then an "early warning"
+    email will still go out.  However, if one wants to never get the early
+    build-case emails, one can turn this off by setting
     ``--send-build-case-email=never``.
  
   ``--send-email-to=base-proj-integrators@url4.gov``
@@ -7038,13 +7114,13 @@ more details):
   
   ``--no-append-test-results --no-rebase``
   
-    These options are needed to stop the ``checkin-test.py`` script from
+    These options are needed to stop the ``checkin-test.py`` tool from
     modifying the commits being tested and pushed from one public git repo to
     another.  The option ``--no-append-test-results`` is needed to instruct
-    the ``checkin-test.py`` script to *NOT* amend the last commit with the
+    the ``checkin-test.py`` tool to **NOT** amend the last commit with the
     test results.  The option ``--no-rebase`` is needed to avoid rebasing the
     new commits pulled.  While the default behavior of the ``checkin-test.py``
-    script is to amend the last commit message and rebase the local commits
+    tool is to amend the last commit message and rebase the local commits
     (which is considered best practice when testing local commits), this is a
     very bad thing to do when a ACI sync server is only testing and moving
     commits between public repos.  Amending the last commit would change the
@@ -7060,7 +7136,7 @@ more details):
   ``--do-all --push -j16``
   
     These are standard options that always get used when invoking the
-    ``checkin-test.py`` script and need no further explanation.
+    ``checkin-test.py`` tool and need no further explanation.
   
   ``--wipe-clean``
   
@@ -7127,12 +7203,12 @@ Addressing ACI Failures and Summary
 +++++++++++++++++++++++++++++++++++
 
 After the above cron job starts running (setup described above), the
-``checkin-test.py`` script will send out emails to the email addresses passed
-into the underlying ``checkin-test.py`` script.  If the emails report an
-update, configure, build, or test failure, then someone will need to log onto
-the machine where the ACI sync server is running and investigate what went
-wrong, just like they would if they were running the ``checkin-test.py`` script
-for testing locally modified changes before pushing.
+``checkin-test.py`` tool will send out emails to the email addresses passed
+into the underlying ``checkin-test.py`` tool.  If the emails report an update,
+configure, build, or test failure, then someone will need to log onto the
+machine where the ACI sync server is running and investigate what went wrong,
+just like they would if they were running the ``checkin-test.py`` tool for
+testing locally modified changes before pushing.
 
 In the above example, only a single git/TriBITS repo is integrated in this ACI
 sync scripts.  For a complete system, other ACI sync scripts would be written
@@ -7142,7 +7218,7 @@ git/TriBITS repos at could would be written and used.  The pattern of
 integrations chosen will depend many different factors and these patterns can
 change over time according to current needs and circumstances.
 
-In summary, the `checkin-test.py`_ script can be used to set up robust and
+In summary, the `checkin-test.py`_ tool can be used to set up robust and
 effective Almost Continuous Integration (ACI) sync servers that can be used to
 integrate large collections of software in logical configurations at any
 logical frequency.  Such an approach, together with the practice of `Regulated
@@ -7159,14 +7235,14 @@ a very attractive testing system with many advantages, setting up a CDash
 server can be a bit difficult and a CDash server can require non-trivial
 storage and CPU resources (due to the MySQL DB of test results) and requires
 some amount of extra maintenance.  As an intermediate approach, one can
-consider just using the project's `checkin-test.py`_ script to implement basic
+consider just using the project's `checkin-test.py`_ tool to implement basic
 post-push CI and/or Nightly testing servers using simple cron jobs and some
-other helper scripts.  The ``checkin-test.py`` script will robustly pull new
+other helper scripts.  The ``checkin-test.py`` tool will robustly pull new
 commits, configure the project, build, run tests, and send out emails with
 results and pass/fail.  A bunch of builds can be run at once using multiple
 builds specified in the ``--default-builds``, ``--st-extra-builds``, and
 ``--extra-build`` arguments, or different invocations of the
-``checkin-test.py`` script can be run in parallel for better machine
+``checkin-test.py`` tool can be run in parallel for better machine
 utilization.
 
 What one gives up with this approach over the full-blow CTest/CDash
@@ -7609,7 +7685,7 @@ If the diffs look correct, commit the changes::
 
   $ git commit -m "Removing deprecated code blocks" -- .
 
-Then test everything and push using the `checkin-test.py`_ script.
+Then test everything and push using the `checkin-test.py`_ tool.
 
 After that, all deprecated code is removed and the next period of incremental
 change and deprecation begins.
@@ -7699,9 +7775,8 @@ TriBITS directory snapshotting
 Some TriBITS projects choose to snapshot the `TriBITS/tribits/`_ directory
 source tree into their project's source tree, typically under
 `<projectDir>/cmake/tribits/`_.  The independent ``TriBITS/tribts/`` source
-tree contains the script ``snapshot_tribits.py`` (calls `snapshot-dir.py`_)
-that allows one to update the snapshot of the TriBITS source tree as simply
-as::
+tree contains the tool ``snapshot_tribits.py`` (calls `snapshot-dir.py`_) that
+allows one to update the snapshot of the TriBITS source tree as simply as::
 
   $ cd <projectDir>/cmake/tribits/
   $ <some-base-dir>/TriBITS/tribits/snapshot_tribits.py
@@ -8379,8 +8454,8 @@ These options are described below.
   defined using `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_ will
   be added for ``ctest`` to run (see `Test Test Category`_).  The TriBITS
   default is ``NIGHTLY`` for a standard local build.  The `checkin-test.py`_
-  script sets this to ``BASIC`` by default.  A TriBITS project can override
-  the default for a basic configure using, for example::
+  tool sets this to ``BASIC`` by default.  A TriBITS project can override the
+  default for a basic configure using, for example::
 
     SET(${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT BASIC)
 
@@ -8716,8 +8791,8 @@ Support`_ and `Multi-Repository Development Workflow`_.
 gitdist documentation
 ---------------------
 
-The sections below show snapshots of the output from the `gitdist`_ script
-from `gitdist --help`_ and ``gitdist --dist-help=<topic>``:
+The sections below show snapshots of the output from the `gitdist`_ tool from
+`gitdist --help`_ and ``gitdist --dist-help=<topic>``:
 
 * `gitdist --help`_
 * `gitdist --dist-help=overview`_
@@ -8822,7 +8897,7 @@ checkin-test.py --help
 Below is a snapshot of the output from ``checkin-test.py --help``.  This
 ``--help`` output contains a lot of information about the recommended
 development workflow (mostly related to pushing commits) and outlines a number
-of different use cases for using the script.
+of different use cases for using the tool.
 
 .. include:: checkin-test-help.txt
    :literal:
@@ -8833,10 +8908,48 @@ of different use cases for using the script.
 is_checkin_tested_commit.py --help
 ----------------------------------
 
-Below is a snapshot of the output from ``is_checkin_tested_commit.py``.  For
-more details see `Using Git Bisect with checkin-test.py workflows`_.
+Below is a snapshot of the output from ``is_checkin_tested_commit.py --help``.
+For more details see `Using Git Bisect with checkin-test.py workflows`_.
 
 .. include:: is_checkin_tested_commit.txt
+   :literal:
+
+
+.. _get-tribits-packages-from-files-list.py:
+
+get-tribits-packages-from-files-list.py --help
+----------------------------------------------
+
+Below is a snapshot of the output from
+``get-tribits-packages-from-files-list.py --help``.  For more details see
+`TriBITS Project Dependencies XML file and tools`_.
+
+.. include:: get-tribits-packages-from-files-list.txt
+   :literal:
+
+
+.. _get-tribits-packages-from-last-tests-failed.py:
+
+get-tribits-packages-from-last-tests-failed.py --help
+-----------------------------------------------------
+
+Below is a snapshot of the output from
+``get-tribits-packages-from-last-tests-failed.py --help``.  For more details
+see `TriBITS Project Dependencies XML file and tools`_.
+
+.. include:: get-tribits-packages-from-last-tests-failed.txt
+   :literal:
+
+
+.. _filter-packages-list.py:
+
+filter-packages-list.py --help
+------------------------------
+
+Below is a snapshot of the output from ``filter-packages-list.py --help``.
+For more details see `TriBITS Project Dependencies XML file and tools`_.
+
+.. include:: filter-packages-list.txt
    :literal:
 
 
@@ -8897,6 +9010,8 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
 
+.. _Outputting package dependency information: TribitsBuildReference.html#outputting-package-dependency-information
+
 .. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: TribitsBuildReference.html#outputting-package-dependency-information
 
 .. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
@@ -8942,3 +9057,4 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 ..  LocalWords:  TriBITS Subpackage subpackage Subpackages subpackages TPL TPLs Kitware
 ..  LocalWords:  CMake cmake CTest ctest CDash CPack WithSubpackages WithSubpackagesA
 ..  LocalWords:  WithSubpackagesB WithSubpackagesC executables FOREACH ENDFOREACH
+

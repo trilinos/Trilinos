@@ -62,7 +62,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::arcp;
 
-using namespace std;
 using std::endl;
 using std::cout;
 
@@ -70,10 +69,11 @@ using std::cout;
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes);
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
 
   doTest(comm, 10, 0, -1, false);

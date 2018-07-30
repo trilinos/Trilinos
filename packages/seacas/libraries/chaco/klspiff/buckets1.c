@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,12 +51,12 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
                  struct bilist **  listspace,   /* list data structure for each vertex */
                  int **            dvals,       /* d-values for each vertex for removing */
                  int *             sets,        /* processor each vertex is assigned to */
-                 float *           term_wgts[], /* weights for terminal propogation */
+                 float *           term_wgts[], /* weights for terminal propagation */
                  int               maxdval,     /* maximum possible dvalue for a vertex */
                  int               nsets,       /* number of sets being divided into */
                  int (*hops)[MAXSETS],          /* hop cost between sets */
                  int using_ewgts                /* are edge weights being used? */
-                 )
+)
 {
   extern double  CUT_TO_HOP_COST; /* if term_prop, cut/hop importance */
   struct bilist *lptr  = NULL;    /* pointer to an element in listspace */
@@ -67,7 +67,7 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
   int            set;             /* set that neighboring vertex belongs to */
   int            weight;          /* edge weight for a particular edge */
   float          tval;            /* terminal propagation value */
-  int            val;             /* terminal propogation rounded value */
+  int            val;             /* terminal propagation rounded value */
   double         cut_cost;        /* relative cut/hop importance */
   double         hop_cost;        /* relative hop/cut importance */
   int            myhop;           /* hops associated with current vertex */
@@ -90,7 +90,7 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
 
   /* Initialize all the preference values. */
   if (term_wgts[1] != NULL) {
-    /* Using terminal propogation. */
+    /* Using terminal propagation. */
     if (myset == 0) { /* No terminal value. */
       for (newset = 1; newset < nsets; newset++) {
         tval = (term_wgts[newset])[vtx];

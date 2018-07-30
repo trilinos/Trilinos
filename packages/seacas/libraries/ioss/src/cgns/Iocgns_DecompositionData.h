@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -63,7 +63,7 @@
 namespace Ioss {
   class Field;
   template <typename INT> class Decomposition;
-}
+} // namespace Ioss
 
 namespace Iocgns {
 
@@ -82,10 +82,10 @@ namespace Iocgns {
     DecompositionDataBase(MPI_Comm comm) {}
 
     virtual ~DecompositionDataBase();
-    virtual void decompose_model(int filePtr, CG_ZoneType_t common_zone_type) = 0;
-    virtual size_t ioss_node_count() const = 0;
-    virtual size_t ioss_elem_count() const = 0;
-    virtual int    int_size() const        = 0;
+    virtual void   decompose_model(int serFilePtr, int filePtr, CG_ZoneType_t common_zone_type) = 0;
+    virtual size_t ioss_node_count() const                                                      = 0;
+    virtual size_t ioss_elem_count() const                                                      = 0;
+    virtual int    int_size() const                                                             = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -140,7 +140,7 @@ namespace Iocgns {
 
     int int_size() const { return sizeof(INT); }
 
-    void decompose_model(int filePtr, CG_ZoneType_t common_zone_type);
+    void decompose_model(int serFilePtr, int filePtr, CG_ZoneType_t common_zone_type);
 
     int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
 
@@ -195,7 +195,7 @@ namespace Iocgns {
                                   INT *data) const;
 
   private:
-    void decompose_structured(int filePtr);
+    void decompose_structured(int serFilePtr, int filePtr);
     void decompose_unstructured(int filePtr);
 
     void get_sideset_data(int filePtr);
@@ -247,11 +247,12 @@ namespace Iocgns {
     void get_file_node_coordinates(int filePtr, int direction, double *ioss_data) const;
     void get_node_coordinates(int filePtr, double *ioss_data, const Ioss::Field &field) const;
 
-    double      m_loadBalanceThreshold;
-    std::string m_preferentialOrdinals;
+    double      m_loadBalanceThreshold{1.4};
+    std::string m_lineDecomposition{};
 
   public:
     Ioss::Decomposition<INT> m_decomposition;
   };
-}
+
+} // namespace Iocgns
 #endif
