@@ -4,22 +4,6 @@
 
 # usage: $ source PullRequestGCC4.9.3TestingEnv.sh
 
-# After the environment is no longer needed, it can be purged using
-# $ module purge
-# or Trilinos/cmake/unload_sems_dev_env.sh
-# param 1: module name
-module_is_available() {
-  module_name=$1
-  output=true
-  ret=$(module avail $module_name 2>&1 | wc -l)
-  if [[ "$ret" == "0" ]]; then
-      output=false
-  fi
-  echo "$output"
-}
- 
-set -x
-
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-gcc/4.9.3
@@ -33,7 +17,9 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
-module load sems-cmake/3.10.3
+
+# Load the SEMS CMake Module
+# module load sems-cmake/3.10.3
 
 # Using CMake and Ninja modules from the ATDM project space.
 # SEMS does not yet supply a recent enough version of CMake

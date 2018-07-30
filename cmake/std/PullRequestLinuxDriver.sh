@@ -1,4 +1,5 @@
-#!/bin/env bash
+#!/usr/bin/env bash
+# set -x  # echo commands
 
 export https_proxy=https://wwwproxy.sandia.gov:80
 export http_proxy=http://wwwproxy.sandia.gov:80
@@ -100,14 +101,6 @@ exit $ierror
 fi
 
 cd ../
-#process list of changes here with script and save to 'packageEnables'
-declare packageEnables=$(bash Trilinos/commonTools/test/utilities/changedPackages.bash)
-ierror=$?
-if [[ $ierror != 0 ]]; then
-echo "There was an issue creating the list of package enables. The error code was: $ierror"
-exit $ierror
-fi
-echo "List of package enables is: $packageEnables"
 
 # Set up the full environment for the build
 if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
@@ -154,7 +147,16 @@ echo "CDash Track = ${CDASH_TRACK:?}"
 #-------------------------------------
 # Doing configure/build/test/submit
 #-------------------------------------
-echo $packageEnables | sed -e "s/-D\([^= ]*\)=\([^ ]*\)/set(\1 \2 CACHE BOOL \"Enabled by PR package enable file.\")^/g" | tr "^" "\n" > packageEnables.cmake
+rm packageEnables.cmake
+changed_packages_app=Trilinos/commonTools/framework/get-changed-trilinos-packages.sh
+${changed_packages_app} ${TRILINOS_SOURCE_SHA} ${TRILINOS_TARGET_SHA} packageEnables.cmake
+
+ierror=$?
+if [[ $ierror != 0 ]]; then
+    echo "There was an issue generating packageEnables.cmake.  The error code was: $ierror"
+    exit $ierror
+fi
+
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
 
@@ -205,3 +207,6 @@ fi
 
 #pushd Trilinos/cmake/ctest/drivers/parameterized
 #ctest -S ctest_linux_nightly_generic.cmake
+
+
+
