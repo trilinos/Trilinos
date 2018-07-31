@@ -135,7 +135,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   Equil_ = true;
   ColPerm_ = "MMD_AT_PLUS_A";
   perm_c_ = 0;
-  RowPerm_ = "LargeDiag";
+  RowPerm_ = "LargeDiag_MC64";
   perm_r_ = 0;
   IterRefine_ = "DOUBLE";
   ReplaceTinyPivot_ = true;
@@ -472,7 +472,7 @@ int Amesos_Superludist::Factor()
     }
 
     if( RowPerm_ == "NATURAL" ) PrivateSuperluData_->options_.RowPerm = (rowperm_t)NATURAL;
-    if( RowPerm_ == "LargeDiag" ) PrivateSuperluData_->options_.RowPerm = LargeDiag;
+    if( RowPerm_ == "LargeDiag_MC64" ) PrivateSuperluData_->options_.RowPerm = LargeDiag_MC64;
     else if( ColPerm_ == "MY_PERMR" ) {
       PrivateSuperluData_->options_.RowPerm = MY_PERMR;
       PrivateSuperluData_->ScalePermstruct_.perm_r = perm_r_;
