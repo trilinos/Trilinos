@@ -30,7 +30,7 @@ options = parser.parse_args()
 
 
 # parse log file with stacked timer output
-timerRegExp = re.compile(r'([\s|]*)(.*):\s([0-9]*\.[0-9]*)\s-\s([0-9]*\.[0-9]*)%')
+timerRegExp = re.compile(r'([\s|]*)(.*):\s([0-9]*(\.[0-9]*)?)\s-\s([0-9]*(\.[0-9]*)?)%')
 with open(options.logFile) as f:
     data = {}
     prevDepth = -1
@@ -48,6 +48,8 @@ with open(options.logFile) as f:
             stack = stack[:depth-1]+[label]
             prevDepth = depth
             data['/'.join(stack)] = time
+            if len(stack) > 1:
+                data['/'.join(stack[:-1])] -= time
 
 # create plot
 dataAll = stringvalues_to_pv(data)
