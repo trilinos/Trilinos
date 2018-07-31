@@ -53,16 +53,6 @@
 #include "Tpetra_SrcDistObject.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
   /// \class RowMatrix
   /// \brief A read-only, row-oriented interface to a sparse matrix.
   ///

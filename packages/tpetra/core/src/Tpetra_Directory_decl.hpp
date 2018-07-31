@@ -42,14 +42,21 @@
 #ifndef TPETRA_DIRECTORY_DECL_HPP
 #define TPETRA_DIRECTORY_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map_decl.hpp"
 #include "Tpetra_DirectoryImpl_decl.hpp"
 #include "Tpetra_TieBreak.hpp"
+#include <Teuchos_Describable.hpp>
 
 namespace Tpetra {
+
+/// \brief Implementation detail of Tpetra, to aid in deprecating
+///   template parameters.
+///
+/// \warning This namespace is an implementation detail of Tpetra.  Do
+///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
+///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
+namespace Classes {
 
   /// \class Directory
   /// \brief Implement mapping from global ID to process ID and local ID.
@@ -181,7 +188,7 @@ namespace Tpetra {
       RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
       if (clone_map.isDistributed ()) {
         if (clone_map.isUniform ()) {
-          typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -191,7 +198,7 @@ namespace Tpetra {
           dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else if (clone_map.isContiguous ()) {
-          typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -201,7 +208,7 @@ namespace Tpetra {
           dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else { // not contiguous
-          typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -212,7 +219,7 @@ namespace Tpetra {
         }
       }
       else { // locally replicated (not distributed)
-        typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
+        typedef ::Tpetra::Details::ReplicatedDirectory<LO, GO, Node> impl_type;
         const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
         TEUCHOS_TEST_FOR_EXCEPTION(
           theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -322,7 +329,7 @@ namespace Tpetra {
     ///   implementations, depending on characteristics of the input
     ///   Map (e.g., locally replicated or globally distributed,
     ///   contiguous or noncontiguous).
-    typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
+    typedef ::Tpetra::Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
     /// \brief Implementation of this object.
     ///
@@ -339,6 +346,9 @@ namespace Tpetra {
     Directory<LocalOrdinal, GlobalOrdinal, Node>&
     operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
   }; // class Directory
+
+} // namespace Classes
+
 } // namespace Tpetra
 
 #endif // TPETRA_DIRECTORY_DECL_HPP
