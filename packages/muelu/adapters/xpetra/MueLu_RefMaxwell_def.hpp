@@ -256,7 +256,7 @@ namespace MueLu {
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
       Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
       rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
       rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
       rapFact->SetParameterList(rapList);
 
@@ -336,7 +336,7 @@ namespace MueLu {
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", false);
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -474,6 +474,7 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
   }
 
@@ -1018,9 +1019,7 @@ namespace MueLu {
           MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
       }
       // add matrices together
-      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setOutputToRootOnly(0);
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,GetOStream(Runtime0));
       AH_->fillComplete();
     }
 
