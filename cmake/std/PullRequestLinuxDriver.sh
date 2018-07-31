@@ -178,15 +178,19 @@ cd TFW_testing_single_configure_prototype
 
 if [ "icc" == ${CC:?} ]
 then
-  CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
+    CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
 else
-  if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
-  then
-    CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
-  elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]
-  then
-    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
-  fi
+    if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+    # --- BEGIN SCAFFOLDING ---
+    # nurgleflurgle... name match!  can we change this to a regex or something to
+    # allow separate testing jobs!?
+    elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+    # --- END SCAFFOLDING ---
+    fi
 fi
 
 ctest -S simple_testing.cmake \
