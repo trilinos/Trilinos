@@ -287,7 +287,7 @@ namespace Tpetra {
     /// communication, and can only access information that would
     /// never need MPI communication, no matter what kind of Map this
     /// is.
-    typedef Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
+    typedef ::Tpetra::Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
       local_map_type;
 
     //@}
