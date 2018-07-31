@@ -97,9 +97,9 @@ elif [[ $JOB_NAME == *"-WSM"* ]]; then
   ATDM_CONFIG_KOKKOS_ARCH=WSM
 else
   ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
-  echo "***"
-  echo "*** No KOKKOS_ARCH specified using default"
-  echo "***"
+  echo "No KOKKOS_ARCH specified so using system default"
+  # NOTE: <system_name>/environment.sh may set ATDM_CONFIG_KOKKOS_ARCH="" as
+  # an allowed value!
 fi
 
 # Set the optimization level
