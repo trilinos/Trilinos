@@ -35,9 +35,9 @@
 //   16                       false/true     false                  true           2
 //   17 SamePattern           true           false                  true           10
 //   18 RowPerm - NATURAL     true           false                  false          10
-//   19 RowPerm - LargeDiag   true           false                  false          10
+//   19 RowPerm - LargeDiag_MC64 true        false                  false          10
 //   20 RowPerm - NATURAL     true           false                  false          10
-//   21 RowPerm - LargeDiag   true           false                  false          10
+//   21 RowPerm - LargeDiag_MC64 true        false                  false          10
 //   22 RowPerm - TinyPivot=t true           false                  false          10
 //   23 RowPerm - TinyPivot=f true           false                  false          10
 //
@@ -703,7 +703,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
-      SuperludistParams.set( "RowPerm", "LargeDiag" );
+      SuperludistParams.set( "RowPerm", "LargeDiag_MC64" );
       SuperludistParams.set( "MaxProcesses", 10 );
       //  ParamList.print( std::cerr, 10 ) ;
 
@@ -772,7 +772,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
-      SuperludistParams.set( "RowPerm", "LargeDiag" );
+      SuperludistParams.set( "RowPerm", "LargeDiag_MC64" );
       SuperludistParams.set( "MaxProcesses", 10 );
       //  ParamList.print( std::cerr, 10 ) ;
 
