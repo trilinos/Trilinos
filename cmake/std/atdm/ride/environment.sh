@@ -37,7 +37,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-    module load devpack/20180308/openmpi/2.1.2/gcc/7.2.0/cuda/9.0.176 
+    module load devpack/20180308/openmpi/2.1.2/gcc/7.2.0/cuda/9.0.176
+    module unload gcc/7.2.0
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
     export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper
     if [ ! -x "$OMPI_CXX" ]; then
