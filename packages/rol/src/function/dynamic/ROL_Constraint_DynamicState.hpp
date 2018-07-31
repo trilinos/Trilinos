@@ -41,79 +41,70 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_CONSTRAINT_DYNAMICSTATE_H
+#define ROL_CONSTRAINT_DYNAMICSTATE_H
+
+#include "ROL_DynamicConstraint.hpp"
 #include "ROL_Constraint.hpp"
-#include "ROL_LinearOperator.hpp"
-
-
-#ifndef ROL_LINEAR_CONSTRAINT_H
-#define ROL_LINEAR_CONSTRAINT_H
-
-
-/** @ingroup func_group
-    \class ROL::LinearConstraint
-    \brief Provides the interface to evaluate linear constraints.
-
-    This class implements the linear constraint
-    \f[
-       c(x) = Ax-b
-    \f]
-
-    Where A is a linear operator
-
-    ---
-*/
 
 namespace ROL {
 
 template <class Real>
-class LinearConstraint : public Constraint<Real> {
+class Constraint_DynamicState : public Constraint<Real> {
 private:
-  const ROL::Ptr<const LinearOperator<Real>> A_;
-  const ROL::Ptr<const LinearOperator<Real>> Atrans_;
-  const ROL::Ptr<const Vector<Real>> b_;
-  bool  isSymmetric_;
+  const Ptr<DynamicConstraint<Real>> con_;
+  const Ptr<const Vector<Real>>       uo_;
+  const Ptr<const Vector<Real>>        z_;
+  const Ptr<const TimeStamp<Real>>    ts_;
+
+  Ptr<Vector<Real>> ijv_;
+  bool isInit_;
+
 public:
-  // Nonsymmetric case
-  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
-                            const ROL::Ptr<const LinearOperator<Real>> &Atrans,
-                            const ROL::Ptr<const Vector<Real> &b ) :
-      A_(A), Atrans_(Atrans), b_(b), isSymmetric_(false) {
-  }
-  // Symmetric case
-  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
-                            const ROL::Ptr<const Vector<Real> &b ) : 
-      A_(A), Atrans_(A), b_(b), isSymmetric_(true) {
+  Constraint_DynamicState(const Ptr<DynamicConstraint<Real>> &con,
+                          const Ptr<const Vector<Real>>      &uo,
+                          const Ptr<const Vector<Real>>      &z,
+                          const Ptr<const TimeStamp<Real>>   &ts)
+    : con_(con), uo_(uo), z_(z), ts_(ts), isInit_(false) {}
+
+  void value(Vector<Real> &c,const Vector<Real> &u,Real &tol) {
+    con_->value(c,*uo_,u,*z_,*ts_);
   }
 
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    A_->apply(c,x,tol);
-    c_->axpy(-1.0,*b_);
+  void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+    con_->applyJacobian_un(jv,v,*uo_,u,*z_,*ts_);
   }
 
-  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
-                     const Vector<Real> &x, Real &tol) {
-    A_->apply(jv,v,tol);
-  }
- 
-  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v,
-                            const Vector<Real> &x, Real &tol) {
-    Atrans_->apply(ajv,v,tol);
+  void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+    con_->applyAdjointJacobian_un(ajv,v,*uo_,u,*z_,*ts_);
   }
 
-  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
-                           const Vector<Real> &x, Real &tol) {
-    ahuv.zero();
+  void applyAdjointHessian(Vector<Real> &ahwv,const Vector<Real> &w,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+    con_->applyAdjointHessian_un_un(ahwv,w,v,*uo_,u,*z_,*ts_);
   }
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    A_->update(x,flag,iter);
-    if( !isSymmetric_ ) {
-      A_->update(x,flag,iter);
+  void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
+    //con_->update_un(u,*ts_);
+    con_->update(*uo_,u,*z_,*ts_);
+  }
+
+  void applyPreconditioner(Vector<Real> &pv,const Vector<Real> &v,const Vector<Real> &u,const Vector<Real> &g,Real &tol) {
+    if (!isInit_) {
+      ijv_ = u.clone();
+      isInit_ = true;
     }
+    con_->applyInverseJacobian_un(*ijv_,v,*uo_,u,*z_,*ts_);
+    con_->applyInverseAdjointJacobian_un(pv,ijv_->dual(),*uo_,u,*z_,*ts_);
   }
-}; // class LinearConstraint
 
+  // Definitions for parametrized (stochastic) equality constraints
+  //void setParameter(const std::vector<Real> &param) {
+  //  con_->setParameter(param);
+  //  Constraint<Real>::setParameter(param);
+  //}
+
+}; // class Constraint_State
 
 } // namespace ROL
 
-#endif //ROL_LINEAR_EQUALITY_CONSTRAINT_H
+#endif

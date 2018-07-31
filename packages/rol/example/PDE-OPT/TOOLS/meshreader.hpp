@@ -49,6 +49,7 @@
 #define MESHREADER_HPP
 
 #include "Shards_CellTopology.hpp"
+#include "ROL_Types.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -98,6 +99,7 @@ public:
     std::ifstream inputfile;
     std::string   line;
     std::string   token;
+    std::string   shape;
 
     inputfile.open(filename);
 
@@ -140,6 +142,13 @@ public:
         if (token == "num_side_sets") {
           ssline >> token;  // skip "="
           ssline >> numSideSets_;
+          break;
+        }
+
+        // Get cell shape.
+        if (token == "connect1:elem_type") {
+          ssline >> token;  // skip "="
+          ssline >> shape;
           processHeader = false;
           break;
         }
@@ -148,7 +157,22 @@ public:
 
     } // end parse header
 
-    cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Hexahedron<8>>() );
+    if (shape.find("TRI") != std::string::npos) {
+      cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Triangle<3>>() );
+    }
+    else if (shape.find("QUAD") != std::string::npos) {
+      cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Quadrilateral<4>>() );
+    }
+    else if (shape.find("TET") != std::string::npos) {
+      cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Tetrahedron<4>>() );
+    }
+    else if (shape.find("HEX") != std::string::npos) {
+      cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Hexahedron<8>>() );
+    }
+    else {
+      std::cout << shape << std::endl;
+      throw ROL::Exception::NotImplemented(">>> Cell shape not recognized!");
+    }
 
     // Set up internal storage.
     numNodesPerCell_ = cellTopo_->getVertexCount();
@@ -266,7 +290,12 @@ public:
     // Parse side sets.
     meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets_);
     for (int ss=0; ss<numSideSets_; ++ss) {
-      (*meshSideSets_)[ss].resize(numFacesPerCell_);
+      if (spaceDim_ == 2) {
+        (*meshSideSets_)[ss].resize(numEdgesPerCell_);
+      }
+      else if (spaceDim_ == 3) {
+        (*meshSideSets_)[ss].resize(numFacesPerCell_);
+      }
     }
     std::vector<int> ssCellIds;
 

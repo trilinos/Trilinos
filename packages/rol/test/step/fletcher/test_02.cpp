@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
 
     ROL::Ptr<ROL::BoundFletcher<RealT> > fletcher_penalty = ROL::makePtr<ROL::BoundFletcher<RealT> >(obj, con, bndxs, *xs, *lis, *parlist);
 
-    ROL::Ptr<ROL::Vector<RealT> > v = xs->clone(); RandomizeVector(*v);
+    ROL::Ptr<ROL::Vector<RealT> > v = xs->clone(); v->randomize();
     std::vector<std::vector<RealT> > gCheck = fletcher_penalty->checkGradient(*xs, *v, true );
 
-    ROL::Ptr<ROL::Vector<RealT> > w = xs->clone(); RandomizeVector(*w);
+    ROL::Ptr<ROL::Vector<RealT> > w = xs->clone(); w->randomize();
     std::vector<RealT> hCheck = fletcher_penalty->checkHessSym( *xs, *v, *w, true, *outStream);
 
     // Define algorithm.

@@ -66,7 +66,7 @@ public:
                 const ROL::Vector<Real> &z,
                 ROL::ParameterList &parlist) :obj_(obj) {
     // Get time discretization parameters
-    theta_  = parlist.sublist("Time Discretization").get("Theta",                1.0);
+    theta_  = parlist.sublist("Time Discretization").get("Theta",1.0);
     zdual_ = z.dual().clone();
   }
 
@@ -183,7 +183,6 @@ public:
                 const ROL::Vector<Real> &un,
                 const ROL::Vector<Real> &z,
                 const ROL::TimeStamp<Real> &ts ) const {
-    const Real one(1);
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
     Real timeOld = ts.t[0], timeNew = ts.t[1];
     Real dt = timeNew - timeOld;

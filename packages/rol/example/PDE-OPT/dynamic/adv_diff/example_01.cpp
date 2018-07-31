@@ -61,13 +61,12 @@
 
 #include <iostream>
 
-#include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/lindynconstraint.hpp"
-#include "../TOOLS/ltiobjective.hpp"
-#include "../TOOLS/pdevector.hpp"
-#include "../TOOLS/pdeobjective.hpp"
-#include "pde_mass.hpp"
-#include "pde_adv_diff.hpp"
+#include "../../TOOLS/meshmanager.hpp"
+#include "../../TOOLS/lindynconstraint.hpp"
+#include "../../TOOLS/ltiobjective.hpp"
+#include "../../TOOLS/pdevector.hpp"
+#include "../../TOOLS/pdeobjective.hpp"
+#include "dynpde_adv_diff.hpp"
 #include "obj_adv_diff.hpp"
 #include "mesh_adv_diff.hpp"
 
@@ -76,7 +75,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -92,33 +91,25 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile("input.xml");
     int nt         = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
     RealT T        = parlist->sublist("Time Discretization").get("End Time",             1.0);
-    RealT dt       = T/static_cast<RealT>(nt-1);
+    RealT dt       = T/static_cast<RealT>(nt);
     int controlDim = 9;
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
     /*************************************************************************/
     /*** Initialize main data structure. ***/
-    ROL::Ptr<MeshManager<RealT> > meshMgr
+    ROL::Ptr<MeshManager<RealT>> meshMgr
       = ROL::makePtr<MeshManager_adv_diff<RealT>>(*parlist);
     // Initialize PDE describing advection-diffusion equation
-    ROL::Ptr<PDE_adv_diff<RealT> > pde
-      = ROL::makePtr<PDE_adv_diff<RealT>>(*parlist);
-    // Initialize PDE describing mass matrix
-    ROL::Ptr<PDE_mass<RealT>> mass
-      = ROL::makePtr<PDE_mass<RealT>>(*parlist);
-
-    /*************************************************************************/
-    /***************** BUILD CONTROL VECTORS *********************************/
-    /*************************************************************************/
-    ROL::Ptr<ROL::Vector<RealT>> zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
-    ROL::Ptr<ROL::PartitionedVector<RealT>> z = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    ROL::Ptr<DynamicPDE_adv_diff<RealT>> pde
+      = ROL::makePtr<DynamicPDE_adv_diff<RealT>>(*parlist);
 
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
     /*************************************************************************/
-    ROL::Ptr<LinDynConstraint<RealT> > dyn_con
-      = ROL::makePtr<LinDynConstraint<RealT>>(pde,mass,meshMgr,comm,*zk,*parlist,true,*outStream);
+    bool isLTI = !parlist->sublist("Problem").get("Time Varying Coefficients",false);
+    ROL::Ptr<LinDynConstraint<RealT>> dyn_con
+      = ROL::makePtr<LinDynConstraint<RealT>>(pde,meshMgr,comm,*parlist,isLTI,*outStream);
     dyn_con->getAssembler()->printMeshData(*outStream);
 
     /*************************************************************************/
@@ -129,16 +120,19 @@ int main(int argc, char *argv[]) {
     uo_ptr = dyn_con->getAssembler()->createStateVector();
     un_ptr = dyn_con->getAssembler()->createStateVector();
     ck_ptr = dyn_con->getAssembler()->createResidualVector();
-    ROL::Ptr<ROL::Vector<RealT> > u0, uo, un, ck;
-    u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,dyn_con->getAssembler());
-    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,dyn_con->getAssembler());
-    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,dyn_con->getAssembler());
-    ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,dyn_con->getAssembler());
+    ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck, zk;
+    u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,*dyn_con->getAssembler());
+    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,*dyn_con->getAssembler());
+    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,*dyn_con->getAssembler());
+    ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,*dyn_con->getAssembler());
+    zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
+    ROL::Ptr<ROL::PartitionedVector<RealT>> z
+      = ROL::PartitionedVector<RealT>::create(*zk, nt);
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
-    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
     qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_adv_diff<RealT>>();
     RealT stateCost   = parlist->sublist("Problem").get("State Cost",1.e5);
@@ -234,6 +228,9 @@ int main(int argc, char *argv[]) {
     std::stringstream ufile;
     ufile << "state." << nt-1 << ".txt";
     dyn_con->outputTpetraVector(uo_ptr, ufile.str());
+    *outStream << "Output time: "
+               << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
