@@ -43,6 +43,7 @@
 #define TPETRA_IMPORTEXPORTDATA_DECL_HPP
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map_fwd.hpp"
 
 namespace Tpetra {
 
@@ -50,9 +51,6 @@ namespace Tpetra {
   // forward declaration of Import,Export, needed to prevent circular inclusions
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Import;
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
-
-  // Forward declaration of Map
-  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 #endif
 
   /// \class ImportExportData

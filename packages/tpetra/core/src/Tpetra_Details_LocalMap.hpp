@@ -49,8 +49,10 @@
 #include "Tpetra_Details_FixedHashTable.hpp"
 // #include "Tpetra_Details_OrdinalTraits.hpp" // comes in above
 // #include "Kokkos_Core.hpp" // comes in above
+#include "Tpetra_Details_LocalMap_fwd.hpp"
 
 namespace Tpetra {
+namespace Classes {
 namespace Details {
 
 /// \class LocalMap
@@ -210,6 +212,7 @@ private:
 };
 
 } // namespace Details
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_LOCALMAP_HPP
