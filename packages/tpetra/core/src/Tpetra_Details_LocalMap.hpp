@@ -52,8 +52,8 @@
 #include "Tpetra_Details_LocalMap_fwd.hpp"
 
 namespace Tpetra {
-namespace Classes {
 namespace Details {
+namespace Classes {
 
 /// \class LocalMap
 /// \brief "Local" part of Map suitable for Kokkos kernels.
@@ -211,8 +211,8 @@ private:
   bool contiguous_;
 };
 
-} // namespace Details
 } // namespace Classes
+} // namespace Details
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_LOCALMAP_HPP
