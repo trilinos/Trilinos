@@ -255,7 +255,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
-  Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
+  Teuchos::Array<Scalar> column_scalar_values(4);            // scalar values for each column
 
   // Loop over elements
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
@@ -273,7 +273,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
     // For each node (row) on the current element:
     // - populate the values array
     // - add the values to the crs_matrix_owned.
-    // Note: hardcoded 4 here because we're using quads.
+    // Note: hardcoded to 4 here because our example uses quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
       global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
