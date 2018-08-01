@@ -44,8 +44,6 @@
 #include <iomanip>
 #include "Kokkos_View.hpp"
 
-// Trivial change to kick off changes for PR Autotesting evaluations
-
 namespace TpetraExamples 
 {
 
