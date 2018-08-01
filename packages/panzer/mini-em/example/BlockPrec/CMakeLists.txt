@@ -39,7 +39,7 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec
@@ -79,7 +79,7 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec
@@ -102,7 +102,7 @@ ENDIF()
 #################################################
 # ML RefMaxwell solver
 
-IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML)
+IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec

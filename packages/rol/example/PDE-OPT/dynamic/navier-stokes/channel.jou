@@ -1,0 +1,47 @@
+reset
+reset aprepro
+
+#{rw = 10} # rectangle width
+#{rh = 2} # rectangle height
+#{cr = 0.25} # circle radius
+#{frw = 0.4} # fraction of rectangle width to which to move circle left from center of rectangle
+#{sz = 1} # mesh size, relative to some unknown nominal resolution; play with it!
+#{ms = 1} # meshing scheme: if set to 1, geometry adaptive quad 'pave' meshing
+# if set to 2 'auto' quad 'pave' meshing
+# if set to 3 triangular Delaunay meshing
+
+create surface rectangle width {rw} height {rh} zplane
+#{Rect = Id("surface")}
+create surface circle radius {cr} zplane
+#{Circ = Id("surface")}
+move Surface {Circ} x {-frw*rw} include_merged
+subtract volume {Circ} from volume {Rect}
+#{CylinderChannel = Id("surface")}
+
+block 1 surface {CylinderChannel}
+
+Sideset 1 add curve 1 # top
+Sideset 2 add curve 4 # right
+Sideset 3 add curve 3 # bottom
+Sideset 4 add curve 2 # left
+Sideset 5 add curve 6 # circle
+
+#{if(ms == 1)}
+block 1 element type QUAD
+surface {CylinderChannel} sizing function type skeleton scale {sz} time_accuracy_level 3
+surface {CylinderChannel} scheme pave
+#{else}
+#{if(ms == 2)}
+block 1 element type QUAD
+surface {CylinderChannel} size auto factor {sz}
+surface {CylinderChannel} scheme pave
+#{else}
+#{if(ms == 3)}
+block 1 element type TRI
+surface {CylinderChannel} size auto factor {sz}
+surface {CylinderChannel} scheme TriDelaunay
+#{endif}
+#{endif}
+#{endif}
+
+mesh surface {CylinderChannel}

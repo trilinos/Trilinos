@@ -56,17 +56,17 @@ class FieldHelper {
   private:
   const int numFields_, numDofs_;
   const std::vector<int> numFieldDofs_;
-  const std::vector<std::vector<int> > fieldPattern_;
+  const std::vector<std::vector<int>> fieldPattern_;
 
   public:
   FieldHelper(const int numFields, const int numDofs,
               const std::vector<int> &numFieldDofs,
-              const std::vector<std::vector<int> > &fieldPattern)
+              const std::vector<std::vector<int>> &fieldPattern)
     : numFields_(numFields), numDofs_(numDofs),
       numFieldDofs_(numFieldDofs), fieldPattern_(fieldPattern) {}
 
-  void splitFieldCoeff(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & U,
-                       const ROL::Ptr<const Intrepid::FieldContainer<Real> >   & u_coeff) const {
+  void splitFieldCoeff(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & U,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff) const {
     U.resize(numFields_);
     int  c = u_coeff->dimension(0);
     for (int i=0; i<numFields_; ++i) {
@@ -80,8 +80,27 @@ class FieldHelper {
     }
   }
 
-  void combineFieldCoeff(ROL::Ptr<Intrepid::FieldContainer<Real> >   & res,
-                         const std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & R) const {
+  void splitFieldCoeff(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> & J,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & jac) const {
+    J.resize(numFields_);
+    int  c = jac->dimension(0);
+    for (int i=0; i<numFields_; ++i) {
+      J[i].resize(numFields_,ROL::nullPtr);
+      for (int j=0; j<numFields_; ++j) {
+        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,numFieldDofs_[i],numFieldDofs_[j]);
+        for (int k=0; k<c; ++k) {
+          for (int l=0; l<numFieldDofs_[i]; ++l) {
+            for (int m=0; m<numFieldDofs_[j]; ++m) {
+              (*J[i][j])(k,l,m) = (*jac)(k,fieldPattern_[i][l],fieldPattern_[j][m]);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void combineFieldCoeff(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
+                         const std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & R) const {
     int c = R[0]->dimension(0);  // number of cells
     res = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);        
     for (int i=0; i<numFields_; ++i) {
@@ -93,8 +112,8 @@ class FieldHelper {
     }
   }
 
-  void combineFieldCoeff(ROL::Ptr<Intrepid::FieldContainer<Real> >   & jac,
-                         const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > & J) const {
+  void combineFieldCoeff(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
+                         const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> & J) const {
     int c = J[0][0]->dimension(0);  // number of cells
     jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_, numDofs_);        
     for (int i=0; i<numFields_; ++i) {

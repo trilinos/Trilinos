@@ -179,7 +179,7 @@ public:
   }
 
   void solve( V& c, const V& uo, V& un, 
-              const V& z, const TS& ts ) const override {
+              const V& z, const TS& ts ) override {
   
     un.zero();  
     auto& un_state = to_state(un);
