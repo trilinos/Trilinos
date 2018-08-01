@@ -9,6 +9,7 @@
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Tpetra_Map.hpp" // for KokkosDeviceWrapperNode
+#include "Tpetra_MultiVector_fwd.hpp"
 #include <vector>
 #include <string>
 
@@ -18,7 +19,6 @@ namespace Teuchos {
 
 namespace Tpetra {
   template<typename S,typename LO,typename GO,typename Node> class CrsMatrix;
-  template<typename S,typename LO,typename GO,typename Node> class MultiVector;
 }
 
 namespace panzer {

@@ -80,8 +80,7 @@ template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
 class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+  using base_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
