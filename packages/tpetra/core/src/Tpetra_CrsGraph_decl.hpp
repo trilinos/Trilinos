@@ -50,6 +50,7 @@
 /// want the declaration of Tpetra::CrsGraph, include this file
 /// (Tpetra_CrsGraph_decl.hpp).
 
+#include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
@@ -68,14 +69,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //
-  // Dear users: These are just forward declarations.  Please skip
-  // over them and go down to the CrsMatrix class declaration.  Thank
-  // you.
-  //
-  template <class LO, class GO, class N>
-  class CrsGraph;
-
   // forward declaration (needed for "friend" inside CrsGraph)
   template <class S, class LO, class GO, class N>
   class CrsMatrix;
@@ -202,6 +195,14 @@ namespace Tpetra {
     };
   } // namespace Details
 
+/// \brief Implementation detail of Tpetra, to aid in deprecating
+///   template parameters.
+///
+/// \warning This namespace is an implementation detail of Tpetra.  Do
+///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
+///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
+namespace Classes {
+
   /// \class CrsGraph
   /// \brief A distributed graph accessed by rows (adjacency lists)
   ///   and stored sparsely.
@@ -270,7 +271,7 @@ namespace Tpetra {
                       GlobalOrdinal,
                       Node>,
     public Teuchos::ParameterListAcceptorDefaultBase,
-    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -601,7 +602,7 @@ namespace Tpetra {
     {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2> output_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> input_crs_graph_type;
-      typedef Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
+      typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
 
@@ -2298,7 +2299,7 @@ namespace Tpetra {
     /// parameter to fillComplete was false, the graph may keep
     /// unpacked 1-D or 2-D storage around and resume it on the next
     /// resumeFill call.
-    Details::EStorageStatus storageStatus_;
+    ::Tpetra::Details::EStorageStatus storageStatus_;
 
     bool indicesAreAllocated_;
     bool indicesAreLocal_;
@@ -2339,6 +2340,7 @@ namespace Tpetra {
     bool sortGhostsAssociatedWithEachProcessor_;
 
   }; // class CrsGraph
+} // namespace Classes
 
   /// \brief Nonmember function to create an empty CrsGraph given a
   ///   row Map and the max number of entries allowed locally per row.
