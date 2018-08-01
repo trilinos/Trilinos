@@ -42,14 +42,15 @@
 #ifndef TPETRA_EXPORT_DEF_HPP
 #define TPETRA_EXPORT_DEF_HPP
 
-#include <Tpetra_Export_decl.hpp>
-
-#include <Tpetra_Distributor.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_ImportExportData.hpp>
-#include <Tpetra_Util.hpp>
-#include <Tpetra_Import.hpp>
-#include <Teuchos_as.hpp>
+#include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_ImportExportData.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Import.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace {
   // Default value of Export's "Debug" parameter.
@@ -57,6 +58,7 @@ namespace {
 } // namespace (anonymous)
 
 namespace Tpetra {
+namespace Classes {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Export<LocalOrdinal,GlobalOrdinal,Node>::
@@ -660,6 +662,7 @@ namespace Tpetra {
     }
   }
 
+} // namespace Classes
 } // namespace Tpetra
 
 // Explicit instantiation macro.
@@ -671,6 +674,6 @@ namespace Tpetra {
 // NODE: The Kokkos Node type.
 #define TPETRA_EXPORT_INSTANT(LO, GO, NODE) \
   \
-  template class Export< LO , GO , NODE >;
+  namespace Classes { template class Export< LO , GO , NODE >; }
 
 #endif // TPETRA_EXPORT_DEF_HPP

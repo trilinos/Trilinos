@@ -42,16 +42,22 @@
 #ifndef TPETRA_IMPORTEXPORTDATA_DECL_HPP
 #define TPETRA_IMPORTEXPORTDATA_DECL_HPP
 
-#include "Tpetra_Distributor.hpp"
+#include "Tpetra_ImportExportData_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
+#include "Tpetra_Import_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
-
-namespace Tpetra {
+#include "Tpetra_Distributor.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of Import,Export, needed to prevent circular inclusions
-  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Import;
-  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
-#endif
+namespace Teuchos {
+class ParameterList; // forward declaration
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+namespace Tpetra {
+namespace Classes {
 
   /// \class ImportExportData
   /// \brief Implementation detail of Import and Export.
@@ -229,6 +235,7 @@ namespace Tpetra {
     operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_IMPORTEXPORTDATA_DECL_HPP
