@@ -27,8 +27,10 @@ fi
 
 echo "Using mutrino compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
-export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8
+# NOTE: We are building on the one 'mutrino' login node so we can't use a lot
+# of cores to build.
 
 # Use srun to run mpi jobs
 export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
@@ -66,9 +68,16 @@ else
     return
 fi
 
+# Load the modules (can't purge)
 module load devpack/20180124/cray/7.6.2/intel/17.0.4
 module load gcc/4.9.3
 module load cmake/3.9.0
+
+# Use manually installed cmake and ninja to allow usage of ninja and
+# all-at-once mode
+export PATH=/projects/netpub/atdm/cmake-3.11.4/bin:/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
+
+# Set MPI wrappers
 export MPICXX=`which CC`
 export MPICC=`which cc`
 export MPIF90=`which ftn`
