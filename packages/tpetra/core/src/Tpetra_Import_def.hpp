@@ -349,6 +349,8 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
+    std::string label;
+    std::string prefix;
     if(!plist.is_null())
       label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:presort ");
@@ -403,9 +405,6 @@ namespace Tpetra {
     ImportData_->isLocallyComplete_ = locallyComplete;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    using Teuchos::TimeMonitor;
-    if(!plist.is_null())
-      label = plist->get("Timer Label",label);
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:cFSAR ");
     auto MM3 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
 #endif

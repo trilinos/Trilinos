@@ -55,17 +55,11 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_def.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
-#include <unistd.h>
 #include <set>
 
-// Tpetra::CrsMatrix uses the functions below in its implementation.
-// To avoid a circular include issue, only include the declarations
-// for CrsMatrix.  We will include the definition after the functions
-// here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
@@ -975,12 +969,9 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
       }
     }
   }
-  if(remotePIDs.size() != RemoteGIDList.size() || NumRemoteColGIDs !=  RemoteGIDList.size()) {
-    std::ostringstream os;
-    os<<" Size missmatch in lowCommunicationMakeColMapAndReindex "<<remotePIDs.size()<<" "<<RemoteGIDList.size()<<" "<<NumRemoteColGIDs <<std::endl;
-    std::cerr<<os.str()<<std::flush;
-  }
 }
+
+
 
 
 // Generates an list of owning PIDs based on two transfer (aka import/export objects)

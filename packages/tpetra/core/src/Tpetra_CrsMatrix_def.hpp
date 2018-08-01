@@ -8209,10 +8209,6 @@ namespace Tpetra {
     }
     Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
 #endif
-    bool isMM=false;
-    if(!params.is_null()) {
-      isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
-    }
 
     // Make sure that the input argument rowTransfer is either an
     // Import or an Export.  Import and Export are the only two
@@ -8891,10 +8887,6 @@ namespace Tpetra {
 
     RCP<import_type> MyImport;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
-    esfc_params.set("Timer Label",prefix + std::string("TAFC"));
-#endif
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",false));
 
@@ -8997,49 +8989,49 @@ namespace Tpetra {
         Teuchos::ArrayRCP<LO>  userExportLIDs = Teuchos::arcp(new LO[MyLen],0,MyLen,true);
         Teuchos::ArrayRCP<int> userExportPIDs = Teuchos::arcp(new int[MyLen],0,MyLen,true);
         int iloc = 0; // will be the size of the userExportLID/PIDs
-        {
+        
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-            auto ssortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort"))));
+	auto ssortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort"))));
 #endif
-            while(i1 < Len1 || i2 < Len2 || i3 < Len3){
-                int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
-                int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
-                int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
+	while(i1 < Len1 || i2 < Len2 || i3 < Len3){
+	    int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
+	    int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
+	    int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
 
-                GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
-                GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
-                GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
+	    GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
+	    GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
+	    GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
 
-                int MIN_PID = TPETRA_MIN3(PID1,PID2,PID3);
-                GO  MIN_GID = TPETRA_MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
-                bool added_entry=false;
+	    int MIN_PID = TPETRA_MIN3(PID1,PID2,PID3);
+	    GO  MIN_GID = TPETRA_MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+	    bool added_entry=false;
 
-                if(PID1 == MIN_PID && GID1 == MIN_GID){
-                    userExportLIDs[iloc]=ELID1[i1];
-                    userExportPIDs[iloc]=EPID1[i1];
-                    i1++;
-                    added_entry=true;
-                    iloc++;
-                }
-                if(PID2 == MIN_PID && GID2 == MIN_GID){
-                    if(!added_entry) {
-                        userExportLIDs[iloc]=ELID2[i2];
-                        userExportPIDs[iloc]=EPID2[i2];
-                        added_entry=true;
-                        iloc++;
-                    }
-                    i2++;
-                }
-                if(PID3 == MIN_PID && GID3 == MIN_GID){
-                    if(!added_entry) {
-                        userExportLIDs[iloc]=ELID3[i3];
-                        userExportPIDs[iloc]=EPID3[i3];
-                        iloc++;
-                    }
-                    i3++;
-                }
-            }// end while
-        {
+	    if(PID1 == MIN_PID && GID1 == MIN_GID){
+		userExportLIDs[iloc]=ELID1[i1];
+		userExportPIDs[iloc]=EPID1[i1];
+		i1++;
+		added_entry=true;
+		iloc++;
+	    }
+	    if(PID2 == MIN_PID && GID2 == MIN_GID){
+		if(!added_entry) {
+		    userExportLIDs[iloc]=ELID2[i2];
+		    userExportPIDs[iloc]=EPID2[i2];
+		    added_entry=true;
+		    iloc++;
+		}
+		i2++;
+	    }
+	    if(PID3 == MIN_PID && GID3 == MIN_GID){
+		if(!added_entry) {
+		    userExportLIDs[iloc]=ELID3[i3];
+		    userExportPIDs[iloc]=EPID3[i3];
+		    iloc++;
+		}
+		i3++;
+	    }
+	}// end while
+	{
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             auto ismmIctor = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor"))));
 #endif
@@ -9053,6 +9045,7 @@ namespace Tpetra {
                                               plist)
                 );
         }
+	
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMMdestMat->expertStaticFillComplete")));
@@ -9060,11 +9053,16 @@ namespace Tpetra {
 #endif
             destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
         }
+
     }  // if(isMM)
     else {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
+#endif
+
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-            TimeMonitor MMnotMM (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
+            TimeMonitor notMMIcTor (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
 #endif
             Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
             mypars->set("Timer Label","notMMFrom_tAFC");
