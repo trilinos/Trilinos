@@ -1005,7 +1005,14 @@ namespace MueLu {
 #endif
         RCP<Vector> diag = VectorFactory::Build(M0inv_Matrix_->getRowMap());
         M0inv_Matrix_->getLocalDiagCopy(*diag);
-        Z->leftScale(*diag);
+        if (Z->getRowMap()->isSameAs(*(diag->getMap())))
+          Z->leftScale(*diag);
+        else {
+          RCP<Import> importer = ImportFactory::Build(diag->getMap(),Z->getRowMap());
+          RCP<Vector> diag2 = VectorFactory::Build(Z->getRowMap());
+          diag2->doImport(*diag,*importer,Xpetra::INSERT);
+          Z->leftScale(*diag2);
+        }
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*ZT,false,*Z,false,*Matrix2,true,true);
       } else if (parameterList_.get<bool>("rap: triple product", false) == false) {
         Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
