@@ -50,6 +50,7 @@
 
 // Kokkos includes
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
@@ -310,7 +311,6 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 } // namespace Tpetra
 
 namespace Tpetra {
-  template <class S, class L, class G, class N> class MultiVector;
   template <class S, class L, class G, class N> class Vector;
 }
 

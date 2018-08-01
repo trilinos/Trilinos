@@ -69,7 +69,7 @@ namespace Tpetra {
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
   private:
-    friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    friend ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -115,7 +115,7 @@ namespace Tpetra {
     ///   resulting MultiVector.  If the importer is not null, this must be the same as importer->getSourceMap()
     /// \param importer [in] Import describing the distribution of rows of the the multivector in two separate modes.
     ///   In the case of finite element assembly, importer->getSourceMap() should correspond to the uniquely owned entries in the domain map
-    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The 
+    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The
     ///   cannonical way to get this importer is to take the Import object associated with the CrsGraph for your finite element matrix.
     /// \param numVectors [in] Number of columns of the resulting MultiVector.
     // NOTE: A map AND an importer need to be arguments because in serial, the importer will be null
@@ -127,7 +127,7 @@ namespace Tpetra {
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~FEMultiVector () {}
-    
+
     //@}
     //! @name Post-construction modification routines
     //@{
