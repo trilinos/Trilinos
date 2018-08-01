@@ -17,7 +17,6 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
-module load sems-cmake/3.10.3
 
 # Load the SEMS CMake Module
 # - One of the SEMS modules will load CMake 3.4.x also,
