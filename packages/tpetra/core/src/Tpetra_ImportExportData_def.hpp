@@ -42,11 +42,12 @@
 #ifndef TPETRA_IMPORTEXPORTDATA_DEF_HPP
 #define TPETRA_IMPORTEXPORTDATA_DEF_HPP
 
-#include <Tpetra_ImportExportData_decl.hpp>
-
-#include <Tpetra_Map.hpp>
+#include "Tpetra_Map.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Tpetra {
+namespace Classes {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
@@ -150,6 +151,7 @@ namespace Tpetra {
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData()
   {}
 
+} // namespace Classes
 } // namespace Tpetra
 
 // Explicit instantiation macro.
@@ -161,6 +163,6 @@ namespace Tpetra {
 // NODE: The Kokkos Node type.
 #define TPETRA_IMPORTEXPORTDATA_INSTANT(LO, GO, NODE) \
   \
-  template class ImportExportData< LO , GO , NODE >;
+  namespace Classes { template class ImportExportData< LO , GO , NODE >; }
 
 #endif // TPETRA_IMPORTEXPORTDATA_DEF_HPP
