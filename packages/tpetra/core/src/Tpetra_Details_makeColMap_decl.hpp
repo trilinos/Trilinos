@@ -55,6 +55,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include <ostream>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -68,11 +69,6 @@ namespace Teuchos {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of RowGraph
-  template<class LO, class GO, class N> class RowGraph;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Details {
 
