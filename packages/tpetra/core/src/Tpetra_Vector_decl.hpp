@@ -51,9 +51,11 @@
 /// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
 /// \class Vector
 /// \brief A distributed dense vector.
@@ -388,7 +390,7 @@ public:
               Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
-
+} // namespace Classes
 
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector

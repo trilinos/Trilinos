@@ -48,6 +48,7 @@
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_Core.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 
 namespace Tpetra {
 
@@ -59,9 +60,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<class SC, class LO, class GO, class N>
 class CrsMatrix;
-
-template<class SC, class LO, class GO, class N>
-class Vector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \brief Whether "scaling" a matrix means multiplying or dividing
