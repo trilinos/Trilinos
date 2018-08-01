@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-# 2018-07-28 : This script is deprecated in the PR testing suite and 
+# 2018-08-01 : This script is deprecated in the PR testing suite and 
 #              is replaced by `commonTools/framework/get-changed-trilinos-packages.sh`
 
 #The purpose of this file is to generate a list of package enables that

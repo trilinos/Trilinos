@@ -130,14 +130,14 @@ then
 # --- BEGIN SCAFFOLDING ---
 # nurgleflurgle... name match!  can we change this to a regex or something to
 # allow separate testing jobs!?
-elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]
-then
-  source Trilinos/cmake/std/sems/PullRequestGCC4.9.3TestingEnv.sh
-  ierror=$?
-  if [[ $ierror != 0 ]]; then
-    echo "There was an issue loading the gcc environment. The error code was: $ierror"
-    exit $ierror
-  fi
+#elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]
+#then
+#  source Trilinos/cmake/std/sems/PullRequestGCC4.9.3TestingEnv.sh
+#  ierror=$?
+#  if [[ $ierror != 0 ]]; then
+#    echo "There was an issue loading the gcc environment. The error code was: $ierror"
+#    exit $ierror
+#  fi
 # --- END SCAFFOLDING ---  
 else
   ierror=42
@@ -187,8 +187,8 @@ else
     # --- BEGIN SCAFFOLDING ---
     # nurgleflurgle... name match!  can we change this to a regex or something to
     # allow separate testing jobs!?
-    elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]; then
-        CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+    #elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]; then
+    #    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
     # --- END SCAFFOLDING ---
     fi
 fi
