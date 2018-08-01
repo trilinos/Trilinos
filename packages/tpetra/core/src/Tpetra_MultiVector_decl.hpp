@@ -52,6 +52,7 @@
 /// (Tpetra_MultiVector_decl.hpp).
 
 #include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Kokkos_DualView.hpp"
@@ -66,9 +67,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of Vector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class Vector;
-
   // forward declaration of FEMultiVector
   template<class S, class LO, class GO, class N> class FEMultiVector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
