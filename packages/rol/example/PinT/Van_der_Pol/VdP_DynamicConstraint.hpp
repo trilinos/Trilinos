@@ -71,17 +71,19 @@ class DynamicConstraint : public ROL::DynamicConstraint<Real> {
 
 private:
 
+  mutable Real uo0, uo1, un0, un1, z0, dt;
+
   // Jacobians
-  Real Jo_[2][2];
-  Real Jn_[2][2];
-  Real Jz_[2];
-  Real iJn_[2][2];
+  mutable Real Jo[2][2];
+  mutable Real Jn[2][2];
+  mutable Real Jz_[2];
+  mutable Real iJn[2][2];
    
   // Hessians
-  Real Hoo_[2][2][2];
-  Real Hnn_[2][2][2];
-  Real Hzo_[2][2];
-  Real Hzn_[2][2];
+  mutable Real Hoo[2][2][2];
+  mutable Real Hnn[2][2][2];
+  mutable Real Hzo[2][2];
+  mutable Real Hzn[2][2];
 
   ROL::Ptr<std::vector<Real>> getVector( V& x ) const {
     return (static_cast<ROL::StdVector<Real>&>(x)).getVector();
@@ -91,62 +93,79 @@ private:
     return (static_cast<const ROL::StdVector<Real>&>(x)).getVector();
   }
 
-public: 
-
-  void update( const V& uo, const V& un, const V& z, const TS& ts ) override {
-
-    auto uop  = getVector(uo);   
+  void update_uz( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    auto uop  = getVector(uo);    
     auto unp  = getVector(un);   
-    auto zp   = getVector(z);   
+    auto zp   = getVector(z);      
+    dt  = ts.t[1]-ts.t[0];
+    uo0 = uop->at(0); 
+    un0 = unp->at(0); 
+    uo1 = uop->at(1); 
+    un1 = unp->at(1); 
+    z0  = zp->at(0);
+  }
 
-    Real dt = ts.t[1]-ts.t[0];
+  void update_Jo( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Jo[0][0] = -1.0;
+    Jo[0][1] = -0.5*dt;
+    Jo[1][0] = -0.5*dt + dt*z0*uo0*uo1;
+    Jo[1][1] = -1.0 - 0.5*dt*z0*(1-uo0*uo0);
+  }
+  void update_Jn( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Jn[0][0] =  1.0;
+    Jn[0][1] = -0.5*dt;
+    Jn[1][0] = -0.5*dt + dt*z0*un0*un1;
+    Jn[1][1] =  1.0 - 0.5*dt*z0*(1-un0*un0);
 
-    Real uo0 = uop->at(0); 
-    Real uo1 = uop->at(1); 
-    Real un0 = unp->at(0); 
-    Real un1 = unp->at(1); 
+    Real Jdet = Jn[0][0]*Jn[1][1]-Jn[0][1]*Jn[1][0];
+    
+    iJn[0][0] =  Jn[1][1]/Jdet;
+    iJn[0][1] = -Jn[0][1]/Jdet;
+    iJn[1][0] = -Jn[1][0]/Jdet;
+    iJn[1][1] =  Jn[0][0]/Jdet;
+  }
 
-    Jo_[0][0] = -1.0;
-    Jo_[0][1] = -0.5*dt;
-    Jo_[1][0] = -0.5*dt + dt*zp->at(0)*uo0*uo1;
-    Jo_[1][1] = -1.0 - 0.5*dt*zp->at(0)*(1-uo0*uo0);
-
-    Jn_[0][0] =  1.0;
-    Jn_[0][1] = -0.5*dt;
-    Jn_[1][0] = -0.5*dt + dt*zp->at(0)*un0*un1;
-    Jn_[1][1] =  1.0 - 0.5*dt*zp->at(0)*(1-un0*un0);
- 
+  void update_Jz( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
     Jz_[0] =  0.0;
     Jz_[1] = -0.5*dt*( (1.0-uo0*uo0)*uo1 + (1.0-un0*un0)*un1 );
+  }
 
-    Real Jdet = Jn_[0][0]*Jn_[1][1]-Jn_[0][1]*Jn_[1][0];
-    
-    iJn_[0][0] =  Jn_[1][1]/Jdet;
-    iJn_[0][1] = -Jn_[0][1]/Jdet;
-    iJn_[1][0] = -Jn_[1][0]/Jdet;
-    iJn_[1][1] =  Jn_[0][0]/Jdet;
+  void update_Hoo( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Hoo[0][0][0] = 0.0;       Hoo[0][0][1] = 0.0;
+    Hoo[0][1][0] = 0.0;       Hoo[0][1][1] = 0.0;
+    Hoo[1][0][0] = dt*z0*uo1; Hoo[1][0][1] = dt*z0*uo0; 
+    Hoo[1][1][0] = dt*z0*uo0; Hoo[1][1][1] = 0.0;
+  }
 
-    Hoo_[0][0][0] = 0.0;              Hoo_[0][0][1] = 0.0;
-    Hoo_[0][1][0] = 0.0;              Hoo_[0][1][1] = 0.0;
-    Hoo_[1][0][0] = dt*zp->at(0)*uo1; Hoo_[1][0][1] = dt*zp->at(0)*uo0; 
-    Hoo_[1][1][0] = dt*zp->at(0)*uo0; Hoo_[1][1][1] = 0.0;
+  void update_Hnn( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Hnn[0][0][0] = 0.0;       Hnn[0][0][1] = 0.0;
+    Hnn[0][1][0] = 0.0;       Hnn[0][1][1] = 0.0;
+    Hnn[1][0][0] = dt*z0*un1; Hnn[1][0][1] = dt*z0*un0; 
+    Hnn[1][1][0] = dt*z0*un0; Hnn[1][1][1] = 0.0;
+  }
 
-    Hnn_[0][0][0] = 0.0;              Hnn_[0][0][1] = 0.0;
-    Hnn_[0][1][0] = 0.0;              Hnn_[0][1][1] = 0.0;
-    Hnn_[1][0][0] = dt*zp->at(0)*un1; Hnn_[1][0][1] = dt*zp->at(0)*un0; 
-    Hnn_[1][1][0] = dt*zp->at(0)*un0; Hnn_[1][1][1] = 0.0;
+  void update_Hzo( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Hzo[0][0] = 0.0;
+    Hzo[0][1] = 0.0;
+    Hzo[1][0] = dt*uo0*uo1;
+    Hzo[1][1] = -0.5*dt*(1.0-uo0*uo0);
+  }
 
-    Hzo_[0][0] = 0.0;
-    Hzo_[0][1] = 0.0;
-    Hzo_[1][0] = dt*uo0*uo1;
-    Hzo_[1][1] = -0.5*dt*(1.0-uo0*uo0);
+  void update_Hzn( const V& uo, const V& un, const V& z, const TS& ts ) const {
+    update_uz(uo,un,z,ts);
+    Hzn[0][0] = 0.0;
+    Hzn[0][1] = 0.0;
+    Hzn[1][0] = dt*un0*un1;
+    Hzn[1][1] = -0.5*dt*(1.0-un0*un0);
+  }
 
-    Hzn_[0][0] = 0.0;
-    Hzn_[0][1] = 0.0;
-    Hzn_[1][0] = dt*un0*un1;
-    Hzn_[1][1] = -0.5*dt*(1.0-un0*un0);
-
-  } // update
+public: 
 
   void value( V& c, const V& uo, const V& un, 
                     const V& z, const TS& ts ) const override {
@@ -156,16 +175,11 @@ public:
     auto unp = getVector(un);
     auto zp  = getVector(z);
 
-    Real dt = ts.t[1]-ts.t[0];
-
-    Real uo0 = uop->at(0); 
-    Real uo1 = uop->at(1); 
-    Real un0 = unp->at(0); 
-    Real un1 = unp->at(1); 
+    update_uz(uo,un,z,ts);
 
     cp->at(0) = un0 - uo0 - 0.5*dt*( un1 + uo1 );
-    cp->at(1) = un1 - uo1 - 0.5*dt*( zp->at(0)*( (1-uo0*uo0)*uo1 + 
-                                                 (1-un0*un0)*un1 ) + uo0 + un0 );
+    cp->at(1) = un1 - uo1 - 0.5*dt*( z0*( (1-uo0*uo0)*uo1 + 
+                                          (1-un0*un0)*un1 ) + uo0 + un0 );
   }
 
   //----------------------------------------------------------------------------
@@ -174,33 +188,32 @@ public:
                                 const V& un, const V& z, 
                                 const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   
-    auto vp  = getVector(v);
-
-    jvp->at(0) = Jo_[0][0]*vp->at(0) + Jo_[0][1]*vp->at(1);
-    jvp->at(1) = Jo_[1][0]*vp->at(0) + Jo_[1][1]*vp->at(1);  
+    auto jvp = getVector(jv);   auto vp  = getVector(v);
+    update_Jo(uo,un,z,ts);
+    
+    jvp->at(0) = Jo[0][0]*vp->at(0) + Jo[0][1]*vp->at(1);
+    jvp->at(1) = Jo[1][0]*vp->at(0) + Jo[1][1]*vp->at(1);  
   }
 
   void applyJacobian_un( V& jv, const V& v,  const V& uo, 
                                 const V& un, const V& z, 
                                 const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   
-    auto vp  = getVector(v);
+    auto jvp = getVector(jv);   auto vp  = getVector(v);
+    update_Jn(uo,un,z,ts);
 
-    jvp->at(0) = Jn_[0][0]*vp->at(0) + Jn_[0][1]*vp->at(1);
-    jvp->at(1) = Jn_[1][0]*vp->at(0) + Jn_[1][1]*vp->at(1);  
+    jvp->at(0) = Jn[0][0]*vp->at(0) + Jn[0][1]*vp->at(1);
+    jvp->at(1) = Jn[1][0]*vp->at(0) + Jn[1][1]*vp->at(1);  
   }
 
   void applyJacobian_z( V& jv, const V& v,  const V& uo, 
                                const V& un, const V& z, 
                                const TS& ts ) const override {
 
-    auto jvp = getVector(jv);   
-    auto vp  = getVector(v);
+    auto jvp = getVector(jv);  auto vp  = getVector(v);
+    update_Jz(uo,un,z,ts);
 
-    jvp->at(0) = 0.0;
-    jvp->at(1) = Jz_[1]*vp->at(0);
+    jvp->at(0) = 0.0;  jvp->at(1) = Jz_[1]*vp->at(0);
   }
 
   //----------------------------------------------------------------------------
@@ -209,21 +222,21 @@ public:
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
 
-    auto ajvp = getVector(ajv);  
-    auto vp   = getVector(v);
+    auto ajvp = getVector(ajv);  auto vp   = getVector(v);
+    update_Jo(uo,un,z,ts);
 
-    ajvp->at(0) = Jo_[0][0]*vp->at(0) + Jo_[1][0]*vp->at(1);
-    ajvp->at(1) = Jo_[0][1]*vp->at(0) + Jo_[1][1]*vp->at(1);  
+    ajvp->at(0) = Jo[0][0]*vp->at(0) + Jo[1][0]*vp->at(1);
+    ajvp->at(1) = Jo[0][1]*vp->at(0) + Jo[1][1]*vp->at(1);  
   }
 
   void applyAdjointJacobian_un( V& ajv, const V& v,  const V& uo, 
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
-    auto ajvp = getVector(ajv);   
-    auto vp   = getVector(v);
+    auto ajvp = getVector(ajv);   auto vp   = getVector(v);
+    update_Jo(uo,un,z,ts);
 
-    ajvp->at(0) = Jn_[0][0]*vp->at(0) + Jn_[1][0]*vp->at(1);
-    ajvp->at(1) = Jn_[0][1]*vp->at(0) + Jn_[1][1]*vp->at(1);  
+    ajvp->at(0) = Jn[0][0]*vp->at(0) + Jn[1][0]*vp->at(1);
+    ajvp->at(1) = Jn[0][1]*vp->at(0) + Jn[1][1]*vp->at(1);  
    }
 
 
@@ -232,6 +245,7 @@ public:
                                        const TS& ts ) const override {
 
     auto ajvp = getVector(ajv);  auto vp  = getVector(v);
+    update_Jz(uo,un,z,ts);
     
     ajvp->at(0) = Jz_[1]*vp->at(1);
   }
@@ -241,19 +255,21 @@ public:
   void applyInverseJacobian_un( V& ijv, const V& v,  const V& uo, 
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
-    auto ijvp = getVector(ijv);   
-    auto vp   = getVector(v);
-    ijvp->at(0) = iJn_[0][0]*vp->at(0) + iJn_[0][1]*vp->at(1);      
-    ijvp->at(1) = iJn_[1][0]*vp->at(0) + iJn_[1][1]*vp->at(1);    
+    auto ijvp = getVector(ijv);   auto vp   = getVector(v);
+    update_Jn(uo,un,z,ts);
+
+    ijvp->at(0) = iJn[0][0]*vp->at(0) + iJn[0][1]*vp->at(1);      
+    ijvp->at(1) = iJn[1][0]*vp->at(0) + iJn[1][1]*vp->at(1);    
   }
     
   void applyInverseAdjointJacobian_un( V& iajv, const V& v,  const V& uo, 
                                                 const V& un, const V& z, 
                                                 const TS& ts ) const override {
-    auto iajvp = getVector(iajv);  
-    auto vp    = getVector(v);
-    iajvp->at(0) = iJn_[0][0]*vp->at(0) + iJn_[1][0]*vp->at(1);      
-    iajvp->at(1) = iJn_[0][1]*vp->at(0) + iJn_[1][1]*vp->at(1);    
+    auto iajvp = getVector(iajv); auto vp = getVector(v);
+    update_Jn(uo,un,z,ts);
+
+    iajvp->at(0) = iJn[0][0]*vp->at(0) + iJn[1][0]*vp->at(1);      
+    iajvp->at(1) = iJn[0][1]*vp->at(0) + iJn[1][1]*vp->at(1);    
 
    }
 
@@ -267,13 +283,15 @@ public:
     auto wp    = getVector(w);
     auto vp    = getVector(v);     
 
+    update_Hoo(uo,un,z,ts);
+
     Real v0 = vp->at(0);    Real v1 = vp->at(1);
     Real w0 = wp->at(0);    Real w1 = wp->at(1);
 
-    ahwvp->at(0) = w0*Hoo_[0][0][0]*v0 + w1*Hoo_[1][0][0]*v0 +
-                   w0*Hoo_[0][0][1]*v1 + w1*Hoo_[1][0][1]*v1;
-    ahwvp->at(1) = w0*Hoo_[0][1][0]*v0 + w1*Hoo_[1][1][0]*v0 +
-                   w0*Hoo_[0][1][1]*v1 + w1*Hoo_[1][1][1]*v1;
+    ahwvp->at(0) = w0*Hoo[0][0][0]*v0 + w1*Hoo[1][0][0]*v0 +
+                   w0*Hoo[0][0][1]*v1 + w1*Hoo[1][0][1]*v1;
+    ahwvp->at(1) = w0*Hoo[0][1][0]*v0 + w1*Hoo[1][1][0]*v0 +
+                   w0*Hoo[0][1][1]*v1 + w1*Hoo[1][1][1]*v1;
   }
 
   void applyAdjointHessian_uo_z( V& ahwv, const V& w,  const V& v,
@@ -288,7 +306,9 @@ public:
     Real w0 = wp->at(0); 
     Real w1 = wp->at(1); 
 
-    ahwvp->at(0) = ( w0*Hzo_[0][0] + w1*Hzo_[1][0] )*v0 + ( w0*Hzo_[0][1] + w1*Hzo_[1][1] )*v1 ;
+    update_Hzo(uo,un,z,ts);
+
+    ahwvp->at(0) = ( w0*Hzo[0][0] + w1*Hzo[1][0] )*v0 + ( w0*Hzo[0][1] + w1*Hzo[1][1] )*v1 ;
   }
 
   void applyAdjointHessian_un_un( V& ahwv, const V& w,  const V& v,
@@ -301,10 +321,13 @@ public:
     Real v0 = vp->at(0);    Real v1 = vp->at(1);
     Real w0 = wp->at(0);    Real w1 = wp->at(1);
 
-    ahwvp->at(0) = w0*Hnn_[0][0][0]*v0 + w1*Hnn_[1][0][0]*v0 +
-                   w0*Hnn_[0][0][1]*v1 + w1*Hnn_[1][0][1]*v1;
-    ahwvp->at(1) = w0*Hnn_[0][1][0]*v0 + w1*Hnn_[1][1][0]*v0 +
-                   w0*Hnn_[0][1][1]*v1 + w1*Hnn_[1][1][1]*v1;
+    update_Hnn(uo,un,z,ts);
+
+    ahwvp->at(0) = w0*Hnn[0][0][0]*v0 + w1*Hnn[1][0][0]*v0 +
+                   w0*Hnn[0][0][1]*v1 + w1*Hnn[1][0][1]*v1;
+    ahwvp->at(1) = w0*Hnn[0][1][0]*v0 + w1*Hnn[1][1][0]*v0 +
+                   w0*Hnn[0][1][1]*v1 + w1*Hnn[1][1][1]*v1;
+
   }
 
   void applyAdjointHessian_un_z( V& ahwv, const V& w,  const V& v,
@@ -319,7 +342,9 @@ public:
     Real w0 = wp->at(0); 
     Real w1 = wp->at(1); 
 
-    ahwvp->at(0) = ( w0*Hzn_[0][0] + w1*Hzn_[1][0] )*v0 + ( w0*Hzn_[0][1] + w1*Hzn_[1][1] )*v1 ;
+    update_Hzn(uo,un,z,ts);
+
+    ahwvp->at(0) = ( w0*Hzn[0][0] + w1*Hzn[1][0] )*v0 + ( w0*Hzn[0][1] + w1*Hzn[1][1] )*v1 ;
   }
 
 
@@ -334,8 +359,10 @@ public:
     Real w0 = wp->at(0); 
     Real w1 = wp->at(1); 
 
-    ahwvp->at(0) = ( w0*Hzo_[0][0] + w1*Hzo_[1][0] )*v0 ;
-    ahwvp->at(1) = ( w0*Hzo_[0][1] + w1*Hzo_[1][1] )*v0 ;
+    update_Hzo(uo,un,z,ts);
+
+    ahwvp->at(0) = ( w0*Hzo[0][0] + w1*Hzo[1][0] )*v0 ;
+    ahwvp->at(1) = ( w0*Hzo[0][1] + w1*Hzo[1][1] )*v0 ;
   }
 
   void applyAdjointHessian_z_un( V& ahwv, const V& w,  const V& v,
@@ -349,8 +376,10 @@ public:
     Real w0 = wp->at(0); 
     Real w1 = wp->at(1); 
 
-    ahwvp->at(0) = ( w0*Hzn_[0][0] + w1*Hzn_[1][0] )*v0 ;
-    ahwvp->at(1) = ( w0*Hzn_[0][1] + w1*Hzn_[1][1] )*v0 ;
+    update_Hzn(uo,un,z,ts);
+
+    ahwvp->at(0) = ( w0*Hzn[0][0] + w1*Hzn[1][0] )*v0 ;
+    ahwvp->at(1) = ( w0*Hzn[0][1] + w1*Hzn[1][1] )*v0 ;
   }
  
 }; // VdP::DynamicConstraint
