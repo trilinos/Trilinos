@@ -1,9 +1,9 @@
 /** \file shylu_sfactor_test.cpp
 
-    \brief factor test 
+    \brief factor test
 
     \author Joshua Dennis Booth
-    
+
     \remark Usage:
     \code mpirun -n np shylu_sfactor.exe
 
@@ -42,7 +42,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 #endif
 
 #include "shylu.h"
@@ -77,7 +76,7 @@ int main(int argc, char* argv[])
   // int n = 0;
 
   int err = EpetraExt::MatrixMarketFileToCrsMatrix(matrixFileName.c_str(), Comm, A);
-  
+
   if(err!=0 && myPID ==0)
     {
       cout << "Error reading matrix file, info = " << err << endl;
@@ -112,10 +111,10 @@ int main(int argc, char* argv[])
   slu_config_.silent_subiter      = true; //This is
   slu_config_.inner_tolerance     = 1e-5; //This is
   slu_config_.inner_maxiters      = 100; //This is
-  slu_config_.overlap             = 0; //This is 
+  slu_config_.overlap             = 0; //This is
   slu_config_.sep_type            = 1; //1 Wide 2 Narrow
   slu_config_.amesosForDiagonal   = true;
-  
+
 
   int serr = shylu_symbolic_factor(B, &slu_sym_, &slu_data_, &slu_config_);
   cout << "shylu_symbolic_factor done:" << endl;

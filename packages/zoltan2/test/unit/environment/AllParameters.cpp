@@ -51,7 +51,6 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <string>
 
-using namespace std;
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -244,11 +243,10 @@ int testForIssue612()
 
   // Print out all the documentation
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 
@@ -310,7 +308,7 @@ int main(int argc, char *argv[])
 
   for (int i=0; i < NUMFN; i++){
     Teuchos::ParameterList badParams(origParams);
-    istringstream iss(fnParams[i][2]);
+    std::istringstream iss(fnParams[i][2]);
     double badVal;
     iss >> badVal;
     int fail = 

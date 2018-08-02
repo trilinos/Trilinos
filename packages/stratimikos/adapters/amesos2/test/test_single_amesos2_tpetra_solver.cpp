@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -66,6 +66,7 @@ bool Thyra::test_single_amesos2_tpetra_solver(
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *amesos2LOWSFPL
   ,Teuchos::FancyOStream                  *out_arg
+  ,const Teuchos::RCP<const Teuchos::Comm<int> >& comm
   )
 {
   using Teuchos::rcp;
@@ -92,8 +93,7 @@ bool Thyra::test_single_amesos2_tpetra_solver(
     }
 
     if(out.get()) *out << "\nA) Reading in a tpetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
-  
-    auto comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
     using Scalar = double;
     using LOWS = Thyra::Amesos2LinearOpWithSolve<Scalar>;
     using MAT = typename LOWS::MAT;
@@ -153,7 +153,7 @@ bool Thyra::test_single_amesos2_tpetra_solver(
     if(!result) success = false;
 
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
-    
+
     LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
     linearOpWithSolveTester.num_rhs(numRhs);
     linearOpWithSolveTester.turn_off_all_tests();
@@ -185,7 +185,7 @@ bool Thyra::test_single_amesos2_tpetra_solver(
     std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
     success = false;
   }
-   
+
   return success;
-    
+
 }

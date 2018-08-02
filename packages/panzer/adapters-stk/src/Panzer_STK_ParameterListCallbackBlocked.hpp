@@ -52,6 +52,7 @@
 
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_UniqueGlobalIndexer_EpetraUtilities.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 
 #include <vector>
@@ -100,8 +101,10 @@ private:
       return (blocked_ugi_->getFieldNum(field) != -1);
   }
 
-  void buildCoordinates(const std::string & field, const bool useAux = false);
-  void buildArrayToVector(int block,const std::string & field, const bool useAux = false);
+  void buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux = false);
+  void buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux = false);
+  void buildCoordinatesTpetra(const std::string & field, const bool useAux = false);
+  void buildCoordinatesEpetra(const std::string & field, const bool useAux = false);
 
   // this method assumes handlesRequest(rm)==true
   std::string getHandledField(const Teuchos::ParameterList & pl) const;
@@ -129,9 +132,13 @@ private:
   std::map<std::string,std::vector<double> > ycoords_;
   std::map<std::string,std::vector<double> > zcoords_;
 
-  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVector_;
+  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVectorTpetra_;
+  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVectorEpetra_;
 
-  Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > coordsVec_;
+  Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > coordsVecTp_;
+  Teuchos::RCP<Epetra_MultiVector> coordsVecEp_;
+
+  bool returnTpetraObjects_;
    
 };
 

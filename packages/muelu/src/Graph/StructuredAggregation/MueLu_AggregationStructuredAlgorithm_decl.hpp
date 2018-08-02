@@ -52,6 +52,7 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_IndexManager_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
@@ -99,7 +100,13 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates,
+                         std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+
+    /*! @brief Local aggregation. */
+
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph,
+                         RCP<IndexManager>& geoData, RCP<CrsGraph>& myGraph) const;
     //@}
 
     std::string description() const { return "Aggretation: structured algorithm"; }

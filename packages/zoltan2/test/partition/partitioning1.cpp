@@ -54,12 +54,10 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to partition a TPetra matrix
@@ -111,9 +109,8 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
@@ -190,10 +187,10 @@ int main(int narg, char** arg)
   }
 
   if (me == 0)
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl
-         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl
+         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
@@ -267,46 +264,46 @@ int main(int narg, char** arg)
   Zoltan2::PartitioningProblem<SparseGraphAdapter> problem(&adapter, &params);
 
   try {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
 
     problem.solve();
 
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
   catch (std::runtime_error &e) {
     delete [] vwgts;
     delete [] ewgts;
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e) {
     delete [] vwgts;
     delete [] ewgts;
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e) {
     delete [] vwgts;
     delete [] ewgts;
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e) {
     delete [] vwgts;
     delete [] ewgts;
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
 
@@ -327,7 +324,7 @@ int main(int narg, char** arg)
 
   for (size_t i = 0; i < checkLength; i++) {
     if (size_t(checkParts[i]) >= checkNparts)
-      cout << "Invalid Part " << checkParts[i] << ": FAIL" << endl;
+      std::cout << "Invalid Part " << checkParts[i] << ": FAIL" << std::endl;
     countPerPart[checkParts[i]]++;
     for (int j = 0; j < nVwgts; j++) {
       if (j != NNZ_IDX)
@@ -354,15 +351,15 @@ int main(int narg, char** arg)
 
   if (me == 0) {
     float avg = (float) sum / (float) checkNparts;
-    cout << "Minimum count:  " << min << " on rank " << minrank << endl;
-    cout << "Maximum count:  " << max << " on rank " << maxrank << endl;
-    cout << "Average count:  " << avg << endl;
-    cout << "Total count:    " << sum
+    std::cout << "Minimum count:  " << min << " on rank " << minrank << std::endl;
+    std::cout << "Maximum count:  " << max << " on rank " << maxrank << std::endl;
+    std::cout << "Average count:  " << avg << std::endl;
+    std::cout << "Total count:    " << sum
          << (sum != origMatrix->getGlobalNumRows()
                  ? "Work was lost; FAIL"
                  : " ")
-         << endl;
-    cout << "Imbalance:     " << max / avg << endl;
+         << std::endl;
+    std::cout << "Imbalance:     " << max / avg << std::endl;
     if (nVwgts) {
       std::vector<zscalar_t> minwt(nVwgts, std::numeric_limits<zscalar_t>::max());
       std::vector<zscalar_t> maxwt(nVwgts, 0.);
@@ -377,11 +374,11 @@ int main(int narg, char** arg)
       }
       for (int j = 0; j < nVwgts; j++) {
         float avgwt = (float) sumwt[j] / (float) checkNparts;
-        cout << endl;
-        cout << "Minimum weight[" << j << "]:  " << minwt[j] << endl;
-        cout << "Maximum weight[" << j << "]:  " << maxwt[j] << endl;
-        cout << "Average weight[" << j << "]:  " << avgwt << endl;
-        cout << "Imbalance:       " << maxwt[j] / avgwt << endl;
+        std::cout << std::endl;
+        std::cout << "Minimum weight[" << j << "]:  " << minwt[j] << std::endl;
+        std::cout << "Maximum weight[" << j << "]:  " << maxwt[j] << std::endl;
+        std::cout << "Average weight[" << j << "]:  " << avgwt << std::endl;
+        std::cout << "Imbalance:       " << maxwt[j] / avgwt << std::endl;
       }
     }
   }
@@ -395,7 +392,7 @@ int main(int narg, char** arg)
 
 
   ////// Redistribute matrix and vector into new matrix and vector.
-  if (me == 0) cout << "Redistributing matrix..." << endl;
+  if (me == 0) std::cout << "Redistributing matrix..." << std::endl;
   SparseMatrix *redistribMatrix;
   SparseMatrixAdapter adapterMatrix(origMatrix);
   adapterMatrix.applyPartitioningSolution(*origMatrix, redistribMatrix,
@@ -405,7 +402,7 @@ int main(int narg, char** arg)
     redistribMatrix->describe(out, Teuchos::VERB_EXTREME);
   }
 
-  if (me == 0) cout << "Redistributing vectors..." << endl;
+  if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
   Vector *redistribVector;
 //  std::vector<const zscalar_t *> weights;
 //  std::vector<int> weightStrides;
@@ -443,17 +440,17 @@ int main(int narg, char** arg)
   ////// Verify that redistribution is "correct"; perform matvec with
   ////// original and redistributed matrices/vectors and compare norms.
 
-  if (me == 0) cout << "Matvec original..." << endl;
+  if (me == 0) std::cout << "Matvec original..." << std::endl;
   origMatrix->apply(*origVector, *origProd);
   z2TestScalar origNorm = origProd->norm2();
   if (me == 0)
-    cout << "Norm of Original matvec prod:       " << origNorm << endl;
+    std::cout << "Norm of Original matvec prod:       " << origNorm << std::endl;
 
-  if (me == 0) cout << "Matvec redistributed..." << endl;
+  if (me == 0) std::cout << "Matvec redistributed..." << std::endl;
   redistribMatrix->apply(*redistribVector, *redistribProd);
   z2TestScalar redistribNorm = redistribProd->norm2();
   if (me == 0)
-    cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
+    std::cout << "Norm of Redistributed matvec prod:  " << redistribNorm << std::endl;
 
   if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) {
     testReturn = 1;

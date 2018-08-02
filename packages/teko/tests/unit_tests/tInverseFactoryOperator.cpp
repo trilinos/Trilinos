@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve)
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra) 
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
    Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
    Teuchos::RCP<Teko::InverseFactory> invFactory
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve)
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve_tpetra) 
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
    Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
    Teuchos::RCP<Teko::InverseFactory> amesosFactory

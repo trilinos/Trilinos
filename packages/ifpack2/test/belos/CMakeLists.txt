@@ -11,7 +11,7 @@ IF (Tpetra_INST_DOUBLE)
     )
 ENDIF()
 
-IF(Ifpack2_ENABLE_QD AND Tpetra_INST_INT_INT)
+IF(Ifpack2_ENABLE_QD)
   TRIBITS_ADD_EXECUTABLE(
     tif_extprec_belos
     SOURCES belos_extprec_solve.cpp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -53,7 +53,7 @@ double STARTUP_COST      = 0.0;   /* Communication cost of a message startup. */
 /* Intel Paragon startup: 70e-6, per byte: 5.3e-8 */
 
 void read_params(FILE *pfile /* file with new user parameters */
-                 )
+)
 {
   extern int CHECK_INPUT;    /* check the input for consistency? */
   extern int ECHO;           /* print input/param options? to file? (-2..2) */
@@ -539,9 +539,9 @@ void read_params(FILE *pfile /* file with new user parameters */
 
 static int read_intTF(char *ptr, /* pointer to string to parse */
                       int * val  /* value returned */
-                      )
+)
 {
-  int nvals; /* number of values sucessfully read */
+  int nvals; /* number of values successfully read */
 
   while (*ptr != 'T' && *ptr != 't' && *ptr != 'F' && *ptr != 'f' && *ptr != '-' &&
          !isdigit(*ptr) && *ptr != '\0') {
@@ -565,9 +565,9 @@ static int read_intTF(char *ptr, /* pointer to string to parse */
 
 static int read_double(char *  ptr, /* pointer to string to parse */
                        double *val  /* value returned */
-                       )
+)
 {
-  int nvals; /* number of values sucessfully read */
+  int nvals; /* number of values successfully read */
 
   while (*ptr != '-' && *ptr != '.' && !isdigit(*ptr) && *ptr != '\0') {
     ptr++;
@@ -584,9 +584,9 @@ static int read_double(char *  ptr, /* pointer to string to parse */
 
 static int read_long(char *ptr, /* pointer to string to parse */
                      long *val  /* value returned */
-                     )
+)
 {
-  int nvals; /* number of values sucessfully read */
+  int nvals; /* number of values successfully read */
 
   while (*ptr != '-' && !isdigit(*ptr) && *ptr != '\0') {
     ptr++;
@@ -603,7 +603,7 @@ static int read_long(char *ptr, /* pointer to string to parse */
 
 static int read_string(char *ptr, /* pointer to string to parse */
                        char *val  /* value returned */
-                       )
+)
 {
   char *sptr; /* loops through val */
 

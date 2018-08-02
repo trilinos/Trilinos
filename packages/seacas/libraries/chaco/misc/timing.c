@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,7 +80,7 @@ double median_time        = 0;
 double sim_time = 0;
 
 void time_out(FILE *outfile /* file to print output to */
-              )
+)
 {
   FILE *     tempfile;    /* file name for two passes */
   extern int ECHO;        /* parameter for different output styles */

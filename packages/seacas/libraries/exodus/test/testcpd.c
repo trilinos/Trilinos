@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,23 +33,23 @@
  *
  */
 /*****************************************************************************
-*
-* testcpd - copy file test.exo created by testwtd
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*
-*
-* environment - UNIX
-*
-* entry conditions -
-*   input parameters:
-*
-* exit conditions -
-*
-* revision history -
-*
-*****************************************************************************/
+ *
+ * testcpd - copy file test.exo created by testwtd
+ *
+ * author - Sandia National Laboratories
+ *          Larry A. Schoof - Original
+ *
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *   input parameters:
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"
 #include "netcdf.h"

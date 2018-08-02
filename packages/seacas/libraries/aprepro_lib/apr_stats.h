@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 National Technology & Engineering Solutions
+ * Copyright (c) 2014-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,16 +38,16 @@ namespace SEAMS {
   class Stats
   {
   public:
-    Stats();
+    Stats() = default;
 
-    void   newsample(int /*n*/);
+    void   newsample(int n);
     double mean() const;
     double deviation() const;
     double variance() const;
 
   private:
-    size_t Numnums;
-    double Mean;
-    double StdDev;
+    size_t Numnums{0};
+    double Mean{0.0};
+    double StdDev{0.0};
   };
-} // namespace SEAMS  // namespace SEAMS
+} // namespace SEAMS

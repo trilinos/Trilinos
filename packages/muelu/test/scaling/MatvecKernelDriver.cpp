@@ -206,7 +206,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("tpetra",   "notpetra", &do_tpetra,     "Evaluate Tpetra");
     clp.setOption("kk",       "nokk",     &do_kk,         "Evaluate KokkosKernels");
 
-    int kk_team_work_size=16;
     std::string matrixFileNameA = "A.mm"; clp.setOption("matrixfile", &matrixFileNameA, "matrix market file containing matrix");
    
     switch (clp.parse(argc,argv)) {

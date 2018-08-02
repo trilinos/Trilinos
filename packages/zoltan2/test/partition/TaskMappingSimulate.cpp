@@ -7,7 +7,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -354,11 +353,10 @@ void test_serial_input_adapter(Teuchos::RCP<const Teuchos::Comm<int> > global_tc
 
 }
 
-int main(int argc, char *argv[]){
+int main(int narg, char *arg[]){
 
-
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm=Tpetra::getDefaultComm();
 
   char *input_binary_graph = NULL;
   char *input_binary_coordinate = NULL;
@@ -368,37 +366,37 @@ int main(int argc, char *argv[]){
   int rank_per_node = 1;
   int reduce_best_mapping = 1;
   bool visualize_mapping  = false;
-  for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "BG" ) ) {
+  for ( int i = 1 ; i < narg ; ++i ) {
+    if ( 0 == strcasecmp( arg[i] , "BG" ) ) {
 
-      input_binary_graph = argv[++i];
+      input_binary_graph = arg[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "BC" ) ) {
-      input_binary_coordinate = argv[++i];
+    else if ( 0 == strcasecmp( arg[i] , "BC" ) ) {
+      input_binary_coordinate = arg[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "MF" ) ) {
+    else if ( 0 == strcasecmp( arg[i] , "MF" ) ) {
       //not binary.
-      input_machine_file = argv[++i];
+      input_machine_file = arg[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "OL" ) ) {
-      machine_optimization_level = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "OL" ) ) {
+      machine_optimization_level = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "DP" ) ) {
-      if (atoi( argv[++i] )){
+    else if ( 0 == strcasecmp( arg[i] , "DP" ) ) {
+      if (atoi( arg[++i] )){
         divide_prime_first = true;
       }
     }
-    else if ( 0 == strcasecmp( argv[i] , "RPN" ) ) {
-      rank_per_node = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "RPN" ) ) {
+      rank_per_node = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "VM" ) ) {
+    else if ( 0 == strcasecmp( arg[i] , "VM" ) ) {
       visualize_mapping = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "RBM" ) ) {
-      reduce_best_mapping = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "RBM" ) ) {
+      reduce_best_mapping = atoi( arg[++i] );
     }
     else{
-      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << arg[i] << std::endl ;
       return 1;
     }
   }

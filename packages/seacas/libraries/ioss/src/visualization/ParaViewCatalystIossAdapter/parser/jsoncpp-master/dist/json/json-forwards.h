@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -82,9 +82,9 @@ static void strictMode(Json::Value *settings);
 ;
 
 /** Consume entire stream and use its begin/end.
-  * Someday we might have a real StreamReader, but for now this
-  * is convenient.
-  */
+ * Someday we might have a real StreamReader, but for now this
+ * is convenient.
+ */
 bool JSON_API parseFromStream(CharReader::Factory const &, std::istream &, Value *root,
                               std::string *errs);
 
@@ -282,7 +282,7 @@ namespace Json {
    *
    * The JSON document is written in a single line. It is not intended for 'human'
    *consumption,
-   * but may be usefull to support feature such as RPC where bandwith is limited.
+   * but may be useful to support feature such as RPC where bandwidth is limited.
    * \sa Reader, Value
    * \deprecated Use StreamWriterBuilder.
    */

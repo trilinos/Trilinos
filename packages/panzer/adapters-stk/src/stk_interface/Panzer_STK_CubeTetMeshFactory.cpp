@@ -85,7 +85,46 @@ Teuchos::RCP<STK_Interface> CubeTetMeshFactory::buildUncommitedMesh(stk::Paralle
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
 
-   if(xProcs_==-1) {
+   if (xProcs_ == -1 && yProcs_ == -1 && zProcs_ == -1) {
+     // copied from galeri
+     xProcs_ = yProcs_ = zProcs_ = Teuchos::as<int>(pow(Teuchos::as<double>(machSize_), 0.333334));
+
+     if (xProcs_ * yProcs_ * zProcs_ != Teuchos::as<int>(machSize_))  {
+       // Simple method to find a set of processor assignments
+       xProcs_ = yProcs_ = zProcs_ = 1;
+
+       // This means that this works correctly up to about maxFactor^3
+       // processors.
+       const int maxFactor = 50;
+
+       int ProcTemp = machSize_;
+       int factors[maxFactor];
+       for (int jj = 0; jj < maxFactor; jj++) factors[jj] = 0;
+       for (int jj = 2; jj < maxFactor; jj++) {
+         bool flag = true;
+         while (flag) {
+           int temp = ProcTemp/jj;
+           if (temp*jj == ProcTemp) {
+             factors[jj]++;
+             ProcTemp = temp;
+
+           } else {
+             flag = false;
+           }
+         }
+       }
+       xProcs_ = ProcTemp;
+       for (int jj = maxFactor-1; jj > 0; jj--) {
+         while (factors[jj] != 0) {
+           if      ((xProcs_ <= yProcs_) && (xProcs_ <= zProcs_)) xProcs_ = xProcs_*jj;
+           else if ((yProcs_ <= xProcs_) && (yProcs_ <= zProcs_)) yProcs_ = yProcs_*jj;
+           else                               zProcs_ = zProcs_*jj;
+           factors[jj]--;
+         }
+       }
+     }
+
+   } else if(xProcs_==-1) {
       // default x only decomposition
       xProcs_ = machSize_; 
       yProcs_ = 1;

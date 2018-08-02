@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -62,7 +62,8 @@
  */
 
 /*!
- * \deprecated Use ex_put_partial_set() instead.
+ * \deprecated Use ex_put_partial_set()(exoid, EX_SIDE_SET, side_set_id, start_side_num, num_sides,
+                            side_set_elem_list, side_set_side_list)
  */
 int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id, int64_t start_side_num,
                             int64_t num_sides, const void_int *side_set_elem_list,

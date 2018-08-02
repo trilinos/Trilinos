@@ -54,6 +54,10 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Pass initial guess to Newton solver 
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
+
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
     virtual Scalar getOrder() const {return 1.0;}
@@ -104,6 +108,7 @@ private:
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for Backward Euler.

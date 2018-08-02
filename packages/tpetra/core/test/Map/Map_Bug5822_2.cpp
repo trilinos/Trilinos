@@ -41,30 +41,23 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Map.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace { // (anonymous)
-using Tpetra::global_size_t;
+
 using Teuchos::Array;
-using Teuchos::ArrayView;
-using Teuchos::as;
-using Teuchos::Comm;
 using Teuchos::outArg;
-using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::REDUCE_MAX;
 using Teuchos::reduceAll;
-using Teuchos::tuple;
 using std::cerr;
-using std::endl;
 using std::cout;
-using std::cin;
+using std::endl;
 
 // This test works (and exercises the interesting case) in serial mode
 // or for 1 MPI process, but it was originally written for 2 MPI
@@ -74,32 +67,24 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   int locallyThrew = 0;
   int globallyThrew = 0;
 
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+  auto comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
   TEUCHOS_TEST_FOR_EXCEPTION(numProcs != 2, std::logic_error,
     "This test only makes sense to run with 2 MPI processes.");
 
-  // Pick the global index type to have 64 bits.
+  // Pick the global index type to have at least 64 bits.
 #if ! defined (HAVE_TPETRA_INT_LONG_LONG) && ! defined (HAVE_TPETRA_INT_LONG)
-  typedef Tpetra::Map<>::global_ordinal_type GO; // just to make it compile
+  using GO = Tpetra::Map<>::global_ordinal_type; // just to make it compile
   out << "This test only makes sense if GO = long or long long is enabled.  "
     "That is because the test is supposed to exercise global indices greater "
     "than the maximum that int can represent (about 2 billion)." << endl;
   return;
 #else
 #  if defined (HAVE_TPETRA_INT_LONG_LONG)
-  typedef long long GO;
-  if (sizeof (long long) <= 4) {
-    out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
-      "This test only makes sense if sizeof (long long) >= 8.  "
-      "That is because the test is supposed to exercise global indices "
-      "greater than the maximum that int can represent (about 2 billion)."
-        << endl;
-    return;
-  }
+  using GO = long long; // C++11 requires that sizeof(long long) >= 8
 #  elif defined (HAVE_TPETRA_INT_LONG)
-  typedef long GO;
+  using GO = long; // long is 32 bits on some platforms, including Windows
   if (sizeof (long) <= 4) {
     out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
       "This test only makes sense if sizeof (long) >= 8.  "
@@ -110,9 +95,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   }
 #  endif
 #endif
-  typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Map<>::node_type NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using map_type = Tpetra::Map<LO, GO>;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
   // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
@@ -121,7 +105,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   // detecting contiguity and bypassing the noncontiguous Map
   // case.
   const size_t localNumElts = (myRank == 0) ? 6 : 5;
-  const global_size_t globalNumElts = 1 + 5*comm->getSize ();
+  const Tpetra::global_size_t globalNumElts = 1 + 5*comm->getSize ();
   const GO globalFirstGid = 1L;
   const GO threeBillion = static_cast<GO> (3000000000L);
 
@@ -139,7 +123,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
       myGidsExpected[k] = myGids[k];
     }
   } else {
-    myGids[0] = threeBillion + as<GO> ((localNumElts+1) * 2);
+    myGids[0] = threeBillion + Teuchos::as<GO> ((localNumElts+1) * 2);
     myGidsExpected[0] = myGids[0];
     for (size_t k = 1; k < localNumElts; ++k) {
       myGids[k] = myGids[k-1] + 2;
@@ -150,7 +134,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   // if (myRank == 0) {
   //   std::cout << "type '0' and hit enter" << std::endl;
   //   int zero;
-  //   cin >> zero;
+  //   std::cin >> zero;
   // }
   // comm->barrier();
   // Tpetra::Map requires that the index base is less than the minimum GID.
@@ -175,7 +159,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   cerr << myRank << ": Querying the Map for local elements" << endl;
   {
     TEUCHOS_FUNC_TIME_MONITOR("Querying the Map for local elements");
-    ArrayView<const GO> myGidsFound = map->getNodeElementList ();
+    Teuchos::ArrayView<const GO> myGidsFound = map->getNodeElementList ();
     TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );
   }
 

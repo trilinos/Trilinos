@@ -43,7 +43,9 @@
 #define TPETRA_CONFIGDEFS_HPP
 
 #include "TpetraCore_config.h"
-#include "Kokkos_DefaultNode.hpp"
+#include "Teuchos_ConfigDefs.hpp"
+#include "KokkosClassic_DefaultNode_config.h"
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 //! %Tpetra namespace
 namespace Tpetra {
@@ -145,7 +147,10 @@ namespace Tpetra {
   /// \warning Do NOT rely on the contents of this namespace.
   namespace Details {
 
-    //! Declarations of values of Tpetra classes' default template parameters.
+    /// \brief Declarations of values of Tpetra classes' default template parameters.
+    ///
+    /// \warning Don't use this directly.  Get defaults from Tpetra classes.
+    ///   For example: <tt>Tpetra::MultiVector<>::scalar_type</tt>.
     namespace DefaultTypes {
       //! Default value of Scalar template parameter.
       typedef double scalar_type;
@@ -167,8 +172,23 @@ namespace Tpetra {
 #else
 #  error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
 #endif
+
+      /// \typedef execution_space
+      /// \brief Default Tpetra execution space.
+#if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
+      using execution_space = ::Kokkos::Cuda;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
+      using execution_space = ::Kokkos::OpenMP;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
+      using execution_space = ::Kokkos::Threads;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
+      using execution_space = ::Kokkos::Serial;
+#else
+#    error "No default Tpetra Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
+#endif
+
       //! Default value of Node template parameter.
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+      using node_type = ::Kokkos::Compat::KokkosDeviceWrapperNode<execution_space>;
     } // namespace DefaultTypes
 
   } // namespace Details

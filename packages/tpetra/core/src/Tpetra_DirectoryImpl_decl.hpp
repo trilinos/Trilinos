@@ -66,6 +66,13 @@
 
 #include <Tpetra_Details_FixedHashTable_decl.hpp>
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of Teuchos::Comm
+namespace Teuchos {
+  template<class OrdinalType>
+  class Comm;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
   // Forward declaration.

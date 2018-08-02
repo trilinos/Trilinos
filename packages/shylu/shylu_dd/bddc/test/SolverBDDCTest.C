@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -68,84 +68,84 @@ typedef double SM; // real (magnitude) for SX
 //
 // Tpetra typedefs
 //
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+typedef Tpetra::Map<>::node_type  Node;
 typedef Tpetra::Map<LO,GO,Node>                                 Map;
 typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
 typedef Tpetra::Import<LO,GO,Node>                              Import;
 typedef Tpetra::Export<LO,GO,Node>                              Export;
 typedef Tpetra::Vector<SX,LO,GO,Node>                           Vector;
-    
+
 void openFiles
 (RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner,
  LO krylovMethod);
 
 void printTimings
-(RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner, 
+(RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner,
  RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver,
  const LO krylovMethod);
 
-void readInputFile(double & lengthDir1, 
-		   double & lengthDir2, 
-		   double & lengthDir3, 
-		   LO & numSubDir1, 
-		   LO & numSubDir2,
-		   LO & numSubDir3, 
-		   LO & numSubDir1PerProc, 
-		   LO & numSubDir2PerProc,
-		   LO & numSubDir3PerProc, 
-		   LO & Hh,
-		   LO & spatialDim,
-		   LO & problemTypeInt,
-		   LO & matrixType,
-		   double & diagScaleFactor,
-		   LO & numThreadsOuter,
-		   LO & numThreadsInner,
-		   SM & solverTolerance,
-		   LO & maxIterations,
-		   LO & krylovMethod,
-		   LO & estimateConditionNumber,
-		   LO & directSolver,
-		   LO & cornerOption,
-		   LO & edgeOption,
-		   LO & faceOption,
-		   LO & numCoarseSubdomainsPerMpiRank,
-		   LO & numSubdomainsPerCoarseSubdomain,
-		   LO & coarseningOption,
-		   LO & applyOnlyPreconditioner,
-		   LO & numberOfSolves);
+void readInputFile(double & lengthDir1,
+                   double & lengthDir2,
+                   double & lengthDir3,
+                   LO & numSubDir1,
+                   LO & numSubDir2,
+                   LO & numSubDir3,
+                   LO & numSubDir1PerProc,
+                   LO & numSubDir2PerProc,
+                   LO & numSubDir3PerProc,
+                   LO & Hh,
+                   LO & spatialDim,
+                   LO & problemTypeInt,
+                   LO & matrixType,
+                   double & diagScaleFactor,
+                   LO & numThreadsOuter,
+                   LO & numThreadsInner,
+                   SM & solverTolerance,
+                   LO & maxIterations,
+                   LO & krylovMethod,
+                   LO & estimateConditionNumber,
+                   LO & directSolver,
+                   LO & cornerOption,
+                   LO & edgeOption,
+                   LO & faceOption,
+                   LO & numCoarseSubdomainsPerMpiRank,
+                   LO & numSubdomainsPerCoarseSubdomain,
+                   LO & coarseningOption,
+                   LO & applyOnlyPreconditioner,
+                   LO & numberOfSolves);
 
-int setParameters(double lengthDir1, 
-		  double lengthDir2, 
-		  double lengthDir3, 
-		  LO numSubDir1, 
-		  LO numSubDir2,
-		  LO numSubDir3, 
-		  LO numSubDir1PerProc, 
-		  LO numSubDir2PerProc,
-		  LO numSubDir3PerProc, 
-		  LO Hh,
-		  LO spatialDim,
-		  LO problemTypeInt,
-		  LO matrixType,
-		  double diagScaleFactor,
-		  LO numThreadsOuter,
-		  SM solverTolerance,
-		  LO maxIterations,
-		  LO krylovMethod,
-		  LO estimateConditionNumber,
-		  LO directSolver,
-		  LO cornerOption,
-		  LO edgeOption,
-		  LO faceOption,
-		  LO numCoarseSubdomainsPerMpiRank,
-		  LO numSubdomainsPerCoarseSubdomain,
-		  LO coarseningOption,
-		  int numProc,
-		  int myPID,
-		  RCP<Teuchos::ParameterList> & Parameters);
+int setParameters(double lengthDir1,
+                  double lengthDir2,
+                  double lengthDir3,
+                  LO numSubDir1,
+                  LO numSubDir2,
+                  LO numSubDir3,
+                  LO numSubDir1PerProc,
+                  LO numSubDir2PerProc,
+                  LO numSubDir3PerProc,
+                  LO Hh,
+                  LO spatialDim,
+                  LO problemTypeInt,
+                  LO matrixType,
+                  double diagScaleFactor,
+                  LO numThreadsOuter,
+                  SM solverTolerance,
+                  LO maxIterations,
+                  LO krylovMethod,
+                  LO estimateConditionNumber,
+                  LO directSolver,
+                  LO cornerOption,
+                  LO edgeOption,
+                  LO faceOption,
+                  LO numCoarseSubdomainsPerMpiRank,
+                  LO numSubdomainsPerCoarseSubdomain,
+                  LO coarseningOption,
+                  int numProc,
+                  int myPID,
+                  RCP<Teuchos::ParameterList> & Parameters);
 
-void updateRhs(SX* rhs, 
-	       LO numRows);
+void updateRhs(SX* rhs,
+               LO numRows);
 
 TEST(SolverBDDC, Test1)
 {
@@ -165,7 +165,7 @@ TEST(SolverBDDC, Test1)
     numThreadsOuter, numThreadsInner, maxIterations, directSolver,
     applyOnlyPreconditioner, numberOfSolves, matrixType, cornerOption,
     edgeOption, faceOption, krylovMethod, estimateConditionNumber,
-    numCoarseSubdomainsPerMpiRank, numSubdomainsPerCoarseSubdomain, 
+    numCoarseSubdomainsPerMpiRank, numSubdomainsPerCoarseSubdomain,
     coarseningOption;
   //
   // We currently only work with structured meshes generated on-the-fly.
@@ -174,39 +174,39 @@ TEST(SolverBDDC, Test1)
   // for testing of threaded sparse direct solvers (see SparseSolverTest.C).
   //
   readInputFile(lengthDir1, lengthDir2, lengthDir3, numSubDir1, numSubDir2,
-		numSubDir3, numSubDir1PerProc, numSubDir2PerProc,
-		numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
-		matrixType, diagScaleFactor, numThreadsOuter, numThreadsInner,
-		solverTolerance, maxIterations, krylovMethod, 
-		estimateConditionNumber, directSolver, cornerOption, 
-		edgeOption, faceOption, numCoarseSubdomainsPerMpiRank, 
-		numSubdomainsPerCoarseSubdomain, coarseningOption, 
-		applyOnlyPreconditioner, numberOfSolves);
+                numSubDir3, numSubDir1PerProc, numSubDir2PerProc,
+                numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
+                matrixType, diagScaleFactor, numThreadsOuter, numThreadsInner,
+                solverTolerance, maxIterations, krylovMethod,
+                estimateConditionNumber, directSolver, cornerOption,
+                edgeOption, faceOption, numCoarseSubdomainsPerMpiRank,
+                numSubdomainsPerCoarseSubdomain, coarseningOption,
+                applyOnlyPreconditioner, numberOfSolves);
   RCP<Teuchos::ParameterList> Parameters;
-  int returnValue = 
+  int returnValue =
   setParameters(lengthDir1, lengthDir2, lengthDir3, numSubDir1, numSubDir2,
-		numSubDir3, numSubDir1PerProc, numSubDir2PerProc,
-		numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
-		matrixType, diagScaleFactor, numThreadsOuter, solverTolerance, 
-		maxIterations, krylovMethod, estimateConditionNumber, 
-		directSolver, cornerOption, edgeOption,	faceOption, 
-		numCoarseSubdomainsPerMpiRank, numSubdomainsPerCoarseSubdomain, 
-		coarseningOption,numProc, myPID, Parameters);
+                numSubDir3, numSubDir1PerProc, numSubDir2PerProc,
+                numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
+                matrixType, diagScaleFactor, numThreadsOuter, solverTolerance,
+                maxIterations, krylovMethod, estimateConditionNumber,
+                directSolver, cornerOption, edgeOption, faceOption,
+                numCoarseSubdomainsPerMpiRank, numSubdomainsPerCoarseSubdomain,
+                coarseningOption,numProc, myPID, Parameters);
   if (returnValue != 0) return;
   // generate problem
-  RCP< bddc::ProblemMaker<LO,GO,SX,SM> > Problem = 
+  RCP< bddc::ProblemMaker<LO,GO,SX,SM> > Problem =
     rcp( new bddc::ProblemMaker<LO,GO,SX,SM>(Parameters, Comm) );
-  std::vector< std::vector<LO> > subNodes, subNodeBegin, subRowBegin, 
+  std::vector< std::vector<LO> > subNodes, subNodeBegin, subRowBegin,
     subLocalDofs, subColumns, subElems;
   std::vector< std::vector<SX> > subValues;
   Problem->getSubDomainElements(numSubDir1PerProc, numSubDir2PerProc,
-				numSubDir3PerProc, subElems);
+                                numSubDir3PerProc, subElems);
   Problem->getSubDomainNodeData(subElems, subNodes, subNodeBegin,
-				subLocalDofs);
-  Problem->getSubdomainMatrices(subElems, subNodes, subNodeBegin, subRowBegin, 
-				subColumns, subValues);
+                                subLocalDofs);
+  Problem->getSubdomainMatrices(subElems, subNodes, subNodeBegin, subRowBegin,
+                                subColumns, subValues);
   Problem->addDiagonalStiffness(subRowBegin, subColumns, subValues,
-				diagScaleFactor);
+                                diagScaleFactor);
   if (matrixType == 1) {
     Problem->addAsymmetry(subRowBegin, subColumns, subValues);
   }
@@ -230,9 +230,9 @@ TEST(SolverBDDC, Test1)
     std::cout << "omp_get_nested() return " << omp_get_nested() << std::endl;
   }
   // Set number of threads (will be used for inner loops, number of threads
-  // for outer loops set manually using num_threads clause). Thanks for idea 
+  // for outer loops set manually using num_threads clause). Thanks for idea
   // suggested by Andrew Bradley who observed environment variable
-  // specifications like OMP_NUM_THREADS=2,4 are not always supported. 
+  // specifications like OMP_NUM_THREADS=2,4 are not always supported.
 #if defined(_OPENMP)
   omp_set_num_threads(numThreadsInner);
 #endif
@@ -240,9 +240,9 @@ TEST(SolverBDDC, Test1)
   int level(0);
   RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner =
     rcp( new bddc::PreconditionerBDDC<SX,SM,LO,GO>
-	 (numNode, nodeBegin, localDofs, nodeGlobalIDs, xCoord, yCoord, zCoord, 
-	  subNodes, subRowBeginPtr.data(), subColumnsPtr.data(), 
-	  subValuesPtr.data(), Parameters, Comm, level) );
+         (numNode, nodeBegin, localDofs, nodeGlobalIDs, xCoord, yCoord, zCoord,
+          subNodes, subRowBeginPtr.data(), subColumnsPtr.data(),
+          subValuesPtr.data(), Parameters, Comm, level) );
   RCP<const Map> dofMap = Preconditioner->getDofMap1to1();
   if (applyOnlyPreconditioner) {
     dofMap = Preconditioner->getDofMapB1to1();
@@ -282,43 +282,43 @@ TEST(SolverBDDC, Test1)
   }
 }
 
-void updateRhs(SX* rhs, 
-	       LO numRows)
+void updateRhs(SX* rhs,
+               LO numRows)
 {
   for (LO i=0; i<numRows; i++) {
     rhs[i] += 0.07*rand()/RAND_MAX;
   }
 }
 
-void readInputFile(double & lengthDir1, 
-		   double & lengthDir2, 
-		   double & lengthDir3, 
-		   LO & numSubDir1, 
-		   LO & numSubDir2,
-		   LO & numSubDir3, 
-		   LO & numSubDir1PerProc, 
-		   LO & numSubDir2PerProc,
-		   LO & numSubDir3PerProc, 
-		   LO & Hh,
-		   LO & spatialDim,
-		   LO & problemTypeInt,
-		   LO & matrixType,
-		   double & diagScaleFactor,
-		   LO & numThreadsOuter,
-		   LO & numThreadsInner,
-		   SM & solverTolerance,
-		   LO & maxIterations,
-		   LO & krylovMethod,
-		   LO & estimateConditionNumber,
-		   LO & directSolver,
-		   LO & cornerOption,
-		   LO & edgeOption,
-		   LO & faceOption,
-		   LO & numCoarseSubdomainsPerMpiRank,
-		   LO & numSubdomainsPerCoarseSubdomain,
-		   LO & coarseningOption,
-		   LO & applyOnlyPreconditioner,
-		   LO & numberOfSolves)
+void readInputFile(double & lengthDir1,
+                   double & lengthDir2,
+                   double & lengthDir3,
+                   LO & numSubDir1,
+                   LO & numSubDir2,
+                   LO & numSubDir3,
+                   LO & numSubDir1PerProc,
+                   LO & numSubDir2PerProc,
+                   LO & numSubDir3PerProc,
+                   LO & Hh,
+                   LO & spatialDim,
+                   LO & problemTypeInt,
+                   LO & matrixType,
+                   double & diagScaleFactor,
+                   LO & numThreadsOuter,
+                   LO & numThreadsInner,
+                   SM & solverTolerance,
+                   LO & maxIterations,
+                   LO & krylovMethod,
+                   LO & estimateConditionNumber,
+                   LO & directSolver,
+                   LO & cornerOption,
+                   LO & edgeOption,
+                   LO & faceOption,
+                   LO & numCoarseSubdomainsPerMpiRank,
+                   LO & numSubdomainsPerCoarseSubdomain,
+                   LO & coarseningOption,
+                   LO & applyOnlyPreconditioner,
+                   LO & numberOfSolves)
 {
   char buff[101];
   std::ifstream fin;
@@ -355,35 +355,35 @@ void readInputFile(double & lengthDir1,
   fin.close();
 }
 
-int setParameters(double lengthDir1, 
-		  double lengthDir2, 
-		  double lengthDir3, 
-		  LO numSubDir1, 
-		  LO numSubDir2,
-		  LO numSubDir3, 
-		  LO numSubDir1PerProc, 
-		  LO numSubDir2PerProc,
-		  LO numSubDir3PerProc, 
-		  LO Hh,
-		  LO spatialDim,
-		  LO problemTypeInt,
-		  LO matrixType,
-		  double diagScaleFactor,
-		  LO numThreadsOuter,
-		  SM solverTolerance,
-		  LO maxIterations,
-		  LO krylovMethod,
-		  LO estimateConditionNumber,
-		  LO directSolver,
-		  LO cornerOption,
-		  LO edgeOption,
-		  LO faceOption,
-		  LO numCoarseSubdomainsPerMpiRank,
-		  LO numSubdomainsPerCoarseSubdomain,
-		  LO coarseningOption,
-		  int numProc,
-		  int myPID,
-		  RCP<Teuchos::ParameterList> & Parameters)
+int setParameters(double lengthDir1,
+                  double lengthDir2,
+                  double lengthDir3,
+                  LO numSubDir1,
+                  LO numSubDir2,
+                  LO numSubDir3,
+                  LO numSubDir1PerProc,
+                  LO numSubDir2PerProc,
+                  LO numSubDir3PerProc,
+                  LO Hh,
+                  LO spatialDim,
+                  LO problemTypeInt,
+                  LO matrixType,
+                  double diagScaleFactor,
+                  LO numThreadsOuter,
+                  SM solverTolerance,
+                  LO maxIterations,
+                  LO krylovMethod,
+                  LO estimateConditionNumber,
+                  LO directSolver,
+                  LO cornerOption,
+                  LO edgeOption,
+                  LO faceOption,
+                  LO numCoarseSubdomainsPerMpiRank,
+                  LO numSubdomainsPerCoarseSubdomain,
+                  LO coarseningOption,
+                  int numProc,
+                  int myPID,
+                  RCP<Teuchos::ParameterList> & Parameters)
 {
   LO numElemPerSubDir1 = numSubDir1PerProc*Hh;
   LO numElemPerSubDir2 = numSubDir2PerProc*Hh;
@@ -406,7 +406,7 @@ int setParameters(double lengthDir1,
     std::cout << "number of processors not large enough\n";
     return 1;
   }
-  //  
+  //
   Parameters = Teuchos::rcp( new Teuchos::ParameterList() );
   Parameters->set("numDofPerNode", numDofPerNode);
   Parameters->set("numThreadsOuter", numThreadsOuter);
@@ -427,11 +427,11 @@ int setParameters(double lengthDir1,
   Parameters->set("Number of Subdomains Direction 2", numSubDir2);
   Parameters->set("Number of Subdomains Direction 3", numSubDir3);
   Parameters->set("Number of Elements Per Subdomain Direction 1",
-		  numElemPerSubDir1);
+                  numElemPerSubDir1);
   Parameters->set("Number of Elements Per Subdomain Direction 2",
-		  numElemPerSubDir2);
+                  numElemPerSubDir2);
   Parameters->set("Number of Elements Per Subdomain Direction 3",
-		  numElemPerSubDir3);
+                  numElemPerSubDir3);
   Parameters->set("Apply Left Side Essential BCs", true);
   Parameters->set("Apply Right Side Essential BCs", false);
   Parameters->set("Load Direction", loadDirection);
@@ -464,10 +464,10 @@ int setParameters(double lengthDir1,
   if (faceOption) Parameters->set("Use Faces", true);
   else Parameters->set("Use Faces", false);
   // coarse space parameters
-  Parameters->set("numCoarseSubdomainsPerMpiRank", 
-		  numCoarseSubdomainsPerMpiRank);
-  Parameters->set("numSubdomainsPerCoarseSubdomain", 
-		  numSubdomainsPerCoarseSubdomain);
+  Parameters->set("numCoarseSubdomainsPerMpiRank",
+                  numCoarseSubdomainsPerMpiRank);
+  Parameters->set("numSubdomainsPerCoarseSubdomain",
+                  numSubdomainsPerCoarseSubdomain);
   if (coarseningOption == 0) {
     Parameters->set("Construct Subdomain Adjacency Graph", true);
     Parameters->set("Coarsening Option", "Graph");
@@ -518,7 +518,7 @@ int setParameters(double lengthDir1,
 }
 
 void printTimings
-(RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner, 
+(RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner,
  RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver,
  const LO krylovMethod)
 {
@@ -530,25 +530,25 @@ void printTimings
   const std::vector<double> & timings = Preconditioner->getTimings();
   timingsFile << "Timings in seconds for different solver components\n";
   timingsFile << "initial static condensations = "
-	      << timings[bddc::TIME_INIT_STATIC_COND] << std::endl;
+              << timings[bddc::TIME_INIT_STATIC_COND] << std::endl;
   timingsFile << "static expansions            = "
-	      << timings[bddc::TIME_STATIC_EXPANSION] << std::endl;
+              << timings[bddc::TIME_STATIC_EXPANSION] << std::endl;
   timingsFile << "subdomain corrections        = "
-	      << timings[bddc::TIME_SUB_CORR] << std::endl;
+              << timings[bddc::TIME_SUB_CORR] << std::endl;
   timingsFile << "coarse corrections           = "
-	      << timings[bddc::TIME_COARSE_CORR] << std::endl;
+              << timings[bddc::TIME_COARSE_CORR] << std::endl;
   timingsFile << "subdomain corrections        = "
-	      << timings[bddc::TIME_SUB_CORR] << std::endl;
+              << timings[bddc::TIME_SUB_CORR] << std::endl;
   timingsFile << "apply operator               = "
-	      << timings[bddc::TIME_APPLY_OPER] << std::endl;
+              << timings[bddc::TIME_APPLY_OPER] << std::endl;
   if (krylovMethod == 0) {
     timingsFile << "OthogGCR:projections         = "
-		<< Solver->getProjectionTime() << std::endl;
+                << Solver->getProjectionTime() << std::endl;
     timingsFile << "OthogGCR:orthogonalizations  = "
-		<< Solver->getOrthogonalizationTime() << std::endl;
+                << Solver->getOrthogonalizationTime() << std::endl;
   }
   timingsFile << "initialization time          = "
-	      << timings[bddc::TIME_INITIALIZATION] << std::endl;
+              << timings[bddc::TIME_INITIALIZATION] << std::endl;
   timingsFile.close();
 }
 
@@ -561,8 +561,8 @@ void openFiles
   LO myPID = Comm->getRank();
   LO numSub = Preconditioner->getNumSub();
   LO numSubAll;
-  Teuchos::reduceAll<int, LO> (*Comm, Teuchos::REDUCE_SUM, 1, 
-			       &numSub, &numSubAll);
+  Teuchos::reduceAll<int, LO> (*Comm, Teuchos::REDUCE_SUM, 1,
+                               &numSub, &numSubAll);
   RCP<const Map> dofMap1to1 = Preconditioner->getDofMap1to1();
   RCP<const Map> dofMapB1to1 = Preconditioner->getDofMapB1to1();
   LO numDofs = dofMap1to1->getGlobalNumElements();

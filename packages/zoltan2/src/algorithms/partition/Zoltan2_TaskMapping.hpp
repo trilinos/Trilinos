@@ -7,6 +7,7 @@
 #include <set>
 #include <tuple>
 
+#include "Zoltan2_Standards.hpp"
 #include "Zoltan2_AlgMultiJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"

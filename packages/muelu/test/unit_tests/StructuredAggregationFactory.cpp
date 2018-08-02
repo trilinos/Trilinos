@@ -60,6 +60,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_LocalLexicographicIndexManager.hpp"
+#include "MueLu_GlobalLexicographicIndexManager.hpp"
 
 namespace MueLuTests {
 

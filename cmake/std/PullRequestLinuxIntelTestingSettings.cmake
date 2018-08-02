@@ -14,7 +14,6 @@
 set (MueLu_UnitTestsEpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (MueLu_UnitTestsEpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (MueLu_UnitTestsTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (Zoltan2_simplePamgenTest_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 

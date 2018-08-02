@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -113,24 +113,25 @@ int cReadEdgeFace(int argc, char **argv)
 
   EXCHECK(ex_get_init_ext(exoid, &modelParams), "Unable to read database parameters.\n");
 
-  fprintf(stdout, "Title: <%s>\n"
-                  "Dimension: %" PRId64 "\n"
-                  "Nodes: %" PRId64 "\n"
-                  "Edges: %" PRId64 "\n"
-                  "Faces: %" PRId64 "\n"
-                  "Elements: %" PRId64 "\n"
-                  "Edge Blocks: %" PRId64 "\n"
-                  "Face Blocks: %" PRId64 "\n"
-                  "Element Blocks: %" PRId64 "\n"
-                  "Node Sets: %" PRId64 "\n"
-                  "Edge Sets: %" PRId64 "\n"
-                  "Face Sets: %" PRId64 "\n"
-                  "Side Sets: %" PRId64 "\n"
-                  "Element Sets: %" PRId64 "\n"
-                  "Node Maps: %" PRId64 "\n"
-                  "Edge Maps: %" PRId64 "\n"
-                  "Face Maps: %" PRId64 "\n"
-                  "Element Maps: %" PRId64 "\n",
+  fprintf(stdout,
+          "Title: <%s>\n"
+          "Dimension: %" PRId64 "\n"
+          "Nodes: %" PRId64 "\n"
+          "Edges: %" PRId64 "\n"
+          "Faces: %" PRId64 "\n"
+          "Elements: %" PRId64 "\n"
+          "Edge Blocks: %" PRId64 "\n"
+          "Face Blocks: %" PRId64 "\n"
+          "Element Blocks: %" PRId64 "\n"
+          "Node Sets: %" PRId64 "\n"
+          "Edge Sets: %" PRId64 "\n"
+          "Face Sets: %" PRId64 "\n"
+          "Side Sets: %" PRId64 "\n"
+          "Element Sets: %" PRId64 "\n"
+          "Node Maps: %" PRId64 "\n"
+          "Edge Maps: %" PRId64 "\n"
+          "Face Maps: %" PRId64 "\n"
+          "Element Maps: %" PRId64 "\n",
           modelParams.title, modelParams.num_dim, modelParams.num_nodes, modelParams.num_edge,
           modelParams.num_face, modelParams.num_elem, modelParams.num_edge_blk,
           modelParams.num_face_blk, modelParams.num_elem_blk, modelParams.num_node_sets,
@@ -339,7 +340,7 @@ int cReadEdgeFace(int argc, char **argv)
         case EX_EDGE_MAP: num_entries = modelParams.num_edge; break;
         case EX_FACE_MAP: num_entries = modelParams.num_face; break;
         case EX_ELEM_MAP: num_entries = modelParams.num_elem; break;
-        default: num_entries          = 0;
+        default: num_entries = 0;
         }
         if (num_entries) {
           fprintf(stdout, "Entries: %3d\n                :", num_entries);
@@ -348,6 +349,7 @@ int cReadEdgeFace(int argc, char **argv)
           for (j = 0; j < num_entries; ++j) {
             fprintf(stdout, " %d", map[j]);
           }
+          free(map);
         }
         else {
           fprintf(stdout, "Entries: none");

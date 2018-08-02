@@ -223,7 +223,7 @@ public:
   }
 
   void run(std::ostream &outStream = std::cout) {
-    const Real zero(0), one(1);
+    const Real zero(0);
     std::vector<Real> vec_p(2), vec_g(2);
     Real znorm(ROL_INF<Real>()), zdotz(0);
     int iter(0), tspiter(0), flag = 1;

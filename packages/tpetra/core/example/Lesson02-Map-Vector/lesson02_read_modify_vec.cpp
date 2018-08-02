@@ -50,6 +50,7 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -73,27 +74,21 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   }
 
   // Type of the Tpetra::Map specialization to use.
-  typedef Tpetra::Map<> map_type;
+  using map_type = Tpetra::Map<>;
 
   // The type of the Tpetra::Vector specialization to use.
-  typedef Tpetra::Vector<> vector_type;
+  using vector_type = Tpetra::Vector<>;
 
   // The "Scalar" type is the type of the values stored in the Tpetra::Vector.
-  typedef Tpetra::Vector<>::scalar_type scalar_type;
+  using scalar_type = Tpetra::Vector<>::scalar_type;
 
   // The "LocalOrdinal" (LO) type is the type of "local" indices.
   // The typedef is commented out to avoid "unused typedef" warnings.
   //
-  //typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
+  //using local_ordinal_type = Tpetra::Vector<>::local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
-  typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
-
-  // The Kokkos "Node" type describes the type of shared-memory
-  // parallelism that Tpetra will use _within_ an MPI process.
-  // The typedef is commented out to avoid "unused typedef" warnings.
-  //
-  //typedef Tpetra::Vector<>::node_type node_type;
+  using global_ordinal_type = Tpetra::Vector<>::global_ordinal_type;
 
   //////////////////////////////////////////////////////////////////////
   // Create a Tpetra Map
@@ -197,8 +192,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // pluralizing the word "entry" conditionally on globalCount.
     if (myRank == 0) {
       out << "x has " << globalCount << " entr"
-	  << (globalCount != 1 ? "ies" : "y")
-	  << " less than 0.5." << endl;
+          << (globalCount != 1 ? "ies" : "y")
+          << " less than 0.5." << endl;
     }
   }
 

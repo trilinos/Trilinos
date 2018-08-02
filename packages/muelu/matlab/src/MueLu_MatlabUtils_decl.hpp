@@ -73,7 +73,7 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_VectorFactory.hpp"
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
 #include "Kokkos_DynRankView.hpp"
 

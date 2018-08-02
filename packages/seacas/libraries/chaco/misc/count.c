@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void count(struct vtx_data **graph, /* graph data structure */
            int (*hops)[MAXSETS],    /* hops metric between sets */
            int dump,                /* flag for extended output */
            int using_ewgts          /* are edge weights being used? */
-           )
+)
 {
   int *nguys;      /* number of vtxs in each set */
   int  ncross;     /* number of outgoing edges */

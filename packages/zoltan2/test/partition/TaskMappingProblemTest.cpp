@@ -7,7 +7,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -366,25 +365,24 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   }
 }
 
-int main(int argc, char *argv[]){
+int main(int narg, char *arg[]){
 
-
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm = Tpetra::getDefaultComm();
 
   int nx = 16, ny = 16, nz = 16;
-  for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "NX" ) ) {
-      nx = atoi( argv[++i] );
+  for ( int i = 1 ; i < narg ; ++i ) {
+    if ( 0 == strcasecmp( arg[i] , "NX" ) ) {
+      nx = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NY" ) ) {
-      ny = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NY" ) ) {
+      ny = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NZ" ) ) {
-      nz = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NZ" ) ) {
+      nz = atoi( arg[++i] );
     }
     else{
-      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << arg[i] << std::endl ;
       return 1;
     }
   }

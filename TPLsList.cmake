@@ -161,6 +161,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   QUO             "cmake/TPLs/"    EX
   ViennaCL        "cmake/TPLs/"    EX
   Avatar          "cmake/TPLs/"    EX
+  pebbl           "cmake/TPLs/"    EX
   )
 
 # NOTES:

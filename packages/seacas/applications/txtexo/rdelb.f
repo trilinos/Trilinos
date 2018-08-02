@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: rdelb.f,v 1.4 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDELB (NTXT, IELB, IDELB, NUMELB, NUMLNK, NUMATR,
      &   NAMELB, A, KLINK, KATRIB, *)
@@ -62,11 +61,12 @@ C   --upon entry; upon exit at end of element block information.
       include 'exodusII.inc'
       DIMENSION A(*)
       CHARACTER*(MXSTLN) NAMELB
-      CHARACTER*5 STRA
+      CHARACTER*32 STRA
 
       NAMELB = ' '
       READ (NTXT, *, END=110, ERR=110)
-      READ (NTXT, 130, END=110, ERR=110) IDELB, NUMELB, NAMELB
+      READ (NTXT, *, END=110, ERR=110) IDELB, NUMELB, NAMELB
+
 C ... Strip everything in namelb from first space to end
       IEX = index(namelb, " ")
       if (iex .gt. 0) then
@@ -94,6 +94,5 @@ C ... Strip everything in namelb from first space to end
      &   'Reading ELEMENT BLOCK SIZING PARAMETERS for block '
      &   // STRA(:LSTRA))
   120 CONTINUE
- 130  format (2I10,6X,A)
       RETURN 1
       END

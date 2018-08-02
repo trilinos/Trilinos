@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ void mergesort(double *vals, int nvals, int *indices, int *space)
   int        flag;          /* has sorting screwed up? */
   int        i;
 
-  for (i       = 0; i < nvals; i++)
+  for (i = 0; i < nvals; i++)
     indices[i] = i;
 
   recursesort(vals, nvals, indices, space);

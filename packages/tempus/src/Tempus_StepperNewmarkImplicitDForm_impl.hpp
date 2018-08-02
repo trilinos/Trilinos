@@ -270,12 +270,8 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar>> d_pred = Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar>> v_pred = Thyra::createMember(v_old->space());
 
-    // create copies of d_old, so as not to modify d_old in working state
-    RCP<Thyra::VectorBase<Scalar>> d_old_copy = Thyra::createMember(d_old->space());
-    Thyra::copy(*d_old, d_old_copy.ptr());
-
     // compute displacement and velocity predictors
-    predictDisplacement(*d_pred, *d_old_copy, *v_old, *a_old, dt);
+    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
 #ifdef DEBUG_OUTPUT
@@ -295,18 +291,39 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
 #endif
     // inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(
-        a_old, v_pred, d_pred, dt, t, beta_, gamma_);
+    wrapperModel->initializeNewmark(v_pred, d_pred, dt, t, beta_, gamma_);
+    
+    // create initial guess in NOX solver
+    RCP<Thyra::VectorBase<Scalar>> initial_guess = Thyra::createMember(d_pred->space());
+    if ((time == solutionHistory->minTime()) && (initial_guess_ != Teuchos::null)) {
+      //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_ 
+      //Throw an exception if initial_guess is not compatible with solution 
+      bool is_compatible = (initial_guess->space())->isCompatible(*initial_guess_->space()); 
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          is_compatible != true, std::logic_error,
+            "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"
+            << "for Newton is not compatible with solution vector!\n"); 
+      Thyra::copy(*initial_guess_, initial_guess.ptr());
+    }
+    else {
+      //Otherwise, set initial guess = diplacement predictor 
+      Thyra::copy(*d_pred, initial_guess.ptr());
+    }
 
+    //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
     const Thyra::SolveStatus<Scalar> status =
-      this->solveImplicitODE(d_old_copy);
+      this->solveImplicitODE(initial_guess);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
 
-    Thyra::copy(*d_old_copy, d_new.ptr());
+    //solveImplicitODE will return converged solution in initial_guess
+    //vector.  Copy it here to d_new, to define the new displacement.
+    Thyra::copy(*initial_guess, d_new.ptr());
+  
+    //correct acceleration, velocity
     correctAcceleration(*a_new, *d_pred, *d_new, dt);
     correctVelocity(*v_new, *v_pred, *a_new, dt);
 

@@ -4,10 +4,10 @@
 // Problem appears to be in creation of Xpetra::EpetraCrsMatrixT
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Epetra_Map.h>
 #include <Xpetra_EpetraCrsMatrix.hpp>
@@ -18,9 +18,8 @@ int main(int narg, char **arg)
 {
   using Teuchos::rcp;
 
-  Teuchos::GlobalMPISession session(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = 
-               Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
   Teuchos::RCP<const Epetra_Comm> ecomm = Xpetra::toEpetra(tcomm);
 
   ////////////////////////

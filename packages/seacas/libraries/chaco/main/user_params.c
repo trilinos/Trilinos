@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@
 #define TRUE 1
 #define FALSE 0
 
-/* Input and ouput control parameters */
+/* Input and output control parameters */
 
 int CHECK_INPUT    = TRUE;  /* Check input for consistency? (TRUE/FALSE) */
 int ECHO           = 2;     /* Print input/param options? to file? (-2..2) */

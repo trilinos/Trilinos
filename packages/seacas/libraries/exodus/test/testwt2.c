@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,28 +33,28 @@
  *
  */
 /*****************************************************************************
-*
-* testwt2 - test write an ExodusII database file
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*          Vic Yarberry    - Added headers and error logging
-*               7/7/93          Modified for use with Exodus 2.00
-*
-*
-* environment - UNIX
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
-*  This is a test program for the C binding of the EXODUS II
-*  database write routines. It tests multiple simultaneous output files.
-*
-*
-*****************************************************************************/
+ *
+ * testwt2 - test write an ExodusII database file
+ *
+ * author - Sandia National Laboratories
+ *          Larry A. Schoof - Original
+ *          Vic Yarberry    - Added headers and error logging
+ *               7/7/93          Modified for use with Exodus 2.00
+ *
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *  This is a test program for the C binding of the EXODUS II
+ *  database write routines. It tests multiple simultaneous output files.
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"
 #include "netcdf.h"
@@ -986,9 +986,9 @@ int main(int argc, char **argv)
   whole_time_step = 1;
   num_time_steps  = 10;
 
-  glob_var_vals  = (float *)calloc(num_glo_vars, sizeof(CPU_word_size));
-  nodal_var_vals = (float *)calloc(num_nodes, sizeof(CPU_word_size));
-  elem_var_vals  = (float *)calloc(4, sizeof(CPU_word_size));
+  glob_var_vals  = (float *)calloc(num_glo_vars, sizeof(float));
+  nodal_var_vals = (float *)calloc(num_nodes, sizeof(float));
+  elem_var_vals  = (float *)calloc(4, sizeof(float));
 
   for (i = 0; i < num_time_steps; i++) {
     time_value  = (float)(i + 1) / 100.;
