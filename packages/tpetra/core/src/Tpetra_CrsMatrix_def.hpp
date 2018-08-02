@@ -4832,7 +4832,7 @@ namespace Tpetra {
 
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	Teuchos::TimeMonitor  graph(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph")))));
+	Teuchos::TimeMonitor  graph(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-Graph")))));
 #endif
 	// We will presume globalAssemble is not needed, so we do the ESFC on the graph
 	myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
@@ -4841,17 +4841,15 @@ namespace Tpetra {
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
     if (callComputeGlobalConstants) {
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	TimeMonitor  cgc(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC")));
+	TimeMonitor  cgc(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-cGC")));
 #endif
-	if(params.is_null() || params->get("compute global constants",true))
-	    computeGlobalConstants ();
+	this->computeGlobalConstants ();
     }
     
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	TimeMonitor  fLGAM(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM")));
+	TimeMonitor  fLGAM(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-fLGAM")));
 #endif
 	// Fill the local graph and matrix
 	fillLocalGraphAndMatrix (params);
@@ -8540,7 +8538,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
+    auto MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
 #endif
 
     // Tpetra-specific stuff
@@ -8628,7 +8626,7 @@ namespace Tpetra {
 
     // Do the exchange of remote data.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer"))));
+    TimeMonitor mm3(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer")));
 #endif
 
     if (communication_needed) {
@@ -8735,7 +8733,7 @@ namespace Tpetra {
     /*********************************************************************/
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1"))));
+    TimeMonitor mm4 (*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1")));
 #endif
 
     // Backwards compatibility measure.  We'll use this again below.
@@ -8804,7 +8802,7 @@ namespace Tpetra {
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2"))));
+   TimeMonitor mm5(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2")));
 #endif
     // Call an optimized version of makeColMap that avoids the
     // Directory lookups (since the Import object knows who owns all
@@ -8844,7 +8842,7 @@ namespace Tpetra {
     /**** 5) Sort                                   ****/
     /***************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3"))));
+    TimeMonitor mm6(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3")));
 #endif
     if ((! reverseMode && xferAsImport != NULL) ||
         (reverseMode && xferAsExport != NULL)) {
