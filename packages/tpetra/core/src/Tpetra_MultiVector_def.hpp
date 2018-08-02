@@ -56,7 +56,6 @@
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
-#include "Tpetra_Details_gemm.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
 #include "Tpetra_Details_Profiling.hpp"
@@ -4157,8 +4156,7 @@ namespace Tpetra {
       const impl_scalar_type alpha_IST (alpha);
 
       ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
-      ::Tpetra::Details::Blas::gemm (ctransA, ctransB, alpha_IST, A_sub,
-                                     B_sub, beta_local, C_sub);
+      KokkosBlas::gemm(&ctransA, &ctransB, alpha_IST, A_sub, B_sub, beta_local, C_sub);
     }
 
     if (! isConstantStride ()) {
