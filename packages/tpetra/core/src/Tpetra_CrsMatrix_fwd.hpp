@@ -1,11 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,38 +34,43 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#ifndef TPETRA_CRSMATRIX_FWD_HPP
+#define TPETRA_CRSMATRIX_FWD_HPP
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
-#include "Tpetra_CrsMatrix_UQ_PCE.hpp"
-#include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
-
-#define TPETRA_LOCAL_INST_N_1(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N)
-
-#define TPETRA_LOCAL_INST_N_2(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
+/// \file Tpetra_CrsMatrix_fwd.hpp
+/// \brief Forward declaration of Tpetra::CrsMatrix
 
 namespace Tpetra {
+
+/// \brief Implementation detail of Tpetra, to aid in deprecating
+///   template parameters.
+///
+/// \warning This namespace is an implementation detail of Tpetra.  Do
+///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
+///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
 namespace Classes {
 
-  INSTANTIATE_TPETRA_UQ_PCE_SERIAL(TPETRA_LOCAL_INST_N_1)
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of CrsMatrix.
+template <class SC, class LO, class GO, class N> class CrsMatrix;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Classes
 
-  INSTANTIATE_TPETRA_UQ_PCE_SERIAL(TPETRA_LOCAL_INST_N_2)
+//! Alias for Tpetra::Classes::CrsMatrix.
+template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+using CrsMatrix = Classes::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // TPETRA_CRSMATRIX_FWD_HPP

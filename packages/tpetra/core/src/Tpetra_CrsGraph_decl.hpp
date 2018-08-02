@@ -51,9 +51,10 @@
 /// (Tpetra_CrsGraph_decl.hpp).
 
 #include "Tpetra_CrsGraph_fwd.hpp"
-#include "Tpetra_RowGraph.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
 
 #include "KokkosSparse_findRelOffset.hpp"
@@ -69,10 +70,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration (needed for "friend" inside CrsGraph)
-  template <class S, class LO, class GO, class N>
-  class CrsMatrix;
-
   namespace Experimental {
     // forward declaration (needed for "friend" inside CrsGraph)
     template<class S, class LO, class GO, class N>
