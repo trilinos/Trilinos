@@ -293,9 +293,13 @@ void StratimikosFactory::initializePrec_Epetra(
 
   // Get the embedded ML_Epetra::MultiLevelPreconditioner object if it exists
   Teuchos::RCP<Teko::Epetra::InverseFactoryOperator> teko_precOp;
-  if(epetra_precOp!=Teuchos::null)
+  if(epetra_precOp!=Teuchos::null) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    teko_precOp = rcp_dynamic_cast<Teko::Epetra::InverseFactoryOperator>(epetra_precOp->getEpetraOperator(),true);
+#else
     teko_precOp = rcp_dynamic_cast<Teko::Epetra::InverseFactoryOperator>(epetra_precOp->epetra_op(),true);
-
+#endif
+  }
   // Permform initialization if needed
   const bool startingOver = (teko_precOp == Teuchos::null);
   if(startingOver) {

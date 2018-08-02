@@ -42,8 +42,11 @@
 #ifndef THYRA_EPETRA_THYRA_WRAPPERS_HPP
 #define THYRA_EPETRA_THYRA_WRAPPERS_HPP
 
-
 #include "Thyra_EpetraTypes.hpp"
+#include "Epetra_Map.h"
+#include "Epetra_Comm.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 
 /// @file
 
@@ -51,7 +54,6 @@ namespace Teuchos { template<class Ordinal> class Comm; }
 
 
 namespace Thyra {
-
 
 /** \brief Given an <tt>Epetra_Comm</tt> object, return an equivalent
  * <tt>Teuchos::Comm</tt> object.
@@ -445,8 +447,6 @@ get_Epetra_MultiVector(
   const MultiVectorBase<double> &mv
   );
 
-
 } // namespace Thyra
-
 
 #endif // THYRA_EPETRA_THYRA_WRAPPERS_HPP

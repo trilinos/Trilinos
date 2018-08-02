@@ -43,6 +43,7 @@
 
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MultiLevelOperator.h"
@@ -239,10 +240,19 @@ void MLPreconditionerFactory::initializePrec(
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_precOp;
   Teuchos::RCP<ML_Epetra::RefMaxwellPreconditioner> rm_precOp;
   if(epetra_precOp.get()) {
-    if(problemType == ML_PROBTYPE_REFMAXWELL)
+    if(problemType == ML_PROBTYPE_REFMAXWELL) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      rm_precOp = rcp_dynamic_cast<ML_Epetra::RefMaxwellPreconditioner>(epetra_precOp->getEpetraOperator(),true);
+#else
       rm_precOp = rcp_dynamic_cast<ML_Epetra::RefMaxwellPreconditioner>(epetra_precOp->epetra_op(),true);
-    else
+#endif
+    } else {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      ml_precOp = rcp_dynamic_cast<ML_Epetra::MultiLevelPreconditioner>(epetra_precOp->getEpetraOperator(),true);
+#else
       ml_precOp = rcp_dynamic_cast<ML_Epetra::MultiLevelPreconditioner>(epetra_precOp->epetra_op(),true);
+#endif
+    }
   }
   //
   // Get the attached forward operator if it exists and make sure that it matches

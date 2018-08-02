@@ -637,7 +637,11 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
       // cast it to a CrsMatrix
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
       if (!eOp.is_null()){
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->getConstEpetraOperator(),true);
+#else
         eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+#endif
       }   
       else if (!tOp.is_null()){
         tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
@@ -770,7 +774,11 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
    }
    else{
      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op,true);
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+     RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->getConstEpetraOperator(),true);
+#else
      RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+#endif
 
      // extract diagonal
      const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
@@ -865,7 +873,11 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
       // cast it to a CrsMatrix
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
       if (!eOp.is_null()){
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->getConstEpetraOperator(),true);
+#else
         eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+#endif
       }   
       else if (!tOp.is_null()){
         tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
@@ -922,7 +934,11 @@ const MultiVector getDiagonal(const LinearOp & op)
       // cast it to a CrsMatrix
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
       if (!eOp.is_null()){
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->getConstEpetraOperator(),true);
+#else
         eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+#endif
       }   
       else if (!tOp.is_null()){
         tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
@@ -956,7 +972,11 @@ const MultiVector getDiagonal(const LinearOp & op)
      const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
      TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+     return Thyra::createVector(diag);
+#else
      return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
+#endif
    }
    else {
      // extract diagonal
@@ -1036,7 +1056,11 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
    }
    else {
      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op,true); 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+     RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->getConstEpetraOperator(),true);
+#else
      RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+#endif
 
      // extract diagonal
      const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
@@ -1976,7 +2000,11 @@ const ModifiableLinearOp explicitSum(const LinearOp & op,
    if(destOp==Teuchos::null) {
       Teuchos::RCP<Epetra_Operator> epetraDest = Teuchos::rcp(new Epetra_CrsMatrix(*epetraOp));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      return Thyra::epetraLinearOp(epetraDest);
+#else
       return Thyra::nonconstEpetraLinearOp(epetraDest);
+#endif
    }
 
    const RCP<Epetra_CrsMatrix> epetraDest =

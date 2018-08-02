@@ -46,12 +46,13 @@
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
-#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Amesos.h"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
+#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
@@ -122,14 +123,15 @@ AmesosLinearOpWithSolveFactory::~AmesosLinearOpWithSolveFactory()
 }
 
 AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
-  const Amesos::ESolverType                            solverType
-  ,const Amesos::ERefactorizationPolicy                refactorizationPolicy
-  ,const bool                                          throwOnPrecInput
+  const Amesos::ESolverType             solverType,
+  const Amesos::ERefactorizationPolicy  refactorizationPolicy,
+  const bool                            throwOnPrecInput
     )
-  :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
-  ,solverType_(solverType)
-  ,refactorizationPolicy_(refactorizationPolicy)
-  ,throwOnPrecInput_(throwOnPrecInput)
+  :
+  epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd())),
+  solverType_(solverType),
+  refactorizationPolicy_(refactorizationPolicy),
+  throwOnPrecInput_(throwOnPrecInput)
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -138,10 +140,13 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  using Teuchos::outArg;
-  RCP<const LinearOpBase<double> >
-    fwdOp = fwdOpSrc.getOp();
+  const Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc.getOp();
+  if (fwdOp.is_null()) {
+    return false;
+  }
   RCP<const Epetra_Operator> epetraFwdOp;
+
+  using Teuchos::outArg;
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
@@ -152,9 +157,8 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
     outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
     outArg(epetraFwdOpScalar)
     );
-  if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
-    return false;
-  return true;
+  return Teuchos::nonnull(epetraFwdOp) && 
+         Teuchos::nonnull(Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp));
 }
 
 RCP<LinearOpWithSolveBase<double> >
@@ -165,8 +169,8 @@ AmesosLinearOpWithSolveFactory::createOp() const
 
 void AmesosLinearOpWithSolveFactory::initializeOp(
   const RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
-  ,LinearOpWithSolveBase<double>                                   *Op
-  ,const ESupportSolveUse                                          supportSolveUse
+  ,LinearOpWithSolveBase<double>                  *Op
+  ,const ESupportSolveUse                         supportSolveUse
   ) const
 {
   using Teuchos::outArg;
@@ -174,12 +178,16 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
-  const RCP<const LinearOpBase<double> > 
-    fwdOp = fwdOpSrc->getOp();
+  const RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
   //
   // Unwrap and get the forward Epetra_Operator object
   //
   RCP<const Epetra_Operator> epetraFwdOp;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  const auto fwdOpE = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(fwdOp);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpE.is_null());
+  epetraFwdOp = fwdOpE->getConstEpetraOperator();
+#else
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
@@ -190,6 +198,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
     outArg(epetraFwdOpScalar)
     );
+#endif
   // Get the AmesosLinearOpWithSolve object
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);

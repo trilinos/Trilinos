@@ -1,6 +1,12 @@
 
 TRIBITS_SUBPACKAGE(EpetraAdapters)
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ThyraEpetraAdapters_ENABLE_Refactor
+  HAVE_THYRA_EPETRA_REFACTOR
+  "Use the new design of the Thyra Epetra adapters."
+  OFF )
+
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

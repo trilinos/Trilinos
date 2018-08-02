@@ -197,10 +197,15 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
       }
 
       // Solve the linear system for x, given b 
-      RCP<Thyra::VectorBase<double> >
-        x = Thyra::create_Vector( outArgs.get_f(), A->domain() );
-      RCP<const Thyra::VectorBase<double> >
-        b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
+      RCP<Thyra::VectorBase<double> > x;
+      RCP<const Thyra::VectorBase<double> > b;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      x = Thyra::createVector( outArgs.get_f(), A->domain() );
+      b = Thyra::createConstVector( modelOutArgs.get_f(), A->range() );
+#else
+      x = Thyra::create_Vector( outArgs.get_f(), A->domain() );
+      b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
+#endif
 
       ::Thyra::solve<double>(*lows, ::Thyra::NOTRANS, *b, x.ptr());
     }

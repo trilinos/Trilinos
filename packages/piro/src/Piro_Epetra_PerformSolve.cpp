@@ -86,10 +86,14 @@ void PerformSolveImpl(
       it != it_end;
       ++it) {
     const int j = std::distance(it_begin, it);
-    const Epetra_Map g_map = *piroSolver.get_g_map(j);
     const Teuchos::RCP<Thyra::VectorBase<double> > g_thyra = *it;
-    const Teuchos::RCP<VectorType> g =
-      Teuchos::nonnull(g_thyra) ? Thyra::get_Epetra_Vector(g_map, g_thyra) : Teuchos::null;
+    Teuchos::RCP<VectorType> g;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    g = Teuchos::nonnull(g_thyra) ? Thyra::EpetraOperatorVectorExtraction::getEpetraVector(g_thyra) : Teuchos::null;
+#else
+    const Epetra_Map g_map = *piroSolver.get_g_map(j);
+    g = Teuchos::nonnull(g_thyra) ? Thyra::get_Epetra_Vector(g_map, g_thyra) : Teuchos::null;
+#endif
     responses.push_back(g);
   }
 
@@ -101,11 +105,17 @@ void PerformSolveImpl(
       it != it_end;
       ++it) {
     const int j = std::distance(it_begin, it);
+#ifndef HAVE_THYRA_EPETRA_REFACTOR
     const Epetra_Map g_map = *piroSolver.get_g_map(j);
+#endif
     for (ThyraSensitivityArray::value_type::const_iterator jt = it->begin(), jt_end = it->end(); jt != jt_end; ++jt) {
       const Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdp_thyra = *jt;
       const Teuchos::RCP<MultiVectorType> dgdp =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        Teuchos::nonnull(dgdp_thyra) ? Thyra::EpetraOperatorVectorExtraction::getEpetraMultiVector(dgdp_thyra) : Teuchos::null;
+#else
         Teuchos::nonnull(dgdp_thyra) ? Thyra::get_Epetra_MultiVector(g_map, dgdp_thyra) : Teuchos::null;
+#endif
       sensitivities[j].push_back(dgdp);
     }
   }

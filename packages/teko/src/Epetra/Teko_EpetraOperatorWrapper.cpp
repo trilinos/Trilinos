@@ -44,6 +44,7 @@
 
 #include "Teko_EpetraOperatorWrapper.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -210,7 +211,11 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
                      "EpetraOperatorWrapper requires std::vector space "
                      "blocks to be SPMD std::vector spaces");
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  return Thyra::EpetraOperatorVectorExtraction::createEpetraComm(spmd->getComm());
+#else
   return Thyra::get_Epetra_Comm(*spmd->getComm());
+#endif
 /*
   const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp); 
 

@@ -45,9 +45,10 @@
 */
 
 #include "Teko_DiagonalPreconditionerOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "EpetraExt_PointToBlockDiagPermute.h"
 #include "Epetra_MultiVector.h"
+
+#include "Thyra_EpetraThyraWrappers.hpp"
 
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
@@ -67,6 +68,11 @@ DiagonalPreconditionerOp::DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointT
 void DiagonalPreconditionerOp::implicitApply(const MultiVector & x, MultiVector & y,
 					      const double alpha, const double beta) const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  using EOVE = Thyra::EpetraOperatorVectorExtraction;
+  RCP<const Epetra_MultiVector> x_ = EOVE::getConstEpetraMultiVector(x);
+  RCP<      Epetra_MultiVector> y_ = EOVE::getEpetraMultiVector(y); 
+#else
   // Get the Multivectors into Epetra land
   // NTS: Thyra inexplicably wants maps, even when they are completely unecessary.
   const Epetra_Map & rangemap_=BDP_->OperatorRangeMap();
@@ -74,6 +80,7 @@ void DiagonalPreconditionerOp::implicitApply(const MultiVector & x, MultiVector 
 
   RCP<const Epetra_MultiVector> x_=Thyra::get_Epetra_MultiVector(domainmap_,x);
   RCP<Epetra_MultiVector> y_=Thyra::get_Epetra_MultiVector(rangemap_,y); 
+#endif
   TEUCHOS_ASSERT(x_!=Teuchos::null);
   TEUCHOS_ASSERT(y_!=Teuchos::null);
 

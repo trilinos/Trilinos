@@ -152,8 +152,13 @@ void EpetraModelEvaluator::initialize(
   x_map_ = epetraModel_->get_x_map();
   f_map_ = epetraModel_->get_f_map();
   if (!is_null(x_map_)) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    x_space_ = createVectorSpace(x_map_);
+    f_space_ = createVectorSpace(f_map_);
+#else
     x_space_ = create_VectorSpace(x_map_);
     f_space_ = create_VectorSpace(f_map_);
+#endif
   }
   //
   EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
@@ -170,7 +175,11 @@ void EpetraModelEvaluator::initialize(
 #endif
 
     p_map_is_local_[l] = !p_map_l->DistributedGlobal();
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    p_space_[l] = createVectorSpace(p_map_l);
+#else
     p_space_[l] = create_VectorSpace(p_map_l);
+#endif
   }
   //
   EpetraExt::ModelEvaluator::OutArgs outArgs = epetraModel_->createOutArgs();
@@ -180,7 +189,11 @@ void EpetraModelEvaluator::initialize(
     RCP<const Epetra_Map>
       g_map_j = ( g_map_[j] = epetraModel_->get_g_map(j) );
     g_map_is_local_[j] = !g_map_j->DistributedGlobal();
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    g_space_[j] = createVectorSpace( g_map_j );
+#else
     g_space_[j] = create_VectorSpace( g_map_j );
+#endif
   }
   //
   epetraInArgsScaling_ = epetraModel_->createInArgs();
@@ -813,11 +826,19 @@ void EpetraModelEvaluator::convertInArgsFromEpetraToThyra(
   TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
 
   if(inArgs->supports(MEB::IN_ARG_x)) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    inArgs->set_x( createConstVector( epetraInArgs.get_x(), x_space_ ) );
+#else
     inArgs->set_x( create_Vector( epetraInArgs.get_x(), x_space_ ) );
+#endif
   }
 
   if(inArgs->supports(MEB::IN_ARG_x_dot)) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    inArgs->set_x_dot( createConstVector( epetraInArgs.get_x_dot(), x_space_ ) );
+#else
     inArgs->set_x_dot( create_Vector( epetraInArgs.get_x_dot(), x_space_ ) );
+#endif
   }
 
   if(inArgs->supports(MEB::IN_ARG_x_mp)) {
@@ -830,7 +851,11 @@ void EpetraModelEvaluator::convertInArgsFromEpetraToThyra(
 
   const int l_Np = inArgs->Np();
   for( int l = 0; l < l_Np; ++l ) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    inArgs->set_p( l, createConstVector( epetraInArgs.get_p(l), p_space_[l] ) );
+#else
     inArgs->set_p( l, create_Vector( epetraInArgs.get_p(l), p_space_[l] ) );
+#endif
   }
   for( int l = 0; l < l_Np; ++l ) {
     if(inArgs->supports(MEB::IN_ARG_p_mp, l))
@@ -861,7 +886,12 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 
   RCP<const VectorBase<double> > x_dot;
   if( inArgs.supports(IN_ARG_x_dot) && (x_dot = inArgs.get_x_dot()).get() ) {
-    RCP<const Epetra_Vector> e_x_dot = get_Epetra_Vector(*x_map_,x_dot);
+    RCP<const Epetra_Vector> e_x_dot =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        EpetraOperatorVectorExtraction::getConstEpetraVector(x_dot);
+#else
+        get_Epetra_Vector(*x_map_,x_dot);
+#endif
     epetraInArgs->set_x_dot(e_x_dot);
   }
   RCP<const Stokhos::ProductEpetraVector > x_dot_mp;
@@ -871,7 +901,12 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 
   RCP<const VectorBase<double> > x;
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() ) {
-    RCP<const Epetra_Vector> e_x = get_Epetra_Vector(*x_map_,x);
+    RCP<const Epetra_Vector> e_x =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        EpetraOperatorVectorExtraction::getConstEpetraVector(x);
+#else
+        get_Epetra_Vector(*x_map_,x);
+#endif
     epetraInArgs->set_x(e_x);
   }
   RCP<const Stokhos::ProductEpetraVector > x_mp;
@@ -882,7 +917,15 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
   RCP<const VectorBase<double> > p_l;
   for(int l = 0;  l < inArgs.Np(); ++l ) {
     p_l = inArgs.get_p(l);
-    if(p_l.get()) epetraInArgs->set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
+    if(p_l.get()) {
+      Teuchos::RCP<const Epetra_Vector> ep_l;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      ep_l = EpetraOperatorVectorExtraction::getConstEpetraVector(p_l);
+#else
+      ep_l = get_Epetra_Vector(*p_map_[l],p_l);
+#endif
+      epetraInArgs->set_p(l,ep_l);
+    }
   }
   RCP<const Stokhos::ProductEpetraVector > p_mp_l;
   for(int l = 0;  l < inArgs.Np(); ++l ) {
@@ -904,8 +947,13 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     RCP<Polynomial<Epetra_Vector> > epetra_x_dot_poly =
       rcp(new Polynomial<Epetra_Vector>(x_dot_poly->degree()));
     for (unsigned int i=0; i<=x_dot_poly->degree(); i++) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_ptr = rcp_const_cast<Epetra_Vector>(
+        EpetraOperatorVectorExtraction::getConstEpetraVector(x_dot_poly->getCoefficient(i)));
+#else
       epetra_ptr = rcp_const_cast<Epetra_Vector>(
         get_Epetra_Vector(*x_map_, x_dot_poly->getCoefficient(i)) );
+#endif
       epetra_x_dot_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraInArgs->set_x_dot_poly(epetra_x_dot_poly);
@@ -920,8 +968,13 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     RCP<Polynomial<Epetra_Vector> > epetra_x_poly =
       rcp(new Polynomial<Epetra_Vector>(x_poly->degree()));
     for (unsigned int i=0; i<=x_poly->degree(); i++) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_ptr = rcp_const_cast<Epetra_Vector>(
+        EpetraOperatorVectorExtraction::getConstEpetraVector(x_poly->getCoefficient(i)));
+#else
       epetra_ptr = rcp_const_cast<Epetra_Vector>(
         get_Epetra_Vector(*x_map_, x_poly->getCoefficient(i)) );
+#endif
       epetra_x_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraInArgs->set_x_poly(epetra_x_poly);
@@ -960,7 +1013,6 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
   using Teuchos::implicit_cast;
-  using Thyra::get_Epetra_Vector;
   //typedef EpetraExt::ModelEvaluator EME; // unused
 
   // Assert input
@@ -980,8 +1032,13 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   // f
   {
     RCP<VectorBase<double> > f;
-    if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
+    if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() ) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetraUnscaledOutArgs.set_f(EpetraOperatorVectorExtraction::getEpetraVector(f));
+#else
       epetraUnscaledOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
+#endif
+    }
     RCP<Stokhos::ProductEpetraVector > f_mp;
     if( outArgs.supports(OUT_ARG_f_mp) && (f_mp = outArgs.get_f_mp()).get() )
       epetraUnscaledOutArgs.set_f_mp(f_mp);
@@ -992,7 +1049,13 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     RCP<VectorBase<double> > g_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       g_j = outArgs.get_g(j);
-      if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
+      if(g_j.get()) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        epetraUnscaledOutArgs.set_g(j,EpetraOperatorVectorExtraction::getEpetraVector(g_j));
+#else
+        epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
+#endif
+      }
     }
     RCP<Stokhos::ProductEpetraVector > g_mp_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
@@ -1025,7 +1088,11 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
       // should already be embeadded with an underlying Epetra_Operator object
       // that was allocated by the EpetraExt::ModelEvaluator object.
       // Therefore, we should just have to grab this object and be on our way.
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      eW = efwdW->getEpetraOperator();
+#else
       eW = efwdW->epetra_op();
+#endif
       epetraUnscaledOutArgs.set_W(eW);
     }
 
@@ -1128,9 +1195,12 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly =
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
     for (unsigned int i=0; i<=f_poly->degree(); i++) {
-      RCP<Epetra_Vector> epetra_ptr
-        = Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
-            f_poly->getCoefficient(i)));
+      RCP<Epetra_Vector> epetra_ptr;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(EpetraOperatorVectorExtraction::getConstEpetraVector(f_poly->getCoefficient(i)));
+#else
+      epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_, f_poly->getCoefficient(i)));
+#endif
       epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraUnscaledOutArgs.set_f_poly(epetra_f_poly);
@@ -1283,6 +1353,8 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   using Teuchos::rcp_dynamic_cast;
   //typedef EpetraExt::ModelEvaluator EME; // unused
 
+  // The following is not necessary in the refactored version
+#ifndef HAVE_THYRA_EPETRA_REFACTOR
   if (nonnull(efwdW)) {
     efwdW->setFullyInitialized(true);
     // NOTE: Above will directly update W_op also if W.get()==NULL!
@@ -1296,7 +1368,7 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
       rcp_dynamic_cast<EpetraLinearOp>(W_op, true)->setFullyInitialized(true);
     }
   }
-
+#endif
 }
 
 
@@ -1503,10 +1575,18 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
 RCP<EpetraLinearOp>
 EpetraModelEvaluator::create_epetra_W_op() const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  return epetraLinearOp(
+      this->get_f_space(),
+      this->get_x_space(),
+      create_and_assert_W(*epetraModel_)
+      );
+#else
   return Thyra::partialNonconstEpetraLinearOp(
     this->get_f_space(), this->get_x_space(),
     create_and_assert_W(*epetraModel_)
     );
+#endif
 }
 
 
@@ -1623,17 +1703,27 @@ Thyra::convert(
   const RCP<const Epetra_Map> &var_map
   )
 {
+#ifndef HAVE_THYRA_EPETRA_REFACTOR
   typedef ModelEvaluatorBase MEB;
+#endif
+
   if(derivative.getLinearOp().get()) {
     return EpetraExt::ModelEvaluator::Derivative(
       Teuchos::rcp_const_cast<Epetra_Operator>(
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        Teuchos::dyn_cast<const EpetraLinearOp>(*derivative.getLinearOp()).getConstEpetraOperator()
+#else
         Teuchos::dyn_cast<const EpetraLinearOp>(*derivative.getLinearOp()).epetra_op()
+#endif
         )
       );
   }
   else if(derivative.getDerivativeMultiVector().getMultiVector().get()) {
     return EpetraExt::ModelEvaluator::Derivative(
       EpetraExt::ModelEvaluator::DerivativeMultiVector(
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        EpetraOperatorVectorExtraction::getEpetraMultiVector(derivative.getDerivativeMultiVector().getMultiVector())
+#else
         get_Epetra_MultiVector(
           ( derivative.getDerivativeMultiVector().getOrientation() == MEB::DERIV_MV_BY_COL
             ? *fnc_map
@@ -1641,6 +1731,7 @@ Thyra::convert(
             )
           ,derivative.getDerivativeMultiVector().getMultiVector()
           )
+#endif
         ,convert(derivative.getDerivativeMultiVector().getOrientation())
         )
       );

@@ -46,7 +46,6 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
-#include "Thyra_EpetraLinearOpBase.hpp"
 #include "Epetra_LinearProblem.h"
 #include "Amesos_BaseSolver.h"
 

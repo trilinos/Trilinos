@@ -42,8 +42,9 @@
 #ifndef THYRA_IFPACK_PRECONDITIONER_FACTORY_DECL_HPP
 #define THYRA_IFPACK_PRECONDITIONER_FACTORY_DECL_HPP
 
-#include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
+
+#include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 #include "Ifpack.h"
 
@@ -71,7 +72,6 @@ public:
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
    */
   STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
-
   //@}
 
   /** @name Overridden from PreconditionerFactoryBase */

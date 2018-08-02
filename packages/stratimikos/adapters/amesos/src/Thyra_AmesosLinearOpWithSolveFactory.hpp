@@ -44,12 +44,13 @@
 #ifndef THYRA_AMESOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_AMESOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
-#include "Thyra_AmesosTypes.hpp"
-#include "Amesos_BaseSolver.h"
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
+
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_AmesosTypes.hpp"
+#include "Amesos_BaseSolver.h"
 
 namespace Thyra {
 

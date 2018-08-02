@@ -340,10 +340,15 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   Teuchos::RCP<Epetra_Vector> inputRCP =
     Teuchos::rcp(&nonConstInput.getEpetraVector(), false);
 
-  Teuchos::RCP<Thyra::VectorBase<double> >
-    x = Thyra::create_Vector(resultRCP , linearOp->domain() );
-  Teuchos::RCP<const Thyra::VectorBase<double> >
-    b = Thyra::create_Vector(inputRCP, linearOp->range() );
+  Teuchos::RCP<Thyra::VectorBase<double> > x;
+  Teuchos::RCP<const Thyra::VectorBase<double> > b;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  x = Thyra::createVector(resultRCP , linearOp->domain() );
+  b = Thyra::createConstVector(inputRCP, linearOp->range() );
+#else
+  x = Thyra::create_Vector(resultRCP , linearOp->domain() );
+  b = Thyra::create_Vector(inputRCP, linearOp->range() );
+#endif
 
   // Alter the convergence tolerance, if Inexact Newton
   Teuchos::RCP<Thyra::SolveCriteria<double> > solveCriteria;
@@ -475,7 +480,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       if (pop == Teuchos::null)
           pop = precObj->getNonconstUnspecifiedPrecOp();
       solvePrecOpPtr =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+          Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->getEpetraOperator();
+#else
           Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+#endif
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -509,7 +518,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       if (pop == Teuchos::null)
           pop = precObj->getNonconstUnspecifiedPrecOp();
       solvePrecOpPtr =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+          Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->getEpetraOperator();
+#else
           Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+#endif
     }
     else // no preconditioner
       precObj = Teuchos::null;

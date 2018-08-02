@@ -63,8 +63,6 @@
 
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_LinearOpWithSolveHelpers.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
@@ -73,6 +71,9 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
@@ -133,12 +134,17 @@ TEUCHOS_UNIT_TEST(belos_gcrodr, multiple_solves)
    // build Thyra wrappers
    RCP<const Thyra::LinearOpBase<double> >
       tA = Thyra::epetraLinearOp( mat );
-   RCP<Thyra::VectorBase<double> >
-      tx0 = Thyra::create_Vector( x0, tA->domain() );
-   RCP<Thyra::VectorBase<double> >
-      tx1 = Thyra::create_Vector( x1, tA->domain() );
-   RCP<const Thyra::VectorBase<double> >
-      tb = Thyra::create_Vector( b, tA->range() );
+   RCP<Thyra::VectorBase<double> > tx0, tx1;
+   RCP<const Thyra::VectorBase<double> > tb;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   tx0 = Thyra::createVector( x0 );
+   tx1 = Thyra::createVector( x1 );
+   tb  = Thyra::createVector( b  );
+#else
+   tx0 = Thyra::create_Vector( x0, tA->domain() );
+   tx1 = Thyra::create_Vector( x1, tA->domain() );
+   tb = Thyra::create_Vector( b, tA->range() );
+#endif
 
    // now comes Stratimikos
    RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("BelosGCRODRTest.xml");
@@ -192,7 +198,11 @@ TEUCHOS_UNIT_TEST(belos_gcrodr, 2x2_multiple_solves)
 
       // build blocked vector
       RCP<const Thyra::VectorBase<double> > tb_sub 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+            = Thyra::createVector(b);
+#else
             = Thyra::create_Vector( b, tA_sub->range() );
+#endif
 
       RCP<Thyra::VectorBase<double> > tb_m = Thyra::createMember(tA->range());
       Thyra::randomize(-1.0,1.0,tb_m.ptr());

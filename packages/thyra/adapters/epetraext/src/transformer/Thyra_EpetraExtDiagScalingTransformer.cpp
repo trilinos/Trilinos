@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "ThyraEpetraAdapters_config.h"
 
 #include "Thyra_EpetraExtDiagScalingTransformer.hpp"
 #include "Thyra_MultipliedLinearOpBase.hpp"
@@ -108,7 +109,11 @@ bool EpetraExtDiagScalingTransformer::isCompatible(
 RCP<LinearOpBase<double> >
 EpetraExtDiagScalingTransformer::createOutputOp() const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   return Teuchos::rcp( new EpetraLinearOp() );
+#else
    return nonconstEpetraLinearOp();
+#endif
 }
 
 
@@ -183,13 +188,22 @@ void EpetraExtDiagScalingTransformer::transform(
 
    // get or allocate an object to use as the destination
    EpetraLinearOp & thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
-   RCP<Epetra_CrsMatrix>  epetra_op =
-         rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+   RCP<Epetra_CrsMatrix>  epetra_op;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.getEpetraOperator());
+#else
+   epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+#endif
 
    bool rightScale = dB!=Teuchos::null;
 
    if(rightScale) {
-      RCP<const Epetra_Vector> v = get_Epetra_Vector(epetra_A->OperatorDomainMap(),dB->getDiag());
+      RCP<const Epetra_Vector> v;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      v = EpetraOperatorVectorExtraction::getConstEpetraVector(dB->getDiag());
+#else
+      v = get_Epetra_Vector(epetra_A->OperatorDomainMap(),dB->getDiag());
+#endif
 
       // if needed allocate a new operator, otherwise use old one assuming
       // constant sparsity
@@ -200,7 +214,12 @@ void EpetraExtDiagScalingTransformer::transform(
       epetra_op->RightScale(*v);
    }
    else {
-      RCP<const Epetra_Vector> v = get_Epetra_Vector(epetra_B->OperatorRangeMap(),dA->getDiag());
+      RCP<const Epetra_Vector> v;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      v = EpetraOperatorVectorExtraction::getConstEpetraVector(dA->getDiag());
+#else
+      v = get_Epetra_Vector(epetra_B->OperatorDomainMap(),dA->getDiag());
+#endif
 
       // if needed allocate a new operator, otherwise use old one assuming
       // constant sparsity

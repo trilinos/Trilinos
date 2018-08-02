@@ -394,7 +394,11 @@ namespace Thyra {
 #if defined(HAVE_MUELU_EPETRA)// && defined(HAVE_MUELU_SERIAL)
         if (bIsEpetra) {
           RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+          RCP<MueEpOp>    muelu_precOp = rcp_dynamic_cast<MueEpOp>(epetr_precOp->getEpetraOperator(),true);
+#else
           RCP<MueEpOp>    muelu_precOp = rcp_dynamic_cast<MueEpOp>(epetr_precOp->epetra_op(),true);
+#endif
 
           H = rcp_dynamic_cast<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(muelu_precOp->GetHierarchy());
         }
@@ -449,7 +453,11 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_epetraOp));
         // attach fwdOp to muelu_epetraOp to guarantee that it will not go away
         set_extra_data(fwdOp,"IFPF::fwdOp", Teuchos::inOutArg(muelu_epetraOp), Teuchos::POST_DESTROY,false);
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        RCP<ThyEpLinOp> thyra_epetraOp = Thyra::epetraLinearOp(muelu_epetraOp, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
+#else
         RCP<ThyEpLinOp> thyra_epetraOp = Thyra::nonconstEpetraLinearOp(muelu_epetraOp, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
+#endif
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyra_epetraOp));
         thyraPrecOp = rcp_dynamic_cast<ThyLinOpBase>(thyra_epetraOp);
       }

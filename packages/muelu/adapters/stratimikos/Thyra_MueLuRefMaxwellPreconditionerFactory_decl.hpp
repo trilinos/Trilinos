@@ -523,10 +523,14 @@ namespace Thyra {
               paramList.remove("M0inv");
 
               RCP<const Teuchos::Comm<int> > comm = A->getDomainMap()->getComm();
-              RCP<const Epetra_Map> map = Thyra::get_Epetra_Map(*(thyM0inv->range()), Xpetra::toEpetra(comm));
               // RCP<XpMap> map = XpThyUtils::toXpetra(thyM0inv->range(), comm);
               RCP<const Thyra::VectorBase<double> > diag = thyM0inv->getDiag();
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+              RCP<const Epetra_Vector> eDiag = Thyra::EpetraOperatorVectorExtraction::getConstEpetraVector(diag);
+#else
+              RCP<const Epetra_Map> map = Thyra::get_Epetra_Map(*(thyM0inv->range()), Xpetra::toEpetra(comm));
               RCP<const Epetra_Vector> eDiag = Thyra::get_Epetra_Vector(*map, diag);
+#endif
               RCP<Epetra_Vector> nceDiag = Teuchos::rcp_const_cast<Epetra_Vector>(eDiag);
               RCP<Xpetra::EpetraVectorT<int,Node> > xpEpDiag = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(nceDiag));
               RCP<const Xpetra::Vector<double,int,int,Node> > xpDiag = rcp_dynamic_cast<const Xpetra::Vector<double,int,int,Node> >(xpEpDiag, true);
@@ -573,7 +577,11 @@ namespace Thyra {
 #if defined(HAVE_MUELU_EPETRA)// && defined(HAVE_MUELU_SERIAL)
         if (bIsEpetra) {
           RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+          preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(epetr_precOp->getEpetraOperator(),true);
+#else
           preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(epetr_precOp->epetra_op(),true);
+#endif
         }
 #endif
         // TODO add the blocked matrix case here...

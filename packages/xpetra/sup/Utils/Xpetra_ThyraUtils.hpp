@@ -92,6 +92,7 @@
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif
 #ifdef HAVE_XPETRA_EPETRA
+#include <ThyraEpetraAdapters_config.h>
 #include <Thyra_EpetraLinearOp.hpp>
 #include <Thyra_EpetraThyraWrappers.hpp>
 #include <Thyra_SpmdVectorBase.hpp>
@@ -951,7 +952,11 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xeMap));
         RCP<const Epetra_Map> eMap = Teuchos::rcpFromRef(xeMap->getEpetra_Map());
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(eMap));
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::EpetraOperatorVectorExtraction::getConstEpetraMultiVector(v);
+#else
         Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::get_Epetra_MultiVector(*eMap, v);
+#endif
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epMultVec));
         RCP<Epetra_MultiVector> epNonConstMultVec = Teuchos::rcp_const_cast<Epetra_MultiVector>(epMultVec);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epNonConstMultVec));
@@ -1204,7 +1209,11 @@ public:
       Teuchos::RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       if (epetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::EpetraMap failed");
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::createVectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+#else
       RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+#endif
       thyraMap = thyraEpetraMap;
     }
 #endif
@@ -1402,7 +1411,11 @@ public:
       Teuchos::RCP<const Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrix();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      Teuchos::RCP<const Thyra::EpetraLinearOp> thyraEpOp = Thyra::constEpetraLinearOp(epCrsMat);
+#else
       Teuchos::RCP<const Thyra::EpetraLinearOp> thyraEpOp = Thyra::epetraLinearOp(epCrsMat,"op");
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraEpOp));
       thyraOp = thyraEpOp;
     }
@@ -1447,7 +1460,11 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrixNonConst();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      Teuchos::RCP<Thyra::EpetraLinearOp> thyraEpOp = Thyra::epetraLinearOp(epCrsMat);
+#else
       Teuchos::RCP<Thyra::EpetraLinearOp> thyraEpOp = Thyra::nonconstEpetraLinearOp(epCrsMat,"op");
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraEpOp));
       thyraOp = thyraEpOp;
     }
@@ -1671,7 +1688,11 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xeMap));
         RCP<const Epetra_Map> eMap = Teuchos::rcpFromRef(xeMap->getEpetra_Map());
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(eMap));
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::EpetraOperatorVectorExtraction::getConstEpetraMultiVector(v);
+#else
         Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::get_Epetra_MultiVector(*eMap, v);
+#endif
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epMultVec));
         RCP<Epetra_MultiVector> epNonConstMultVec = Teuchos::rcp_const_cast<Epetra_MultiVector>(epMultVec);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epNonConstMultVec));
@@ -1925,7 +1946,11 @@ public:
       Teuchos::RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       if (epetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::EpetraMap failed");
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::createVectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+#else
       RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+#endif
       thyraMap = thyraEpetraMap;
     }
 #endif
@@ -2122,7 +2147,11 @@ public:
       Teuchos::RCP<const Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrix();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      Teuchos::RCP<const Thyra::EpetraLinearOp> thyraEpOp = Thyra::constEpetraLinearOp(epCrsMat);
+#else
       Teuchos::RCP<const Thyra::EpetraLinearOp> thyraEpOp = Thyra::epetraLinearOp(epCrsMat,"op");
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraEpOp));
       thyraOp = thyraEpOp;
     }
@@ -2167,7 +2196,11 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrixNonConst();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      Teuchos::RCP<Thyra::EpetraLinearOp> thyraEpOp = Thyra::epetraLinearOp(epCrsMat);
+#else
       Teuchos::RCP<Thyra::EpetraLinearOp> thyraEpOp = Thyra::nonconstEpetraLinearOp(epCrsMat,"op");
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraEpOp));
       thyraOp = thyraEpOp;
     }

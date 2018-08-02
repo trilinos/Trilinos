@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "ThyraEpetraAdapters_config.h"
 
 #include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
 #include "Thyra_MultipliedLinearOpBase.hpp"
@@ -72,7 +73,11 @@ bool EpetraExtDiagScaledMatProdTransformer::isCompatible(
 RCP<LinearOpBase<double> >
 EpetraExtDiagScaledMatProdTransformer::createOutputOp() const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   return Teuchos::rcp( new EpetraLinearOp() );
+#else
    return nonconstEpetraLinearOp();
+#endif
 }
 
 
@@ -134,8 +139,12 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
    // extract dagonal
    RCP<const Epetra_Vector> epetra_d;
    if(haveDiagScaling) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_d = EpetraOperatorVectorExtraction::getConstEpetraVector(d);
+#else
       epetra_d = (B_transp==CONJTRANS ? get_Epetra_Vector(epetra_B->OperatorRangeMap(), d)
                                       : get_Epetra_Vector(epetra_B->OperatorDomainMap(), d));
+#endif
    }
  
    // convert third operator to an Epetra_CrsMatrix
@@ -158,7 +167,11 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
    //   3. If neccessary, allocate new Epetra_CrsMatrix
    EpetraLinearOp &thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
    RCP<Epetra_CrsMatrix>  epetra_op =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+         rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.getEpetraOperator());
+#else
          rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+#endif
    if(is_null(epetra_op)) {
       epetra_op = Teuchos::rcp(
             new Epetra_CrsMatrix(::Copy, op_inout_row_map, 0));

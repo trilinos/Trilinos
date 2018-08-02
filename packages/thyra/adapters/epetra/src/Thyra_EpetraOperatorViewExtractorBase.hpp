@@ -45,6 +45,7 @@
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraTypes.hpp"
 
+class Epetra_Operator;
 
 namespace Thyra {
 

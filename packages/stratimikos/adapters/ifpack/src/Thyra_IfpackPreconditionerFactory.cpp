@@ -40,8 +40,6 @@
 // @HEADER
 
 #include "Thyra_IfpackPreconditionerFactory.hpp"
-#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Ifpack_ValidParameters.h"
 #include "Ifpack_Preconditioner.h"
@@ -55,6 +53,8 @@
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
 
+#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
 namespace {
 
@@ -87,9 +87,10 @@ namespace Thyra {
 // Constructors/initializers/accessors
 
 IfpackPreconditionerFactory::IfpackPreconditionerFactory()
-  :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
-  ,precType_(PrecType_default)
-  ,overlap_(Overlap_default)
+  :
+  epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd())),
+  precType_(PrecType_default),
+  overlap_(Overlap_default)
 {
   initializeTimers();
   getValidParameters(); // Make sure validators get created!
@@ -101,21 +102,33 @@ bool IfpackPreconditionerFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  using Teuchos::outArg;
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
+  const Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc.getOp();
+  if (fwdOp.is_null()) {
+    return false;
+  }
+
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  const auto fwdOpE = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(fwdOp);
+  if (fwdOpE.is_null()) {
+    return false;
+  }
+  epetraFwdOp = fwdOpE->getConstEpetraOperator();
+#else
+  using Teuchos::outArg;
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
   double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOpSrc.getOp(), 
+    fwdOp,
     outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
     outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
     outArg(epetraFwdOpScalar)
     );
-  if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
-    return false;
-  return true;
+#endif
+  return Teuchos::nonnull(epetraFwdOp) && 
+         Teuchos::nonnull(Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp));
 }
 
 bool IfpackPreconditionerFactory::applySupportsConj(EConj conj) const
@@ -170,12 +183,25 @@ void IfpackPreconditionerFactory::initializePrec(
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
 #endif
+
   //
   // Unwrap and get the forward Epetra_Operator object
   //
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
+// #ifdef HAVE_THYRA_EPETRA_REFACTOR
+//   auto fwdOpE = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(fwdOp);
+//   TEUCHOS_TEST_FOR_EXCEPT(fwdOpE.is_null());
+//   epetraFwdOp = fwdOpE->getConstEpetraOperator();
+//   TEUCHOS_TEST_FOR_EXCEPT(epetraFwdOp.is_null());
+//   auto epetraFwdRowMat = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp);
+//   TEUCHOS_TEST_FOR_EXCEPT(epetraFwdRowMat.is_null());
+
+//   epetraFwdOpTransp = fwdOpE->epetraOpTransposeMode();
+//   epetraFwdOpApplyAs = fwdOpE->epetraOpApplyMode();
+
+// #else
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
   double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
@@ -187,6 +213,7 @@ void IfpackPreconditionerFactory::initializePrec(
   // Validate what we get is what we need
   RCP<const Epetra_RowMatrix>
     epetraFwdRowMat = rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp,true);
+// #endif
   TEUCHOS_TEST_FOR_EXCEPTION(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
@@ -206,8 +233,13 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   Teuchos::RCP<Ifpack_Preconditioner>
     ifpack_precOp;
-  if(epetra_precOp.get())
+  if(epetra_precOp.get()) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(epetra_precOp->getEpetraOperator(),true);
+#else
     ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(epetra_precOp->epetra_op(),true);
+#endif
+  }
   //
   // Get the attached forward operator if it exists and make sure that it matches
   //
@@ -290,7 +322,7 @@ void IfpackPreconditionerFactory::initializePrec(
   // Initialize the output EpetraLinearOp
   //
   if(startingOver) {
-    epetra_precOp = rcp(new EpetraLinearOp);
+    epetra_precOp = rcp(new EpetraLinearOp());
   }
   epetra_precOp->initialize(
     ifpack_precOp

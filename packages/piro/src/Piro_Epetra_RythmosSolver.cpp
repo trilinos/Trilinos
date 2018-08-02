@@ -488,7 +488,11 @@ void Piro::Epetra::RythmosSolver::evalModel(const InArgs& inArgs, const OutArgs&
   for (int l = 0; l < thyraInArgs.Np(); ++l) {
     const Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(l);
     if (Teuchos::nonnull(p_in)) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      thyraInArgs.set_p(l, Thyra::createConstVector(p_in));
+#else
       thyraInArgs.set_p(l, Thyra::create_Vector(p_in, thyraImplementation_->get_p_space(l)));
+#endif
     }
   }
 
@@ -499,7 +503,11 @@ void Piro::Epetra::RythmosSolver::evalModel(const InArgs& inArgs, const OutArgs&
     for (int j = 0; j < thyraOutArgs.Ng(); ++j) {
       const Teuchos::RCP<Epetra_Vector> g_out = outArgs.get_g(j);
       if (Teuchos::nonnull(g_out)) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+        thyraOutArgs.set_g(j, Thyra::createVector(g_out));
+#else
         thyraOutArgs.set_g(j, Thyra::create_Vector(g_out, thyraImplementation_->get_g_space(j)));
+#endif
       }
     }
     // Derivatives
@@ -527,7 +535,11 @@ void Piro::Epetra::RythmosSolver::evalModel(const InArgs& inArgs, const OutArgs&
                 thyraImplementation_->get_g_space(j) :
                 thyraImplementation_->get_p_space(l);
               const Teuchos::RCP<Thyra::MultiVectorBase<double> > mv_thyra =
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+                Thyra::createMultiVector(dgdp_out.getMultiVector());
+#else
                 Thyra::create_MultiVector(dgdp_out.getMultiVector(), mv_range);
+#endif
               dgdp_thyra = Thyra::ModelEvaluatorBase::Derivative<double>(mv_thyra, mv_orient);
             }
             thyraOutArgs.set_DgDp(j, l, dgdp_thyra);

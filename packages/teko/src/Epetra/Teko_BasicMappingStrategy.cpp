@@ -103,7 +103,11 @@ void BasicMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 void BasicMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
                                                  Epetra_MultiVector& Y) const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   RCP<const Epetra_MultiVector> eSrc = Thyra::EpetraOperatorVectorExtraction::getConstEpetraMultiVector(thyra_Y);
+#else
    RCP<const Epetra_MultiVector> eSrc = Thyra::get_Epetra_MultiVector(*rangeMap(),thyra_Y);
+#endif
 
    Y = *eSrc;
 }

@@ -43,8 +43,9 @@
 #define THYRA_EPETRA_MODEL_EVALUATOR_HPP
 
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Map.h"
 #include "Teuchos_Array.hpp"

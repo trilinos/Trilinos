@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "ThyraEpetraAdapters_config.h"
 
 #include "Thyra_EpetraExtAddTransformer.hpp"
 #include "Thyra_AddedLinearOpBase.hpp"
@@ -82,7 +83,11 @@ bool EpetraExtAddTransformer::isCompatible(
 RCP<LinearOpBase<double> >
 EpetraExtAddTransformer::createOutputOp() const
 {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   return Teuchos::rcp( new EpetraLinearOp() );
+#else
    return nonconstEpetraLinearOp();
+#endif
 }
 
 
@@ -166,8 +171,12 @@ void EpetraExtAddTransformer::transform(
       //   2. Extract RCP to destination Epetra_CrsMatrix
       //   3. If neccessary, allocate new Epetra_CrsMatrix
       EpetraLinearOp &thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
-      RCP<Epetra_CrsMatrix>  epetra_op =
-            rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+      RCP<Epetra_CrsMatrix>  epetra_op;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.getEpetraOperator());
+#else
+      epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+#endif
       Epetra_CrsMatrix * epetra_op_raw = epetra_op.get();
    
       // perform addition
@@ -197,8 +206,12 @@ void EpetraExtAddTransformer::transform(
 
       // get or allocate an object to use as the destination
       EpetraLinearOp & thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
-      RCP<Epetra_CrsMatrix>  epetra_op =
-            rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+      RCP<Epetra_CrsMatrix>  epetra_op;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.getEpetraOperator());
+#else
+      epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
+#endif
 
       if(epetra_op==Teuchos::null)
          epetra_op = Teuchos::rcp(new Epetra_CrsMatrix(*crsMat));
@@ -206,7 +219,13 @@ void EpetraExtAddTransformer::transform(
          *epetra_op = *crsMat;
       
       // grab vector to add to diagonal
-      RCP<const Epetra_Vector> v = get_Epetra_Vector(epetra_op->OperatorDomainMap(),diag->getDiag());
+      RCP<const Epetra_Vector> v;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      v = EpetraOperatorVectorExtraction::getConstEpetraVector(diag->getDiag());
+      epetra_op = rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.getEpetraOperator());
+#else
+      v = get_Epetra_Vector(epetra_op->OperatorDomainMap(),diag->getDiag());
+#endif
 
       if(matScalar!=1.0)
          epetra_op->Scale(matScalar);

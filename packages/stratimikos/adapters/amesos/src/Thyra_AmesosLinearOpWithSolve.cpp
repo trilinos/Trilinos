@@ -42,11 +42,11 @@
 */
 
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Epetra_MultiVector.h"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Epetra_MultiVector.h"
 
 namespace Thyra {
 
@@ -300,19 +300,28 @@ AmesosLinearOpWithSolve::solveImpl(
   //
   const EOpTransp amesosOpTransp = real_trans(trans_trans(amesosSolverTransp_,M_trans));
   const Epetra_Operator *amesosOp = epetraLP_->GetOperator();
-  const Epetra_Map
-    &opRangeMap  = ( amesosOpTransp == NOTRANS
-      ? amesosOp->OperatorRangeMap()  : amesosOp->OperatorDomainMap() ),
-    &opDomainMap = ( amesosOpTransp == NOTRANS
-      ? amesosOp->OperatorDomainMap() : amesosOp->OperatorRangeMap()  );
 
   //
   // Get Epetra_MultiVector views of B and X
   //
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  Teuchos::RCP<const Epetra_MultiVector>
+    epetra_B = EpetraOperatorVectorExtraction::getConstEpetraMultiVector(rcpFromRef(B));
+  Teuchos::RCP<Epetra_MultiVector>
+    epetra_X = EpetraOperatorVectorExtraction::getEpetraMultiVector(rcpFromPtr(X));
+#else
+  const Epetra_Map& opRangeMap  = ( amesosOpTransp == NOTRANS
+                                ? amesosOp->OperatorRangeMap()
+                                : amesosOp->OperatorDomainMap() );
+  const Epetra_Map& opDomainMap = ( amesosOpTransp == NOTRANS
+                                ? amesosOp->OperatorDomainMap() 
+                                : amesosOp->OperatorRangeMap()  );
+
   Teuchos::RCP<const Epetra_MultiVector>
     epetra_B = get_Epetra_MultiVector(opRangeMap, rcpFromRef(B));
   Teuchos::RCP<Epetra_MultiVector>
     epetra_X = get_Epetra_MultiVector(opDomainMap, rcpFromPtr(X));
+#endif
 
   //
   // Set B and X in the linear problem

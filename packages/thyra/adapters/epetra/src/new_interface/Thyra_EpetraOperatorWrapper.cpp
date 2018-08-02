@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-//
+// 
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-//
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,43 +34,75 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
-//
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
+// 
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraMultiVector.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#include "ThyraEpetraAdapters_config.h"
 
-#include "Teuchos_dyn_cast.hpp"
+namespace Thyra { 
 
-#include "Epetra_Operator.h"
+// Constructor, utilties
 
-namespace Thyra {
 
-template<>
-Teuchos::RCP<Epetra_Operator>
-get_Epetra_Operator( LinearOpBase<double> &op )
+EpetraOperatorWrapper::
+EpetraOperatorWrapper(const RCP<const LinearOpBase<double> > &thyraOp)
+  : useTranspose_(false),
+    thyraOp_(thyraOp)
 {
-  EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<EpetraLinearOp>(op);
-#ifdef HAVE_THYRA_EPETRA_REFACTOR
-  return thyra_epetra_op.getEpetraOperator();
-#else
-  return thyra_epetra_op.epetra_op();
-#endif
+  TEUCHOS_TEST_FOR_EXCEPTION (thyraOp_.is_null(), std::logic_error,
+                              "Error! EpetraOperatorWrapper requires a nonnull LinearOpBase ptr as input.\n");
+  range_     = thyraOp->range();
+  domain_    = thyraOp->domain();
+  label_     = thyraOp->description();
+  domainMap_ = EpetraOperatorVectorExtraction::getOrCreateEpetraMap(domain_);
+  rangeMap_  = EpetraOperatorVectorExtraction::getOrCreateEpetraMap(range_);
 }
 
-template<>
-Teuchos::RCP<const Epetra_Operator>
-get_Epetra_Operator( const LinearOpBase<double> &op )
+
+// Overridden from Epetra_Operator
+
+
+int EpetraOperatorWrapper::
+Apply(const Epetra_MultiVector& X,
+            Epetra_MultiVector& Y) const
 {
-  const EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<const EpetraLinearOp>(op);
-#ifdef HAVE_THYRA_EPETRA_REFACTOR
-  return thyra_epetra_op.getConstEpetraOperator();
-#else
-  return thyra_epetra_op.epetra_op();
-#endif
+  // Wrap inputs into EpetraMultiVector's
+  const RCP<const MultiVectorBase<double>> eX = createConstMultiVector(Teuchos::rcpFromRef(X));
+  const RCP<MultiVectorBase<double>> eY = createMultiVector(Teuchos::rcpFromRef(Y));
+
+  Thyra::apply<double>( *thyraOp_, !useTranspose_ ? NOTRANS : CONJTRANS, *eX, eY.ptr());
+
+  return 0;
+}
+
+
+int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
+  Epetra_MultiVector& Y) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+    "EpetraOperatorWrapper::ApplyInverse not implemented");
+  TEUCHOS_UNREACHABLE_RETURN(1);
+}
+
+
+double EpetraOperatorWrapper::NormInf() const 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+    "EpetraOperatorWrapper::NormInf not implemated");
+  TEUCHOS_UNREACHABLE_RETURN(1.0);
+}
+
+
+// Free function
+Teuchos::RCP<const Thyra::LinearOpBase<double> > 
+makeEpetraWrapper(const RCP<const LinearOpBase<double> > &thyraOp)
+{
+  return constEpetraLinearOp(Teuchos::rcp(new EpetraOperatorWrapper(thyraOp)));
 }
 
 } // namespace Thyra

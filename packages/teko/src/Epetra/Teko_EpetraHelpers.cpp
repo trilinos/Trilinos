@@ -48,6 +48,8 @@
 
 // Thyra Includes
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
@@ -92,7 +94,11 @@ const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<con
                                                                    const std::string & lbl)
 {
    const RCP<const Thyra::VectorBase<double> > thyraVec  // need a Thyra::VectorBase object
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+         = Thyra::createConstVector(ev);
+#else
          = Thyra::create_Vector(ev,Thyra::create_VectorSpace(rcpFromRef(map)));
+#endif
    Teuchos::RCP<Thyra::LinearOpBase<double> > op 
          = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
    op->setObjectLabel(lbl);
@@ -113,7 +119,11 @@ const Teuchos::RCP<Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<Epetra_Ve
                                                                    const std::string & lbl)
 {
    const RCP<Thyra::VectorBase<double> > thyraVec  // need a Thyra::VectorBase object
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+         = Thyra::createVector(ev);
+#else
          = Thyra::create_Vector(ev,Thyra::create_VectorSpace(rcpFromRef(map)));
+#endif
    Teuchos::RCP<Thyra::LinearOpBase<double> > op 
          = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
    op->setObjectLabel(lbl);

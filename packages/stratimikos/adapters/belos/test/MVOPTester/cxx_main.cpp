@@ -186,13 +186,19 @@ int main(int argc, char *argv[])
   typedef Thyra::LinearOpBase<double>    TLOB;
   // create thyra objects from the epetra objects
 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+  // Create a MultiVectorBase (from the Epetra_MultiVector)
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec =
+    Thyra::createMultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec));
+#else
   // first, a Thyra::VectorSpaceBase
   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > epetra_vs =
     Thyra::create_VectorSpace(Map);
-
   // then, a MultiVectorBase (from the Epetra_MultiVector)
   Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec =
     Thyra::create_MultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs);
+#endif
+
 
   // then, a LinearOpBase (from the Epetra_CrsMatrix)
   Teuchos::RCP<Thyra::LinearOpBase<double> > thyra_op =

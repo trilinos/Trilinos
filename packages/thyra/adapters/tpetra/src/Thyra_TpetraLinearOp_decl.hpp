@@ -49,7 +49,7 @@
 #include "Tpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-#if defined(HAVE_THYRA_EPETRA) && defined(HAVE_TPETRA_EPETRA)
+#if defined(HAVE_THYRA_EPETRA) && defined(HAVE_TPETRA_EPETRA) && !defined(HAVE_THYRA_EPETRA_REFACTOR)
 #  define HAVE_THYRA_TPETRA_EPETRA
 #endif
 

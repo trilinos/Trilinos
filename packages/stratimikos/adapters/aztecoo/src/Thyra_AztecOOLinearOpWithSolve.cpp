@@ -41,13 +41,13 @@
 
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_LinearOpWithSolveHelpers.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
 
 namespace {
 
@@ -624,8 +624,13 @@ AztecOOLinearOpWithSolve::solveImpl(
     dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
 
   if (opWrapper == 0) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    epetra_B = EpetraOperatorVectorExtraction::getOrCreateConstEpetraMultiVector(rcpFromRef(B));
+    epetra_X = EpetraOperatorVectorExtraction::getOrCreateEpetraMultiVector(rcpFromPtr(X));
+#else
     epetra_B = get_Epetra_MultiVector(opRangeMap, rcpFromRef(B));
     epetra_X = get_Epetra_MultiVector(opDomainMap, rcpFromPtr(X));
+#endif
   }
 
   //
@@ -667,8 +672,15 @@ AztecOOLinearOpWithSolve::solveImpl(
         epetra_b_j = rcp(new Epetra_Vector(opRangeMap));
         epetra_x_j = rcp(new Epetra_Vector(opDomainMap));
       }
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      auto thyra_epetra_bj = Thyra::createVector(epetra_b_j);
+      auto thyra_epetra_xj = Thyra::createVector(epetra_x_j);
+      thyra_epetra_bj->assign(*B.col(j));
+      thyra_epetra_xj->assign(*X->col(j));
+#else
       opWrapper->copyThyraIntoEpetra(*B.col(j), *epetra_b_j);
       opWrapper->copyThyraIntoEpetra(*X->col(j), *epetra_x_j);
+#endif
     }
 
     //
@@ -703,7 +715,12 @@ AztecOOLinearOpWithSolve::solveImpl(
     // If necessary, convert the solution back to a non-epetra vector
     //
     if (opWrapper != 0) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      auto thyra_epetra_xj = createVector(epetra_x_j);
+      X->col(j)->assign(*thyra_epetra_xj);
+#else
       opWrapper->copyEpetraIntoThyra(*epetra_x_j, X->col(j).ptr());
+#endif
     }
 
     //

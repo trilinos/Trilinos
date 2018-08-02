@@ -44,16 +44,6 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 
-// Define this to see selected timers
-//#define EPETRA_THYRA_TEUCHOS_TIMERS
-
-class Epetra_Comm;
-class Epetra_Map;
-class Epetra_MultiVector;
-class Epetra_Vector;
-class Epetra_Operator;
-
-
 namespace Thyra {
 
 
@@ -113,10 +103,6 @@ const std::string toString(const EApplyEpetraOpAs applyEpetraOpAs)
   }
   TEUCHOS_UNREACHABLE_RETURN("");
 }
-
-
-/** \brief . */
-class EpetraLinearOp;
 
 
 } // namespace Thyra

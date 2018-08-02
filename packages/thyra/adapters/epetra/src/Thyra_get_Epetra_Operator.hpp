@@ -42,10 +42,24 @@
 #ifndef THYRA_GET_EPETRA_OPERATOR_HPP
 #define THYRA_GET_EPETRA_OPERATOR_HPP
 
-#include "Thyra_EpetraTypes.hpp"
+// Not directly needed in this file, but this way we made the
+// macro HAVE_THYRA_EPETRA_REFACTOR available to files that include
+// this header. This way, they do not need to include the config.h
+// header manually. That's nice, because in the future we may deprecate
+// and then remove the old interface, making the config.h file pointless.
+// If that happens, we may remove it, and at that point all files including
+// it would have to be updated. This was, only the adapters headers need to
+// be updated.
+#include "ThyraEpetraAdapters_config.h"
+
+#include "Thyra_LinearOpBase.hpp"
+
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <stdexcept> // std::invalid_argument
+
+class Epetra_Operator;
 
 namespace Thyra {
 

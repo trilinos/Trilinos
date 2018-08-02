@@ -64,8 +64,12 @@ int Piro::Epetra::PerformAnalysis(
 
   if (Teuchos::nonnull(p_thyra)) {
     const int l = 0;
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+    p = Thyra::EpetraOperatorVectorExtraction::getEpetraVector(p_thyra);
+#else
     const Teuchos::RCP<const Epetra_Map> p_map = epetraModel->get_p_map(l);
     p = Thyra::get_Epetra_Vector(*p_map, p_thyra);
+#endif
   } else {
     p = Teuchos::null;
   }

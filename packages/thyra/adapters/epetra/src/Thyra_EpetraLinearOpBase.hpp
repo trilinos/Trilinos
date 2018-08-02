@@ -45,7 +45,6 @@
 #include "Thyra_EpetraTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 class Epetra_Operator;
 
 

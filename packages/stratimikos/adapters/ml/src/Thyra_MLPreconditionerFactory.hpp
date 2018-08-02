@@ -42,9 +42,9 @@
 #ifndef THYRA_ML_PRECONDITIONER_FACTORY_DECL_HPP
 #define THYRA_ML_PRECONDITIONER_FACTORY_DECL_HPP
 
+#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
-#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
 namespace Thyra {
@@ -73,7 +73,6 @@ public:
    */
   STANDARD_COMPOSITION_MEMBERS(
     EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
-
   //@}
 
   /** @name Overridden from PreconditionerFactoryBase */

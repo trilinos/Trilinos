@@ -129,8 +129,13 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
          = rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double> >(thyra_Y);
 
    // convert thyra product vector to subY
-   for(unsigned int i=0;i<blockMaps_.size();i++)
+   for(unsigned int i=0;i<blockMaps_.size();i++) {
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+      subY.push_back(Thyra::EpetraOperatorVectorExtraction::getConstEpetraMultiVector(prod_Y->getMultiVectorBlock(i)));
+#else
       subY.push_back(Thyra::get_Epetra_MultiVector(*blockMaps_[i].second,prod_Y->getMultiVectorBlock(i)));
+#endif
+   }
 
    // endow the subVectors with required information about the maps
    Strided::associateSubVectors(blockMaps_,subY);
@@ -183,7 +188,11 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
          ss << label << "_" << i << "," << j;
 
          // build the blocks and place it the right location
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+         A->setNonconstBlock(i,j,Thyra::epetraLinearOp(Strided::buildSubBlock(i,j,*crsContent,blockMaps_)));
+#else
          A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(Strided::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
+#endif
       }
    } // end for i
    A->endBlockFill();

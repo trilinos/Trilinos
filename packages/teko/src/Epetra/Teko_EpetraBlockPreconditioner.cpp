@@ -321,7 +321,11 @@ Teuchos::RCP<const Thyra::LinearOpBase<double> > EpetraBlockPreconditioner::extr
       return eow->getThyraOp(); 
 
    // otherwise wrap it up as a thyra operator 
+#ifdef HAVE_THYRA_EPETRA_REFACTOR
+   return Thyra::constEpetraLinearOp(A);
+#else
    return Thyra::epetraLinearOp(A);
+#endif
 }
 
 Teuchos::RCP<const MappingStrategy> EpetraBlockPreconditioner::extractMappingStrategy(const Teuchos::RCP<const Epetra_Operator> & A) const
