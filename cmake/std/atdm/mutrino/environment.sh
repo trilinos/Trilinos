@@ -155,21 +155,11 @@ function atdm_run_script_on_compute_node {
   fi
   echo "Create empty file $output_file"
   touch $output_file
-  
-  echo
-  echo "Running '$script_to_run' using sbatch in the background ..."
+
   if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ] ; then
-    set -x
-    sbatch --output=$output_file --wait -N1 -p knl -C cache --hint=multithread \
-      --time=${timeout} -J $JOB_NAME ${script_to_run} &
-    SBATCH_PID=$!
-    set +x
+    ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
   elif [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ] ; then
-    set -x
-    sbatch --output=$output_file --wait -N1 --time=${timeout} \
-      -J $JOB_NAME ${script_to_run} &
-    SBATCH_PID=$!
-    set +x
+    ATDM_CONFIG_SBATCH_EXTRA_ARGS=
   else
    echo
    echo "***"
@@ -177,6 +167,14 @@ function atdm_run_script_on_compute_node {
    echo "***"
    return
   fi
+ 
+  echo
+  echo "Running '$script_to_run' using sbatch in the background ..."
+  set -x
+  sbatch --output=$output_file --wait -N1 ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} \
+    --time=${timeout} -J $JOB_NAME ${script_to_run} &
+  SBATCH_PID=$!
+  set +x
   
   echo
   echo "Tailing output file $output_file in the background ..."
