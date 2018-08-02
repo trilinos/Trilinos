@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -165,8 +165,9 @@ static void *smalloc(size_t n)
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr, "smalloc: Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
+    fprintf(stderr,
+            "smalloc: Out of space - number of bytes "
+            "requested = " ST_ZU "\n",
             n);
     exit(0);
   }

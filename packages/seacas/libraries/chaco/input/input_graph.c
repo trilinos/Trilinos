@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -298,9 +298,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
           }
         }
         if (found_flag) {
-          printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n", vertex, neighbor);
+          printf("WARNING: Multiple occurrences of edge (%d,%d) ignored\n", vertex, neighbor);
           if (Output_File != NULL) {
-            fprintf(Output_File, "WARNING: Multiple occurences of edge (%d,%d) ignored\n", vertex,
+            fprintf(Output_File, "WARNING: Multiple occurrences of edge (%d,%d) ignored\n", vertex,
                     neighbor);
           }
           skip_flag = TRUE;

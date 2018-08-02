@@ -50,6 +50,8 @@
 #include "Tpetra_Details_LocalMap.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Comm.hpp"
 #include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
@@ -1430,7 +1432,7 @@ namespace Tpetra {
   ///   Kokkos Node type.
   ///
   /// The Map is configured to use zero-based indexing.
-  /// 
+  ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >

@@ -254,6 +254,21 @@ else(CGNS_LIBRARIES AND CGNS_INCLUDE_DIRS)
     endif()
 endif(CGNS_LIBRARIES AND CGNS_INCLUDE_DIRS )    
 
+# Search for CGNS tools
+set(_cgns_TOOLS cgnscheck cgnsdiff cgnslist cgnscompress cgnsconvert cgnsnames cgnsupdate)
+set(CGNS_TOOLS_FOUND)
+foreach( tool ${_cgns_TOOLS})
+  string(TOUPPER "${tool}" tool_uc)
+  set(_cgns_VAR_NAME CGNS_${tool_uc}_BINARY)
+  find_program(${_cgns_VAR_NAME}
+               ${tool}
+               HINTS ${_cgns_BINARY_SEARCH_DIRS}
+               ${_cgns_FIND_OPTIONS})
+  if (${_cgns_VAR_NAME})
+    list(APPEND CGNS_TOOLS_FOUND ${tool})
+  endif()
+endforeach()
+
 # Send useful message if everything is found
 find_package_handle_standard_args(CGNS DEFAULT_MSG
                                         CGNS_LIBRARIES
@@ -272,6 +287,7 @@ if ( NOT CGNS_FIND_QUIETLY )
   # Create a not found list
   message(STATUS "\tCGNS_INCLUDE_DIRS      = ${CGNS_INCLUDE_DIRS}")
   message(STATUS "\tCGNS_LIBRARIES         = ${CGNS_LIBRARIES}")
+  message(STATUS "\tCGNS_TOOLS_FOUND       = ${CGNS_TOOLS_FOUND}")
 
 endif()
 # For compatability with TriBITS:

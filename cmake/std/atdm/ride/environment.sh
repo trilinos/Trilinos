@@ -28,8 +28,8 @@ fi
 
 export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-    module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-    module swap openblas/0.2.19/gcc/5.4.0 netlib/3.8.0/gcc/5.4.0
+    module load devpack/20180308/openmpi/2.1.2/gcc/7.2.0/cuda/9.0.176
+    module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
     export OMPI_CXX=`which g++`
     export OMPI_CC=`which gcc`
     export OMPI_FC=`which gfortran`
@@ -37,8 +37,9 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-    module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-    module swap openblas/0.2.19/gcc/5.4.0 netlib/3.8.0/gcc/5.4.0
+    module load devpack/20180308/openmpi/2.1.2/gcc/7.2.0/cuda/9.0.176
+    module unload gcc/7.2.0
+    module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
     export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper
     if [ ! -x "$OMPI_CXX" ]; then
         echo "No nvcc_wrapper found"
@@ -64,13 +65,6 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-
-module swap yamlcpp/0.3.0 yaml-cpp/20170104 
-if [ $? ]; then module load  yaml-cpp/20170104; fi
-
-module load binutils/2.27.0
-# NOTE: Above we need to use updated 'ar' from binutils 2.27 to handle big
-# object files with 'ar' that otherwise can cause "File truncated" failures (see #3069)
 
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)

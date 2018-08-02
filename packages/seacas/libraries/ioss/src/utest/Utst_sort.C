@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -39,11 +39,10 @@
 namespace {
   template <typename INT> bool verify_sorted(std::vector<INT> v)
   {
-    for (size_t i = 1; i < v.size(); i++) {
-      if (v[i - 1] > v[i]) {
-        std::cerr << "Unsorted at position " << i << "\n";
-        return false;
-      }
+    auto it = std::adjacent_find(v.begin(), v.end(), std::greater<INT>());
+    if (it != v.end()) {
+      std::cerr << "Unsorted at position " << it - v.begin() + 1 << "\n";
+      return false;
     }
     return true;
   }

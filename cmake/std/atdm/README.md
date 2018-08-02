@@ -18,7 +18,9 @@ build locally as described below.
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
+* <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
+
 
 ## Quick-start
 
@@ -213,6 +215,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 However, a default `local-checkin-test-defaults.py` is created the first time
 the `checkin-test-atdm.sh` script is run.
+
 
 ## Specific instructions for each system
 
@@ -418,6 +421,7 @@ ATDM Trilinos configuration and testing scripts should work with just about
 any version of git 2.0+.  Another approach would be for the user to
 (temporarily) edit their `~/.gitconfig` file to address the problems.
 
+
 ## Directory structure and contents
 
 This base directory:
@@ -485,9 +489,192 @@ default file name:
   Trilinos/cmake/std/atdm/<system-name>/tweaks/$ATDM_JOB_NAME_KEYS_STR.cmake
 ```
 
-If that file exists, then it is set as the default for the cmake cache var
-`ATDM_TWEAKS_FILES` (printes to STDOUT) and that file is included and its
-options are read.
+If that file exists, then it is set as the default for the cmake cache
+variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
+its options are read.
+
+
+## Disabling failing tests
+
+There are situations where specific tests must be disabled on certain
+platforms for certain builds or based on other criteria (see sub-process
+[Temporarily disable the failing code or
+test](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Triaging+and+addressing+ATDM+Trilinos+Failures#TriagingandaddressingATDMTrilinosFailures-5.Makesuretheissueisaddressedinatimelyway:)).
+There are various ways to disable tests with the Trilinos TriBITS/CMake-based
+build and test system.  Tests can be disabled in the `CMakeLists.txt` files
+that define the tests themselves using various logic.  But the way to
+selectively disable tests for the ATDM Trilinos builds that will be described
+here will be to only modify files under the `Trilinos/cmake/std/atdm/`
+directory.  This will be done by setting the CMake cache variable
+`<full-test-name>_DISABLE=ON` for each test to be disabled where
+`<full-test-name>` is the full test name.  For example, to disable the test
+`MueLu_UnitTestsTpetra_MPI_4`, one would set the CMake cache variable
+`MueLu_UnitTestsTpetra_MPI_4_DISABLE=ON`.  The TriBITS/CMake configure system
+will then disable the test and print the following line during configuration
+(when `Trilinos_TRACE_ADD_TEST=ON` is also set):
+
+```
+-- MueLu_UnitTestsTpetra_MPI_4: NOT added test because MueLu_UnitTestsTpetra_MPI_4_DISABLE='ON'!
+```
+
+The CMake function `ATDM_SET_ENABLE()` is provided in order to set the disable
+such as with:
+
+```
+ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
+```
+
+Using this function will result in the CMake cache variable
+`<full-test-name>_DISABLE` to get set to `ON` by default and will print the
+disable to the CMake STDOUT when the `ATDM_SET_ENABLE()` is run, such as:
+
+```
+-- Setting default MueLu_UnitTestsTpetra_MPI_4_DISABLE=ON
+```
+
+This approach also allows a user to enable the test by adding
+`-D<full-test-name>_DISABLE=OFF` to the configure line (which overrides the
+default `ON`).
+
+However, before any tests are disabled, there must be a Trilinos GitHub issue
+addressing the failing test(s) and the GitHub issue number (e.g. `#2839`) must
+put into a comment above the `ATDM_SET_ENABLE()` statement and the issue
+number must be added to the git commit message (see [Create a Trilinos GitHub
+issue for the
+failure](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Triaging+and+addressing+ATDM+Trilinos+Failures#TriagingandaddressingATDMTrilinosFailures-3.CreateaTrilinosGitHubissueforthefailure:)).
+
+The best file to add the `ATDM_SET_ENABLE(<full-test-name>_DISABLE ON)`
+statement to based on different situations is described in the following
+sub-sections:
+
+* <a href="#disable-a-test-for-a-specific-build-on-a-specific-platform">Disable a test for a specific build on a specific platform</a>
+* <a href="#disable-a-test-for-several-or-all-builds-on-a-specific-platform">Disable a test for several or all builds on a specific platform</a>
+* <a href="#disable-a-test-for-builds-on-all-platforms">Disable a test for builds on all platforms</a>
+
+
+### Disable a test for a specific build on a specific platform
+
+In order to disable a test for a single build on single platform, one will
+want to put the `ATDM_SET_ENABLE()` statement into the [tweaks
+file](#ATDM_TWEAKS_FILES) for that build and platform:
+
+```
+  Trilinos/cmake/std/atdm/<system-name>/tweaks/<ATDM_JOB_NAME_KEYS_STR>.cmake
+  ```
+
+The tweak file being looked for is printed out in the CMake configure output
+as the line:
+
+```
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/<system-name>/tweaks/<ATDM_JOB_NAME_KEYS_STR>.cmake'
+```
+
+For example, for the `intel-debug-openmp` build on 'mutrino', the printout
+would be:
+
+```
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP.cmake'
+```
+
+For example, Trilinos commit
+[73ae19cf0c](https://github.com/trilinos/Trilinos/commit/73ae19cf0cc7295a7f36de342ea51718226825b7)
+shows the disable of the test:
+
+```
+# Disable test that times out for some unkown reason (#2925)
+ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
+```
+
+in both the files `cmake/std/atdm/shiller/tweaks/GNU-DEBUG-SERIAL.cmake` and
+`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake`
+
+NOTE: Adding a comment with the Trilinos GitHub Issue ID (`#2925` in this
+example) is critical for tractability to remind why the test was disabled and
+where to find the disable to remove it later.
+
+To avoid duplicate `ATDM_SET_ENABLE()` statements, one can use the approach of
+creating a single `*.cmake` that is included in the different tweak files as
+described below.
+
+
+### Disable a test for several or all builds on a specific platform
+
+It is often the case that a test needs to be disabled for several (or all)
+builds for a given platform.  An efficient way to do this is to create a new
+`*.cmake` file that contains the `ATDM_SET_ENABLE()` statements and then
+include that new file in all of the tweaks files on that system where the
+tests should be disabled.
+
+For example, the Trilinos commit
+[3450efd421](https://github.com/trilinos/Trilinos/commit/3450efd421f1ce2b47700853aa4c5801f667202a)
+shows how a set of tests were disabled for all of the CUDA builds on the
+system `ride` through the creation of the file:
+
+```
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_COMMON_TWEAKS.cmake
+```
+
+and then the inclusion of that file in the specific tweak files for each CUDA
+build:
+
+```
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-DEBUG-CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-RELEASE-CUDA.cmake
+```
+
+using the inserted CMake statement:
+
+```
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/CUDA_COMMON_TWEAKS.cmake")
+```
+
+An example of using a `*.cmake` file to disable the same set of tests in all
+of the builds for a given system is shown in Trilinos commit
+[33a933b004](https://github.com/trilinos/Trilinos/commit/33a933b004f88710274906fad612380049e1e82e).
+This example shows the creation of the file:
+
+```
+  Trilinos/cmake/std/atdm/ride/tweaks/ALL_COMMON_TWEAKS.cmake
+```
+
+and then the inclusion of that file in all of the specific tweaks files on
+'ride' with the statement:
+
+```
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")
+```
+
+in each of those files.
+
+
+### Disable a test for builds on all platforms
+
+There are rare cases where a test (or a set of tests) will need to be disabled
+for all or a subset of builds across all systems.  To do that using the
+above-described approaches would require touching files in every
+`cmake/std/atdm/<system-name>/tweaks/` directory.  In rare cases like this,
+one can accomplish this by adding a (conditional) `ATDM_SET_ENABLE()`
+statement for each test disable directly to the file:
+
+```
+  Trilinos/cmake/std/atdm/ATDMDevEnvSettings.cmake
+```
+
+For example, Trilinos commit [5e52db03ff](https://github.com/trilinos/Trilinos/commit/5e52db03ff33acb5b9a0be7ba7507a8bb0de6e30) added the CMake code:
+
+```
+# Disable test that fails for all openmp builds (#3035)
+IF (ATDM_USE_OPENMP)
+  ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
+ENDIF()
+```
+
+to the file `ATDMDevEnvSettings.cmake` to disable the test
+`MueLu_UnitTestsTpetra_MPI_4` for all OpenMP builds across all platforms.
+(Note that that disable was later removed in Trilinos commit
+[62fa6663a6](https://github.com/trilinos/Trilinos/commit/62fa6663a6d5a757d786ac87752c3e2074d28414)
+after the test was fixed.)
+
 
 ## Specific systems supported
 

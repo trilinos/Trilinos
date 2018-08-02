@@ -53,35 +53,18 @@ namespace Tpetra {
   /// \brief Implementation of the Platform concept for MPI-based
   ///   platforms.
   ///
-  /// \warning This class will be DEPRECATED, in favor of the
-  ///   initialize() functions in Tpetra_Core.hpp.  Please use those
-  ///   functions for safe, consistent initialization of MPI and
-  ///   Kokkos, on which Tpetra depends.  If you must use this class,
-  ///   please prefer the constructors that take \c argc and \c argv.
-  ///   Those constructors will call initialize() for you.
-  ///
-  /// MpiPlatform is an implementation of Tpetra's Platform concept.
-  /// Classes implementing the Platform concept are templated on the
-  /// Kokkos Node type.  They have at least the following public
-  /// interface:
-  /// \code
-  /// // This is not a real class; it just illustrates the concept.
-  /// template<class Node>
-  /// class Platform {
-  /// public:
-  ///   typedef Node NodeType;
-  ///   explicit Platform (const RCP<Node>& node);
-  ///   RCP<const Comm<int> > getComm() const;
-  ///   RCP<Node> getNode() const;
-  /// };
-  /// \endcode
-  /// MpiPlatform also has a constructor that accepts an MPI
-  /// communicator, over which the application using the platform
-  /// should perform communication.  The default communicator is
-  /// MPI_COMM_WORLD.  MpiPlatform is only available if Trilinos was
-  /// built with MPI.
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <class Node>
-  class MpiPlatform : public Teuchos::Describable {
+  class TPETRA_DEPRECATED MpiPlatform : public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
@@ -303,10 +286,18 @@ namespace Tpetra {
   /// \class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type>
   /// \brief MpiPlatform specialization for the default Node type.
   ///
-  /// \note <tt>::Tpetra::Details::DefaultTypes::node_type</tt> is a
-  ///   typedef.  Its actual type depends on Trilinos' build options.
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <>
-  class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> :
+  class TPETRA_DEPRECATED MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs

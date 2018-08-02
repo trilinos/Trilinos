@@ -190,7 +190,7 @@ namespace MueLu {
         ArrayRCP<const coord_type> fineCoordsData = ghostedCoords->getData(dim);
         ArrayRCP<coord_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
 
-        for (LO lnode = 0; lnode < numNodes; lnode++) {
+        for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
           if (procWinner[lnode] == myPID &&
               lnode < vertex2AggID.size() &&
               lnode < fineCoordsData.size() &&

@@ -252,7 +252,16 @@ namespace MueLuTests {
     RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory);
     RepHeuFact->SetFactory("A", MueLu::NoFactory::getRCP()); // 2x2 blocked operator
     RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
-    RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(200));
+    int minRowsPerRank=200;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+    using execution_space = typename Node::device_type::execution_space;
+    if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+    {
+       //Because target value will be multiplied by the # of threads in RepartitionHeuristic
+       minRowsPerRank /= execution_space::concurrency();
+    }
+#endif
+    RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(minRowsPerRank));
 
     // define sub block factories for blocked operator "A"
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());

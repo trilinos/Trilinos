@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -209,7 +209,7 @@ extern int interface(int    nvtxs,                 /**< number of vertices in fu
                      int     vmax,                 /**< how many vertices to coarsen down to? */
                      int     ndims,                /**< number of eigenvectors (2^d sets) */
                      double  eigtol,               /**< tolerance on eigenvectors */
-                     long    seed);                /**< for random graph mutations */
+                     long    seed);                   /**< for random graph mutations */
 
 /* Chaco interface to read assignment vector from file */
 extern int input_assign(FILE *, char *, int, int *);

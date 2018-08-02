@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ void countcedges(
     int *             mflag,    /* flag indicating vtx matched or not */
     int *             v2cv,     /* mapping from fine to coarse vertices */
     int *             pcnedges  /* number of edges in coarsened graph */
-    )
+)
 {
   int *jptr;       /* loops through edge list */
   int  cnedges;    /* twice number of edges in coarsened graph */

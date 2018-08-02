@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -91,7 +91,7 @@
    extra robust numericlly. */
 
 void lanczos_FO(struct vtx_data **A,      /* graph data structure */
-                int               n,      /* number of rows/colums in matrix */
+                int               n,      /* number of rows/columns in matrix */
                 int               d,      /* problem dimension = # evecs to find */
                 double **         y,      /* columns of y are eigenvectors of A  */
                 double *          lambda, /* ritz approximation to eigenvals of A */
@@ -100,7 +100,7 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
                 double *          vwsqrt, /* square root of vertex weights */
                 double            maxdeg, /* maximum degree of graph */
                 int               version /* 1 = standard mode, 2 = inverse operator mode */
-                )
+)
 
 {
   extern FILE *    Output_File;         /* output file or NULL */
@@ -120,7 +120,7 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
   extern double    init_time;           /* time for allocating memory, etc. */
   extern double    scan_time;           /* time for scanning bounds list */
   extern double    debug_time;          /* time for debug computations and output */
-  int              i, j;                /* indicies */
+  int              i, j;                /* indices */
   int              maxj;                /* maximum number of Lanczos iterations */
   double *         u, *r;               /* Lanczos vectors */
   double *         Aq;                  /* sparse matrix-vector product vector */
@@ -175,7 +175,7 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
   double           Tevec();        /* calc evec of T by linear recurrence */
   struct scanlink *mkscanlist();   /* make scan list for min ritz vecs */
   double           lanc_seconds(); /* current clock timer */
-  int              symmlq_(), get_ritzvals();
+  int              symmlq(), get_ritzvals();
   void             setvec(), vecscale(), update(), vecran(), strout();
   void             splarax(), scanmin(), scanmax(), frvec(), orthogonalize();
   void             orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
@@ -309,10 +309,10 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
       splarax(Aq, A, n, q[j], vwsqrt, workn);
     }
     else if (version == 2) {
-      symmlq_(&long_n, &(q[j][1]), &wv1[1], &wv2[1], &wv3[1], &wv4[1], &Aq[1], &wv5[1], &wv6[1],
-              &checka, &goodb, &precon, &shift, &nout, &intlim, &rtol, &istop, &itn, &anorm, &acond,
-              &rnorm, &ynorm, (double *)A, vwsqrt, (double *)orthlist2, &macheps, &normxlim,
-              &itnmin);
+      symmlq(&long_n, &(q[j][1]), &wv1[1], &wv2[1], &wv3[1], &wv4[1], &Aq[1], &wv5[1], &wv6[1],
+             &checka, &goodb, &precon, &shift, &nout, &intlim, &rtol, &istop, &itn, &anorm, &acond,
+             &rnorm, &ynorm, (double *)A, vwsqrt, (double *)orthlist2, &macheps, &normxlim,
+             &itnmin);
       symmlqitns += itn;
       if (DEBUG_EVECS > 2) {
         printf("Symmlq report:      rtol %g\n", rtol);

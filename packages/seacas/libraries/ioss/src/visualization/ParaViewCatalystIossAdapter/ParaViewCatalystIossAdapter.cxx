@@ -1,4 +1,4 @@
-// Copyright(C) 1999 - 2010 National Technology &Engineering Solutions
+// Copyright(C) 1999 - 2010-2017 National Technology &Engineering Solutions
 // of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
 // NTESS, the U.S.Government retains certain rights in this software.
 //
@@ -370,7 +370,7 @@ private:
   ParaViewCatalystIossAdapterImplementation(ParaViewCatalystIossAdapterImplementation const &);
   void operator=(ParaViewCatalystIossAdapterImplementation const &);
 
-  vtkCPProcessor *coProcessor;
+  vtkCPProcessor *                            coProcessor;
   std::map<std::string, PipelineDataDescPair> pipelines;
   std::map<std::string, LoggingPair>          logging;
 };
@@ -566,7 +566,7 @@ void ParaViewCatalystIossAdapter::CreateSideSet(/*const char* side_set_name,*/
    extractblock.  It may become necessary at a later date to
    pass in both, but for now we
    are just passing in ss_owner_name to give us correct
-   functionality while not chaning the function interface*/
+   functionality while not changing the function interface*/
 
   ParaViewCatalystIossAdapterImplementation &pcsai =
       ParaViewCatalystIossAdapterImplementation::getInstance();
@@ -597,7 +597,7 @@ void ParaViewCatalystIossAdapter::CreateSideSet(/*const char* side_set_name,*/
    extractblock.  It may become necessary at a later date to
    pass in both, but for now we
    are just passing in ss_owner_name to give us correct
-   functionality while not chaning the function interface*/
+   functionality while not changing the function interface*/
 
   ParaViewCatalystIossAdapterImplementation &pcsai =
       ParaViewCatalystIossAdapterImplementation::getInstance();

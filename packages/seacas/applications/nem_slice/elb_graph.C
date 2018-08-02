@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -153,8 +153,7 @@ namespace {
     size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
     std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size
               << " entries (" << total << " bytes).\n";
-    last_element.resize(0);
-    last_element.shrink_to_fit();
+    vec_free(last_element);
 
     // Attempt to reserve an array with this size...
     double time1 = get_time();
@@ -261,9 +260,8 @@ namespace {
           for (int i = 0; i < nnodes; i++) {
             INT entry = mesh->connect[elem][i];
 
-            if (ncnt != (size_t)entry &&
-                in_list(entry, graph->adj.size() - graph->start[ncnt],
-                        &graph->adj[graph->start[ncnt]]) < 0) {
+            if (ncnt != (size_t)entry && in_list(entry, graph->adj.size() - graph->start[ncnt],
+                                                 &graph->adj[graph->start[ncnt]]) < 0) {
               graph->adj.push_back(entry);
               graph->nadj++;
             }
@@ -276,7 +274,7 @@ namespace {
 
       /* for face adjacencies, need to allocate some memory */
       if (problem->face_adj) {
-        /* allocate space to hold info about surounding elements */
+        /* allocate space to hold info about surrounding elements */
         pt_list   = (INT *)malloc(sizeof(INT) * graph->max_nsur);
         hold_elem = (INT *)malloc(sizeof(INT) * graph->max_nsur);
         if (!(pt_list) || !(hold_elem)) {
@@ -428,7 +426,7 @@ namespace {
 
                 nelem = 0; /* reset this in case no intersections are needed */
 
-/* copy the first array into temp storage */
+                /* copy the first array into temp storage */
 
 #if 0
 		/* nhold is the number of elements touching node 0 on
@@ -554,7 +552,7 @@ namespace {
                         /* need to check for hex's */
                         hflag2 = is_hex(etype2);
 
-                        /* TET10 cannnot connect to a HEX */
+                        /* TET10 cannot connect to a HEX */
                         tflag2 = is_tet(etype2);
 
                         /* check here for tet/hex combinations */

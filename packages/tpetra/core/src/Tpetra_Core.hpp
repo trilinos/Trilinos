@@ -53,6 +53,9 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_Comm.hpp>
+#ifdef HAVE_TPETRACORE_MPI
+#  include "mpi.h"
+#endif // HAVE_TPETRACORE_MPI
 
 namespace Tpetra {
 

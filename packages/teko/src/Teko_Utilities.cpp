@@ -991,6 +991,15 @@ const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
   */
 const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 {
+   // if this is a diagonal linear op already, just take the reciprocal
+   auto diagonal_op = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double>>(op);
+   if(diagonal_op != Teuchos::null){
+     auto diag = diagonal_op->getDiag();
+     auto inv_diag = diag->clone_v();
+     Thyra::reciprocal(*diag,inv_diag.ptr());
+     return rcp(new Thyra::DefaultDiagonalLinearOp<double>(inv_diag));
+   }
+
    // if this is a blocked operator, extract diagonals block by block
    RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_op = rcp_dynamic_cast<const Thyra::PhysicallyBlockedLinearOpBase<double> >(op);
    if(blocked_op != Teuchos::null){

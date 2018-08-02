@@ -491,11 +491,10 @@ void test6(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 
 ///////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
 #ifdef HAVE_TPETRA_INT_INT
   test1<int>(comm);
