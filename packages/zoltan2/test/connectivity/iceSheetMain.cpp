@@ -336,6 +336,7 @@ int main(int narg, char **arg)
   
   timeDistribute->stop();
   
+  timeConstruct->start();
   //create local csr graph instances from the local src/dst arrays
   int* out_array;
   unsigned * out_degree_list;
@@ -351,11 +352,13 @@ int main(int narg, char **arg)
   if (me == 0){ 
     //ierr += prop.vtxLabelUnitTest();
   }
-  
+  timeConstruct->stop();
   //run iceSheetPropagation::propagate  
   int lnum_removed = 0; 
   int gnum_removed = 0;
+  timeSolve->start();
   int* remove = prop.propagate();
+  timeSolve->stop();
   for(int i = 0; i < nLocalOwned; i++){
     if(remove[i]>-2){
       lnum_removed++;
@@ -371,13 +374,42 @@ int main(int narg, char **arg)
 
   // Test results versus accepted answer
   // Proc 0 reads file of accepted answers into buffer
+  int * ans_removed = new int[n];
+  if(me == 0){
+    for(int i = 0; i < n; i++) ans_removed[i] = 0;
+    std::ifstream fin(arg[4]);
+    if(!fin){
+      std::cout<<"Unable to open "<<arg[4];
+    }
+    int ans_count = 0;
+    int vertex = -1;
+
+    while(fin>>vertex){
+      std::cout<<"vertex "<<vertex<<" was removed\n";
+      ans_removed[vertex]=1;
+    }
+  }  
   // Proc 0 broadcasts that buffer
+  Teuchos::broadcast<int,int>(*comm,0,n,ans_removed);
   // Every processor checks its locally owned vertices' answers with the
+  int local_mismatches = 0;
+  for(int i = 0; i < nLocalOwned; i++){
+    if(remove[i]>-2 && !ans_removed[mapOwned->getGlobalElement(i)]){
+      local_mismatches++;
+      std::cout<<me<<": Found a mismatch, vertex "<<mapOwned->getGlobalElement(i)<<"\n";
+    }
+  }
   // appropriate entries of the buffer (as determined by mapOwned).
   // Count how many differ from expected
+  int global_mismatches = 0;
   // Allreduce differ counts
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &local_mismatches, &global_mismatches);
   // if anyone differed, print FAIL; else print PASS
-
+  if(me == 0 && global_mismatches){ 
+    std::cout<<"FAIL "<<global_mismatches<<" mismatches\n";
+  } else if(me == 0){
+    std::cout<<"PASS, no mismatches\n";
+  }
   // Report the timers
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
