@@ -5,23 +5,35 @@
 %
 
 !rm -f compX.mm map_compX.mm
-!rm -f myRegionsInfo*_ myAppData_* myCompositeMap_* myRegionAssignment_* myProblemLayout_* myRegions_*
 
-nDims = 1; file='caseTen'; 
-% nDims = 2; file='caseTwenty'; 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%% USER-PROVIDED INFORMATION %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+nDims = 1; file = 'caseTen';
+% nDims = 2; file = 'caseTwenty';
+
+outDir = sprintf('%s/regDataDir', pwd);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Setup the output directory
+eval(sprintf('!mkdir -p %s', outDir));
+eval(sprintf('!rm -f %s/*', outDir));
+eval(sprintf('!cp case* %s', outDir));
 
 if (nDims == 2)
-  [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
+  [globalDims,localDims,relcorners,abscorners] = mk2DRegionFile(file, outDir);
 elseif (nDims == 1) && ...
     ((strcmp(file,'caseOne') == false) && (strcmp(file,'caseTwo')) == false && ...
     (strcmp(file,'caseThree') == false) && (strcmp(file,'caseFour') == false))
   
-  mk1DRegionFile(file);
+  mk1DRegionFile(file, outDir);
 end
 
 %
 %  read in some of header type information 
-fp = fopen(file,'r'); fgetl(fp); 
+fp = fopen(sprintf('%s/%s', outDir, file), 'r'); fgetl(fp); 
 t = fscanf(fp,'%d'); nNodes = t(1); nProcs = t(3); 
 whichCase = fgets(fp,16); fclose(fp);
 
@@ -40,8 +52,8 @@ end
 
 % Each 'processor' reads regional file. 
 for myRank=0:nProcs-1
-   eval(sprintf('myNodes%d = readRegionalFile(file,myRank);',myRank));
-   eval(sprintf('RegionToProc%d=regionToProcMap(myNodes%d,myRank,file);',...
+eval(sprintf('myNodes%d = readRegionFile(file,myRank,outDir);',myRank));
+eval(sprintf('RegionToProc%d=regionToProcMap(myNodes%d,myRank,file,outDir);',...
                myRank,myRank));
 end
 
@@ -62,7 +74,7 @@ end
 
 % send header to C++
 for myRank=0:nProcs-1
-  fp=fopen(sprintf('myRegionInfo_%d',myRank),'w');
+  fp=fopen(sprintf('%s/myRegionInfo_%d',outDir,myRank),'w');
   if (nDims == 1)
     fprintf(fp,'%d %d %d %d %s\n',maxRegPerGID,maxRegPerProc, nNodes, 1, whichCase);
   elseif (nDims == 2)
@@ -75,19 +87,18 @@ end
 
 % make and send composite map to C++
 for myRank=0:nProcs-1
-  eval(sprintf('mkCompositeMap(myNodes%d,%d);',myRank,myRank));
+  eval(sprintf('mkCompositeMap(myNodes%d,%d,outDir);',myRank,myRank));
 end
 
 % write matrix to file using MatrixMarket format
-mkMatrixFile(A);
+mkMatrixFile(A, outDir);
 
 for myRank=0:nProcs-1
-  eval(sprintf('mkRegionsPerGID(myNodes%d,%d,maxRegPerGID);',myRank,myRank));
+  eval(sprintf('mkRegionsPerGID(myNodes%d,%d,maxRegPerGID,outDir);',myRank,myRank));
 end
 
 for myRank=0:nProcs-1
-  fp=fopen(sprintf('myRegions_%d',myRank),'w');
-%   fprintf(fp,'LoadRegions\n');
+  fp=fopen(sprintf('%s/myRegions_%d',outDir,myRank),'w');
   for j=1:length(allMyRegions{myRank+1}.myRegions)
     fprintf(fp,'%d\n', allMyRegions{myRank+1}.myRegions(j));
   end
@@ -95,9 +106,9 @@ for myRank=0:nProcs-1
 end
 
 if (nDims == 1)
-  mkAppData(allMyNodes,allMyRegions,nProcs,whichCase);
+  mkAppData(allMyNodes,allMyRegions,nProcs,whichCase,outDir);
 elseif (nDims == 2)
-  mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,globalDims,localDims,relcorners,abscorners);
+  mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,globalDims,localDims,relcorners,abscorners,outDir);
 else
   error("Problems of spatial dimension %d are not implemented, yet.", nDims);
 end
