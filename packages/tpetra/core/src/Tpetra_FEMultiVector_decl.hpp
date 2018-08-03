@@ -51,15 +51,11 @@
 /// (Tpetra_FEMultiVector_decl.hpp).
 ///
 
+#include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of MultiVector (declared later in this file)
-  template<class S, class LO, class GO, class N> class FEMultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+namespace Classes {
 
   template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
@@ -171,15 +167,17 @@ namespace Tpetra {
     void switchActiveMultiVector();
 
   private:
-    /// \brief Default c'tor (private so it does not get used)
-    ///
-    FEMultiVector() { }
+    //! Default c'tor (private so it does not get used)
+    FEMultiVector() = delete;
 
   protected:
     //@{
     //! @name Internal routines and data structures
 
-    /// \brief Replace the underlying Map in place.  NOTE: FEMultiVector does not allow this and will throw
+    /// \brief Replace the underlying Map in place.
+    ///
+    /// \warning FEMultiVector does not allow this and will throw if
+    ///   you call this method.
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
     // Enum for activity
@@ -201,6 +199,7 @@ namespace Tpetra {
     //@}
   }; // class FEMultiVector
 
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_FEMULTIVECTOR_DECL_HPP
