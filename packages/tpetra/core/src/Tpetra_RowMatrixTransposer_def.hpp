@@ -42,11 +42,11 @@
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
-#include "Tpetra_RowMatrixTransposer_decl.hpp"
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Import.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Import.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Tpetra {
 

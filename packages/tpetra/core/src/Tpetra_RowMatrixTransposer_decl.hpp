@@ -47,7 +47,17 @@
 ///
 /// Declaration of Tpetra::RowMatrixTransposer.
 
-#include <Tpetra_CrsMatrix_decl.hpp>
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_Map_fwd.hpp"
+#include "Teuchos_RCP.hpp"
+#include <string>
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Forward declaration of ParameterList
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
