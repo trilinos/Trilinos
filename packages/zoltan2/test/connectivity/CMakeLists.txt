@@ -15,30 +15,233 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
     iceSheet
-    NAME iceSheet_test1
-    ARGS " test1.quad.msh test1-borders.quad.msh test1-basal-friction.ascii test1-answers.txt"
+    NAME iceSheet_SimpleHinge_sensitivity4
+    ARGS " test1.quad.msh test1-borders.quad.msh test1-basal-friction.ascii test1-s4-answers.txt 4"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
 TRIBITS_ADD_TEST(
     iceSheet
-    NAME iceSheet_Antarctica_16km
-    ARGS " ant16km.quad.msh ant16km-borders.quad.msh ant16km-basal-friction.ascii ant16km-answers.txt" 
+    NAME iceSheet_SimpleHinge_sensitivity3
+    ARGS " test1.quad.msh test1-borders.quad.msh test1-basal-friction.ascii test1-s3-answers.txt 3"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_SimpleHinge_sensitivity2
+    ARGS " test1.quad.msh test1-borders.quad.msh test1-basal-friction.ascii test1-s2-answers.txt 2"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_SimpleHinge_sensitivity1
+    ARGS " test1.quad.msh test1-borders.quad.msh test1-basal-friction.ascii test1-s1-answers.txt 1"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_16km_sensitivity4
+    ARGS " ant16km.quad.msh ant16km-borders.quad.msh ant16km-basal-friction.ascii ant16km-s4-answers.txt 4" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_16km_sensitivity3
+    ARGS " ant16km.quad.msh ant16km-borders.quad.msh ant16km-basal-friction.ascii ant16km-s3-answers.txt 3" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_16km_sensitivity2
+    ARGS " ant16km.quad.msh ant16km-borders.quad.msh ant16km-basal-friction.ascii ant16km-s2-answers.txt 2" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_16km_sensitivity1
+    ARGS " ant16km.quad.msh ant16km-borders.quad.msh ant16km-basal-friction.ascii ant16km-s1-answers.txt 1" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_8km_sensitivity4
+    ARGS " ant8km.quad.msh ant8km-borders.quad.msh ant8km-basal-friction.ascii ant8km-s4-answers.txt 4" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_8km_sensitivity3
+    ARGS " ant8km.quad.msh ant8km-borders.quad.msh ant8km-basal-friction.ascii ant8km-s3-answers.txt 3" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_8km_sensitivity2
+    ARGS " ant8km.quad.msh ant8km-borders.quad.msh ant8km-basal-friction.ascii ant8km-s2-answers.txt 2" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_8km_sensitivity1
+    ARGS " ant8km.quad.msh ant8km-borders.quad.msh ant8km-basal-friction.ascii ant8km-s1-answers.txt 1" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_4km_sensitivity4
+    ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s4-answers.txt 4" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_4km_sensitivity3
+    ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s3-answers.txt 3" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_4km_sensitivity2
+    ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s2-answers.txt 2" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_4km_sensitivity1
+    ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s1-answers.txt 1" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_2km_sensitivity4
+    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s4-answers.txt 4" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_2km_sensitivity3
+    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s3-answers.txt 3" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_2km_sensitivity2
+    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s2-answers.txt 2" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_2km_sensitivity1
+    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s1-answers.txt 1" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_1km_sensitivity4
+    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s4-answers.txt 4" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_1km_sensitivity3
+    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s3-answers.txt 3" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_1km_sensitivity2
+    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s2-answers.txt 2" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_Antarctica_1km_sensitivity1
+    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s1-answers.txt 1" 
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
   SOURCE_FILES
     test1.quad.msh
     test1-borders.quad.msh
     test1-basal-friction.ascii
-    test1-answers.txt
+    test1-s4-answers.txt
+    test1-s3-answers.txt
+    test1-s2-answers.txt
+    test1-s1-answers.txt
     ant16km.quad.msh
     ant16km-borders.quad.msh
     ant16km-basal-friction.ascii
-    ant16km-answers.txt
+    ant16km-s4-answers.txt
+    ant16km-s3-answers.txt
+    ant16km-s2-answers.txt
+    ant16km-s1-answers.txt
+    ant8km.quad.msh
+    ant8km-borders.quad.msh
+    ant8km-basal-friction.ascii
+    ant8km-s4-answers.txt
+    ant8km-s3-answers.txt
+    ant8km-s2-answers.txt
+    ant8km-s1-answers.txt
+    ant4km.quad.msh
+    ant4km-borders.quad.msh
+    ant4km-basal-friction.ascii
+    ant4km-s4-answers.txt
+    ant4km-s3-answers.txt
+    ant4km-s2-answers.txt
+    ant4km-s1-answers.txt
+    ant2km.quad.msh
+    ant2km-borders.quad.msh
+    ant2km-basal-friction.ascii
+    ant2km-s4-answers.txt
+    ant2km-s3-answers.txt
+    ant2km-s2-answers.txt
+    ant2km-s1-answers.txt
+    ant1km.quad.msh
+    ant1km-borders.quad.msh
+    ant1km-basal-friction.ascii
+    ant1km-s4-answers.txt
+    ant1km-s3-answers.txt
+    ant1km-s2-answers.txt
+    ant1km-s1-answers.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/meshData
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

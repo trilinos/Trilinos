@@ -216,7 +216,7 @@ int main(int narg, char **arg)
 
     read_grounded_file(arg[3],n,grounded_flags);
     
-    int ground_sensitivity = 4;
+    int ground_sensitivity = atoi(arg[5]);
     read_edge_mesh(arg[1],n,m,srcs,dsts,grounded_flags, ground_sensitivity);
     
     read_boundary_file(arg[2],n,boundary_flags);
