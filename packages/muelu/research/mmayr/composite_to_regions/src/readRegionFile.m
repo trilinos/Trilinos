@@ -1,4 +1,16 @@
-function [myNodes] = readRegionFile(filename,myRank)
+% readRegionFile.m
+%
+% Read region information from file.
+%
+% Input
+%   filename  filename of case file to read
+%   myRank    rank of this processor
+%   inputDir  path to directory with region information
+%
+% Output
+%   myNodes   list of nodes owned by this processor
+%
+function [myNodes] = readRegionFile(filename,myRank,inputDir)
 
 %
 % Construct the list myNodes of ndoes that I own or share for proc 'myRank'.
@@ -16,7 +28,7 @@ function [myNodes] = readRegionFile(filename,myRank)
 % entries corresponding to shared ids are consecutive.
 
 
-fp = fopen(filename,'r');
+fp = fopen(sprintf('%s/%s', inputDir, filename), 'r');
 if (fp == -1)
   error('Cannot read %s \n',filename);
 end

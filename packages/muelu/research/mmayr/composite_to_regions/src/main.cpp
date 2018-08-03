@@ -496,9 +496,6 @@ void vCycle(const int l, ///< ID of current level
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-//  const int myRank = compMaps[l]->Comm().MyPID();
-//  std::cout << myRank << ": Entering V-cycle on level " << l << std::endl;
-
   if (l < numLevels - 1) { // fine or intermediate levels
 
     // pre-smoothing
@@ -590,11 +587,11 @@ int main(int argc, char *argv[]) {
 #endif
   int  myRank;
   FILE *fp;
-  char fileName[20];
   char command[40];
   bool doing1D = false;
   int  globalNx, globalNy;
   std::string xmlFileName;
+  std::string regionDataDirectory;
 
   myRank = Comm.MyPID();
 
@@ -613,6 +610,7 @@ int main(int argc, char *argv[]) {
 
     // define command line arguments
     clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration", true);
+    clp.setOption("regDataDir", &regionDataDirectory, "directory with all region information/files", true);
 
     // force user to specify all options
     clp.recogniseAllOptions(true);
@@ -638,25 +636,42 @@ int main(int argc, char *argv[]) {
   //                 RegionsSpanProcs: processors own only a piece of 1 region
   //                                but regions may span across many procs
 
-  int maxRegPerGID, maxRegPerProc, whichCase, iii = 0;
-  sprintf(fileName,"myRegionInfo_%d",myRank);
-  while ( (fp = fopen(fileName,"r") ) == NULL) sleep(1);
-  fgets(command,80,fp);
-  sscanf(command,"%d",&maxRegPerGID);
-  while ( command[iii] != ' ') iii++;
-  sscanf(&(command[iii+1]),"%d",&maxRegPerProc);
-  while ( command[iii] == ' ') iii++;
-  while ( command[iii] != ' ') iii++;
-  sscanf(&(command[iii+1]),"%d",&globalNx);
-  while ( command[iii] == ' ') iii++;
-  while ( command[iii] != ' ') iii++;
-  sscanf(&(command[iii+1]),"%d",&globalNy);
-  while ( command[iii] == ' ') iii++;
-  while ( command[iii] != ' ') iii++;
-  if      (command[iii+1] == 'M') whichCase = MultipleRegionsPerProc;
-  else if (command[iii+1] == 'R') whichCase = RegionsSpanProcs;
-  else {fprintf(stderr,"%d: head messed up %s\n",myRank,command); exit(1);}
-//  sprintf(command,"/bin/rm -f myData_%d",myRank); system(command); sleep(1);
+  // Provide some feedback to the user
+  if (myRank == 0) {
+
+    std::cout << "User input:" << std::endl
+        << "  xml-file with MueLu configuration: " << xmlFileName << std::endl
+        << "  Path to directory with region data: " << regionDataDirectory << std::endl;
+  }
+  Comm.Barrier();
+
+  int maxRegPerGID = 0;
+  int maxRegPerProc = 0;
+  int whichCase = 0;
+  int iii = 0;
+
+  // Read region info from file
+  {
+    std::stringstream fileNameSS;
+    fileNameSS << regionDataDirectory << "/myRegionInfo_" << myRank;
+    while ((fp = fopen(fileNameSS.str().c_str(),"r") ) == NULL) sleep(1);
+
+    fgets(command,80,fp);
+    sscanf(command,"%d",&maxRegPerGID);
+    while ( command[iii] != ' ') iii++;
+    sscanf(&(command[iii+1]),"%d",&maxRegPerProc);
+    while ( command[iii] == ' ') iii++;
+    while ( command[iii] != ' ') iii++;
+    sscanf(&(command[iii+1]),"%d",&globalNx);
+    while ( command[iii] == ' ') iii++;
+    while ( command[iii] != ' ') iii++;
+    sscanf(&(command[iii+1]),"%d",&globalNy);
+    while ( command[iii] == ' ') iii++;
+    while ( command[iii] != ' ') iii++;
+    if      (command[iii+1] == 'M') whichCase = MultipleRegionsPerProc;
+    else if (command[iii+1] == 'R') whichCase = RegionsSpanProcs;
+    else {fprintf(stderr,"%d: head messed up %s\n",myRank,command); exit(1);}
+  }
 
   Comm.Barrier();
 
@@ -781,7 +796,7 @@ int main(int argc, char *argv[]) {
     std::cout << myRank << " | Loading composite map ..." << std::endl;
 
     std::stringstream fileNameSS;
-    fileNameSS << "myCompositeMap_" << myRank;
+    fileNameSS << regionDataDirectory << "/myCompositeMap_" << myRank;
     fp = fopen(fileNameSS.str().c_str(), "r");
     if (fp == NULL)
       std::cout << std::endl << ">>> Check number of MPI ranks!" << std::endl << std::endl;
@@ -802,8 +817,11 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Reading matrix from file ..." << std::endl;
 
+    std::stringstream fileNameSS;
+    fileNameSS << regionDataDirectory << "/Amat.mm";
+
     Epetra_CrsMatrix* ACompPtr;
-    EpetraExt::MatrixMarketFileToCrsMatrix("Amat.mm", *mapComp, ACompPtr);
+    EpetraExt::MatrixMarketFileToCrsMatrix(fileNameSS.str().c_str(), *mapComp, ACompPtr);
     AComp = Teuchos::rcp(new Epetra_CrsMatrix(*ACompPtr));
 //    AComp->Print(std::cout);
   }
@@ -817,7 +835,7 @@ int main(int argc, char *argv[]) {
     regionsPerGID = Teuchos::rcp(new Epetra_MultiVector(AComp->RowMap(),maxRegPerGID));
 
     std::stringstream fileNameSS;
-    fileNameSS << "myRegionAssignment_" << myRank;
+    fileNameSS << regionDataDirectory << "/myRegionAssignment_" << myRank;
     fp = fopen(fileNameSS.str().c_str(), "r");
     TEUCHOS_ASSERT(fp!=NULL);
 
@@ -853,7 +871,7 @@ int main(int argc, char *argv[]) {
     std::cout << myRank << " | Loading regions ..." << std::endl;
 
     std::stringstream fileNameSS;
-    fileNameSS << "myRegions_" << myRank;
+    fileNameSS << regionDataDirectory << "/myRegions_" << myRank;
     fp = fopen(fileNameSS.str().c_str(), "r");
     TEUCHOS_ASSERT(fp!=NULL);
 
@@ -869,7 +887,7 @@ int main(int argc, char *argv[]) {
   // Load AppData for LID region
   {
     std::stringstream fileNameSS;
-    fileNameSS << "myAppData_" << myRank;
+    fileNameSS << regionDataDirectory << "/myAppData_" << myRank;
     fp = fopen(fileNameSS.str().c_str(), "r");
     TEUCHOS_ASSERT(fp!=NULL);
 
@@ -931,8 +949,6 @@ int main(int argc, char *argv[]) {
         if (doing1D) tempRegIDs[i] = LIDregion(&appData, i, k);
         else tempRegIDs[i] = LID2Dregion(&appData, i, k);
       }
-
-      std::cout << myRank << " | k = " << k << std::endl;
 
       std::vector<int> idx(tempRegIDs.size());
       std::iota(idx.begin(), idx.end(), 0);
@@ -1306,12 +1322,6 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Setting up MueLu hierarchies ..." << std::endl;
 
-//    printRegionalMap("rowMapPerGrp", rowMapPerGrp, myRank);
-//
-//    sleep(3);
-//
-//    printRegionalMap("revisedRowMapPerGrp", revisedRowMapPerGrp, myRank);
-
     typedef MueLu::HierarchyManager<double,int,int,Xpetra::EpetraNode> HierarchyManager;
     typedef MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> Hierarchy;
     typedef MueLu::ParameterListInterpreter<double,int,int,Xpetra::EpetraNode> ParameterListInterpreter;
@@ -1363,16 +1373,15 @@ int main(int argc, char *argv[]) {
           gNodesPerDim[i] = -1;
 
         Array<int> lNodesPerDim(3);
-        // One-dimensional problems
-        {
+
+        if (doing1D) { // One-dimensional problems
           lNodesPerDim[0] = revisedRowMapPerGrp[j]->NumMyElements();
           lNodesPerDim[1] = 1;
           lNodesPerDim[2] = 1;
         }
+        else { // Two-dimensional problems
 
-        // Two-dimensional problems
-        {
-//          // caseFifteen
+          // caseFifteen
 //          {
 //            lNodesPerDim[0] = 4;
 //            lNodesPerDim[1] = 4;
@@ -1400,12 +1409,12 @@ int main(int argc, char *argv[]) {
 //            lNodesPerDim[2] = 1;
 //          }
 
-//          // caseTwenty
-//          {
-//            lNodesPerDim[0] = 10;
-//            lNodesPerDim[1] = 10;
-//            lNodesPerDim[2] = 1;
-//          }
+          // caseTwenty
+          {
+            lNodesPerDim[0] = 10;
+            lNodesPerDim[1] = 10;
+            lNodesPerDim[2] = 1;
+          }
         }
 
         regGrpHierarchy[j]->GetLevel(0)->Set("gNodesPerDim", gNodesPerDim);
