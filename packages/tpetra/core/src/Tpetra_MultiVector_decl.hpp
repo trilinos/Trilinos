@@ -53,6 +53,7 @@
 
 #include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
+#include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Kokkos_DualView.hpp"
@@ -65,11 +66,6 @@
 #include <type_traits>
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of FEMultiVector
-  template<class S, class LO, class GO, class N> class FEMultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
