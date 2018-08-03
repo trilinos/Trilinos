@@ -42,7 +42,7 @@
 #ifndef TPETRA_DIRECTORY_FWD_HPP
 #define TPETRA_DIRECTORY_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Directory_fwd.hpp
 /// \brief Forward declaration of Tpetra::Directory

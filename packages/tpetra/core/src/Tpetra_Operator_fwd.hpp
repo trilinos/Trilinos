@@ -42,7 +42,7 @@
 #ifndef TPETRA_OPERATOR_FWD_HPP
 #define TPETRA_OPERATOR_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Operator_fwd.hpp
 /// \brief Forward declaration of Tpetra::Operator

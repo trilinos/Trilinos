@@ -42,7 +42,7 @@
 #ifndef TPETRA_ROWMATRIX_FWD_HPP
 #define TPETRA_ROWMATRIX_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_RowMatrix_fwd.hpp
 /// \brief Forward declaration of Tpetra::RowMatrix
