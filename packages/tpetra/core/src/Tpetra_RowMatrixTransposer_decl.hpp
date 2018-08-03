@@ -47,6 +47,7 @@
 ///
 /// Declaration of Tpetra::RowMatrixTransposer.
 
+#include "Tpetra_RowMatrixTransposer_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Teuchos_RCP.hpp"
@@ -60,6 +61,7 @@ namespace Teuchos {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
+namespace Classes {
 
 /// \class RowMatrixTransposer
 /// \brief Construct and (optionally) redistribute the explicitly
@@ -119,7 +121,7 @@ private:
   std::string label_;
 };
 
-
-}
+} // namespace Classes
+} // namespace Tpetra
 
 #endif /* TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP */

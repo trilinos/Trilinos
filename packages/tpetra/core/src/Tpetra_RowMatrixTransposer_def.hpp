@@ -49,6 +49,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
 template<class Scalar,
      class LocalOrdinal,
@@ -286,10 +287,11 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
 //
 
 #define TPETRA_ROWMATRIXTRANSPOSER_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class RowMatrixTransposer< SCALAR, LO , GO , NODE >;
+  namespace Classes { \
+    template class RowMatrixTransposer< SCALAR, LO , GO , NODE >; \
+  }
 
-
-}
+} // namespace Classes
+} // namespace Tpetra
 
 #endif
