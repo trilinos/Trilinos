@@ -12,7 +12,190 @@ TRIBITS_ADD_EXECUTABLE(
 #    PASS_REGULAR_EXPRESSION "PASS"
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepAll_sensitivity4
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-all.ascii tictactoe-s4-all-answers.txt 4" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepAll_sensitivity3
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-all.ascii tictactoe-s3-all-answers.txt 3" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepAll_sensitivity2
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-all.ascii tictactoe-s2-all-answers.txt 2" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepAll_sensitivity1
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-all.ascii tictactoe-s1-all-answers.txt 1" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepTwo_sensitivity4
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-two.ascii tictactoe-s4-two-answers.txt 4" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepTwo_sensitivity3
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-two.ascii tictactoe-s3-two-answers.txt 3" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepTwo_sensitivity2
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-two.ascii tictactoe-s2-two-answers.txt 2" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_TicTacToe_KeepTwo_sensitivity1
+    ARGS " tictactoe.quad.msh tictactoe-borders.quad.msh tictactoe-basal-friction-two.ascii tictactoe-s1-two-answers.txt 1" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ManyDoubleHinges_sensitivity4
+    ARGS " worstcase.quad.msh worstcase-borders.quad.msh worstcase-basal-friction.ascii worstcase-s4-answers.txt 4" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ManyDoubleHinges_sensitivity3
+    ARGS " worstcase.quad.msh worstcase-borders.quad.msh worstcase-basal-friction.ascii worstcase-s3-answers.txt 3" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ManyDoubleHinges_sensitivity2
+    ARGS " worstcase.quad.msh worstcase-borders.quad.msh worstcase-basal-friction.ascii worstcase-s2-answers.txt 2" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ManyDoubleHinges_sensitivity1
+    ARGS " worstcase.quad.msh worstcase-borders.quad.msh worstcase-basal-friction.ascii worstcase-s1-answers.txt 1" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ChainedDoubleHinge_sensitivity4
+    ARGS " chaineddoublehinge.quad.msh chaineddoublehinge-borders.quad.msh chaineddoublehinge-basal-friction.ascii chaineddoublehinge-answer.txt 4" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ChainedDoubleHinge_sensitivity3
+    ARGS " chaineddoublehinge.quad.msh chaineddoublehinge-borders.quad.msh chaineddoublehinge-basal-friction.ascii chaineddoublehinge-answer.txt 3" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ChainedDoubleHinge_sensitivity2
+    ARGS " chaineddoublehinge.quad.msh chaineddoublehinge-borders.quad.msh chaineddoublehinge-basal-friction.ascii chaineddoublehinge-answer.txt 2" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_ChainedDoubleHinge_sensitivity1
+    ARGS " chaineddoublehinge.quad.msh chaineddoublehinge-borders.quad.msh chaineddoublehinge-basal-friction.ascii chaineddoublehinge-answer.txt 1" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_BigRectangle_sensitivity4
+    ARGS " bigrectangle.quad.msh bigrectangle-borders.quad.msh bigrectangle-basal-friction.ascii bigrectangle-s4-answers.txt 4" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_BigRectangle_sensitivity3
+    ARGS " bigrectangle.quad.msh bigrectangle-borders.quad.msh bigrectangle-basal-friction.ascii bigrectangle-s3-answers.txt 3" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_BigRectangle_sensitivity2
+    ARGS " bigrectangle.quad.msh bigrectangle-borders.quad.msh bigrectangle-basal-friction.ascii bigrectangle-s2-answers.txt 2" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+TRIBITS_ADD_TEST(
+    iceSheet
+    NAME iceSheet_BigRectangle_sensitivity1
+    ARGS " bigrectangle.quad.msh bigrectangle-borders.quad.msh bigrectangle-basal-friction.ascii bigrectangle-s1-answers.txt 1" 
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
 TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_SimpleHinge_sensitivity4
@@ -114,6 +297,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_4km_sensitivity4
     ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s4-answers.txt 4" 
+    NUM_MPI_PROCS 8
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -121,6 +306,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_4km_sensitivity3
     ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s3-answers.txt 3" 
+    NUM_MPI_PROCS 8
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -129,6 +316,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_4km_sensitivity2
     ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s2-answers.txt 2" 
+    NUM_MPI_PROCS 8
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -137,6 +326,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_4km_sensitivity1
     ARGS " ant4km.quad.msh ant4km-borders.quad.msh ant4km-basal-friction.ascii ant4km-s1-answers.txt 1" 
+    NUM_MPI_PROCS 8
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -145,6 +336,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_2km_sensitivity4
     ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s4-answers.txt 4" 
+    NUM_MPI_PROCS 32 
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -152,6 +345,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_2km_sensitivity3
     ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s3-answers.txt 3" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -159,6 +354,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_2km_sensitivity2
     ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s2-answers.txt 2" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -166,6 +363,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_2km_sensitivity1
     ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s1-answers.txt 1" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -174,6 +373,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_1km_sensitivity4
     ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s4-answers.txt 4" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -181,6 +382,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_1km_sensitivity3
     ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s3-answers.txt 3" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -188,6 +391,8 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_1km_sensitivity2
     ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s2-answers.txt 2" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -195,9 +400,12 @@ TRIBITS_ADD_TEST(
     iceSheet
     NAME iceSheet_Antarctica_1km_sensitivity1
     ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s1-answers.txt 1" 
+    NUM_MPI_PROCS 32
+    COMM mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
   SOURCE_FILES
     test1.quad.msh
@@ -242,6 +450,36 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant1km-s3-answers.txt
     ant1km-s2-answers.txt
     ant1km-s1-answers.txt
+    bigrectangle.quad.msh
+    bigrectangle-borders.quad.msh
+    bigrectangle-basal-friction.ascii
+    bigrectangle-s4-answers.txt
+    bigrectangle-s3-answers.txt
+    bigrectangle-s2-answers.txt
+    bigrectangle-s1-answers.txt
+    chaineddoublehinge.quad.msh
+    chaineddoublehinge-borders.quad.msh
+    chaineddoublehinge-basal-friction.ascii
+    chaineddoublehinge-answer.txt
+    worstcase.quad.msh
+    worstcase-borders.quad.msh
+    worstcase-basal-friction.ascii
+    worstcase-s4-answers.txt
+    worstcase-s3-answers.txt
+    worstcase-s2-answers.txt
+    worstcase-s1-answers.txt
+    tictactoe.quad.msh
+    tictactoe-borders.quad.msh
+    tictactoe-basal-friction-all.ascii
+    tictactoe-basal-friction-two.ascii
+    tictactoe-s4-two-answers.txt
+    tictactoe-s3-two-answers.txt
+    tictactoe-s2-two-answers.txt
+    tictactoe-s1-two-answers.txt
+    tictactoe-s4-all-answers.txt
+    tictactoe-s3-all-answers.txt
+    tictactoe-s2-all-answers.txt
+    tictactoe-s1-all-answers.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/meshData
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
