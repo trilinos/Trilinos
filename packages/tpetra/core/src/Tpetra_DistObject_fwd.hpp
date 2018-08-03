@@ -42,7 +42,7 @@
 #ifndef TPETRA_DISTOBJECT_FWD_HPP
 #define TPETRA_DISTOBJECT_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_DistObject_fwd.hpp
 /// \brief Forward declaration of Tpetra::DistObject

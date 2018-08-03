@@ -42,7 +42,7 @@
 #ifndef TPETRA_IMPORTEXPORTDATA_FWD_HPP
 #define TPETRA_IMPORTEXPORTDATA_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_ImportExportData_fwd.hpp
 /// \brief Forward declaration of Tpetra::ImportExportData

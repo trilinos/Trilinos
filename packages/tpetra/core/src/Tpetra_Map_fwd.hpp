@@ -42,7 +42,7 @@
 #ifndef TPETRA_MAP_FWD_HPP
 #define TPETRA_MAP_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Map_fwd.hpp
 /// \brief Forward declaration of Tpetra::Map
