@@ -350,31 +350,34 @@ namespace MueLu {
       //
       // If you know something better, please let me know.
       RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
+      Teuchos::Array<GO> indout(1);
+      Teuchos::Array<SC> valout(1);
       for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
         if (diagVal[r] == zero) {
           GO grid = rowMap->getGlobalElement(r);
-          Teuchos::ArrayRCP<GO> indout(1,grid);
-          Teuchos::ArrayRCP<SC> valout(1, one);
-          fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
+          indout[0] = grid;
+          valout[0] = one;
+          fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
         }
       }
       {
         Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
-        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
-        Ac->fillComplete(p);
+        fixDiagMatrix->fillComplete(Ac->getDomainMap(),Ac->getRangeMap());
       }
-      MatrixMatrix::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+
+      RCP<Matrix> newAc;
+      MatrixMatrix::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, GetOStream(Warnings0));
       if (Ac->IsView("stridedMaps"))
-        fixDiagMatrix->CreateView("stridedMaps", Ac);
+        newAc->CreateView("stridedMaps", Ac);
 
       Ac = Teuchos::null;     // free singular coarse level matrix
-      Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
+      fixDiagMatrix = Teuchos::null;
+      Ac = newAc;     // set fixed non-singular coarse level matrix
 
       // call fillComplete with optimized storage option set to true
       // This is necessary for new faster Epetra MM kernels.
       {
         Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
-        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
         Ac->fillComplete(p);
       }
     } // end repair
