@@ -39,53 +39,38 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP
-#define TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP
+#ifndef TPETRA_ROWMATRIX_FWD_HPP
+#define TPETRA_ROWMATRIX_FWD_HPP
 
-/// \file Tpetra_computeRowAndColumnOneNorms_decl.hpp
-/// \brief Declaration of Tpetra::computeRowAndColumnOneNorms
+#include "Tpetra_ConfigDefs.hpp"
 
-#include "TpetraCore_config.h"
-#include "Kokkos_ArithTraits.hpp"
-#include "Tpetra_Details_EquilibrationInfo.hpp"
-#include "Tpetra_RowMatrix_fwd.hpp"
+/// \file Tpetra_RowMatrix_fwd.hpp
+/// \brief Forward declaration of Tpetra::RowMatrix
 
 namespace Tpetra {
 
-/// \brief Compute global row and column one-norms ("row sums" and
-///   "column sums") of the input sparse matrix A, in a way suitable
-///   for equilibration.
+/// \brief Implementation detail of Tpetra, to aid in deprecating
+///   template parameters.
 ///
-/// \note USERS: This is a function you want.
-///
-/// \note For AztecOO users: If you set assumeSymmetric=true, this
-///   function should behave like setting the <tt>AZ_scaling</tt>
-///   option to <tt>AZ_sym_row_sum</tt>.
-///
-/// \note This function is collective over A's communicator, and may
-///   need to communicate, depending on A's Maps.
-///
-/// For the nonsymmetric case, this function works like a sparse
-/// version of LAPACK's DGEEQU routine, except that it uses one norms
-/// (sums of absolute values) instead of infinity norms (maximum
-/// absolute value).  The resulting row and column scaling is NOT
-/// symmetric.  For the symmetric case, this function computes the row
-/// norms and uses those for the column norms.  The resulting scaling
-/// is symmetric IF you take square roots.
-///
-/// \param A [in] The input sparse matrix A.
-///
-/// \param assumeSymmetric [in] Whether to assume that the matrix A is
-///   (globally) symmetric.  If so, don't compute row-scaled column
-///   norms separately from row norms.
-///
-/// \return Input to leftAndOrRightScaleCrsMatrix (which see).
-template<class SC, class LO, class GO, class NT>
-Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
-                           typename NT::device_type>
-computeRowAndColumnOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                             const bool assumeSymmetric);
+/// \warning This namespace is an implementation detail of Tpetra.  Do
+///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
+///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
+namespace Classes {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of RowMatrix.
+template <class SC, class LO, class GO, class N> class RowMatrix;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+} // namespace Classes
+
+//! Alias for Tpetra::Classes::RowMatrix.
+template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+using RowMatrix = Classes::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 } // namespace Tpetra
 
-#endif // TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP
+#endif // TPETRA_ROWMATRIX_FWD_HPP
