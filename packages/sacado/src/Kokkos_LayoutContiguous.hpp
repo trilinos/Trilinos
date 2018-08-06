@@ -84,23 +84,8 @@ struct inner_layout< LayoutContiguous<Layout> > {
   typedef Layout type;
 };
 
-template <class Layout, int32_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, int64_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, uint32_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, uint64_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
+template <class Layout, unsigned Stride>
+struct inner_layout< LayoutContiguous<Layout, Stride> > {
   typedef Layout type;
 };
 
