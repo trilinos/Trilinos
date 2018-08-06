@@ -41,7 +41,7 @@ void sorts2d(
     double *vals[4][MAXSETS],    /* lists of values to sort */
     int *   indices[4][MAXSETS], /* indices of sorted lists */
     int     nvtxs                /* number of vertices */
-    )
+)
 {
   int *space;      /* space for mergesort routine */
   int *temp[4];    /* place holders for indices */

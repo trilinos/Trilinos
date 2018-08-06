@@ -40,7 +40,7 @@ int findindex(int *   indices, /* indices sorting values */
               double *vals,    /* values sorted by indices */
               double  target,  /* target value */
               int     nvals    /* number of values */
-              )
+)
 {
   double ratio;       /* interpolation parameter */
   double vlow, vhigh; /* values at limits of search range */
@@ -98,7 +98,7 @@ void inits2d(struct vtx_data **graph,                /* graph data structure for
              int               startvtx[4][MAXSETS], /* indices defining separation */
              double *          size,                 /* size of each set being modified */
              int *             sets                  /* set each vertex gets assigned to */
-             )
+)
 {
   double xmid, ymid;   /* median x and y values */
   double val, bestval; /* values for determining set preferences */

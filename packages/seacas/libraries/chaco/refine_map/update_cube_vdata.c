@@ -40,7 +40,7 @@ void update_cube_vdata(int    old_side,      /* previous side for moved vertex i
                        int    neighbor_node, /* node neighbor vertex assigned to */
                        double ewgt,          /* weight of edge */
                        struct refine_vdata *vdata /* neighbor connected by that edge */
-                       )
+)
 {
   int neighbor_side; /* side of cube neighbor is on */
 

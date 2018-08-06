@@ -94,7 +94,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   /* Open the EXODUS II mesh file */
   exoid = ex_open(exofile, mode, &cpu_ws, &io_ws, &version);
   if (exoid == -1) {
-    fprintf(stderr, "%s: ERROR openning up the mesh exoII file, %s\n", yo, exofile);
+    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile);
     exit(-1);
   }
 

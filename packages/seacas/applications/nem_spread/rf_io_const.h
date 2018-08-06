@@ -59,7 +59,7 @@ template <typename T> struct Restart_Description
   int Flag; /* Indicates whether restart info is to be processed */
 
   int              Num_Times; /* The number of time indices to spread */
-  std::vector<int> Time_Idx;  /* Time indicies to read, need to keep track of all */
+  std::vector<int> Time_Idx;  /* Time indices to read, need to keep track of all */
   T                Time;      /* time value */
 
   int NVar_Glob; /* Number of global variables read */

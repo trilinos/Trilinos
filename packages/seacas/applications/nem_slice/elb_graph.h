@@ -44,12 +44,12 @@ template <typename INT> struct Weight_Description;
 
 template <typename INT>
 int generate_graph(Problem_Description *problem,    /* Pointer to structure containing information
-                                          * about the type of decomposition */
+                                                     * about the type of decomposition */
                    Mesh_Description<INT> * mesh,    /* Pointer to structure containing the mesh */
                    Graph_Description<INT> *graph,   /* Pointer to structure in which to store
-                                     * the graph. */
+                                                     * the graph. */
                    Weight_Description<INT> *weight, /* Pointer to structure for graph weighting */
                    Sphere_Info *            sphere  /* Pointer to sphere adjustment structure */
-                   );
+);
 
 #endif /* _ELB_GRAPH_CONST_H_ */

@@ -48,7 +48,7 @@ void update_mesh_edata(int                   vertex,     /* graph vertex being w
                        double *              best_desire,  /* best desire seen */
                        int                   imax,         /* offset in desire_ptr array */
                        struct refine_edata **desire_ptr    /* buckets for desire values */
-                       )
+)
 {
   struct refine_edata *eguy;       /* data for desired edge */
   float                old_desire; /* original desire for edge to flip */

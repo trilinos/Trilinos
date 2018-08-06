@@ -49,7 +49,7 @@ void connect_enforce(struct vtx_data **graph,       /* data structure for graph 
                      int               nsets_tot,   /* total number sets created */
                      int *             total_move,  /* total number of vertices moved */
                      int *             max_move     /* largest connected component moved */
-                     )
+)
 {
   struct vtx_data **subgraph;           /* data structure for domain graph */
   int               subnvtxs;           /* number of vertices in a domain */

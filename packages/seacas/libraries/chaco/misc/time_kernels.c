@@ -43,7 +43,7 @@ static double checkvec();
 void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
                   int               n,     /* number of rows/columns in matrix */
                   double *          vwsqrt /* square roots of vertex weights */
-                  )
+)
 {
   extern int    DEBUG_PERTURB; /* debug flag for matrix perturbation */
   extern int    PERTURB;       /* randomly perturb to break symmetry? */

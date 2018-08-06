@@ -39,9 +39,10 @@ C
       character*80 ws
       character*8 cdum
 
+      iows = 4
       call exname (-5, ws, llen)
-      read(ws,'(i1)',ERR=25)iows
       if (llen .lt. 1) goto 25
+      read(ws,'(i1)',ERR=25)iows
       if (iows .ne. 4 .and. iows .ne. 8) then
         CALL PRTERR('WARNING', 'invalid output word size, set to 4')
         iows = 4

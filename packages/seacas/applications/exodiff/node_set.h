@@ -47,10 +47,10 @@ public:
   Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs = 0);
   ~Node_Set() override;
 
-  void apply_map(const INT *node_map);
+  void       apply_map(const INT *node_map);
   const INT *Nodes() const;
-  size_t Node_Id(size_t position) const;
-  size_t Node_Index(size_t position) const;
+  size_t     Node_Id(size_t position) const;
+  size_t     Node_Index(size_t position) const;
 
   const double *Distribution_Factors() const;
   void          Free_Distribution_Factors() const;

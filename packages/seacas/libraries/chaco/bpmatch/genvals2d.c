@@ -41,7 +41,7 @@ void genvals2d(
     double **xvecs,            /* vectors to partition */
     double * vals[4][MAXSETS], /* ptrs to lists of values */
     int      nvtxs             /* number of values */
-    )
+)
 {
   int     nlists = 4; /* number of lists to generate */
   double *temp[4];    /* place holders for vals */

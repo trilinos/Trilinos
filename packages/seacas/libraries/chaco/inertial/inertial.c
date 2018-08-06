@@ -48,7 +48,7 @@ void inertial(struct vtx_data **graph,        /* graph data structure */
               int *             sets,         /* set each vertex gets assigned to */
               double *          goal,         /* desired set sizes */
               int               using_vwgts   /* are vertex weights being used? */
-              )
+)
 {
   extern int    DEBUG_TRACE;     /* trace the execution of the code */
   extern int    PROJECTION_AXIS; /* axis to project out geometry */

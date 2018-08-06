@@ -35,12 +35,13 @@
 #ifndef EXODIFF_UTIL_H
 #define EXODIFF_UTIL_H
 
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
+#include "terminal_color.h"
 
 char **get_name_array(int size, int length);
-void free_name_array(char **names, int size);
+void   free_name_array(char **names, int size);
+
+void ERR_OUT(std::ostringstream &buf);
+void DIFF_OUT(std::ostringstream &buf, trmclr::Style color = trmclr::red);
+void DIFF_OUT(const char *buf, trmclr::Style color = trmclr::red);
+
 #endif

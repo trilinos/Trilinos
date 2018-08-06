@@ -153,13 +153,13 @@ long rand_port(void)
   to get [0,1], use (double)(rand_port()-1)/(double)(MAX_VALUE-1) */
 double rand_rect_port(void) { return (double)rand_port() / (double)(MAX_VALUE + 1); }
 
-/* skip ahead in recursion
-  residue = (a^skip * init) mod modulus
-  Use Russian peasant algorithm  */
+  /* skip ahead in recursion
+    residue = (a^skip * init) mod modulus
+    Use Russian peasant algorithm  */
 
-/* calculate residue = (a * x) mod modulus for arbitrary a and x
-  without overflow assume 0 < a < modulus and 0 < x < modulus
-  use Russian peasant algorithm followed by approximate factoring */
+  /* calculate residue = (a * x) mod modulus for arbitrary a and x
+    without overflow assume 0 < a < modulus and 0 < x < modulus
+    use Russian peasant algorithm followed by approximate factoring */
 
 #if defined(TESTING)
 /* Test the generator */

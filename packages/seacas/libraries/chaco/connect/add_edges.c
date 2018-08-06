@@ -42,7 +42,7 @@ void add_edges(struct vtx_data **graph,      /* graph data structure */
                struct ilists **  old_edges,  /* edges data overwritten for connecting */
                struct flists **  old_ewgts,  /* weights of edges overwritten */
                int               using_ewgts /* are edge weights being used? */
-               )
+)
 {
   struct ilists *   save_list;  /* space to save old edge list */
   struct flists *   save_ewgts; /* space to save old edge weights */

@@ -32,8 +32,8 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
       PROGRAM TSTEXT
-      CHARACTER*32 VERSN
-      CHARACTER*8 DATE,TIME,NAME,LINE,HARD,SOFT
+      CHARACTER*32 VERSN, LINE
+      CHARACTER*8 DATE,TIME,NAME,HARD,SOFT
       character*1 b(5)
       DIMENSION A(5)
       CALL EXCPUS( CPU0 )
@@ -41,7 +41,10 @@ C
       CALL GSUPEV(VERSN)
       WRITE (*,'(A, A)') ' SUPES Version ', VERSN
 
-      CALL EXREAD( 'TST: ',LINE,IOSTAT )
+C ... Commented out since I didn't want to make CMake Test that took input from stdin
+C      CALL EXREAD( 'TST: ',LINE,IOSTAT )
+
+      LINE="Gregory Sjaardema"
       CALL EXUPCS( LINE )
       PRINT *,'Input line = ',LINE
 

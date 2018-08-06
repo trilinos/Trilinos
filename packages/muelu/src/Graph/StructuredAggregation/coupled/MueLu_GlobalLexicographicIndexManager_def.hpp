@@ -100,17 +100,18 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map> fineMap,
-                     Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
+                     Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>&ghostedNodeCoarseGIDs) const {
 
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
     ghostedNodeCoarsePIDs.resize(this->getNumLocalGhostedNodes());
+    ghostedNodeCoarseGIDs.resize(this->numGhostedNodes);
 
     // Find the GIDs, LIDs and PIDs of the coarse points on the fine mesh and coarse
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
     Array<GO> lCoarseNodeCoarseGIDs(this->lNumCoarseNodes),
       lCoarseNodeFineGIDs(this->lNumCoarseNodes);
-    Array<GO> ghostedNodeCoarseGIDs(this->numGhostedNodes),
-      ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
+    //Array<GO> ghostedNodeCoarseGIDs(this->numGhostedNodes);
+      Array<GO> ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
     Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
     LO currentIndex = -1, /*coarseNodeFineLID = -1,*/ currentCoarseIndex = -1;
     for(ijk[2] = 0; ijk[2] < this->ghostedNodesPerDir[2]; ++ijk[2]) {

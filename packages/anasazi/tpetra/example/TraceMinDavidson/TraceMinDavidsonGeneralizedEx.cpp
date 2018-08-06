@@ -67,7 +67,7 @@
 #include <MatrixMarket_Tpetra.hpp>
 
 // Include header for sparse matrix operations
-#include <TpetraExt_MatrixMatrix_def.hpp>
+//#include <TpetraExt_MatrixMatrix_def.hpp>
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"

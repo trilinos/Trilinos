@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -50,12 +50,12 @@
  *  \param[in] io_database The database associated with the block.
  *  \param[in] my_name The block name.
  *  \param[in] entity_type The topology type for the block.
- *  \param[in] entity_count The number of subentities in the block.
+ *  \param[in] entity_cnt The number of subentities in the block.
  *
  */
 Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                               const std::string &entity_type, size_t entity_count)
-    : Ioss::GroupingEntity(io_database, my_name, entity_count), idOffset(0)
+                               const std::string &entity_type, size_t entity_cnt)
+    : Ioss::GroupingEntity(io_database, my_name, entity_cnt), idOffset(0)
 
 {
   // The 'true' means it is ok for the factory to return
@@ -77,11 +77,11 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
   properties.add(Ioss::Property(this, "topology_node_count", Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "topology_type", Ioss::Property::STRING));
   fields.add(Ioss::Field("connectivity", field_int_type(), topology_->name(), Ioss::Field::MESH,
-                         entity_count));
+                         entity_cnt));
 
   // Returns connectivity in local id space
   fields.add(Ioss::Field("connectivity_raw", field_int_type(), topology()->name(),
-                         Ioss::Field::MESH, entity_count));
+                         Ioss::Field::MESH, entity_cnt));
 }
 
 /** \brief Calculate and get an implicit property.

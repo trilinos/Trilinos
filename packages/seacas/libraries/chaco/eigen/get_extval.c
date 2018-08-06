@@ -51,7 +51,7 @@ void get_extval(double *alpha,   /* j-vector of Lanczos scalars (using elements 
                 double *v,       /* the j-vector solving the extended eig problem in T */
                 double *work1,   /* j-vector of workspace */
                 double *work2    /* j-vector of workspace */
-                )
+)
 {
   extern int DEBUG_EVECS; /* debug flag for eigen computation */
   double     lambda_low;  /* lower bound on extended eval */

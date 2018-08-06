@@ -166,8 +166,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if (sscanf(cptr, "%d", &(spreader.Proc_Info[0])) != 1) {
-            fprintf(stderr, "%s: ERROR, can\'t interpret int for number of"
-                            " Processors.\n",
+            fprintf(stderr,
+                    "%s: ERROR, can\'t interpret int for number of"
+                    " Processors.\n",
                     yo);
             exit(1);
           }

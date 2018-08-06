@@ -49,7 +49,7 @@ void ch_interpolate(double **         vecs,       /* approximate eigenvectors fo
                     int               nvtxs,      /* number of vertices in graph */
                     int *             v2cv,       /* mapping from vtxs to cvtxs */
                     int               using_ewgts /* are edge weights being used in fine graph? */
-                    )
+)
 {
   double *vec, *cvec;  /* pointers into vecs and vecs */
   int *   eptr;        /* loops through edge lists */

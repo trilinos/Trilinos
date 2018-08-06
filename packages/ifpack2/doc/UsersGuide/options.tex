@@ -164,6 +164,25 @@ The following parameters are used in the block relaxation methods:
 
 \cccc{relaxation: type}
     {See~\ref{s:relaxation}.}
+\cccc{relaxation: container}
+    {string}
+    {``TriDi''}
+    {Containers are used to store and solve block matrices. These container
+     types are always available: ``Dense'', ``TriDi''
+     (equivalent to ``Tridiagonal''), ``Banded'' and ``SparseILUT''.
+     ``Dense'', ``TriDi'' and ``Banded'' block matrices are
+     solved exactly LAPACK routines, and ``SparseILUT'' blocks are solved approximately
+     using an incomplete LU factorization with thresholding.
+
+     If Amesos2 is enabled, ``SparseAmesos'' (equivalent to ``SparseAmesos2'') is available.
+     The default Amesos2 sparse solver is KLU2, but this can be configured by setting
+     ``Amesos2 solver name'' (see the Amesos2 documentation for all available solvers).
+
+     If experimental kokkos-kernels features are enabled (true by default), the ``BlockTriDi''
+     container (equivalent to ``Block Tridiagonal'') is available. This container's solver is the damped Jacobi method, using
+     block tridiagonal matrices as the diagonal D.
+     For a block size of 1, this is equivalent to standard damped Jacobi.
+     This container is designed for high performance on KNL and GPU.}
 \cccc{relaxation: sweeps}
     {See~\ref{s:relaxation}.}
 \cccc{relaxation: damping factor}
@@ -216,10 +235,10 @@ The following parameters are used in the block relaxation methods:
     {Teuchos::RCP<multi\_vector>}
     {null}
     {Coordinates of local nodes. Only valid for ``line'' partitioner type.}
-\ccc{partitioner: print level}
+\ccc{partitioner: maintain sparsity}
     {bool}
     {\false}
-    {If true, produce extra information about used blocks.}
+    {For OverlappingPartitioner, whether to sort the entries in each partition.}
 
 \section{Chebyshev}\label{s:Chebyshev}
 
@@ -447,107 +466,59 @@ The following parameters are used in the ILUTP method:
     {``SILU''}
     {Type of modified ILU to use. Accepted values: ``SILU'', ``SMILU\_1'', ``SMILU\_2'', or ``SMILU\_3''.}
 
-\subsection{FastILU}\label{s:FastILU}
-\textbf{Preconditioner type:} ``FAST\_ILU''.
+\subsection{ShyLU FastILU}\label{s:FastILU}
+\ifpacktwo{} provides an interface to the FastILU family of factorizations provided by ShyLU.
+They are available if Trilinos was configured with the
 
-\ifpacktwo{} provides an interface to the FastILU (incomplete LU) factorization provided by \shylu{}.
-It accepts the following parameters:
+\texttt{-D Trilinos\_ENABLE\_ShyLU\_Node=ON}
+
+option. There are three values of ``Preconditioner type:'' that use the FastILU subpackage:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+``Preconditioner type:'' & Factorization   \\ \hline \hline
+FAST\_ILU                & Incomplete LU       \\ \hline
+FAST\_IC                 & Incomplete Cholesky \\ \hline
+FAST\_ILDL               & Incomplete LDL*     \\ \hline
+\end{tabular}
+\end{table}
+
+FAST\_ILU, FAST\_IC, and FAST\_ILDL all use iterative factorization algorithms in compute(). \texttt{"sweeps"} controls
+this iteration count. A higher number of sweeps improves the quality of the factorization. All three
+preconditioners also use an triangular block Jacobi solver in apply().
+The Jacobi iteration count is controlled by \texttt{"triangular solve iterations"}.
+The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
+
 \ccc{sweeps}
     {int}
     {5}
-    {Number of applications of the FastILU algorithm}
+    {Number of iterations of ILU/IC/ILDL factorization algorithm.}
 \ccc{triangular solve iterations}
     {int}
     {1}
-    {Number of iterations of the block Jacobi triangular solver}
+    {Number of iterations of the block Jacobi triangular solver.}
 \ccc{level}
     {int}
     {0}
-    {Level of fill}
+    {Level of fill.}
 \ccc{damping factor}
     {double}
     {0.5}
-    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
+    {Damping factor $\omega$ for the Jacobi triangular solver. $0 < \omega \leq 1$. A lower $\omega$ slows convergence but improves stability.}
 \ccc{shift}
     {double}
     {0}
-    {Parameter that controls Manteuffel shifting}
+    {Manteuffel shifting parameter $\alpha$.}
 \ccc{guess}
     {bool}
     {true}
-    {Whether to run a few sweeps of FastILU with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
+    {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
 \ccc{block size}
     {int}
     {1}
-    {Block size for the block Jacobi solver}
-
-\subsection{FastIC}\label{s:FastIC}
-\textbf{Preconditioner type:} ``FAST\_IC''.
-
-\ifpacktwo{} provides an interface to the FastIC (incomplete Chebyshev) factorization provided by \shylu{}.
-It accepts the following parameters:
-\ccc{sweeps}
-    {int}
-    {5}
-    {Number of applications of the FastIC algorithm}
-\ccc{triangular solve iterations}
-    {int}
-    {1}
-    {Number of iterations of the block Jacobi triangular solver}
-\ccc{level}
-    {int}
-    {0}
-    {Level of fill}
-\ccc{damping factor}
-    {double}
-    {0.5}
-    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
-\ccc{shift}
-    {double}
-    {0}
-    {Parameter that controls Manteuffel shifting}
-\ccc{guess}
-    {bool}
-    {true}
-    {Whether to run a few sweeps of FastIC with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
-\ccc{block size}
-    {int}
-    {1}
-    {Block size for the block Jacobi solver}
-
-\subsection{FastILDL}\label{s:FastILDL}
-\textbf{Preconditioner type:} ``FAST\_ILDL''.
-
-\ifpacktwo{} provides an interface to the FastILDL (incomplete lower-diagonal-lower) factorization provided by \shylu{}.
-It accepts the following parameters:
-\ccc{sweeps}
-    {int}
-    {5}
-    {Number of applications of the FastILDL algorithm}
-\ccc{triangular solve iterations}
-    {int}
-    {1}
-    {Number of iterations of the block Jacobi triangular solver}
-\ccc{level}
-    {int}
-    {0}
-    {Level of fill}
-\ccc{damping factor}
-    {double}
-    {0.5}
-    {Also called omega, a value between 0 and 1. A lower omega slows convergence but improves stability}
-\ccc{shift}
-    {double}
-    {0}
-    {Parameter that controls Manteuffel shifting}
-\ccc{guess}
-    {bool}
-    {true}
-    {Whether to run a few sweeps of FastILDL with a lower level of fill to create initial guess (only has an effect if level of fill > 0)} 
-\ccc{block size}
-    {int}
-    {1}
-    {Block size for the block Jacobi solver}
+    {Block size for the block Jacobi solver.}
 
 \section{Additive Schwarz}\label{s:schwarz}
 
@@ -619,9 +590,9 @@ Table~\ref{t:schwarz_inner}.
     ``CHEBYSHEV''           & Chebyshev iteration (see~\ref{s:Chebyshev}) \\
     ``RILUK''               & ILU($k$) (see~\ref{s:ILU}) \\
     ``ILUT''                & ILUT (see~\ref{s:ILUT}) \\
-    ``FastILU''             & FastILU (see~\ref{s:FastILU}) \\
-    ``FastIC''              & FastIC (see~\ref{s:FastIC}) \\
-    ``FastILDL''            & FastILDL(see~\ref{s:FastILDL}) \\
+    ``FAST\_ILU''             & FastILU (see~\ref{s:FastILU}) \\
+    ``FAST\_IC''              & FastIC (see~\ref{s:FastILU}) \\
+    ``FAST\_ILDL''            & FastILDL(see~\ref{s:FastILU}) \\
     ``AMESOS2''             & \amesostwo's interface to sparse direct solvers \\
     ``DENSE'' or ``LAPACK'' & LAPACK's LU factorization for a dense representation of a subdomain matrix \\
     ``CUSTOM''              & User provided inner solver \\

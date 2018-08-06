@@ -311,7 +311,7 @@ echo "*"
 echo "*    Starting loadbal calculation for $runid"
 echo -n "*         at "; date
 echo "*"
-echo "*    .... begining decomposition ...."
+echo "*    .... beginning decomposition ...."
 echo "*         see $output for current status"
 
 

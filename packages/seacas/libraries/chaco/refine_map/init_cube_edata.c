@@ -39,7 +39,7 @@ void init_cube_edata(struct refine_edata *edata, /* desire data for current edge
                      int                  node1, /* processor incident to current wire */
                      int                  dim,   /* direction of wire */
                      int                  mask   /* bit set in wire dimension */
-                     )
+)
 {
 
   edata->node1 = node1;

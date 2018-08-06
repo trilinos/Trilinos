@@ -44,7 +44,7 @@ int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication r
                     int                using_ewgts, /* are edge weights being used? */
                     int *              assign,      /* current assignment */
                     int                nsets_tot    /* total number of sets */
-                    )
+)
 {
   float  ewgt;               /* edge weight in graph */
   int ** edges_list  = NULL; /* lists of edges */

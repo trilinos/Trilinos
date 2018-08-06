@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: rdnm1.f,v 1.5 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDNM1 (NTXT, NDB, NELBLK, NVAREL, ISEVOK, LSEVOK, *)
 C=======================================================================
@@ -56,7 +55,7 @@ C   --upon exit positioned after table.
       INTEGER ISEVOK(NVAREL,*)
       LOGICAL LSEVOK(NVAREL,*)
 
-      CHARACTER*5 STRA
+      CHARACTER*32 STRA
 
 C ... Nothing to read if NVAREL == 0
       if (nvarel .eq. 0) return

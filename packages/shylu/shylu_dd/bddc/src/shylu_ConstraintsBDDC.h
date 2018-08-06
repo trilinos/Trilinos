@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -61,15 +61,15 @@ using Teuchos::rcp;
 
 // Author: Clark R. Dohrmann
 namespace bddc {
-  
-template <class SX, class SM, class LO, class GO> 
+
+template <class SX, class SM, class LO, class GO>
   class ConstraintsBDDC
 {
 public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type  Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
@@ -125,9 +125,9 @@ public:
 
   void determineBaseConstraints()
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
-    const std::vector< std::vector<LO> > & equivClasses = 
+    const std::vector< std::vector<LO> > & equivClasses =
       m_Partition->getEquivClasses();
     const std::vector<LO> & equivCard = m_Partition->getEquivCardinality();
     std::vector<LO> dofMap(m_numDofs, -1), dofMapEquiv(m_numDofs, -1);
@@ -135,25 +135,25 @@ public:
       LO numEquiv = subdomainEquivClasses[i].size();
       setDofMap(m_subNodes[i], dofMap);
       std::vector< std::vector<LO> > equivClassDofs(numEquiv),
-	equivConstraintsLocalDofs(numEquiv);
+        equivConstraintsLocalDofs(numEquiv);
       std::vector< std::vector<SX> > equivConstraints(numEquiv);
       std::vector<LO> numEquivConstraints(numEquiv);
       LO numCorners(0), numEdges(0), numFaces(0);
       getNumCornersEdgesFaces(subdomainEquivClasses[i], equivClasses,
-			      equivCard, numCorners, numEdges, numFaces);
+                              equivCard, numCorners, numEdges, numFaces);
       for (LO j=0; j<numEquiv; j++) {
-	LO equiv = subdomainEquivClasses[i][j];
-	const std::vector<LO> & equivNodes = equivClasses[equiv];
-	getDofsEquiv(equivNodes, dofMap, equivClassDofs[j]);
-	setDofMap(equivNodes, dofMapEquiv);
-	determineEquivConstraints
-	  (i, equivNodes, equiv, dofMapEquiv, numCorners, numEdges, numFaces,
-	   equivConstraintsLocalDofs[j], equivConstraints[j]);
-	resetDofMap(equivNodes, dofMapEquiv);
+        LO equiv = subdomainEquivClasses[i][j];
+        const std::vector<LO> & equivNodes = equivClasses[equiv];
+        getDofsEquiv(equivNodes, dofMap, equivClassDofs[j]);
+        setDofMap(equivNodes, dofMapEquiv);
+        determineEquivConstraints
+          (i, equivNodes, equiv, dofMapEquiv, numCorners, numEdges, numFaces,
+           equivConstraintsLocalDofs[j], equivConstraints[j]);
+        resetDofMap(equivNodes, dofMapEquiv);
       }
       m_Subdomain[i]->setEquivalenceClasses(equivClassDofs);
       m_Subdomain[i]->setInitialConstraints(equivConstraintsLocalDofs,
-					    equivConstraints);
+                                            equivConstraints);
       resetDofMap(m_subNodes[i], dofMap);
     }
   }
@@ -176,35 +176,35 @@ private:
   Tpetra::global_size_t m_IGO;
   bool m_useCorners, m_useEdges, m_useFaces;
 
-  void setDofMap(const std::vector<LO> & nodes, 
-		 std::vector<LO> & dofMap)
+  void setDofMap(const std::vector<LO> & nodes,
+                 std::vector<LO> & dofMap)
   {
     LO numDof = 0;
     for (size_t i=0; i<nodes.size(); i++) {
       LO node = nodes[i];
       for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	dofMap[j] = numDof++;
+        dofMap[j] = numDof++;
       }
     }
   }
 
-  void resetDofMap(const std::vector<LO> & nodes, 
-		   std::vector<LO> & dofMap)
+  void resetDofMap(const std::vector<LO> & nodes,
+                   std::vector<LO> & dofMap)
   {
     for (size_t i=0; i<nodes.size(); i++) {
       LO node = nodes[i];
       for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	dofMap[j] = -1;
+        dofMap[j] = -1;
       }
     }
   }
 
   void getNumCornersEdgesFaces
-    (const std::vector<LO> & subEquivClasses, 
+    (const std::vector<LO> & subEquivClasses,
      const std::vector< std::vector<LO> > & equivClasses,
-     const std::vector<LO> & equivCard, 
-     LO & numCorners, 
-     LO & numEdges, 
+     const std::vector<LO> & equivCard,
+     LO & numCorners,
+     LO & numEdges,
      LO & numFaces)
   {
     numCorners = numEdges = numFaces = 0;
@@ -219,25 +219,25 @@ private:
   }
 
   void getDofsEquiv(const std::vector<LO> & equivClass,
-		    std::vector<LO> & dofMap,
-		    std::vector<LO> & equivDofs)
+                    std::vector<LO> & dofMap,
+                    std::vector<LO> & equivDofs)
   {
     LO numNodes = equivClass.size();
     for (LO i=0; i<numNodes; i++) {
       LO node = equivClass[i];
       for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	LO dof = dofMap[j];
-	assert (dof != -1);
-	equivDofs.push_back(dof);
+        LO dof = dofMap[j];
+        assert (dof != -1);
+        equivDofs.push_back(dof);
       }
     }
   }
 
-  void getLocalDofsAndCoordinates(const std::vector<LO> & equivNodes, 
-				  std::vector<LO> & equivLocalDofs, 
-				  std::vector<SM> & xCoords,
-				  std::vector<SM> & yCoords,
-				  std::vector<SM> & zCoords)
+  void getLocalDofsAndCoordinates(const std::vector<LO> & equivNodes,
+                                  std::vector<LO> & equivLocalDofs,
+                                  std::vector<SM> & xCoords,
+                                  std::vector<SM> & yCoords,
+                                  std::vector<SM> & zCoords)
   {
     LO numRows(0);
     for (size_t i=0; i<equivNodes.size(); i++) {
@@ -246,19 +246,19 @@ private:
     }
     equivLocalDofs.resize(numRows);
     xCoords.resize(numRows);
-    yCoords.resize(numRows); 
+    yCoords.resize(numRows);
     zCoords.resize(numRows);
     numRows = 0;
     SM xSum(0), ySum(0), zSum(0);
     for (size_t i=0; i<equivNodes.size(); i++) {
       LO node = equivNodes[i];
       for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	int localDof = m_localDofs[j];
-	equivLocalDofs[numRows] = localDof;
-	xCoords[numRows] = m_xCoord[node]; xSum += m_xCoord[node];
-	yCoords[numRows] = m_yCoord[node]; ySum += m_yCoord[node];
-	zCoords[numRows] = m_zCoord[node]; zSum += m_zCoord[node];
-	numRows++;
+        int localDof = m_localDofs[j];
+        equivLocalDofs[numRows] = localDof;
+        xCoords[numRows] = m_xCoord[node]; xSum += m_xCoord[node];
+        yCoords[numRows] = m_yCoord[node]; ySum += m_yCoord[node];
+        zCoords[numRows] = m_zCoord[node]; zSum += m_zCoord[node];
+        numRows++;
       }
     }
     SM xCent = xSum/numRows;
@@ -284,11 +284,11 @@ private:
     return numNeededAncestors;
   }
 
-  void getNullSpace(const std::vector<LO> & localDofs, 
-		    const std::vector<SM> & xCoords, 
-		    const std::vector<SM> & yCoords, 
-		    const std::vector<SM> & zCoords, 
-		    std::vector<SX> & nullSpace)
+  void getNullSpace(const std::vector<LO> & localDofs,
+                    const std::vector<SM> & xCoords,
+                    const std::vector<SM> & yCoords,
+                    const std::vector<SM> & zCoords,
+                    std::vector<SX> & nullSpace)
   {
     const LO numRows = localDofs.size();
     if (m_problemType == SCALARPDE) {
@@ -296,39 +296,39 @@ private:
     }
     else if (m_problemType == ELASTICITY) {
       if (m_spatialDim == 2) {
-	int numRBM = 3;
-	LO numTerms = numRBM*numRows;
-	nullSpace.resize(numTerms, 0);
-	numTerms = 0;
-	for (int j=0; j<numRBM; j++) {
-	  for (LO i=0; i<numRows; i++) {
-	    nullSpace[numTerms++] = 
-	      getElasticityRBM2D(j, localDofs[i],
-				 xCoords[i], yCoords[i], zCoords[i]);
-	  }
-	}
+        int numRBM = 3;
+        LO numTerms = numRBM*numRows;
+        nullSpace.resize(numTerms, 0);
+        numTerms = 0;
+        for (int j=0; j<numRBM; j++) {
+          for (LO i=0; i<numRows; i++) {
+            nullSpace[numTerms++] =
+              getElasticityRBM2D(j, localDofs[i],
+                                 xCoords[i], yCoords[i], zCoords[i]);
+          }
+        }
       }
       else if (m_spatialDim == 3) {
-	int numRBM = 6;
-	LO numTerms = numRBM*numRows;
-	nullSpace.resize(numTerms, 0);
-	numTerms = 0;
-	for (int j=0; j<numRBM; j++) {
-	  for (LO i=0; i<numRows; i++) {
-	    nullSpace[numTerms++] = 
-	      getElasticityRBM3D(j, localDofs[i],
-				 xCoords[i], yCoords[i], zCoords[i]);
-	  }
-	}
+        int numRBM = 6;
+        LO numTerms = numRBM*numRows;
+        nullSpace.resize(numTerms, 0);
+        numTerms = 0;
+        for (int j=0; j<numRBM; j++) {
+          for (LO i=0; i<numRows; i++) {
+            nullSpace[numTerms++] =
+              getElasticityRBM3D(j, localDofs[i],
+                                 xCoords[i], yCoords[i], zCoords[i]);
+          }
+        }
       }
     }
   }
 
-  SM getElasticityRBM2D(int rbm, 
-			int localDof,
-			const SM xCoord, 
-			const SM yCoord, 
-			const SM zCoord)
+  SM getElasticityRBM2D(int rbm,
+                        int localDof,
+                        const SM xCoord,
+                        const SM yCoord,
+                        const SM zCoord)
   {
     SM value = 0.0;
     if (localDof == rbm) value = 1.0;
@@ -339,11 +339,11 @@ private:
     return value;
   }
 
-  SM getElasticityRBM3D(int rbm, 
-			int localDof,
-			const SM xCoord, 
-			const SM yCoord, 
-			const SM zCoord)
+  SM getElasticityRBM3D(int rbm,
+                        int localDof,
+                        const SM xCoord,
+                        const SM yCoord,
+                        const SM zCoord)
   {
     SM value = 0.0;
     if (localDof == rbm) value = 1.0;
@@ -366,11 +366,11 @@ private:
     return value;
   }
 
-  void determineIndependentColumns(const LO numRows, 
-				   const std::vector<SX> & nullSpace, 
-				   const int numMissing,
-				   const enum EquivType equivType,
-				   std::vector<int> & independentCols)
+  void determineIndependentColumns(const LO numRows,
+                                   const std::vector<SX> & nullSpace,
+                                   const int numMissing,
+                                   const enum EquivType equivType,
+                                   std::vector<int> & independentCols)
   {
     if (numRows == 0) return;
     int numColsMax = nullSpace.size()/numRows;
@@ -389,32 +389,32 @@ private:
       SX* col = &A[numRows*i];
       SM norm = BLAS.NRM2(numRows, col, INCX);
       if (norm > tol) {
-	independentCols.push_back(i);
-	for (LO j=0; j<numRows; j++) col[j] /= norm;
-	for (int j=i+1; j<numColsMax; j++) {
-	  SX* col2 = &A[numRows*j];
-	  SX dotProd = 0;
-	  for (LO k=0; k<numRows; k++) dotProd += col[k]*col2[k];
-	  for (LO k=0; k<numRows; k++) col2[k] -= dotProd*col[k];
-	}
+        independentCols.push_back(i);
+        for (LO j=0; j<numRows; j++) col[j] /= norm;
+        for (int j=i+1; j<numColsMax; j++) {
+          SX* col2 = &A[numRows*j];
+          SX dotProd = 0;
+          for (LO k=0; k<numRows; k++) dotProd += col[k]*col2[k];
+          for (LO k=0; k<numRows; k++) col2[k] -= dotProd*col[k];
+        }
       }
     }
   }
 
-  void determineEquivConstraints(const LO numRows, 
-				 const std::vector<SX> & nullSpace, 
-				 const std::vector<int> & independentCols, 
-				 std::vector<SX> & equivConstraints)
+  void determineEquivConstraints(const LO numRows,
+                                 const std::vector<SX> & nullSpace,
+                                 const std::vector<int> & independentCols,
+                                 std::vector<SX> & equivConstraints)
   {
     const int numCols = independentCols.size();
     std::vector<SX> A(numRows*numCols);
     for (int j=0; j<numCols; j++) {
       const int col = independentCols[j];
       for (int i=0; i<numRows; i++) {
-	A[j*numRows+i] = nullSpace[col*numRows+i];
+        A[j*numRows+i] = nullSpace[col*numRows+i];
       }
     }
-    // The the pseudo-inverse of A (transpose), obtained using the singular 
+    // The the pseudo-inverse of A (transpose), obtained using the singular
     // value decomposition, is used for the equivalence class constraints
     int M = numRows;
     int N = numCols;
@@ -425,13 +425,13 @@ private:
     SX U[1], dumWORK[1];
     int LDU(1), INFO, LDVT(N), LWORK(-1);
     Teuchos::LAPACK<int, SX> LAPACK;
-    LAPACK.GESVD(JOBU, JOBVT, M, N, A.data(), M, S.data(), U, LDU, 
-		 VT.data(), LDVT, dumWORK, LWORK, RWORK.data(), &INFO);
+    LAPACK.GESVD(JOBU, JOBVT, M, N, A.data(), M, S.data(), U, LDU,
+                 VT.data(), LDVT, dumWORK, LWORK, RWORK.data(), &INFO);
     assert (INFO == 0);
     LWORK = dumWORK[0];
     std::vector<SX> WORK(LWORK);
-    LAPACK.GESVD(JOBU, JOBVT, M, N, A.data(), M, S.data(), U, LDU, 
-		 VT.data(), LDVT, WORK.data(), LWORK, RWORK.data(), &INFO);
+    LAPACK.GESVD(JOBU, JOBVT, M, N, A.data(), M, S.data(), U, LDU,
+                 VT.data(), LDVT, WORK.data(), LWORK, RWORK.data(), &INFO);
     // Note: for A = U * S * V^T, the matrix V^T is stored one column at
     //       a time in VT (regular Fortran column ordering for transpose of V)
     assert (INFO == 0);
@@ -439,25 +439,25 @@ private:
     for (int j=0; j<N; j++) {
       SX* colU = &A[M*j];
       for (LO i=0; i<numRows; i++) {
-	colU[i] /= S[j];
+        colU[i] /= S[j];
       }
     }
     equivConstraints.resize(M*N);
     Teuchos::BLAS<int, SX>  BLAS;
     SX ALPHA(1), BETA(0);
-    BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, M, N, N, ALPHA, A.data(), 
-	      M, VT.data(), N, BETA, equivConstraints.data(), M);
+    BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, M, N, N, ALPHA, A.data(),
+              M, VT.data(), N, BETA, equivConstraints.data(), M);
   }
 
   void determineEquivConstraints(LO sub,
-				 const std::vector<LO> & equivNodes,
-				 LO equiv,
-				 std::vector<LO> & dofMapEquiv,
-				 LO numCorners, 
-				 LO numEdges, 
-				 LO numFaces,
-				 std::vector<LO> & equivConstraintsLocalDofs, 
-				 std::vector<SX> & equivConstraints)
+                                 const std::vector<LO> & equivNodes,
+                                 LO equiv,
+                                 std::vector<LO> & dofMapEquiv,
+                                 LO numCorners,
+                                 LO numEdges,
+                                 LO numFaces,
+                                 std::vector<LO> & equivConstraintsLocalDofs,
+                                 std::vector<SX> & equivConstraints)
   {
     enum EquivType equivType = m_Partition->getEquivType(equiv);
     int numAncestors = m_Partition->getNumActiveAncestors(equiv);
@@ -482,17 +482,17 @@ private:
     if (isActive == true) {
       std::vector<LO> equivLocalDofs;
       std::vector<SM> xCoords, yCoords, zCoords;
-      getLocalDofsAndCoordinates(equivNodes, equivLocalDofs, 
-				 xCoords, yCoords, zCoords);
+      getLocalDofsAndCoordinates(equivNodes, equivLocalDofs,
+                                 xCoords, yCoords, zCoords);
       const LO numRows = equivLocalDofs.size();
       std::vector<SX> nullSpace;
-      getNullSpace(equivLocalDofs, xCoords, yCoords, zCoords, nullSpace); 
+      getNullSpace(equivLocalDofs, xCoords, yCoords, zCoords, nullSpace);
       std::vector<int> independentCols;
       determineIndependentColumns(numRows, nullSpace, numMissing, equivType,
-				  independentCols);
-      determineEquivConstraints(numRows, nullSpace, independentCols, 
-				equivConstraints);
-      equivConstraintsLocalDofs = independentCols;      
+                                  independentCols);
+      determineEquivConstraints(numRows, nullSpace, independentCols,
+                                equivConstraints);
+      equivConstraintsLocalDofs = independentCols;
       /*
       clark;
       int numDofLocal = localDofsAll.size();
@@ -500,11 +500,11 @@ private:
       equivConstraints.resize(numDofLocal*numDofEquiv);
       numEquivConstraints = numDofLocal;
       for (LO i=0; i<numDofLocal; i++) {
-	for (LO j=0; j<numDofEquiv; j++) {
-	  if (localDofsEquiv[j] == localDofsAll[i]) {
-	    equivConstraints[j+i*numDofEquiv] = 1.0/numDofEquiv;
-	  }
-	}
+        for (LO j=0; j<numDofEquiv; j++) {
+          if (localDofsEquiv[j] == localDofsAll[i]) {
+            equivConstraints[j+i*numDofEquiv] = 1.0/numDofEquiv;
+          }
+        }
       }
       */
     }
@@ -519,15 +519,15 @@ private:
   }
 
   void processFluxConstraints(const std::vector<LO> & equivNodes,
-			      std::vector<SX> & equivConstraints)
+                              std::vector<SX> & equivConstraints)
   {
     LO numNode = equivNodes.size();
     LO numFlux(0), numDof(0);
     for (LO i=0; i<numNode; i++) {
       LO node = equivNodes[i];
       for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	if (m_localDofs[j] == 7) numFlux++;
-	numDof++;
+        if (m_localDofs[j] == 7) numFlux++;
+        numDof++;
       }
     }
     if (numFlux > 0) {
@@ -535,11 +535,11 @@ private:
       equivConstraints.resize(numDof);
       numDof = 0;
       for (LO i=0; i<numNode; i++) {
-	LO node = equivNodes[i];
-	for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	  if (m_localDofs[j] == 7) equivConstraints[numDof] = 1;
-	  numDof++;
-	}
+        LO node = equivNodes[i];
+        for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
+          if (m_localDofs[j] == 7) equivConstraints[numDof] = 1;
+          numDof++;
+        }
       }
     }
   }
@@ -549,4 +549,4 @@ private:
 } // namespace bddc
 
 #endif // CONSTRAINTSBDDC_H
-  
+

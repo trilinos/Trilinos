@@ -54,7 +54,7 @@ double bidir(double *alpha, /* vector of Lanczos scalars */
              double  ritz,  /* approximate eigenvalue  of T */
              double *s,     /* approximate eigenvector of T */
              double  hurdle /* hurdle for local maximum in recurrence */
-             )
+)
 
 {
   int    i;        /* index */

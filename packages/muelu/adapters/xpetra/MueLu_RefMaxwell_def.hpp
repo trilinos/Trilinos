@@ -138,14 +138,14 @@ namespace MueLu {
     // Remove zero entries from D0 if necessary.
     // In the construction of the prolongator we use the graph of the
     // matrix, so zero entries mess it up.
-    if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+    if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getNodeMaxNumRowEntries()>2) {
       Level fineLevel;
       fineLevel.SetFactoryManager(Teuchos::null);
       fineLevel.SetLevelID(0);
       fineLevel.Set("A",D0_Matrix_);
       fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
       // We expect D0 to have entries +-1, so any threshold value will do.
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false));
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false,/*expectedNNZperRow=*/2));
       fineLevel.Request("A",ThreshFact.get());
       ThreshFact->Build(fineLevel);
       D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
@@ -256,7 +256,7 @@ namespace MueLu {
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
       Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
       rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
       rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
       rapFact->SetParameterList(rapList);
 
@@ -336,7 +336,7 @@ namespace MueLu {
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", false);
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -360,7 +360,7 @@ namespace MueLu {
           SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || (defined(HAVE_MUELU_INST_DOUBLE_INT_INT)))
         Teuchos::ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
 
         if (smootherList_.isSublist("smoother: pre params"))
@@ -413,7 +413,7 @@ namespace MueLu {
         useHiptmairSmoothing_ = true;
 #else
         throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
-#endif  // defined(HAVE_MUELU_IFPACK2)
+#endif  // defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
       } else {
         Level level;
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
@@ -474,6 +474,7 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
   }
 
@@ -1004,7 +1005,14 @@ namespace MueLu {
 #endif
         RCP<Vector> diag = VectorFactory::Build(M0inv_Matrix_->getRowMap());
         M0inv_Matrix_->getLocalDiagCopy(*diag);
-        Z->leftScale(*diag);
+        if (Z->getRowMap()->isSameAs(*(diag->getMap())))
+          Z->leftScale(*diag);
+        else {
+          RCP<Import> importer = ImportFactory::Build(diag->getMap(),Z->getRowMap());
+          RCP<Vector> diag2 = VectorFactory::Build(Z->getRowMap());
+          diag2->doImport(*diag,*importer,Xpetra::INSERT);
+          Z->leftScale(*diag2);
+        }
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*ZT,false,*Z,false,*Matrix2,true,true);
       } else if (parameterList_.get<bool>("rap: triple product", false) == false) {
         Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
@@ -1018,9 +1026,7 @@ namespace MueLu {
           MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
       }
       // add matrices together
-      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setOutputToRootOnly(0);
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,GetOStream(Runtime0));
       AH_->fillComplete();
     }
 
@@ -1158,7 +1164,7 @@ namespace MueLu {
     }
 
     // apply pre-smoothing
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
     if (useHiptmairSmoothing_) {
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
@@ -1184,7 +1190,7 @@ namespace MueLu {
       applyInverseAdditive(RHS,X);
 
     // apply post-smoothing
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
     if (useHiptmairSmoothing_)
       {
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);

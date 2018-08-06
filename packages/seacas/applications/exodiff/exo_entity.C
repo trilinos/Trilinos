@@ -377,9 +377,9 @@ void Exo_Entity::internal_load_params()
   int name_size = ex_inquire_int(fileId, EX_INQ_MAX_READ_NAME_LENGTH);
   {
     std::vector<char> name(name_size + 1);
-    ex_get_name(fileId, exodus_type(), id_, TOPTR(name));
+    ex_get_name(fileId, exodus_type(), id_, name.data());
     if (name[0] != '\0') {
-      name_ = TOPTR(name);
+      name_ = name.data();
       to_lower(name_);
     }
     else {
@@ -445,7 +445,7 @@ namespace {
     size_t count = get_num_entities(file_id, exo_type);
     if ((ex_int64_status(file_id) & EX_IDS_INT64_API) != 0) {
       std::vector<int64_t> ids(count);
-      ex_get_ids(file_id, exo_type, TOPTR(ids));
+      ex_get_ids(file_id, exo_type, ids.data());
 
       for (size_t i = 0; i < count; i++) {
         if (static_cast<size_t>(ids[i]) == id) {
@@ -455,7 +455,7 @@ namespace {
     }
     else {
       std::vector<int> ids(count);
-      ex_get_ids(file_id, exo_type, TOPTR(ids));
+      ex_get_ids(file_id, exo_type, ids.data());
 
       for (size_t i = 0; i < count; i++) {
         if (static_cast<size_t>(ids[i]) == id) {
@@ -473,8 +473,8 @@ namespace {
     int inquiry = 0;
     switch (exo_type) {
     case EX_ELEM_BLOCK: inquiry = EX_INQ_ELEM_BLK; break;
-    case EX_NODE_SET: inquiry   = EX_INQ_NODE_SETS; break;
-    case EX_SIDE_SET: inquiry   = EX_INQ_SIDE_SETS; break;
+    case EX_NODE_SET: inquiry = EX_INQ_NODE_SETS; break;
+    case EX_SIDE_SET: inquiry = EX_INQ_SIDE_SETS; break;
     default: ERROR("Invalid entity type in get_num_entities\n"); exit(1);
     }
     SMART_ASSERT(inquiry > 0);

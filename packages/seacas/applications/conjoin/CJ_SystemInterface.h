@@ -47,10 +47,14 @@ namespace Excn {
 
     int debug() const { return debugLevel_; }
     int screen_width() const { return screenWidth_; }
+    int compress_data() const { return compressionLevel_; }
 
-    bool   omit_nodesets() const { return omitNodesets_; }
-    bool   omit_sidesets() const { return omitSidesets_; }
-    bool   ints_64_bit() const { return ints64Bit_; }
+    bool omit_nodesets() const { return omitNodesets_; }
+    bool omit_sidesets() const { return omitSidesets_; }
+    bool ints_64_bit() const { return ints64Bit_; }
+    bool ignore_coordinates() const { return ignoreCoordinates_; }
+    bool use_netcdf4() const { return useNetcdf4_; }
+
     double alive_value() const { return aliveValue_; }
 
     double         interpart_minimum_time_delta() const { return interpartMinimumTimeDelta_; }
@@ -78,14 +82,17 @@ namespace Excn {
 
     GetLongOption options_; //!< Options parsing
 
-    int  debugLevel_;
-    int  screenWidth_;
-    bool omitNodesets_;
-    bool omitSidesets_;
-    bool ints64Bit_;
+    int  debugLevel_{0};
+    int  screenWidth_{0};
+    int  compressionLevel_{0};
+    bool omitNodesets_{false};
+    bool omitSidesets_{false};
+    bool ints64Bit_{false};
+    bool ignoreCoordinates_{false};
+    bool useNetcdf4_{false};
 
-    double aliveValue_;
-    double interpartMinimumTimeDelta_;
+    double aliveValue_{-1.0};
+    double interpartMinimumTimeDelta_{0.0};
 
     std::string elementStatusVariable_;
     std::string nodalStatusVariable_;

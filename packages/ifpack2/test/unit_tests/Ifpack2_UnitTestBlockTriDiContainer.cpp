@@ -46,10 +46,11 @@
 \brief Ifpack2 Unit and performance test for the BlockTriDiContainter template.
 */
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Tpetra_Core.hpp>
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 # include <complex>
 #endif
@@ -169,7 +170,9 @@ private:
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 // Configure with Ifpack2_ENABLE_BlockTriDiContainer_Timers:BOOL=ON to get timer
 // output for each piece of the computation.
-template <typename Scalar, typename LO, typename GO>
+template <typename Scalar,
+          typename LO = Tpetra::Map<>::local_ordinal_type,
+          typename GO = Tpetra::Map<>::global_ordinal_type>
 static void run_performance_test (const Input& in) {
   typedef LO Int;
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
@@ -296,7 +299,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                 }
                 if (threw)
                   printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
-                
+
                 TEUCHOS_TEST(ne == 0 && ! threw, details);
               }
             }
@@ -309,7 +312,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockTriDi, Unit, Scalar, LO, GO) {
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  Input in(Teuchos::DefaultComm<int>::getComm());
+  Input in(Tpetra::getDefaultComm());
   run_teuchos_tests<Scalar, LO, GO>(in, out, success);
 #endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 }
@@ -321,39 +324,41 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 IFPACK2_INSTANTIATE_SLG(UNIT_TEST_GROUP_SC_LO_GO)
 
 static Teuchos::RCP<const Teuchos::Comm<int> > make_comm () {
-  return Teuchos::DefaultComm<int>::getComm();
+  return Tpetra::getDefaultComm();
 }
 
 int main (int argc, char** argv) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+
   int ret = 0;
-  Teuchos::GlobalMPISession mpi_session(&argc, &argv, nullptr); {
-    Kokkos::initialize(argc, argv);
-    do {
-      Teuchos::RCP<const Teuchos::Comm<int> > comm;
-      std::shared_ptr<Input> in;
-      try {
-        comm = make_comm();
-        in = std::make_shared<Input>(argc, argv, comm);
-      } catch (const std::exception& e) {
-        if (comm.is_null() || comm->getRank() == 0)
-          std::cerr << e.what() << "\n";
-        ret = -1;
-        break;
-      }
-      try {
-        if (in->teuchos_test)
-          Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-        if (in->repeat)
-          run_performance_test<double, int, int>(*in);
-#endif
-      } catch (const std::exception& e) {
+  do {
+    Teuchos::RCP<const Teuchos::Comm<int> > comm;
+    std::shared_ptr<Input> in;
+    try {
+      comm = make_comm();
+      in = std::make_shared<Input>(argc, argv, comm);
+    } catch (const std::exception& e) {
+      if (comm.is_null() || comm->getRank() == 0) {
         std::cerr << e.what() << "\n";
-        ret = -1;
-        break;
       }
-    } while (0);
-    Kokkos::finalize();
-  }
+      ret = -1;
+      break;
+    }
+    try {
+      if (in->teuchos_test) {
+        Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
+      }
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+      if (in->repeat) {
+        run_performance_test<double>(*in);
+      }
+#endif
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << "\n";
+      ret = -1;
+      break;
+    }
+  } while (0);
+
   return ret;
 }

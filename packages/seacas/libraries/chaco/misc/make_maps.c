@@ -40,7 +40,7 @@ int make_maps(int *setlists,  /* linked list of set vertices */
               int  set,       /* set value denoting subgraph */
               int *glob2loc,  /* graph -> subgraph numbering map */
               int *loc2glob   /* subgraph -> graph numbering map */
-              )
+)
 {
   int i, j; /* loop counter */
 
@@ -70,7 +70,7 @@ void make_maps2(int *assignment, /* set assignments for graph */
                 int  set,        /* set value denoting subgraph */
                 int *glob2loc,   /* graph -> subgraph numbering map */
                 int *loc2glob    /* subgraph -> graph numbering map */
-                )
+)
 {
   int i, j; /* loop counter */
 

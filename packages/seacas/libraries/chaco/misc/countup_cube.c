@@ -47,7 +47,7 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
                   int               print_lev,  /* level of output */
                   FILE *            outfile,    /* output file if not NULL */
                   int               using_ewgts /* are edge weights being used? */
-                  )
+)
 {
   double *hopsize;            /* number of hops for each set */
   double *cutsize;            /* number of cuts for each set */

@@ -274,7 +274,7 @@ function execute_spread {
 ########################################################################
 # initialize variables
 # Text color variables
-if test "${TERM}set" != xtermset ; then
+if [[ $TERM != *"xterm"* ]]; then
     export TERM=dumb
 fi
 txtund=$(tput sgr 0 1)    # Underline

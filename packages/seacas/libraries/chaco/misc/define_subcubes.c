@@ -46,7 +46,7 @@ int define_subcubes(int              nsets_real, /* actual number of sets being 
                     int              inert,      /* using inertial method? */
                     int *            pstriping,  /* cut in single direction? */
                     int              hop_mtx_special[MAXSETS][MAXSETS] /* nonstandard hop values */
-                    )
+)
 {
   extern int KL_METRIC; /* 2 => using hops so generate hop matrix */
   int        hop_flag;  /* use special hop matrix? */

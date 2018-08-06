@@ -39,7 +39,7 @@
 /* Debug break point. */
 void checkpnt(char *tag)
 {
-  int affirm(char *prompt);
+  int  affirm(char *prompt);
   void bail(char *msg, int status);
 
   if (tag != NULL && (int)strlen(tag) > 0) {

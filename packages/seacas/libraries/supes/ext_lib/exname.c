@@ -32,9 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*
- * $Id: exname.c,v 1.14 2008/03/14 13:22:36 gdsjaar Exp $
- */
 
 /*
  *   This routine is here for the purpose of assigning a replacement
@@ -62,7 +59,7 @@
  *        ENDIF
  *
  *   In fact, the same sort of thing happens in the UNIX world.
- *   To provide as least some compatiblity with the VAX world,  we test
+ *   To provide as least some compatibility with the VAX world,  we test
  *   for the ENVIRONMENT variables of the form FOR0NN.
  *
  */
@@ -89,43 +86,56 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 
   char *darg;
 
+  if (*iunit > -100 && *iunit < 100) {
 #if Build64
-  sprintf(string, "%02ld", labs(*iunit));
+    sprintf(string, "%02ld", labs(*iunit));
 #else
-  sprintf(string, "%02d", abs(*iunit));
+    sprintf(string, "%02d", abs(*iunit));
 #endif
 
-  if (*iunit > 0) {
-    ExtSymbol = FALSE;
-    sprintf(symbol, "%s%s", INSYMBOL, string);
-  }
-  else {
-    ExtSymbol = TRUE;
-    sprintf(symbol, "%s%s", EXSYMBOL, string);
-  }
+    if (*iunit > 0) {
+      ExtSymbol = FALSE;
+      sprintf(symbol, "%s%s", INSYMBOL, string);
+    }
+    else {
+      ExtSymbol = TRUE;
+      sprintf(symbol, "%s%s", EXSYMBOL, string);
+    }
 
-  if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
-    unsigned int DargLen = strlen(darg);
-    /* We need this to give us the length of the ENVIRONMENT
-     * variable while calling strlen() only once.
-     */
-    strncpy(name, darg, DargLen);
-    *ln = DargLen;
-  }
-  else if (!ExtSymbol) {
+    if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
+      unsigned int DargLen = strlen(darg);
+      /* We need this to give us the length of the ENVIRONMENT
+       * variable while calling strlen() only once.
+       */
+      strncpy(name, darg, DargLen);
+      *ln = DargLen;
+    }
+    else if (!ExtSymbol) {
 #if Build64
-    sprintf(name, "fort.%ld", labs(*iunit));
+      sprintf(name, "fort.%ld", labs(*iunit));
 #else
-    sprintf(name, "fort.%d", abs(*iunit));
+      sprintf(name, "fort.%d", abs(*iunit));
 #endif
-    *ln = strlen(name);
+      *ln = strlen(name);
+    }
+    else {
+      /* Then I have referenced an external symbol that has not been
+       *  defined...
+       */
+      *name = '\0';
+      *ln   = 0;
+    }
   }
   else {
-    /* Then I have referenced an external symbol that has not been
-     *  defined...
-     */
-    *name = '\0';
-    *ln   = 0;
+#if Build64
+    fprintf(stderr,
+            "ERROR: SUPES exname - invalid unit number %ld.  Must be between -100 and 100.\n",
+            *iunit);
+#else
+    fprintf(stderr,
+            "ERROR: SUPES exname - invalid unit number %d.  Must be between -100 and 100.\n",
+            *iunit);
+#endif
   }
 }
 /*

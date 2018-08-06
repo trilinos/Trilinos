@@ -30,18 +30,12 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
-
-C $Id: mirss.f,v 1.7 2008/04/28 16:00:59 gdsjaar Exp $
-c 
 C=======================================================================
       SUBROUTINE MIRSS (NUMESS, LESSEL, LESSDL, IDESS, NEESS, NEDSS,
      *     IXEESS, IXEDSS, LTEESS, LTSSS, LTSNC, FAC, USESDF, NONQUAD,
      *     COMTOP)
 C=======================================================================
-C $Id: mirss.f,v 1.7 2008/04/28 16:00:59 gdsjaar Exp $
-
 C   --*** MIRSS *** (GJOIN) Mirror element side sets
-C   --   Written by Greg Sjaardema
 C   --
 C   --MIRSS mirrors a side set and (if USESDF true) the distribution factors 
 C   --applied to the nodes.      
@@ -89,7 +83,7 @@ C     if applied to elements on other faces...
       END IF
 
       IF (USESDF) THEN
-        CALL PRTERR ('PROGRAM',
+        CALL PRTERR ('WARNING',
      *    'Mirroring of sideset distribution factors not supported')
         RETURN
       END IF

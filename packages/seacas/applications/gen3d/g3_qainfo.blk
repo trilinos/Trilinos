@@ -38,9 +38,9 @@ C     there are any changes to any routines, this routine should also
 C     be committed.  The assignment to QAINFO(I) strips off the 'Revision'
 C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
       
-      QAINFO(1) = 'Gen3DII                         '
+      QAINFO(1) = 'Gen3D                           '
       QAINFO(2) = '                                '
       QAINFO(3) = '                                '
-      QAINFO(2)(:8) = '20160128'
-      QAINFO(3)(:8) = ' 1.41   '
+      QAINFO(2)(:8) = '20180329'
+      QAINFO(3)(:8) = ' 1.42   '
       

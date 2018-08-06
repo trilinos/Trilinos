@@ -62,11 +62,11 @@ int     quote        = 1;    /* 1 is do quote. */
 int     alternative  = 0;    /* 0 is getopt_long, 1 is getopt_long_only */
 
 /* Function prototypes */
-void *our_malloc(size_t size);
-void *our_realloc(void *ptr, size_t size);
+void *      our_malloc(size_t size);
+void *      our_realloc(void *ptr, size_t size);
 const char *normalize(const char *arg);
-int generate_output(char *argv[], int argc, const char *optstr, const struct option *longopts);
-int main(int argc, char *argv[]);
+int  generate_output(char *argv[], int argc, const char *optstr, const struct option *longopts);
+int  main(int argc, char *argv[]);
 void parse_error(const char *message);
 void add_long_options(char *options);
 void add_longopt(const char *name, int has_arg);
@@ -119,7 +119,7 @@ const char *normalize(const char *arg)
     return BUFFER;
   }
 
-  /* Each character in arg may take upto four characters in the result:
+  /* Each character in arg may take up to four characters in the result:
      For a quote we need a closing quote, a backslash, a quote and an
      opening quote! We need also the global opening and closing quote,
      and one extra character for '\0'. */
@@ -181,7 +181,7 @@ int generate_output(char *argv[], int argc, const char *optstr, const struct opt
 
   if (quiet_errors) /* No error reporting from getopt(3) */
     opterr = 0;
-  optind   = 0; /* Reset getopt(3) */
+  optind = 0; /* Reset getopt(3) */
 
   while ((opt = (alternative ? getopt_long_only(argc, argv, optstr, longopts, &longindex)
                              : getopt_long(argc, argv, optstr, longopts, &longindex))) != EOF)
@@ -329,7 +329,7 @@ void print_help(void)
 }
 
 /* Exit codes:
- *   0) No errors, succesful operation.
+ *   0) No errors, successful operation.
  *   1) getopt(3) returned an error.
  *   2) A problem with parameter parsing for getopt(1).
  *   3) Internal error, out of memory

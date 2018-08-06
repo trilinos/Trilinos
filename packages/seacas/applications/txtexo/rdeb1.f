@@ -59,7 +59,7 @@ C   --upon entry; upon exit at end of element block misc. information.
       INTEGER LINK(NUMLNK,*)
       REAL ATRIB(natrdm, *)
 
-      CHARACTER*5 STRA, STRB
+      CHARACTER*32 STRA, STRB
 
       NE = 0
       READ (NTXT, *, END=120, ERR=120)

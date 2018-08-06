@@ -87,7 +87,7 @@ C         is the same....
          end do
       end if
       IF (.NOT. ALLONE) THEN
-         CALL PRTERR ('PROGRAM',
+         CALL PRTERR ('WARNING',
      *        'Mirroring of sideset distribution factors not supported')
       END IF
       

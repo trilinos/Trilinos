@@ -162,7 +162,7 @@ void F2C(negii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Warning: file type string length is %d in file id %d\n", ftypelen, *idne);
-    ex_err("negii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
     slen = ftypelen;
   }
@@ -172,7 +172,7 @@ void F2C(negii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
   if ((*ierr = ex_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to get initial information from file id %d", *idne);
-    ex_err("negii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   if (*ierr == 0)
@@ -199,7 +199,7 @@ void F2C(nepii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     sprintf(errmsg, "Warning: file type string length is %d in file id %d\n", ftypelen, *idne);
-    ex_err("nepii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
   }
 
@@ -209,7 +209,7 @@ void F2C(nepii)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr, 
 
   if ((*ierr = ex_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0) {
     sprintf(errmsg, "Error: failed to put initial information in file id %d", *idne);
-    ex_err("nepii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   free(file_type);
@@ -225,7 +225,7 @@ void F2C(negig)(int *idne, void_int *nnodes_g, void_int *nelems_g, void_int *nel
                                   nside_sets_g)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read initial global information from file id %d", *idne);
-    ex_err("negig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -257,7 +257,7 @@ void F2C(nepig)(int *idne, void_int *nnodes_g, void_int *nelems_g, void_int *nel
   if (*ierr != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store initial global information in file id %d", *idne);
-    ex_err("nepig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -272,7 +272,7 @@ void F2C(neglbp)(int *idne, void_int *nint_nodes, void_int *nbor_nodes, void_int
                                     nbor_elems, nnode_cmaps, nelem_cmaps, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read load balance parameters from file id %d", *idne);
-    ex_err("neglbp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -308,7 +308,7 @@ void F2C(neplbp)(int *idne, void_int *nint_nodes, void_int *nbor_nodes, void_int
   if (*ierr != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store load balance parameters in file id %d", *idne);
-    ex_err("neplbp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -323,7 +323,7 @@ void F2C(neplbpc)(int *idne, void_int *nint_nodes, void_int *nbor_nodes, void_in
                                        nbor_elems, nnode_cmaps, nelem_cmaps)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store load balance parameters in file id %d", *idne);
-    ex_err("neplbpc", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -336,7 +336,7 @@ void F2C(negnspg)(int *idne, void_int *ns_ids_glob, void_int *ns_n_cnt_glob,
   if ((*ierr = ex_get_ns_param_global(*idne, ns_ids_glob, ns_n_cnt_glob, ns_df_cnt_glob)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read global node set parameters from file id %d", *idne);
-    ex_err("negnspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -349,7 +349,7 @@ void F2C(nepnspg)(int *idne, void_int *global_ids, void_int *global_n_cnts,
   if ((*ierr = ex_put_ns_param_global(*idne, global_ids, global_n_cnts, global_df_cnts)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store global node set parameters in file id %d", *idne);
-    ex_err("nepnspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -363,7 +363,7 @@ void F2C(negsspg)(int *idne, void_int *ss_ids_glob, void_int *ss_n_cnt_glob,
   if ((*ierr = ex_get_ss_param_global(*idne, ss_ids_glob, ss_n_cnt_glob, ss_df_cnt_glob)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read global side set parameters from file id %d", *idne);
-    ex_err("negsspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -376,7 +376,7 @@ void F2C(nepsspg)(int *idne, void_int *global_ids, void_int *global_el_cnts,
   if ((*ierr = ex_put_ss_param_global(*idne, global_ids, global_el_cnts, global_df_cnts)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store global side set parameters in file id %d", *idne);
-    ex_err("nepsspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -388,7 +388,7 @@ void F2C(negebig)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnts, int *i
   if ((*ierr = ex_get_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read global element block info from file id %d", *idne);
-    ex_err("negebig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -400,7 +400,7 @@ void F2C(nepebig)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnts, int *i
   if ((*ierr = ex_put_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to store global element block info in file id %d", *idne);
-    ex_err("nepebig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -423,7 +423,7 @@ void F2C(negnss)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
   if ((*ierr = ex_get_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read side set element list from file id %d", *idne);
-    ex_err("negnss", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -446,7 +446,7 @@ void F2C(nepnss)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
   if ((*ierr = ex_put_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write side set element list to file id %d", *idne);
-    ex_err("nepnss", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -469,7 +469,7 @@ void F2C(negnssd)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
   if ((*ierr = ex_get_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read side set dist factor from file id %d", *idne);
-    ex_err("negnssd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -492,7 +492,7 @@ void F2C(nepnssd)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
   if ((*ierr = ex_put_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write side set dist factor to file id %d", *idne);
-    ex_err("nepnssd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -515,7 +515,7 @@ void F2C(negnns)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
   if ((*ierr = ex_get_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read node set node list from file id %d", *idne);
-    ex_err("negnns", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -538,7 +538,7 @@ void F2C(nepnns)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
   if ((*ierr = ex_put_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write node set node list to file id %d", *idne);
-    ex_err("nepnns", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -561,7 +561,7 @@ void F2C(negnnsd)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
   if ((*ierr = ex_get_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read node set dist factor from file id %d", *idne);
-    ex_err("negnnsd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -584,7 +584,7 @@ void F2C(nepnnsd)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
   if ((*ierr = ex_put_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write node set dist factor to file id %d", *idne);
-    ex_err("nepnnsd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -607,7 +607,7 @@ void F2C(negcor)(int *idne, void_int *start, void_int *count, real *x_coor, real
   if ((*ierr = ex_get_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read node coordinates from file id %d", *idne);
-    ex_err("negcor", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -630,7 +630,7 @@ void F2C(nepcor)(int *idne, void_int *start, void_int *count, real *x_coor, real
   if ((*ierr = ex_put_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write node coordinates to file id %d", *idne);
-    ex_err("nepcor", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -653,7 +653,7 @@ void F2C(negnec)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *c
   if ((*ierr = ex_get_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read element block connectivity from file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -676,7 +676,7 @@ void F2C(nepnec)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *c
   if ((*ierr = ex_put_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write element block connectivity to file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -699,7 +699,7 @@ void F2C(negneat)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *
   if ((*ierr = ex_get_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read element block attribute from file id %d", *idne);
-    ex_err("negneat", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -722,7 +722,7 @@ void F2C(nepneat)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *
   if ((*ierr = ex_put_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write element block attribute to file id %d", *idne);
-    ex_err("nepneat", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -742,7 +742,7 @@ void F2C(negelt)(int *idne, entity_id *elem_blk_id, char *elem_type, int *ierr, 
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Warning: element type string length is %d in file id %d\n", elem_typelen,
             *idne);
-    ex_err("negelt", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
     slen = elem_typelen;
   }
@@ -752,7 +752,7 @@ void F2C(negelt)(int *idne, entity_id *elem_blk_id, char *elem_type, int *ierr, 
   if ((*ierr = ex_get_elem_type(*idne, *elem_blk_id, etype)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read element block type from file id %d", *idne);
-    ex_err("negelt", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   if (*ierr == 0)
@@ -784,7 +784,7 @@ void F2C(negnev)(int *idne, int *time_step, int *elem_var_index, entity_id *elem
                                  elem_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read element block variable from file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -808,7 +808,7 @@ void F2C(nepevs)(int *idne, int *time_step, int *elem_var_index, entity_id *elem
                                     elem_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write elem block variable slab to file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -831,7 +831,7 @@ void F2C(negnnv)(int *idne, int *time_step, int *nodal_var_index, void_int *star
   if ((*ierr = ex_get_n_nodal_var(*idne, *time_step, *nodal_var_index, st, cnt, nodal_vars)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read nodal variable from file id %d", *idne);
-    ex_err("negnnv", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -855,7 +855,7 @@ void F2C(nepnvs)(int *idne, int *time_step, int *nodal_var_index, void_int *star
                                      nodal_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write nodal variable slab to file id %d", *idne);
-    ex_err("nepnvs", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -877,7 +877,7 @@ void F2C(negnenm)(int *idne, void_int *starte, void_int *num_ent, void_int *elem
   if ((*ierr = ex_get_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read element numbering map from file id %d", *idne);
-    ex_err("negnenm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -899,7 +899,7 @@ void F2C(nepnenm)(int *idne, void_int *starte, void_int *num_ent, void_int *elem
   if ((*ierr = ex_put_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write element numbering map to file id %d", *idne);
-    ex_err("nepnenm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -921,7 +921,7 @@ void F2C(negnnnm)(int *idne, void_int *startn, void_int *num_ent, void_int *node
   if ((*ierr = ex_get_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read node numbering map from file id %d", *idne);
-    ex_err("negnnnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -943,7 +943,7 @@ void F2C(nepnnnm)(int *idne, void_int *startn, void_int *num_ent, void_int *node
   if ((*ierr = ex_put_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write node numbering map to file id %d", *idne);
-    ex_err("nepnnnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -957,7 +957,7 @@ void F2C(negnm)(int *idne, void_int *node_mapi, void_int *node_mapb, void_int *n
       0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read processor node map from file id %d", *idne);
-    ex_err("negnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -971,7 +971,7 @@ void F2C(nepnm)(int *idne, void_int *node_mapi, void_int *node_mapb, void_int *n
       0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write processor node map to file id %d", *idne);
-    ex_err("nepnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -983,7 +983,7 @@ void F2C(negem)(int *idne, void_int *elem_mapi, void_int *elem_mapb, int *proces
   if ((*ierr = ex_get_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read processor element map from file id %d", *idne);
-    ex_err("negem", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -995,7 +995,7 @@ void F2C(nepem)(int *idne, void_int *elem_mapi, void_int *elem_mapb, int *proces
   if ((*ierr = ex_put_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write processor element map to file id %d", *idne);
-    ex_err("nepem", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1009,7 +1009,7 @@ void F2C(negcmp)(int *idne, void_int *ncmap_ids, void_int *ncmap_node_cnts, void
                                   *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read comm map parameters from file id %d", *idne);
-    ex_err("negcmp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1023,7 +1023,7 @@ void F2C(nepcmp)(int *idne, void_int *nmap_ids, void_int *nmap_node_cnts, void_i
                                   *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write comm map parameters to file id %d", *idne);
-    ex_err("nepcmp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1037,7 +1037,7 @@ void F2C(nepcmpc)(int *idne, void_int *nmap_ids, void_int *nmap_node_cnts, void_
                                      emap_elem_cnts, eproc_ptrs)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write comm map parameters to file id %d", *idne);
-    ex_err("nepcmpc", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1050,7 +1050,7 @@ void F2C(negncm)(int *idne, entity_id *map_id, void_int *node_ids, void_int *pro
   if ((*ierr = ex_get_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read nodal communications map from file id %d", *idne);
-    ex_err("negncm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1063,7 +1063,7 @@ void F2C(nepncm)(int *idne, entity_id *map_id, void_int *node_ids, void_int *pro
   if ((*ierr = ex_put_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write nodal communications map to file id %d", *idne);
-    ex_err("nepncm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1076,7 +1076,7 @@ void F2C(negecm)(int *idne, entity_id *map_id, void_int *elem_ids, void_int *sid
   if ((*ierr = ex_get_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to read elemental comm map from file id %d", *idne);
-    ex_err("negecm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -1089,6 +1089,6 @@ void F2C(nepecm)(int *idne, entity_id *map_id, void_int *elem_ids, void_int *sid
   if ((*ierr = ex_put_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg, "Error: failed to write elemental comm map to file id %d", *idne);
-    ex_err("nepecm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }

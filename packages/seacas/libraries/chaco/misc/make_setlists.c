@@ -42,7 +42,7 @@ void make_setlists(int *setlists,  /* space for linked lists of vertices in sets
                    int *loc2glob,  /* mapping from subgraph to graph numbering */
                    int  subnvtxs,  /* number of vertices in (sub)graph */
                    int  first      /* is this full graph or subgraph? */
-                   )
+)
 {
   int set;  /* set a vertex belongs to */
   int i, j; /* loop counters */

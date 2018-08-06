@@ -154,13 +154,19 @@ namespace Amesos2
   template <class Matrix, class Vector>
   MUMPS<Matrix,Vector>::~MUMPS( )
   {
+      
     /* Clean up the struc*/
-    if(MUMPS_STRUCT == true)
-      {
-        free(mumps_par.a);
-        free(mumps_par.jcn);
-        free(mumps_par.irn);
+//    if(MUMPS_STRUCT == true)
+//      {
+//        free(mumps_par.a);
+//        free(mumps_par.jcn);
+//        free(mumps_par.irn);
+//      }
+      mumps_par.job = -2;
+      if (this->rank_ < this->nprocs_) {
+          function_map::mumps_c(&(mumps_par));
       }
+
   }
   
   template<class Matrix, class Vector>

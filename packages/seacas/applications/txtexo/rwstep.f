@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: rwstep.f,v 1.3 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RWSTEP (NTXT, NDB, istep, idelb,
      &  NVARGL, NVARNP, NUMNP, NVAREL, NELBLK, NUMELB, 
@@ -67,7 +66,7 @@ C   --upon exit positioned after time step.
       LOGICAL ISEVOK(NVAREL, *)
       REAL VAR(*)
 
-      CHARACTER*5 STRA
+      CHARACTER*32 STRA
 
 C   --Read step time
 

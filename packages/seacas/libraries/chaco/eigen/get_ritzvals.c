@@ -54,7 +54,7 @@ int get_ritzvals(double *alpha,         /* vector of Lanczos scalars */
                  int     right_goodlim, /* number of ritz pairs checked on right end */
                  double  eigtol,        /* tolerance on eigenpair */
                  double  bis_safety     /* bisection tolerance function divisor */
-                 )
+)
 {
   extern int DEBUG_EVECS;     /* debug flag for eigen computation */
   extern int WARNING_EVECS;   /* warning flag for eigen computation */

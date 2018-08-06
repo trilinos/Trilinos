@@ -47,7 +47,7 @@ int sturmcnt(double *alpha, /* vector of Lanczos scalars */
              int     j,     /* index of Lanczos step we're on */
              double  mu,    /* argument to the sequence generating polynomial */
              double *p      /* work vector for sturm sequence */
-             )
+)
 {
   extern double DOUBLE_MAX; /* maximum double precision number to be used */
   int           i;          /* loop index */

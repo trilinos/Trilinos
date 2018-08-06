@@ -50,14 +50,14 @@ extern double second(void);
 template <typename T, typename INT> class NemSpread
 {
 public:
-  void load_mesh();
-  int  check_inp();
-  void read_coord(int exoid, int max_name_length);
-  void read_elem_blk_ids(int mesh_exoid, int max_name_length);
-  void read_elem_blk(int exoid);
-  void extract_elem_blk();
-  void extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc);
-  void extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc);
+  void   load_mesh();
+  int    check_inp();
+  void   read_coord(int exoid, int max_name_length);
+  void   read_elem_blk_ids(int mesh_exoid, int max_name_length);
+  void   read_elem_blk(int exoid);
+  void   extract_elem_blk();
+  void   extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc);
+  void   extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc);
   size_t extract_elem_connect(INT elem_blk[], int icurrent_elem_blk, size_t istart_elem,
                               size_t iend_elem, int *local_ielem_blk, int iproc);
   void extract_elem_attr(T *elem_attr, int icurrent_elem_blk, size_t istart_elem, size_t iend_elem,
@@ -121,7 +121,7 @@ public:
 
   int                    io_ws;
   Restart_Description<T> Restart_Info;
-  Globals<T, INT> globals;
+  Globals<T, INT>        globals;
 
   /*-----------------------------------------------------------------------------
    *

@@ -50,7 +50,7 @@ void bpm_improve(struct vtx_data **graph,      /* list of graph info for each ve
                  int **            bndy_list,  /* list of vertices on boundary (0 ends) */
                  double *          weights,    /* vertex weights in each set */
                  int               using_vwgts /* invoke weighted cover routines? */
-                 )
+)
 {
   extern int DEBUG_COVER;  /* debug flag for min vertex cover */
   extern int VERTEX_COVER; /* apply improvement once, or repeatedly? */
@@ -147,7 +147,7 @@ static int bpm_improve1(struct vtx_data **graph,       /* list of graph info for
                         int *             sep_weight,  /* weight of separator */
                         int               using_vwgts, /* use weighted model? */
                         double *          pcost        /* cost of current separator */
-                        )
+)
 {
   extern int DEBUG_COVER;    /* debug flag for min vertex cover */
   double     new_weights[2]; /* weights associated with new separator */
@@ -309,7 +309,7 @@ static int bpm_improve1(struct vtx_data **graph,       /* list of graph info for
 /* Routine that can be modified to allow different cost functions. */
 
 static double sep_cost(double size_sep /* maximum allowed imbalance */
-                       )
+)
 {
   return (size_sep);
 }

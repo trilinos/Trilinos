@@ -58,10 +58,10 @@ int cmd_line_arg_parse(
     Problem_Description *prob,           /* Pointer to structure in which to place general
                                           * information about the run */
     Solver_Description *solver,          /* Pointer to structure in which to place parameters
-                                       * for the eigensolver */
+                                          * for the eigensolver */
     Weight_Description<INT> *weight      /* Pointer to structure in which to place parameters
-                               * for the graph weighting scheme */
-    );
+                                          * for the graph weighting scheme */
+);
 
 /* Prototype for function which reads in the ASCII input file */
 template <typename INT>
@@ -74,12 +74,12 @@ int read_cmd_file(
     LB_Description<INT> *lb,             /* Pointer to structure in which to place load
                                           * balance parameters */
     Problem_Description *problem,        /* Pointer to structure in which to place general
-                                       * information about the run */
+                                          * information about the run */
     Solver_Description *solver,          /* Pointer to structure in which to place parameters
-                                       * for the eigensolver */
+                                          * for the eigensolver */
     Weight_Description<INT> *weight      /* Pointer to structure in which to place parameters
-                                        * for the eigensolver */
-    );
+                                          * for the eigensolver */
+);
 
 /* Prototype for function which checks the user specified input */
 template <typename INT>
@@ -93,10 +93,10 @@ int check_inp_specs(
     Problem_Description *prob,           /* Pointer to structure in which to place general
                                           * information about the run */
     Solver_Description *solver,          /* Pointer to structure in which to place parameters
-                                       * for the eigensolver */
+                                          * for the eigensolver */
     Weight_Description<INT> *weight      /* Pointer to structure in which to place parameters
-                                * for the weighting scheme */
-    );
+                                          * for the weighting scheme */
+);
 
 /* Various defines used by the input routines */
 #define NONE -1

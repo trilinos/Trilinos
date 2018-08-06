@@ -301,7 +301,12 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+    
   //@}
+  
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+     {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -351,6 +356,9 @@ protected:
 
   Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 

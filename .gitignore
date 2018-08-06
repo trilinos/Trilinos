@@ -158,3 +158,5 @@ rsync.*
 #My ignores
 build/*
 installed/*
+packages/PyTrilinos/*
+cmake/*

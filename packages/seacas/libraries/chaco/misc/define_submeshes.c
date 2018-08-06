@@ -48,7 +48,7 @@ int define_submeshes(int              nsets,        /* number of subsets in this
                      int *            striping,     /* should I partition with parallel cuts? */
                      int *            dir,          /* directions of each cut */
                      int              hop_mtx_special[MAXSETS][MAXSETS] /* hops values if unusual */
-                     )
+)
 {
   extern int KL_METRIC; /* 2 => using hops, so generate special values */
   int        ndims;     /* dimension of cut */

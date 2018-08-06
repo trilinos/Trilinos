@@ -48,7 +48,7 @@ void mapper(struct vtx_data **graph,        /* data structure with vertex weight
             int               mediantype,   /* type of eigenvector partitioning to use */
             double *          goal,         /* desired set sizes */
             int               vwgt_max      /* largest vertex weight */
-            )
+)
 {
   double temp_goal[2]; /* combined set goals if using option 1. */
   double wbelow;       /* weight of vertices with negative values */

@@ -47,7 +47,7 @@ template <typename INT>
 int read_mesh_params(const std::string &    exo_file, /* Name of ExodusII geometry file */
                      Problem_Description *  problem,  /* Pointer to problem info structure */
                      Mesh_Description<INT> *mesh,     /* Mesh information structure */
-                     Sphere_Info *          sphere);  /* Sphere element info structure */
+                     Sphere_Info *          sphere);            /* Sphere element info structure */
 
 template <typename INT>
 int read_mesh(const std::string &      exo_file, /* Name of ExodusII geometry file */

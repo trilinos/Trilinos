@@ -36,7 +36,7 @@
  *
  * testwtm - test write many ExodusII database files
  *
- * author - Sandia-2017 National Laboratories
+ * author - Sandia National Laboratories
  *          Larry A. Schoof - Original
  *          Vic Yarberry    - Added headers and error logging
  *               7/7/93          Modified for use with Exodus 2.00
@@ -1365,7 +1365,7 @@ int main(int argc, char **argv)
     printf("after ex_put_prop (%d), error = %d\n", n, error);
   }
 
-    /* END COMMENTED OUT SECTION */
+  /* END COMMENTED OUT SECTION */
 
 #endif /* TEST_INDIV_SIDESET */
 

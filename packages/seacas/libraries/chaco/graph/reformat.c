@@ -46,7 +46,7 @@ int reformat(int *              start,     /* start of edge list for each vertex
              int *              vwgts,     /* weights for all vertices */
              float *            ewgts,     /* weights for all edges */
              struct vtx_data ***pgraph     /* ptr to array of vtx data for graph */
-             )
+)
 {
   extern FILE *     Output_File;      /* output file or null */
   struct vtx_data **graph     = NULL; /* array of vtx data for graph */

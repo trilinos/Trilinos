@@ -61,11 +61,12 @@ C   --upon entry; upon exit at end of element block information.
       include 'exodusII.inc'
       DIMENSION A(*)
       CHARACTER*(MXSTLN) NAMELB
-      CHARACTER*5 STRA
+      CHARACTER*32 STRA
 
       NAMELB = ' '
       READ (NTXT, *, END=110, ERR=110)
-      READ (NTXT, 130, END=110, ERR=110) IDELB, NUMELB, NAMELB
+      READ (NTXT, *, END=110, ERR=110) IDELB, NUMELB, NAMELB
+
 C ... Strip everything in namelb from first space to end
       IEX = index(namelb, " ")
       if (iex .gt. 0) then
@@ -93,6 +94,5 @@ C ... Strip everything in namelb from first space to end
      &   'Reading ELEMENT BLOCK SIZING PARAMETERS for block '
      &   // STRA(:LSTRA))
   120 CONTINUE
- 130  format (2I10,6X,A)
       RETURN 1
       END

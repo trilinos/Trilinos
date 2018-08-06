@@ -126,7 +126,7 @@ void add_to_log(const char *my_name, double elapsed)
 
         uname(&sys_info);
 
-        minutes = elapsed / 60;
+        minutes = (int)(elapsed / 60.0);
         seconds = elapsed - minutes * 60.0;
 
         snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",

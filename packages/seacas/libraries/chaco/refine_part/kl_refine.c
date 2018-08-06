@@ -56,7 +56,7 @@ int kl_refine(struct vtx_data **graph,      /* graph data structure */
               float * term_wgts[],          /* space for terminal propagation weights */
               int     architecture,         /* 0 => hypercube, d => d-dimensional mesh */
               int     mesh_dims[3]          /* if mesh, how big is it? */
-              )
+)
 {
   extern int     TERM_PROP;               /* perform terminal propagation? */
   extern double  KL_IMBALANCE;            /* fractional imbalance allowed in KL */

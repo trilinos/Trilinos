@@ -298,9 +298,9 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
           }
         }
         if (found_flag) {
-          printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n", vertex, neighbor);
+          printf("WARNING: Multiple occurrences of edge (%d,%d) ignored\n", vertex, neighbor);
           if (Output_File != NULL) {
-            fprintf(Output_File, "WARNING: Multiple occurences of edge (%d,%d) ignored\n", vertex,
+            fprintf(Output_File, "WARNING: Multiple occurrences of edge (%d,%d) ignored\n", vertex,
                     neighbor);
           }
           skip_flag = TRUE;

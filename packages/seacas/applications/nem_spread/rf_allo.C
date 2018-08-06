@@ -81,39 +81,39 @@ static double *smalloc(size_t n, char *filename, int lineno);
  *
  *****************************************************************************/
 /******************************************************************************
-* 	The following section is a commented section containing
-*	an example main code:
-*******************************************************************************
-*double *array_alloc();
-*main()
-*{
-*  int ***temp;
-*   int *temp2;
-*   int i, j, k;
-*   int il, jl, kl;
-*
-*   malloc_debug(2);
-*   il = 2;
-*   jl = 3;
-*   kl = 3;
-*   temp = (int ***) array_alloc(3,il,jl,kl,sizeof(int));
-*   for (i=0; i<il; i++) {
-*      for (j=0; j<jl; j++) {
-*         for (k=0; k<kl; k++) temp[i][j][k] = 1;
-*      }
-*   }
-*
-*   temp2 = (int *) malloc(10*sizeof(int));
-*   for (i=0; i<10; i++) temp2[i] = 0;
-*
-*   for (i=0; i<il; i++) {
-*      for (j=0; j<jl; j++) {
-*         for (k=0; k<kl; k++) printf(" %d\n", temp[i][j][k]);
-*      }
-*   }
-*   malloc_verify();
-*}
-******************************************************************************/
+ * 	The following section is a commented section containing
+ *	an example main code:
+ *******************************************************************************
+ *double *array_alloc();
+ *main()
+ *{
+ *  int ***temp;
+ *   int *temp2;
+ *   int i, j, k;
+ *   int il, jl, kl;
+ *
+ *   malloc_debug(2);
+ *   il = 2;
+ *   jl = 3;
+ *   kl = 3;
+ *   temp = (int ***) array_alloc(3,il,jl,kl,sizeof(int));
+ *   for (i=0; i<il; i++) {
+ *      for (j=0; j<jl; j++) {
+ *         for (k=0; k<kl; k++) temp[i][j][k] = 1;
+ *      }
+ *   }
+ *
+ *   temp2 = (int *) malloc(10*sizeof(int));
+ *   for (i=0; i<10; i++) temp2[i] = 0;
+ *
+ *   for (i=0; i<il; i++) {
+ *      for (j=0; j<jl; j++) {
+ *         for (k=0; k<kl; k++) printf(" %d\n", temp[i][j][k]);
+ *      }
+ *   }
+ *   malloc_verify();
+ *}
+ ******************************************************************************/
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -152,8 +152,9 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 
   if (dim[0].index == 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-                    "dimension == 0; will return nullptr\n",
+    fprintf(stderr,
+            "WARNING, %s (%s: %d) called with first "
+            "dimension == 0; will return nullptr\n",
             yo, file, lineno);
 #endif
     va_end(va);
@@ -166,8 +167,9 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
   for (int i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, size_t);
     if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
-                      " will return nullptr\n",
+      fprintf(stderr,
+              "WARNING: %s (%s: %d) called with dimension %d == 0, "
+              " will return nullptr\n",
               yo, file, lineno, i + 1);
       va_end(va);
       return ((double *)nullptr);
@@ -221,8 +223,9 @@ static double *smalloc(size_t n, char *filename, int lineno)
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
+    fprintf(stderr,
+            "%s (from %s,%d) Out of space - number of bytes "
+            "requested = " ST_ZU "\n",
             yo, filename, lineno, (unsigned long)n);
     exit(0);
   }

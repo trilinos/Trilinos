@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,7 +43,7 @@ void graph_out(struct vtx_data **graph,       /* graph data structure */
                int               using_ewgts, /* Are edges weighted? */
                char *            tag,         /* message to include */
                char *            file_name    /* output file name if not null */
-               )
+)
 {
   FILE *file;        /* output file */
   int   using_vwgts; /* Are vertices weighted? */

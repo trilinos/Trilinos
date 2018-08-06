@@ -40,7 +40,7 @@ find_edge_cube(int                  node,     /* processor node */
                int                  dim,      /* direction of edge from node */
                struct refine_edata *edata,    /* data structure for edge preferences */
                int                  nsets_tot /* total number of processors */
-               )
+)
 {
   struct refine_edata *eguy;  /* returned pointer to edge info */
   int                  index; /* computed index into edata */

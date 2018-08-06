@@ -61,14 +61,14 @@ C     --Expects the input text file on unit 20, the output database on unit 11.
       CHARACTER*1 C(1)
 C     --A - the dynamic memory base array
 
-      CHARACTER*5 STRA, STRB
+      CHARACTER*32 STRA, STRB
       CHARACTER*8 STR8
 
 C     Program Information
 C.
-      QAINFO(1) = 'txtexo2                         '
-      QAINFO(2) = '2011/09/26                      '
-      QAINFO(3) = ' 1.13                           '
+      QAINFO(1) = 'txtexo                          '
+      QAINFO(2) = '2018/02/06                      '
+      QAINFO(3) = ' 1.14                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '

@@ -50,7 +50,7 @@ void mergesort(double *vals, int nvals, int *indices, int *space)
   int        flag;          /* has sorting screwed up? */
   int        i;
 
-  for (i       = 0; i < nvals; i++)
+  for (i = 0; i < nvals; i++)
     indices[i] = i;
 
   recursesort(vals, nvals, indices, space);

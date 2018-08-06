@@ -469,7 +469,7 @@ static float ndc_ymax = 1.;
 static float color_table[MAX_COLORS][3];
 static float default_color_table[8][3] = {{0., 0., 0.}, {1., 0., 0.}, {0., 1., 0.}, {1., 1., 0.},
                                           {0., 0., 1.}, {1., 0., 1.}, {0., 1., 1.}, {1., 1., 1.}};
-static int x_colors[MAX_COLORS];
+static int   x_colors[MAX_COLORS];
 static enum CT { MONO, PSEUDO, FULL } color_type;
 static int def_bc_index, def_fc_index;
 static int svdicolors_base;
@@ -594,10 +594,10 @@ int *justif;
   }
   else
     valuemask = CWBackPixel | CWBorderPixel;
-  x_width     = .65 * d_width; /* default size */
-  x_height    = .65 * d_height;
-  xpos        = .3 * d_width;
-  ypos        = .3 * d_height;
+  x_width  = .65 * d_width; /* default size */
+  x_height = .65 * d_height;
+  xpos     = .3 * d_width;
+  ypos     = .3 * d_height;
   /* use user-supplied default geometry if available */
   geometry = XGetDefault(display, "svdi", "Geometry");
   if (geometry)
@@ -648,7 +648,7 @@ int *justif;
          are preserved.
       */
       /* query default colors */
-      for (i              = 0; i < ncolors; i++)
+      for (i = 0; i < ncolors; i++)
         def_cmap[i].pixel = (unsigned long)i;
       XQueryColors(display, cmap, def_cmap, ncolors);
       /* setup a virtual colormap */
@@ -674,10 +674,10 @@ int *justif;
     def_bc_index = 0;       /* remember defaults */
     def_fc_index = 7;
     /* setup default SVDI colors */
-    for (i     = 0; i < 8; i++)
+    for (i = 0; i < 8; i++)
       index[i] = i;
-    i          = 8;
-    j          = 0;
+    i = 8;
+    j = 0;
     vdstco(&i, index, default_color_table, &j); /* color table */
     i = 0;
     vdstbc(&i); /* background color */
@@ -1019,7 +1019,7 @@ vdiqes(escape_code, support) int *escape_code, *support;
   switch (*escape_code) {
   case 3500: *support = 1; break;
   case 3501: *support = 1; break;
-  default: *support   = 0; break;
+  default: *support = 0; break;
   }
 }
 
@@ -1115,8 +1115,8 @@ vitext(length, char_array) int *length, char_array[];
       }
       switch (char_array[i]) /* process special character */
       {
-      case 8: /* backspace */ xcp        = xcp - vector[6]; break;
-      case 10: /* line feed */ ycp       = ycp - vector[5]; break;
+      case 8: /* backspace */ xcp = xcp - vector[6]; break;
+      case 10: /* line feed */ ycp = ycp - vector[5]; break;
       case 13: /* carriage return */ xcp = 0.; break;
       default: /* other */
         fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 208, 5);
@@ -1178,7 +1178,7 @@ vdiqcp(x, y) float *x, *y;
 vdiqos(attr_array) float attr_array[];
 {
   int i;
-  for (i          = 0; i < MAX_VECTOR; i++)
+  for (i = 0; i < MAX_VECTOR; i++)
     attr_array[i] = vector[i];
 }
 

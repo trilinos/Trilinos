@@ -39,10 +39,15 @@
 # ************************************************************************
 # @HEADER
 
+#
 # Usage: mockprogram.py [any arguments]
-
+#
 # Mock program that takes input arguments and produces stdout by reading from
-# a file .mockprogram_inout.txt
+# a file .mockprogram_inout.txt in the current directory or the file specified
+# by the env var MOCKPROGRAM_INOUT_FILE_OVERRIDE (which can be in any
+# diretory).  This script is used to take the place of real commands during a
+# test that involves calling commands on the commandline.
+#
 
 import sys
 import os
@@ -50,17 +55,22 @@ import os
 inputArgs = ' '.join(sys.argv[1:])
 #print("inputArgs = '" + inputArgs + "'"
 
-if not os.path.exists('.mockprogram_inout.txt'):
-  print("Error: .mockprogram_inout.txt is missing!")
+if os.environ.get("MOCKPROGRAM_INOUT_FILE_OVERRIDE"):
+  mockProgramInOutFilePath=os.environ.get("MOCKPROGRAM_INOUT_FILE_OVERRIDE")
+else:
+  mockProgramInOutFilePath='.mockprogram_inout.txt'
+
+if not os.path.exists(mockProgramInOutFilePath):
+  print("Error: "+mockProgramInOutFilePath+" is missing!")
   sys.exit(1)
 
-mockprogramInout = open('.mockprogram_inout.txt', 'r').read()
+mockprogramInout = open(mockProgramInOutFilePath, 'r').read()
 mockprogramInoutArray = mockprogramInout.splitlines()
 if len(mockprogramInoutArray) and mockprogramInoutArray[-1] == "":
   mockprogramInoutArray = mockprogramInoutArray[:-1]
 
 if len(mockprogramInoutArray) < 3:
-  print("Error: .mockprogram_inout.txt has less than three lines:\n"
+  print("Error: "+mockProgramInOutFilePath+" has less than three lines:\n"
         "-------------\n" + mockprogramInout + "-------------")
   sys.exit(2)
 
@@ -103,10 +113,10 @@ print(outputStr)
 # Write the remaining lines back into the file
 lineLineIndex = 2 + numLinesOuput
 if len(mockprogramInoutArray) > lineLineIndex:
-  open('.mockprogram_inout.txt', 'w').write(
+  open(mockProgramInOutFilePath, 'w').write(
     ('\n'.join(mockprogramInoutArray[lineLineIndex:]))+"\n" )
 else:
-  open('.mockprogram_inout.txt', 'w').write("")
+  open(mockProgramInOutFilePath, 'w').write("")
 
 # Return exit code
 sys.exit(int(returnCode))

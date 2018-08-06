@@ -116,7 +116,7 @@ C=======================================================================
          stop 'EXBFID'
       else if (ierr .eq. EXWARN) then
          write (string, '(A,A)') 
-     $        'A non-fatal error occured in ', path(:lp)
+     $        'A non-fatal error occurred in ', path(:lp)
          call prterr ('WARNING', string)
       else
          if (ierr .le. 19) then

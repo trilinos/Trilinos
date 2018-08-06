@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   int ne_test_plbpc(int);
   int ne_test_pcmpc(int);
 
-  /* Unitialized local variables */
+  /* Uninitialized local variables */
   int   ne_file_id;
   char *file_name = "./ne_test.exoII";
   float version;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     fflush(stdout);
   }
   else {
-    printf("succesful\n");
+    printf("successful\n");
     fflush(stdout);
   }
 
