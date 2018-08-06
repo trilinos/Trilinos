@@ -86,7 +86,7 @@ double NOX::Random::number()
   return 2.0*(seed/bigInt)-1.0;
 }
 
-int NOX::Random::checkSeed(const std::string& func, int s)
+int NOX::Random::checkSeed(const std::string& /* func */, int s)
 {
   if ((s < 1) || (s > 2147483646)) {
     std::cerr << "Error in NOX::Random::" << s << "():  " << "supplied seed "

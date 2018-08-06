@@ -148,9 +148,9 @@ namespace LOCA {
      */
     virtual NOX::Abstract::Group::ReturnType
     solveTranspose(
-      Teuchos::ParameterList& params,
-      const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
-      LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const {
+      Teuchos::ParameterList& /* params */,
+      const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& /* input */,
+      LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& /* result */) const {
       return NOX::Abstract::Group::NotDefined;
     }
 

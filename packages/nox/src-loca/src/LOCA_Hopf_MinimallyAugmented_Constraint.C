@@ -71,7 +71,7 @@ Constraint(
     const NOX::Abstract::Vector& a_imag,
     const NOX::Abstract::Vector* b_real,
     const NOX::Abstract::Vector* b_imag,
-    int bif_param,
+    int /* bif_param */,
     double freq) :
   globalData(global_data),
   parsedParams(topParams),
@@ -585,7 +585,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::Constraint::
 computeDP(const std::vector<int>& paramIDs,
       NOX::Abstract::MultiVector::DenseMatrix& dgdp,
-      bool isValidG)
+      bool /* isValidG */)
 {
   std::string callingFunction =
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDP()";

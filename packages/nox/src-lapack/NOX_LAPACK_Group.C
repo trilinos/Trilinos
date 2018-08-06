@@ -307,7 +307,7 @@ NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p,
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p,
+NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& /* p */,
                      const Vector& input,
                      Vector& result) const
 {
@@ -326,7 +326,7 @@ NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p,
 
 NOX::Abstract::Group::ReturnType
 NOX::LAPACK::Group::applyJacobianInverseMultiVector(
-                     Teuchos::ParameterList& p,
+                     Teuchos::ParameterList& /* p */,
                      const NOX::Abstract::MultiVector& input,
                      NOX::Abstract::MultiVector& result) const
 {

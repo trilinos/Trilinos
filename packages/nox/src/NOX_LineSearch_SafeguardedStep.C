@@ -108,7 +108,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
                            double& step,
                            const Abstract::Vector& dir,
-                           const Solver::Generic& s)
+                           const Solver::Generic& /* s */)
 {
   printOpeningRemarks();
 

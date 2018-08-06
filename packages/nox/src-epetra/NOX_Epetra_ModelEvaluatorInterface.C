@@ -121,7 +121,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
 bool NOX::Epetra::ModelEvaluatorInterface::
 computePreconditioner(const Epetra_Vector& x,
               Epetra_Operator& M,
-              Teuchos::ParameterList* precParams)
+              Teuchos::ParameterList* /* precParams */)
 {
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
