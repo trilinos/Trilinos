@@ -461,6 +461,15 @@ public:
     } 
   }
   
+  void bccPropagate(){
+    //while (there are empty vertices)
+      //initialize the reg frontier
+      //(also count how many empty vertices there are)
+      //call this->propagate
+      //check for articulation points
+    //endwhile
+  }
+  
   int vtxLabelUnitTest();
 
 private:

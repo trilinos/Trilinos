@@ -187,8 +187,7 @@ typedef Tpetra::Map<> map_t;
 typedef map_t::local_ordinal_type lno_t;
 typedef map_t::global_ordinal_type gno_t;
 
-int main(int narg, char **arg)
-{
+void iceSheetDriver(int narg, char** arg){
   Tpetra::ScopeGuard scope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -413,6 +412,39 @@ int main(int narg, char **arg)
   // Report the timers
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
+}
 
+void bccDriver(int narg, char** arg) {
+  Tpetra::ScopeGuard scope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int ierr = 0;
+
+  // Initialize Teuchos timer
+  Teuchos::RCP<Teuchos::Time>
+         timeFileRead(Teuchos::TimeMonitor::getNewTimer("00 FILE READ")),
+         timeDistribute(Teuchos::TimeMonitor::getNewTimer("01 DISTRIBUTE")),
+         timeConstruct(Teuchos::TimeMonitor::getNewTimer("02 CONSTRUCT")),
+         timeSolve(Teuchos::TimeMonitor::getNewTimer("03 SOLVE"));
+  
+  //need to:
+  //  1) read in the global graph on proc 0
+  //  2) run lca on the global graph on proc 0
+  //  3) distribute the src/dst arrays to other procs
+  //  4) distribute potential art-pts to other procs
+  //  5) build local graph instances
+  //  6) initialize propagation classes for local problem instances
+  //  7) call bccProp(); or whatever it'll be called
+  //  8) report the labeling.
+  
+}
+
+int main(int narg, char **arg)
+{
+  if(!strncmp(arg[6],"i",1)){
+    iceSheetDriver(narg, arg);
+  } else {
+    bccDriver(narg, arg);
+  }
   return 0;
 }
