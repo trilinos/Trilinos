@@ -124,7 +124,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 bool
 NOX::Multiphysics::Solver::FixedPointBased::reset(
       const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
-      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i,
+      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& /* i */,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t,
       const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
@@ -143,8 +143,8 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
 
 void
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const NOX::Abstract::Vector& initialGuess,
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
+      const NOX::Abstract::Vector& /* initialGuess */,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& /* t */)
 {
   std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
@@ -152,7 +152,7 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
 
 void
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const NOX::Abstract::Vector& initialGuess)
+      const NOX::Abstract::Vector& /* initialGuess */)
 {
   std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);

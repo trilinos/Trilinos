@@ -809,8 +809,8 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
-                         Teuchos::ParameterList& params,
+NOX::Thyra::Group::applyRightPreconditioning(bool /* useTranspose */,
+                         Teuchos::ParameterList& /* params */,
                          const NOX::Abstract::Vector& input,
                          NOX::Abstract::Vector& result) const
 {

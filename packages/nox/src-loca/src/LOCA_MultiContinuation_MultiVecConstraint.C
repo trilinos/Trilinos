@@ -118,14 +118,14 @@ LOCA::MultiContinuation::MultiVecConstraint::setX(
 }
 
 void
-LOCA::MultiContinuation::MultiVecConstraint::setParam(int paramID, double val)
+LOCA::MultiContinuation::MultiVecConstraint::setParam(int /* paramID */, double /* val */)
 {
 }
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::setParams(
-             const std::vector<int>& paramIDs,
-             const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& /* paramIDs */,
+             const NOX::Abstract::MultiVector::DenseMatrix& /* vals */)
 {
 }
 

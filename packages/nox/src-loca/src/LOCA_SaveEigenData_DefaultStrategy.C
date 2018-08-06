@@ -55,8 +55,8 @@
 
 LOCA::SaveEigenData::DefaultStrategy::DefaultStrategy(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) :
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
+    const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) :
   globalData(global_data)
 {
 }
@@ -67,10 +67,10 @@ LOCA::SaveEigenData::DefaultStrategy::~DefaultStrategy()
 
 NOX::Abstract::Group::ReturnType
 LOCA::SaveEigenData::DefaultStrategy::save(
-         Teuchos::RCP< std::vector<double> >& evals_r,
-         Teuchos::RCP< std::vector<double> >& evals_i,
-         Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
-             Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
+         Teuchos::RCP< std::vector<double> >& /* evals_r */,
+         Teuchos::RCP< std::vector<double> >& /* evals_i */,
+         Teuchos::RCP< NOX::Abstract::MultiVector >& /* evecs_r */,
+             Teuchos::RCP< NOX::Abstract::MultiVector >& /* evecs_i */)
 {
   return NOX::Abstract::Group::Ok;
 }

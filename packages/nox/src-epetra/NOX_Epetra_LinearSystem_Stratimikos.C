@@ -423,10 +423,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-applyRightPreconditioning(bool useTranspose,
-              Teuchos::ParameterList& params,
-              const NOX::Epetra::Vector& input,
-              NOX::Epetra::Vector& result) const
+applyRightPreconditioning(bool /* useTranspose */,
+              Teuchos::ParameterList& /* params */,
+              const NOX::Epetra::Vector& /* input */,
+              NOX::Epetra::Vector& /* result */) const
 {
 
 std::cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
@@ -437,7 +437,7 @@ return false;
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
 createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
-             bool recomputeGraph) const
+             bool /* recomputeGraph */) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -557,8 +557,8 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-recomputePreconditioner(const NOX::Epetra::Vector& x,
-            Teuchos::ParameterList& linearSolverParams) const
+recomputePreconditioner(const NOX::Epetra::Vector& /* x */,
+            Teuchos::ParameterList& /* linearSolverParams */) const
 {
 std::cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
      << " NOT IMPLEMENTED " << std::endl;

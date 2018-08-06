@@ -138,7 +138,7 @@ LOCA::LAPACK::Group::computeJacobian() {
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverse(
-                     Teuchos::ParameterList& p,
+                     Teuchos::ParameterList& /* p */,
                      const NOX::Abstract::Vector& input,
                      NOX::Abstract::Vector& result) const
 {
@@ -164,7 +164,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverse(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
-                     Teuchos::ParameterList& p,
+                     Teuchos::ParameterList& /* p */,
                      const NOX::Abstract::MultiVector& input,
                      NOX::Abstract::MultiVector& result) const
 {
@@ -363,7 +363,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
-                         Teuchos::ParameterList& params,
+                         Teuchos::ParameterList& /* params */,
                      const NOX::Abstract::MultiVector& input,
                      NOX::Abstract::MultiVector& result) const
 {
@@ -405,7 +405,7 @@ LOCA::LAPACK::Group::isComplex() const
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::computeComplex(double frequency)
+LOCA::LAPACK::Group::computeComplex(double /* frequency */)
 {
   std::string callingFunction = "LOCA::LAPACK::computeComplex()";
 
@@ -452,10 +452,10 @@ LOCA::LAPACK::Group::computeComplex(double frequency)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
-                  const NOX::Abstract::Vector& input_imag,
-                  NOX::Abstract::Vector& result_real,
-                  NOX::Abstract::Vector& result_imag) const
+LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& /* input_real */,
+                  const NOX::Abstract::Vector& /* input_imag */,
+                  NOX::Abstract::Vector& /* result_real */,
+                  NOX::Abstract::Vector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
@@ -499,10 +499,10 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexMultiVector(
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
@@ -559,11 +559,11 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverseMultiVector(
-                Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
@@ -622,10 +622,10 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTranspose(
-                  const NOX::Abstract::Vector& input_real,
-                  const NOX::Abstract::Vector& input_imag,
-                  NOX::Abstract::Vector& result_real,
-                  NOX::Abstract::Vector& result_imag) const
+                  const NOX::Abstract::Vector& /* input_real */,
+                  const NOX::Abstract::Vector& /* input_imag */,
+                  NOX::Abstract::Vector& /* result_real */,
+                  NOX::Abstract::Vector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
@@ -669,10 +669,10 @@ LOCA::LAPACK::Group::applyComplexTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
@@ -729,11 +729,11 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
-                Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian

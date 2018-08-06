@@ -72,7 +72,7 @@ NOX::LAPACK::Vector::Vector(int N, double *v) :
 }
 
 NOX::LAPACK::Vector::Vector(const NOX::LAPACK::Vector& source,
-                NOX::CopyType type) :
+                NOX::CopyType /* type */) :
   n(source.n),
   x(source.x)
 {

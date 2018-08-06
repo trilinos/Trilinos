@@ -56,7 +56,7 @@
 
 LOCA::MultiPredictor::Constant::Constant(
           const Teuchos::RCP<LOCA::GlobalData>& global_data,
-          const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
+          const Teuchos::RCP<Teuchos::ParameterList>& /* predParams */) :
   globalData(global_data),
   predictor(),
   secant(),

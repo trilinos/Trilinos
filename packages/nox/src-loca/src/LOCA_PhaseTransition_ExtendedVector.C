@@ -164,8 +164,8 @@ LOCA::PhaseTransition::ExtendedVector::ExtendedVector(
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::PhaseTransition::ExtendedVector::generateMultiVector(
                             int nColumns,
-                            int nVectorRows,
-                            int nScalarRows) const
+                            int /* nVectorRows */,
+                            int /* nScalarRows */) const
 {
   return
     Teuchos::rcp(new LOCA::PhaseTransition::ExtendedMultiVector(
