@@ -229,10 +229,6 @@ namespace FROSch {
         return 0;
     }
     
-    template <class SC,class LO,class GO,class NO>
-    void IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::AddCoarseDofMaps(LOVecPtr2D &partMappings){
-        FROSCH_ASSERT(0!=0,"AddCoarseDofMaps not implemented yet...");
-    }
 }
 
 #endif

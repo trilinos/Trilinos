@@ -43,7 +43,6 @@
 #define _FROSCH_TOOLS_DEF_HPP
 
 #include <FROSch_Tools_decl.hpp>
-using namespace std;
 namespace FROSch {
     
     template <class LO,class GO,class NO>

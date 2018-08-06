@@ -84,10 +84,7 @@ namespace FROSch {
         
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
-#ifdef COARSE_TIMER
-        Teuchos::TimeMonitor CoarseOperator_InitInterface_TimeMonitor(*this->CoarseOperator_InitInterface_Timer);
-        CoarseOperator_InitInterface_TimeMonitor.setStackedTimer(Teuchos::null);
-#endif
+
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
         
@@ -193,9 +190,7 @@ namespace FROSch {
                     numEntitiesGlobal[i] = 0;
                 }
             }
-#ifdef COARSE_TIMER
-            CoarseOperator_InitInterface_TimeMonitor.~TimeMonitor();
-#endif
+
             if (this->MpiComm_->getRank() == 0) {
                 std::cout << "\n\
                 --------------------------------------------\n\
@@ -212,13 +207,9 @@ namespace FROSch {
             this->BlockCoarseSize_[blockId] = numEntitiesGlobal[0];
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-//            this->AddCoarseDofMaps(partMappings);//important for MueLu nullspace. maps saved in CoarseDofMaps_
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-#ifdef COARSE_TIMER
-            Teuchos::TimeMonitor CoarseOperator_InitPhi_TimeMonitor(*this->CoarseOperator_InitPhi_Timer);
-#endif
             phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);
         }
         

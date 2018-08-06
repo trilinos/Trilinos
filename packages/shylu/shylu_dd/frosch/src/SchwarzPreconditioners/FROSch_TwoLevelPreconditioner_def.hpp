@@ -217,9 +217,9 @@ namespace FROSch {
     {
         return "GDSW Preconditioner";
     }
+
     template <class SC,class LO,class GO,class NO>
-    
-    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
     {
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);

@@ -43,8 +43,6 @@
 #define _FROSCH_COARSEOPERATOR_DEF_HPP
 
 #include <FROSch_CoarseOperator_decl.hpp>
-#include <Epetra_CrsMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
 namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
@@ -60,15 +58,10 @@ namespace FROSch {
     GatheringMaps_ (0),
     CoarseSolveMap_ (),
     CoarseSolveRepeatedMap_ (),
-    CoarseSolver_ (),
-    CoarseDofMaps_(),
     BlockCoarseSize_(),
+    CoarseSolver_ (),
     DistributionList_ (sublist(parameterList,"Distribution")),
     CoarseSolveExporters_ (0)
-#ifdef COARSE_TIMER
-    ,CoarseOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Apply")),
-    CoarseOperator_BuildMat_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Build Coarse Matrix (RAP)"))
-#endif
     {
         
     }
@@ -88,9 +81,6 @@ namespace FROSch {
                                             SC beta) const
     {
         static int i = 0;
-#ifdef COARSE_TIMER
-        Teuchos::TimeMonitor CoarseOperator_Apply_TimeMonitor(*CoarseOperator_Apply_Timer);
-#endif
         if (this->IsComputed_) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
             *xTmp = x;
@@ -280,9 +270,7 @@ namespace FROSch {
     typename CoarseOperator<SC,LO,GO,NO>::CrsMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseMatrix()
     {
         
-#ifdef COARSE_TIMER
-        Teuchos::TimeMonitor CoarseOperator_BuildMat_TimeMonitor(*CoarseOperator_BuildMat_Timer);
-#endif
+
         CoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(Phi_->getDomainMap(),1);
         CrsMatrixPtr k0 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseMap_,CoarseMap_->getNodeNumElements());
         
@@ -296,14 +284,6 @@ namespace FROSch {
         }
         return k0;
     }
-    
-    /*
-    CoarseMap_.reset(new Epetra_Map(Phi_->DomainMap()));
-    CrsMatrixPtr k0(new Epetra_CrsMatrix(Copy,*CoarseMap_,CoarseMap_->getNodeNumElements())); // schoener machen mit ColMap
-    Epetra_CrsMatrix tmp(Copy,K_->getRowMap(),50);
-    EpetraExt::MatrixMatrix::Multiply(*K_,false,*Phi_,false,tmp);
-    EpetraExt::MatrixMatrix::Multiply(*Phi_,true,tmp,false,*k0);
-     */
     
     template<class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(CrsMatrixPtr &k0)

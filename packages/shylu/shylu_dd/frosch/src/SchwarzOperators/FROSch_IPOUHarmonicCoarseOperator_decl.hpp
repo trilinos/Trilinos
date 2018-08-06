@@ -131,9 +131,7 @@ namespace FROSch {
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
         std::string description() const;
-        
-        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings);
-        
+                
     protected:
         
         int buildCoarseSpace(UN dimension,

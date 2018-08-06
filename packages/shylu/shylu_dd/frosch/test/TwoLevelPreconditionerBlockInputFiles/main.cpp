@@ -66,7 +66,6 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
-
 #include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 
 //#include "Tools/FROSch_Tools_def.hpp"

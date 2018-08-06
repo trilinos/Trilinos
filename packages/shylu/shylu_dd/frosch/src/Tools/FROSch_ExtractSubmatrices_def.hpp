@@ -43,7 +43,6 @@
 #define _FROSCH_EXTRACTSUBMATRICES_DEF_HPP
 
 #include <FROSch_ExtractSubmatrices_decl.hpp>
-using namespace std;
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>

@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_COARSEOPERATOR_DECL_HPP
 #define _FROSCH_COARSEOPERATOR_DECL_HPP
-#define COARSE_TIMER
+
 #include <FROSch_SchwarzOperator_def.hpp>
 
 // TODO: Member sortieren!?
@@ -90,9 +90,6 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView ConstSCVecView;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::Time_Type Time_Type;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::TimePtr_Type TimePtr_Type;
-        
         CoarseOperator(CrsMatrixPtr k,
                        ParameterListPtr parameterList);
         
@@ -119,7 +116,6 @@ namespace FROSch {
         virtual void applyPhi(MultiVector& x,
                              MultiVector& y) const;
 
-        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings) = 0;
         
     protected:
         
@@ -143,7 +139,6 @@ namespace FROSch {
         MapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
         MapPtr CoarseSolveRepeatedMap_;
-        MapPtrVecPtr CoarseDofMaps_;
         GOVecPtr BlockCoarseSize_;
         
         SubdomainSolverPtr CoarseSolver_;
@@ -152,10 +147,6 @@ namespace FROSch {
         
         ExporterPtrVecPtr CoarseSolveExporters_;
         
-#ifdef COARSE_TIMER
-        TimePtr_Type CoarseOperator_Apply_Timer;
-        TimePtr_Type CoarseOperator_BuildMat_Timer;
-#endif
     };
     
 }

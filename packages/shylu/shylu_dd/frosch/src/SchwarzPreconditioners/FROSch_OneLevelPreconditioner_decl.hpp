@@ -46,11 +46,6 @@
 
 namespace FROSch {
     
-//    template <class SC = Xpetra::Operator<>::scalar_type,
-//    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-//    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-//    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-//    class OneLevelPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
     template <class SC,
     class LO,
     class GO,

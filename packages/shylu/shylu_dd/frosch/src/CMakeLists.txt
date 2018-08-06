@@ -96,17 +96,16 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
-  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
-  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
   Tools/FROSch_SubdomainSolver_decl.hpp
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
-
 )
 
 # Set sources

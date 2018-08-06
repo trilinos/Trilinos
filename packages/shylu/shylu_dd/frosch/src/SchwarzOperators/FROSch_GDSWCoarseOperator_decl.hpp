@@ -90,9 +90,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr BoolVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::Time_Type Time_Type;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::TimePtr_Type TimePtr_Type;
+            
         
         GDSWCoarseOperator(CrsMatrixPtr k,
                            ParameterListPtr parameterList);
@@ -145,8 +143,6 @@ namespace FROSch {
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
         std::string description() const;
-        
-        virtual void AddCoarseDofMaps(LOVecPtr2D &partMappings);
         
     protected:
         
@@ -211,10 +207,7 @@ namespace FROSch {
         
         
         DDInterfacePtr DDInterface_;
-#ifdef COARSE_TIMER
-        TimePtr_Type  CoarseOperator_InitInterface_Timer;
-        TimePtr_Type  CoarseOperator_InitPhi_Timer;
-#endif
+
     };
     
 }

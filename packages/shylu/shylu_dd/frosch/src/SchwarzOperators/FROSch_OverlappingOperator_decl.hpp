@@ -73,10 +73,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::Time_Type Time_Type;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::TimePtr_Type TimePtr_Type;
 
-        
         OverlappingOperator(CrsMatrixPtr k,
                             ParameterListPtr parameterList);
         
@@ -103,9 +100,7 @@ namespace FROSch {
         
         CrsMatrixPtr OverlappingMatrix_;
         
-        MapPtr OverlappingMap_;
-        
-        MapPtr RepeatedMap_;
+        MapPtr OverlappingMap_;            
         
         ImporterPtr Scatter_;
         
@@ -117,11 +112,6 @@ namespace FROSch {
         
         int levelID_;
         
-#ifdef OVERLAPPING_TIMER
-        TimePtr_Type  OverlappingOperator_Init_Timer;
-        TimePtr_Type  OverlappingOperator_Compute_Timer;
-        TimePtr_Type  OverlappingOperator_Apply_Timer;
-#endif
     };
     
 }

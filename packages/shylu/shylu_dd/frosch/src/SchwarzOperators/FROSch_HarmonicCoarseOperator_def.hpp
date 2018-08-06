@@ -59,9 +59,6 @@ namespace FROSch {
     IDofs_ (0),
     DofsMaps_ (0),
     NumberOfBlocks_ (0)
-#ifdef COARSE_TIMER
-    ,CoarseOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Coarse Operator: Compute"))
-#endif
     {
         
     }
@@ -69,9 +66,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::compute()
     {
-#ifdef COARSE_TIMER
-        Teuchos::TimeMonitor CoarseOperator_Compute_TimeMonitor(*CoarseOperator_Compute_Timer);
-#endif
+
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
             cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";

@@ -11,10 +11,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoLevelBlockInputFilesCopyFiles
     EXEDEPS twolevelblockinputfiles
 )
 
-#TRIBITS_ADD_TEST(
-#    twolevelblockinputfiles
-#    NAME test_twolevelblockinputfiles_2d_gdsw
-#    ARGS "--DIM=2 --CL=GDSW"
-#    COMM mpi
-#    NUM_MPI_PROCS 4
-#)
+TRIBITS_ADD_TEST(
+    twolevelblockinputfiles
+    NAME test_twolevelblockinputfiles_2d_gdsw
+    ARGS "--DIM=2 --CL=GDSW"
+    COMM mpi
+    NUM_MPI_PROCS 4
+)

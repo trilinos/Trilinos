@@ -81,7 +81,7 @@
             <ParameterList name="Blocks">
                 <ParameterList name="1">
                     <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                    <Parameter name="Exclude"	                            type="string"   value="0"/>
+                    <Parameter name="Exclude"	                            type="string"   value="2"/>
                     <ParameterList name="InterfacePartitionOfUnity">
                         <Parameter name="Type"                              type="string"   value="GDSW"/>
                         <ParameterList name="GDSW">
@@ -128,7 +128,7 @@
                     </ParameterList>
                     <ParameterList name="2">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                        <Parameter name="Exclude"	                            type="string"   value="0"/>
+                        <Parameter name="Exclude"	                            type="string"   value="1"/>
                         <ParameterList name="InterfacePartitionOfUnity">
                             <Parameter name="Type"                              type="string"   value="GDSW"/>
                             <ParameterList name="GDSW">
@@ -215,7 +215,24 @@
             <ParameterList name="Blocks">
                 <ParameterList name="1">
                     <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                    <Parameter name="Rotations"                             type="bool"     value="true"/>
+                    <Parameter name="Exclude"	                            type="string"   value="2"/>
+                    <Parameter name="Rotations"                             type="bool"     value="false"/>
+                    <ParameterList name="Custom">
+                        <Parameter name="Vertices: translations"            type="bool"     value="true"/>
+                        <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
+                        <Parameter name="ShortEdges: rotations"             type="bool"     value="true"/>
+                        <Parameter name="StraightEdges: translations"       type="bool"     value="true"/>
+                        <Parameter name="StraightEdges: rotations"          type="bool"     value="true"/>
+                        <Parameter name="Edges: translations"               type="bool"     value="true"/>
+                        <Parameter name="Edges: rotations"                  type="bool"     value="true"/>
+                        <Parameter name="Faces: translations"               type="bool"     value="true"/>
+                        <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
+                    </ParameterList>
+                </ParameterList>
+                <ParameterList name="2">
+                    <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                    <Parameter name="Exclude"	                            type="string"   value="1"/>
+                    <Parameter name="Rotations"                             type="bool"     value="false"/>
                     <ParameterList name="Custom">
                         <Parameter name="Vertices: translations"            type="bool"     value="true"/>
                         <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
@@ -345,8 +362,15 @@
             <ParameterList name="Blocks">
                 <ParameterList name="1">
                     <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                    <Parameter name="Exclude"	                            type="string"   value="2"/>
                     <Parameter name="Option"                                type="int"      value="1"/>
-                    <Parameter name="Rotations"                             type="bool"     value="true"/>
+                    <Parameter name="Rotations"                             type="bool"     value="false"/>
+                </ParameterList>
+                <ParameterList name="1">
+                    <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                    <Parameter name="Exclude"	                            type="string"   value="1"/>
+                    <Parameter name="Option"                                type="int"      value="1"/>
+                    <Parameter name="Rotations"                             type="bool"     value="false"/>
                 </ParameterList>
             </ParameterList>
             

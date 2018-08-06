@@ -119,7 +119,7 @@ namespace FROSch {
                 //nullspace of upper part
                 for (unsigned j=0; j<nullspace->getLocalLength(); j++) {
                     GO globIndex = nullspace->getMap()->getGlobalElement(j);
-                    if (globIndex<=(dofs*blockCoarseSize[0]-1)) {
+                    if (globIndex<=(GO)(dofs*blockCoarseSize[0]-1)) {
                         unsigned vecIndex = (globIndex)%dofs;
                         nullspace->getDataNonConst(vecIndex)[j] = 1.;
                     }

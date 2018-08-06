@@ -43,8 +43,6 @@
 #define _FROSCH_OVERLAPPINGOPERATOR_DEF_HPP
 
 #include <FROSch_OverlappingOperator_decl.hpp>
-#include <Epetra_CrsMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
 
 namespace FROSch {
     
@@ -54,17 +52,11 @@ namespace FROSch {
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     OverlappingMatrix_ (),
     OverlappingMap_ (),
-    RepeatedMap_(),
     Scatter_(),
     SubdomainSolver_ (),
     Multiplicity_(),
     Combine_(),
     levelID_(this->ParameterList_->get("Level ID",1))
-#ifdef OVERLAPPING_TIMER
-    ,OverlappingOperator_Init_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Init" )),
-    OverlappingOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Compute" )),
-    OverlappingOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Apply" ))
-#endif
     {
         if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Averaging")) {
             Combine_ = Averaging;
@@ -92,9 +84,6 @@ namespace FROSch {
     {
         FROSCH_ASSERT(this->IsComputed_,"ERROR: OverlappingOperator has to be computed before calling apply()");
 
-#ifdef OVERLAPPING_TIMER
-        Teuchos::TimeMonitor OverlappingOperator_Apply_TimeMonitor(*OverlappingOperator_Apply_Timer);
-#endif
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
         
@@ -102,18 +91,11 @@ namespace FROSch {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }
         
-        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-        
-        
         MultiVectorPtr xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
         MultiVectorPtr yOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
 
-//        xTmp->describe(*fancy,Teuchos::VERB_EXTREME);
-//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
         xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
 
-        
-//        xOverlap->describe(*fancy,Teuchos::VERB_EXTREME);
         xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
         
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
@@ -155,9 +137,6 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
 
-#ifdef OVERLAPPING_TIMER
-        Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
-#endif
         Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
         if (Combine_ == Averaging) {
             Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
@@ -174,9 +153,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
-#ifdef OVERLAPPING_TIMER
-        Teuchos::TimeMonitor OverlappingOperator_Compute_TimeMonitor(*OverlappingOperator_Compute_Timer);
-#endif
+
         if (this->IsComputed_) {// already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
             OverlappingMatrix_ = this->K_;
         }

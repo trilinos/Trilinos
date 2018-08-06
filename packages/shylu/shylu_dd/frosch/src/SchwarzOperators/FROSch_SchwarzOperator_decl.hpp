@@ -142,9 +142,6 @@ namespace FROSch {
         typedef Teuchos::Array<bool> BoolVec;
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
         
-        typedef Teuchos::Time               Time_Type;
-        typedef Teuchos::RCP<Time_Type>     TimePtr_Type;
-
         
         SchwarzOperator(CommPtr comm);
         
