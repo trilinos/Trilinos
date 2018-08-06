@@ -347,8 +347,8 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 	}
 
       }
-      float margin_risk = 1 - avatarOutput[chosen_option_id][avatarGoodClass_ + 1];
-      if(margin_risk > .75){
+      float margin_risk = 100 - avatarOutput[chosen_option_id][avatarGoodClass_ + 1];
+      if(margin_risk > 75){
 	GetOStream(Runtime0)<< "WARNING: Margin risk: Margin risk is above recommended level, meaning there is a high chance of extrapolation" <<std::endl;
       }
     }
