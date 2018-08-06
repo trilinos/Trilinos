@@ -329,7 +329,6 @@ main (int argc, char *argv[])
             avatar.Cleanup();
           }
 #endif
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
           for(int i=0; i<numMueluRebuilds+1; i++) {
             if (inputList.isSublist("MueLu")) {
               ParameterList mueluParams = inputList.sublist("MueLu");
