@@ -345,8 +345,12 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 	    chosen_option_id = acceptableCombos[x];
 	  }
 	}
-      }
 
+      }
+      float margin_risk = 1 - avatarOutput[chosen_option_id][avatarGoodClass_ + 1];
+      if(margin_risk > .75){
+	GetOStream(Runtime0)<< "WARNING: Margin risk is above recommended level, meaning there is a high chance of extrapolation" <<std:endl;
+      }
     }
 
     // Generate the parameterList from the chosen option
