@@ -7,6 +7,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+#include "Panzer_Product.hpp"
 #include "Panzer_DotProduct.hpp"
 #include "Panzer_Sum.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
@@ -14,6 +15,8 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include "MiniEM_GaussianPulse.hpp"
+#include "MiniEM_InversePermeability.hpp"
+#include "MiniEM_Permittivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -95,41 +98,72 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
-      if(type=="ELECTROMAGNETIC ENERGY") {
+      if(type=="INVERSE PERMEABILITY") {
         double mu = plist.get<double>("mu");
-        double epsilon = plist.get<double>("epsilon");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu));
+	evaluators->push_back(e);
 
-        // compute ||E||^2
+        found = true;
+      }
+      if(type=="PERMITTIVITY") {
+        double epsilon = plist.get<double>("epsilon");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::Permittivity<EvalT,panzer::Traits>(key,*ir,fl,epsilon,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="ELECTROMAGNETIC ENERGY") {
+        // compute (E, epsilon*E)
         {
           Teuchos::ParameterList input;
           input.set("Result Name", "E_SQUARED");
           input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
           input.set("Vector A Name", "E_edge");
           input.set("Vector B Name", "E_edge");
+          input.set("Field Multiplier", "PERMITTIVITY");
 
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);
         }
 
-        // compute ||B||^2
+        // compute (B, 1/mu * B)
         {
-          Teuchos::ParameterList input;
-          input.set("Result Name", "B_SQUARED");
-          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
-          input.set("Vector A Name", "B_face");
-          input.set("Vector B Name", "B_face");
+          if (ir->spatial_dimension == 3) {
+            Teuchos::ParameterList input;
+            input.set("Result Name", "B_SQUARED");
+            input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+            input.set("Vector A Name", "B_face");
+            input.set("Vector B Name", "B_face");
+            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
 
-          RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
-	  evaluators->push_back(e);
+            RCP< Evaluator<panzer::Traits> > e =
+              rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          } else if (ir->spatial_dimension == 2) {
+            Teuchos::ParameterList input;
+            input.set("Product Name", "B_SQUARED");
+            RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+            valuesNames->push_back("B_face");
+            valuesNames->push_back("B_face");
+            input.set("Values Names",valuesNames);
+            input.set("Data Layout",ir->dl_scalar);
+            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
+
+            RCP< Evaluator<panzer::Traits> > e =
+              rcp(new panzer::Product<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          }
         }
 
-        // compute epsilon/2*||E||^2 + 1/(2*mu)*||B||^2
+        // compute 1/2*(E, epsilon * E) + 1/2*(B, 1/mu * B)
         {
           RCP<std::vector<double> > coeffs = rcp(new std::vector<double>);
-          coeffs->push_back(0.5*epsilon);
-          coeffs->push_back(0.5/mu);
+          coeffs->push_back(0.5);
+          coeffs->push_back(0.5);
   
           RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
           valuesNames->push_back("E_SQUARED");
@@ -140,7 +174,7 @@ buildClosureModels(const std::string& model_id,
           input.set("Values Names",valuesNames);
           input.set("Data Layout",ir->dl_scalar);
           input.set<RCP<const std::vector<double> > >("Scalars", coeffs);
-        
+
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);

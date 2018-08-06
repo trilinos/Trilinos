@@ -220,7 +220,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
    else if(rank==3) {
       std::size_t entries = data.extent(2);
  
-      TEUCHOS_TEST_FOR_EXCEPTION(dataVector.NumVectors()!=entries,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dataVector.NumVectors()!=static_cast<int>(entries),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
