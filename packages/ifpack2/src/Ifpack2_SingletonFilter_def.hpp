@@ -244,7 +244,7 @@ size_t SingletonFilter<MatrixType>::getNodeNumEntries() const
 }
 
 template<class MatrixType>
-size_t SingletonFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+size_t SingletonFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal /* globalRow */) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getNumEntriesInGlobalRow.");
 }
@@ -292,10 +292,10 @@ bool SingletonFilter<MatrixType>::isFillComplete() const
 }
 
 template<class MatrixType>
-void SingletonFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                                                  const Teuchos::ArrayView<Scalar> &Values,
-                                                  size_t &NumEntries) const
+void SingletonFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
+                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
+                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
+                                                  size_t &/* NumEntries */) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowCopy.");
 }
@@ -326,17 +326,17 @@ void SingletonFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
 }
 
 template<class MatrixType>
-void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayView<const Scalar> &values) const
+void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
+                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
+                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getGlobalRowView.");
 }
 
 template<class MatrixType>
-void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayView<const Scalar> &values) const
+void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
+                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
+                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getLocalRowView.");
 }
@@ -349,13 +349,13 @@ void SingletonFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOr
 }
 
 template<class MatrixType>
-void SingletonFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void SingletonFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not support leftScale.");
 }
 
 template<class MatrixType>
-void SingletonFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void SingletonFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not support rightScale.");
 }
@@ -364,8 +364,8 @@ template<class MatrixType>
 void SingletonFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                        Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                                        Teuchos::ETransp mode,
-                                       Scalar alpha,
-                                       Scalar beta) const
+                                       Scalar /* alpha */,
+                                       Scalar /* beta */) const
 {
   typedef Scalar DomainScalar;
   typedef Scalar RangeScalar;
