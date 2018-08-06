@@ -299,7 +299,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    int * avatarOutput;
+    int ** avatarOutput;
     {
       std::string testString;
       for(int i=0; i<num_combos; i++) {
@@ -319,7 +319,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
+      if(avatarOutput[i][0] == avatarGoodClass_) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
@@ -330,9 +330,23 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
                            << "         An arbitrary set of options will be chosen instead"<<std::endl;    
     }
     else {
-      // As a placeholder, we'll choose the first acceptable combination.  Later we can do something smarter
-      //TODO: Look at other options to choose best possible combination
-      chosen_option_id = acceptableCombos[0];
+      // If there is only one acceptable combination, use it; 
+      // otherwise, find the parameter choice with the highest
+      // probability of success
+      if(acceptableCombos.size() == 1){
+	chosen_option_id = acceptableCombos[0];
+      } 
+      else {
+	int best_prob = avatarOutput[0][avatarOutput[0][0] + 1];
+	chosen_option_id = acceptableCombos[0];
+	for(int x=0; x<acceptableCombos.size(); x++){
+	  if(avatarOutput[x][avatarOutput[x][0] + 1] >= best_prob){
+	    best_prob =  avatarOutput[x][avatarOutput[x][0] + 1];
+	    chosen_option_id = acceptableCombos[x];
+	  }
+	}
+      }
+
     }
 
     // Generate the parameterList from the chosen option
