@@ -236,7 +236,7 @@ namespace FROSch {
         this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
         MultiVectorPtr mVPhiI = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        SC thresholdPhi = (SC) this->ParameterList_->get("Threshold Phi",1.e-8);
+        SC thresholdPhi = this->ParameterList_->get("Threshold Phi",1.e-8);
         //Build mVPhiGamma
         MultiVectorPtr mVPhiGamma = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
         LO jj=0;
@@ -339,29 +339,7 @@ namespace FROSch {
             postIndex[i] = maxGID+1;
         }
         priorIndex[0] = -1;
-        
-        // Now we have to insert the values to the global matrix Phi
-        // IST DAS LANGSAM??????? TESTEN!!!!!
-//        for (UN i=0; i<mVPhiI->getLocalLength(); i++) {
-//            indices.resize(0);
-//            values.resize(0);
-//            GO gid = repeatedMap->getGlobalElement(indicesIDofsAll[i]);
-//            for (UN j=0; j<mVPhiI->getNumVectors(); j++) {
-//                IsInBlockRange(j)
-//                valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
-//                if (fabs(valueTmp) > 1.0e-8) {
-//                    indices.push_back(j);
-//                    values.push_back(valueTmp);
-//                }
-//            }
-//            
-//            // CHECK, IF OK?!?!?
-//            iD = this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i]));
-//            //ID = IndicesI[0][i];
-//            if (iD!=-1) {
-//                this->Phi_->insertLocalValues(iD,indices(),values());
-//            }
-//        }
+ 
 
         // Now we have to insert the values to the global matrix Phi
         // IST DAS LANGSAM??????? TESTEN!!!!!
@@ -385,7 +363,7 @@ namespace FROSch {
                     }
                 }
                 if (use) {
-                    valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
+                    valueTmp=mVPhiI->getData(j)[i];
                     if (fabs(valueTmp) > thresholdPhi) {
                         indices.push_back(j);
                         values.push_back(valueTmp);

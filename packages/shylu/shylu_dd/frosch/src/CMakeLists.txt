@@ -76,6 +76,8 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_HarmonicCoarseOperator_def.hpp
   SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_def.hpp
+  SchwarzOperators/FROSch_MultiplicativeOperator_decl.hpp
+  SchwarzOperators/FROSch_MultiplicativeOperator_def.hpp
   SchwarzOperators/FROSch_OverlappingOperator_decl.hpp
   SchwarzOperators/FROSch_OverlappingOperator_def.hpp
   SchwarzOperators/FROSch_RGDSWCoarseOperator_decl.hpp
@@ -104,6 +106,7 @@ APPEND_SET(HEADERS
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
+
 )
 
 # Set sources

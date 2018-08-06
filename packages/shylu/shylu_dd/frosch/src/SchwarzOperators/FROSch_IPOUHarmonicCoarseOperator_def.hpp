@@ -169,7 +169,7 @@ namespace FROSch {
         blockIdStringstream << blockId+1;
         std::string blockIdString = blockIdStringstream.str();
         Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-        
+
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
         if (useForCoarseSpace) {
@@ -178,6 +178,8 @@ namespace FROSch {
             
             // Compute Interface Partition of Unity
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
+
+                coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true)); 
                 InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW")));
             } else {
                 FROSCH_ASSERT(0!=0,"InterfacePartitionOfUnity Type is unknown.");

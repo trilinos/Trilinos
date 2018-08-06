@@ -34,7 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Christian Hochmuth (c.hochmuth@uni-koeln.de)
+// Questions? Contact   Alexander Heinlein (alexander.heinlein@uni-koeln.de)
+//                      Christian Hochmuth (c.hochmuth@uni-koeln.de)
 //
 // ************************************************************************
 //@HEADER
@@ -54,8 +55,8 @@ namespace FROSch {
     {
         if (this->ParameterList_->get("TwoLevel",true)) {            
             if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
-                FROSCH_ASSERT(false,"not implemented for block.");
-                this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").set("Test Unconnected Interface",false);
+//                FROSCH_ASSERT(false,"not implemented for block.");
+                this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",false);
                 CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"IPOUHarmonicCoarseOperator")));
             } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
                 this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",false);
@@ -66,7 +67,12 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
             } // Todo: Möglichkeit die einzelnen Level auszuschalten
-            this->SumOperator_->addOperator(CoarseOperator_);
+            if (this->UseMultiplicative_) {
+                this->MultiplicativeOperator_->addOperator(CoarseOperator_);
+            }
+            else{
+                this->SumOperator_->addOperator(CoarseOperator_);
+            }
         }
     }
     
@@ -78,8 +84,8 @@ namespace FROSch {
                                                              GOVecPtr blockMaxGIDVec,
                                                              int overlap,
                                                              MapPtrVecPtr repeatedMapVec,
-                                                             MultiVectorPtrVecPtr nullSpaceBasisVec, //change for blocks
-                                                             MultiVectorPtrVecPtr nodeListVec, //change for blocks
+                                                             MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                             MultiVectorPtrVecPtr nodeListVec,
                                                              MapPtrVecPtr2D dofsMapsVec,
                                                              GOVecPtr2D dirichletBoundaryDofsVec)
     {
@@ -241,10 +247,23 @@ namespace FROSch {
         this->OverlappingOperator_->resetMatrix(this->K_);
         if (this->ParameterList_->get("TwoLevel",true)) {
             CoarseOperator_->resetMatrix(this->K_);
+            if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
         }
         return 0;
     }
-
+    
+    template <class SC,class LO,class GO,class NO>
+    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y)
+    {
+        if (this->UseMultiplicative_) {
+            this->MultiplicativeOperator_->preApplyCoarse(*x,*y);
+        }
+        else{
+            FROSCH_ASSERT(false,"preApplyCoarse(MultiVectorPtr &x) only implemented for MultiplicativeOperator.")
+        }
+        return 0;
+    }
+    
 }
 
 #endif

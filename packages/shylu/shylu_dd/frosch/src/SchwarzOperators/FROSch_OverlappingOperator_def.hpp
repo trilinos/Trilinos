@@ -56,19 +56,23 @@ namespace FROSch {
     OverlappingMap_ (),
     RepeatedMap_(),
     Scatter_(),
-    ScatterRestricted_(),
-    GatherRestricted_(),
     SubdomainSolver_ (),
     Multiplicity_(),
-    Restricted_(this->ParameterList_->get("Restricted",false)),
-    levelID_(this->ParameterList_->get("Level ID",96))
+    Combine_(),
+    levelID_(this->ParameterList_->get("Level ID",1))
 #ifdef OVERLAPPING_TIMER
     ,OverlappingOperator_Init_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Init" )),
     OverlappingOperator_Compute_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Compute" )),
     OverlappingOperator_Apply_Timer(Teuchos::TimeMonitor::getNewCounter("FROSch: Overlapping Operator: Level " + Teuchos::toString(levelID_) + ": Apply" ))
 #endif
     {
-        
+        if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Averaging")) {
+            Combine_ = Averaging;
+        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Full")) {
+            Combine_ = Full;
+        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Restricted")) {
+            Combine_ = Restricted;
+        }
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -117,33 +121,21 @@ namespace FROSch {
         xTmp->putScalar(0.0);
         yOverlap->replaceMap(OverlappingMap_);
 
-        if (Restricted_){
-            
-                            
-//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//            yOverlap->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//            yOverlap->describe(*fancy,Teuchos::VERB_EXTREME);
-            MultiVectorPtr yOverlapRestricted = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(RepeatedMap_,x.getNumVectors());
-
-//            yOverlapRestricted->doExport(*yOverlap,*ScatterRestricted2_,Xpetra::INSERT);
-            yOverlapRestricted->doImport(*yOverlap,*GatherRestricted_,Xpetra::INSERT);
-//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//            yOverlapRestricted->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//            yOverlapRestricted->describe(*fancy,Teuchos::VERB_EXTREME);
-//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//            xTmp->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-//            this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-
-            xTmp->doExport(*yOverlapRestricted,*ScatterRestricted_,Xpetra::ADD);
-//            xTmp->describe(*fancy,Teuchos::VERB_EXTREME);
-            
+        if (Combine_ == Restricted){
+            GO globID = 0;
+            LO localID = 0;
+            for (unsigned i=0; i<y.getNumVectors(); i++) {
+                for (unsigned j=0; j<y.getMap()->getNodeNumElements(); j++) {
+                    globID = y.getMap()->getGlobalElement(j);
+                    localID = yOverlap->getMap()->getLocalElement(globID);
+                    xTmp->getDataNonConst(i)[j] = yOverlap->getData(i)[localID];
+                }
+            }
         }
         else{
             xTmp->doExport(*yOverlap,*Scatter_,Xpetra::ADD);
         }
-        if (this->ParameterList_->get("Averaging",false)) {
+        if (Combine_ == Averaging) {
             ConstSCVecPtr scaling = Multiplicity_->getData(0);
             for (unsigned j=0; j<xTmp->getNumVectors(); j++) {
                 SCVecPtr values = xTmp->getDataNonConst(j);
@@ -166,30 +158,16 @@ namespace FROSch {
 #ifdef OVERLAPPING_TIMER
         Teuchos::TimeMonitor OverlappingOperator_Init_TimeMonitor(*OverlappingOperator_Init_Timer);
 #endif
-        if (Restricted_) {
-            ScatterRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),RepeatedMap_);
-            GatherRestricted_ = Xpetra::ImportFactory<LO,GO,NO>::Build(OverlappingMap_,RepeatedMap_);
-
-        }
         Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
-        if (this->ParameterList_->get("Averaging",false)) {
+        if (Combine_ == Averaging) {
             Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
             MultiVectorPtr multiplicityRepeated;
-            if (Restricted_) {
-                multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(RepeatedMap_,1);
-            }
-            else{
-                multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
-            }
-
+            multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
             multiplicityRepeated->putScalar(1.);
-
             ExporterPtr multiplicityExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
             Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,Xpetra::ADD);
         }
         
-//        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
-//        SubdomainSolver_->initialize();
         return 0; // RETURN VALUE
     }
     

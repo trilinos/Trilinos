@@ -75,7 +75,7 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",false);
         int option = coarseSpaceList->get("Option",1);
         bool useRotations = coarseSpaceList->get("Rotations",true);
-        
+
         if (useRotations && nodeList.is_null()) {
             FROSCH_ASSERT(option==1,"Only option 1 can be constructed without a valid node list.");
             useRotations = false;
@@ -206,7 +206,7 @@ namespace FROSch {
                 Coarse space:\n\
                 --------------------------------------------\n\
                 vertices: translations      --- " << 1 << "\n\
-                vertices: rotations         --- " << 1 << "\n\
+                vertices: rotations         --- " << useRotations << "\n\
                 --------------------------------------------\n";
             }
             this->BlockCoarseSize_[blockId] = numEntitiesGlobal[0];

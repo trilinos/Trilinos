@@ -431,6 +431,11 @@ namespace FROSch {
             FROSCH_ASSERT(0!=0,"Distribution type not defined...");
         }
         
+        if (this->Verbose_) {
+            std::cout << "### ------------------------------ ###" << std::endl;
+            std::cout << "### - NumProcs CoarseMatrix : " << NumProcsCoarseSolve_ << std::endl;
+            std::cout << "### ------------------------------ ### " << std::endl;
+        }
         return 0;
     }
     

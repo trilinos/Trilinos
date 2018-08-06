@@ -69,6 +69,7 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr SumOperatorPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiplicativeOperatorPtr MultiplicativeOperatorPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::OverlappingOperatorPtr OverlappingOperatorPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
         
@@ -108,8 +109,9 @@ namespace FROSch {
         CrsMatrixPtr K_;
         
         SumOperatorPtr SumOperator_;
+        MultiplicativeOperatorPtr MultiplicativeOperator_;
         OverlappingOperatorPtr OverlappingOperator_;
-        
+        bool UseMultiplicative_;
     };
     
 }

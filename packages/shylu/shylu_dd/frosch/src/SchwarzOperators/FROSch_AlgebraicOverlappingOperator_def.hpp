@@ -95,22 +95,11 @@ namespace FROSch {
     {
         if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
 
-        if (this->Restricted_) {
-            this->RepeatedMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(repeatedMap,1);
-        }
-        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
-//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//        std::cout << "repeated map:"<<std::endl;
-//        repeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
         for (int i=0; i<overlap; i++) {
             ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
         }
-//        this->MpiComm_->barrier();        this->MpiComm_->barrier();        this->MpiComm_->barrier();
-//        std::cout << "overlapping map:"<<std::endl;
-//        this->OverlappingMap_->describe(*fancy,Teuchos::VERB_EXTREME);
 
         return 0;
     }

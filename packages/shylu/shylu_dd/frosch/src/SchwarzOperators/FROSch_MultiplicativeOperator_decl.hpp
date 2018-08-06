@@ -34,14 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
+// Questions? Contact Christian Hochmuth (c.hochmuth@uni-koeln.de)
 //
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
-#define _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
-#define OVERLAPPING_TIMER
+#ifndef _FROSCH_MULTIPLICATIVEOPERATOR_DECL_HPP
+#define _FROSCH_MULTIPLICATIVEOPERATOR_DECL_HPP
+
 #include <FROSch_SchwarzOperator_def.hpp>
 
 namespace FROSch {
@@ -50,78 +50,76 @@ namespace FROSch {
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class OverlappingOperator : public SchwarzOperator<SC,LO,GO,NO> {
-    
+    class MultiplicativeOperator : public SchwarzOperator<SC,LO,GO,NO> {
+        
     public:
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr; 
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtr SchwarzOperatorPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVec SchwarzOperatorPtrVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVecPtr SchwarzOperatorPtrVecPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ImporterPtr ImporterPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtr ExporterPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVec BoolVec;
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
+        MultiplicativeOperator(CrsMatrixPtr k, ParameterListPtr parameterList);
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
+        MultiplicativeOperator(CrsMatrixPtr k, SchwarzOperatorPtrVecPtr operators, ParameterListPtr parameterList);
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::Time_Type Time_Type;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::TimePtr_Type TimePtr_Type;
-
+        ~MultiplicativeOperator();
         
-        OverlappingOperator(CrsMatrixPtr k,
-                            ParameterListPtr parameterList);
+        virtual int initialize();
         
-        ~OverlappingOperator();
+        virtual int initialize(MapPtr repeatedMap);
         
-        virtual int initialize() = 0;
+        virtual int compute();
         
-        virtual int compute() = 0;
+        void preApplyCoarse(MultiVector &x, MultiVector &y);
         
         virtual void apply(const MultiVector &x,
-                          MultiVector &y,
-                          bool usePreconditionerOnly,
-                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+                           MultiVector &y,
+                           bool usePreconditionerOnly,
+                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
+                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
+                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+        
+        virtual ConstMapPtr getDomainMap() const;
+        
+        virtual ConstMapPtr getRangeMap() const;
+        
+        virtual void describe(Teuchos::FancyOStream &out,
+                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        
+        virtual std::string description() const;
+        
+        int addOperator(SchwarzOperatorPtr op);
+        
+        int addOperators(SchwarzOperatorPtrVecPtr operators);
+        
+        int resetOperator(UN iD,
+                          SchwarzOperatorPtr op);
+        
+        int enableOperator(UN iD,
+                           bool enable);
+        
+        UN getNumOperators();
+        
         
     protected:
         
-        enum CombinationType {Averaging,Full,Restricted};
+        SchwarzOperatorPtrVec OperatorVector_;
         
-        virtual int initializeOverlappingOperator();
-        
-        virtual int computeOverlappingOperator();
-        
-        CrsMatrixPtr OverlappingMatrix_;
-        
-        MapPtr OverlappingMap_;
-        
-        MapPtr RepeatedMap_;
-        
-        ImporterPtr Scatter_;
-        
-        SubdomainSolverPtr SubdomainSolver_;
-        
-        MultiVectorPtr Multiplicity_;
-        
-        CombinationType Combine_;
-        
-        int levelID_;
-        
-#ifdef OVERLAPPING_TIMER
-        TimePtr_Type  OverlappingOperator_Init_Timer;
-        TimePtr_Type  OverlappingOperator_Compute_Timer;
-        TimePtr_Type  OverlappingOperator_Apply_Timer;
-#endif
+        BoolVec EnableOperators_;
     };
     
 }
