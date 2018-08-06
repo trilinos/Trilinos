@@ -54,6 +54,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Core.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace Tpetra {
   namespace TestingUtilities {

@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,15 +47,15 @@ public:
   Side_Set(int file_id, size_t id, size_t ns, size_t ndf = 0);
   ~Side_Set() override;
 
-  void apply_map(const INT *elmt_map);
-  const INT *Elements() const;
-  const INT *Sides() const;
+  void                apply_map(const INT *elmt_map);
+  const INT *         Elements() const;
+  const INT *         Sides() const;
   std::pair<INT, INT> Side_Id(size_t position) const;
-  size_t Side_Index(size_t position) const;
+  size_t              Side_Index(size_t position) const;
 
   std::pair<INT, INT> Distribution_Factor_Range(size_t side) const;
-  const double *Distribution_Factors() const;
-  void          Free_Distribution_Factors() const;
+  const double *      Distribution_Factors() const;
+  void                Free_Distribution_Factors() const;
 
   void   Display_Stats(std::ostream & = std::cout) const;
   void   Display(std::ostream & /*s*/ = std::cout) const;

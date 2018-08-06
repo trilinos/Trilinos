@@ -252,12 +252,13 @@ const RCP<tMVector_t> getMeshCoordinates(
 }
 
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
   // MEMORY_CHECK(true, "Before initializing MPI");
 
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
@@ -324,7 +325,7 @@ int main(int argc, char *argv[])
    "list of processes that output memory usage");
 
   CommandLineProcessor::EParseCommandLineReturn rc = 
-    commandLine.parse(argc, argv);
+    commandLine.parse(narg, arg);
 
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){

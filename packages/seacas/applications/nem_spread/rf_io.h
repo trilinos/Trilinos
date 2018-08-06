@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,13 +33,13 @@
  *
  */
 /*
-*
-*
-*
-*	Include file for I/O global varibales used in FEM
-*	problem specification
-*
-*/
+ *
+ *
+ *
+ *	Include file for I/O global variables used in FEM
+ *	problem specification
+ *
+ */
 
 char ExoFile[MAX_FNL];               /* Exodus II File containing problem definition. */
                                      /* This name is the root name.                   */
@@ -47,7 +47,7 @@ char Output_File_Base_Name[MAX_FNL]; /* Base name of output file. If it has a su
                                         stripped */
 
 char Exo_LB_File[MAX_FNL];  /* Exodus II file containing the mesh
-                               * load-balanceinformation                       */
+                             * load-balanceinformation                       */
 char Exo_Res_File[MAX_FNL]; /* Exodus II file containing the mesh results  */
                             /* information                                   */
 

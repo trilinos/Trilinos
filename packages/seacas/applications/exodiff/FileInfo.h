@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -75,7 +75,7 @@ public:
 
   ~FileInfo();
 
-  bool exists() const;        //!< returns True if file exists, false if nonexistant
+  bool exists() const;        //!< returns True if file exists, false if nonexistent
   bool is_readable() const;   //!< Exists and is readable
   bool is_writable() const;   //!< Exists and is writable
   bool is_executable() const; //!< Exists and is executable

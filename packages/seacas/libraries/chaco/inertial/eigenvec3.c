@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,10 +41,10 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
                double *eval1,   /* smallest eigenvalue */
                double *eval2,   /* middle eigenvalue */
                double *eval3    /* largest eigenvalue */
-               )
+)
 {
   double mat[3][3] = {{0.0}}; /* scaled version of H */
-  double a1, a2, a3;          /* coefficents of cubic equation */
+  double a1, a2, a3;          /* coefficients of cubic equation */
   double q, r;                /* intermediate terms */
   double q3, r2;              /* powers of q and r */
   double theta;               /* angular parameter */
@@ -141,7 +141,7 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
 
 void kramer3(                                         /* Use Kramer's rule to solve 3x3 */
              double A[3][3], double b[3], double x[3] /* Solve Ax=b */
-             )
+)
 {
   double det; /* determinant of system */
   double determinant();
@@ -169,7 +169,7 @@ void ch_eigenvec3(double  A[3][3], /* matrix to find eigenvector of */
                   double  eval,    /* eigenvalue */
                   double  evec[3], /* eigenvector returned */
                   double *res      /* returned error estimate */
-                  )
+)
 {
   double mat[3][3];            /* copy of A to write over */
   int    ind[3];               /* permutation indices */

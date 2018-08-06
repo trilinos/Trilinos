@@ -187,14 +187,23 @@ public:
   }
 
 private:
+  Real time_;
   std::vector<Real> param_;
 
 protected:
+  Real getTime(void) const {
+    return time_;
+  }
+
   std::vector<Real> getParameter(void) const {
     return param_;
   }
 
 public:
+  void setTime(const Real time) {
+    time_ = time;
+  }
+
   void setParameter(const std::vector<Real> &param) {
     param_.assign(param.begin(),param.end());
   }

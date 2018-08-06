@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,14 +46,14 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
              double *          dists, /* distances that separate sets */
              int               nvtxs, /* number of vertices */
              int               ndims  /* number of dimensions for division */
-             )
+)
 {
   int    signs[MAXDIMS];     /* signs for coordinates of target points */
   int    sizes[MAXSETS];     /* size of each set */
   int    weights[MAXSETS];   /* size of each set */
   double setval = 0.0;       /* value from assigned set */
   double val, bestval = 0.0; /* value to decide set assignment */
-  double tol   = 1.0e-8;     /* numerical tolerence */
+  double tol   = 1.0e-8;     /* numerical tolerance */
   int    error = FALSE;      /* are errors encountered? */
   int    nsets;              /* number of sets */
   int    bestset = -1;       /* set vtx should be assigned to */

@@ -461,7 +461,7 @@ bool run(const UserInputForTests &uinput,
   return bSuccess;
 }
 
-bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm) 
+bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm) 
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
@@ -473,12 +473,12 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   // the input file defines tests to be run
   ////////////////////////////////////////////////////////////
   string inputFileName(""); 
-  if(argc > 1)
-    inputFileName = argv[1]; // user has provided an input file
+  if(narg > 1)
+    inputFileName = arg[1]; // user has provided an input file
   else{
     if(rank == 0){
       std::cout << "\nFAILED to specify xml input file!" << std::endl;
-      ostringstream msg;
+      std::ostringstream msg;
       msg << "\nStandard use of test_driver.cpp:\n";
       msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
       std::cout << msg.str() << std::endl;
@@ -559,15 +559,15 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   return bPass;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv); 
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int result = 0;
   int rank = comm->getRank();
   try {
-    result = mainExecute(argc, argv, comm) ? 0 : 1; // code 0 is ok,
+    result = mainExecute(narg, arg, comm) ? 0 : 1; // code 0 is ok,
                                                     // 1 is a failed test
   }
   catch(std::logic_error &e) { 

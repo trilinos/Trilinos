@@ -1,4 +1,4 @@
-// Copyright (c) 2014 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 // 
@@ -56,7 +56,7 @@ namespace {
 }
 
 namespace SEAMS {
-   extern int echo;
+   extern bool echo;
  }
 
  %}
@@ -151,7 +151,7 @@ line:	  '\n'			{ if (echo) aprepro.lexer->LexerOutput("\n", 1); }
 	| LBRACE exp RBRACE 	{ if (echo) {
 	                             static char tmpstr[512];
 				     SEAMS::symrec *format = aprepro.getsym("_FORMAT");
-				     int len = sprintf(tmpstr, format->value.svar, $2);
+				     int len = sprintf(tmpstr, format->value.svar.c_str(), $2);
 				     aprepro.lexer->LexerOutput(tmpstr, len);
 				   }
                                 }
@@ -258,8 +258,8 @@ aexp:   AVAR                    { $$ = $1->value.avar;}
 				}
 
 sexp:     QSTRING		{ $$ = $1;				}
-        | SVAR			{ $$ = (char*)$1->value.svar;			}
-        | IMMSVAR		{ $$ = (char*)$1->value.svar;			}
+        | SVAR			{ $$ = (char*)$1->value.svar.c_str();			}
+        | IMMSVAR		{ $$ = (char*)$1->value.svar.c_str();			}
     	| UNDVAR EQUAL sexp	{ $$ = $3; $1->value.svar = $3;
 		                  set_type(aprepro, $1, Parser::token::SVAR);	}
         | SVAR EQUAL sexp	{ $$ = $3; 
@@ -269,7 +269,7 @@ sexp:     QSTRING		{ $$ = $1;				}
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::SVAR);		}
-	| IMMSVAR EQUAL sexp	{ $$ = (char*)$1->value.svar; immutable_modify(aprepro, $1); }
+	| IMMSVAR EQUAL sexp	{ $$ = (char*)$1->value.svar.c_str(); immutable_modify(aprepro, $1); }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | SFNCT LPAR sexp RPAR	{
 	  if (arg_check($1, $1->value.strfnct_c == NULL))
@@ -317,6 +317,12 @@ sexp:     QSTRING		{ $$ = $1;				}
         | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR {
 	  if (arg_check($1, $1->value.strfnct_ccc == NULL))
 	    $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7);
+	  else
+	    $$ = (char*)"";
+	}
+        | SFNCT LPAR sexp COMMA sexp RPAR {
+	  if (arg_check($1, $1->value.strfnct_cc == NULL))
+	    $$ = (char*)(*($1->value.strfnct_cc))($3, $5);
 	  else
 	    $$ = (char*)"";
 	}
@@ -441,6 +447,13 @@ exp:	  NUM			{ $$ = $1; 				}
 	      $$ = 0.0;
 	  }
 
+        | FNCT LPAR sexp COMMA sexp COMMA sexp RPAR  {
+	  if (arg_check($1, $1->value.fnctptr_ccc == NULL))
+	    $$ = (*($1->value.fnctptr_ccc))($3,$5,$7);
+	  else
+	    yyerrok;
+	}
+
         | FNCT LPAR exp COMMA exp RPAR {
 	    if (arg_check($1, $1->value.fnctptr_dd == NULL))
 	      $$ = (*($1->value.fnctptr_dd))($3, $5);
@@ -511,7 +524,30 @@ exp:	  NUM			{ $$ = $1; 				}
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }
         | bool QUEST exp COLON exp   { $$ = ($1) ? ($3) : ($5);              }
+        | AVAR LBRACK exp RBRACK { $$ = array_value($1->value.avar, $3, 0); }
         | AVAR LBRACK exp COMMA exp RBRACK { $$ = array_value($1->value.avar, $3, $5); }
+        | AVAR LBRACK exp RBRACK EQUAL exp 
+                                  { $$ = $6;
+                                    array *arr = $1->value.avar;
+                                    int cols = arr->cols;
+				    if (cols > 1) {
+                                      yyerror(aprepro, "Cannot use [index] array access with multi-column array"); 
+                                      yyerrok;
+				    }
+                                    int rows = arr->rows;
+				    int row = $3;
+				    if (aprepro.ap_options.one_based_index) {
+				      row--;
+				    }
+				    if (row < rows) {
+                                      int offset = row*cols;
+                                      $1->value.avar->data[offset] = $6;
+                                    }
+                                    else {
+                                      yyerror(aprepro, "Row or Column index out of range"); 
+                                      yyerrok;
+                                    }
+                                  }
         | AVAR LBRACK exp COMMA exp RBRACK EQUAL exp 
                                   { $$ = $8;
                                     array *arr = $1->value.avar;

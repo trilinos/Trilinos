@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ void refine_map(struct vtx_data **graph,        /* graph data structure */
                 int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
                 int               ndims_tot,    /* if hypercube, number of dimensions */
                 int               mesh_dims[3]  /* if mesh, dimensions of mesh */
-                )
+)
 {
   struct vtx_data **comm_graph;       /* graph for communication requirements */
   int               nsets_tot = 0;    /* total number of sets */

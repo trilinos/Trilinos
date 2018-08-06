@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,7 +43,7 @@ void splarax(double *          result, /* result of matrix vector multiplication
              double *          vec,    /* vector being multiplied by matrix */
              double *          vwsqrt, /* square roots of vertex weights */
              double *          work    /* work vector from 1-n */
-             )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */
@@ -148,7 +148,7 @@ void splarax_float(float *           result, /* result of matrix vector multipli
                    float *           vec,    /* vector being multiplied by matrix */
                    float *           vwsqrt, /* square roots of vertex weights */
                    float *           work    /* work vector from 1-n */
-                   )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */

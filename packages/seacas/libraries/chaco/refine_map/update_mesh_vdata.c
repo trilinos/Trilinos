@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ void update_mesh_vdata(int    old_loc, /* previous node for moved vertex in move
                        int                  mesh_dims[3], /* size of processor mesh */
                        int                  neighbor,     /* vertex impacted by flip */
                        int *vtx2node /* mapping from comm_graph vtxs to processors */
-                       )
+)
 {
   struct refine_vdata *vptr          = NULL; /* correct element in vdata */
   int                  offset        = 0;    /* index into vdata array */

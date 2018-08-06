@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ void compress_ewgts(struct vtx_data **graph,      /* list of graph info for each
                     int               nedges,     /* number of edges in graph */
                     double            ewgt_max,   /* largest edge weight */
                     int               using_ewgts /* are edge weights being used? */
-                    )
+)
 {
   extern double EWGT_RATIO_MAX; /* max allowed ewgt/nvtxs */
   float *       old_ewptr;      /* loops through old edge weights */
@@ -91,7 +91,7 @@ void compress_ewgts(struct vtx_data **graph,      /* list of graph info for each
 
 void restore_ewgts(struct vtx_data **graph, /* list of graph info for each vertex */
                    int               nvtxs  /* number of vertices in graph */
-                   )
+)
 {
   int i; /* loop counter */
 

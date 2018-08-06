@@ -138,7 +138,7 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, ParameterList *p):
-  PartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  PartitioningProblem(A, p, Tpetra::getDefaultComm())
   {}
 
   /*! \brief Destructor
@@ -583,7 +583,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       Teuchos::ParameterList &pl = this->env_->getParametersNonConst();
       Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
       if (numberOfWeights_ > 0) {
-        char strval[10];
+        char strval[20];
         sprintf(strval, "%d", numberOfWeights_);
         zparams.set("OBJ_WEIGHT_DIM", strval);
       }
@@ -797,7 +797,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
       zparams.set("LB_METHOD", algorithm);
       if (numberOfWeights_ > 0) {
-        char strval[10];
+        char strval[20];
         sprintf(strval, "%d", numberOfWeights_);
         zparams.set("OBJ_WEIGHT_DIM", strval);
       }

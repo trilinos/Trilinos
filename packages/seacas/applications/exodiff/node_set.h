@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,10 +47,10 @@ public:
   Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs = 0);
   ~Node_Set() override;
 
-  void apply_map(const INT *node_map);
+  void       apply_map(const INT *node_map);
   const INT *Nodes() const;
-  size_t Node_Id(size_t position) const;
-  size_t Node_Index(size_t position) const;
+  size_t     Node_Id(size_t position) const;
+  size_t     Node_Index(size_t position) const;
 
   const double *Distribution_Factors() const;
   void          Free_Distribution_Factors() const;

@@ -141,7 +141,8 @@ namespace MueLu {
 
     virtual void getGhostedNodesData(const RCP<const Map> fineMap,
                                      Array<LO>& ghostedNodeCoarseLIDs,
-                                     Array<int>& ghostedNodeCoarsePIDs) const = 0;
+                                     Array<int>& ghostedNodeCoarsePIDs,
+                                     Array<GO>& ghostedNodeCoarseGIDs) const = 0;
 
     bool isAggregationCoupled() const {return coupled_;}
 

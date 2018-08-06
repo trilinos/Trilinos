@@ -86,6 +86,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_toString.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
 namespace Zoltan2{
@@ -109,7 +110,6 @@ using Teuchos::MpiComm;
 #endif
 using Teuchos::Comm;
 using Teuchos::SerialComm;
-using Teuchos::DefaultComm;
 using Teuchos::CommRequest;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;

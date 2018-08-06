@@ -55,19 +55,16 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> ztcrsgraph_t;
 typedef Tpetra::RowGraph<zlno_t, zgno_t, znode_t> ztrowgraph_t;
@@ -140,10 +137,11 @@ int verifyInputAdapter(
   return fail;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int fail = 0, gfail=0;
   bool aok = true;

@@ -15,63 +15,8 @@ jurisdictions which recognize such a disclaimer. In such jurisdictions,
 this software is released into the Public Domain.
 
 In jurisdictions which do not recognize Public Domain property (e.g. Germany as
-of
-2010), this software is Copyright(C) 1999-2010 National Technology & Engineering
+of 2010), this software is Copyright(C) 2017 National Technology & Engineering
 Solutions
-2010), this software is of Sandia, LLC (NTESS).  Under the terms of Contract
-DE-NA0003525 with
-2010), this software is NTESS, the U.S. Government retains certain rights in
-this software.
-2010), this software is
-2010), this software is Redistribution and use in source and binary forms, with
-or without
-2010), this software is modification, are permitted provided that the following
-conditions are
-2010), this software is met:
-2010), this software is
-2010), this software is     * Redistributions of source code must retain the
-above copyright
-2010), this software is       notice, this list of conditions and the following
-disclaimer.
-2010), this software is
-2010), this software is     * Redistributions in binary form must reproduce the
-above
-2010), this software is       copyright notice, this list of conditions and the
-following
-2010), this software is       disclaimer in the documentation and/or other
-materials provided
-2010), this software is       with the distribution.
-2010), this software is
-2010), this software is     * Neither the name of NTESS nor the
-names of its
-2010), this software is       contributors may be used to endorse or promote
-products derived
-2010), this software is       from this software without specific prior written
-permission.
-2010), this software is
-2010), this software is THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS
-2010), this software is "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT
-2010), this software is LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS FOR
-2010), this software is A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-THE COPYRIGHT
-2010), this software is OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL,
-2010), this software is SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT
-2010), this software is LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE,
-2010), this software is DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY
-2010), this software is THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT
-2010), this software is (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE
-2010), this software is OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-released under the terms of the MIT License (see below).
 
 In jurisdictions which recognize Public Domain property, the user of this
 software may choose to accept it either as 1) Public Domain, 2) under the
@@ -267,18 +212,18 @@ namespace Json {
 
 #endif // JSON_CONFIG_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/config.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/config.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/forwards.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/forwards.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef JSON_FORWARDS_H_INCLUDED
 #define JSON_FORWARDS_H_INCLUDED
@@ -313,18 +258,18 @@ namespace Json {
 
 #endif // JSON_FORWARDS_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/forwards.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/forwards.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/features.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/features.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_FEATURES_H_INCLUDED
 #define CPPTL_JSON_FEATURES_H_INCLUDED
@@ -380,18 +325,18 @@ namespace Json {
 
 #endif // CPPTL_JSON_FEATURES_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/features.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/features.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/value.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/value.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_H_INCLUDED
 #define CPPTL_JSON_H_INCLUDED
@@ -476,7 +421,7 @@ namespace Json {
 
   /** \brief Lightweight wrapper to tag static string.
    *
-   * Value constructor and objectValue member assignement takes advantage of the
+   * Value constructor and objectValue member assignment takes advantage of the
    * StaticString and avoid the cost of string duplication when storing the
    * string or the member name.
    *
@@ -589,9 +534,9 @@ namespace Json {
       CZString(char const *str, unsigned length, DuplicationPolicy allocate);
       CZString(CZString const &other);
       ~CZString();
-      CZString &operator=(CZString other);
-      bool operator<(CZString const &other) const;
-      bool operator==(CZString const &other) const;
+      CZString & operator=(CZString other);
+      bool       operator<(CZString const &other) const;
+      bool       operator==(CZString const &other) const;
       ArrayIndex index() const;
       // const char* c_str() const; ///< \deprecated
       char const *data() const;
@@ -691,7 +636,7 @@ namespace Json {
     bool operator>(const Value &other) const;
     bool operator==(const Value &other) const;
     bool operator!=(const Value &other) const;
-    int compare(const Value &other) const;
+    int  compare(const Value &other) const;
 
     const char *asCString() const; ///< Embedded zeroes could cause you trouble!
     std::string asString() const;  ///< Embedded zeroes are possible.
@@ -925,8 +870,8 @@ namespace Json {
 
     // Accessors for the [start, limit) range of bytes within the JSON text from
     // which this value was parsed, if any.
-    void setOffsetStart(size_t start);
-    void setOffsetLimit(size_t limit);
+    void   setOffsetStart(size_t start);
+    void   setOffsetLimit(size_t limit);
     size_t getOffsetStart() const;
     size_t getOffsetLimit() const;
 
@@ -1014,7 +959,7 @@ namespace Json {
          const PathArgument &a4 = PathArgument(), const PathArgument &a5 = PathArgument());
 
     const Value &resolve(const Value &root) const;
-    Value resolve(const Value &root, const Value &defaultValue) const;
+    Value        resolve(const Value &root, const Value &defaultValue) const;
     /// Creates the "path" to access the specified node and returns a reference on
     /// the node.
     Value &make(Value &root) const;
@@ -1212,7 +1157,7 @@ namespace Json {
 namespace std {
   /// Specialize std::swap() for Json::Value.
   template <> inline void swap(Json::Value &a, Json::Value &b) { a.swap(b); }
-}
+} // namespace std
 
 #if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 #pragma warning(pop)
@@ -1220,18 +1165,18 @@ namespace std {
 
 #endif // CPPTL_JSON_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/value.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/value.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/reader.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/reader.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_READER_H_INCLUDED
 #define CPPTL_JSON_READER_H_INCLUDED
@@ -1419,37 +1364,37 @@ namespace Json {
 
     typedef std::deque<ErrorInfo> Errors;
 
-    bool readToken(Token &token);
-    void skipSpaces();
-    bool match(Location pattern, int patternLength);
-    bool readComment();
-    bool readCStyleComment();
-    bool readCppStyleComment();
-    bool readString();
-    void readNumber();
-    bool readValue();
-    bool readObject(Token &token);
-    bool readArray(Token &token);
-    bool decodeNumber(Token &token);
-    bool decodeNumber(Token &token, Value &decoded);
-    bool decodeString(Token &token);
-    bool decodeString(Token &token, std::string &decoded);
-    bool decodeDouble(Token &token);
-    bool decodeDouble(Token &token, Value &decoded);
-    bool decodeUnicodeCodePoint(Token &token, Location &current, Location end,
-                                unsigned int &unicode);
-    bool decodeUnicodeEscapeSequence(Token &token, Location &current, Location end,
-                                     unsigned int &unicode);
-    bool addError(const std::string &message, Token &token, Location extra = 0);
-    bool recoverFromError(TokenType skipUntilToken);
-    bool addErrorAndRecover(const std::string &message, Token &token, TokenType skipUntilToken);
+    bool   readToken(Token &token);
+    void   skipSpaces();
+    bool   match(Location pattern, int patternLength);
+    bool   readComment();
+    bool   readCStyleComment();
+    bool   readCppStyleComment();
+    bool   readString();
+    void   readNumber();
+    bool   readValue();
+    bool   readObject(Token &token);
+    bool   readArray(Token &token);
+    bool   decodeNumber(Token &token);
+    bool   decodeNumber(Token &token, Value &decoded);
+    bool   decodeString(Token &token);
+    bool   decodeString(Token &token, std::string &decoded);
+    bool   decodeDouble(Token &token);
+    bool   decodeDouble(Token &token, Value &decoded);
+    bool   decodeUnicodeCodePoint(Token &token, Location &current, Location end,
+                                  unsigned int &unicode);
+    bool   decodeUnicodeEscapeSequence(Token &token, Location &current, Location end,
+                                       unsigned int &unicode);
+    bool   addError(const std::string &message, Token &token, Location extra = 0);
+    bool   recoverFromError(TokenType skipUntilToken);
+    bool   addErrorAndRecover(const std::string &message, Token &token, TokenType skipUntilToken);
     void   skipUntilSpace();
     Value &currentValue();
     Char   getNextChar();
-    void getLocationLineAndColumn(Location location, int &line, int &column) const;
+    void   getLocationLineAndColumn(Location location, int &line, int &column) const;
     std::string getLocationLineAndColumn(Location location) const;
-    void addComment(Location begin, Location end, CommentPlacement placement);
-    void skipCommentTokens(Token &token);
+    void        addComment(Location begin, Location end, CommentPlacement placement);
+    void        skipCommentTokens(Token &token);
 
     typedef std::stack<Value *> Nodes;
     Nodes                       nodes_;
@@ -1586,9 +1531,9 @@ namespace Json {
   };
 
   /** Consume entire stream and use its begin/end.
-    * Someday we might have a real StreamReader, but for now this
-    * is convenient.
-    */
+   * Someday we might have a real StreamReader, but for now this
+   * is convenient.
+   */
   bool JSON_API parseFromStream(CharReader::Factory const &, std::istream &, Value *root,
                                 std::string *errs);
 
@@ -1626,18 +1571,18 @@ namespace Json {
 
 #endif // CPPTL_JSON_READER_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/reader.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/reader.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/writer.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/writer.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef JSON_WRITER_H_INCLUDED
 #define JSON_WRITER_H_INCLUDED
@@ -1786,7 +1731,7 @@ namespace Json {
    *
    * The JSON document is written in a single line. It is not intended for 'human'
    *consumption,
-   * but may be usefull to support feature such as RPC where bandwith is limited.
+   * but may be useful to support feature such as RPC where bandwidth is limited.
    * \sa Reader, Value
    * \deprecated Use StreamWriterBuilder.
    */
@@ -1858,17 +1803,17 @@ namespace Json {
     virtual std::string write(const Value &root);
 
   private:
-    void writeValue(const Value &value);
-    void writeArrayValue(const Value &value);
-    bool isMultineArray(const Value &value);
-    void pushValue(const std::string &value);
-    void writeIndent();
-    void writeWithIndent(const std::string &value);
-    void indent();
-    void unindent();
-    void writeCommentBeforeValue(const Value &root);
-    void writeCommentAfterValueOnSameLine(const Value &root);
-    bool hasCommentForValue(const Value &value);
+    void               writeValue(const Value &value);
+    void               writeArrayValue(const Value &value);
+    bool               isMultineArray(const Value &value);
+    void               pushValue(const std::string &value);
+    void               writeIndent();
+    void               writeWithIndent(const std::string &value);
+    void               indent();
+    void               unindent();
+    void               writeCommentBeforeValue(const Value &root);
+    void               writeCommentAfterValueOnSameLine(const Value &root);
+    bool               hasCommentForValue(const Value &value);
     static std::string normalizeEOL(const std::string &text);
 
     typedef std::vector<std::string> ChildValues;
@@ -1923,17 +1868,17 @@ namespace Json {
     void write(std::ostream &out, const Value &root);
 
   private:
-    void writeValue(const Value &value);
-    void writeArrayValue(const Value &value);
-    bool isMultineArray(const Value &value);
-    void pushValue(const std::string &value);
-    void writeIndent();
-    void writeWithIndent(const std::string &value);
-    void indent();
-    void unindent();
-    void writeCommentBeforeValue(const Value &root);
-    void writeCommentAfterValueOnSameLine(const Value &root);
-    bool hasCommentForValue(const Value &value);
+    void               writeValue(const Value &value);
+    void               writeArrayValue(const Value &value);
+    bool               isMultineArray(const Value &value);
+    void               pushValue(const std::string &value);
+    void               writeIndent();
+    void               writeWithIndent(const std::string &value);
+    void               indent();
+    void               unindent();
+    void               writeCommentBeforeValue(const Value &root);
+    void               writeCommentAfterValueOnSameLine(const Value &root);
+    bool               hasCommentForValue(const Value &value);
     static std::string normalizeEOL(const std::string &text);
 
     typedef std::vector<std::string> ChildValues;
@@ -1969,18 +1914,18 @@ namespace Json {
 
 #endif // JSON_WRITER_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/writer.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/writer.h
+  // //////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////
-// Beginning of content of file: include/json/assertions.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // Beginning of content of file: include/json/assertions.h
+  // //////////////////////////////////////////////////////////////////////
 
-// Copyright 2007-2010 Baptiste Lepilleur
-// Distributed under MIT license, or public domain if desired and
-// recognized in your jurisdiction.
-// See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
+  // Copyright 2007-2010 Baptiste Lepilleur
+  // Distributed under MIT license, or public domain if desired and
+  // recognized in your jurisdiction.
+  // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #ifndef CPPTL_JSON_ASSERTIONS_H_INCLUDED
 #define CPPTL_JSON_ASSERTIONS_H_INCLUDED
@@ -2037,8 +1982,8 @@ namespace Json {
 
 #endif // CPPTL_JSON_ASSERTIONS_H_INCLUDED
 
-// //////////////////////////////////////////////////////////////////////
-// End of content of file: include/json/assertions.h
-// //////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////
+  // End of content of file: include/json/assertions.h
+  // //////////////////////////////////////////////////////////////////////
 
 #endif // ifndef JSON_AMALGATED_H_INCLUDED

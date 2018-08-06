@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -94,7 +94,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   /* Open the EXODUS II mesh file */
   exoid = ex_open(exofile, mode, &cpu_ws, &io_ws, &version);
   if (exoid == -1) {
-    fprintf(stderr, "%s: ERROR openning up the mesh exoII file, %s\n", yo, exofile);
+    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile);
     exit(-1);
   }
 

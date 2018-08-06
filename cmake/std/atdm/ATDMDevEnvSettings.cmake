@@ -243,8 +243,3 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
-
-# Disable test that fails for all openmp builds (#3035)
-IF (ATDM_USE_OPENMP)
-  ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
-ENDIF()

@@ -58,6 +58,10 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   virtual void
   takeStep(const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory);
 
+  /// Pass initial guess to Newton solver  
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
+
   /// Get a default (initial) StepperState
   virtual Teuchos::RCP<Tempus::StepperState<Scalar>>
   getDefaultStepperState();
@@ -144,6 +148,8 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
 
   Scalar beta_;
   Scalar gamma_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 };

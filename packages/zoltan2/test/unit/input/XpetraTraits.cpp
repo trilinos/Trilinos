@@ -54,7 +54,6 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <string>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -68,7 +67,6 @@
 #include <Xpetra_EpetraUtils.hpp>
 #endif
 
-using namespace std;
 using std::string;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
@@ -147,10 +145,11 @@ ArrayRCP<zgno_t> roundRobinMap(const Xpetra::Map<zlno_t, zgno_t, znode_t> &xmap)
   return roundRobinMapShared(proc, nprocs, basegid, maxgid, nglobalrows);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   bool aok = true;
 

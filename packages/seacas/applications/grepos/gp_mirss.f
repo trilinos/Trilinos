@@ -1,4 +1,4 @@
-C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -87,7 +87,7 @@ C         is the same....
          end do
       end if
       IF (.NOT. ALLONE) THEN
-         CALL PRTERR ('PROGRAM',
+         CALL PRTERR ('WARNING',
      *        'Mirroring of sideset distribution factors not supported')
       END IF
       

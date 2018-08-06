@@ -43,13 +43,11 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -59,8 +57,7 @@
 #include "MueLu_MemoryProfiler.hpp"
 
 int main(int argc, char *argv[]) {
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard mpiSession(&argc,&argv);
 
   bool success = false;
   bool verbose = true;
@@ -81,8 +78,7 @@ int main(int argc, char *argv[]) {
     using Teuchos::rcp;
     using Teuchos::tuple;
 
-    RCP<const Teuchos::Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     //const int myRank = comm->getRank();
 
     //int numGlobalElements = 10000000;

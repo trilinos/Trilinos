@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -168,8 +168,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
      * elemental communication map is supported.
      */
     if (globals.Num_N_Comm_Maps[iproc] > 1 || globals.Num_E_Comm_Maps[iproc] > 1) {
-      fprintf(stderr, "%s: ERROR. Only 1 nodal and elemental comm map "
-                      "is supported\n",
+      fprintf(stderr,
+              "%s: ERROR. Only 1 nodal and elemental comm map "
+              "is supported\n",
               yo);
       exit(1);
     }
@@ -245,7 +246,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
                            &Integer_Vector[vec_indx + comm_vec[ijump + 1]], iproc) < 0) {
         /*
          * If there are disconnected mesh pieces, then it is
-         * possible that there is no comminication between the
+         * possible that there is no communication between the
          * pieces and there will be no communication maps.  Normally
          * this is a problem, so output a warning, but don't abort.
          */
@@ -328,7 +329,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     printf("\nFinished distributing load balance info\n");
   }
 
-  /* Output Detailed timing information for the progam */
+  /* Output Detailed timing information for the program */
   /*
    * Print out a Large table of Load Balance Information if the debug_flag
    * setting is large enough
@@ -424,17 +425,17 @@ template <typename T, typename INT>
 void NemSpread<T, INT>::process_lb_data(INT *Integer_Vector, int indx)
 
 /*
-*       Function which reads the load balance information from the processor's
-*       communication buffer.
-*
-*       Author:          Scott Hutchinson (1421)
-*       Date:            11 March 1993
-*       Revised:         11 March 1993
-*
-* int *Integer_Vector;   Data structure for sending int data to processors
-*               (ptr to vector of length, length_int)
-*
-*/
+ *       Function which reads the load balance information from the processor's
+ *       communication buffer.
+ *
+ *       Author:          Scott Hutchinson (1421)
+ *       Date:            11 March 1993
+ *       Revised:         11 March 1993
+ *
+ * int *Integer_Vector;   Data structure for sending int data to processors
+ *               (ptr to vector of length, length_int)
+ *
+ */
 {
   /* Local variables */
   int icount = 0, itotal_nodes, itotal_elems, ig_count = 0;
@@ -450,11 +451,11 @@ void NemSpread<T, INT>::process_lb_data(INT *Integer_Vector, int indx)
   itotal_elems = globals.Num_Internal_Elems[indx] + globals.Num_Border_Elems[indx];
 
   /* Allocate Permament Arrays on the current processor */
-  globals.GNodes[indx] =
-      (INT *)array_alloc(__FILE__, __LINE__, 1, itotal_nodes + 2 * itotal_elems +
-                                                    2 * (globals.N_Comm_Map[indx]->node_cnt) +
-                                                    3 * (globals.E_Comm_Map[indx]->elem_cnt),
-                         sizeof(INT));
+  globals.GNodes[indx] = (INT *)array_alloc(__FILE__, __LINE__, 1,
+                                            itotal_nodes + 2 * itotal_elems +
+                                                2 * (globals.N_Comm_Map[indx]->node_cnt) +
+                                                3 * (globals.E_Comm_Map[indx]->elem_cnt),
+                                            sizeof(INT));
 
   globals.GElems[indx]               = globals.GNodes[indx] + itotal_nodes;
   globals.Elem_Map[indx]             = globals.GElems[indx] + itotal_elems;
@@ -640,8 +641,7 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   if (((size_t)num_nodes != globals.Num_Node) || ((size_t)num_elem != globals.Num_Elem) ||
       (num_elem_blk != globals.Num_Elem_Blk)) {
     fprintf(stderr, "%s: ERROR: Problem dimensions in the LB File don't match with those \
-in mesh file",
-            yo);
+in mesh file", yo);
     exit(1);
   }
 
@@ -754,7 +754,7 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
  * read_cmap_params:
  *
  *	This function reads the parameters for the communication maps.
- * Processor 0 reads each processors paramters and then a broadcast of
+ * Processor 0 reads each processors parameters and then a broadcast of
  * this information is performed and each processor extracts it's
  * information.
  */

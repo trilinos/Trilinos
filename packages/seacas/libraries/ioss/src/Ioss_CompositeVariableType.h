@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,7 +40,7 @@ namespace Ioss {
   class CompositeVariableType : public VariableType
   {
   public:
-    static std::string composite_name(const std::string &base, int copies);
+    static std::string   composite_name(const std::string &base, int copies);
     static VariableType *composite_variable_type(const VariableType *inst, int copies);
 
     std::string label(int which, char suffix_sep = '_') const override;

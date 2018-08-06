@@ -53,12 +53,10 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
@@ -89,23 +87,20 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int myrank, part_t numparts,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char** argv)
+int main(int narg, char** arg)
 {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+
+  //////////////////////////////////////////////////////////////////////
+
   std::string inputFile = "";        // Matrix Market or Zoltan file to read
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool distributeInput = true;
   int success = 0;
   part_t numParts = 8;
 
-
-  //////////////////////////////////////////////////////////////////////
-  ////// Establish session.
-  //////////////////////////////////////////////////////////////////////
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  int me = comm->getRank();
-  //////////////////////////////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////
   // Read run-time options.
@@ -125,7 +120,7 @@ int main(int argc, char** argv)
                  "Global number of parts;");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
-    parseReturn= cmdp.parse( argc, argv );
+    parseReturn= cmdp.parse( narg, arg );
 
   if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
   {
@@ -153,10 +148,10 @@ int main(int argc, char** argv)
 
   if (me == 0)
   {
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl
-         << "NumParts = " << numParts << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl
+         << "NumParts = " << numParts << std::endl;
   }
 
   if (origMatrix->getGlobalNumRows() < 40)
@@ -333,7 +328,7 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     problem.getSolution();
 
   solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
+                            splitRangeEnd,treeVertParents);
 
   comm->barrier(); // for tidy output...
   if(comm->getRank() == 0) { // for now just plot for rank 0
@@ -341,52 +336,52 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     // print the acquired information about the tree
 
     // Header
-    cout << endl << "Printing partition tree info..." << endl << endl;
+    std::cout << std::endl << "Printing partition tree info..." << std::endl << std::endl;
 
     // numTreeVerts
-    cout << "  numTreeVerts: " << numTreeVerts << endl << endl;
+    std::cout << "  numTreeVerts: " << numTreeVerts << std::endl << std::endl;
 
     // array index values 0 1 2 3 ...
-    cout << "  part array index:";
+    std::cout << "  part array index:";
     for(part_t n = 0; n < static_cast<part_t>(permPartNums.size()); ++n) {
-      cout << setw(4) << n << " ";
+      std::cout << std::setw(4) << n << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 
     // permParNums
-    cout << "  permPartNums:    ";
+    std::cout << "  permPartNums:    ";
     for(part_t n = 0; n < static_cast<part_t>(permPartNums.size()); ++n) {
-      cout << setw(4) << permPartNums[n] << " ";
+      std::cout << std::setw(4) << permPartNums[n] << " ";
     }
-    cout << endl << endl;
+    std::cout << std::endl << std::endl;
 
     // node index values 0 1 2 3 ...
-    cout << "  node index:      ";
+    std::cout << "  node index:      ";
     for(part_t n = 0; n < static_cast<part_t>(splitRangeBeg.size()); ++n) {
-      cout << setw(4) << n << " ";
+      std::cout << std::setw(4) << n << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 
     // splitRangeBeg
-    cout << "  splitRangeBeg:   ";
+    std::cout << "  splitRangeBeg:   ";
     for(part_t n = 0; n < static_cast<part_t>(splitRangeBeg.size()); ++n) {
-      cout << setw(4) << splitRangeBeg[n] << " ";
+      std::cout << std::setw(4) << splitRangeBeg[n] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 
     // splitRangeEnd
-    cout << "  splitRangeEnd:   ";
+    std::cout << "  splitRangeEnd:   ";
     for(part_t n = 0; n < static_cast<part_t>(splitRangeEnd.size()); ++n) {
-      cout << setw(4) << splitRangeEnd[n] << " ";
+      std::cout << std::setw(4) << splitRangeEnd[n] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 
     // treeVertParents
-    cout << "  treeVertParents: ";
+    std::cout << "  treeVertParents: ";
     for(part_t n = 0; n < static_cast<part_t>(treeVertParents.size()); ++n) {
-      cout << setw(4) << treeVertParents[n] << " ";
+      std::cout << std::setw(4) << treeVertParents[n] << " ";
     }
-    cout << endl << endl;
+    std::cout << std::endl << std::endl;
   }
   comm->barrier(); // for tidy output...
 
@@ -425,40 +420,40 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   try
   {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
     problem.solve();
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
   catch (std::runtime_error &e)
   {
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e)
   {
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e)
   {
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e)
   {
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   //////////////////////////////////////////////////////////////////////
@@ -470,7 +465,7 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   if (binary == false)
   {
-    cout << "RCB should produce a binary partitioning tree. FAIL" << std::endl;
+    std::cout << "RCB should produce a binary partitioning tree. FAIL" << std::endl;
     return -1;
   }
 
@@ -509,40 +504,40 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   try
   {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
     problem.solve();
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
   catch (std::runtime_error &e)
   {
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e)
   {
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e)
   {
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e)
   {
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   //////////////////////////////////////////////////////////////////////
@@ -553,7 +548,7 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   if (binary == false)
   {
-    cout << "PHG should produce a binary partitioning tree. FAIL" << std::endl;
+    std::cout << "PHG should produce a binary partitioning tree. FAIL" << std::endl;
     return -1;
   }
 
@@ -589,40 +584,40 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   try
   {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
     problem.solve();
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
   catch (std::runtime_error &e)
   {
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e)
   {
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e)
   {
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e)
   {
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   //////////////////////////////////////////////////////////////////////
@@ -656,7 +651,7 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
 
   if (binary == true)
   {
-    cout << "MJ should not produce a binary partitioning tree for this problem. FAIL" << std::endl;
+    std::cout << "MJ should not produce a binary partitioning tree for this problem. FAIL" << std::endl;
     return -1;
   }
 

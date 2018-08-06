@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,7 +39,7 @@
 static void assign_out_normal(int   nvtxs,  /* number of vertices to output */
                               int * sets,   /* values to be printed */
                               char *outname /* name of output file */
-                              )
+)
 {
   FILE *fout; /* output file */
   int   i;    /* loop counter */
@@ -66,7 +66,7 @@ static void assign_out_inv(int   nvtxs,  /* number of vertices to output */
                            int * sets,   /* values to be printed */
                            int   nsets,  /* number of sets */
                            char *outname /* name of output file */
-                           )
+)
 {
   FILE *fout;    /* output file */
   int * size;    /* # vtxs in sets / index into inorder */
@@ -135,7 +135,7 @@ void assign_out(int   nvtxs,  /* number of vertices to output */
                 int * sets,   /* values to be printed */
                 int   nsets,  /* number of sets */
                 char *outname /* name of output file */
-                )
+)
 {
   extern int OUT_ASSIGN_INV; /* print assignment in inverted form? */
 

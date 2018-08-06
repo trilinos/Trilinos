@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ void solistout(struct orthlink **solist, /* vector of pntrs to orthlnks */
                int               n,      /* length of vecs to orth. against */
                int               ngood,  /* number of good vecs on list */
                int               j       /* current number of Lanczos steps */
-               )
+)
 {
   int        i;           /* index */
   extern int DEBUG_EVECS; /* debugging output level for eigen computations */
@@ -63,7 +63,7 @@ void solistout(struct orthlink **solist, /* vector of pntrs to orthlnks */
   printf("%d\n", ngood);
 
   if (DEBUG_EVECS > 2) {
-    printf("  actual indicies: ");
+    printf("  actual indices: ");
     for (i = 1; i <= ngood; i++) {
       printf(" %2d", solist[i]->index);
     }
@@ -76,7 +76,7 @@ void solistout_float(struct orthlink_float **solist, /* vector of pntrs to orthl
                      int                     n,      /* length of vecs to orth. against */
                      int                     ngood,  /* number of good vecs on list */
                      int                     j       /* current number of Lanczos steps */
-                     )
+)
 {
   int i; /* index */
 

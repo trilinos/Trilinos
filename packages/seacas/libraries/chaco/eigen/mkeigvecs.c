@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ void mkeigvecs(struct scanlink *scanlist, /* linked list of fields to do with mi
                double **        y,        /* columns of y are eigenvectors of A  */
                int              n,        /* problem size */
                double **        q         /* columns of q are Lanczos basis vectors */
-               )
+)
 {
 
   int              i, k;     /* indcies */

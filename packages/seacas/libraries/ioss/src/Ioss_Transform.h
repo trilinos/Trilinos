@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,7 +57,7 @@ namespace Ioss {
   public:
     virtual ~Transform();
     virtual const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const = 0;
-    virtual int output_count(int in) const                                               = 0;
+    virtual int                       output_count(int in) const                         = 0;
 
     bool execute(const Ioss::Field &field, void *data);
 
@@ -87,7 +87,7 @@ namespace Iotr {
   protected:
     explicit Factory(const std::string &type);
     virtual Ioss::Transform *make(const std::string &) const = 0;
-    static void alias(const std::string &base, const std::string &syn);
+    static void              alias(const std::string &base, const std::string &syn);
 
   private:
     static FactoryMap *registry();
