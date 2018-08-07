@@ -337,17 +337,27 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 	chosen_option_id = acceptableCombos[0];
       } 
       else {
-	int best_prob = avatarOutput[0][avatarOutput[0][0] + 1];
+	int low_crash = avatarOutput[0][1];
+	int best_prob = avatarOutput[0][3];
+	int diff, this_combo;
 	chosen_option_id = acceptableCombos[0];
 	for(int x=0; x<acceptableCombos.size(); x++){
-	  if(avatarOutput[x][avatarOutput[x][0] + 1] >= best_prob){
-	    best_prob =  avatarOutput[x][avatarOutput[x][0] + 1];
+	  this_combo = acceptableCombos[x];
+	  diff = avatarOutput[this_combo][1] - low_crash;
+	  if(diff < -20){
+	    low_crash =  avatarOutput[this_combo][1];
+	    best_prob = avatarOutput[this_combo][3];
 	    chosen_option_id = acceptableCombos[x];
-	  }
+	  } 
+	  else if(diff <= 0 && avatarOutput[this_combo][3] > best_prob){
+	    low_crash =  avatarOutput[this_combo][1];
+	    best_prob = avatarOutput[this_combo][3];
+	    chosen_option_id = acceptableCombos[x];
+   	  }
 	}
 
       }
-      float margin_risk = 100 - avatarOutput[chosen_option_id][avatarGoodClass_ + 1];
+      int margin_risk = 100 - avatarOutput[chosen_option_id][avatarGoodClass_ + 2];
       if(margin_risk > 75){
 	GetOStream(Runtime0)<< "WARNING: Margin risk: Margin risk is above recommended level, meaning there is a high chance of extrapolation" <<std::endl;
       }
