@@ -1,5 +1,5 @@
 ADD_SUBDIRECTORIES(
-    Laplacian_Epetra
+#    Laplacian_Epetra
     Laplacian_Tpetra
     TwoLevelPreconditioner    
 #    InterfaceSets
