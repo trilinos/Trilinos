@@ -136,7 +136,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     if(analysisParams.isSublist("Optimization Status")){
       auto optimizationParams = analysisParams.sublist("Optimization Status");
       if(optimizationParams.isParameter("Optimizer Iteration Number")) {
-        int iteration = optimizationParams.get<int>("Optimizer Iteration Number");
+        int iteration = optimizationParams.template get<int>("Optimizer Iteration Number");
         int write_interval = analysisParams.get("Write Interval",1);
         Teuchos::RCP<Teuchos::ParameterList> writeParams = Teuchos::rcp(new Teuchos::ParameterList());
         if (write_interval > 0) {
