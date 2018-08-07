@@ -107,7 +107,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   int procx = sqrtProcs;
   int procy = sqrtProcs;
 
-  // Generate a simple 3x3 mesh
+  // Generate a simple 2D mesh
   int nex = opts.numElementsX;
   int ney = opts.numElementsY;
 
