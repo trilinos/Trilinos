@@ -66,7 +66,7 @@ public:
     thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
     valueUpdated = gradientUpdated = false;
     value_ = 0;
-    x_ptr == Teuchos::null;
+    x_ptr = Teuchos::null;
     grad_ptr = Teuchos::null;
     if(params != Teuchos::null)
       params->set<int>("Optimizer Iteration Number", -1);
