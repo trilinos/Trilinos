@@ -153,10 +153,3 @@ rsync.*
 # Eclipse IDE
 .project
 .settings/
-
-
-#My ignores
-build/*
-installed/*
-packages/PyTrilinos/*
-cmake/*
