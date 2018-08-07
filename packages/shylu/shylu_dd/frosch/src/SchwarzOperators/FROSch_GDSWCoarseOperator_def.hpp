@@ -262,6 +262,7 @@ namespace FROSch {
             this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
             this->DofsMaps_.resize(this->DofsMaps_.size()+1);
             this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+            this->BlockCoarseSize_.resize(this->BlockCoarseSize_.size()+1);
             this->NumberOfBlocks_++;
             resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
         }
@@ -513,15 +514,15 @@ namespace FROSch {
                 faces: rotations            --- " << coarseSpaceFunctions[8] << "\n\
                 --------------------------------------------\n";
             }
+
             this->BlockCoarseSize_[blockId] = 0;
             for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                 this->BlockCoarseSize_[blockId] += numEntitiesGlobal[i];
             }
-
             
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-            
+
             ////////////////////
             // Build PhiGamma //
             ////////////////////
