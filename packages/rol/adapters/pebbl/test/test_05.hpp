@@ -122,7 +122,7 @@ public:
 template<class Real>
 class Objective_SimpleBinary : public ROL::Objective<Real> {
 private:
-  const std::vector<Real> alpha_;
+  const std::vector<Real> alpha_, beta_;
 
   ROL::Ptr<std::vector<Real>> getVector(ROL::Vector<Real> &x) const {
     return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
@@ -133,17 +133,18 @@ private:
   }
 
 public:
-  Objective_SimpleBinary(const std::vector<Real> &alpha)
-    : alpha_(alpha) {}
+  Objective_SimpleBinary(const std::vector<Real> &alpha, const std::vector<Real> &beta)
+    : alpha_(alpha), beta_(beta) {}
 
   Real value(const ROL::Vector<Real> &x, Real &tol) {
     ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
+    const Real half(0.5);
     int dim(xp->size());
     Real val(0);
     for (int i = 0; i < dim; ++i) {
-      val += alpha_[i] * (*xp)[i] * (*xp)[i];
+      val += half * alpha_[i] * (*xp)[i] * (*xp)[i] - beta_[i] * (*xp)[i];
     }
-    return static_cast<Real>(0.5)*val;
+    return val;
   }
 
   void gradient(ROL::Vector<Real> &g,
@@ -153,7 +154,7 @@ public:
     ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
     int dim(xp->size());
     for (int i = 0; i < dim; ++i) {
-      (*gp)[i] = alpha_[i] * (*xp)[i];
+      (*gp)[i] = alpha_[i] * (*xp)[i] - beta_[i];
     }
   }
 

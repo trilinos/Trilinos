@@ -4,18 +4,13 @@
 
 //#include <acro_config.h>
 #include <pebbl/bb/branching.h>
-#include <pebbl/utilib/CharString.h>
-#include <pebbl/utilib/BasicArray.h>
 #include <pebbl/utilib/BitArray.h>
 #include <pebbl/utilib/IntVector.h>
 #include <pebbl/utilib/DoubleVector.h>
 #include <pebbl/utilib/_math.h>
-#include <pebbl/utilib/ParameterSet.h>
-#ifdef ACRO_HAVE_MPI
-#include <pebbl/utilib/PackBuf.h>
-#endif
 #include <pebbl/misc/chunkAlloc.h>
 
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_BranchHelper_PEBBL.hpp"
 #include "ROL_Constraint_PEBBL.hpp"
 #include "ROL_TransformedObjective_PEBBL.hpp"
@@ -65,7 +60,7 @@ public:
     solution_.set(*dynamic_cast<ROL_PEBBL_Solution>(toCopy)->getVector());
   }
 
-  const char* typeDescription() const { return "ROL solution"; };
+  const char* typeDescription() const { return "ROL solution"; }
 
   void print(std::ostream& s) {
     solution_->print(s);
@@ -157,6 +152,7 @@ public:
       nfrac_(-1), index_(-1), integralityMeasure_(-1),
       verbosity_(verbosity), outStream_(outStream) {
     solution_   = branching_->getOptimizationProblem()->getSolutionVector()->clone();
+    solution_->set(*branching_->getOptimizationProblem()->getSolutionVector());
     multiplier_ = branching_->getOptimizationProblem()->getMultiplierVector()->clone();
     ptrans_     = branching_->getBranchHelper()->createTransform();
   }
@@ -169,8 +165,8 @@ public:
       nfrac_(-1), index_(-1), integralityMeasure_(-1), 
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
-    solution_   = branching_->getOptimizationProblem()->getSolutionVector()->clone();
-    multiplier_ = branching_->getOptimizationProblem()->getMultiplierVector()->clone();
+    solution_   = rpbs.solution_->clone();   solution_->set(*rpbs.solution_);
+    multiplier_ = rpbs.multiplier_->clone(); multiplier_->set(*rpbs.multiplier_);
     ptrans_     = branching_->getBranchHelper()->createTransform();
     bound = rpbs.bound;
   }
@@ -201,7 +197,12 @@ public:
     // Set solution and multiplier vectors
     //solution_->set(*problem0->getSolutionVector());
     Real tol = static_cast<Real>(1e-10);
-    ptrans_->value(*solution_,*problem0->getSolutionVector(),tol);
+    ptrans_->value(*solution_,*solution_,tol);
+    if (verbosity_ > 2) {
+      *outStream_ << std::endl << "After apply transformation" << std::endl;
+      solution_->print(*outStream_);
+      *outStream_ << std::endl;
+    }
     multiplier_->set(*problem0->getMultiplierVector());
 //    // Build vector of equality constraints/multipliers
 //    std::vector<Ptr<Constraint<Real>>> econ_vec(2,nullPtr);
@@ -234,6 +235,7 @@ public:
         problem_->check(*outStream_);
       }
       solver_->solve(*outStream_);
+      ptrans_->value(*solution_,*problem_->getSolutionVector(),tol);
       if (verbosity_ > 2) {
         *outStream_ << std::endl << "  ";
         solution_->print(*outStream_);

@@ -41,17 +41,16 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TRANSFORM_PEBBL_H
-#define ROL_TRANSFORM_PEBBL_H
+#ifndef ROL_TEUCHOSBRANCHHELPER_PEBBL_H
+#define ROL_TEUCHOSBRANCHHELPER_PEBBL_H
 
-#include "ROL_Constraint.hpp"
+#include "ROL_TeuchosVector.hpp"
+#include "ROL_BranchHelper_PEBBL.hpp"
+#include "ROL_TeuchosTransform_PEBBL.hpp"
 
 /** @ingroup func_group
-    \class ROL::Transform_PEBBL
-    \brief Defines the pebbl transform operator interface.
-
-    ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is the same as the domain.
+    \class ROL::TeuchosBranchHelper_PEBBL
+    \brief Defines the pebbl branch index interface for TeuchosVectors.
 
     ---
 */
@@ -59,79 +58,66 @@
 
 namespace ROL {
 
-template <class Real>
-class Transform_PEBBL : public Constraint<Real> {
+template <class Ordinal, class Real>
+class TeuchosBranchHelper_PEBBL : public BranchHelper_PEBBL<Real> {
 private:
-  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
-    try {
-      return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
-    }
-    catch (std::exception &e) {
-      return makePtrFromRef(xs);
-    }
-  }
+  const Real tol_;
 
-protected:
-  std::map<int,Real> map_;
+  Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
+    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
 
 public:
-  Transform_PEBBL(void) {}
+  TeuchosBranchHelper_PEBBL(const Real tol = 1e-6) : tol_(tol) {}
 
-  Transform_PEBBL(const Transform_PEBBL &T) : map_(T.map_) {}
+  TeuchosBranchHelper_PEBBL(const TeuchosBranchHelper_PEBBL &BH)
+    : tol_(BH.tol_) {}
 
-  virtual void pruneVector(Vector<Real> &c) = 0;
-  virtual void shiftVector(Vector<Real> &c) = 0;
-
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    c.set(x);
-    Ptr<Vector<Real>> cp = getVector(c);
-    pruneVector(*cp);
-    shiftVector(*cp);
+  int getMyIndex(const Vector<Real> &x) const {
+    // Get index closest to 0.5
+    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
+    int index = 0;
+    Real minD(0), minX(ROL_INF<Real>()), half(0.5);
+    int size = xval->length();
+    for (int i = 0; i < size; ++i) {
+      Real x  = (*xval)(i);
+      Real fx = std::floor(x);
+      Real cx = std::ceil(x);
+      minD    = std::min(x-fx,cx-x);
+      if (std::abs(minD-half) < minX) {
+        minX = std::abs(minD-half);
+        index = i;
+      }
+    }
+    return index;
   }
 
-  void applyJacobian(Vector<Real> &jv,
-               const Vector<Real> &v,
-               const Vector<Real> &x,
-                     Real &tol) {
-    jv.set(v);
-    Ptr<Vector<Real>> jvp = getVector(jv);
-    pruneVector(*jvp);
+  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
+                    const Vector<Real> &x) const {
+    // Return number of fractional variables and the
+    // sum of the distance to integer for the input vector
+    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
+    nfrac = 0;
+    integralityMeasure = static_cast<Real>(0);
+    Real minD(0);
+    int size = xval->length();
+    for (int i = 0; i < size; ++i) {
+      Real x  = (*xval)(i);
+      Real fx = std::floor(x);
+      Real cx = std::ceil(x);
+      minD    = std::min(x-fx,cx-x);
+      integralityMeasure += minD;
+      if (minD > tol_) {
+        nfrac++;
+      }
+    }
   }
 
-  void applyAdjointJacobian(Vector<Real> &ajv,
-                      const Vector<Real> &v,
-                      const Vector<Real> &x,
-                            Real &tol) {
-    ajv.set(v);
-    Ptr<Vector<Real>> ajvp = getVector(ajv);
-    pruneVector(*ajvp);
+  Ptr<Transform_PEBBL<Real>> createTransform(void) const {
+    return makePtr<TeuchosTransform_PEBBL<Ordinal,Real>>();
   }
 
-  void applyAdjointHessian(Vector<Real> &ahuv,
-                     const Vector<Real> &u,
-                     const Vector<Real> &v,
-                     const Vector<Real> &x,
-                           Real &tol) {
-    ahuv.zero();
-  }
-
-  bool isEmpty(void) const {
-    return map_.empty();
-  }
-
-  void reset(void) {
-    map_.clear();
-  }
-
-  void add(const std::map<int,Real> &in) {
-    map_.insert(in.begin(),in.end());
-  }
-
-  void add(const std::pair<int,Real> &in) {
-    map_.insert(in);
-  }
-
-}; // class Transform_PEBBL
+}; // class StdBranchHelper_PEBBL
 
 } // namespace ROL
 

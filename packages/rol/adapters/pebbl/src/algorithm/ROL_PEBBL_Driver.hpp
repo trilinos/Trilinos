@@ -37,12 +37,12 @@ public:
 
   bool solve(int &argc, char** &argv,
              std::ostream &outStream = std::cout) {
-    utilib::exception_mngr::set_stack_trace(false); 
+    utilib::exception_mngr::set_stack_trace(false);
     bool flag = branching_->setup(argc,argv);
     if (flag) {
       utilib::exception_mngr::set_stack_trace(true);
       branching_->reset();
-      branching_->solve();            
+      branching_->solve();
     }
     return flag;
   }

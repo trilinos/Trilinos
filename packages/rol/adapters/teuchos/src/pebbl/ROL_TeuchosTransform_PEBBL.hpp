@@ -41,14 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TRANSFORM_PEBBL_H
-#define ROL_TRANSFORM_PEBBL_H
+#ifndef ROL_TEUCHOSTRANSFORM_PEBBL_H
+#define ROL_TEUCHOSTRANSFORM_PEBBL_H
 
-#include "ROL_Constraint.hpp"
+#include "ROL_Transform_PEBBL.hpp"
+#include "ROL_TeuchosVector.hpp"
 
 /** @ingroup func_group
-    \class ROL::Transform_PEBBL
-    \brief Defines the pebbl transform operator interface.
+    \class ROL::TeuchosTransform_PEBBL
+    \brief Defines the pebbl transform operator interface for TeuchosVectors.
 
     ROL's pebbl constraint interface is designed to set individual components
     of a vector to a fixed value.  The range space is the same as the domain.
@@ -59,79 +60,43 @@
 
 namespace ROL {
 
-template <class Real>
-class Transform_PEBBL : public Constraint<Real> {
+template <class Ordinal, class Real>
+class TeuchosTransform_PEBBL : public Transform_PEBBL<Real> {
 private:
-  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
-    try {
-      return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
-    }
-    catch (std::exception &e) {
-      return makePtrFromRef(xs);
-    }
+  Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> getData(Vector<Real> &x) const {
+    return dynamic_cast<TeuchosVector<Ordinal,Real>&>(x).getVector();
   }
 
-protected:
-  std::map<int,Real> map_;
+  Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
+    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
+
+ using Transform_PEBBL<Real>::map_; 
 
 public:
-  Transform_PEBBL(void) {}
+  TeuchosTransform_PEBBL(void)
+    : Transform_PEBBL<Real>() {}
 
-  Transform_PEBBL(const Transform_PEBBL &T) : map_(T.map_) {}
+  TeuchosTransform_PEBBL(const TeuchosTransform_PEBBL &T)
+    : Transform_PEBBL<Real>(T) {}
 
-  virtual void pruneVector(Vector<Real> &c) = 0;
-  virtual void shiftVector(Vector<Real> &c) = 0;
-
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    c.set(x);
-    Ptr<Vector<Real>> cp = getVector(c);
-    pruneVector(*cp);
-    shiftVector(*cp);
+  void pruneVector(Vector<Real> &c) {
+    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      (*cval)(it->first) = static_cast<Real>(0);
+    }
   }
 
-  void applyJacobian(Vector<Real> &jv,
-               const Vector<Real> &v,
-               const Vector<Real> &x,
-                     Real &tol) {
-    jv.set(v);
-    Ptr<Vector<Real>> jvp = getVector(jv);
-    pruneVector(*jvp);
+  void shiftVector(Vector<Real> &c) {
+    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      (*cval)(it->first) = it->second;
+    }
   }
 
-  void applyAdjointJacobian(Vector<Real> &ajv,
-                      const Vector<Real> &v,
-                      const Vector<Real> &x,
-                            Real &tol) {
-    ajv.set(v);
-    Ptr<Vector<Real>> ajvp = getVector(ajv);
-    pruneVector(*ajvp);
-  }
-
-  void applyAdjointHessian(Vector<Real> &ahuv,
-                     const Vector<Real> &u,
-                     const Vector<Real> &v,
-                     const Vector<Real> &x,
-                           Real &tol) {
-    ahuv.zero();
-  }
-
-  bool isEmpty(void) const {
-    return map_.empty();
-  }
-
-  void reset(void) {
-    map_.clear();
-  }
-
-  void add(const std::map<int,Real> &in) {
-    map_.insert(in.begin(),in.end());
-  }
-
-  void add(const std::pair<int,Real> &in) {
-    map_.insert(in);
-  }
-
-}; // class Transform_PEBBL
+}; // class TeuchosTransform_PEBBL
 
 } // namespace ROL
 
