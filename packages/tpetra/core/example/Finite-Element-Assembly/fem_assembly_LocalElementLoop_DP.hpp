@@ -68,6 +68,17 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
 
 int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
 {
+  using Teuchos::RCP;
+
+  // The output stream 'out' will ignore any output not from Process 0.
+  RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
+  Teuchos::FancyOStream& out = *pOut;
+
+  out << "================================================================================" << std::endl
+      << "=  Local Element Loop (Dynamic Profile)"    << std::endl
+      << "================================================================================" << std::endl
+      << std::endl;
+
   int status = 0;
   for(size_t i=0; i<opts.repetitions; ++i)
   {
@@ -88,11 +99,6 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
   Teuchos::FancyOStream& out = *pOut;
-
-  out << "================================================================================" << std::endl
-      << "=  Local Element Loop (Dynamic Profile)"    << std::endl
-      << "================================================================================" << std::endl
-      << std::endl;
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
@@ -119,7 +125,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // -----------------
   // - Doxygen: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_t> owned_row_map       = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
-  RCP<const map_t> overlapping_row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(), 0, comm));
+  RCP<const map_t> overlapping_row_map = rcp(new map_t(GO_INVALID, mesh.getGhostNodeGlobalIDs(), 0, comm));
   export_t exporter(overlapping_row_map, owned_row_map);
 
   if(opts.verbose)
@@ -174,7 +180,14 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
     //
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-       crs_graph_overlapping->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+      if( mesh.nodeIsOwned(element_node_idx) )
+      {
+        crs_graph_owned->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+      }
+      else
+      {
+        crs_graph_overlapping->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+      }
     }
   }
   timerElementLoopGraph = Teuchos::null;
@@ -182,7 +195,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // Call fillComplete on the crs_graph_owned to 'finalize' it.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Overlapping Graph)"));
-    crs_graph_overlapping->fillComplete();
+    crs_graph_overlapping->fillComplete(domain_map, range_map);
   }
 
   // Need to Export and fillComplete the crs_graph_owned structure...
@@ -245,10 +258,8 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // Create owned and overlapping CRS Matrices
   RCP<matrix_t> crs_matrix_owned       = rcp(new matrix_t(crs_graph_owned));
   RCP<matrix_t> crs_matrix_overlapping = rcp(new matrix_t(crs_graph_overlapping));
-  RCP<multivector_t> rhs_owned =
-    rcp(new multivector_t(crs_graph_owned->getRowMap(), 1));
-  RCP<multivector_t> rhs_overlapping =
-    rcp(new multivector_t(crs_graph_overlapping->getRowMap(), 1));
+  RCP<multivector_t> rhs_owned         = rcp(new multivector_t(crs_graph_owned->getRowMap(), 1));
+  RCP<multivector_t> rhs_overlapping   = rcp(new multivector_t(crs_graph_overlapping->getRowMap(), 1));
 
   scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
@@ -284,8 +295,16 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
       }
 
       // For Type-2 Assembly, we only sumInot the overlapping crs_matrix.
-      crs_matrix_overlapping->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-      rhs_overlapping->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+      if( mesh.nodeIsOwned(element_node_idx) )
+      {
+        crs_matrix_owned->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+        rhs_owned->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+      }
+      else
+      {
+        crs_matrix_overlapping->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+        rhs_overlapping->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+      }
     }
   }
   timerElementLoopMatrix = Teuchos::null;
@@ -297,7 +316,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // fillComplete the owned matrix.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("6) FillComplete (Overlapping Matrix)"));
-    crs_matrix_overlapping->fillComplete();
+    crs_matrix_overlapping->fillComplete(domain_map, range_map);
   }
 
   {

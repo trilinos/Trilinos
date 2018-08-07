@@ -70,6 +70,17 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
 
 int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
 {
+  using Teuchos::RCP;
+
+  // The output stream 'out' will ignore any output not from Process 0.
+  RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
+  Teuchos::FancyOStream& out = *pOut;
+
+  out << "================================================================================" << std::endl
+      << "=  Insert Global Indices (Dynamic Profile)"    << std::endl
+      << "================================================================================" << std::endl
+      << std::endl;
+
   int status = 0;
   for(size_t i=0; i<opts.repetitions; ++i)
   {
@@ -90,11 +101,6 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
   Teuchos::FancyOStream& out = *pOut;
-
-  out << "================================================================================" << std::endl
-      << "=  Insert Global Indices (Dynamic Profile)"    << std::endl
-      << "================================================================================" << std::endl
-      << std::endl;
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
