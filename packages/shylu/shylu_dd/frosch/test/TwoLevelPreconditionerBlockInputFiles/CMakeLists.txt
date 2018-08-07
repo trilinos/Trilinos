@@ -5,7 +5,7 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoLevelBlockInputFilesCopyFiles
-    DEST_FILES Parameters.xml
+    DEST_FILES Parameters.xml stokes.h5
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     EXEDEPS twolevelblockinputfiles
