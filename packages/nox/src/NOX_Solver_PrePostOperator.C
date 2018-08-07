@@ -55,13 +55,13 @@
 #include "NOX_Solver_Generic.H"
 
 // Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p):
+NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& /* p */):
   havePrePostOperator(false)
 { }
 
 // Disallowed
 NOX::Solver::PrePostOperator& NOX::Solver::PrePostOperator::
-operator=(const PrePostOperator& p)
+operator=(const PrePostOperator& /* p */)
 { return *this; }
 
 NOX::Solver::PrePostOperator::PrePostOperator():
@@ -78,7 +78,7 @@ NOX::Solver::PrePostOperator::~PrePostOperator()
 { }
 
 void NOX::Solver::PrePostOperator::
-reset(const Teuchos::RCP<NOX::Utils>& utils, Teuchos::ParameterList& p)
+reset(const Teuchos::RCP<NOX::Utils>& /* utils */, Teuchos::ParameterList& p)
 {
   havePrePostOperator = false;
 

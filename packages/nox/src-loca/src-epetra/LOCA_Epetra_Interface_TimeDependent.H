@@ -103,7 +103,7 @@ namespace LOCA {
           for cases when computeF, computeJacobian, computeMassMatrix fills
           are functions of time (nonautonomous systems).
         */
-        virtual void setXdot(const Epetra_Vector& xdot, const double time) {
+        virtual void setXdot(const Epetra_Vector& /* xdot */, const double /* time */) {
       std::cout << "WARNING: "
             << "LOCA::Epetra::Interface::TimeDependent::setXdot"
             << "\n\tempty default implementation not overloaded!" << std::endl;

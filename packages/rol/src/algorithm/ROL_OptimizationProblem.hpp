@@ -46,7 +46,6 @@
 
 #include "ROL_ConstraintManager.hpp"
 #include "ROL_SlacklessObjective.hpp"
-#include "ROL_RandomVector.hpp"
 
 // Stochastic Includes
 #include "ROL_SampleGenerator.hpp"
@@ -1103,10 +1102,10 @@ public:
 
     Ptr<Vector<Real>> x, y, u, v;
     try {
-      x = sol_->clone(); RandomizeVector(*x);
-      y = sol_->clone(); RandomizeVector(*y);
-      u = sol_->clone(); RandomizeVector(*u);
-      v = sol_->clone(); RandomizeVector(*v);
+      x = sol_->clone(); x->randomize();
+      y = sol_->clone(); y->randomize();
+      u = sol_->clone(); u->randomize();
+      v = sol_->clone(); v->randomize();
 
       checkSolutionVector(*x,*y,*u,outStream);
       checkObjective(*x,*u,*v,outStream,numSteps,order);
@@ -1118,10 +1117,10 @@ public:
     if(con_ != nullPtr) {
       Ptr<Vector<Real>> c, l, w, q;
       try {
-        c = mul_->dual().clone(); RandomizeVector(*c);
-        l = mul_->clone();        RandomizeVector(*l);
-        w = mul_->clone();        RandomizeVector(*w);
-        q = mul_->clone();        RandomizeVector(*q);   
+        c = mul_->dual().clone(); c->randomize();
+        l = mul_->clone();        l->randomize();
+        w = mul_->clone();        w->randomize();
+        q = mul_->clone();        q->randomize();
 
         checkMultiplierVector(*w,*q,*l,outStream);
         checkConstraint(*x,*u,*v,*c,*l,outStream,numSteps,order);

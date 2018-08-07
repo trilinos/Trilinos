@@ -1,4 +1,5 @@
-#!/bin/env bash
+#!/usr/bin/env bash
+# set -x  # echo commands
 
 export https_proxy=https://wwwproxy.sandia.gov:80
 export http_proxy=http://wwwproxy.sandia.gov:80
@@ -100,14 +101,6 @@ exit $ierror
 fi
 
 cd ../
-#process list of changes here with script and save to 'packageEnables'
-declare packageEnables=$(bash Trilinos/commonTools/test/utilities/changedPackages.bash)
-ierror=$?
-if [[ $ierror != 0 ]]; then
-echo "There was an issue creating the list of package enables. The error code was: $ierror"
-exit $ierror
-fi
-echo "List of package enables is: $packageEnables"
 
 # Set up the full environment for the build
 if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
@@ -134,6 +127,18 @@ then
     echo "There was an issue loading the intel environment. The error code was: $ierror"
     exit $ierror
   fi
+# --- BEGIN SCAFFOLDING ---
+# nurgleflurgle... name match!  can we change this to a regex or something to
+# allow separate testing jobs!?
+#elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]
+#then
+#  source Trilinos/cmake/std/sems/PullRequestGCC4.9.3TestingEnv.sh
+#  ierror=$?
+#  if [[ $ierror != 0 ]]; then
+#    echo "There was an issue loading the gcc environment. The error code was: $ierror"
+#    exit $ierror
+#  fi
+# --- END SCAFFOLDING ---  
 else
   ierror=42
   echo "There was an issue loading the proper environment. The error code was: $ierror"
@@ -154,7 +159,16 @@ echo "CDash Track = ${CDASH_TRACK:?}"
 #-------------------------------------
 # Doing configure/build/test/submit
 #-------------------------------------
-echo $packageEnables | sed -e "s/-D\([^= ]*\)=\([^ ]*\)/set(\1 \2 CACHE BOOL \"Enabled by PR package enable file.\")^/g" | tr "^" "\n" > packageEnables.cmake
+rm packageEnables.cmake
+changed_packages_app=Trilinos/commonTools/framework/get-changed-trilinos-packages.sh
+${changed_packages_app} ${TRILINOS_SOURCE_SHA} ${TRILINOS_TARGET_SHA} packageEnables.cmake
+
+ierror=$?
+if [[ $ierror != 0 ]]; then
+    echo "There was an issue generating packageEnables.cmake.  The error code was: $ierror"
+    exit $ierror
+fi
+
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
 
@@ -164,15 +178,19 @@ cd TFW_testing_single_configure_prototype
 
 if [ "icc" == ${CC:?} ]
 then
-  CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
+    CONFIG_SCRIPT=PullRequestLinuxIntelTestingSettings.cmake
 else
-  if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]
-  then
-    CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
-  elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]
-  then
-    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
-  fi
+    if [ "Trilinos_pullrequest_gcc_4.8.4" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+    # --- BEGIN SCAFFOLDING ---
+    # nurgleflurgle... name match!  can we change this to a regex or something to
+    # allow separate testing jobs!?
+    #elif [ "Trilinos_pullrequest_gcc_4.9.3_wcmclen_test" == "${JOB_BASE_NAME:?}" ]; then
+    #    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+    # --- END SCAFFOLDING ---
+    fi
 fi
 
 ctest -S simple_testing.cmake \
@@ -205,3 +223,6 @@ fi
 
 #pushd Trilinos/cmake/ctest/drivers/parameterized
 #ctest -S ctest_linux_nightly_generic.cmake
+
+
+

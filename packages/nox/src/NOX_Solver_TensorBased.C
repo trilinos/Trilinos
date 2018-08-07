@@ -784,8 +784,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
 
 bool
 NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
-                     const NOX::Abstract::Group& soln,
-                     const NOX::Solver::Generic& s,
+                     const NOX::Abstract::Group& /* soln */,
+                     const NOX::Solver::Generic& /* s */,
                      double& lambda)
 {
   double qval = 0;

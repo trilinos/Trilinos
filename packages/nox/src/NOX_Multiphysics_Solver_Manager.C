@@ -65,8 +65,8 @@ NOX::Multiphysics::Solver::Manager::Manager(
 }
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RCP<NOX::Abstract::Group>& grp,
-    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+        const Teuchos::RCP<NOX::Abstract::Group>& /* grp */,
+    const Teuchos::RCP<NOX::StatusTest::Generic>& /* t */,
     const Teuchos::RCP<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),

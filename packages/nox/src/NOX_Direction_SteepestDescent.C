@@ -99,7 +99,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
 bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
                  Abstract::Group& soln,
-                 const Solver::Generic& solver)
+                 const Solver::Generic& /* solver */)
 {
   NOX::Abstract::Group::ReturnType status;
 

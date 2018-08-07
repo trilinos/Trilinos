@@ -60,7 +60,7 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-FullStep::FullStep(const Teuchos::RCP<NOX::GlobalData>& gd,
+FullStep::FullStep(const Teuchos::RCP<NOX::GlobalData>& /* gd */,
            Teuchos::ParameterList& params)
 {
   Teuchos::ParameterList& p = params.sublist("Full Step");
@@ -72,7 +72,7 @@ FullStep::~FullStep()
 
 }
 
-bool FullStep::reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+bool FullStep::reset(const Teuchos::RCP<NOX::GlobalData>& /* gd */,
              Teuchos::ParameterList& params)
 {
   Teuchos::ParameterList& p = params.sublist("Full Step");

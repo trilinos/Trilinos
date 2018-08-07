@@ -850,7 +850,10 @@ public:
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
-  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra<GlobalOrdinal,Node>(diag)); }
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy");
+    XPETRA_ERR_CHECK(mtx_->ExtractDiagonalCopy(toEpetra<GlobalOrdinal,Node>(diag)));
+  }
 
   //! Get offsets of the diagonal entries in the matrix.
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {

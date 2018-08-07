@@ -103,8 +103,8 @@ namespace LOCA {
     virtual void setParameters(const ParameterVector& p) = 0;
 
     //! Call user's own print routine for vector-parameter pair
-    virtual void printSolution(const Epetra_Vector& x_,
-                   double conParam) {}
+    virtual void printSolution(const Epetra_Vector& /* x_ */,
+                   double /* conParam */) {}
 
         /*!
           \brief Provides data to application for output files.
@@ -114,15 +114,15 @@ namespace LOCA {
           and gives the application some indices that can be used for
           creating a unique name/index for the output files.
         */
-        virtual void dataForPrintSolution(const int conStep, const int timeStep,
-                                          const int totalTimeSteps) {};
+        virtual void dataForPrintSolution(const int /* conStep */, const int /* timeStep */,
+                                          const int /* totalTimeSteps */) {};
 
     /*!
       \brief Set multipoint parameter in the user's application.
 
       Should be called prior to calling one of the compute functions.
     */
-        virtual void setMultiPointParameter(const int stepNum) {};
+        virtual void setMultiPointParameter(const int /* stepNum */) {};
 
 
     //! Perform any preprocessing before a continuation step starts.
@@ -132,8 +132,8 @@ namespace LOCA {
      */
     virtual void
     preProcessContinuationStep(
-                 LOCA::Abstract::Iterator::StepStatus stepStatus,
-                 LOCA::Epetra::Group& group) {}
+                 LOCA::Abstract::Iterator::StepStatus /* stepStatus */,
+                 LOCA::Epetra::Group& /* group */) {}
 
     //! Perform any postprocessing after a continuation step finishes.
     /*!
@@ -142,8 +142,8 @@ namespace LOCA {
      */
     virtual void
     postProcessContinuationStep(
-                 LOCA::Abstract::Iterator::StepStatus stepStatus,
-                 LOCA::Epetra::Group& group) {}
+                 LOCA::Abstract::Iterator::StepStatus /* stepStatus */,
+                 LOCA::Epetra::Group& /* group */) {}
 
     /*!
       \brief Projects solution to a few scalars for

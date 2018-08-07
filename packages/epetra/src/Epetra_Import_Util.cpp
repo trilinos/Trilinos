@@ -189,11 +189,11 @@ template<typename int_type>
 int TUnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
                                int NumSameIDs,
                                int NumRemoteIDs,
-                               const int * RemoteLIDs,
+                               const int * /* RemoteLIDs */,
                                int NumPermuteIDs,
-                               const int *PermuteToLIDs,
+                               const int */* PermuteToLIDs */,
                                const int *PermuteFromLIDs,
-                               int LenImports,
+                               int /* LenImports */,
                                char* Imports)
 {
   int i,nnz=0;
@@ -266,7 +266,7 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
                                   int NumPermuteIDs,
                                   const int *PermuteToLIDs,
                                   const int *PermuteFromLIDs,
-                                  int LenImports,
+                                  int /* LenImports */,
                                   char* Imports,
                                   int TargetNumRows,
                                   int TargetNumNonzeros,
