@@ -53,9 +53,9 @@ template <class Real>
 class SimController {
 private:
   // Storage
-  std::map<std::vector<Real>, int>          indices_;
-  std::vector<bool>                         flags_;
-  std::vector<ROL::Ptr<Vector<Real> > > vectors_;
+  std::map<std::vector<Real>,int> indices_;
+  std::vector<bool>               flags_;
+  std::vector<Ptr<Vector<Real>>>  vectors_;
   int maxIndex_;
 
   // Update flags
@@ -63,7 +63,7 @@ private:
 
   void reset(const bool flag = true) {
     if ( flag ) {
-      typename std::map<std::vector<Real>, int>::iterator it;
+      typename std::map<std::vector<Real>,int>::iterator it;
       for (it = indices_.begin(); it != indices_.end(); ++it) {
         flags_[it->second] = false;
       }
@@ -114,7 +114,7 @@ public:
     bool flag = false;
     int index = maxIndex_;
     if (count) {
-      typename std::map<std::vector<Real>, int>::iterator it
+      typename std::map<std::vector<Real>,int>::iterator it
         = indices_.find(param);
       index = it->second;
       flag  = flags_[index];
@@ -124,7 +124,7 @@ public:
     }
     else {
       indices_.insert(
-        std::pair<std::vector<Real>, int>(param, index));
+        std::pair<std::vector<Real>,int>(param, index));
       flags_.push_back(false);
       vectors_.push_back(x.clone()); 
       maxIndex_++;
@@ -139,7 +139,7 @@ public:
     int count = indices_.count(param);
     int index = maxIndex_;
     if (count) {
-      typename std::map<std::vector<Real>, int>::iterator it
+      typename std::map<std::vector<Real>,int>::iterator it
         = indices_.find(param);
       index = it->second;
       flags_[index] = true;
@@ -147,7 +147,7 @@ public:
     }
     else {
       indices_.insert(
-        std::pair<std::vector<Real>, int>(param, index));
+        std::pair<std::vector<Real>,int>(param, index));
       flags_.push_back(true);
       vectors_.push_back(x.clone()); 
       vectors_[index]->set(x);
