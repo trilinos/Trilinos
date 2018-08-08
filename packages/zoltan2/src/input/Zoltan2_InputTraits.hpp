@@ -134,7 +134,9 @@ typedef Tpetra::Map<>::node_type default_node_t;
     \li \c gno (global number) is the integral data type used by the application and Zoltan2 to represent global identifiers and global counts.
  */
 
-template <typename scalar=double, typename lno=int, typename gno=int>
+template <typename scalar=double, 
+          typename lno=Tpetra::Map<>::local_ordinal_type, 
+          typename gno=Tpetra::Map<>::global_ordinal_type>
 class BasicUserTypes{
 };
 
