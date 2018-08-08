@@ -86,13 +86,13 @@ Array< int > commDims;
  * \param mdv [in] an MDVector, whose values will be re-assigned
  *
  */
-template< typename Sca, class Node >
-void assignGlobalIDsToMDVector(MDVector< Sca, Node > & mdv)
+template< typename Sca >
+void assignGlobalIDsToMDVector(MDVector< Sca > & mdv)
 {
   // Give the iterator a simpler name
   typedef typename MDArrayView< Sca >::iterator iterator;
   // Get a pointer to the underlying MDMap
-  const Teuchos::RCP< const MDMap< Node > > mdMap = mdv.getMDMap();
+  const Teuchos::RCP< const MDMap > mdMap = mdv.getMDMap();
   // Loop over the underlying MDArrayView
   MDArrayView< Sca > mdav = mdv.getDataNonConst();
   for (iterator it = mdav.begin(); it != mdav.end(); ++it)
@@ -160,8 +160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
   }
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims(), commPad(), bndryPad()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims(), commPad(), bndryPad()));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
@@ -259,8 +259,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceMid, Sca )
   }
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims(), commPad()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims(), commPad()));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
@@ -381,8 +381,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
   }
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims(), padding(), padding()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims(), padding(), padding()));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
@@ -477,8 +477,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceIndex, Sca )
   }
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims()));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
@@ -560,8 +560,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, CompoundSlice, Sca )
   }
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims, commPad, bndryPad));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims, commPad, bndryPad));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
