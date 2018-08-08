@@ -417,7 +417,7 @@ void
 Chebyshev<MatrixType>::
 applyImpl (const MV& X,
            MV& Y,
-           Teuchos::ETransp mode,
+           Teuchos::ETransp /* mode */,
            scalar_type alpha,
            scalar_type beta) const
 {
