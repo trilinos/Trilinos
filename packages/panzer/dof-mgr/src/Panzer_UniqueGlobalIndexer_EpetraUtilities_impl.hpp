@@ -123,7 +123,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,Glo
    Teuchos::RCP<Map> reducedMap
      = Teuchos::rcp(new Map(-1, static_cast<int>(reducedIndices.size()), Teuchos::arrayViewFromVector(reducedIndices).getRawPtr(),
                             1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-   return Teuchos::rcp(new IntVector(View,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
+   return Teuchos::rcp(new IntVector(Copy,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
