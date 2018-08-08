@@ -121,7 +121,9 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // "Good" Class ID for Avatar
   validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
 
-  
+   // Which drop tol choice heuristic to use
+  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heurisitc we want to use");  
+
   return validParamList;
 }
 
@@ -170,6 +172,8 @@ void AvatarInterface::Setup() {
 
   // Which class does Avatar consider "good"
   avatarGoodClass_ = params_.get<int>("avatar: good class");
+
+  heuristicToUse_ = params_.get<int>("avatar: heuristic");
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
@@ -299,8 +303,10 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    int ** avatarOutput;
-    {
+    // FIXME: Find alternative to hard coding malloc size (input deck?)
+    int* predictions = (int*)malloc(8 * sizeof(int));
+    float* probabilities = (float*)malloc(3 * 8 * sizeof(float));
+
       std::string testString;
       for(int i=0; i<num_combos; i++) {
         SetIndices(i,indices);
@@ -313,13 +319,12 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
       const int test_data_is_a_string = 1;
-      avatarOutput=avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string);
-    }
+      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions,probabilities);
 
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i][0] == avatarGoodClass_) acceptableCombos.push_back(i);      
+      if(predictions[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
@@ -337,48 +342,129 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 	chosen_option_id = acceptableCombos[0];
       } 
       else {
-	int low_crash = avatarOutput[0][1];
-	int best_prob = avatarOutput[0][3];
-	int diff, this_combo;
-	chosen_option_id = acceptableCombos[0];
-	for(int x=0; x<acceptableCombos.size(); x++){
-	  this_combo = acceptableCombos[x];
-	  diff = avatarOutput[this_combo][1] - low_crash;
-	  if(diff < -20){
-	    low_crash =  avatarOutput[this_combo][1];
-	    best_prob = avatarOutput[this_combo][3];
-	    chosen_option_id = acceptableCombos[x];
-	  } 
-	  else if(diff <= 0 && avatarOutput[this_combo][3] > best_prob){
-	    low_crash =  avatarOutput[this_combo][1];
-	    best_prob = avatarOutput[this_combo][3];
-	    chosen_option_id = acceptableCombos[x];
-   	  }
-	}
+	switch (heuristicToUse_){
+	  case 1: 
+		chosen_option_id = hybrid(probabilities, acceptableCombos);
+		break;
+	  case 2: 
+		chosen_option_id = highProb(probabilities, acceptableCombos);
+		break;
+	  case 3: 
+		chosen_option_id = acceptableCombos[0];
+		break;
+	  case 4: 
+		chosen_option_id = lowCrash(probabilities, acceptableCombos);
+		break;
+	  case 5:
+		chosen_option_id = weighted(probabilities, acceptableCombos);
+		break;
+        }
 
       }
-      int margin_risk = 100 - avatarOutput[chosen_option_id][avatarGoodClass_ + 2];
-      if(margin_risk > 75){
-	GetOStream(Runtime0)<< "WARNING: Margin risk: Margin risk is above recommended level, meaning there is a high chance of extrapolation" <<std::endl;
-      }
     }
+    
 
     // Generate the parameterList from the chosen option
     GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
-
+  } 
     // Cleanup
-    free(avatarOutput);
-  }
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
+
+
 
 }
 
+int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination has the same
+    // or slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= 0 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
+}
 
+int AvatarInterface::highProb(float * probabilities, std::vector<int> acceptableCombos) const{
+  float high_prob = probabilities[2];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a higher "GOOD" 
+    // probability, use this combination
+    if(probabilities[this_combo + 2] > high_prob){
+      high_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
 
+int AvatarInterface::lowCrash(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a lower "CRASH"
+    // probability, use this combination
+    if(probabilities[this_combo] < low_crash){
+      low_crash = probabilities[this_combo];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
 
+int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination has the same
+    // or slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= .1 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
+}
 
-
-} // namespace MueLu
+}// namespace MueLu
 
 #endif// HAVE_MUELU_AVATAR
 

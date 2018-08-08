@@ -91,6 +91,14 @@ namespace MueLu {
     // Clean up the handle
     void Cleanup();
 
+    int hybrid(float * probabilities, std::vector<int> acceptableCombos) const; 
+
+    int highProb(float * probabilities, std::vector<int> acceptableCombos) const; 
+ 
+    int lowCrash(float * probabilities, std::vector<int> acceptableCombos) const; 
+
+    int weighted(float * probabilities, std::vector<int> acceptableCombos) const; 
+
   private:
     // Utility functions
     Teuchos::ArrayRCP<std::string> ReadFromFiles(const char * param_name) const;
@@ -107,6 +115,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<std::string> namesStrings_;
     Teuchos::Array<std::string> filestem_;
     int avatarGoodClass_;
+    int heuristicToUse_;
 
     // RCP's don't handle opaque pointers well
     Avatar_handle * avatarHandle_;
