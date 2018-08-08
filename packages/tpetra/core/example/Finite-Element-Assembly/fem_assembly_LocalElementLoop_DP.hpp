@@ -180,7 +180,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
     //
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      if( mesh.nodeIsOwned(element_node_idx) )
+      if( mesh.nodeIsOwned(global_ids_in_row[element_node_idx]) )
       {
         crs_graph_owned->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
@@ -294,7 +294,7 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
         column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
       }
 
-      if( mesh.nodeIsOwned(element_node_idx) )
+      if( mesh.nodeIsOwned(global_row_id) )
       {
         crs_matrix_owned->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
         rhs_owned->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
