@@ -5,7 +5,7 @@
 #include<queue>
 
 void bfs(graph* g, int root, int* parents, int* levels, edge_set& nonTreeEdges){
-  queue<int> frontier;
+  std::queue<int> frontier;
   frontier.push(root);
   parents[root] = root;
   levels[root] = 0;
@@ -62,7 +62,7 @@ int lca(graph* g, int* levels, int* parents, int curr_node, int neighbor, edge_m
   } else if(levels[p_curr_node] > levels[p_neighbor]){
     edge e(p_curr_node, parents[p_curr_node]);
     e.validate();
-    visited_edges[e]+=1;
+    visitedEdges[e]+=1;
     p_curr_node = parents[p_curr_node];
   }
 

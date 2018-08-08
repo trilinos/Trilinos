@@ -27,9 +27,10 @@ namespace iceProp{
 	  int first_sender;
 	  int second_label;
 	  int second_sender;
+          int bcc_name;
 	  bool is_art;
 	  // Constructors
-	  vtxLabel(int idx, int first = -1, int first_sender = -1, int second = -1, int second_sender = -1,bool art = false) { 
+	  vtxLabel(int idx, int first = -1, int first_sender = -1, int second = -1, int second_sender = -1,bool art = false, int bcc_name_ = -1) { 
 	    id = idx;
             //gid = idx;
 	    if(id == -1){
@@ -40,6 +41,7 @@ namespace iceProp{
 	    second_label = second;
 	    this->second_sender = second_sender; 
 	    is_art = art;
+            bcc_name = bcc_name_;
 	  }
 	  vtxLabel() {
 	    id = -1;
@@ -48,6 +50,7 @@ namespace iceProp{
 	    second_label = -1;
 	    second_sender = -1;
 	    is_art = false; 
+            bcc_name = -1;
 	  }
 	  // vtxLabel assignment
 	  vtxLabel& operator=(const vtxLabel& other)  { 
@@ -58,6 +61,7 @@ namespace iceProp{
 	    second_label = other.second_label;
 	    second_sender = other.second_sender;
 	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
 	    return *this;
 	  }
 	  // int assignment
@@ -86,6 +90,7 @@ namespace iceProp{
               first_sender = copy.first_sender;
               second_label = copy.second_label;
               second_sender = copy.second_sender;
+              bcc_name = copy.bcc_name;
             //handles HALF == HALF
             } else if(owned_gs == copy_gs && owned_gs == HALF){
               if(copy.first_label != first_label){
@@ -206,48 +211,18 @@ public:
   
  	
   //Constructor assigns vertices to processors and builds maps with and
-  //without copies
+  //without copies ICE SHEET VERSION
   iceSheetPropagation(Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const map_t> mapOwned_, Teuchos::RCP<const map_t> mapWithCopies_, graph* g_,int* boundary_flags, int* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
     mapWithCopies(mapWithCopies_)
   {
-    //Each rank has 15 IDs, the last five of which overlap with the next rank.
-    //(IDs and owning processors wrap-around from processor np-1 to 0)
-    /*const Tpetra::global_size_t nGlobal = np * nLocalOwned;
-    lno_t offset = me * nLocalOwned;
-    
-    Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
-    for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++)
-      gids[i] = static_cast<gno_t> (offset + i) % nGlobal;
-    
-    //Create Map of owned + copies (a.k.a. overlap map); analogous to ColumnMap
-    Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    mapWithCopies = rcp(new map_t(dummy, gids(), 0, comm));
-
-    //create map of owned only (a.k.a. one-to-one map); analogous to RowMap
-    mapOwned = rcp(new map_t(dummy, gids(0,nLocalOwned), 0, comm));*/
-
-    //print the entries of each map
-    //std::cout << me << " MAP WITH COPIES ("
-    //                << mapWithCopies->getGlobalNumElements() <<"):   ";
-    //lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
-    //for(lno_t i = 0; i < nlocal; i++)
-    //  std::cout << mapWithCopies->getGlobalElement(i) << " ";
-    //std::cout << std::endl;
 
     typedef Tpetra::Import<lno_t, gno_t> import_t;
     Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, mapWithCopies));
     
-    femv = rcp(new femv_t(mapOwned, importer, nVec, true));
-   
-    
- 
-    //this is where the algorithm goes. Things that I still need to do:
-    //	1. initialize the femv with the vtxLabels, using input data
-    //	2. add half-grounded nodes to iceProp::reg
-    //	3. call propagate.
+    femv = rcp(new femv_t(mapOwned, importer, nVec, true)); 
 
     femv->beginFill();
     //set the member variable that stores femv->getData(0);
@@ -422,6 +397,7 @@ public:
       neighbor.first_sender = curr_node_gid;
       neighbor.second_label = curr_node.second_label;
       neighbor.second_sender = curr_node_gid;
+      neighbor.bcc_name = curr_node.bcc_name;
       return;
     } else if (curr_gs == FULL) {
       //if it is an articulation point, and it hasn't sent to this neighbor
@@ -430,6 +406,7 @@ public:
         if(nbor_gs == NONE){
           neighbor.first_label = curr_node_gid;
           neighbor.first_sender = curr_node_gid;
+          neighbor.bcc_name = curr_node.bcc_name;
         } else if(nbor_gs == HALF){
           if(neighbor.first_label != curr_node_gid){
             neighbor.second_label = curr_node_gid;
@@ -445,6 +422,7 @@ public:
       if(nbor_gs == NONE){
         neighbor.first_label = curr_node.first_label;
         neighbor.first_sender = curr_node_gid;
+        neighbor.bcc_name = curr_node.bcc_name;
       } else if(nbor_gs == HALF){
         //make sure you aren't giving a duplicate label, and that
         //you haven't sent a label to this neighbor before.
@@ -461,13 +439,200 @@ public:
     } 
   }
   
-  void bccPropagate(){
-    //while (there are empty vertices)
-      //initialize the reg frontier
-      //(also count how many empty vertices there are)
-      //call this->propagate
+  Teuchos::ArrayRCP<const scalar_t> bccPropagate(){
+    int done = 0;
+    std::queue<int> art_queue;
+    int bcc_count = 0;
+    //while there are empty vertices
+    while(!done){
+      
+      //see how many articulation points all processors know about
+      int globalArtPtCount = 0;
+      int localArtPtCount = art_queue.size();
+      Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1, &localArtPtCount,&globalArtPtCount);
+       
+      //if none, no one is making progress, so ground two empty neighbors.
+      if(globalArtPtCount == 0){
+        //search for a pair of empty vertices where one is ghosted on a processor
+        int foundGhostPair = 0;
+        int ownedVtx = -1, ghostVtx = -1;
+        for(int i = 0; i < nLocalOwned; i++){
+          if(femvData[i].getGroundingStatus() == NONE){
+            int out_degree = out_degree(g, i);
+            int* outs = out_vertices(g, i);
+            for(int j = 0; j < out_degree; j++){
+              if(outs[j] >= nLocalOwned){
+                //we're dealing with a ghosted vertex
+                if(femvData[outs[j]].getGroundingStatus() == NONE){
+                  ownedVtx = i;
+                  ghostVtx = outs[j];
+                  foundGhostPair = 1;
+                  break;
+                }
+              }
+            }
+          }
+          if(foundGhostPair) break;
+        }
+        //if you found a ghost pair, send your own procID, otherwise send -1
+        int neighborProc = -1;
+        int neighborSend = -1;
+        if(foundGhostPair) neighborSend = me;
+        Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX, 1, &neighborSend, &neighborProc);
+        
+        //if neighborProc is me, I have to ground the neighbors.
+        if(neighborProc == me){
+          femv->beginFill();
+          //replace local value with self-grounded vertex with new bcc_name
+          iceProp::vtxLabel firstNeighbor = femvData[ownedVtx];
+          iceProp::vtxLabel secondNeighbor = femvData[ghostVtx];
+          int firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
+	  int secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
+          firstNeighbor.first_label = firstNeighbor_gid;
+          firstNeighbor.first_sender = firstNeighbor_gid;
+          firstNeighbor.bcc_name = bcc_count*np + me;
+          secondNeighbor.first_label = secondNeighbor_gid;
+          secondNeighbor.first_sender = secondNeighbor_gid;
+          secondNeighbor.bcc_name = bcc_count*np + me;
+          femv->replaceLocalValue(ownedVtx,0, firstNeighbor);
+          femv->replaceLocalValue(ghostVtx,0, secondNeighbor);
+          femv->endFill();
+          //push the neighbors on the reg queue
+          iceProp::reg.push(ownedVtx);
+          iceProp::reg.push(ghostVtx);
+        } else if(neighborProc == -1){
+          int foundEmptyPair = 0;
+          int vtx1 = -1, vtx2 = -1;
+          //if none are found, find any pair of empty vertices. (similar procedure)
+          for(int i = 0; i < nLocalOwned; i++){
+            if(femvData[i].getGroundingStatus() == NONE){
+              int out_degree = out_degree(g, i);
+              int* outs = out_vertices(g, i);
+              for(int j = 0; j < out_degree; j++){
+                if(femvData[outs[j]].getGroundingStatus() == NONE){
+                  foundEmptyPair = 1;
+                  vtx1 = i;
+                  vtx2 = outs[j];
+                  break;
+                }
+              }
+            }
+            if(foundEmptyPair) break;
+          }
+          
+          int emptyProc = -1;
+          int emptySend = -1;
+          if(foundEmptyPair) emptySend = me;
+          Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &emptySend, &emptyProc);
+          
+          //if emptyProc is -1, no processor has a pair of empty neighboring vertices, so we can't do anything
+          
+          if(emptyProc == -1){
+            std::cout<<me<<": Couldn't find two empty neighbors\n";
+            break;
+          }
+          else if(emptyProc == me){
+            std::cout<<me<<": Grounding two empty neighbors\n";
+            //this processor will ground two random, empty neighbors.
+            femv->beginFill();
+            iceProp::vtxLabel firstNeighbor = femvData[vtx1];
+            iceProp::vtxLabel secondNeighbor = femvData[vtx2];
+            int firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
+            int secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
+            firstNeighbor.first_label = firstNeighbor_gid;
+            firstNeighbor.first_sender = firstNeighbor_gid;
+            firstNeighbor.bcc_name = bcc_count*np + me;
+            secondNeighbor.first_label = secondNeighbor_gid;
+            secondNeighbor.first_sender = secondNeighbor_gid;
+            secondNeighbor.bcc_name = bcc_count*np + me;
+            femv->replaceLocalValue(vtx1, 0, firstNeighbor);
+            femv->replaceLocalValue(vtx2, 0, secondNeighbor);
+            femv->endFill();
+            //put the neighbors on the regular queue
+            iceProp::reg.push(vtx1);
+            iceProp::reg.push(vtx2);
+          }
+        }
+      } else {
+        //if this processor knows about articulation points
+        if(art_queue.size()){
+          //look at the front, and ground a neighbor.
+          int art_pt = art_queue.front();
+          int out_degree = out_degree(g, art_pt);
+          int* outs = out_vertices(g, art_pt);
+          for(int i = 0;i < out_degree; i++){
+            if(femvData[outs[i]].getGroundingStatus() == NONE){
+              femv->beginFill();
+              iceProp::vtxLabel neighbor = femvData[outs[i]];
+              iceProp::vtxLabel art = femvData[art_pt];
+              int neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
+              neighbor.first_label = neighbor_gid;
+              neighbor.first_sender = neighbor_gid;
+              neighbor.bcc_name = bcc_count*np+me;
+              art.bcc_name = bcc_count*np+me;
+              femv->replaceLocalValue(art_pt,0,art);
+              femv->replaceLocalValue(outs[i],0, neighbor);
+              femv->endFill();
+              iceProp::reg.push(art_pt);
+              iceProp::reg.push(outs[i]);
+            }
+          }
+          
+        }
+      }
+      
+      //call this->propagate, which, per-processor, finds one bcc at a time.
+      std::cout<<me<<": Calling propagate\n";
+      int* t = propagate();
+      bcc_count++;
+      delete [] t;
+      std::cout<<me<<": Checking for articulation points\n";
       //check for articulation points
-    //endwhile
+      for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
+        if(femvData[i].getGroundingStatus() == FULL){
+          int out_degree = out_degree(g, i);
+          int* outs = out_vertices(g, i);
+          for(int j = 0; j < out_degree; j++){
+            if(femvData[outs[j]].getGroundingStatus() < FULL){
+              art_queue.push(i);
+              break;
+            }
+          }
+        }
+      }
+      std::cout<<me<<": Clearing half labels\n";
+      //clear half labels
+      for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
+        iceProp::vtxLabel label = femvData[i];
+        if(label.getGroundingStatus() == HALF){
+          label.first_label = -1;
+          label.first_sender = -1;
+          label.bcc_name = -1;
+          femv->switchActiveMultiVector();
+          femv->replaceLocalValue(i,0,label);
+        }
+      }
+      //pop articulation points off of the art_queue if necessary.
+      std::cout<<me<<": Removing fully explored articulation points\n";
+      if(!art_queue.empty()){
+        bool pop_art = true;
+        while(pop_art && !art_queue.empty()){
+          std::cout<<me<<": Checking artpt "<<art_queue.front()<<"\n";
+          int top_art_degree = out_degree(g,art_queue.front());
+          int* art_outs = out_vertices(g,art_queue.front());
+        
+          for(int i = 0; i < top_art_degree; i++){
+            if(femvData[art_outs[i]].getGroundingStatus() < FULL){
+              pop_art = false;
+            }
+          }
+          if(pop_art) art_queue.pop();
+        }
+      }
+      std::cout<<me<<": Starting over\n";
+    }
+    std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
+    return femv->getData(0);
   }
   
   int vtxLabelUnitTest();
