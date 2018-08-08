@@ -899,7 +899,7 @@ namespace Classes {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getRowMap () const
   {
@@ -908,7 +908,7 @@ namespace Classes {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getColMap () const
   {
@@ -917,7 +917,7 @@ namespace Classes {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getDomainMap () const
   {
@@ -926,15 +926,16 @@ namespace Classes {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getRangeMap () const
   {
     return rangeMap_;
   }
 
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::import_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getImporter () const
   {
@@ -943,7 +944,7 @@ namespace Classes {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::export_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getExporter () const
   {
