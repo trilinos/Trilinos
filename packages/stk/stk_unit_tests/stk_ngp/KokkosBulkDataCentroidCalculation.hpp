@@ -46,6 +46,8 @@
 #define _KokkosBulkDataCentroidCalculation_h_
 
 #include "KokkosCentroidCalculation.hpp"
+
+#include <sys/time.h>
 #include <gtest/gtest.h>
 
 #include <stk_mesh/base/MetaData.hpp>
