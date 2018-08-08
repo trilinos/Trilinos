@@ -308,7 +308,7 @@ public:
           femv->replaceLocalValue(i,0,cleared);
         }
       }
-      //std::cout<<me<<": Running BFS-prop again\n";
+      std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
       bfs_prop(femv);     
     }
@@ -323,7 +323,7 @@ public:
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
-    //printFEMV(*femv, "AfterPropagation");
+    printFEMV(*femv, "AfterPropagation");
     return removed;
   }
 
@@ -374,7 +374,7 @@ public:
       //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
       //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
       int local_done = iceProp::reg.empty() && iceProp::art.empty();
-      //printFEMV(*femv,"Propagation Step");
+      printFEMV(*femv,"Propagation Step");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
@@ -484,6 +484,7 @@ public:
         
         //if neighborProc is me, I have to ground the neighbors.
         if(neighborProc == me){
+          std::cout<<me<<": Grounding empty neighbors, one is ghosted.\n";
           femv->beginFill();
           //replace local value with self-grounded vertex with new bcc_name
           iceProp::vtxLabel firstNeighbor = femvData[ownedVtx];
@@ -502,6 +503,10 @@ public:
           //push the neighbors on the reg queue
           iceProp::reg.push(ownedVtx);
           iceProp::reg.push(ghostVtx);
+        } else if(neighborProc != me && neighborProc != -1){
+          femv->beginFill();
+          std::cout<<me<<": Waiting for proc "<<neighborProc<<" to ground neighbors\n";
+          femv->endFill();
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
           int vtx1 = -1, vtx2 = -1;
@@ -553,11 +558,16 @@ public:
             //put the neighbors on the regular queue
             iceProp::reg.push(vtx1);
             iceProp::reg.push(vtx2);
+          } else {
+            femv->beginFill();
+            femv->endFill();
           }
         }
       } else {
+        
         //if this processor knows about articulation points
-        if(art_queue.size()){
+        if(!art_queue.empty()){
+          std::cout<<me<<": Grounding an articulation point & neighbor.\n";
           //look at the front, and ground a neighbor.
           int art_pt = art_queue.front();
           int out_degree = out_degree(g, art_pt);
@@ -580,6 +590,10 @@ public:
             }
           }
           
+        } else {
+          //some processor knows about articulation points, just not this one.
+          femv->beginFill();
+          femv->endFill();
         }
       }
       
