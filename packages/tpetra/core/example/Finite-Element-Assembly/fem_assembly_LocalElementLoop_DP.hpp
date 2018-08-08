@@ -294,7 +294,6 @@ int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
         column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
       }
 
-      // For Type-2 Assembly, we only sumInot the overlapping crs_matrix.
       if( mesh.nodeIsOwned(element_node_idx) )
       {
         crs_matrix_owned->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
