@@ -63,10 +63,10 @@ namespace FROSch {
     {
         OperatorVector_.push_back(operators.at(0));
         for (unsigned i=1; i<operators.size(); i++) {
-            FROSCH_ASSERT(operators.at(i)->OperatorDomainMap().SameAs(OperatorVector_.at(0)->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
-            FROSCH_ASSERT(operators.at(i)->OperatorRangeMap().SameAs(OperatorVector_.at(0)->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
+            FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[i]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
+            FROSCH_ASSERT(operators[i]->OperatorRangeMap().SameAs(OperatorVector_[i]->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
             
-            OperatorVector_.push_back(operators.at(i));
+            OperatorVector_.push_back(operators[i]);
             EnableOperators_.push_back(true);
         }
     }
@@ -80,7 +80,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(MultiVector &x, MultiVector &y)
     {
-        FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator but has size.");
+        FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
         this->OperatorVector_[1]->apply(x,y,true);
         
     }
@@ -94,39 +94,34 @@ namespace FROSch {
                                          SC alpha,
                                          SC beta) const
     {
-        if (this->Verbose_ && !usePreconditionerOnly)
-            std::cout << "MultiplicativeOperator can only be used as a Preconditioner!" << std::endl;
-        // check transpose mode
-        if (this->OperatorVector_.size()==2) {
-            //Update multi-vector values with scaled values of A, this = beta*this + alpha*A. More...
-            MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
-            *xTmp = x; // Das brauche ich für den Fall das x=y
 
-            MultiVectorPtr yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
-            *yTmp = y; // fuer zweite Anwendung
+        FROSCH_ASSERT(usePreconditionerOnly,"MultiplicativeOperator can only be used as a preconditioner.");
+        FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
 
-//            this->OperatorVector_[1]->apply(x,*yTmp,true,mode,alpha,beta); //keep yTmp
 
-            this->OperatorVector_[0]->apply(*xTmp,*yTmp,true);
-            
-            this->K_->apply(*yTmp,*xTmp);
-            
-            this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
+        MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        *xTmp = x; // Need this for the case when x aliases y
 
-            yTmp->update(1.0,*xTmp,-1.0);
-            y.update(alpha,*yTmp,beta);
-            
-        } else {
-            if (this->Verbose_) std::cout <<"WARNING! MultiplicativeOperator has " << this->OperatorVector_.size() << " Operators and not 2! No preconditioner used." << std::endl;
-            y.update(alpha,x,beta);
-        }
+        MultiVectorPtr yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
+        *yTmp = y; // for the second apply
+
+        this->OperatorVector_[0]->apply(*xTmp,*yTmp,true);
+        
+        this->K_->apply(*yTmp,*xTmp);
+        
+        this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
+
+        yTmp->update(1.0,*xTmp,-1.0);
+        y.update(alpha,*yTmp,beta);
+        
+        
     }
     
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::initialize()
     {
         if (this->Verbose_) {
-            cerr << "ERROR: Each of the Operators has to be initialized manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");
         }
         return 0;
     }
@@ -135,7 +130,7 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::initialize(MapPtr repeatedMap)
     {
         if (this->Verbose_) {
-            cerr << "ERROR: Each of the Operators has to be initialized manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");
         }
         return 0;
     }
@@ -144,7 +139,7 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::compute()
     {
         if (this->Verbose_) {
-            cerr << "ERROR: Each of the Operators has to be computed manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be computed manually.");
         }
         return 0;
     }
@@ -166,7 +161,7 @@ namespace FROSch {
     void MultiplicativeOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                               const Teuchos::EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(0!=0,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
     
     template <class SC,class LO,class GO,class NO>

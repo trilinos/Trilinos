@@ -171,7 +171,7 @@ namespace FROSch {
         
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapJ = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ(),0,k->getRowMap()->getComm());
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapJLocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ.size(),0,k->getRowMap()->getComm());
-        
+        Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > colMap = k->getColMap();
         kII = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         kIJ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
         kJI = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
@@ -191,12 +191,12 @@ namespace FROSch {
             LO tmp2=0;
             if (tmp1>=0) {
                 for (LO j=0; j<indices.size(); j++) {
-                    tmp2 = mapI->getLocalElement((GO) indices[j]);
+                    tmp2 = mapI->getLocalElement(colMap->getGlobalElement(indices[j]));
                     if (tmp2>=0) {
                         indicesI.push_back(tmp2);
                         valuesI.push_back(values[j]);
                     } else {
-                        indicesJ.push_back(mapJ->getLocalElement((GO) indices[j]));
+                        indicesJ.push_back(mapJ->getLocalElement(colMap->getGlobalElement(indices[j])));
                         valuesJ.push_back(values[j]);
                     }
                 }
@@ -206,12 +206,12 @@ namespace FROSch {
             } else  {
                 tmp1=mapJ->getLocalElement((GO) i);
                 for (LO j=0; j<indices.size(); j++) {
-                    tmp2 = mapI->getLocalElement((GO) indices[j]); // CH: This always correct?! local and global elements are the same in ColMap?!
+                    tmp2 = mapI->getLocalElement(colMap->getGlobalElement(indices[j]));
                     if (tmp2>=0) {
                         indicesI.push_back(tmp2);
                         valuesI.push_back(values[j]);
                     } else {
-                        indicesJ.push_back(mapJ->getLocalElement(indices[j]));
+                        indicesJ.push_back(mapJ->getLocalElement(colMap->getGlobalElement(indices[j])));
                         valuesJ.push_back(values[j]);
                     }
                 }

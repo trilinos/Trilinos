@@ -66,7 +66,7 @@ namespace FROSch {
                 CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
             } else {
                 FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
-            } // Todo: Möglichkeit die einzelnen Level auszuschalten
+            } // TODO: Add ability to disable individual levels
             if (this->UseMultiplicative_) {
                 this->MultiplicativeOperator_->addOperator(CoarseOperator_);
             }

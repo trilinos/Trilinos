@@ -150,7 +150,7 @@ namespace FROSch {
             
             
         } else {
-            FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
+            FROSCH_ASSERT(0!=0,"SolverType unknown...");
         }
     }
     
@@ -194,7 +194,7 @@ namespace FROSch {
             IsInitialized_ = true;
             IsComputed_ = false;
         } else {
-            FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
+            FROSCH_ASSERT(0!=0,"SolverType unknown...");
         }
         return 0;
     }
@@ -245,7 +245,7 @@ namespace FROSch {
             IsComputed_ = true;
             
         } else {
-            FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
+            FROSCH_ASSERT(0!=0,"SolverType unknown...");
         }
         return 0;
         
@@ -329,7 +329,7 @@ namespace FROSch {
             y = *yTmp;
             
         } else {
-            FROSCH_ASSERT(0!=0,"SolverType nicht bekannt...");
+            FROSCH_ASSERT(0!=0,"SolverType unknown...");
         }
         y.update(alpha,*yTmp,beta);
     }

@@ -66,8 +66,8 @@ namespace FROSch {
                 uniqueVector.push_back(map->getGlobalElement(i));
             }
         }
-        
-        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,uniqueVector(),0,map->getComm());
+        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),-1,uniqueVector(),0,map->getComm()); // We need this setup for maps with offset (with MaxGID+1 not being the number of global elements), or we need an allreduce to determine the number of global elements from uniqueVector
+//        return Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,uniqueVector(),0,map->getComm());
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -733,7 +733,7 @@ namespace FROSch {
                                                          const Epetra_BlockMap &map,
                                                          Teuchos::RCP<const Teuchos::Comm<int> > comm)
     {
-#ifdef Epetra64
+#ifdef FROSCH_Epetra64
         Teuchos::ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
 #else
         Teuchos::ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
@@ -760,7 +760,7 @@ namespace FROSch {
             Teuchos::Array<GO> indicesArray(numEntries);
             Teuchos::ArrayView<SC> valuesArrayView(values,numEntries);
             for (LO j=0; j<numEntries; j++) {
-#ifdef Epetra64
+#ifdef FROSCH_Epetra64
                 indicesArray[j] = matrix.ColMap().GID64(indices[j]);
             }
             xmatrix->insertGlobalValues(matrix.RowMap().GID64(i),indicesArray(),valuesArrayView);

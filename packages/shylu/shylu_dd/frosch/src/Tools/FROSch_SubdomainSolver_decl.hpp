@@ -58,17 +58,17 @@
 #include <BelosSolverFactory.hpp>
 
 
-#include <MueLu.hpp>
+//#include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
 
 namespace FROSch {
     
-    template <class SC = typename Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    template <class SC,
+    class LO ,
+    class GO ,
+    class NO >
     class OneLevelPreconditioner;
     
     template <class SC = typename Xpetra::Operator<>::scalar_type,

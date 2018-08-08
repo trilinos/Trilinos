@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
 #define _FROSCH_OVERLAPPINGOPERATOR_DECL_HPP
-#define OVERLAPPING_TIMER
+
 #include <FROSch_SchwarzOperator_def.hpp>
 
 namespace FROSch {

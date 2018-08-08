@@ -209,7 +209,7 @@ namespace FROSch {
                     
                 }
                 
-                CoarseMatrix_->fillComplete(); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
+                CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
                 CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
                 CoarseSolver_->initialize();
 
@@ -244,7 +244,7 @@ namespace FROSch {
                     
                 }
                 
-                CoarseMatrix_->fillComplete(); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
+                CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
 
                 if (!this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos").compare("MueLu")) {
                     CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver"),BlockCoarseSize_));
@@ -378,7 +378,7 @@ namespace FROSch {
             CrsMatrixPtr k0Unique = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
             
             k0Unique->doExport(*k0,*CoarseSolveExporters_[0],Xpetra::INSERT);
-            k0Unique->fillComplete();
+            k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
             if (NumProcsCoarseSolve_<this->MpiComm_->getSize()) {
                 ParameterListPtr tmpList = sublist(DistributionList_,"Zoltan2 Parameter");
                 ParameterListPtr zoltanParameterList = Teuchos::rcp(new ParameterList("Zoltan2 Parameter"));
