@@ -490,6 +490,7 @@ convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
     binormal[1] = 0.;
     binormal[2] = 0.;
 
+    // TEUCHOS_ASSERT(false);
   }
 
 }
@@ -601,7 +602,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
   // We get to build up our cubature one face at a time
   int point_offset=0;
-  for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
+  for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index) {
 
     // Default for 1D
     int num_points_on_face = 1;
@@ -770,6 +771,10 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   for(int cell=0; cell<num_cells; ++cell){
     for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
       for(int point=0; point<num_points; ++point){
+
+        for(int dim=0; dim<3; ++dim)
+          normal[dim] = 0.0;
+
         for(int dim=0; dim<cell_dim; ++dim){
           normal[dim] = surface_normals(cell,point,dim);
         }
@@ -1080,7 +1085,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
     evaluateValuesCV(in_node_coordinates);
   }
-               }
+}
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
