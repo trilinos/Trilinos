@@ -207,9 +207,11 @@ int main(int argc, char *argv[])
             } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
                 belosLinearProblem->setRightPrec(OpP);
             } else {
-                FROSCH_ASSERT(0!=0,"PreconditionerPosition unknown...");
+                FROSCH_ASSERT(false,"PreconditionerPosition unknown...");
             }
-
+            if (!parameterList->sublist("TwoLevelPreconditioner").get("Level Combination","Additive").compare("Multiplicative")) {
+                TwoLevelPrec->preApplyCoarse(rhs,xSolution);
+            }
             belosLinearProblem->setProblem(xSolution,rhs);
             belosSoverManager->solve();
             belosSoverManager->getNumIters();

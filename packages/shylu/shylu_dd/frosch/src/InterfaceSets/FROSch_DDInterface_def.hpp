@@ -560,17 +560,20 @@ namespace FROSch {
 #else
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 #endif
-        
+
         Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
         Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
         for (int i=0; i<NumMyNodes_; i++) {
             commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
         }
-        commMat->fillComplete();
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+
+        commMat->fillComplete(NodesMap_,rangeMap);
         
         commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
-        commMatTmp->fillComplete();
         
+        commMatTmp->fillComplete(UniqueNodesMap_,rangeMap);
+
         commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
 #ifdef Tpetra_issue_1752
         commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
