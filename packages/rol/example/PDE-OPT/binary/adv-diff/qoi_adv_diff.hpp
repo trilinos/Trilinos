@@ -201,12 +201,10 @@ public:
 template <class Real>
 class QoI_Control_Cost_adv_diff : public QoI<Real> {
 private:
-  Real budget_;
+  const Real budget_;
 
 public:
-  QoI_Control_Cost_adv_diff(ROL::ParameterList &pl) {
-    budget_ = pl.sublist("Problem").get("Control Cost",2.0);
-  }
+  QoI_Control_Cost_adv_diff(const Real budget = 0.0) : budget_(budget) {}
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,

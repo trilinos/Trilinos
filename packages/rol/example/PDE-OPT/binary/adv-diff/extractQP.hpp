@@ -57,8 +57,9 @@ private:
   const ROL::Ptr<ROL::Objective<Real>>       input_obj_;
   const ROL::Ptr<ROL::Vector<Real>>          input_x_;
   const ROL::Ptr<ROL::BoundConstraint<Real>> input_bnd_;
-  const ROL::Ptr<ROL::Constraint<Real>>      input_con_;
-  const ROL::Ptr<ROL::Vector<Real>>          input_mul_;
+  const ROL::Ptr<ROL::Constraint<Real>>      input_icon_;
+  const ROL::Ptr<ROL::Vector<Real>>          input_imul_;
+  const ROL::Ptr<ROL::BoundConstraint<Real>> input_ibnd_;
 
   ROL::Ptr<ROL::LinearOperator<Real>> H_;
   ROL::Ptr<ROL::Vector<Real>> g_;
@@ -69,9 +70,13 @@ private:
 
   ROL::Ptr<ROL::Vector<Real>> J_;
   Real b_;
-  ROL::Ptr<ROL::Constraint<Real>> con_;
+  ROL::Ptr<ROL::Constraint<Real>> icon_;
 
-  ROL::Ptr<ROL::Vector<Real>> mul_;
+  ROL::Ptr<ROL::Vector<Real>> imul_;
+
+  ROL::Ptr<ROL::Vector<Real>> il_;
+  ROL::Ptr<ROL::Vector<Real>> iu_;
+  ROL::Ptr<ROL::BoundConstraint<Real>> ibnd_;
 
   ROL::Ptr<ROL::Vector<Real>> l_;
   ROL::Ptr<ROL::Vector<Real>> u_;
@@ -122,7 +127,7 @@ private:
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
     ROL::Ptr<ROL::Vector<Real>> one
       = ROL::makePtr<ROL::StdVector<Real>>(1,1.0);
-    input_con_->applyAdjointJacobian(*dual_,*one,*zero_,tol);
+    input_icon_->applyAdjointJacobian(*dual_,*one,*zero_,tol);
     ROL::Ptr<std::vector<Real>> es
       = ROL::dynamicPtrCast<PDE_OptVector<Real>>(dual_)->getParameter()->getVector();
     int size = es->size();
@@ -137,8 +142,8 @@ private:
   // Get shift of knapsack constraint
   void computeBudget(void) {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
-    ROL::Ptr<ROL::Vector<Real>> b = input_mul_->dual().clone();
-    input_con_->value(*b,*zero_,tol);
+    ROL::Ptr<ROL::Vector<Real>> b = input_imul_->dual().clone();
+    input_icon_->value(*b,*zero_,tol);
     b_ = -(*ROL::dynamicPtrCast<ROL::StdVector<Real>>(b)->getVector())[0];
   }
 
@@ -146,7 +151,7 @@ private:
   void buildConstraint(void) {
     computeJacobian();
     computeBudget();
-    con_ = ROL::makePtr<ROL::ScalarLinearConstraint<Real>>(J_,b_);
+    icon_ = ROL::makePtr<ROL::ScalarLinearConstraint<Real>>(J_,b_);
   }
 
   // Wrap lower bound as TeuchosVectr
@@ -198,17 +203,41 @@ private:
 
   void buildMultiplier(void) {
     ROL::Ptr<std::vector<Real>> ms
-      = ROL::dynamicPtrCast<ROL::StdVector<Real>>(input_mul_)->getVector();
-    mul_ = ROL::makePtr<ROL::SingletonVector<Real>>((*ms)[0]);
+      = ROL::dynamicPtrCast<ROL::StdVector<Real>>(input_imul_)->getVector();
+    imul_ = ROL::makePtr<ROL::SingletonVector<Real>>((*ms)[0]);
+  }
+
+  // Wrap lower bound as TeuchosVectr
+  void computeIneqLowerBound(void) {
+    ROL::Ptr<const ROL::Vector<Real>> l = input_ibnd_->getLowerBound();
+    ROL::Ptr<const std::vector<Real>> ls
+      = ROL::dynamicPtrCast<const ROL::StdVector<Real>>(l)->getVector();
+    il_ = ROL::makePtr<ROL::SingletonVector<Real>>((*ls)[0]);
+  }
+
+  // Wrap upper bound as TeuchosVectr
+  void computeIneqUpperBound(void) {
+    ROL::Ptr<const ROL::Vector<Real>> u = input_ibnd_->getUpperBound();
+    ROL::Ptr<const std::vector<Real>> us
+      = ROL::dynamicPtrCast<const ROL::StdVector<Real>>(u)->getVector();
+    iu_ = ROL::makePtr<ROL::SingletonVector<Real>>((*us)[0]);
+  }
+
+  // Build bound constraint
+  void buildIneqBound(void) {
+    computeIneqLowerBound();
+    computeIneqUpperBound();
+    ibnd_ = ROL::makePtr<ROL::Bounds<Real>>(il_,iu_);
   }
 
 public:
   extractQP(const ROL::Ptr<ROL::Objective<Real>>       &obj,
             const ROL::Ptr<ROL::Vector<Real>>          &x,
             const ROL::Ptr<ROL::BoundConstraint<Real>> &bnd,
-            const ROL::Ptr<ROL::Constraint<Real>>      &con,
-            const ROL::Ptr<ROL::Vector<Real>>          &mul)
-    : input_obj_(obj), input_x_(x), input_bnd_(bnd), input_con_(con), input_mul_(mul) {
+            const ROL::Ptr<ROL::Constraint<Real>>      &icon,
+            const ROL::Ptr<ROL::Vector<Real>>          &imul,
+            const ROL::Ptr<ROL::BoundConstraint<Real>> &ibnd = ROL::nullPtr)
+    : input_obj_(obj), input_x_(x), input_bnd_(bnd), input_icon_(icon), input_imul_(imul), input_ibnd_(ibnd) {
     dual_ = input_x_->dual().clone();
     zero_ = input_x_->clone(); zero_->zero();
   }
@@ -219,7 +248,11 @@ public:
     buildBound();
     buildConstraint();
     buildMultiplier();
-    return ROL::makePtr<ROL::OptimizationProblem<Real>>(obj_,x_,bnd_,con_,mul_);
+    if (input_ibnd_ != ROL::nullPtr) {
+      buildIneqBound();
+      return ROL::makePtr<ROL::OptimizationProblem<Real>>(obj_,x_,bnd_,icon_,imul_,ibnd_);
+    }
+    return ROL::makePtr<ROL::OptimizationProblem<Real>>(obj_,x_,bnd_,icon_,imul_);
   }
 };
 

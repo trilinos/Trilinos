@@ -142,17 +142,20 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD KNAPSACK CONSTRAINT *****************************/
     /*************************************************************************/
-    RealT ctrlCost = parlist->sublist("Problem").get("Control Cost",4.0);
+    RealT ctrlCost = parlist->sublist("Problem").get("Control Cost", 4.0);
+    bool  useIneq  = parlist->sublist("Problem").get("Use Inequality", false);
+    RealT budget   = (useIneq ? static_cast<RealT>(0) : ctrlCost);
     ROL::Ptr<QoI<RealT>> knapsack_qoi
-      = ROL::makePtr<QoI_Control_Cost_adv_diff<RealT>>(*parlist);
+      = ROL::makePtr<QoI_Control_Cost_adv_diff<RealT>>(budget);
     ROL::Ptr<ROL::Constraint<RealT>> knapsack_con
       = ROL::makePtr<IntegralOptConstraint<RealT>>(knapsack_qoi,assembler);
-//    ROL::Ptr<ROL::Vector<RealT>> klop
-//      = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
-//    ROL::Ptr<ROL::Vector<RealT>> khip
-//      = ROL::makePtr<ROL::StdVector<RealT>>(1,ctrlCost);
-//    ROL::Ptr<ROL::BoundConstraint<RealT>> knapsack_bnd
-//      = ROL::makePtr<ROL::Bounds<RealT>>(klop,khip);
+    ROL::Ptr<ROL::BoundConstraint<RealT>> knapsack_bnd = ROL::nullPtr;
+    if (useIneq) {
+      ROL::Ptr<ROL::Vector<RealT>> klop, khip;
+      klop = ROL::makePtr<ROL::StdVector<RealT>>(1,static_cast<RealT>(0));
+      khip = ROL::makePtr<ROL::StdVector<RealT>>(1,ctrlCost);
+      knapsack_bnd = ROL::makePtr<ROL::Bounds<RealT>>(klop,khip);
+    }
     ROL::Ptr<ROL::Vector<RealT>> knapsack_mul
       = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
 
@@ -173,12 +176,11 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
     ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
     if (!useQP) {
-      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp,bnd,knapsack_con,knapsack_mul);
-   // problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp,bnd,knapsack_con,knapsack_mul,knapsack_bnd);
+      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp,bnd,knapsack_con,knapsack_mul,knapsack_bnd);
       bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>();
     }
     else {
-      extractQP<RealT> extract(robj,zp,bnd,knapsack_con,knapsack_mul);
+      extractQP<RealT> extract(robj,zp,bnd,knapsack_con,knapsack_mul,knapsack_bnd);
       problem = extract();
       bHelper = ROL::makePtr<ROL::TeuchosBranchHelper_PEBBL<int,RealT>>();
     }
