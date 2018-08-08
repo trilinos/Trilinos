@@ -36,7 +36,7 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
 
   TRIBITS_ADD_ADVANCED_TEST( get_changed_trilinos_packages_test_${TEST_POSTFIX}
     OVERALL_WORKING_DIRECTORY TEST_NAME
-    OVERALL_NUM_MPI_PROCS 10
+    OVERALL_NUM_MPI_PROCS 1
     ENVIRONMENT # We can't use real git so we use mockprogram.py instead!
       GCTP_GIT_OVERRIDE=${${PROJECT_NAME}_TRIBITS_DIR}/python_utils/mockprogram.py
       MOCKPROGRAM_INOUT_FILE_OVERRIDE=${ABS_TEST_DIR}/mockprogram_inout.txt
