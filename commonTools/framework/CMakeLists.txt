@@ -84,7 +84,7 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos
 
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm
-  "cmake/std/atdm/anything"
+  "cmake/std/atdm/anything\ncmake/std/atdm/shiller/tweaks/INTEL-RELEASE-OPENMP-HSW.cmake"
   ""
   ""
   "-- NOTE: No packages are being enabled!"
