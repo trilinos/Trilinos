@@ -93,7 +93,7 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             MapPtr repeatedMap)
     {
-        if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
+        //if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
 
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
