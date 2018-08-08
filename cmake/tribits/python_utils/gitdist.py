@@ -722,6 +722,17 @@ helpTopicsDict.update( { 'script-dependencies' : scriptDependenciesHelp } )
 #
 
 
+# Shrink a string to a given width by inserting an ellipsis (...) in the
+# middle.
+def shrinkString(string, width):
+  if len(string) > width:
+    start = int(width//2) - 1
+    stop  = width - start - 3
+    return string[:start] + "..." + string[-stop:]
+  else:
+    return string
+
+
 # Fill in a field
 def getTableField(field, width, just):
   if just == "R":
@@ -763,7 +774,59 @@ def createAsciiTable(tableData):
     fullTableWidth += (maxFieldWidth + 3) # begin " ", end " ", '|'
     tableFieldWidth.append(maxFieldWidth)
 
-  # b) Write the header of the table (always left-align the colume labels)
+  # b) Shrink the dist-repo-status table to fit in the terminal if needed.
+  shrink = True
+  for fieldDict in tableData:
+    label = fieldDict["label"]
+    if (label != "ID"              and
+        label != "Repo Dir"        and
+        label != "Branch"          and
+        label != "Tracking Branch" and
+        label != "C"               and
+        label != "M"               and
+        label != "?"):
+      shrink = False
+  if shrink:
+    try:
+      mockSttySize = os.environ.get("GITDIST_UNIT_TEST_STTY_SIZE")
+      if mockSttySize:
+        sttySize = mockSttySize
+      else:
+        sttySize = os.popen("stty size", "r").read()
+      rows, columns = sttySize.split()
+    except:
+      shrink = False
+  if shrink:
+    terminalWidth = int(columns)
+    numDividers = len(tableData) + 1
+    numSpaces = 2 * len(tableData)
+    fullTableWidth = sum(tableFieldWidth) + numDividers + numSpaces
+    if fullTableWidth > terminalWidth:
+      widthToShrink = sum(tableFieldWidth[1:4])
+      availableWidth = (terminalWidth
+                        - tableFieldWidth[0]
+                        - sum(tableFieldWidth[4:])
+                        - numDividers
+                        - numSpaces)
+      newWidth = {}
+      remainingWidth = availableWidth
+      for i in range(1, 3):
+        ratio = float(tableFieldWidth[i]) / widthToShrink
+        newWidth[i] = int((ratio*availableWidth) // 1)
+        remainingWidth = remainingWidth - newWidth[i]
+      newWidth[3] = remainingWidth
+      for i in range(1, 4):
+        if newWidth[i] < len(tableData[i]["label"]):
+          shrink = False
+          break
+      if shrink:
+        for i in range(1, 4):
+          tableFieldWidth[i] = newWidth[i]
+          for j, field in enumerate(tableData[i]["fields"]):
+            tableData[i]["fields"][j] = shrinkString(field, tableFieldWidth[i])
+        fullTableWidth = terminalWidth
+
+  # c) Write the header of the table (always left-align the colume labels)
   asciiTable += ('-'*fullTableWidth)+"\n"
   asciiTable += "|"
   fieldIdx = 0
@@ -777,7 +840,7 @@ def createAsciiTable(tableData):
     fieldIdx += 1
   asciiTable += "\n"
 
-  # c) Write each row of the table
+  # d) Write each row of the table
   for row_i in range(numRows):
     asciiTable += "|"
     field_i = 0
