@@ -332,7 +332,7 @@ int executeTotalElementLoopSP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // Save crs_matrix as a MatrixMarket file.
   if(opts.saveMM)
   {
-    std::ofstream ofs("FEMAssembly_TotalElementLoop_SP.out", std::ofstream::out);
+    std::ofstream ofs("crsMatrix_TotalElementLoop_SP.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
     ofs.close();
   }
