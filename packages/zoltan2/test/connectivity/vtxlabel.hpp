@@ -1,5 +1,7 @@
 #include "Tpetra_Core.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_FEMultiVector.hpp"
 #include "graph.h"
 
 #include <string>

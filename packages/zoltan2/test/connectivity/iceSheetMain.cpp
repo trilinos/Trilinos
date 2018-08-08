@@ -1,7 +1,5 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Import.hpp"
-#include "Tpetra_FEMultiVector.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -232,6 +230,9 @@ void iceSheetDriver(int narg, char** arg){
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
   int ierr = 0;
+
+  typedef Tpetra::Map<> map_t;
+  typedef map_t::global_ordinal_type gno_t;
 
   // Initialize Teuchos timer
   Teuchos::RCP<Teuchos::Time>
