@@ -3,7 +3,7 @@
 ===================
 
 08.08.2018 Christian Hochmuth:
-	- migrate Ifpack2 for building overlap based matrix graph
+	- Determine overlap only based on the graph of the matrix
 	- forward declaration
 	- Assert for ScalarType not being float or double
 	- check on Tpetra deprecating DynamicProfile in FY19
