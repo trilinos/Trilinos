@@ -591,15 +591,6 @@ namespace Classes {
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
 
-    // Forward declaration of nonmember function.
-    template<class PT, class LO, class GO, class NT>
-    friend void
-    ::Tpetra::removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
-                                           const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
-    // Forward declaration of nonmember function.
-    template<class PT, class LO, class GO, class NT>
-    friend void
-    ::Tpetra::removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
     //@}
 
   protected:

@@ -308,11 +308,11 @@ namespace Classes {
     typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
 
     //! The Map specialization used by this class.
-    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
     //! The Import specialization used by this class.
-    typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    using import_type = ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
     //! The Export specialization used by this class.
-    typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+    using export_type = ::Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! @name Constructor/Destructor Methods
     //@{
