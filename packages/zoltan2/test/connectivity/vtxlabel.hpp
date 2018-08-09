@@ -308,7 +308,7 @@ public:
           femv->replaceLocalValue(i,0,cleared);
         }
       }
-      std::cout<<me<<": Running BFS-prop again\n";
+      //std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
       bfs_prop(femv);     
     }
@@ -323,7 +323,6 @@ public:
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
-    printFEMV(*femv, "AfterPropagation");
     return removed;
   }
 
@@ -346,6 +345,10 @@ public:
       while(!curr->empty()){
         vtxLabel curr_node = femvData[curr->front()];
         curr->pop();
+        
+        //if the current node is a copy, it shouldn't propagate out to its neighbors.
+        if(curr_node.id >= nLocalOwned) continue;
+
         int out_degree = out_degree(g, curr_node.id);
         int* outs = out_vertices(g, curr_node.id);
         for(int i = 0; i < out_degree; i++){
@@ -374,7 +377,7 @@ public:
       //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
       //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
       int local_done = iceProp::reg.empty() && iceProp::art.empty();
-      printFEMV(*femv,"Propagation Step");
+      //printFEMV(*femv,"Propagation Step");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
@@ -476,6 +479,7 @@ public:
           }
           if(foundGhostPair) break;
         }
+        femv->beginFill();
         //if you found a ghost pair, send your own procID, otherwise send -1
         int neighborProc = -1;
         int neighborSend = -1;
@@ -484,8 +488,7 @@ public:
         
         //if neighborProc is me, I have to ground the neighbors.
         if(neighborProc == me){
-          std::cout<<me<<": Grounding empty neighbors, one is ghosted.\n";
-          femv->beginFill();
+          //std::cout<<me<<": Grounding empty neighbors,"<<mapWithCopies->getGlobalElement(ownedVtx)<<" and "<<mapWithCopies->getGlobalElement(ghostVtx)<<"\n";
           //replace local value with self-grounded vertex with new bcc_name
           iceProp::vtxLabel firstNeighbor = femvData[ownedVtx];
           iceProp::vtxLabel secondNeighbor = femvData[ghostVtx];
@@ -499,14 +502,9 @@ public:
           secondNeighbor.bcc_name = bcc_count*np + me;
           femv->replaceLocalValue(ownedVtx,0, firstNeighbor);
           femv->replaceLocalValue(ghostVtx,0, secondNeighbor);
-          femv->endFill();
           //push the neighbors on the reg queue
           iceProp::reg.push(ownedVtx);
           iceProp::reg.push(ghostVtx);
-        } else if(neighborProc != me && neighborProc != -1){
-          femv->beginFill();
-          std::cout<<me<<": Waiting for proc "<<neighborProc<<" to ground neighbors\n";
-          femv->endFill();
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
           int vtx1 = -1, vtx2 = -1;
@@ -535,13 +533,13 @@ public:
           //if emptyProc is -1, no processor has a pair of empty neighboring vertices, so we can't do anything
           
           if(emptyProc == -1){
-            std::cout<<me<<": Couldn't find two empty neighbors\n";
+            //std::cout<<me<<": Couldn't find two empty neighbors\n";
+            femv->endFill();
             break;
           }
           else if(emptyProc == me){
-            std::cout<<me<<": Grounding two empty neighbors\n";
+            //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(vtx1)<<" and neighbor "<<mapWithCopies->getGlobalElement(vtx2)<<"\n";
             //this processor will ground two random, empty neighbors.
-            femv->beginFill();
             iceProp::vtxLabel firstNeighbor = femvData[vtx1];
             iceProp::vtxLabel secondNeighbor = femvData[vtx2];
             int firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
@@ -554,27 +552,24 @@ public:
             secondNeighbor.bcc_name = bcc_count*np + me;
             femv->replaceLocalValue(vtx1, 0, firstNeighbor);
             femv->replaceLocalValue(vtx2, 0, secondNeighbor);
-            femv->endFill();
             //put the neighbors on the regular queue
             iceProp::reg.push(vtx1);
             iceProp::reg.push(vtx2);
-          } else {
-            femv->beginFill();
-            femv->endFill();
           }
         }
+        femv->endFill();
       } else {
+        femv->beginFill();
         
         //if this processor knows about articulation points
         if(!art_queue.empty()){
-          std::cout<<me<<": Grounding an articulation point & neighbor.\n";
           //look at the front, and ground a neighbor.
           int art_pt = art_queue.front();
           int out_degree = out_degree(g, art_pt);
           int* outs = out_vertices(g, art_pt);
           for(int i = 0;i < out_degree; i++){
             if(femvData[outs[i]].getGroundingStatus() == NONE){
-              femv->beginFill();
+              //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
               iceProp::vtxLabel neighbor = femvData[outs[i]];
               iceProp::vtxLabel art = femvData[art_pt];
               int neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
@@ -584,27 +579,25 @@ public:
               art.bcc_name = bcc_count*np+me;
               femv->replaceLocalValue(art_pt,0,art);
               femv->replaceLocalValue(outs[i],0, neighbor);
-              femv->endFill();
               iceProp::reg.push(art_pt);
               iceProp::reg.push(outs[i]);
+              break;
             }
           }
           
-        } else {
-          //some processor knows about articulation points, just not this one.
-          femv->beginFill();
-          femv->endFill();
         }
+        femv->endFill();
       }
       
       //call this->propagate, which, per-processor, finds one bcc at a time.
-      std::cout<<me<<": Calling propagate\n";
+      //std::cout<<me<<": Calling propagate\n";
       int* t = propagate();
+      //printFEMV(*femv, "AfterPropagation");
       bcc_count++;
       delete [] t;
-      std::cout<<me<<": Checking for articulation points\n";
-      //check for articulation points
-      for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
+      //std::cout<<me<<": Checking for articulation points\n";
+      //check for OWNED articulation points
+      for(int i = 0; i < nLocalOwned; i++){
         if(femvData[i].getGroundingStatus() == FULL){
           int out_degree = out_degree(g, i);
           int* outs = out_vertices(g, i);
@@ -616,7 +609,7 @@ public:
           }
         }
       }
-      std::cout<<me<<": Clearing half labels\n";
+      //std::cout<<me<<": Clearing half labels\n";
       //clear half labels
       for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
         iceProp::vtxLabel label = femvData[i];
@@ -626,14 +619,15 @@ public:
           label.bcc_name = -1;
           femv->switchActiveMultiVector();
           femv->replaceLocalValue(i,0,label);
+          femv->switchActiveMultiVector();
         }
       }
       //pop articulation points off of the art_queue if necessary.
-      std::cout<<me<<": Removing fully explored articulation points\n";
+      //std::cout<<me<<": Removing fully explored articulation points\n";
       if(!art_queue.empty()){
         bool pop_art = true;
         while(pop_art && !art_queue.empty()){
-          std::cout<<me<<": Checking artpt "<<art_queue.front()<<"\n";
+          //std::cout<<me<<": Checking artpt "<<art_queue.front()<<"\n";
           int top_art_degree = out_degree(g,art_queue.front());
           int* art_outs = out_vertices(g,art_queue.front());
         
@@ -645,9 +639,9 @@ public:
           if(pop_art) art_queue.pop();
         }
       }
-      std::cout<<me<<": Starting over\n";
+      //std::cout<<me<<": Starting over\n";
     }
-    std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
+    //std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
     return femv->getData(0);
   }
   

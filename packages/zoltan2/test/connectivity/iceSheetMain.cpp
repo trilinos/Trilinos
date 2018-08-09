@@ -359,15 +359,9 @@ void iceSheetDriver(int narg, char** arg){
   
   //create the gids array for the maps
   Teuchos::Array<gno_t> gids(nLocalOwned + numcopies);
-  int gidsCounter = 0;
   for(int i = 0; i < n; i++){
-    if(localOwned[i]) {
-      gids[gidsCounter++] = i;
-    }
-  }
-  for(int i = 0; i < n; i++) {
-    if(copies[i]) {
-      gids[gidsCounter++] = i;
+    if(newId[i]>-1) {
+      gids[newId[i]] = i;
     }
   }
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -473,6 +467,7 @@ void bccDriver(int narg, char** arg) {
   int *srcs, *dsts;
   int* potential_art_pts;
   unsigned m;
+  timeFileRead->start();
   if(me == 0){
     edge_map<int> visited_edges;
     int* out_array;
@@ -485,7 +480,9 @@ void bccDriver(int narg, char** arg) {
     // run lca on the global graph on proc 0
     findPotentialArtPts(global, potential_art_pts, visited_edges);
   }
+  timeFileRead->stop();
   //  distribute the src/dst arrays to other procs
+  timeDistribute->start();
   Teuchos::broadcast<int,int>(*comm,0,1,&n); 
   Teuchos::broadcast<int,unsigned>(*comm,0,1,&m);
  
@@ -503,7 +500,8 @@ void bccDriver(int narg, char** arg) {
   int np = comm->getSize();
   int nLocalOwned = n/np + (me < (n%np));
   int vtxOffset = std::min(me, n%np)*(n/np + 1) + std::max(0, me - (n%np))*(n/np);
-  
+  //std::cout<<me<<" : vertices go from "<<vtxOffset<<" to "<<vtxOffset + nLocalOwned-1<<"\n";
+   
   //cut the global arrays down to local instances, keeping neighbors of owned vertices in the csr,
   //note them as copies.
 
@@ -551,7 +549,14 @@ void bccDriver(int narg, char** arg) {
       localSrcs[localEdgeCounter++] = newId[srcs[i]];
     }
   }
-  
+ 
+  /*std::cout<<"New VtxId Mapping:\n";
+  for(int i = 0; i < n; i++){
+    if(newId[i] > -1){
+      std::cout<<"\t"<<i<<" --> "<<newId[i]<<"\n";
+    }
+  }*/
+ 
   //make new potential articulation point array for just the local graph instance
   int* localPotentialArtPts = new int[nLocalOwned+nLocalCopy];
   int* localGrounding = new int [nLocalOwned + nLocalCopy];
@@ -562,22 +567,18 @@ void bccDriver(int narg, char** arg) {
   for(int i = 0; i < n; i++){
     if(newId[i] > -1){
       localPotentialArtPts[newId[i]] = potential_art_pts[i]*3;
+      //if(localPotentialArtPts[newId[i]] > 2) std::cout<<newId[i]<<" is a potential Art Pt\n";
     }
   }
 
   //create the gids array for the maps
   Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
-  int gidsCounter = 0;
   for(int i = 0; i < n; i++){
-    if(localOwned[i]) {
-      gids[gidsCounter++] = i;
+    if(newId[i]>-1) {
+      gids[newId[i]] = i;
     }
   }
-  for(int i = 0; i < n; i++){
-    if(copies[i]){
-      gids[gidsCounter++] = i;
-    }
-  }
+  
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   Teuchos::RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,gids(),0,comm));
   Teuchos::RCP<const map_t> mapOwned = rcp(new map_t(dummy, gids(0,nLocalOwned), 0, comm));
@@ -590,15 +591,30 @@ void bccDriver(int narg, char** arg) {
   create_csr(newIdCounter, localEdgeCounter, localSrcs,localDsts,out_array, out_degree_list, max_degree_vert, avg_out_degree);
   
   graph* g = new graph({newIdCounter, localEdgeCounter, out_array, out_degree_list, max_degree_vert, avg_out_degree});
-
+  timeDistribute->stop();
+  //std::cout<<"Proc "<<me<<"'s graph\n";
+  //debug output to verify graph edges were correctly preserved
+  /*for(int i = 0; i < g->n; i++){
+    int out_degree = out_degree(g, i);
+    int* outs = out_vertices(g, i);
+    for(int j = 0;j < out_degree; j++){
+      std::cout<<i<<"("<<mapWithCopies->getGlobalElement(i)<<")--"<<outs[j]<<"("<<mapWithCopies->getGlobalElement(outs[j])<<")\n";
+    }
+  }*/
+  timeConstruct->start();
   //  6) initialize propagation classes for local problem instances
   iceProp::iceSheetPropagation prop(comm, mapOwned, mapWithCopies, g, localPotentialArtPts, localGrounding, nLocalOwned, nLocalCopy);
+  timeConstruct->stop();
+  timeSolve->start();
   //  7) call bccProp(); or whatever it'll be called
   Teuchos::ArrayRCP<const scalar_t> labels = prop.bccPropagate();
+  timeSolve->stop();
   //  8) report/validate the labeling.
   for(int i = 0; i < nLocalOwned; i++){
-    std::cout<<me<<": vtx "<<i<<" belongs to bcc "<<labels[i].bcc_name<<"\n";
+    std::cout<<me<<": vtx "<<mapWithCopies->getGlobalElement(i)<<" belongs to bcc "<<labels[i].bcc_name<<"\n";
   }
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 }
 
 int main(int narg, char **arg)
