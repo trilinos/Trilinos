@@ -1,0 +1,253 @@
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "BelosSolverFactory.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Vector.hpp"
+#include "KokkosBlas1_mult.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include <iostream>
+
+namespace { // (anonymous)
+
+template<class TpetraOperatorType = Tpetra::Operator<>>
+class TestDiagonalOperator : public TpetraOperatorType {
+public:
+  using multivector_type = Tpetra::MultiVector<
+    typename TpetraOperatorType::scalar_type,
+    typename TpetraOperatorType::local_ordinal_type,
+    typename TpetraOperatorType::global_ordinal_type,
+    typename TpetraOperatorType::node_type>;
+  using map_type = Tpetra::Map<
+    typename TpetraOperatorType::local_ordinal_type,
+    typename TpetraOperatorType::global_ordinal_type,
+    typename TpetraOperatorType::node_type>;
+
+private:
+  using device_type = typename map_type::device_type;  
+  using val_type = typename TpetraOperatorType::scalar_type;
+  using STS = Teuchos::ScalarTraits<val_type>;
+  
+public:
+  using mag_type = typename Teuchos::ScalarTraits<val_type>::magnitudeType;
+
+  TestDiagonalOperator (const Teuchos::RCP<const map_type>& map,
+                        const mag_type minSingularValue) :
+    map_ (map)
+  {
+    using dev_view_type = Kokkos::View<mag_type*, device_type>;
+    using host_view_type = typename dev_view_type::HostMirror;
+    using SC = typename TpetraOperatorType::scalar_type;
+    using LO = typename TpetraOperatorType::local_ordinal_type;
+
+    const LO lclNumRows = map_.is_null () ?
+      static_cast<LO> (0) :
+      static_cast<LO> (map_->getNodeNumElements ());
+    dev_view_type diag_d ("diag", lclNumRows);
+    host_view_type diag_h = Kokkos::create_mirror_view (diag_d);
+
+    if (lclNumRows != 0) {
+      const SC ONE = STS::one ();
+      const SC exponent = ONE / static_cast<mag_type> (lclNumRows - 1);
+      const SC scalingFactor = ::pow (minSingularValue, exponent);
+      diag_h(0) = ONE;
+      for (LO lclRow = 1; lclRow < lclNumRows; ++lclRow) {
+        diag_h(lclRow) = diag_h(lclRow-1) * scalingFactor;
+      }
+    }
+    Kokkos::deep_copy (diag_d, diag_h);
+    diag_ = diag_d;
+  }
+
+  Teuchos::RCP<const map_type> getDomainMap () const {
+    return map_;
+  }
+
+  Teuchos::RCP<const map_type> getRangeMap () const {
+    return map_;
+  }
+
+  void
+  apply (const multivector_type& X,
+         multivector_type& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         val_type alpha = Teuchos::ScalarTraits<val_type>::one (),
+         val_type beta = Teuchos::ScalarTraits<val_type>::zero ()) const
+  {
+    using ISC = typename multivector_type::impl_scalar_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (mode == Teuchos::CONJ_TRANS && STS::isComplex,
+       std::logic_error, "Conjugate transpose case not implemented.");
+
+    const size_t numVecs = X.getNumVectors ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      auto X_j = X.getVector (j);
+      auto Y_j = Y.getVectorNonConst (j);
+
+      auto X_j_lcl_2d = X_j->template getLocalView<device_type> ();
+      auto X_j_lcl = Kokkos::subview (X_j_lcl_2d, Kokkos::ALL (), 0);
+      auto Y_j_lcl_2d = Y_j->template getLocalView<device_type> ();
+      auto Y_j_lcl = Kokkos::subview (Y_j_lcl_2d, Kokkos::ALL (), 0);
+
+      KokkosBlas::mult (static_cast<ISC> (beta), Y_j_lcl,
+                        static_cast<ISC> (alpha), X_j_lcl, diag_);
+    }
+  }
+
+private:
+  Teuchos::RCP<const map_type> map_;
+  Kokkos::View<const mag_type*, device_type> diag_;
+};
+
+void
+testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& solverName)
+{
+  using Teuchos::FancyOStream;
+  using Teuchos::getFancyOStream;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using std::endl;
+  using map_type = Tpetra::Map<>;
+  using MV = Tpetra::MultiVector<>;
+  using OP = Tpetra::Operator<>;
+  using SC = MV::scalar_type;
+  using GO = map_type::global_ordinal_type;
+  using mag_type = MV::mag_type;
+  using STS = Teuchos::ScalarTraits<SC>;
+  using STM = Teuchos::ScalarTraits<mag_type>;
+  constexpr bool debug = true;
+  
+  const SC ZERO = STS::zero ();
+  const SC ONE = STS::one ();
+
+  // In debug mode, print immediately, on all processes.  (The Teuchos
+  // unit test framework likes to capture output and not print
+  // anything until the test is done.)  This will help diagnose hangs.
+  RCP<FancyOStream> myOutPtr =
+    debug ? getFancyOStream (rcpFromRef (std::cerr)) : rcpFromRef (out);
+  Teuchos::FancyOStream& myOut = *myOutPtr;
+
+  myOut << "Test \"native\" Tpetra version of CgPipeline" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  myOut << "Create the linear system to solve" << endl;
+
+  auto comm = Tpetra::getDefaultComm ();
+  const GO gblNumRows = 10000;
+  const GO indexBase = 0;
+  RCP<const map_type> map (new map_type (gblNumRows, indexBase, comm));
+  const mag_type minSingVal = 0.1;
+  RCP<TestDiagonalOperator<OP> > A =
+    rcp (new TestDiagonalOperator<> (map, minSingVal));
+
+  MV X (A->getDomainMap (), 1);
+  MV B (A->getRangeMap (), 1);
+  B.randomize ();
+  // Get ready for next solve by resetting initial guess to zero.
+  X.putScalar (ZERO);
+
+  myOut << "Create the CgPipeline solver" << endl;
+
+  RCP<Belos::SolverManager<SC, MV, OP> > solver;
+  try {
+    Belos::SolverFactory<SC, MV, OP> factory;
+    solver = factory.create (solverName, Teuchos::null);
+  }
+  catch (std::exception& e) {
+    myOut << "*** FAILED: Belos::SolverFactory::create threw an exception: "
+        << e.what () << endl;
+    success = false;
+    return;
+  }
+
+  TEST_ASSERT( solver.get () != nullptr );
+  if (solver.get () == nullptr) {
+    myOut << "Belos::SolverFactory returned a null solver." << endl;
+    return;
+  }
+
+  myOut << "Set parameters" << endl;
+  RCP<ParameterList> params = parameterList ("Belos");
+  params->set ("Verbosity", 1);
+  try {
+    solver->setParameters (params);
+  }
+  catch (std::exception& e) {
+    myOut << "*** FAILED: setParameters threw an exception: "
+        << e.what () << endl;
+    success = false;
+    return;
+  }
+  catch (...) {
+    myOut << "*** FAILED: setParameters threw an exception "
+      "not a subclass of std::exception." << endl;
+    success = false;
+    return;
+  }
+
+  myOut << "Set up the linear system to solve" << endl;
+  auto lp = rcp (new Belos::LinearProblem<SC, MV, OP> (A, rcpFromRef (X),
+                                                       rcpFromRef (B)));
+  lp->setProblem ();
+
+  myOut << "Solve the linear system" << endl;  
+  solver->setProblem (lp);
+  const Belos::ReturnType belosResult = solver->solve ();
+
+  myOut << "Belos solver wrapper result: "
+	<< (belosResult == Belos::Converged ? "Converged" : "Unconverged")
+	<< endl
+	<< "Number of iterations: " << solver->getNumIters ()
+	<< endl;
+
+  myOut << "Check the residual" << endl;
+
+  MV X_copy (X, Teuchos::Copy);
+  MV R (B.getMap (), B.getNumVectors ());
+  A->apply (X_copy, R);
+  R.update (ONE, B, -ONE);
+  Teuchos::Array<mag_type> R_norms (R.getNumVectors ());
+  R.norm2 (R_norms ());
+  Teuchos::Array<mag_type> B_norms (B.getNumVectors ());
+  B.norm2 (B_norms ());
+
+  for (size_t j = 0; j < R.getNumVectors (); ++j) {
+    const mag_type relResNorm = (B_norms[j] == STM::zero ()) ?
+      R_norms[j] :
+      R_norms[j] / B_norms[j];
+    myOut << "Column " << (j+1) << " of " << R.getNumVectors ()
+	  << ": Absolute residual norm: " << R_norms[j]
+	  << ", Relative residual norm: " << relResNorm
+	  << endl;
+  }
+  myOut << endl;
+}
+
+TEUCHOS_UNIT_TEST( CgVariants, CreateAndSolve )
+{
+  testCgVariant (out, success, "TPETRA CG PIPELINE");
+  testCgVariant (out, success, "TPETRA CG SINGLE REDUCE");  
+}
+
+} // namespace (anonymous)
+
+namespace BelosTpetra {
+namespace Impl {
+  extern void register_CgPipeline (const bool verbose);
+  extern void register_CgSingleReduce (const bool verbose);  
+} // namespace Impl
+} // namespace BelosTpetra
+
+int main (int argc, char* argv[])
+{
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+
+  const bool verbose = true;
+  BelosTpetra::Impl::register_CgPipeline (verbose);
+  BelosTpetra::Impl::register_CgSingleReduce (verbose);  
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+}
