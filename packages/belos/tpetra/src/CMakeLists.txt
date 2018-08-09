@@ -38,6 +38,25 @@ APPEND_SET(SOURCES
   Belos_Details_Tpetra_registerSolverFactory.cpp
   )
 
+APPEND_SET(SOURCES
+  BelosTpetraAdapter.cpp
+  Belos_Details_Tpetra_registerLinearSolverFactory.cpp
+  Belos_Details_Tpetra_registerSolverFactory.cpp
+  )
+
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Krylov.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Krylov_parameters.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_SolverManager.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_SolverManagerBase.hpp
+  )
+APPEND_SET(SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.cpp  
+  )
+
 #
 # C) Define the targets for package's library(s)
 #
