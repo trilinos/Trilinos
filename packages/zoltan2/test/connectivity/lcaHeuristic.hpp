@@ -2,9 +2,11 @@
 #define __lca_heuristic_hpp__
 #include "edgeDS.hpp"
 #include"graph.h"
+#include<iostream>
 #include<queue>
 
 void bfs(graph* g, int root, int* parents, int* levels, edge_set& nonTreeEdges){
+  assert(nonTreeEdges.empty());
   std::queue<int> frontier;
   frontier.push(root);
   parents[root] = root;
@@ -23,6 +25,7 @@ void bfs(graph* g, int root, int* parents, int* levels, edge_set& nonTreeEdges){
         frontier.push(neighbor);
       } else if(neighbor != parents[curr_node]){
         edge e(curr_node, neighbor);
+        //std::cout<<e.getU()<<" is less than "<<e.getV()<<"\n";
         e.validate();
         nonTreeEdges.insert(e);
       }
@@ -33,7 +36,7 @@ void bfs(graph* g, int root, int* parents, int* levels, edge_set& nonTreeEdges){
 int lca(graph* g, int* levels, int* parents, int curr_node, int neighbor, edge_map<int>& visitedEdges){
   int p_curr_node = parents[curr_node];
   int p_neighbor = parents[neighbor];
-  
+   
   if(p_curr_node == neighbor){
     edge e(curr_node, neighbor);
     e.validate();
