@@ -845,8 +845,8 @@ namespace FROSch {
 
         problem->solve();
 
-        Teuchos::RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > matrixRepartition;
-
+//        Teuchos::RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > matrixRepartition;
+        Teuchos::RCP<Xpetra::CrsMatrix<> > matrixRepartition;
         adaptedMatrix.applyPartitioningSolution(*tmpCrsWrap->getCrsMatrix(), matrixRepartition, problem->getSolution());
         
         Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap2 = Teuchos::rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(matrixRepartition));
