@@ -350,6 +350,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 		chosen_option_id = highProb(probabilities, acceptableCombos);
 		break;
 	  case 3: 
+		// Choose the first option in the list of acceptable
+		// combinations; the lowest drop tolerance among the 
+		// acceptable combinations
 		chosen_option_id = acceptableCombos[0];
 		break;
 	  case 4: 
@@ -363,13 +366,14 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
     }
     
-
     // Generate the parameterList from the chosen option
     GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
+    // Cleanup  
+    free(probabilities);
+    free(predictions);
   } 
-    // Cleanup
-  Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
+  Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
 
 }
@@ -452,8 +456,8 @@ int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptable
       best_prob = probabilities[this_combo + 2];
       chosen_option_id = acceptableCombos[x];
     } 
-    // If this parameter combination has the same
-    // or slightly lower crash probability than the
+    // If this parameter combination is within .1
+    // or has a slightly lower crash probability than the
     // current best, we compare their "GOOD" probabilities 
     else if(diff <= .1 && probabilities[this_combo + 2] > best_prob){
       low_crash =  probabilities[this_combo];
@@ -463,6 +467,7 @@ int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptable
   }
   return chosen_option_id;
 }
+
 
 }// namespace MueLu
 
