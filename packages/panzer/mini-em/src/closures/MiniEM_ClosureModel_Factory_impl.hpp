@@ -17,6 +17,7 @@
 #include "MiniEM_GaussianPulse.hpp"
 #include "MiniEM_InversePermeability.hpp"
 #include "MiniEM_Permittivity.hpp"
+#include "MiniEM_Conductivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -111,6 +112,15 @@ buildClosureModels(const std::string& model_id,
         std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::Permittivity<EvalT,panzer::Traits>(key,*ir,fl,epsilon,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="CONDUCTIVITY") {
+        double sigma = plist.get<double>("sigma");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::Conductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
 	evaluators->push_back(e);
 
         found = true;

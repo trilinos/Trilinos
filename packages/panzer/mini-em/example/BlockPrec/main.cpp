@@ -449,6 +449,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("DoF Name","E_edge");
       closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
       closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("Type","CONDUCTIVITY");
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<double>("sigma",0.0);
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("DoF Name","E_edge");
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
