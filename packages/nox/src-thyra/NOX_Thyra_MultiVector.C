@@ -73,7 +73,7 @@ MultiVector(const ::Thyra::MultiVectorBase<double>& source)
 }
 
 NOX::Thyra::MultiVector::
-MultiVector(const NOX::Thyra::MultiVector& source, NOX::CopyType type)
+MultiVector(const NOX::Thyra::MultiVector& source, NOX::CopyType /* type */)
   : thyraMultiVec(source.thyraMultiVec->clone_mv()),
     noxThyraVectors(thyraMultiVec->domain()->dim()),
     do_implicit_weighting_(false)

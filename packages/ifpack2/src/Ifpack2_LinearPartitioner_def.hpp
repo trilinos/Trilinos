@@ -63,7 +63,7 @@ LinearPartitioner<GraphType>::~LinearPartitioner() {}
 template<class GraphType>
 void
 LinearPartitioner<GraphType>::
-setPartitionParameters (Teuchos::ParameterList& List) {}
+setPartitionParameters (Teuchos::ParameterList& /* List */) {}
 
 
 template<class GraphType>

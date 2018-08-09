@@ -880,7 +880,7 @@ bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerValidity()
 //***********************************************************************
 bool NOX::Epetra::LinearSystemAztecOO::
 createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
-             bool recomputeGraph) const
+             bool /* recomputeGraph */) const
 {
   double startTime = timer.WallTime();
 

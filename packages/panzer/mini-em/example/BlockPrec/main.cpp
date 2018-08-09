@@ -139,7 +139,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     int numReps = 0;
     std::string linAlgebra = "Tpetra";
     use_stacked_timer = true;
-    Teuchos::CommandLineProcessor clp;
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
     clp.setOption("z-elements",&z_elements);

@@ -59,7 +59,7 @@
 
 LOCA::StepSize::Constant::Constant(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
     const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams) :
   globalData(global_data),
   maxStepSize(1.0e+12),
@@ -87,10 +87,10 @@ NOX::Abstract::Group::ReturnType
 LOCA::StepSize::Constant::computeStepSize(
              LOCA::MultiContinuation::AbstractStrategy& curGroup,
              const LOCA::MultiContinuation::ExtendedVector& predictor,
-             const NOX::Solver::Generic& solver,
+             const NOX::Solver::Generic& /* solver */,
              const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 //             const LOCA::Stepper& stepper,
-             const LOCA::Abstract::Iterator& stepper,
+             const LOCA::Abstract::Iterator& /* stepper */,
              double& stepSize)
 {
 

@@ -63,7 +63,7 @@
 
 LOCA::BorderedSolver::EpetraAugmented::EpetraAugmented(
      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
      const Teuchos::RCP<Teuchos::ParameterList>& slvrParams):
   globalData(global_data),
   solverParams(slvrParams),

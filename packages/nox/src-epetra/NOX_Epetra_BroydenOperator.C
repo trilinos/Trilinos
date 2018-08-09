@@ -342,7 +342,7 @@ const Epetra_BlockMap& BroydenOperator::Map() const
 //-----------------------------------------------------------------------------
 
 bool
-BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac )
+BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& /* Jac */ )
 {
   bool ok = false;
 
@@ -365,8 +365,8 @@ BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac 
 
 bool
 BroydenOperator::computePreconditioner( const Epetra_Vector & x,
-                    Epetra_Operator& Prec,
-                                        Teuchos::ParameterList * pList )
+                    Epetra_Operator& /* Prec */,
+                                        Teuchos::ParameterList * /* pList */ )
 {
   bool ok = false;
 

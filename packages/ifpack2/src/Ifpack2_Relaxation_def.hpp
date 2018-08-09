@@ -483,7 +483,7 @@ void
 Relaxation<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
-       Teuchos::ETransp mode,
+       Teuchos::ETransp /* mode */,
        scalar_type alpha,
        scalar_type beta) const
 {
@@ -1728,8 +1728,8 @@ Relaxation<MatrixType>::
 MTGaussSeidel (const crs_matrix_type* crsMat,
                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
-               const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
-               const scalar_type& dampingFactor,
+               const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* D */,
+               const scalar_type& /* dampingFactor */,
                const Tpetra::ESweepDirection direction,
                const int numSweeps,
                const bool zeroInitialGuess) const
