@@ -44,7 +44,7 @@ CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOT
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
-PRN=`grep number\": $TMPFILE | cut -f2 -d:`
+PRN=`grep number\": $TMPFILE | cut -f2 -d: | cut -f1 -d,`
 
 if grep Created $TMPFILE > /dev/null; then
     echo "PR $PRN created successfully"
@@ -60,7 +60,7 @@ eval $CMD >$TMPFILE 2> $TMPFILE
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
     echo "PR $PRN labeled as 'AT: AUTOMERGE"
 else
-    echo "PR label failed"; 
+    echo "PR $PRN label failed"; 
     exit 1
 fi
 
