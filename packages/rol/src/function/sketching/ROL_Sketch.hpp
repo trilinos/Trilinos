@@ -209,6 +209,14 @@ public:
     reset();
   }
 
+  void setRank(const int rank) {
+    rank_ = rank;
+    // Compute reduced dimensions
+    l_ = std::min(4*rank_+3,ncol_);
+    k_ = std::min(2*rank_+1,l_);
+    update();
+  }
+
   void update(void) {
     flagQ_ = false;
     flagX_ = false;
