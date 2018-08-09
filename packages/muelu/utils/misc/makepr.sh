@@ -58,7 +58,7 @@ CMD=$(echo curl -i -H $h -d \'[\"AT: AUTOMERGE\"]\' https://api.github.com/repos
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
-    echo "PR $PRN labeled as 'AT: AUTOMERGE"
+    echo "PR $PRN labeled as 'AT: AUTOMERGE'"
 else
     echo "PR $PRN label failed"; 
     exit 1
