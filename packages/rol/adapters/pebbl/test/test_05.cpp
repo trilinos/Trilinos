@@ -64,65 +64,19 @@ int main(int argc, char* argv[]) {
 
   try {
     /**********************************************************************************************/
-    /************************* CONSTRUCT ROL ALGORITHM ********************************************/
+    /************************* GET PROBLEM PARAMETERS *********************************************/
     /**********************************************************************************************/
-    // Get ROL parameterlist
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile("input.xml");
     /**********************************************************************************************/
-    /************************* CONSTRUCT VECTORS **************************************************/
+    /************************* CONSTRUCT PROBLEM FACTORY ******************************************/
     /**********************************************************************************************/
-    // Build control vectors
-    int N = 10;
-    ROL::Ptr<ROL::Vector<RealT>> x    = ROL::makePtr<ROL::StdVector<RealT>>(N,0.0);
-    /**********************************************************************************************/
-    /************************* CONSTRUCT OBJECTIVE FUNCTION ***************************************/
-    /**********************************************************************************************/
-    std::vector<RealT> alpha(N,0.0), beta(N,0.0);
-    *outStream << std::endl << std::endl;
-    for (int i = 0; i < N; ++i) {
-      alpha[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      beta[i]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-    }
-    *outStream << std::endl << std::endl;
-    ROL::Ptr<ROL::Objective<RealT>> obj = ROL::makePtr<Objective_SimpleBinary<RealT>>(alpha,beta);
-    /**********************************************************************************************/
-    /************************* CONSTRUCT CONSTRAINT ***********************************************/
-    /**********************************************************************************************/
-    RealT budget  = static_cast<RealT>(parlist->get("Budget", 3));
-    bool  useIneq = parlist->get("Use Inequality", true);
-    ROL::Ptr<ROL::Constraint<RealT>> icon;
-    if (useIneq) {
-      icon = ROL::makePtr<Constraint_SimpleBinary<RealT>>(0.0);
-    }
-    else {
-      icon = ROL::makePtr<Constraint_SimpleBinary<RealT>>(static_cast<int>(budget));
-    }
-    ROL::Ptr<ROL::Vector<RealT>>          imul = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
-    ROL::Ptr<ROL::Vector<RealT>>          ilo  = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
-    ROL::Ptr<ROL::Vector<RealT>>          iup  = ROL::makePtr<ROL::StdVector<RealT>>(1,budget);
-    ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilo,iup);
-    /**********************************************************************************************/
-    /************************* CONSTRUCT BOUND CONSTRAINT *****************************************/
-    /**********************************************************************************************/
-    ROL::Ptr<ROL::Vector<RealT>>          xl  = ROL::makePtr<ROL::StdVector<RealT>>(N,0.0);
-    ROL::Ptr<ROL::Vector<RealT>>          xu  = ROL::makePtr<ROL::StdVector<RealT>>(N,1.0);
-    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd = ROL::makePtr<ROL::Bounds<RealT>>(xl,xu);
+    ROL::Ptr<Test05Factory<RealT>> factory = ROL::makePtr<Test05Factory<RealT>>(*parlist);
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    if (useIneq) {
-      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(obj,x,bnd,icon,imul,ibnd);
-    }
-    else {
-      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(obj,x,bnd,icon,imul);
-    }
-    problem->check(*outStream);
     ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper
       = ROL::makePtr<ROL::StdBranchHelper_PEBBL<RealT>>();
-    ROL::ROL_PEBBL_Driver<RealT> pebbl(problem,parlist,bHelper,3,outStream);
+    ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
     pebbl.solve(argc,argv,*outStream);
   }
   catch (std::logic_error err) {

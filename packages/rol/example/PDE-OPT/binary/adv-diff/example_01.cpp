@@ -54,26 +54,11 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationProblem.hpp"
-#include "ROL_Bounds.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_PEBBL_Driver.hpp"
-
 #include "ROL_TeuchosBranchHelper_PEBBL.hpp"
-#include "extractQP.hpp"
-
-#include "../../TOOLS/linearpdeconstraint.hpp"
-#include "../../TOOLS/pdeconstraint.hpp"
-#include "../../TOOLS/pdeobjective.hpp"
-#include "../../TOOLS/pdevector.hpp"
-#include "../../TOOLS/integralconstraint.hpp"
-#include "pde_adv_diff.hpp"
-#include "qoi_adv_diff.hpp"
-#include "mesh_adv_diff.hpp"
 #include "branchHelper.hpp"
 
-#include "ROL_HelperFunctions.hpp"
-
+#include "opfactory.hpp"
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -99,136 +84,25 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> tparlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, tparlist.ptr() );
 
-    // Problem dimensions
-    const int controlDim = 9;
-
     /*************************************************************************/
-    /***************** BUILD GOVERNING PDE ***********************************/
+    /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<MeshManager<RealT>> meshMgr
-      = ROL::makePtr<MeshManager_adv_diff<RealT>>(*tparlist);
-    ROL::Ptr<PDE_adv_diff<RealT>> pde
-      = ROL::makePtr<PDE_adv_diff<RealT>>(*tparlist);
-    ROL::Ptr<Linear_PDE_Constraint<RealT>> con
-      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*tparlist,*outStream);
-    const ROL::Ptr<Assembler<RealT>> assembler = con->getAssembler();
-
-    /*************************************************************************/
-    /***************** BUILD VECTORS *****************************************/
-    /*************************************************************************/
-    ROL::Ptr<Tpetra::MultiVector<>> u_ptr, p_ptr, r_ptr;
-    u_ptr = assembler->createStateVector();
-    p_ptr = assembler->createStateVector();
-    r_ptr = assembler->createResidualVector();
-    ROL::Ptr<ROL::Vector<RealT>> up, pp, rp, zp;
-    up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*tparlist);
-    pp = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*tparlist);
-    rp = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*tparlist);
-    zp = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
-
-    /*************************************************************************/
-    /***************** BUILD COST FUNCTIONAL *********************************/
-    /*************************************************************************/
-    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(1,ROL::nullPtr);
-    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<RealT>>(pde->getFE());
-    RealT stateCost = parlist->sublist("Problem").get("State Cost",4.0);
-    std::vector<RealT> wts = {stateCost};
-    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj
-      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
-    bool storage = parlist->sublist("Problem").get("Use Storage",true);
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT>> robj
-      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, storage, false);
-
-    /*************************************************************************/
-    /***************** BUILD KNAPSACK CONSTRAINT *****************************/
-    /*************************************************************************/
-    RealT ctrlCost = parlist->sublist("Problem").get("Control Cost", 4.0);
-    bool  useIneq  = parlist->sublist("Problem").get("Use Inequality", false);
-    RealT budget   = (useIneq ? static_cast<RealT>(0) : ctrlCost);
-    ROL::Ptr<QoI<RealT>> knapsack_qoi
-      = ROL::makePtr<QoI_Control_Cost_adv_diff<RealT>>(budget);
-    ROL::Ptr<ROL::Constraint<RealT>> knapsack_con
-      = ROL::makePtr<IntegralOptConstraint<RealT>>(knapsack_qoi,assembler);
-    ROL::Ptr<ROL::BoundConstraint<RealT>> knapsack_bnd = ROL::nullPtr;
-    if (useIneq) {
-      ROL::Ptr<ROL::Vector<RealT>> klop, khip;
-      klop = ROL::makePtr<ROL::StdVector<RealT>>(1,static_cast<RealT>(0));
-      khip = ROL::makePtr<ROL::StdVector<RealT>>(1,ctrlCost);
-      knapsack_bnd = ROL::makePtr<ROL::Bounds<RealT>>(klop,khip);
+    bool useQP = parlist->sublist("Problem").get("Use Quadratic Program",false);
+    ROL::Ptr<ROL::OptimizationProblemFactory<RealT>> factory;
+    ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
+    if (!useQP) {
+      factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
+      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>();
     }
-    ROL::Ptr<ROL::Vector<RealT>> knapsack_mul
-      = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
-
-    /*************************************************************************/
-    /***************** BUILD BOUND CONSTRAINT ********************************/
-    /*************************************************************************/
-    ROL::Ptr<ROL::Vector<RealT>> zlop
-      = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim,0.0));
-    ROL::Ptr<ROL::Vector<RealT>> zhip
-      = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim,1.0));
-    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    else {
+      factory = ROL::makePtr<BinaryAdvDiffQPFactory<RealT>>(*parlist,comm,outStream);
+      bHelper = ROL::makePtr<ROL::TeuchosBranchHelper_PEBBL<int,RealT>>();
+    }
 
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    bool useQP = parlist->sublist("Problem").get("Use Quadratic Program",false);
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
-    if (!useQP) {
-      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp,bnd,knapsack_con,knapsack_mul,knapsack_bnd);
-      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>();
-    }
-    else {
-      extractQP<RealT> extract(robj,zp,bnd,knapsack_con,knapsack_mul,knapsack_bnd);
-      problem = extract();
-      bHelper = ROL::makePtr<ROL::TeuchosBranchHelper_PEBBL<int,RealT>>();
-    }
-    bool derivCheck = parlist->sublist("Problem").get("Check Derivatives",true);
-    if (derivCheck) {
-      ROL::Ptr<Tpetra::MultiVector<>> vu_ptr, wu_ptr;
-      vu_ptr = assembler->createStateVector();
-      wu_ptr = assembler->createStateVector();
-      ROL::Ptr<ROL::Vector<RealT>> vup, wup, vzp, wzp, vp, wp, xp;
-      vup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(vu_ptr,pde,assembler,*tparlist);
-      wup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(wu_ptr,pde,assembler,*tparlist);
-      vzp = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
-      wzp = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim));
-      xp  = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(up,zp);
-      vp  = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(vup,vzp);
-      wp  = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(wup,wzp);
-      xp->randomize(); vp->randomize(); wp->randomize();
-      pp->randomize(); rp->randomize();
-      
-      obj->checkGradient(*xp,*vp,true,*outStream);
-      obj->checkGradient_1(*up,*zp,*vup,true,*outStream);
-      obj->checkGradient_2(*up,*zp,*vzp,true,*outStream);
-      obj->checkHessVec(*xp,*vp,true,*outStream);
-      obj->checkHessVec_11(*up,*zp,*vup,true,*outStream);
-      obj->checkHessVec_12(*up,*zp,*vzp,true,*outStream);
-      obj->checkHessVec_21(*up,*zp,*vup,true,*outStream);
-      obj->checkHessVec_22(*up,*zp,*vzp,true,*outStream);
-      obj->checkHessSym(*xp,*vp,*wp,true,*outStream);
-
-      con->checkSolve(*up,*zp,*rp,true,*outStream);
-      con->checkAdjointConsistencyJacobian(*pp,*vp,*xp,true,*outStream);
-      con->checkAdjointConsistencyJacobian_1(*pp,*vup,*up,*zp,true,*outStream);
-      con->checkAdjointConsistencyJacobian_2(*pp,*vzp,*up,*zp,true,*outStream);
-      con->checkInverseJacobian_1(*rp,*vup,*up,*zp,true,*outStream);
-      con->checkInverseAdjointJacobian_1(*rp,*vup,*up,*zp,true,*outStream);
-      con->checkApplyJacobian(*xp,*vp,*rp,true,*outStream);
-      con->checkApplyJacobian_1(*up,*zp,*vup,*rp,true,*outStream);
-      con->checkApplyJacobian_2(*up,*zp,*vzp,*rp,true,*outStream);
-      con->checkApplyAdjointHessian(*xp,*pp,*vp,*xp,true,*outStream);
-      con->checkApplyAdjointHessian_11(*up,*zp,*pp,*vup,wup->dual(),true,*outStream);
-      con->checkApplyAdjointHessian_12(*up,*zp,*pp,*vup,wzp->dual(),true,*outStream);
-      con->checkApplyAdjointHessian_21(*up,*zp,*pp,*vzp,wup->dual(),true,*outStream);
-      con->checkApplyAdjointHessian_22(*up,*zp,*pp,*vzp,wzp->dual(),true,*outStream);
-      problem->check(*outStream);
-      xp->zero(); pp->zero(); rp->zero();
-    }
-
-    ROL::ROL_PEBBL_Driver<RealT> pebbl(problem,parlist,bHelper,3,outStream);
+    ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
     pebbl.solve(argc,argv,*outStream);
 
     //*outStream << "OPTIMAL CONTROLS" << std::endl;

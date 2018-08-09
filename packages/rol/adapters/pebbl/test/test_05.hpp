@@ -55,6 +55,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Constraint_PEBBL.hpp"
+#include "ROL_OptimizationProblemFactory.hpp"
 
 template<class Real>
 class Constraint_SimpleBinary : public ROL::Constraint<Real> {
@@ -168,5 +169,84 @@ public:
     for (int i = 0; i < dim; ++i) {
       (*hvp)[i] = alpha_[i] * (*vp)[i];
     }
+  }
+};
+
+template<class Real>
+class Test05Factory : public ROL::OptimizationProblemFactory<Real> {
+private:
+  std::vector<Real> alpha_, beta_;
+  const int N_;
+  ROL::ParameterList pl_;
+
+public:
+  Test05Factory(ROL::ParameterList &pl)
+    : N_(10), pl_(pl) {
+    alpha_.resize(N_); beta_.resize(N_);
+    for (int i = 0; i < N_; ++i) {
+      alpha_[i] = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+      beta_[i]  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    }
+    update();
+  }
+
+  void update(void) {}
+
+  ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
+    return ROL::makePtr<Objective_SimpleBinary<Real>>(alpha_,beta_);
+  }
+
+  ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
+    return ROL::makePtr<ROL::StdVector<Real>>(N_,0.0);
+  }
+
+  ROL::Ptr<ROL::BoundConstraint<Real>> buildBoundConstraint(void) {
+    ROL::Ptr<ROL::Vector<Real>> xl = ROL::makePtr<ROL::StdVector<Real>>(N_,0.0);
+    ROL::Ptr<ROL::Vector<Real>> xu = ROL::makePtr<ROL::StdVector<Real>>(N_,1.0);
+    return ROL::makePtr<ROL::Bounds<Real>>(xl,xu);
+  }
+
+  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
+    bool useIneq = pl_.get("Use Inequality", true);
+    if (!useIneq) {
+      Real budget  = static_cast<Real>(pl_.get("Budget", 3));
+      return ROL::makePtr<Constraint_SimpleBinary<Real>>(static_cast<int>(budget));
+    }
+    return ROL::nullPtr;
+  }
+
+  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
+    bool useIneq = pl_.get("Use Inequality", true);
+    if (!useIneq) {
+      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
+    }
+    return ROL::nullPtr;
+  }
+
+  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
+    bool useIneq = pl_.get("Use Inequality", true);
+    if (useIneq) {
+      return ROL::makePtr<Constraint_SimpleBinary<Real>>(0);
+    }
+    return ROL::nullPtr;
+  }
+
+  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
+    bool useIneq = pl_.get("Use Inequality", true);
+    if (useIneq) {
+      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
+    }
+    return ROL::nullPtr;
+  }
+
+  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
+    bool useIneq = pl_.get("Use Inequality", true);
+    if (useIneq) {
+      Real budget  = static_cast<Real>(pl_.get("Budget", 3));
+      ROL::Ptr<ROL::Vector<Real>> ilo = ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
+      ROL::Ptr<ROL::Vector<Real>> iup = ROL::makePtr<ROL::StdVector<Real>>(1,budget);
+      return ROL::makePtr<ROL::Bounds<Real>>(ilo,iup);
+    }
+    return ROL::nullPtr;
   }
 };
