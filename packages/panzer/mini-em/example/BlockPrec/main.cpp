@@ -63,7 +63,7 @@
 Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order);
 std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier, Teuchos::RCP<const std::vector<std::string> > fieldMultipliers);
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
@@ -352,16 +352,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // build the auxiliary physics blocks objects
     Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
-    Teuchos::RCP<std::vector<std::string> > fieldMultipliers;
     if (use_refmaxwell) {
-      fieldMultipliers = rcp(new std::vector<std::string>);
-      fieldMultipliers->push_back("PERMITTIVITY");
-      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0 / dt / cfl / cfl / min_dx / min_dx, fieldMultipliers.getConst());
-      // We actually want Q_rho with weight 1/mu but for that we
-      // would need to be able to request a Q_E with weight 1
-      // instead of eps/dt.
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, mu/dt);
     } else
-      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0, fieldMultipliers.getConst());
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
     std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
     {
       Teuchos::TimeMonitor tMaux_physics(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks")));
@@ -790,7 +784,7 @@ std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interfa
 }
 
 //! Create parameter list defining nodal mass matrix and node-edge weak gradient
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier, Teuchos::RCP<const std::vector<std::string> > fieldMultipliers)
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Aux Physics Block"));
   const int integration_order = 2*basis_order;
@@ -804,7 +798,17 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, 
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
     p.set("Multiplier",massMultiplier);
-    p.set("Field Multipliers",fieldMultipliers);
+  }
+
+  {
+    Teuchos::ParameterList& p = pl->sublist("Auxiliary Edge Mass Physics");
+    p.set("Type","Auxiliary Mass Matrix");
+    p.set("Model ID","electromagnetics_aux");
+    p.set("DOF Name","AUXILIARY_EDGE");
+    p.set("Basis Type","HCurl");
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",integration_order);
+    p.set("Multiplier",1.0);
   }
 
   {
