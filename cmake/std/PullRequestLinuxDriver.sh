@@ -211,12 +211,23 @@ env \
   TRILINOS_SCRIPTS_DIR=${TRILINOS_DRIVER_SRC_DIR} \
 ${TRILINOS_DRIVER_SRC_DIR}/commonTools/framework/get-changed-trilinos-packages.sh \
   origin/${TRILINOS_TARGET_BRANCH:?} HEAD packageEnables.cmake
+# NOTE: Above we use the git diff origin/<target-branch>..HEAD to give us the
+# correct list of changed files.  This works because this is done after
+# merging the target branch and the soruce branch.  With that, git diff will
+# show all of the changes in the merged copy from what is in <target-branch>.
+# This with give the correct set of changed files even if older versions of
+# <target-branch> were merged multiple times into <source-branch>.  It turns
+# out that the only way to have git show the correct set of diffs in that case
+# is to actually do the merge and then do the diff.
 
 ierror=$?
 if [[ $ierror != 0 ]]; then
   echo "There was an issue generating packageEnables.cmake.  The error code was: $ierror"
   exit $ierror
 fi
+
+echo "Enabled packages:"
+cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
 
