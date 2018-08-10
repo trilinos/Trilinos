@@ -76,8 +76,12 @@ StepperOperatorSplit<Scalar>::getModel()
     model = (*subStepperIter)->getModel();
     if (model != Teuchos::null) break;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
-    "Error - StepperOperatorSplit::getModel() Could not find a valid model!\n");
+  if ( model == Teuchos::null ) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::getModel()");
+    *out << "Warning -- StepperOperatorSplit::getModel() "
+         << "Could not find a valid model!  Returning null!" << std::endl;
+  }
 
   return model;
 }
