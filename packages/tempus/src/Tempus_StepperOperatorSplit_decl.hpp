@@ -62,6 +62,8 @@ public:
       { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
+      { tempState_ = state; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -70,10 +72,11 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
-    
+    /// Pass initial guess to Newton solver (only relevant for explicit schemes)
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+      {initial_guess_ = initial_guess;}
+
    virtual std::string getStepperType() const
      { return stepperPL_->get<std::string>("Stepper Type"); }
 
