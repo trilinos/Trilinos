@@ -966,11 +966,11 @@ void updateParametersFromYamlFile(const std::string& yamlFileName,
 {
   //load the YAML file in as a new param list
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlFile(yamlFileName);
-  //now update the original list (overwriting values with same key)
-  paramList->setParameters(*updated);
   if (paramList->name() == "ANONYMOUS") {
     paramList->setName(updated->name());
   }
+  //now update the original list (overwriting values with same key)
+  paramList->setParameters(*updated);
 }
 
 void updateParametersFromYamlCString(const char* const data,
