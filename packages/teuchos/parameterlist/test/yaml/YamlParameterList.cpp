@@ -294,5 +294,20 @@ namespace TeuchosTests
     TEST_EQUALITY(field_pl.get<double>("rho"), 0.125);
   }
 
+  TEUCHOS_UNIT_TEST(YAML, root_name)
+  {
+    Teuchos::ParameterList pl;
+    Teuchos::updateParametersFromYamlString(
+      "mycode:\n"
+      "  sublist:\n"
+      "    param1: foo\n",
+      Teuchos::ptr(&pl),
+      true,
+      "root_name test"
+      );
+    auto& sublist = pl.sublist("sublist");
+    TEST_EQUALITY(sublist.name(), "mycode->sublist");
+  }
+
 } //namespace TeuchosTests
 

@@ -980,10 +980,10 @@ void updateParametersFromYamlCString(const char* const data,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data, "CString");
   if(overwrite)
   {
-    paramList->setParameters(*updated);
     if (paramList->name() == "ANONYMOUS") {
       paramList->setName(updated->name());
     }
+    paramList->setParameters(*updated);
   }
   else
   {
@@ -999,10 +999,10 @@ void updateParametersFromYamlString(const std::string& yamlData,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData, name);
   if(overwrite)
   {
-    paramList->setParameters(*updated);
     if (paramList->name() == "ANONYMOUS") {
       paramList->setName(updated->name());
     }
+    paramList->setParameters(*updated);
   }
   else
   {
