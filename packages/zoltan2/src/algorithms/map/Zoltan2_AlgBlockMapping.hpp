@@ -121,26 +121,29 @@ public:
 
       size_t nLocal = adapter_->getLocalNumIDs();
 
-      std::set<part_t> unique;
+      // Ideally, we'd use part_t as global ID in the map, but that won't
+      // work if Tpetra is compiled without global ID = int.
+      //    typedef part_t use_this_gno_t;
+      // We'll use Tpetra's default instead
+      typedef Tpetra::Map<>::global_ordinal_type use_this_gno_t;
+
+      std::set<use_this_gno_t> unique;
       for (size_t i = 0; i < nLocal; i++)
         unique.insert(partList[i]);
 
       size_t nUnique = unique.size();
-      Array<part_t> uniquePartList(nUnique);
+      Array<use_this_gno_t> uniquePartList(nUnique);
       size_t k = 0;
-      for (typename std::set<part_t>::iterator it = unique.begin();
+      for (typename std::set<use_this_gno_t>::iterator it = unique.begin();
            it != unique.end(); it++)
         uniquePartList[k++] = *it;
         
       // Use Tpetra::Map to find the max, min, total part.
 
-   // KDDKDD TODO:  As is, building a map with GO=part_t will break 
-   // KDDKDD TODO:  ETI builds without GO=int.
-   // KDDKDD TODO:  Maybe part_t needs to be Tpetra::Map<>::gno_t?
-
       global_size_t nGlobalElts = 
                     Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      Tpetra::Map<lno_t, part_t> tmap(nGlobalElts, uniquePartList(), 0, comm_);
+      Tpetra::Map<lno_t, use_this_gno_t> tmap(nGlobalElts, uniquePartList(),
+                                              0, comm_);
 
       nParts = Teuchos::as<part_t>(tmap.getGlobalNumElements());
       minPart = tmap.getMinAllGlobalIndex();
