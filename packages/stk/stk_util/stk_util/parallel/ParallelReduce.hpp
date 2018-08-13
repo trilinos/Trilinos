@@ -43,7 +43,7 @@
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 //------------------------------------------------------------------------
 

@@ -4605,7 +4605,7 @@ TEST(BulkData, can_we_create_shared_nodes)
                 EXPECT_NEAR(owned_value, *tempField, 1e-6);
             }
 
-            std::vector<stk::mesh::FieldBase*> fields1(1, &temperatureField);
+            std::vector<const stk::mesh::FieldBase*> fields1(1, &temperatureField);
             stk::mesh::parallel_sum(bulk, fields1); /* IMPORTANT PART TO TEST */
 
             double summed_value = 2*owned_value;

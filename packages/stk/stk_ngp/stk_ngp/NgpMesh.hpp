@@ -80,7 +80,7 @@ public:
     STK_FUNCTION
     stk::mesh::Entity operator[](unsigned i) const
     {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef __CUDA_ARCH__
         return entities[bucketSize*i];
 #else
         return entities[i];
@@ -95,8 +95,6 @@ private:
     T entities;
     unsigned num;
 };
-
-
 
 inline stk::Vector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
                      stk::mesh::EntityRank rank,
@@ -261,9 +259,10 @@ public:
         copy_mesh_indices_to_device();
     }
 
-    ~StaticMesh()
-    {
-    }
+    STK_FUNCTION
+    StaticMesh(const StaticMesh &) = default;
+    STK_FUNCTION
+    ~StaticMesh() {}
 
     STK_FUNCTION
     unsigned get_spatial_dimension() const

@@ -75,7 +75,6 @@ int testElement(const std::string &name, unsigned spatialDim)
   // Currently not supported:
   if (element->name() == "unknown"   ||
       element->name() == "tetra14"   || element->name() == "tetra15" ||
-      element->name() == "quad6"     || element->name() == "hex16" ||
       element->name() == "tri7"      || element->name() == "trishell7" ||
       element->name() == "pyramid18" || element->name() == "pyramid19" ||
       element->name() == "wedge20"   || element->name() == "wedge21" ||

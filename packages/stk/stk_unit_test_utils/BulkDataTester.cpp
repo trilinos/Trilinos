@@ -11,7 +11,7 @@
 #include "stk_mesh/base/EntityKey.hpp"               // for EntityKey, etc
 #include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_util/environment/ReportHandler.hpp"    // for ThrowRequireMsg, etc
+#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg, etc
 #include "stk_util/parallel/ParallelComm.hpp"        // for CommBuffer
 #include "stk_util/util/PairIter.hpp"                // for PairIter
 namespace stk { namespace mesh { class Part; } }

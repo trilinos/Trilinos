@@ -155,7 +155,6 @@ exe stk_io_mesh_read_write_example
   :
     $(stk_io-root)/example/io_mesh_read_write_example.cpp
     stk_io
-    /sierra/stk_util//stk_util_util
   : <tag>@sierra-exec-tag
   ;
 
@@ -163,9 +162,7 @@ exe stk_io_utest
   :
     [ glob $(stk_io-root)/../stk_unit_tests/stk_io/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_io
     /sierra/stk_io//stk_io_util
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_util//stk_util_unit_test_support
   : <tag>@sierra-exec-tag
     <include>$(stk_io-root)/../stk_unit_tests/stk_io
@@ -175,10 +172,8 @@ exe stk_io_doc_test
   :
     [ glob $(stk_io-root)/../stk_doc_tests/stk_io/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
   : <tag>@sierra-exec-tag
     <include>$(stk_io-root)/../stk_doc_tests/stk_io
   ;
@@ -194,7 +189,6 @@ exe stk_io_topology
   :
     $(stk_io-root)/example/io_topology.cpp
     stk_io
-    /sierra/stk_topology//stk_topology
   : <tag>@sierra-exec-tag
   ;
 

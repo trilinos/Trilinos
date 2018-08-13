@@ -44,7 +44,7 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
 #include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_unit_tests/stk_mesh_fixtures/TriFixture.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {

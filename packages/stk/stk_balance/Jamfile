@@ -156,7 +156,6 @@ lib stk_balance_lib
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
-    /mpi//mpi
   :
     <include>$(stk_balance-root)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
@@ -170,7 +169,6 @@ lib stk_balance_test_utils
     stk_balance_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
-    /sierra/seacas//ioss
     /sierra/seacas//nemesis
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -188,12 +186,6 @@ exe stk_balance_unit_tester
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
-    stk_balance_lib
-    /sierra/seacas//ioss
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
-    /sierra/stk_util//stk_util_parallel
   :
     <tag>@sierra-exec-tag
   ;
@@ -205,11 +197,6 @@ exe stk_balance_integration_tester
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
-    stk_balance_lib
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/seacas//ioss
-    /tpl/gtest//gtest
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;
@@ -220,7 +207,6 @@ exe stk_balance
         $(stk_balance-root)/stk_balance/balance_main/*.cpp
     ]
     stk_balance_lib
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;
@@ -231,8 +217,6 @@ exe stk_balance_m2n
         $(stk_balance-root)/stk_balance/m2n_main/*.cpp
     ]
     stk_balance_lib
-    /sierra/stk_util//stk_util_command_line
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;

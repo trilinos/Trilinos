@@ -38,7 +38,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk
 {

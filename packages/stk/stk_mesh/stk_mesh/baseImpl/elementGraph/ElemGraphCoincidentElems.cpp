@@ -15,7 +15,7 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk

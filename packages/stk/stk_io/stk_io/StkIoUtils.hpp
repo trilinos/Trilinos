@@ -42,6 +42,8 @@
 #include "stk_mesh/base/Types.hpp"                        // for EntityRank, etc
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include "stk_io/OutputParams.hpp"
+#include "stk_util/util/ParameterList.hpp"
+#include "Ioss_Field.h"
 
 namespace stk { namespace io   { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { class BulkData; } }
@@ -95,6 +97,20 @@ template<typename DATA_TYPE>
 void write_global_to_stk_io(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
                             const std::string& externalName,
                             size_t component_count, const void* ptr);
+
+std::pair<size_t, stk::util::ParameterType::Type>
+get_parameter_type_from_storage(const std::string &storage,
+                                stk::util::ParameterType::Type scalar,
+                                stk::util::ParameterType::Type vector);
+
+std::pair<size_t, stk::util::ParameterType::Type>
+get_parameter_type_from_field_representation(const std::string &storage,
+                                             Ioss::Field::BasicType dataType,
+                                             int copies = 1);
+
+std::pair<size_t, Ioss::Field::BasicType>
+get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
+                               const boost::any &value);
 
 }}
 

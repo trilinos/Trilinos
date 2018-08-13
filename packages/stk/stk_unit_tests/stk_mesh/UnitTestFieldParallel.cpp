@@ -55,7 +55,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
 #include "stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk { namespace mesh { class FieldBase; } }
@@ -228,7 +228,7 @@ void do_parallel_assemble()
     }
   }
 
-  std::vector<FieldBase*> double_field_vector;
+  std::vector<const FieldBase*> double_field_vector;
   double_field_vector.push_back(&universal_scalar_node_field);
   double_field_vector.push_back(&non_universal_scalar_node_field);
   double_field_vector.push_back(&universal_cartesian_node_field);
@@ -236,15 +236,15 @@ void do_parallel_assemble()
 
   do_assemble(Op, bulk, double_field_vector);
 
-  std::vector<FieldBase*> int_field_vector(1, &universal_scalar_int_node_field);
+  std::vector<const FieldBase*> int_field_vector(1, &universal_scalar_int_node_field);
 
   do_assemble(Op, bulk, int_field_vector);
 
-  std::vector<FieldBase*> long_double_field_vector(1, &universal_scalar_long_double_node_field);
+  std::vector<const FieldBase*> long_double_field_vector(1, &universal_scalar_long_double_node_field);
 
   do_assemble(Op, bulk, long_double_field_vector);
 
-  std::vector<FieldBase*> id_field_vector(1, &universal_scalar_id_node_field);
+  std::vector<const FieldBase*> id_field_vector(1, &universal_scalar_id_node_field);
 
   do_assemble(Op, bulk, id_field_vector);
 

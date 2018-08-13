@@ -22,7 +22,7 @@
 #include "stk_mesh/base/Types.hpp"                 // for OrdinalVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"               // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, etc
 #include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
@@ -169,7 +169,10 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                sb_part = get_part_for_grouping_entity(*region, meta, sset);
             }
 
-            ThrowRequireMsg(sb_part != nullptr, "Could not find sset '" + sset->name() + "'");
+            if (sb_part == nullptr)
+            {
+                continue;
+            }
 
             stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 

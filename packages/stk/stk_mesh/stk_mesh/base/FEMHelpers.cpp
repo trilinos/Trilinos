@@ -39,7 +39,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for get_topology, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 

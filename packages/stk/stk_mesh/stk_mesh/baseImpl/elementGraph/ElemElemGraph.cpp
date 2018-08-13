@@ -18,7 +18,7 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk { namespace mesh {
@@ -320,9 +320,7 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
             }
         }
     }
-    std::sort(graphEdges.begin(), graphEdges.end(), GraphEdgeLessByElem2());
-    auto new_end = std::unique(graphEdges.begin(), graphEdges.end());
-    graphEdges.resize(new_end - graphEdges.begin());
+    stk::util::sort_and_unique(graphEdges, GraphEdgeLessByElem2());
 }
 
 template <typename GraphType>

@@ -28,9 +28,12 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
+#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
+#include "stk_util/util/string_case_compare.hpp"
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -362,5 +365,220 @@ template
 void write_global_to_stk_io<double>(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
                                     const std::string& externalName,
                                     size_t component_count, const void* ptr);
+
+
+bool storage_type_is_general(const std::string &storage)
+{
+    bool value = false;
+
+    if(stk::equal_case(storage,"scalar")          ||
+       stk::equal_case(storage,"vector_2d")       ||
+       stk::equal_case(storage,"vector_3d")       ||
+       stk::equal_case(storage,"full_tensor_36")  ||
+       stk::equal_case(storage,"full_tensor_32")  ||
+       stk::equal_case(storage,"full_tensor_22")  ||
+       stk::equal_case(storage,"full_tensor_12")  ||
+       stk::equal_case(storage,"sym_tensor_33")   ||
+       stk::equal_case(storage,"sym_tensor_31")   ||
+       stk::equal_case(storage,"sym_tensor_21")   ||
+       stk::equal_case(storage,"matrix_22")       ||
+       stk::equal_case(storage,"matrix_33")) {
+        value = true;
+    }
+
+    return value;
+}
+
+bool storage_type_is_real(const std::string &storage)
+{
+    bool value = false;
+
+    if(storage_type_is_general(storage) ||
+       stk::equal_case(storage,"real")) {
+        value = true;
+    } else {
+        std::string str = storage.substr(0, 4);
+        if(stk::equal_case(str,"real")) {
+            value = true;
+        }
+    }
+
+    return value;
+}
+
+bool storage_type_is_integer(const std::string &storage)
+{
+    bool value = false;
+
+    if(storage_type_is_general(storage)   ||
+       stk::equal_case(storage,"integer") ||
+       stk::equal_case(storage,"integer64")) {
+        value = true;
+    } else {
+        std::string str = storage.substr(0, 7);
+        if(stk::equal_case(str,"integer")) {
+            value = true;
+        }
+    }
+
+    return value;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> parse_square_bracket_case(const std::string &storage,
+                                                                            stk::util::ParameterType::Type scalar,
+                                                                            stk::util::ParameterType::Type vector)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    std::string storageType = sierra::make_lower(storage);
+
+    // Step 0:
+    // See if the type contains '[' and ']'
+    char const *typestr = storageType.c_str();
+    char const *lbrace  = std::strchr(typestr, '[');
+    char const *rbrace  = std::strrchr(typestr, ']');
+
+    if (lbrace != nullptr && rbrace != nullptr) {
+        // Step 1:
+        // First, we split off the basename (REAL/INTEGER) from the component count
+        // ([2])
+        // and see if the basename is a valid variable type and the count is a
+        // valid integer.
+
+        char *base = std::strtok(const_cast<char *>(typestr), "[]");
+        assert(base != nullptr);
+
+        if(!strcmp(base, "real") || !strcmp(base, "integer")) {
+            char *num_str = std::strtok(nullptr, "[]");
+            assert(num_str != nullptr);
+
+            std::istringstream os(num_str);
+            int n = 0;
+            os >> n;
+
+            type = std::make_pair(size_t(n), vector);
+        }
+    }
+
+    return type;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_storage(const std::string &storage,
+                                                                                  stk::util::ParameterType::Type scalar,
+                                                                                  stk::util::ParameterType::Type vector)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    if(stk::equal_case(storage,"scalar")) {
+        type = std::make_pair(1, scalar);
+    } else if(stk::equal_case(storage,"integer")) {
+        type = std::make_pair(1, scalar);
+    } else if(stk::equal_case(storage,"real")) {
+        type = std::make_pair(1, scalar);
+    }else if(stk::equal_case(storage,"vector_2d")) {
+        type = std::make_pair(2, vector);
+    } else if(stk::equal_case(storage,"vector_3d")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"full_tensor_36")) {
+        type = std::make_pair(9, vector);
+    } else if(stk::equal_case(storage,"full_tensor_32")) {
+        type = std::make_pair(5, vector);
+    } else if(stk::equal_case(storage,"full_tensor_22")) {
+        type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"full_tensor_12")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_33")) {
+        type = std::make_pair(6, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_31")) {
+        type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_21")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"matrix_33")) {
+        type = std::make_pair(9, vector);
+    } else if(stk::equal_case(storage,"matrix_22")) {
+        type = std::make_pair(4, vector);
+    } else {
+        type = parse_square_bracket_case(storage, scalar, vector);
+    }
+
+    return type;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_field_representation(const std::string &storage,
+                                                                                               Ioss::Field::BasicType dataType,
+                                                                                               int copies)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    stk::util::ParameterType::Type scalar = stk::util::ParameterType::INVALID;
+    stk::util::ParameterType::Type vector = stk::util::ParameterType::INVALID;
+
+    if((dataType == Ioss::Field::DOUBLE) && storage_type_is_real(storage)) {
+        scalar = stk::util::ParameterType::DOUBLE;
+        vector = stk::util::ParameterType::DOUBLEVECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    } else if((dataType == Ioss::Field::INTEGER) && storage_type_is_integer(storage)) {
+        scalar = stk::util::ParameterType::INTEGER;
+        vector = stk::util::ParameterType::INTEGERVECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    } else if((dataType == Ioss::Field::INT64) && storage_type_is_integer(storage)) {
+        scalar = stk::util::ParameterType::INT64;
+        vector = stk::util::ParameterType::INT64VECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    }
+
+    if(copies > 1) {
+        type.second = vector;
+    }
+
+    type.first *= copies;
+
+    return type;
+}
+
+std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
+                                                                         const boost::any &value)
+{
+  try {
+    switch(type)  {
+    case stk::util::ParameterType::INTEGER: {
+      return std::make_pair(1, Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64: {
+      return std::make_pair(1, Ioss::Field::INT64);
+    }
+
+    case stk::util::ParameterType::DOUBLE: {
+      return std::make_pair(1, Ioss::Field::REAL);
+    }
+
+    case stk::util::ParameterType::DOUBLEVECTOR: {
+      std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::REAL);
+    }
+
+    case stk::util::ParameterType::INTEGERVECTOR: {
+      std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64VECTOR: {
+      std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INT64);
+    }
+
+    default: {
+      return std::make_pair(0, Ioss::Field::INVALID);
+    }
+    }
+  }
+  catch(...) {
+    std::cerr << "ERROR: Actual type of parameter does not match the declared type. Something went wrong."
+              << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
+    throw;
+  }
+}
+
 }}
 

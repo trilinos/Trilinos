@@ -208,6 +208,7 @@ public:
         copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
     }
 
+    STK_FUNCTION StaticField(const StaticField &) = default;
     STK_FUNCTION ~StaticField(){}
 
     template <typename Mesh> STK_FUNCTION

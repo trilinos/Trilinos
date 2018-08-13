@@ -16,6 +16,7 @@
 #include <iterator>
 #include <cassert>
 #include <string>
+#include <limits>
 
 namespace stk {
 namespace math {
@@ -152,8 +153,15 @@ template<class REAL, unsigned DIM>
 inline REAL Vec<REAL,DIM>::unitize()
 {
   const REAL len = length();
-  const REAL inv_length = 1.0/len;
-  for (unsigned i=0; i<DIM; ++i) vec[i] *= inv_length;
+  if (len > 0.0)
+  {
+    const REAL inv_length = 1.0/len;
+    for (unsigned i=0; i<DIM; ++i) vec[i] *= inv_length;
+  }
+  else
+  {
+    for (unsigned i=0; i<DIM; ++i) vec[i] = std::nan("");
+  }
   return len;
 }
 

@@ -60,7 +60,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/CSet.hpp"       // for CSet
 
 namespace shards { class ArrayDimTag; }

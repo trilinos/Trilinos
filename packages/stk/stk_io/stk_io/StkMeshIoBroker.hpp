@@ -52,7 +52,7 @@
 #include "Teuchos_RCPDecl.hpp"                     // for RCP
 #include "mpi.h"                                   // for MPI_Comm, etc
 #include "stk_mesh/base/Types.hpp"                 // for FieldVector
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
 namespace boost { class any; }
@@ -233,25 +233,50 @@ namespace impl
     class Heartbeat {
     public:
       Heartbeat(const std::string &filename, HeartbeatType db_type,
-		Ioss::PropertyManager properties, MPI_Comm comm);
+                Ioss::PropertyManager properties, MPI_Comm comm,
+                bool openFileImmediately = true);
       ~Heartbeat() {};
       
-      void add_global_ref(const std::string &variableName, const boost::any *value,
-			  stk::util::ParameterType::Type type);
+      void define_global_ref(const std::string &variableName,
+                          const boost::any *value,
+                          stk::util::ParameterType::Type type,
+                          int copies = 1,
+                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+      void define_global_ref(const std::string &name,
+                          const boost::any *value,
+                          const std::string &storage,
+                          Ioss::Field::BasicType dataType,
+                          int copies = 1,
+                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+      void add_global_ref(const std::string &variableName,
+                          const boost::any *value,
+                          stk::util::ParameterType::Type type,
+                          int copies = 1,
+                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
       void add_global_ref(const std::string &name,
                           const boost::any *value,
                           const std::string &storage,
-                          Ioss::Field::BasicType dataType);
+                          Ioss::Field::BasicType dataType,
+                          int copies = 1,
+                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
       void process_output(int step, double time);
+      void process_output_pre_write(int step, double time);
+      void process_output_write(int step, double time);
+      void process_output_post_write(int step, double time);
+
       void flush_output() const;
       Teuchos::RCP<Ioss::Region> get_heartbeat_io_region() {
-	return m_region;
+          return m_region;
       }
 
       void begin_define_transient();
       void end_define_transient();
+
+      bool has_global(const std::string &name);
 
     private:
       std::vector<GlobalAnyVariable> m_fields;
@@ -703,23 +728,50 @@ namespace impl
 
       // Add a history or heartbeat output...
       size_t add_heartbeat_output(const std::string &filename,
-				  HeartbeatType db_type,
-				  const Ioss::PropertyManager &properties =
-			                   Ioss::PropertyManager());
+                                  HeartbeatType db_type,
+                                  const Ioss::PropertyManager &properties = Ioss::PropertyManager(),
+                                  bool openFileImmediately = true);
   
+      void define_heartbeat_global(size_t index,
+                                   const std::string &name,
+                                   const boost::any *value,
+                                   stk::util::ParameterType::Type type,
+                                   int copies = 1,
+                                   Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+      void define_heartbeat_global(size_t index,
+                                   const std::string &globalVarName,
+                                   const boost::any *value,
+                                   const std::string &storage,
+                                   Ioss::Field::BasicType dataType,
+                                   int copies = 1,
+                                   Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
       void add_heartbeat_global(size_t index,
-				const std::string &name,
-				const boost::any *value,
-				stk::util::ParameterType::Type type);
+                                const std::string &name,
+                                const boost::any *value,
+                                stk::util::ParameterType::Type type,
+                                int copies = 1,
+                                Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
   
       void add_heartbeat_global(size_t index,
                                 const std::string &globalVarName,
                                 const boost::any *value,
                                 const std::string &storage,
-                                Ioss::Field::BasicType dataType);
+                                Ioss::Field::BasicType dataType,
+                                int copies = 1,
+                                Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
+      bool has_heartbeat_global(size_t output_file_index,
+                                const std::string &globalVarName) const;
+      size_t get_heartbeat_global_component_count(size_t output_file_index,
+                                                  const std::string &globalVarName) const;
       void process_heartbeat_output(size_t index, int step, double time);
-  
+
+      void process_heartbeat_output_pre_write(size_t index, int step, double time);
+      void process_heartbeat_output_write(size_t index, int step, double time);
+      void process_heartbeat_output_post_write(size_t index, int step, double time);
+
       bool is_meta_data_null() const;
       bool is_bulk_data_null() const;
       stk::mesh::MetaData &meta_data();
@@ -937,23 +989,50 @@ namespace impl
     inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     { replace_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
 
+    inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
+                                                         const std::string &name,
+                                                         const boost::any *value,
+                                                         stk::util::ParameterType::Type type,
+                                                         int copies,
+                                                         Ioss::Field::RoleType role)
+    {
+      STKIORequire(index < m_heartbeat.size());
+      m_heartbeat[index]->define_global_ref(name, value, type, copies, role);
+    }
+
+    inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
+                                                         const std::string &globalVarName,
+                                                         const boost::any *value,
+                                                         const std::string &storage,
+                                                         Ioss::Field::BasicType dataType,
+                                                         int copies,
+                                                         Ioss::Field::RoleType role)
+    {
+      STKIORequire(index < m_heartbeat.size());
+      m_heartbeat[index]->define_global_ref(globalVarName, value, storage, dataType, copies, role);
+    }
+
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
 						      const std::string &name,
 						      const boost::any *value,
-						      stk::util::ParameterType::Type type)
+						      stk::util::ParameterType::Type type,
+						      int copies,
+						      Ioss::Field::RoleType role)
     {
       STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->add_global_ref(name, value, type);
+      m_heartbeat[index]->add_global_ref(name, value, type, copies, role);
     }
   
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
                                                       const std::string &globalVarName,
                                                       const boost::any *value,
                                                       const std::string &storage,
-                                                      Ioss::Field::BasicType dataType)
+                                                      Ioss::Field::BasicType dataType,
+                                                      int copies,
+                                                      Ioss::Field::RoleType role)
     {
       STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->add_global_ref(globalVarName, value, storage, dataType);
+      m_heartbeat[index]->add_global_ref(globalVarName, value, storage, dataType, copies, role);
     }
 
     inline void StkMeshIoBroker::process_heartbeat_output(size_t index, int step, double time)
@@ -962,6 +1041,24 @@ namespace impl
       m_heartbeat[index]->process_output(step, time);
     }
   
+    inline void StkMeshIoBroker::process_heartbeat_output_pre_write(size_t index, int step, double time)
+    {
+      STKIORequire(index < m_heartbeat.size());
+      m_heartbeat[index]->process_output_pre_write(step, time);
+    }
+
+    inline void StkMeshIoBroker::process_heartbeat_output_write(size_t index, int step, double time)
+    {
+      STKIORequire(index < m_heartbeat.size());
+      m_heartbeat[index]->process_output_write(step, time);
+    }
+
+    inline void StkMeshIoBroker::process_heartbeat_output_post_write(size_t index, int step, double time)
+    {
+      STKIORequire(index < m_heartbeat.size());
+      m_heartbeat[index]->process_output_post_write(step, time);
+    }
+
     inline bool StkMeshIoBroker::is_meta_data_null() const
     {
       return Teuchos::is_null(m_meta_data);

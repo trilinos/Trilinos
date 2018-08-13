@@ -546,7 +546,6 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const stk::simd::Double b = stk::simd::load(&y[n]);
-    //const stk::simd::Double c = a*b+(a+b);
     const stk::simd::Double c = ( a+b*(a-b) )/a;
     stk::simd::store(&out1[n],c);
   }
@@ -557,7 +556,6 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   for (int n=0; n < N; ++n) {
     const double a = x[n];
     const double b = y[n];
-    //out2[n] = a*b+(a+b);
     out2[n] = ( a+b*(a-b) )/a;
   }
   t0 += stk::get_time_in_seconds();

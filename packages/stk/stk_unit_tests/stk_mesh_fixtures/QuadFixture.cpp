@@ -39,7 +39,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
 #include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field

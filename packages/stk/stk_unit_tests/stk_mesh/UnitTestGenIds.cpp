@@ -42,7 +42,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include <stk_util/environment/WallTime.hpp>  // for wall_time
 #include <stk_util/parallel/MPI.hpp>    // for Datatype
 #include <string>                       // for string

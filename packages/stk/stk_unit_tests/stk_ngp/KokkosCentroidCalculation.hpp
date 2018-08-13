@@ -50,6 +50,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <gtest/gtest.h>
+#include <sys/time.h>
 
 namespace {
 

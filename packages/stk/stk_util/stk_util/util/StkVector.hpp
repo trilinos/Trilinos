@@ -43,7 +43,7 @@ template <typename Datatype>
 class Vector
 {
 public:
-    Vector(const std::string &n) : mSize(0), deviceVals(n), hostVals(Kokkos::create_mirror_view(deviceVals))
+    Vector(const std::string &n) : mSize(0), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
     {
     }
     Vector() : Vector(get_default_name())

@@ -44,7 +44,8 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/SortAndUnique.hpp"
 
 
 
@@ -198,9 +199,7 @@ void FieldBaseImpl::insert_restriction(
       else {
         //if subsets were found, we replaced them with the new restriction. so now we need
         //to sort and unique the vector, and trim it to remove any duplicates:
-        std::sort(restrs.begin(), restrs.end());
-        FieldRestrictionVector::iterator it = std::unique(restrs.begin(), restrs.end());
-        restrs.resize(it - restrs.begin());
+        stk::util::sort_and_unique(restrs);
       }
     }
     else {

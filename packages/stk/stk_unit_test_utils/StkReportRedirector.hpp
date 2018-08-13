@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 #ifndef STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 
 namespace stk

@@ -51,7 +51,7 @@
 #include <unordered_map>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/base/Part.hpp"       // for Part, remove, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }

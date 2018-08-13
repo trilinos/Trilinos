@@ -114,6 +114,11 @@ size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std
         mBrokerB.add_global(outputFileIndex, globalVariableName, length, Ioss::Field::DOUBLE);
     }
 
+    if(fieldVector.empty())
+    {
+        mBrokerB.write_output_mesh(outputFileIndex);
+    }
+
     for(int iStep = 0; iStep < mBrokerA.get_num_time_steps(); iStep++)
     {
         internal::logMessage(mBrokerA.bulk_data().parallel(), "Appending transient data for time step " + std::to_string(iStep));
@@ -150,15 +155,8 @@ size_t TransientFieldTransferById::setup_output_transient_fields(const std::stri
 
     stk::mesh::FieldVector allTransientFieldsB = stk::io::get_transient_fields(mBrokerB.meta_data());
 
-    if(allTransientFieldsB.empty())
-    {
-        mBrokerB.write_output_mesh(outputFileIndex);
-    }
-    else
-    {
-        for(stk::mesh::FieldBase* field : allTransientFieldsB)
-            mBrokerB.add_field(outputFileIndex, *field);
-    }
+    for(stk::mesh::FieldBase* field : allTransientFieldsB)
+        mBrokerB.add_field(outputFileIndex, *field);
 
     return outputFileIndex;
 }

@@ -34,7 +34,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stddef.h>                     // for size_t, NULL
 #include <string.h>                     // for memcpy, strcmp
-#include <algorithm>                    // fom_deleted_entities_current_modification_cycler sort, lower_bound, unique, etc
+#include <algorithm>                    // for sort, lower_bound, unique, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <fstream>
@@ -46,7 +46,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
@@ -575,18 +575,15 @@ BulkData::~BulkData()
 
 void BulkData::update_deleted_entities_container()
 {
-  //Question: should the m_deleted_entities container be sorted and uniqued?
-  //I.e., should we guard against the same entity being deleted in consecutive modification cycles?
-
   while(!m_deleted_entities_current_modification_cycle.empty()) {
-    size_t entity_offset = m_deleted_entities_current_modification_cycle.front();
+    Entity::entity_value_type entity_offset = m_deleted_entities_current_modification_cycle.front();
     m_deleted_entities_current_modification_cycle.pop_front();
     m_deleted_entities.push_front(entity_offset);
   }
 
-  // Reclaim offsets for deleted ghosted that were not regenerated
-  for (GhostReuseMap::iterator m_itr = m_ghost_reuse_map.begin(), m_end = m_ghost_reuse_map.end(); m_itr != m_end; ++m_itr) {
-    m_deleted_entities.push_front(m_itr->second);
+  // Reclaim offsets for deleted ghosts that were not regenerated
+  for (auto keyAndOffset : m_ghost_reuse_map) {
+    m_deleted_entities.push_front(keyAndOffset.second);
   }
 
   m_ghost_reuse_map.clear();
@@ -731,7 +728,7 @@ unsigned BulkData::count_valid_connectivity(Entity entity, EntityRank rank) cons
 
 Entity BulkData::generate_new_entity(unsigned preferred_offset)
 {
-  unsigned new_local_offset = m_mesh_indexes.size();
+  Entity::entity_value_type new_local_offset = m_mesh_indexes.size();
 
   if (preferred_offset != 0) {
     new_local_offset = preferred_offset;
@@ -1352,10 +1349,8 @@ std::vector<uint64_t> BulkData::internal_get_ids_in_use(stk::topology::rank_t ra
         }
     }
 
-    std::list<size_t>::const_iterator iter = m_deleted_entities_current_modification_cycle.begin();
-    for (; iter != m_deleted_entities_current_modification_cycle.end(); ++iter)
+    for (Entity::entity_value_type local_offset : m_deleted_entities_current_modification_cycle)
     {
-        size_t local_offset = *iter;
         stk::mesh::Entity entity;
         entity.set_local_offset(local_offset);
         if ( is_valid(entity) && entity_rank(entity) == rank )

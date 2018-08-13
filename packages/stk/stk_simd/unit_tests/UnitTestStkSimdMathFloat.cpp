@@ -52,7 +52,6 @@ TEST(StkSimd, SimdAddSubtractMultDivideFloat)
 
 TEST(StkSimd, SimdMiscSelfAddSubEtcFloat) 
 {
-
   int N = 10000;
 
   std::vector<float> x(N);
@@ -1290,7 +1289,6 @@ TEST(StkSimd, SimdSpecialFunctionsFloat)
 
 TEST(StkSimd, SimdTimeSet1VsConstFloats)
 {
-
   int N = 1000000;
   double t0; // timing variable
   float maxerr;

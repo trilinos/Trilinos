@@ -42,7 +42,7 @@
 
 #include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
 

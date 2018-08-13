@@ -36,7 +36,7 @@
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 
 namespace stk {
@@ -140,6 +140,10 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
     EntityKeyEntityVector::iterator loc = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
     std::inplace_merge(loc, oldEnd, m_entities[rank].end());
     m_create_cache[rank].clear();
+    size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
+                          m_entities[stk::topology::ELEM_RANK].size());
+    unsigned possibleCacheSize = num/1000;
+    m_maxCreateCacheSize = std::max(m_maxCreateCacheSize, possibleCacheSize);
   }
 }
 

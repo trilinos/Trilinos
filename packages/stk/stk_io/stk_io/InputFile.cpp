@@ -47,7 +47,7 @@
 #include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>              // for MetaData
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <utility>                                 // for pair
 #include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
 #include "Ioss_DatabaseIO.h"                       // for DatabaseIO

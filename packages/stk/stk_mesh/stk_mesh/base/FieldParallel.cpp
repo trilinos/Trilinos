@@ -212,7 +212,7 @@ struct DoOp<T, Operation::MAX>
 };
 
 template <typename T, Operation OP>
-void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool deterministic = false)
+void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields, bool deterministic = false)
 {
   if (fields.empty()) {
     return;
@@ -322,7 +322,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
 
 template <Operation OP>
 inline
-void parallel_op(const BulkData& mesh, const std::vector<FieldBase*>& fields, bool deterministic)
+void parallel_op(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic)
 {
   if (mesh.parallel_size() == 1 || fields.empty()) return;
 
@@ -348,7 +348,7 @@ void parallel_op(const BulkData& mesh, const std::vector<FieldBase*>& fields, bo
 
 }
 
-void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, bool deterministic)
+void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic)
 {
   parallel_op<Operation::SUM>(mesh, fields, deterministic);
 }
@@ -359,7 +359,7 @@ void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, b
  * on shared entities such that each shared entity
  * will have the same (maximum) field values on each sharing proc.
  */
-void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields)
+void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fields)
 {
   parallel_op<Operation::MAX>(mesh, fields, false);
 }
@@ -368,7 +368,7 @@ void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields)
  * on shared entities such that each shared entity
  * will have the same (minimum) field values on each sharing proc.
  */
-void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
+void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fields)
 {
   parallel_op<Operation::MIN>(mesh, fields, false);
 }

@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_util_parallel_CommBufferV_hpp
-#define stk_util_parallel_CommBufferV_hpp
+#ifndef CommBufferV_hpp
+#define CommBufferV_hpp
 
 #include <cstddef>
 #include <cstring>
@@ -62,6 +62,7 @@ public:
     }
 
     unsigned char* raw_buffer() { return data_buffer.data(); }
+    const unsigned char* raw_buffer() const { return data_buffer.data(); }
 
     template<typename T>
     void pack(const T& item) {

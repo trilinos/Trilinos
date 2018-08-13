@@ -37,7 +37,7 @@
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include <map>                          // for multimap, etc
 #include <memory>
 #include <stddef.h>                     // for size_t, NULL

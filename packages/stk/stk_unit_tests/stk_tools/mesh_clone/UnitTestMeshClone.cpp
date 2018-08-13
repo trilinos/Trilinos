@@ -41,7 +41,7 @@
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_tools/mesh_clone/MeshCloneUtils.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace
