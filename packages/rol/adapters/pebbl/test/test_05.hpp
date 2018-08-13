@@ -187,7 +187,6 @@ public:
       alpha_[i] = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
       beta_[i]  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
     }
-    update();
   }
 
   void update(void) {}

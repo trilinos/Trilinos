@@ -77,9 +77,7 @@ public:
   BinaryAdvDiffFactory(ROL::ParameterList                 &pl,
                  const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                  const ROL::Ptr<std::ostream>             &os)
-    : dim_(9), pl_(pl), comm_(comm), os_(os) {
-    update();
-  }
+    : dim_(9), pl_(pl), comm_(comm), os_(os) {}
 
   void update(void) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);
@@ -186,12 +184,11 @@ public:
   BinaryAdvDiffQPFactory(ROL::ParameterList                 &pl,
                    const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                    const ROL::Ptr<std::ostream>             &os)
-    : pl_(pl), comm_(comm), os_(os) {
-    update();
-  }
+    : pl_(pl), comm_(comm), os_(os) {}
 
   void update(void) {
     factory_ = ROL::makePtr<BinaryAdvDiffFactory<Real>>(pl_,comm_,os_);
+    factory_->update();
     bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
     if (useIneq) {
       extract_ = ROL::makePtr<extractQP<Real>>(factory_->buildObjective(),

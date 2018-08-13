@@ -92,6 +92,7 @@ public:
   virtual void update(void) {}
 
   Ptr<OptimizationProblem<Real>> build(void) {
+    update();
     return makePtr<OptimizationProblem<Real>>(buildObjective(),
                                               buildSolutionVector(),
                                               buildBoundConstraint(),
