@@ -1462,6 +1462,16 @@ public:
    // KKT multigrid preconditioner
    /////////////////////////////////////////////
    
+   /**
+    * \brief Apply the augmented KKT operator
+    *
+    * \param[out] output Action of the KKT operator 
+    * \param[in] input Input vector to the operator
+    * \param[in] u State vector to linearize around
+    * \param[in] z Control vector to linearize around
+    * \param[in] tol Tolerance
+    * \param[in] level Level of the multigrid hierarchy, default is 0 (fine level)        
+    */
    void applyAugmentedKKT(Vector<Real> & output, 
                           const Vector<Real> & input,
                           const Vector<Real> & u, 
@@ -1499,6 +1509,25 @@ public:
      output_v->axpy(1.0,*output_v_tmp);
    }
 
+   /**
+    * \brief Apply an inverse of the KKT system, or an approximation.
+    *
+    * Compute the inverse of the KKT system. This uses a block factorization
+    * and the exact Jacobian. Currently the implementation ignores the constraint
+    * Jacobian and looks more like a Wathen style preconditioner.
+    *
+    * Additionally, if an approximate version is desired then a block jacobi preconditioner
+    * split at processor boundaries is used.
+    *
+    * \param[out] output Action of the inverse KKT matrix
+    * \param[in] input Input vector to the inverse operator
+    * \param[in] u State vector to linearize around
+    * \param[in] z Control vector to linearize around
+    * \param[in] tol Tolerance
+    * \param[in] approx Apply the parallel block Jacobi inverse if true,
+    *                   otherwise do the serial Wathen preconditioner, default false
+    * \param[in] level Level of the multigrid hierarchy, default is 0 (fine level)        
+    */
    void applyAugmentedInverseKKT(Vector<Real> & output, 
                                  const Vector<Real> & input,
                                  const Vector<Real> & u, 
@@ -1580,6 +1609,19 @@ public:
 
    }
 
+   /**
+    * \brief Apply a multigrid in time approximate inverse operator to the KKT matrix
+    *
+    * This uses a multigrid in time algorithm with a parallel domain decomposition block
+    * Jacobi smoother for each time sub domain. 
+    *
+    * \param[out] x Action of the multigrid operator 
+    * \param[in] b Input vector to the operator
+    * \param[in] u State vector to linearize around
+    * \param[in] z Control vector to linearize around
+    * \param[in] tol Tolerance
+    * \param[in] level Level of the multigrid hierarchy, default is 0 (fine level)        
+    */
    void applyMultigridAugmentedKKT(Vector<Real> & x, 
                                 const Vector<Real> & b,
                                 const Vector<Real> & u, 
@@ -1589,12 +1631,17 @@ public:
    {
      using PartitionedVector = PartitionedVector<Real>;
 
+
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
-       applyAugmentedInverseKKT(x,b,u,z,tol,false,level);
+       bool approxSmoother = false;
+  
+       applyAugmentedInverseKKT(x,b,u,z,tol,approxSmoother,level);
 
        return;
      }
+
+     bool approxSmoother = false;
 
      auto dx = x.clone();
      auto residual = b.clone();
@@ -1602,7 +1649,7 @@ public:
 
      // apply one smoother sweep
      for(int i=0;i<numSweeps_;i++) {
-       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,true,level); 
+       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
        x.axpy(omega_,*dx);
 
        // compute the residual
@@ -1661,7 +1708,7 @@ public:
        residual->scale(-1.0);
        residual->axpy(1.0,b);
 
-       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,true,level); 
+       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
        x.axpy(omega_,*dx);
      }
    }

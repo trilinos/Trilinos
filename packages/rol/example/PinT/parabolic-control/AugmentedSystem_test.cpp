@@ -191,7 +191,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   int sweeps = 3;
   RealT omega = 2.0/3.0;
 
-  int numLevels = 4;
+  int numLevels = 3;
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
