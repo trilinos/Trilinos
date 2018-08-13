@@ -91,6 +91,10 @@ namespace MueLu {
     // Clean up the handle
     void Cleanup();
 
+    // Returns 1 if the given parameters are within same 
+    // same domain as training data, 0 otherwise
+    int checkBounds(std::string trialString) const;
+
     int hybrid(float * probabilities, std::vector<int> acceptableCombos) const; 
 
     int highProb(float * probabilities, std::vector<int> acceptableCombos) const; 

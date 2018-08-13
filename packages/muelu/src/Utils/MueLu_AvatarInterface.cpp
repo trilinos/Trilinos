@@ -315,6 +315,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
 
       std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
+      int bound_check = checkBounds(testString);
       
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
@@ -366,16 +367,69 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
     }
     
-    // Generate the parameterList from the chosen option
-    GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
+    // If mesh parameters are outside bounding box, set drop tolerance
+    // to 0, otherwise use avatar recommended drop tolerance
+    if (bound_check == 0){
+      GetOStream(Runtime0) << "WARNING: Extrapolation risk detected, setting drop tolerance to 0" <<std::endl;
+      GenerateMueLuParametersFromIndex(0,avatarParams);
+    } else {
+      GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
+    }
+
     // Cleanup  
-    free(probabilities);
-    free(predictions);
   } 
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
 
+}
+
+int AvatarInterface::checkBounds(std::string trialString) const {
+  float ElEdge_max_MAX=500.0;
+  float ElEdge_max_MIN=5.85;
+  float ElEdge_mean_MAX=330.11;
+  float ElEdge_mean_MIN=5.425;
+  float ElDet_J_min_MAX=0.921659;
+  float ElDet_J_min_MIN=0.000458804;
+  float ElDet_J_max_MAX=3.91452;
+  float ElDet_J_max_MIN=1.07834;
+  float stretch_min_MAX=0.223193;
+  float stretch_min_MIN=0.00263527;
+  float stretch_mean_MAX=0.232755;
+  float stretch_mean_MIN=0.0116566;
+
+  std::stringstream ss(trialString);
+  std::vector<float> vect;
+
+  float i;
+ 
+  while (ss >> i)
+  {
+    vect.push_back(i);
+
+    if (ss.peek() == ',')
+      ss.ignore();
+  }
+   
+  if (vect.at(3) > 500 || vect.at(3) < 5.85)
+    return 0;
+ 
+  if (vect.at(4) > 330.11 || vect.at(4) < 5.425)
+    return 0;
+
+  if (vect.at(5) > 0.921659 || vect.at(5) < 0.000458804)
+    return 0;
+ 
+  if (vect.at(6) > 3.91452 || vect.at(6) < 1.07834)
+    return 0;
+
+  if (vect.at(8) > 0.223193 || vect.at(8) < 0.00263527)
+    return 0;
+
+  if (vect.at(9) > 0.232755 || vect.at(9) < 0.0116566)
+    return 0;
+
+  return 1;
 }
 
 int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCombos) const{
