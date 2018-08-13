@@ -611,7 +611,9 @@ void bccDriver(int narg, char** arg) {
   timeSolve->stop();
   //  8) report/validate the labeling.
   for(int i = 0; i < nLocalOwned; i++){
-    std::cout<<me<<": vtx "<<mapWithCopies->getGlobalElement(i)<<" belongs to bcc "<<labels[i].bcc_name<<"\n";
+    std::cout<<me<<": vtx "<<mapWithCopies->getGlobalElement(i)<<" belongs to bcc "<<labels[i].bcc_name;
+    if(labels[i].is_art) std::cout<<" -- Articulation Point";
+    std::cout<<"\n";
   }
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();

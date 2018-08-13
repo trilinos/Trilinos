@@ -232,7 +232,7 @@ public:
     for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++){
       gno_t gid = mapWithCopies->getGlobalElement(i);
       iceProp::vtxLabel label(i);
-      if(boundary_flags[i] > 2) label.is_art = true;
+      if(boundary_flags[i] > 2 && i < nLocalOwned) label.is_art = true;
       if(grounding_flags[i]){
         label.first_label = gid;
         label.first_sender = gid;
@@ -448,6 +448,10 @@ public:
     int done = 0;
     std::queue<int> art_queue;
     int bcc_count = 0;
+    int* articulation_point_flags = new int[nLocalOwned];
+    for(int i = 0; i < nLocalOwned; i++){
+      articulation_point_flags[i] = 0;
+    }
     //while there are empty vertices
     while(!done){
       
@@ -604,6 +608,7 @@ public:
           for(int j = 0; j < out_degree; j++){
             if(femvData[outs[j]].getGroundingStatus() < FULL){
               art_queue.push(i);
+              articulation_point_flags[i] = 1;
               break;
             }
           }
@@ -642,9 +647,15 @@ public:
       //std::cout<<me<<": Starting over\n";
     }
     //std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
+    for(int i = 0; i < nLocalOwned; i++){
+      if(!articulation_point_flags[i]){
+        iceProp::vtxLabel label = femvData[i];
+        label.is_art = false;
+        femv->replaceLocalValue(i,0,label);
+      }
+    }
     return femv->getData(0);
   }
-  
   int vtxLabelUnitTest();
 
 private:
