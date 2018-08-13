@@ -34,7 +34,7 @@
 #ifndef STK_SEARCH_POINT_HPP
 #define STK_SEARCH_POINT_HPP
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <iosfwd>
 #include <Kokkos_Core.hpp>
 

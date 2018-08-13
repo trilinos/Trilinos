@@ -54,7 +54,7 @@
 #include "boost/program_options/detail/parsers.hpp"
 #include "boost/program_options/errors.hpp"  // for program_options
 #include "boost/program_options/variables_map.hpp"  // for variables_map, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 #if defined(__GNUC__)
 #include <cstdlib>

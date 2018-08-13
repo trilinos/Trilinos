@@ -2,6 +2,7 @@
 #include <stk_math/StkMath.hpp>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 
 constexpr float a = 2.1f;
 constexpr float b = 3.7f;
@@ -119,9 +120,8 @@ TEST(StkSimd, StkMathFloat_erf)
 
 TEST(StkSimd, StkMathFloat_multiplysign)
 {
-  EXPECT_EQ( stk::math::multiplysign(a,c), a*std::copysign(1.0,c) );
+  EXPECT_EQ( stk::math::multiplysign(a,c), a*std::copysign(1.0,c));
 }
-
 
 TEST(StkSimd, StkMathFloat_multiplysignNegZero)
 {

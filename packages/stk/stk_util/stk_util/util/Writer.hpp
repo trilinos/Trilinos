@@ -816,6 +816,14 @@ using stk::diag::c_ptr_func_;
 
 }
 
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
+  for (const auto& v : vec) {
+    out << v << " ";
+  }
+  return out;
+}
+
 } // namespace sierra
 
 #endif // STK_UTIL_DIAG_WRITER_HPP

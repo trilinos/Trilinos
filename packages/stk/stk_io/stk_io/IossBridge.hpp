@@ -255,6 +255,7 @@ public:
     m_field(my_field),
     m_dbName(my_db_name),
     m_variableType(my_field != nullptr ? my_field->entity_rank() : stk::topology::INVALID_RANK),
+    m_useAlias(true),
     m_wasFound(false),
     m_forceNodeblockOutput(false) {}
 
@@ -262,6 +263,7 @@ public:
     m_field(my_field),
     m_dbName(my_db_name),
     m_variableType(my_var_type),
+    m_useAlias(true),
     m_wasFound(false),
     m_forceNodeblockOutput(false) {}
 
@@ -269,10 +271,13 @@ public:
   std::string db_name() const {return m_dbName;}
   void set_db_name(const std::string &name) {m_dbName = name;}
   stk::mesh::EntityRank type() const {return m_variableType;}
+  void set_use_alias(bool useAlias) { m_useAlias = useAlias; }
+  bool get_use_alias() const { return m_useAlias; }
 private:
   stk::mesh::FieldBase *m_field;
   std::string m_dbName;
   stk::mesh::EntityRank m_variableType;
+  bool m_useAlias;
 public:
   bool m_wasFound;
   // Field is not defined on UNIVERSAL part, but we still want to output it on the nodeblock.

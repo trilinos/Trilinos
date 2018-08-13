@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <iostream>                     // for cout
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error, logic_error, etc

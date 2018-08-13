@@ -43,7 +43,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_io/WriteMesh.hpp>
 

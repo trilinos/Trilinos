@@ -50,7 +50,7 @@
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################

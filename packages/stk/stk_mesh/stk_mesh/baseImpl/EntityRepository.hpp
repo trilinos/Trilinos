@@ -103,7 +103,7 @@ public:
     mutable std::vector<EntityKeyEntityVector> m_create_cache;
     mutable std::vector<std::vector<std::pair<EntityKey,EntityKey> > > m_update_cache;
     mutable std::vector<std::vector<EntityKey> > m_destroy_cache;
-    unsigned m_maxCreateCacheSize;
+    mutable unsigned m_maxCreateCacheSize;
     unsigned m_maxUpdateCacheSize;
 
     //disable copy constructor and assignment operator

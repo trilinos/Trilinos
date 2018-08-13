@@ -219,35 +219,35 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* part = get_part_for_grouping_entity(region, meta, entity);
-      STKIORequire(part != nullptr);
+      if (part != nullptr) {
+          stk::topology topo = part->topology();
+          ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
-      stk::topology topo = part->topology();
-      ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+          std::vector<INT> elem_ids ;
+          std::vector<INT> connectivity ;
 
-      std::vector<INT> elem_ids ;
-      std::vector<INT> connectivity ;
+          entity->get_field_data("ids", elem_ids);
+          entity->get_field_data("connectivity", connectivity);
 
-      entity->get_field_data("ids", elem_ids);
-      entity->get_field_data("connectivity", connectivity);
+          size_t element_count = elem_ids.size();
+          int nodes_per_elem = topo.num_nodes();
 
-      size_t element_count = elem_ids.size();
-      int nodes_per_elem = topo.num_nodes();
+          stk::mesh::EntityIdVector id_vec(nodes_per_elem);
 
-      stk::mesh::EntityIdVector id_vec(nodes_per_elem);
+          size_t offset = entity->get_offset();
+          for(size_t i=0; i<element_count; ++i) {
+              INT *conn = &connectivity[i*nodes_per_elem];
+              std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
+              stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
 
-      size_t offset = entity->get_offset();
-      for(size_t i=0; i<element_count; ++i) {
-        INT *conn = &connectivity[i*nodes_per_elem];
-        std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
+              bulk.set_local_id(element, offset + i);
 
-        bulk.set_local_id(element, offset + i);
-
-        for(unsigned j = 0; j < id_vec.size(); ++j)
-        {
-            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id_vec[j]);
-            bulk.change_entity_parts(node, nodeParts, {});
-        }
+              for(unsigned j = 0; j < id_vec.size(); ++j)
+              {
+                  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id_vec[j]);
+                  bulk.change_entity_parts(node, nodeParts, {});
+              }
+          }
       }
     }
   }

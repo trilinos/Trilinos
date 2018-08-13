@@ -14,7 +14,7 @@
 #include <algorithm> // for find
 #include <sstream>   // for operator<<, basic_ostream, etc
 #include <stdexcept> // for runtime_error
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <string> // for char_traits, operator<<, etc
 
 namespace sierra {

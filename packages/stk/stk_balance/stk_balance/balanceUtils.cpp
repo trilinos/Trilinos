@@ -1,6 +1,7 @@
 #include "balanceUtils.hpp"
 #include "mpi.h"
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
@@ -155,6 +156,20 @@ bool BalanceSettings::shouldFixMechanisms() const
     return false;
 }
 
+bool BalanceSettings::shouldFixSpiders() const
+{
+    return false;
+}
+
+std::string BalanceSettings::getSpiderConnectivityCountFieldName() const
+{
+    return "beam_connectivity_count";
+}
+
+const stk::mesh::Field<int> * BalanceSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    return nullptr;
+}
 
 //////////////////////////////////////
 
@@ -221,6 +236,7 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
         case stk::topology::PARTICLE:
         case stk::topology::LINE_2:
         case stk::topology::BEAM_2:
+        case stk::topology::BEAM_3:
             return 1;
             break;
         case stk::topology::SHELL_TRIANGLE_3:
@@ -399,11 +415,30 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
     return tableIndex;
 }
 
+void GraphCreationSettings::setShouldFixSpiders(bool fixSpiders)
+{
+    m_shouldFixSpiders = fixSpiders;
+}
+
 bool GraphCreationSettings::shouldFixMechanisms() const
 {
     return true;
 }
 
+bool GraphCreationSettings::shouldFixSpiders() const
+{
+    return m_shouldFixSpiders;
+}
+
+const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    if (m_spiderConnectivityCountField == nullptr) {
+        m_spiderConnectivityCountField = reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,
+                                                                                                                             getSpiderConnectivityCountFieldName()));
+        ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
+    }
+    return m_spiderConnectivityCountField;
+}
 
 }
 }

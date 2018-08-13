@@ -38,7 +38,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include <stk_mesh/base/FindRestriction.hpp>
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 namespace stk { namespace mesh { class BulkData; } }
 
 

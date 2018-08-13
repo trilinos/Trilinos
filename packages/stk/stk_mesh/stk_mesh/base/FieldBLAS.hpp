@@ -653,8 +653,6 @@ void field_product(
         INTERNAL_field_product<std::complex<float> >(xFieldBase,yFieldBase,zFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_product<int>(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_product<std::complex<int> >(xFieldBase,yFieldBase,zFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_product; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -774,8 +772,6 @@ void field_copy(
         INTERNAL_field_copy<std::complex<float> >(xFieldBase,yFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_copy<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_copy<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -1345,8 +1341,6 @@ void field_swap(
         INTERNAL_field_swap<std::complex<float> >(xFieldBase,yFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_swap<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_swap<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -2078,8 +2072,6 @@ Entity field_eamax(
         return INTERNAL_field_eamax_complex<float>(xFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamax<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        return INTERNAL_field_eamax_complex<int>(xFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -2563,8 +2555,6 @@ Entity field_eamin(
         return INTERNAL_field_eamin_complex<float>(xFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamin<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        return INTERNAL_field_eamin_complex<int>(xFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }

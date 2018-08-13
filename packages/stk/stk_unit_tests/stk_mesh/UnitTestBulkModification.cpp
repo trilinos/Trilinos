@@ -53,7 +53,7 @@
 #include "stk_mesh/base/Part.hpp"                            // for Part
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 // clang-format on

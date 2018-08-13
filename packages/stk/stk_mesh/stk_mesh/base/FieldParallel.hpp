@@ -42,7 +42,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommNeighbors.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
 #include <vector>                       // for vector
@@ -79,9 +79,9 @@ void copy_owned_to_shared( const BulkData& mesh,
 /** Sum/Max/Min (assemble) field-data for the specified fields on shared entities such that each shared entity
  * will have the same field values on each sharing proc.
  */
-void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, bool deterministic = true);
-void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields);
-void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
+void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic = true);
+void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
+void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
 
 
 inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc, int index)

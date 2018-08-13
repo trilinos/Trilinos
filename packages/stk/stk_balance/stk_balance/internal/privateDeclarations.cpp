@@ -17,6 +17,7 @@
 
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/util/human_bytes.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <zoltan.h>
@@ -27,6 +28,7 @@
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_util/environment/Env.hpp>
+#include "stk_mesh/base/FieldParallel.hpp"
 
 namespace stk {
 namespace balance {
@@ -308,25 +310,53 @@ void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::BulkData& b
     }
 }
 
-stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData)
+void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
+{
+    if (balanceSettings.shouldFixSpiders()) {
+        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+
+        stk::mesh::Selector beamNodesSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part() &
+                                              stkMeshBulkData.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::BEAM_2)));
+        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, beamNodesSelector);
+
+        for (stk::mesh::Bucket * bucket : buckets) {
+            for (stk::mesh::Entity node : *bucket) {
+                int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
+                const unsigned numElements = stkMeshBulkData.num_elements(node);
+                const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(node);
+                for (unsigned i = 0; i < numElements; ++i) {
+                    if (stkMeshBulkData.bucket(element[i]).topology() == stk::topology::BEAM_2) {
+                        (*connectivityCount)++;
+                    }
+                }
+            }
+        }
+
+        stk::mesh::communicate_field_data(stkMeshBulkData, {connectivityCountField});
+    }
+}
+
+stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
 {
     stk::mesh::Ghosting * customAura = nullptr;
-    if(!stkMeshBulkData.is_automatic_aura_on())
+    if (!stkMeshBulkData.is_automatic_aura_on())
     {
         stkMeshBulkData.modification_begin();
-        customAura = &stkMeshBulkData.create_ghosting("customAura");
-        stkMeshBulkData.modification_end();
 
-        stk::mesh::EntityProcVec entitiesToGhost ;
+        customAura = &stkMeshBulkData.create_ghosting("customAura");
+        stk::mesh::EntityProcVec entitiesToGhost;
         fill_list_of_entities_to_send_for_aura_like_ghosting(stkMeshBulkData, entitiesToGhost);
-        stkMeshBulkData.batch_add_to_ghosting(*customAura , entitiesToGhost);
+        stkMeshBulkData.change_ghosting(*customAura, entitiesToGhost);
+
+        stkMeshBulkData.modification_end();
     }
+
     return customAura;
 }
 
 void destroy_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Ghosting * customAura)
 {
-    if(!stkMeshBulkData.is_automatic_aura_on())
+    if (nullptr != customAura)
     {
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.destroy_ghosting(*customAura);
@@ -509,12 +539,104 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     return params;
 }
 
+bool isElementPartOfSpider(const stk::mesh::BulkData& stkMeshBulkData,
+                           const stk::mesh::Field<int>& beamConnectivityCountField,
+                           stk::mesh::Entity element)
+{
+    const int spiderConnectivityThreshold = 5;
+    const stk::mesh::Entity* nodes = stkMeshBulkData.begin_nodes(element);
+    const unsigned numNodes = stkMeshBulkData.num_nodes(element);
+    for (unsigned i = 0; i < numNodes; ++i) {
+        const int connectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[i]);
+        if (connectivityCount > spiderConnectivityThreshold) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
+                             const stk::balance::BalanceSettings & balanceSettings,
+                             stk::mesh::Entity elem)
+{
+    bool omitConnection = false;
+    if (balanceSettings.shouldFixSpiders()) {
+        const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+        stk::topology elemTopology = stkMeshBulkData.bucket(elem).topology();
+
+        if (elemTopology == stk::topology::BEAM_2 || elemTopology == stk::topology::PARTICLE) {
+            omitConnection = isElementPartOfSpider(stkMeshBulkData, beamConnectivityCountField, elem);
+        }
+    }
+
+    return omitConnection;
+}
+
+void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData)
+{
+    stk::mesh::Ghosting * customAura = create_custom_ghosting(stkMeshBulkData, balanceSettings);
+
+    stk::mesh::MetaData & meta = stkMeshBulkData.mesh_meta_data();
+    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+
+    stk::mesh::EntityVector beams;
+    stk::mesh::Part & beamPart = meta.get_topology_root_part(stk::topology::BEAM_2);
+    stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK), beams);
+
+    stk::mesh::EntityProcVec beamsToMove;
+    for (stk::mesh::Entity beam : beams) {
+        if (isElementPartOfSpider(stkMeshBulkData, beamConnectivityCountField, beam)) {
+            const stk::mesh::Entity* nodes = stkMeshBulkData.begin_nodes(beam);
+            const int node1ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[0]);
+            const int node2ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[1]);
+
+            const stk::mesh::Entity endNode = (node1ConnectivityCount < node2ConnectivityCount) ? nodes[0] : nodes[1];
+            const stk::mesh::Entity* elements = stkMeshBulkData.begin_elements(endNode);
+            const unsigned numElements = stkMeshBulkData.num_elements(endNode);
+            int newOwner = stkMeshBulkData.parallel_size() - 1;
+            for (unsigned i = 0; i < numElements; ++i) {
+                if (stkMeshBulkData.bucket(elements[i]).topology() != stk::topology::BEAM_2) {
+                    newOwner = std::min(newOwner, stkMeshBulkData.parallel_owner_rank(elements[i]));
+                }
+            }
+
+            if (newOwner != stkMeshBulkData.parallel_rank()) {
+                beamsToMove.push_back(std::make_pair(beam, newOwner));
+            }
+        }
+    }
+
+    destroy_custom_ghosting(stkMeshBulkData, customAura);
+
+    stkMeshBulkData.change_entity_owner(beamsToMove);
+}
+
+void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList)
+{
+    // Need to keep spiders on the original proc until the remaining elements have moved,
+    // so that we can properly determine the final ownership of the elements on the end.
+    // Then, we can move them.
+    //
+    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(bulk);
+
+    stk::mesh::EntityProcVec entityProcs = changeList.get_all_partition_changes();
+    for (const stk::mesh::EntityProc & entityProc : entityProcs) {
+        stk::mesh::Entity entity = entityProc.first;
+        if (bulk.bucket(entity).topology() == stk::topology::BEAM_2) {
+            if (isElementPartOfSpider(bulk, beamConnectivityCountField, entity)) {
+                changeList.delete_entity(entity);
+            }
+        }
+    }
+}
+
 void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
                                Zoltan2ParallelGraph& zoltan2Graph)
 {
     std::vector<size_t> counts;
     stk::mesh::Selector locallyOwnedSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part());
+
     stk::mesh::comm_mesh_counts(stkMeshBulkData, counts, &locallyOwnedSelector);
     zoltan2Graph.set_num_global_elements(counts[stk::topology::ELEM_RANK]);
     zoltan2Graph.set_spatial_dim(stkMeshBulkData.mesh_meta_data().spatial_dimension());
@@ -653,8 +775,9 @@ void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings
     }
     else if (balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan")
     {
-        stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(stkMeshBulkData);
+        stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(stkMeshBulkData, balanceSettings);
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
+        internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
         internal::destroy_custom_ghosting(stkMeshBulkData, customAura);
     }

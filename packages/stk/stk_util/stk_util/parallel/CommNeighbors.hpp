@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef stk_util_parallel_CommNeighbors_hpp
-#define stk_util_parallel_CommNeighbors_hpp
+#ifndef stk_util_CommNeighbors_hpp
+#define stk_util_CommNeighbors_hpp
 
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <vector>
@@ -46,7 +46,7 @@ namespace stk {
 class CommNeighbors {
 public:
 
-  ParallelMachine parallel()      const { return m_comm ; }
+  stk::ParallelMachine parallel()      const { return m_comm ; }
   int             parallel_size() const { return m_size ; }
   int             parallel_rank() const { return m_rank ; }
 
@@ -79,8 +79,8 @@ public:
    *     in recv_buffers.
    *     All processors recvd from, are members of neighbor_procs.
    */
-  CommNeighbors( ParallelMachine comm, const std::vector<int>& neighbor_procs );
-  CommNeighbors( ParallelMachine comm, const std::vector<int>& send_procs, const std::vector<int>& recv_procs );
+  CommNeighbors( stk::ParallelMachine comm, const std::vector<int>& neighbor_procs );
+  CommNeighbors( stk::ParallelMachine comm, const std::vector<int>& send_procs, const std::vector<int>& recv_procs );
 
   //----------------------------------------
   /** Communicate send buffers to receive buffers.  */
@@ -96,8 +96,19 @@ public:
   const std::vector<int>& send_procs() const { return m_send_procs; }
   const std::vector<int>& recv_procs() const { return m_recv_procs; }
 
-private:
+protected:
 
+  virtual stk::ParallelMachine setup_neighbor_comm(stk::ParallelMachine fullComm,
+                                                  const std::vector<int>& sendProcs,
+                                                  const std::vector<int>& recvProcs);
+
+  virtual void perform_neighbor_communication(MPI_Comm neighborComm,
+                                              const std::vector<unsigned char>& sendBuf,
+                                              const std::vector<int>& sendCounts,
+                                              const std::vector<int>& sendDispls,
+                                                    std::vector<unsigned char>& recvBuf,
+                                                    std::vector<int>& recvCounts,
+                                                    std::vector<int>& recvDispls);
   //----------------------------------------
   /** default Constructor not allowed
    */
@@ -109,7 +120,8 @@ private:
   void rank_error( const char * , int ) const ;
   void sort_procs_and_resize_buffers();
 
-  ParallelMachine m_comm ;
+  stk::ParallelMachine m_comm ;
+  bool m_created_dist_graph;
   int             m_size ;
   int             m_rank ;
   std::vector<CommBufferV> m_send;

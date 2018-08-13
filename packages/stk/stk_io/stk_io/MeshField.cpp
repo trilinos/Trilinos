@@ -38,7 +38,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <Ioss_GroupingEntity.h>        // for GroupingEntity
 #include <Ioss_VariableType.h>          // for VariableType

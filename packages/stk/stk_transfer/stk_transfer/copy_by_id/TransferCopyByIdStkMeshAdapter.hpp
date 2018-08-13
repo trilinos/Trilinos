@@ -63,7 +63,14 @@ public :
       stk::mesh::BulkData &   mesh,
       const EntityVector &    entities,
       const FieldVector &     fields)
+  : TransferCopyByIdStkMeshAdapter(mesh, entities, fields, mesh.parallel()) {}
+  TransferCopyByIdStkMeshAdapter(
+      stk::mesh::BulkData &   mesh,
+      const EntityVector &    entities,
+      const FieldVector &     fields,
+      stk::ParallelMachine global_comm)
     :m_mesh              (mesh)
+    ,m_comm(global_comm)
     ,m_coordinates_field (m_mesh.mesh_meta_data().coordinate_field())
     ,m_transfer_fields   (fields)
   {
@@ -127,7 +134,7 @@ public :
 
   ParallelMachine comm() const
   {
-    return m_mesh.parallel();
+    return m_comm;
   }
 
   const MeshIDVector & get_mesh_ids() const
@@ -181,6 +188,7 @@ public :
 
 private:
   stk::mesh::BulkData & m_mesh;
+  stk::ParallelMachine m_comm;
   const stk::mesh::FieldBase* m_coordinates_field;
   FieldVector m_transfer_fields;
   EntityKeyVector m_entity_keys;

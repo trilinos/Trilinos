@@ -42,7 +42,7 @@
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsg
 
 namespace stk {
 namespace mesh {

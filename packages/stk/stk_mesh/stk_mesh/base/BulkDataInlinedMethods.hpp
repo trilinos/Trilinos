@@ -51,26 +51,28 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
       m_mesh->entity_rank(lhs) == m_sideRank &&
       m_mesh->entity_rank(rhs) == m_sideRank)
   {
-      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
-      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
+      unsigned num_nodes_lhs = m_mesh->count_valid_connectivity(lhs, stk::topology::NODE_RANK);
+      unsigned num_nodes_rhs = m_mesh->count_valid_connectivity(rhs, stk::topology::NODE_RANK);
       if (num_nodes_lhs != num_nodes_rhs)
       {
           result = num_nodes_lhs < num_nodes_rhs;
       }
+      else if (num_nodes_lhs == 0) {
+          result = m_mesh->identifier(lhs) < m_mesh->identifier(rhs);
+      }
       else
       {
-          std::vector<stk::mesh::EntityId> nodes_lhs(num_nodes_lhs);
-          std::vector<stk::mesh::EntityId> nodes_rhs(num_nodes_rhs);
           const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
           const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
-          for(unsigned i=0;i<num_nodes_lhs;++i)
+          unsigned i=0;
+          while(i<num_nodes_lhs &&
+                (m_mesh->identifier(nodes_lhs_ptr[i]) == m_mesh->identifier(nodes_rhs_ptr[i])))
           {
-              nodes_lhs[i] = m_mesh->identifier(nodes_lhs_ptr[i]);
-              nodes_rhs[i] = m_mesh->identifier(nodes_rhs_ptr[i]);
+            ++i;
           }
-          std::sort(nodes_lhs.begin(), nodes_lhs.end());
-          std::sort(nodes_rhs.begin(), nodes_rhs.end());
-          result = nodes_lhs < nodes_rhs;
+          result = (i<num_nodes_lhs) ?
+                     (m_mesh->identifier(nodes_lhs_ptr[i]) < m_mesh->identifier(nodes_rhs_ptr[i]))
+                   : false;
       }
   }
   else

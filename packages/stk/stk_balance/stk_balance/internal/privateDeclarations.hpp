@@ -33,7 +33,7 @@
 #ifndef BALANCE_PRIVATEDECLARATIONS_HPP
 #define BALANCE_PRIVATEDECLARATIONS_HPP
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
@@ -86,6 +86,17 @@ void rebalance(DecompositionChangeList &changeList);
 
 void logMessage(MPI_Comm communicator, const std::string &message);
 
+bool isElementPartOfSpider(const stk::mesh::BulkData & stkMeshBulkData,
+                           const stk::mesh::Field<int> & beamConnectivityCountField,
+                           stk::mesh::Entity element);
+
+bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
+                             const stk::balance::BalanceSettings & balanceSettings,
+                             stk::mesh::Entity elem);
+
+void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList);
+void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
+
 void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
                                Zoltan2ParallelGraph& zoltan2Graph);
@@ -94,7 +105,7 @@ void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::m
 
 void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::BulkData& bulkData, stk::mesh::EntityProcVec &entitiesToGhost);
 
-stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData);
+stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings);
 void destroy_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Ghosting * customAura);
 
 unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh::Entity entity);

@@ -500,6 +500,9 @@ TEST_F(MTK_Kokkos, stkFieldBLAS) {
 
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+    if (bulk.parallel_size() > 1) {
+      return;
+    }
 
     int nx, ny, nz;
     get_mesh_dimensions(nx, ny, nz);
@@ -562,6 +565,9 @@ TEST_F(MTK_Kokkos, kokkosFieldBLAS) {
 
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+    if (bulk.parallel_size() > 1) {
+      return;
+    }
 
     int nx, ny, nz;
     get_mesh_dimensions(nx, ny, nz);

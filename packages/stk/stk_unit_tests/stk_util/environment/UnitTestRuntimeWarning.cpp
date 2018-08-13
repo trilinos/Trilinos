@@ -34,7 +34,7 @@
 #include <iostream>                     // for operator<<, ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for operator==, basic_string, etc
 

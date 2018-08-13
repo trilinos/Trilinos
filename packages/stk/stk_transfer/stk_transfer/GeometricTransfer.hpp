@@ -42,7 +42,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 

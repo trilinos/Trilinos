@@ -57,6 +57,7 @@ public:
   virtual bool is_locally_owned(const Mesh_ID & id) const =0;
   virtual void centroid(const Mesh_ID & id, double coords[3]) const =0;
   virtual std::string print_mesh_id(const Mesh_ID& id) const =0;
+  virtual ~TransferCopyByIdMeshAdapter() = default;
 };
 
 } } // namespace stk transfer

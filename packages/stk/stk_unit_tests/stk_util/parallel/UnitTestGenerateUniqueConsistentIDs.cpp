@@ -37,7 +37,7 @@
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 
 //-------------------------------------------------------------------------------------------------------------------

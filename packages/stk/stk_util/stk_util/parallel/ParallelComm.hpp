@@ -37,7 +37,7 @@
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <vector>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
 
 namespace stk { template <unsigned int N> struct CommBufferAlign; }
 

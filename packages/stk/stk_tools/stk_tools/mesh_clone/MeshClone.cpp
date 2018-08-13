@@ -8,7 +8,7 @@
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <stk_mesh/base/DestroyElements.hpp>
 
 namespace stk {

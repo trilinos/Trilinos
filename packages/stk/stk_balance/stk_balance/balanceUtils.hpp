@@ -133,6 +133,9 @@ public:
     virtual bool allowModificationOfVertexWeightsForSmallMeshes() const;
 
     virtual bool shouldFixMechanisms() const;
+    virtual bool shouldFixSpiders() const;
+    virtual std::string getSpiderConnectivityCountFieldName() const;
+    virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
 };
 
 class BasicGeomtricSettings : public BalanceSettings
@@ -152,7 +155,9 @@ public:
                              edgeWeightForSearch (edgeWeightSearch),
                              method(decompMethod),
                              vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
-                             m_UseConstantToleranceForFaceSearch(true)
+                             m_UseConstantToleranceForFaceSearch(true),
+                             m_shouldFixSpiders(false),
+                             m_spiderConnectivityCountField(nullptr)
     {}
 
     virtual ~GraphCreationSettings() {}
@@ -186,8 +191,11 @@ public:
     virtual void setToleranceForParticleSearch(double tol) ;
     virtual void setEdgeWeightForSearch(double w) ;
     virtual void setVertexWeightMultiplierForVertexInSearch(double w) ;
+    virtual void setShouldFixSpiders(bool fixSpiders);
 
-    virtual bool shouldFixMechanisms() const;
+    virtual bool shouldFixMechanisms() const override;
+    virtual bool shouldFixSpiders() const override;
+    virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
 protected:
     int getConnectionTableIndex(stk::topology elementTopology) const;
@@ -197,6 +205,8 @@ protected:
     std::string method;
     double vertexWeightMultiplierForVertexInSearch;
     bool m_UseConstantToleranceForFaceSearch;
+    bool m_shouldFixSpiders;
+    mutable const stk::mesh::Field<int> * m_spiderConnectivityCountField;
     std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
 };
 

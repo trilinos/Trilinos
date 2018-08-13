@@ -87,7 +87,7 @@
 #include "stk_mesh/base/Selector.hpp"                // for Selector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"    // for ThrowRequireMsg, etc
+#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg, etc
 #include "stk_util/environment/EnvData.hpp"
 namespace stk { namespace mesh { class Bucket; } }
 // clang-format on
@@ -919,7 +919,10 @@ namespace stk {
           std::string name = namedField.db_name();
           std::string storage = field_type.name;
 
-          Ioss::VariableType::get_field_type_mapping(f->name(), &storage);
+          if (namedField.get_use_alias())
+          {
+              Ioss::VariableType::get_field_type_mapping(f->name(), &storage);
+          }
           entity->field_add(Ioss::Field(name, field_type.type, storage,
                                         field_type.copies, filter_role, entity_size));
           if (entity->type() == Ioss::NODEBLOCK) {

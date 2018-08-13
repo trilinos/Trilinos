@@ -42,7 +42,7 @@
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssert, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert, etc
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -445,10 +445,14 @@ private:
   template <typename T>
   void modify_all_connectivity(T& callable, Bucket* other_bucket=NULL);
 
-#ifdef NDEBUG
-inline
+  void check_for_invalid_connectivity_request(ConnectivityType const* type) const
+  {
+#ifndef NDEBUG
+    debug_check_for_invalid_connectivity_request(type);
 #endif
-  void check_for_invalid_connectivity_request(ConnectivityType const* type) const;
+  }
+
+  void debug_check_for_invalid_connectivity_request(ConnectivityType const* type) const;
 };
 #undef CONNECTIVITY_TYPE_SWITCH
 #undef RANK_SWITCH
@@ -656,12 +660,6 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
     break;
   }
 }
-
-#ifdef NDEBUG
-inline
-void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type) const
-{}
-#endif
 
 typedef Bucket::iterator BucketIterator;
 

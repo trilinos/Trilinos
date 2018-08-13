@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, OrdinalVector, etc
 #include <vector>                       // for vector
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }

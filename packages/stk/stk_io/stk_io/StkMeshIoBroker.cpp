@@ -54,7 +54,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
+#include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
 #include <utility>                                   // for pair, make_pair
 #include "Ioss_CodeTypes.h"                          // for NameList
 #include "Ioss_DBUsage.h"
@@ -94,6 +94,7 @@
 #include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
 #include "stk_util/util/ParameterList.hpp"           // for Type, etc
 #include "stk_util/diag/StringUtil.hpp"           // for Type, etc
+#include "stk_util/util/string_case_compare.hpp"
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -119,49 +120,7 @@ namespace io {
     return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
   }
 
-  std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
-                                                                           const boost::any &value)
-  {
-    try {
-      switch(type)  {
-      case stk::util::ParameterType::INTEGER: {
-        return std::make_pair(1, Ioss::Field::INTEGER);
-      }
 
-      case stk::util::ParameterType::INT64: {
-        return std::make_pair(1, Ioss::Field::INT64);
-      }
-
-      case stk::util::ParameterType::DOUBLE: {
-        return std::make_pair(1, Ioss::Field::REAL);
-      }
-
-      case stk::util::ParameterType::DOUBLEVECTOR: {
-        std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
-        return std::make_pair(vec.size(), Ioss::Field::REAL);
-      }
-
-      case stk::util::ParameterType::INTEGERVECTOR: {
-        std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
-        return std::make_pair(vec.size(), Ioss::Field::INTEGER);
-      }
-
-      case stk::util::ParameterType::INT64VECTOR: {
-        std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
-        return std::make_pair(vec.size(), Ioss::Field::INT64);
-      }
-
-      default: {
-        return std::make_pair(0, Ioss::Field::INVALID);
-      }
-      }
-    }
-    catch(...) {
-      std::cerr << "ERROR: Actual type of parameter does not match the declared type. Something went wrong."
-                << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
-      throw;
-    }
-  }
 
   template <typename DataType>
   void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
@@ -388,29 +347,32 @@ namespace io {
   }
 
   void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                           const std::string &globalVarName, const std::string &storage,
-                           Ioss::Field::BasicType dataType)
+                           const std::string &globalVarName,
+                           const std::string &storage,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT)
   {
     ThrowErrorMsgIf (region->field_exists(globalVarName),
                      "On region named " << region->name() <<
                      " Attempt to add global variable '" << globalVarName << "' twice.");
 
-    region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, 1));
+    region->field_add(Ioss::Field(globalVarName, dataType, storage, copies, role, 1));
   }
 
   void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                           const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+                           const std::string &globalVarName,
+                           int component_count,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT)
   {
     if (component_count == 1) {
-      internal_add_global(region, globalVarName, "scalar", dataType);
-//    } else if(component_count == 2) {
-//        internal_add_global(region, globalVarName, "vector_2d", dataType);
-//    } else if(component_count == 3) {
-//        internal_add_global(region, globalVarName, "vector_3d", dataType);
+      internal_add_global(region, globalVarName, "scalar", dataType, copies, role);
     } else {
       std::ostringstream type;
       type << "Real[" << component_count << "]";
-      internal_add_global(region, globalVarName, type.str(), dataType);
+      internal_add_global(region, globalVarName, type.str(), dataType, copies, role);
     }
   }
 
@@ -458,7 +420,11 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       {
           sb_part = get_part_for_grouping_entity(*region, meta, sset);
       }
-      ThrowRequireMsg(sb_part != nullptr, "Could not find sset '" + sset->name() + "'");
+      if (sb_part == nullptr)
+      {
+          continue;
+      }
+
       // Get topology of the sides being defined to see if they
       // are 'faces' or 'edges'.  This is needed since for shell-type
       // elements, (and actually all elements) a sideset can specify either a face or an edge...
@@ -599,7 +565,10 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
 
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* part = get_part_for_grouping_entity(region, meta, entity);
-      STKIORequire(part != nullptr);
+      if (part == nullptr)
+      {
+          continue;
+      }
 
       stk::topology topo = part->topology();
       if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -1518,12 +1487,12 @@ void put_field_data(OutputParams &params,
 
       void StkMeshIoBroker::validate_heartbeat_file_index(size_t heartbeat_file_index) const
       {
-        ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
-                        "StkMeshIoBroker::validate_heartbeat_file_index: invalid heartbeat file index of "
-                        << heartbeat_file_index << ".");
+          ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
+                          "StkMeshIoBroker::validate_heartbeat_file_index: invalid heartbeat file index of "
+                          << heartbeat_file_index << ".");
 
-        ThrowErrorMsgIf (Teuchos::is_null(m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region()),
-                         "StkMeshIoBroker::validate_heartbeat_file_index: There is no heartbeat mesh region associated with this heartbeat file index: " << heartbeat_file_index << ".");
+          ThrowErrorMsgIf (Teuchos::is_null(m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region()),
+                           "StkMeshIoBroker::validate_heartbeat_file_index: There is no heartbeat mesh region associated with this heartbeat file index: " << heartbeat_file_index << ".");
       }
 
       void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
@@ -1866,12 +1835,12 @@ void put_field_data(OutputParams &params,
       }
 
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
-                                                   const Ioss::PropertyManager &properties)
+                                                   const Ioss::PropertyManager &properties, bool openFileImmediately)
       {
         std::string out_filename = filename;
         stk::util::filename_substitution(out_filename);
         auto heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
-                                                                       properties, m_communicator));
+                                                          properties, m_communicator, openFileImmediately));
         m_heartbeat.push_back(heartbeat);
         return m_heartbeat.size()-1;
       }
@@ -2052,16 +2021,39 @@ void put_field_data(OutputParams &params,
         return Ioss::VariableType::add_field_type_mapping(field, type);
       }
 
+      bool StkMeshIoBroker::has_heartbeat_global(size_t heartbeat_file_index, const std::string &globalVarName) const
+      {
+        validate_heartbeat_file_index(heartbeat_file_index);
+        return m_heartbeat[heartbeat_file_index]->has_global(globalVarName);
+      }
+
+      size_t StkMeshIoBroker::get_heartbeat_global_component_count(size_t heartbeat_file_index, const std::string &globalVarName) const
+      {
+        validate_heartbeat_file_index(heartbeat_file_index);
+
+        size_t comp_count = 0;
+        if(has_heartbeat_global(heartbeat_file_index, globalVarName)) {
+            Teuchos::RCP<Ioss::Region> hbRegion = m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region();
+
+            if(!hbRegion.is_null()) {
+                comp_count = hbRegion->get_fieldref(globalVarName).raw_storage()->component_count();
+            }
+        }
+
+        return comp_count;
+      }
+
       impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
-                           Ioss::PropertyManager properties, stk::ParallelMachine comm)
+                                 Ioss::PropertyManager properties, stk::ParallelMachine comm,
+                                 bool openFileImmediately)
         : m_current_step(0), m_processor(0)
         {
           if (comm != MPI_COMM_NULL) {
             m_processor = stk::parallel_machine_rank(comm);
           }
 
-          // if (m_processor == 0) {
-            std::string db_io_type = "exodus";
+//           if (m_processor == 0) {
+            std::string db_io_type = "exodusII";
             Ioss::DatabaseUsage db_usage = Ioss::WRITE_HISTORY;
 
             if (hb_type != BINARY) {
@@ -2114,14 +2106,14 @@ void put_field_data(OutputParams &params,
 
             Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
                                                            db_usage, comm, properties);
-            if (db == nullptr || !db->ok()) {
+            if (db == nullptr || (openFileImmediately && !db->ok())) {
               std::cerr << "ERROR: Could not open history/heartbeat database '" << filename << "'\n";
               return;
             }
 
             // NOTE: 'region' owns 'db' pointer at this time...
             m_region = Teuchos::rcp(new Ioss::Region(db, filename));
-          // }
+//           }
         }
 
       void impl::Heartbeat::begin_define_transient()
@@ -2148,8 +2140,34 @@ void put_field_data(OutputParams &params,
         }
       }
 
-        void impl::Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
-                                       stk::util::ParameterType::Type type)
+      bool impl::Heartbeat::has_global(const std::string &name)
+      {
+          return m_region->field_exists(name);
+      }
+
+      void impl::Heartbeat::define_global_ref(const std::string &name,
+                                           const boost::any *value,
+                                           stk::util::ParameterType::Type type,
+                                           int copies,
+                                           Ioss::Field::RoleType role)
+      {
+        if (m_processor == 0) {
+          ThrowErrorMsgIf (m_current_step != 0,
+                           "At least one output step has been written to the history/heartbeat file. "
+                           "Variables cannot be added anymore.");
+
+          // Determine name and type of parameter...
+          std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
+          internal_add_global(m_region, name, parameter_type.first, parameter_type.second, copies, role);
+          m_fields.emplace_back(name, value, type);
+        }
+      }
+
+        void impl::Heartbeat::add_global_ref(const std::string &name,
+                                             const boost::any *value,
+                                             stk::util::ParameterType::Type type,
+                                             int copies,
+                                             Ioss::Field::RoleType role)
         {
           if (m_processor == 0) {
             ThrowErrorMsgIf (m_current_step != 0,
@@ -2161,78 +2179,38 @@ void put_field_data(OutputParams &params,
               m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
             }
 
-            // Determine name and type of parameter...
-            std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
-            internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-            m_fields.emplace_back(name, value, type);
+            define_global_ref(name, value, type, copies, role);
           }
         }
 
-
-        stk::util::ParameterType::Type get_parameter_type_from_storage(const std::string &storage,
-                                                                       stk::util::ParameterType::Type scalar,
-                                                                       stk::util::ParameterType::Type vector)
+        void impl::Heartbeat::define_global_ref(const std::string &name,
+                                             const boost::any *value,
+                                             const std::string &storage,
+                                             Ioss::Field::BasicType dataType,
+                                             int copies,
+                                             Ioss::Field::RoleType role)
         {
-            stk::util::ParameterType::Type type = stk::util::ParameterType::INVALID;
+          if (m_processor == 0) {
+            ThrowErrorMsgIf (m_current_step != 0,
+                             "At least one output step has been written to the history/heartbeat file. "
+                             "Variables cannot be added anymore.");
 
-            if(storage == "scalar") {
-                type = scalar;
-            } else if((storage == "vector_2d") || (storage == "vector_3d")) {
-                type = vector;
-            } else {
-                std::string storageType = sierra::make_lower(storage);
+            std::pair<size_t, stk::util::ParameterType::Type> type = get_parameter_type_from_field_representation(storage, dataType, copies);
 
-                // Step 0:
-                // See if the type contains '[' and ']'
-                char const *typestr = storageType.c_str();
-                char const *lbrace  = std::strchr(typestr, '[');
-                char const *rbrace  = std::strrchr(typestr, ']');
-
-                if (lbrace != nullptr && rbrace != nullptr) {
-                    // Step 1:
-                    // First, we split off the basename (REAL/INTEGER) from the component count
-                    // ([2])
-                    // and see if the basename is a valid variable type and the count is a
-                    // valid integer.
-                    size_t len      = storageType.length() + 1;
-                    auto   typecopy = new char[len];
-                    std::strcpy(typecopy, typestr);
-
-                    char *base = std::strtok(typecopy, "[]");
-                    assert(base != nullptr);
-
-                    if(!strcmp(base, "real") || !strcmp(base, "integer")) {
-                        type = vector;
-                    }
-                }
-            }
-
-            return type;
-        }
-
-        stk::util::ParameterType::Type get_paramater_type_from_field_representation(const std::string &storage,
-                                                                                    Ioss::Field::BasicType dataType)
-        {
-            stk::util::ParameterType::Type type = stk::util::ParameterType::INVALID;
-
-            if(dataType == Ioss::Field::DOUBLE) {
-                type = get_parameter_type_from_storage(storage, stk::util::ParameterType::DOUBLE,
-                                                       stk::util::ParameterType::DOUBLEVECTOR);
-            } else if(dataType == Ioss::Field::INTEGER) {
-                type = get_parameter_type_from_storage(storage, stk::util::ParameterType::INTEGER,
-                                                       stk::util::ParameterType::INTEGERVECTOR);
-            } else if(dataType == Ioss::Field::INT64) {
-                type = get_parameter_type_from_storage(storage, stk::util::ParameterType::INT64,
-                                                       stk::util::ParameterType::INT64VECTOR);
-            }
-
-            return type;
+            // Determine name and type of parameter...
+            std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type.second, *value);
+            ThrowRequireMsg(dataType == parameter_type.second, "data type must be consistent");
+            internal_add_global(m_region, name, storage, dataType, copies, role);
+            m_fields.emplace_back(name, value, type.second);
+          }
         }
 
         void impl::Heartbeat::add_global_ref(const std::string &name,
                                              const boost::any *value,
                                              const std::string &storage,
-                                             Ioss::Field::BasicType dataType)
+                                             Ioss::Field::BasicType dataType,
+                                             int copies,
+                                             Ioss::Field::RoleType role)
         {
           if (m_processor == 0) {
             ThrowErrorMsgIf (m_current_step != 0,
@@ -2244,17 +2222,11 @@ void put_field_data(OutputParams &params,
               m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
             }
 
-            stk::util::ParameterType::Type type = get_paramater_type_from_field_representation(storage, dataType);
-
-            // Determine name and type of parameter...
-            std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
-            ThrowRequireMsg(dataType == parameter_type.second, "data type must be consistent");
-            internal_add_global(m_region, name, storage, dataType);
-            m_fields.emplace_back(name, value, type);
+            define_global_ref(name, value, storage, dataType, copies, role);
           }
         }
 
-        void impl::Heartbeat::process_output(int step, double time)
+        void impl::Heartbeat::process_output_pre_write(int step, double time)
         {
           if (m_processor == 0) {
             Ioss::State currentState = m_region->get_state();
@@ -2265,12 +2237,29 @@ void put_field_data(OutputParams &params,
             m_region->begin_mode(Ioss::STATE_TRANSIENT);
             m_current_step = m_region->add_state(time);
             m_region->begin_state(m_current_step);
+          }
+        }
 
+        void impl::Heartbeat::process_output_write(int step, double time)
+        {
+          if (m_processor == 0) {
             write_defined_global_any_fields(m_region, m_fields);
+          }
+        }
 
+        void impl::Heartbeat::process_output_post_write(int step, double time)
+        {
+          if (m_processor == 0) {
             m_region->end_state(m_current_step);
             m_region->end_mode(Ioss::STATE_TRANSIENT);
           }
+        }
+
+        void impl::Heartbeat::process_output(int step, double time)
+        {
+            process_output_pre_write(step, time);
+            process_output_write(step, time);
+            process_output_post_write(step, time);
         }
 
         void impl::Heartbeat::flush_output() const
@@ -2401,11 +2390,13 @@ void put_field_data(OutputParams &params,
                       stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
                       std::string field_name_with_suffix = stk::io::get_stated_field_name(alternate_name, state_identifier, multiStateSuffixes);
                       stk::io::FieldAndName namedField(statedField, field_name_with_suffix, var_type);
+                      namedField.set_use_alias(false);
                       m_named_fields.push_back(namedField);
                       stk::io::set_field_role(*statedField, Ioss::Field::TRANSIENT);
                   }
               } else {
                   stk::io::FieldAndName namedField(&field, alternate_name, var_type);
+                  namedField.set_use_alias(false);
                   m_named_fields.push_back(namedField);
                   stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
               }

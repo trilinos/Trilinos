@@ -43,6 +43,7 @@
 #include <Ioss_VariableType.h>
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include "stk_io/StkIoUtils.hpp"
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace {
@@ -420,4 +421,171 @@ TEST(StkIoFieldType, testMatrix33FieldType)
         setup_and_test_field_type<double, stk::mesh::Matrix33>(meta, params);
     }
 }
+
+
+void test_field_representation_and_size(const std::string &storage,
+                                        int copies,
+                                        Ioss::Field::BasicType dataType,
+                                        size_t expectedSize,
+                                        stk::util::ParameterType::Type expectedType)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type;
+
+    type = stk::io::get_parameter_type_from_field_representation(storage, dataType, copies);
+    EXPECT_EQ(expectedSize, type.first) << " for storage: " << storage << " and copies: " << copies;
+    EXPECT_EQ(expectedType, type.second) << " for storage: " << storage << " and copies: " << copies;
+}
+
+TEST(StkIoFieldType, testFieldRepresentationAndSize)
+{
+//    std::pair<size_t, stk::util::ParameterType::Type> type;
+    std::string invalidKeyword;
+
+    invalidKeyword = "blah";
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    invalidKeyword = "vector";
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 1, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size(invalidKeyword  , 5, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size("real"          , 1, Ioss::Field::REAL   ,  1u, stk::util::ParameterType::DOUBLE       );
+    test_field_representation_and_size("real"          , 1, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("real"          , 1, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size("real"          , 9, Ioss::Field::REAL   ,  9u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size("real"          , 9, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("real"          , 9, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size("real[8]"       , 1, Ioss::Field::REAL   ,  8u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size("real[8]"       , 1, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("real[8]"       , 1, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size("real[2]"       , 4, Ioss::Field::REAL   ,  8u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size("real[2]"       , 4, Ioss::Field::INTEGER,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("real[2]"       , 4, Ioss::Field::INT64  ,  0u, stk::util::ParameterType::INVALID      );
+
+    test_field_representation_and_size("integer"       , 1, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("integer"       , 1, Ioss::Field::INTEGER,  1u, stk::util::ParameterType::INTEGER      );
+    test_field_representation_and_size("integer"       , 1, Ioss::Field::INT64  ,  1u, stk::util::ParameterType::INT64        );
+
+    test_field_representation_and_size("integer"       , 7, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("integer"       , 7, Ioss::Field::INTEGER,  7u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size("integer"       , 7, Ioss::Field::INT64  ,  7u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size("integer[7]"    , 1, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("integer[7]"    , 1, Ioss::Field::INTEGER,  7u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size("integer[7]"    , 1, Ioss::Field::INT64  ,  7u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size("integer[1]"    , 7, Ioss::Field::REAL   ,  0u, stk::util::ParameterType::INVALID      );
+    test_field_representation_and_size("integer[1]"    , 7, Ioss::Field::INTEGER,  7u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size("integer[1]"    , 7, Ioss::Field::INT64  ,  7u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(scalar          , 1, Ioss::Field::REAL   ,  1u, stk::util::ParameterType::DOUBLE       );
+    test_field_representation_and_size(scalar          , 1, Ioss::Field::INTEGER,  1u, stk::util::ParameterType::INTEGER      );
+    test_field_representation_and_size(scalar          , 1, Ioss::Field::INT64  ,  1u, stk::util::ParameterType::INT64        );
+
+    test_field_representation_and_size(scalar          , 4, Ioss::Field::REAL   ,  4u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(scalar          , 4, Ioss::Field::INTEGER,  4u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(scalar          , 4, Ioss::Field::INT64  ,  4u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(vector_2d       , 1, Ioss::Field::REAL   ,  2u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(vector_2d       , 1, Ioss::Field::INTEGER,  2u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(vector_2d       , 1, Ioss::Field::INT64  ,  2u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(vector_2d       , 2, Ioss::Field::REAL   ,  4u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(vector_2d       , 2, Ioss::Field::INTEGER,  4u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(vector_2d       , 2, Ioss::Field::INT64  ,  4u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(vector_3d       , 1, Ioss::Field::REAL   ,  3u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(vector_3d       , 1, Ioss::Field::INTEGER,  3u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(vector_3d       , 1, Ioss::Field::INT64  ,  3u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(vector_3d       , 3, Ioss::Field::REAL   ,  9u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(vector_3d       , 3, Ioss::Field::INTEGER,  9u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(vector_3d       , 3, Ioss::Field::INT64  ,  9u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_33   , 1, Ioss::Field::REAL   ,  6u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_33   , 1, Ioss::Field::INTEGER,  6u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_33   , 1, Ioss::Field::INT64  ,  6u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_33   , 3, Ioss::Field::REAL   , 18u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_33   , 3, Ioss::Field::INTEGER, 18u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_33   , 3, Ioss::Field::INT64  , 18u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_31   , 1, Ioss::Field::REAL   ,  4u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_31   , 1, Ioss::Field::INTEGER,  4u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_31   , 1, Ioss::Field::INT64  ,  4u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_31   , 4, Ioss::Field::REAL   , 16u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_31   , 4, Ioss::Field::INTEGER, 16u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_31   , 4, Ioss::Field::INT64  , 16u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_21   , 1, Ioss::Field::REAL   ,  3u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_21   , 1, Ioss::Field::INTEGER,  3u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_21   , 1, Ioss::Field::INT64  ,  3u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(sym_tensor_21   , 5, Ioss::Field::REAL   , 15u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(sym_tensor_21   , 5, Ioss::Field::INTEGER, 15u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(sym_tensor_21   , 5, Ioss::Field::INT64  , 15u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_36  , 1, Ioss::Field::REAL   ,  9u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_36  , 1, Ioss::Field::INTEGER,  9u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_36  , 1, Ioss::Field::INT64  ,  9u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_36  , 3, Ioss::Field::REAL   , 27u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_36  , 3, Ioss::Field::INTEGER, 27u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_36  , 3, Ioss::Field::INT64  , 27u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_32  , 1, Ioss::Field::REAL   ,  5u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_32  , 1, Ioss::Field::INTEGER,  5u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_32  , 1, Ioss::Field::INT64  ,  5u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_32  , 4, Ioss::Field::REAL   , 20u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_32  , 4, Ioss::Field::INTEGER, 20u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_32  , 4, Ioss::Field::INT64  , 20u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_22  , 1, Ioss::Field::REAL   ,  4u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_22  , 1, Ioss::Field::INTEGER,  4u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_22  , 1, Ioss::Field::INT64  ,  4u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_22  , 5, Ioss::Field::REAL   , 20u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_22  , 5, Ioss::Field::INTEGER, 20u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_22  , 5, Ioss::Field::INT64  , 20u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_12  , 1, Ioss::Field::REAL   ,  3u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_12  , 1, Ioss::Field::INTEGER,  3u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_12  , 1, Ioss::Field::INT64  ,  3u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(full_tensor_12  , 6, Ioss::Field::REAL   , 18u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(full_tensor_12  , 6, Ioss::Field::INTEGER, 18u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(full_tensor_12  , 6, Ioss::Field::INT64  , 18u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(matrix_33       , 1, Ioss::Field::REAL   ,  9u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(matrix_33       , 1, Ioss::Field::INTEGER,  9u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(matrix_33       , 1, Ioss::Field::INT64  ,  9u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(matrix_33       , 7, Ioss::Field::REAL   , 63u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(matrix_33       , 7, Ioss::Field::INTEGER, 63u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(matrix_33       , 7, Ioss::Field::INT64  , 63u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(matrix_22       , 1, Ioss::Field::REAL   ,  4u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(matrix_22       , 1, Ioss::Field::INTEGER,  4u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(matrix_22       , 1, Ioss::Field::INT64  ,  4u, stk::util::ParameterType::INT64VECTOR  );
+
+    test_field_representation_and_size(matrix_22       , 8, Ioss::Field::REAL   , 32u, stk::util::ParameterType::DOUBLEVECTOR );
+    test_field_representation_and_size(matrix_22       , 8, Ioss::Field::INTEGER, 32u, stk::util::ParameterType::INTEGERVECTOR);
+    test_field_representation_and_size(matrix_22       , 8, Ioss::Field::INT64  , 32u, stk::util::ParameterType::INT64VECTOR  );
+}
+
 }

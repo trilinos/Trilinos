@@ -61,7 +61,7 @@
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
@@ -130,7 +130,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
                                           stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 }
 
-typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
+typedef std::unordered_map<EntityKey, Entity::entity_value_type, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
 struct sharing_info
 {
@@ -1444,7 +1444,7 @@ protected: //data
   impl::EntityRepository* m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   CommListUpdater m_comm_list_updater;
-  std::list<size_t> m_deleted_entities_current_modification_cycle;
+  std::list<Entity::entity_value_type> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
   std::vector<EntityKey> m_entity_keys; //indexed by Entity
 
@@ -1475,7 +1475,7 @@ private: // data
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   std::vector<std::vector<int> > m_all_sharing_procs;
   PartVector m_ghost_parts;
-  std::list<size_t> m_deleted_entities;
+  std::list<Entity::entity_value_type> m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
   std::vector<unsigned> m_local_ids; //indexed by Entity

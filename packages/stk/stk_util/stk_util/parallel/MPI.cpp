@@ -37,7 +37,7 @@
 #if defined( STK_HAS_MPI )
 
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
 #include <sstream>                      // for ostringstream, etc
 #include "mpi.h"                        // for MPI_Datatype, etc
 #include <assert.h>                     // for static_assert

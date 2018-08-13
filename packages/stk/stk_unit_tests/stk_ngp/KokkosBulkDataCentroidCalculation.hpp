@@ -192,7 +192,7 @@ struct MyApp {
         num_repeat = stk::unit_test_util::get_command_line_option<int>("-n", 1);
         dim = stk::unit_test_util::get_command_line_option<size_t>("-d", 10);
         choice = stk::unit_test_util::get_command_line_option<int>("-c", 0);
-        teamSize = stk::unit_test_util::get_command_line_option<int>("-t", 512);
+        teamSize = stk::unit_test_util::get_command_line_option<int>("-t", 1);
     
         std::ostringstream os;
         os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;

@@ -14,8 +14,11 @@ struct CommandLineOptions
 {
     stk::CommandLineOption infile{"infile", "i", "undecomposed serial input mesh file"};
     stk::CommandLineOption outputDirectory{"outputDirectory", "o", "output directory for decomposition"};
-    stk::CommandLineOption smDefaults{"sm", "", "Use settings suitable for solving Solid Mechanics problems"};
-    stk::CommandLineOption sdDefaults{"sd", "", "Use settings suitable for solving Structural Dynamics problems (default)"};
+    stk::CommandLineOption smDefaults{"sm", "", "Use settings suitable for solving Solid Mechanics problems "
+                                      "(Graph vertex weights, graph edge weight, and search tolerances "
+                                      "appropriate for contact)"};
+    stk::CommandLineOption sdDefaults{"sd", "", "Use settings suitable for solving Structural Dynamics"
+                                      " problems (handle spider elements)"};
 };
 
 struct ParsedOptions

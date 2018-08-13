@@ -306,13 +306,7 @@ void internal_clean_and_verify_parallel_change(
   std::ostringstream error_msg ;
 
   // Order and eliminate redundancies:
-  {
-    std::vector<EntityProc>::iterator i = local_change.begin() ,
-                                      j = local_change.end() ;
-    std::sort( i , j , EntityLess(mesh) );
-    i = std::unique( i , j );
-    local_change.erase( i , j );
-  }
+  stk::util::sort_and_unique(local_change, EntityLess(mesh));
 
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
