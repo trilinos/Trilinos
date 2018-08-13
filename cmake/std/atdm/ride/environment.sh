@@ -135,7 +135,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_PRE_FLAGS="--mca;orte_abort_on_non_zero_status;0"
 export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=4"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
