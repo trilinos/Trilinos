@@ -192,6 +192,13 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   int sweeps    = pl->get("MGRIT Sweeps", 1); 
   RealT omega   = pl->get("MGRIT Relaxation",2.0/3.0);
   int numLevels = pl->get("MGRIT Levels",3);
+  double relTol = pl->get("MGRIT Krylov Relative Tolerance",1e-4);
+  
+  if(myRank==0) {
+    (*outStream) << "Sweeps = " << sweeps    << std::endl;
+    (*outStream) << "Omega = "  << omega     << std::endl;
+    (*outStream) << "Levels = " << numLevels << std::endl;
+  }
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
@@ -283,7 +290,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     Teuchos::ParameterList parlist;
     parlist.set("Absolute Tolerance",1.e-1);
-    parlist.set("Relative Tolerance",1.e-4);
+    parlist.set("Relative Tolerance",relTol);
  
     ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
 

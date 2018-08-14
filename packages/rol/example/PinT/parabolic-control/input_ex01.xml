@@ -31,9 +31,10 @@
   <!--================================================================================-->
   <!--================================================================================--> 
   <!-- MGRIT Parameters                                                               --> 
-  <Parameter name="MGRIT Sweeps"             type="int"      value="1"     />
-  <Parameter name="MGRIT Relaxation"         type="double"   value="0.6666"/>
-  <Parameter name="MGRIT Levels"             type="int"      value="3"     />
+  <Parameter name="MGRIT Sweeps"                    type="int"      value="1"     />
+  <Parameter name="MGRIT Relaxation"                type="double"   value="0.6666"/>
+  <Parameter name="MGRIT Levels"                    type="int"      value="3"     />
+  <Parameter name="MGRIT Krylov Relative Tolerance" type="double"   value="1e-4"     />
 </ParameterList>
 
 
