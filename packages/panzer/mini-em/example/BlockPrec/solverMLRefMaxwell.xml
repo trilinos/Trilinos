@@ -16,6 +16,7 @@
           <Parameter name="Num Blocks" type="int" value="40"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
         </ParameterList>
         <ParameterList name="Pseudo Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
@@ -43,7 +44,7 @@
         <ParameterList name="Maxwell">
           <Parameter name="Type" type="string" value="Full Maxwell Preconditioner"/>
           <Parameter name="Use refMaxwell" type="bool" value="true"/>
-          <Parameter name="Use as preconditioner" type="bool" value="true"/>
+          <Parameter name="Use as preconditioner" type="bool" value="false"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
           <Parameter name="Use discrete gradient" type="bool" value="true"/>
@@ -61,10 +62,11 @@
                 <Parameter name="Output Frequency" type="int" value="1"/>
                 <Parameter name="Output Style" type="int" value="1"/>
                 <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="none"/>
+              <Parameter name="Verbosity Level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
 
@@ -113,10 +115,11 @@
                 <Parameter name="Output Frequency" type="int" value="1"/>
                 <Parameter name="Output Style" type="int" value="1"/>
                 <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="none"/>
+              <Parameter name="Verbosity Level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
 
@@ -163,8 +166,7 @@
                   <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
                   <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
-                  <!-- Repartitioning switched off, since EdgeMatrixFreePreconditioner::BuildProlongator does not forward coordinates to the coarse level -->
-                  <Parameter name="repartition: enable" type="int" value="0"/>
+                  <Parameter name="repartition: enable" type="int" value="1"/>
                   <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
                   <Parameter name="repartition: min per proc" type="int" value="800"/>
@@ -194,7 +196,7 @@
                 <Parameter name="repartition: start level" type="int" value="1"/>
                 <Parameter name="repartition: min per proc" type="int" value="800"/>
                 <Parameter name="repartition: max min ratio" type="double" value="1.1"/>
-                <Parameter name="repartition: Zoltan dimensions" type="int" value="3"/>
+                <Parameter name="repartition: Zoltan dimensions" type="int" value="1"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Required Parameters">
