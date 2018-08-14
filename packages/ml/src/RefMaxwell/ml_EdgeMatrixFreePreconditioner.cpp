@@ -81,7 +81,6 @@ ML_Epetra::EdgeMatrixFreePreconditioner::~EdgeMatrixFreePreconditioner(){
 int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
   Teuchos::ParameterList dummy, ListCoarse;
-  ListCoarse=List_.get("edge matrix free: coarse",dummy);
 
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
@@ -144,6 +143,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     if(print_hierarchy) EpetraExt::RowMatrixToMatlabFile("coarsemat.dat",*CoarseMatrix);
 
     /* Setup Preconditioner on Coarse Matrix */
+    ListCoarse=List_.get("edge matrix free: coarse",dummy);
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
     if(!CoarsePC) ML_CHK_ERR(-2);
 
