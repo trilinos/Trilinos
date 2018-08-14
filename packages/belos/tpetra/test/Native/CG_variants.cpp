@@ -101,7 +101,10 @@ private:
 };
 
 void
-testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& solverName)
+testCgVariant (Teuchos::FancyOStream& out,
+	       bool& success,
+	       const std::string& solverName,
+	       const int maxAllowedNumIters)
 {
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
@@ -172,7 +175,7 @@ testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& sol
 
   myOut << "Set parameters" << endl;
   RCP<ParameterList> params = parameterList ("Belos");
-  params->set ("Verbosity", 1);
+  //params->set ("Verbosity", 1);
   try {
     solver->setParameters (params);
   }
@@ -186,7 +189,7 @@ testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& sol
     myOut << "*** FAILED: setParameters threw an exception "
       "not a subclass of std::exception." << endl;
     success = false;
-    return;
+    return;    
   }
 
   myOut << "Set up the linear system to solve" << endl;
@@ -204,7 +207,24 @@ testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& sol
 	<< "Number of iterations: " << solver->getNumIters ()
 	<< endl;
 
-  myOut << "Check the residual" << endl;
+  TEST_ASSERT( solver->getNumIters () <= maxAllowedNumIters );
+  TEST_ASSERT( belosResult == Belos::Converged );
+
+  myOut << "Check the explicit residual norm(s)" << endl;
+
+  // Get the tolerance that the solver actually used.
+  const mag_type tol = [&] () {
+      const char tolParamName[] = "Convergence Tolerance";
+      auto pl = solver->getCurrentParameters ();
+      if (! pl->isType<mag_type> (tolParamName)) {
+	pl = solver->getValidParameters ();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! pl->isType<mag_type> (tolParamName), std::logic_error,
+       "Solver lacks \"" << tolParamName << "\" parameter, in either "
+	 "getCurrentParameters() or getValidParameters().");
+      return pl->get<mag_type> (tolParamName);
+    } ();
 
   MV X_copy (X, Teuchos::Copy);
   MV R (B.getMap (), B.getNumVectors ());
@@ -223,20 +243,42 @@ testCgVariant (Teuchos::FancyOStream& out, bool& success, const std::string& sol
 	  << ": Absolute residual norm: " << R_norms[j]
 	  << ", Relative residual norm: " << relResNorm
 	  << endl;
+    TEST_ASSERT( relResNorm <= tol );
   }
   myOut << endl;
 }
 
-TEUCHOS_UNIT_TEST( CgVariants, CreateAndSolve )
+// mfh 14 Aug 2018: Most of these CG solvers take 29 or 30 iterations
+// on this problem.  We add five iterations to allow for rounding
+// error.
+constexpr int maxAllowedNumIters = 35;
+
+TEUCHOS_UNIT_TEST( CgVariants, Cg )
 {
-  testCgVariant (out, success, "TPETRA CG PIPELINE");
-  testCgVariant (out, success, "TPETRA CG SINGLE REDUCE");  
+  testCgVariant (out, success, "TPETRA CG", maxAllowedNumIters);
+}
+
+TEUCHOS_UNIT_TEST( CgVariants, CgPipeline )
+{
+  testCgVariant (out, success, "TPETRA CG PIPELINE", maxAllowedNumIters);  
+}
+
+TEUCHOS_UNIT_TEST( CgVariants, CgSingleReduce )
+{
+  testCgVariant (out, success, "TPETRA CG SINGLE REDUCE", maxAllowedNumIters);    
+}
+
+// Compare against Belos' "generic" CG implementation.
+TEUCHOS_UNIT_TEST( CgVariants, BelosGenericCg )
+{
+  testCgVariant (out, success, "CG", maxAllowedNumIters);
 }
 
 } // namespace (anonymous)
 
 namespace BelosTpetra {
 namespace Impl {
+  extern void register_Cg (const bool verbose);
   extern void register_CgPipeline (const bool verbose);
   extern void register_CgSingleReduce (const bool verbose);  
 } // namespace Impl
@@ -247,7 +289,8 @@ int main (int argc, char* argv[])
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   const bool verbose = true;
+  BelosTpetra::Impl::register_Cg (verbose);
   BelosTpetra::Impl::register_CgPipeline (verbose);
-  BelosTpetra::Impl::register_CgSingleReduce (verbose);  
+  BelosTpetra::Impl::register_CgSingleReduce (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
