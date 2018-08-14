@@ -110,9 +110,11 @@ APPEND_SET(HEADERS
   adapters/Thyra_FROSch_TwoLevelPreconditionerFactory_def.hpp
   adapters/Stratimikos_FROSchHelp.hpp
   adapters/Stratimikos_FROSchHelpers.hpp
-
-
-
+  adapters/Thyra_FROSchEpetraPreconFactory_decl.hpp
+  adapters/Thyra_FROSchEpetraPreconFactory_def.hpp
+  adapters/stratimikos_froschEpetra.hpp
+  adapters/FROSch_EpetraOp_decl.hpp
+  adapters/FROSch_EpetraOp_def.hpp
 
 
 )
