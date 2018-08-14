@@ -45,6 +45,7 @@ APPEND_SET(SOURCES
   )
 
 APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Cg.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Krylov.hpp
@@ -53,6 +54,7 @@ APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_SolverManagerBase.hpp
   )
 APPEND_SET(SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Cg.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.cpp  
   )

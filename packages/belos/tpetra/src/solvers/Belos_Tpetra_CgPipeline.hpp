@@ -46,9 +46,7 @@ protected:
 
     SolverOutput<SC> output {};
 
-    // local vectors
-    // matrix containing R and AR
-    MV R_AR (R_in.getMap (), 2);
+    MV R_AR (R_in.getMap (), 2); // [R, A*R]
     vec_type R = * (R_AR.getVectorNonConst (0));
     vec_type AR = * (R_AR.getVectorNonConst (1));
     Tpetra::deep_copy (R, R_in);
