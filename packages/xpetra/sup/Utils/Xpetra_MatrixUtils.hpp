@@ -59,6 +59,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
+#include "Xpetra_MatrixMatrix.hpp"
 
 namespace Xpetra {
 
@@ -492,7 +493,7 @@ public:
       }
 
       RCP<Matrix> newAc;
-      MatrixMatrix::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
       if (Ac->IsView("stridedMaps"))
         newAc->CreateView("stridedMaps", Ac);
 
