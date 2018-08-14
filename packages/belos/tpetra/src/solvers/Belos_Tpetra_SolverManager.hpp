@@ -17,7 +17,7 @@ class SolverManager :
 {
 private:
   using solver_impl_type = KrylovSubclassType<SC, MV, OP>;  
-  using solver_base_type = typename solver_impl_type::base_type;
+  using solver_base_type = Krylov<SC, MV, OP>;
   
   static Teuchos::RCP<solver_base_type>
   makeSolverImplementation ()

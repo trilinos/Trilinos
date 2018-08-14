@@ -11,9 +11,10 @@ template<class SC = Tpetra::MultiVector<>::scalar_type,
 	 class MV = Tpetra::MultiVector<SC>,
 	 class OP = Tpetra::Operator<SC>>
 class CgSingleReduce: public Krylov<SC, MV, OP> {
-public:
+private:
   using base_type = Krylov<SC, MV, OP>;
-  
+
+public:
   CgSingleReduce () :
     base_type::Krylov ()
   {}
