@@ -122,19 +122,22 @@ testCgVariant (Teuchos::FancyOStream& out,
   using mag_type = MV::mag_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using STM = Teuchos::ScalarTraits<mag_type>;
-  constexpr bool debug = true;
+  // The Teuchos unit test framework likes to capture output to 'out',
+  // and not print anything until the test is done.  This can hinder
+  // debugging.  If the test crashes without useful output, try
+  // setting this to 'true'.  That will change 'myOut' from an alias
+  // to 'out', into a wrapper for std::cerr.
+  constexpr bool debug = false;
   
   const SC ZERO = STS::zero ();
   const SC ONE = STS::one ();
 
-  // In debug mode, print immediately, on all processes.  (The Teuchos
-  // unit test framework likes to capture output and not print
-  // anything until the test is done.)  This will help diagnose hangs.
   RCP<FancyOStream> myOutPtr =
     debug ? getFancyOStream (rcpFromRef (std::cerr)) : rcpFromRef (out);
   Teuchos::FancyOStream& myOut = *myOutPtr;
 
-  myOut << "Test \"native\" Tpetra version of CgPipeline" << endl;
+  myOut << "Test \"native\" Tpetra version of solver \"" << solverName << "\""
+	<< endl;
   Teuchos::OSTab tab1 (out);
 
   myOut << "Create the linear system to solve" << endl;
@@ -153,7 +156,7 @@ testCgVariant (Teuchos::FancyOStream& out,
   // Get ready for next solve by resetting initial guess to zero.
   X.putScalar (ZERO);
 
-  myOut << "Create the CgPipeline solver" << endl;
+  myOut << "Create solver instance using Belos::SolverFactory" << endl;
 
   RCP<Belos::SolverManager<SC, MV, OP> > solver;
   try {
@@ -268,6 +271,13 @@ TEUCHOS_UNIT_TEST( CgVariants, CgSingleReduce )
   testCgVariant (out, success, "TPETRA CG SINGLE REDUCE", maxAllowedNumIters);    
 }
 
+TEUCHOS_UNIT_TEST( CgVariants, Gmres )
+{
+  // GMRES minimizes the residual norm, so it should converge at least
+  // as fast as CG.
+  testCgVariant (out, success, "TPETRA GMRES", maxAllowedNumIters);
+}
+
 // Compare against Belos' "generic" CG implementation.
 TEUCHOS_UNIT_TEST( CgVariants, BelosGenericCg )
 {
@@ -280,7 +290,8 @@ namespace BelosTpetra {
 namespace Impl {
   extern void register_Cg (const bool verbose);
   extern void register_CgPipeline (const bool verbose);
-  extern void register_CgSingleReduce (const bool verbose);  
+  extern void register_CgSingleReduce (const bool verbose);
+  extern void register_Gmres (const bool verbose);  
 } // namespace Impl
 } // namespace BelosTpetra
 
@@ -292,5 +303,6 @@ int main (int argc, char* argv[])
   BelosTpetra::Impl::register_Cg (verbose);
   BelosTpetra::Impl::register_CgPipeline (verbose);
   BelosTpetra::Impl::register_CgSingleReduce (verbose);
+  BelosTpetra::Impl::register_Gmres (verbose);  
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
