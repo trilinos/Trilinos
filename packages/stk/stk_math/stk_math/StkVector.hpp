@@ -184,9 +184,9 @@ inline REAL Vec<REAL,DIM>::length() const
 template<class REAL, unsigned DIM>
 inline Vec<REAL,DIM> Vec<REAL,DIM>::unit_vector() const
 {
-  const REAL inv_length = 1.0/length();
   Vec<REAL,DIM> result(MemberInit::NONE);
-  for (unsigned i=0; i<DIM; ++i) result.vec[i] = vec[i]*inv_length;
+  for (unsigned i=0; i<DIM; ++i) result.vec[i] = vec[i];
+  result.unitize();
   return result;
 }
 
