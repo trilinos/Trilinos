@@ -357,8 +357,10 @@ protected:
                const OP& M,
                const SolverInput<SC>& input) = 0;
 
-private:
+protected:
   SolverInput<SC> input_;
+
+private:
   Teuchos::RCP<const OP> A_;
   std::string precoType_;
   Teuchos::RCP<const OP> M_;

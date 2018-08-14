@@ -23,7 +23,7 @@ public:
   mag_type r_norm_orig = STM::zero ();
   mag_type tol = STM::squareroot (STS::eps ());
   int maxNumIters = 1000;
-  int resCycle = 0;
+  int resCycle = 30;
   int stepSize = 1;
   bool needToScale = true;
   bool needToReortho = false;
@@ -54,7 +54,8 @@ struct SolverOutput {
   int numRests = -1;
   //! Whether the solve converged.
   bool converged = true;
-  //! Ritz values if requested (only real part for now)
+  //! Ritz values if requested
+
   std::vector<val_type> ritzValues;
 };
 
