@@ -225,7 +225,7 @@ namespace MueLu {
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
     }
     else {
-      std::cerr << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
+      GetOStream(Errors) << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
     }
 
     // Nuke the BC edges in nullspace
@@ -356,8 +356,8 @@ namespace MueLu {
     }
 
     {
-      std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-      if (smootherType == "hiptmair" &&
+      if (parameterList_.isType<std::string>("smoother: type") &&
+          parameterList_.get<std::string>("smoother: type") == "hiptmair" &&
           SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
@@ -416,18 +416,53 @@ namespace MueLu {
         throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
 #endif  // defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
       } else {
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
-        RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-        RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-        level.Request("PreSmoother",SmootherFact.get());
-        SmootherFact->Build(level);
-        Smoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+        if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
+          std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
+          std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
+
+          Teuchos::ParameterList preSmootherList, postSmootherList;
+          if (parameterList_.isSublist("smoother: pre params"))
+            preSmootherList = parameterList_.sublist("smoother: pre params");
+          if (parameterList_.isSublist("smoother: post params"))
+            postSmootherList = parameterList_.sublist("smoother: post params");
+
+          Level level;
+          RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+          level.SetFactoryManager(factoryHandler);
+          level.SetLevelID(0);
+          level.setObjectLabel("RefMaxwell (1,1)");
+          level.Set("A",SM_Matrix_);
+          level.setlib(SM_Matrix_->getDomainMap()->lib());
+
+          RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
+          RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
+
+          RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
+          RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
+
+          level.Request("PreSmoother",preSmootherFact.get());
+          preSmootherFact->Build(level);
+          PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
+
+          level.Request("PostSmoother",postSmootherFact.get());
+          postSmootherFact->Build(level);
+          PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
+        } else {
+          std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
+          Level level;
+          RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+          level.SetFactoryManager(factoryHandler);
+          level.SetLevelID(0);
+          level.setObjectLabel("RefMaxwell (1,1)");
+          level.Set("A",SM_Matrix_);
+          level.setlib(SM_Matrix_->getDomainMap()->lib());
+          RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
+          RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
+          level.Request("PreSmoother",SmootherFact.get());
+          SmootherFact->Build(level);
+          PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+          PostSmoother_ = PreSmoother_;
+        }
         useHiptmairSmoothing_ = false;
       }
     }
@@ -1175,7 +1210,7 @@ namespace MueLu {
     }
     else
 #endif
-      Smoother_->Apply(X, RHS, true);
+      PreSmoother_->Apply(X, RHS, false);
 
     // do solve for the 2x2 block system
     if(mode_=="additive")
@@ -1202,7 +1237,7 @@ namespace MueLu {
       }
     else
 #endif
-      Smoother_->Apply(X, RHS, false);
+      PostSmoother_->Apply(X, RHS, false);
 
   }
 
@@ -1228,7 +1263,8 @@ namespace MueLu {
 
     HierarchyH_ = Teuchos::null;
     Hierarchy22_ = Teuchos::null;
-    Smoother_ = Teuchos::null;
+    PreSmoother_ = Teuchos::null;
+    PostSmoother_ = Teuchos::null;
     disable_addon_ = false;
     mode_ = "additive";
 
