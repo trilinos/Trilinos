@@ -138,7 +138,7 @@ LOCA::LAPACK::Group::computeJacobian() {
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverse(
-                     Teuchos::ParameterList& p,
+                     Teuchos::ParameterList& /* p */,
                      const NOX::Abstract::Vector& input,
                      NOX::Abstract::Vector& result) const
 {
@@ -164,7 +164,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverse(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
-                     Teuchos::ParameterList& p,
+                     Teuchos::ParameterList& /* p */,
                      const NOX::Abstract::MultiVector& input,
                      NOX::Abstract::MultiVector& result) const
 {
@@ -363,7 +363,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
-                         Teuchos::ParameterList& params,
+                         Teuchos::ParameterList& /* params */,
                      const NOX::Abstract::MultiVector& input,
                      NOX::Abstract::MultiVector& result) const
 {
@@ -407,6 +407,7 @@ LOCA::LAPACK::Group::isComplex() const
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::computeComplex(double frequency)
 {
+  (void)frequency;
   std::string callingFunction = "LOCA::LAPACK::computeComplex()";
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -457,6 +458,10 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
                   NOX::Abstract::Vector& result_real,
                   NOX::Abstract::Vector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())
@@ -504,6 +509,10 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
                 NOX::Abstract::MultiVector& result_real,
                 NOX::Abstract::MultiVector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())
@@ -559,12 +568,16 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverseMultiVector(
-                Teuchos::ParameterList& params,
+                Teuchos::ParameterList& /* params */,
                 const NOX::Abstract::MultiVector& input_real,
                 const NOX::Abstract::MultiVector& input_imag,
                 NOX::Abstract::MultiVector& result_real,
                 NOX::Abstract::MultiVector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())
@@ -627,6 +640,10 @@ LOCA::LAPACK::Group::applyComplexTranspose(
                   NOX::Abstract::Vector& result_real,
                   NOX::Abstract::Vector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())
@@ -674,6 +691,10 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
                 NOX::Abstract::MultiVector& result_real,
                 NOX::Abstract::MultiVector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())
@@ -729,12 +750,16 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
-                Teuchos::ParameterList& params,
+                Teuchos::ParameterList& /* params */,
                 const NOX::Abstract::MultiVector& input_real,
                 const NOX::Abstract::MultiVector& input_imag,
                 NOX::Abstract::MultiVector& result_real,
                 NOX::Abstract::MultiVector& result_imag) const
 {
+  (void)input_real;
+  (void)input_imag;
+  (void)result_real;
+  (void)result_imag;
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex())

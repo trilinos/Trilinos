@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_FILES
   solverAugmentation.xml solverAugmentationEpetra.xml
-  solverMueLuRefMaxwell.xml solverMueLuRefMaxwellEpetra.xml
+  solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
   solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
   solverAugmentationUseILU.xml
   solverMLRefMaxwell.xml
@@ -39,7 +39,7 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec
@@ -83,6 +83,18 @@ IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
 
   TRIBITS_ADD_TEST(
     BlockPrec
+    NAME "MiniEM-BlockPrec_RefMaxwell2D"
+    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Tpetra --spatialDim=2"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    )
+
+ENDIF()
+
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
+
+  TRIBITS_ADD_TEST(
+    BlockPrec
     NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
     ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
     COMM serial mpi
@@ -102,7 +114,7 @@ ENDIF()
 #################################################
 # ML RefMaxwell solver
 
-IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML)
+IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec

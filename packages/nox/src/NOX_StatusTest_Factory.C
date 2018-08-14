@@ -90,7 +90,7 @@ NOX::StatusTest::Factory::~Factory()
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildStatusTests(const std::string& file_name , const NOX::Utils& u,
+buildStatusTests(const std::string& /* file_name */ , const NOX::Utils& u,
           std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
          tagged_tests) const
 {
@@ -261,7 +261,7 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   double tolerance = p.get("Tolerance", 1.0e-3);
 
@@ -302,7 +302,7 @@ buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   double bdf_multiplier = p.get("BDF Multiplier", 1.0);
   double tolerance = p.get("Tolerance", 1.0);
@@ -351,7 +351,7 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   std::string vector_type_string = p.get("Vector Type","F Vector");
   std::string norm_type_string = p.get("Norm Type", "Two Norm");
@@ -389,7 +389,7 @@ buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildDivergenceTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildDivergenceTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   double tolerance = p.get("Tolerance", 1.0e+12);
   int iterations = p.get("Consecutive Iterations", 1);
@@ -403,7 +403,7 @@ buildDivergenceTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildStagnationTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildStagnationTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   double tolerance = p.get("Tolerance", 1.0e+12);
   int iterations = p.get("Consecutive Iterations", 1);
@@ -447,7 +447,7 @@ buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   int num_iters = p.get<int>("Number of Nonlinear Iterations", 1);
   int num_ramping_steps = p.get<int>("Number of Initial Ramping Steps", 0);
@@ -464,7 +464,7 @@ buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 // ************************************************************************
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
-buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
   RCP<NOX::StatusTest::Generic> status_test;
 

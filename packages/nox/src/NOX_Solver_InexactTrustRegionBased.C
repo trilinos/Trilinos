@@ -1004,8 +1004,8 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 //*************************************************************************
 NOX::StatusTest::StatusType
 NOX::Solver::InexactTrustRegionBased::
-checkStep(const NOX::Abstract::Vector& step,
-      double& radius)
+checkStep(const NOX::Abstract::Vector& /* step */,
+      double& /* radius */)
 {
   return NOX::StatusTest::Converged;
 }

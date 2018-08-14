@@ -19,6 +19,8 @@
 #include "Panzer_Integrator_CurlBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
+#include "Panzer_ScalarToVector.hpp"
+#include "Panzer_Product.hpp"
 #include "Panzer_Constant.hpp"
 
 // ***********************************************************************
@@ -47,8 +49,6 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Model ID","","Closure model id associated with this equation set");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",2,"Order of the integration");
-    valid_parameters.set("Epsilon",8.854187817e-12, "Permittivity of free space");
-    valid_parameters.set("Mu",1.2566370614e-6, "Permeability of free space");
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -56,8 +56,6 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int basis_order = params->get<int>("Basis Order");
   std::string model_id = params->get<std::string>("Model ID");
   int int_order = params->get<int>("Integration Order");
-  eps = params->get<double>("Epsilon");
-  mu = params->get<double>("Mu");
   dimension = cell_data.baseCellDimension();
   TEUCHOS_ASSERT(dimension == 2 || dimension == 3);
 
@@ -112,7 +110,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Value Name", "DXDT_"+m_Efield_dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
-      p.set("Multiplier", eps);
+      p.set("Multiplier", 1.0);
+      const std::vector<std::string> fieldMultiplier = {"PERMITTIVITY"};
+      p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
+
       RCP< PHX::Evaluator<panzer::Traits> > op =
           rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
 
@@ -127,11 +128,12 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       using std::string;
       string resName("RESIDUAL_" + m_Efield_dof_name),
              valName(m_Bfield_dof_name);
-      double multiplier(-1.0 / mu);
+      double multiplier(-1.0);
+      std::vector<std::string> fieldMultiplier = {"INVERSE_PERMEABILITY"};
       RCP<Evaluator<Traits>> op = rcp(new
         Integrator_CurlBasisDotVector<EvalT, Traits>(
         EvaluatorStyle::CONTRIBUTES, resName, valName, *basis, *ir,
-        multiplier));
+        multiplier,fieldMultiplier));
       this->template registerEvaluator<EvalT>(fm, op);
     }
     {

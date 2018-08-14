@@ -326,7 +326,7 @@ double NOX::Epetra::Vector::norm(const NOX::Abstract::Vector& weights) const
   return norm(dynamic_cast<const NOX::Epetra::Vector&>(weights));
 }
 
-double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& weights) const
+double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& /* weights */) const
 {
     std::cerr << "NOX::Epetra::Vector - Weighted norm not supported" << std::endl;
     throw "NOX-Epetra Error";

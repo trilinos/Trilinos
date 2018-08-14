@@ -111,8 +111,8 @@ LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X,
 }
 
 int
-LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X,
-                        Epetra_MultiVector&Y) const
+LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& /* X */,
+                        Epetra_MultiVector&/* Y */) const
 {
   globalData->locaErrorCheck->throwError(
       "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",

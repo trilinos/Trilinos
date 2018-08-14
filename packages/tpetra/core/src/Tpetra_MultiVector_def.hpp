@@ -4490,7 +4490,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
        std::runtime_error,
-       "Global row index " << gblRow << "is not present on this process "
+       "Global row index " << gblRow << " is not present on this process "
        << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->vectorIndexOutOfRange (col), std::runtime_error,
@@ -4515,7 +4515,7 @@ namespace Tpetra {
       lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
       "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
-      << "is not present on this process "
+      << " is not present on this process "
       << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       vectorIndexOutOfRange(col),

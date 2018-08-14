@@ -76,8 +76,12 @@ StepperOperatorSplit<Scalar>::getModel()
     model = (*subStepperIter)->getModel();
     if (model != Teuchos::null) break;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
-    "Error - StepperOperatorSplit::getModel() Could not find a valid model!\n");
+  if ( model == Teuchos::null ) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::getModel()");
+    *out << "Warning -- StepperOperatorSplit::getModel() "
+         << "Could not find a valid model!  Returning null!" << std::endl;
+  }
 
   return model;
 }
@@ -190,8 +194,14 @@ void StepperOperatorSplit<Scalar>::initialize()
   OpSpSolnHistory_->setStorageLimit(2);
   OpSpSolnHistory_->setStorageType(Tempus::STORAGE_TYPE_STATIC);
 
-  tempState_ = rcp(new SolutionState<Scalar>(this->getModel(),
-                                             this->getDefaultStepperState()));
+  if (tempState_ == Teuchos::null) {
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >model = this->getModel();
+    TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
+      "Error - StepperOperatorSplit::initialize() Could not find "
+      "a valid model!\n");
+    tempState_ = rcp(new SolutionState<Scalar>(
+      model, this->getDefaultStepperState()));
+  }
   this->setObserver();
 
   if (!isOneStepMethod() ) {

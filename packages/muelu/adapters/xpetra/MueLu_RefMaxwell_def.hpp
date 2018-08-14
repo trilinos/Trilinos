@@ -256,7 +256,7 @@ namespace MueLu {
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
       Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
       rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
       rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
       rapFact->SetParameterList(rapList);
 
@@ -336,7 +336,7 @@ namespace MueLu {
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", false);
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -474,6 +474,7 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
   }
 
@@ -1004,7 +1005,14 @@ namespace MueLu {
 #endif
         RCP<Vector> diag = VectorFactory::Build(M0inv_Matrix_->getRowMap());
         M0inv_Matrix_->getLocalDiagCopy(*diag);
-        Z->leftScale(*diag);
+        if (Z->getRowMap()->isSameAs(*(diag->getMap())))
+          Z->leftScale(*diag);
+        else {
+          RCP<Import> importer = ImportFactory::Build(diag->getMap(),Z->getRowMap());
+          RCP<Vector> diag2 = VectorFactory::Build(Z->getRowMap());
+          diag2->doImport(*diag,*importer,Xpetra::INSERT);
+          Z->leftScale(*diag2);
+        }
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*ZT,false,*Z,false,*Matrix2,true,true);
       } else if (parameterList_.get<bool>("rap: triple product", false) == false) {
         Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
@@ -1018,9 +1026,7 @@ namespace MueLu {
           MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
       }
       // add matrices together
-      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setOutputToRootOnly(0);
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,GetOStream(Runtime0));
       AH_->fillComplete();
     }
 

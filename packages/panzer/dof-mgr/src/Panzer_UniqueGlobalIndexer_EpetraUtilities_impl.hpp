@@ -123,7 +123,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,Glo
    Teuchos::RCP<Map> reducedMap
      = Teuchos::rcp(new Map(-1, static_cast<int>(reducedIndices.size()), Teuchos::arrayViewFromVector(reducedIndices).getRawPtr(),
                             1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-   return Teuchos::rcp(new IntVector(View,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
+   return Teuchos::rcp(new IntVector(Copy,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -220,7 +220,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
    else if(rank==3) {
       std::size_t entries = data.extent(2);
  
-      TEUCHOS_TEST_FOR_EXCEPTION(dataVector.NumVectors()!=entries,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dataVector.NumVectors()!=static_cast<int>(entries),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector

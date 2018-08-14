@@ -164,8 +164,8 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector(
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::generateMultiVector(
                             int nColumns,
-                            int nVectorRows,
-                            int nScalarRows) const
+                            int /* nVectorRows */,
+                            int /* nScalarRows */) const
 {
   return
     Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(

@@ -165,8 +165,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestMagnitude(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~LargestMagnitude() {}
@@ -206,8 +206,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestMagnitude(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~SmallestMagnitude() {}
@@ -247,8 +247,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestReal(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~LargestReal() {}
@@ -288,8 +288,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestReal(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~SmallestReal() {}
@@ -329,8 +329,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestImaginary(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~LargestImaginary() {}
@@ -370,8 +370,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestImaginary(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) {}
 
       //! Destructor
       ~SmallestImaginary() {}

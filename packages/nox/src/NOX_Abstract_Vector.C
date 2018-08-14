@@ -53,7 +53,7 @@
 // Included multivector declarations
 #include "NOX_MultiVector.H"
 
-void NOX::Abstract::Vector::print(std::ostream& stream) const
+void NOX::Abstract::Vector::print(std::ostream& /* stream */) const
 {
   return;
 }
