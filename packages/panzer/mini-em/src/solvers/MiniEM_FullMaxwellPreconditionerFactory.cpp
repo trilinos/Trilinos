@@ -186,11 +186,9 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp idQ_B, KtK, S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
-     KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
-     if (debug != Teuchos::null)
-       *debug << "Adding up S_E" << std::endl;
-     S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
+     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
+     S_E = Teko::explicitAdd(Q_E, CurlCurl);
+
      if (debug != Teuchos::null)
        *debug << "Added up S_E" << std::endl;
      if (dump)

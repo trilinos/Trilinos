@@ -443,17 +443,23 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("DoF Name","E_edge");
       closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
       closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("DoF Name","B_face");
       closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("Type","CONDUCTIVITY");
       closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<double>("sigma",0.0);
       closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("DoF Name","E_edge");
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
       closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
 
-      // constant permeability and permittivity
+      // constant permeability, permittivity and conductivity
       // closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<double>("Value",epsilon);
       // closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("Value",1.0/mu);
+      // closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<double>("Value",0.0);
       // closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("Value",epsilon);
+      // closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<double>("Value",1.0/mu);
 
       // electromagnetic energy: 1/2 * ((E, epsilon * E) + (B, 1/mu * B))
       closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY");
@@ -809,6 +815,20 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, 
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
     p.set("Multiplier",1.0);
+  }
+
+  {
+    Teuchos::ParameterList& p = pl->sublist("Auxiliary Edge Curl Curl Physics");
+    p.set("Type","Auxiliary Curl Curl");
+    p.set("Model ID","electromagnetics_aux");
+    p.set("DOF Name","AUXILIARY_EDGE");
+    p.set("Basis Type","HCurl");
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",integration_order);
+    p.set("Multiplier",1.0/massMultiplier);
+    // Teuchos::RCP<std::vector<std::string> > fieldMultipliers = Teuchos::rcp(new std::vector<std::string>);
+    // fieldMultipliers->push_back("INVERSE_PERMEABILITY");
+    // p.set("Field Multipliers",fieldMultipliers.getConst());
   }
 
   {

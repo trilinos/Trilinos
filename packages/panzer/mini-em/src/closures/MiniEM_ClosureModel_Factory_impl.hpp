@@ -101,8 +101,9 @@ buildClosureModels(const std::string& model_id,
       }
       if(type=="INVERSE PERMEABILITY") {
         double mu = plist.get<double>("mu");
+        std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu));
+	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu,DoF));
 	evaluators->push_back(e);
 
         found = true;
