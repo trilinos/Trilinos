@@ -394,19 +394,6 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 }
 
 int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString_) const {
-  float ElEdge_max_MAX=500.0;
-  float ElEdge_max_MIN=5.85;
-  float ElEdge_mean_MAX=330.11;
-  float ElEdge_mean_MIN=5.425;
-  float ElDet_J_min_MAX=0.921659;
-  float ElDet_J_min_MIN=0.000458804;
-  float ElDet_J_max_MAX=3.91452;
-  float ElDet_J_max_MIN=1.07834;
-  float stretch_min_MAX=0.223193;
-  float stretch_min_MIN=0.00263527;
-  float stretch_mean_MAX=0.232755;
-  float stretch_mean_MIN=0.0116566;
-
   std::stringstream ss(trialString);
   std::vector<float> vect;
 
