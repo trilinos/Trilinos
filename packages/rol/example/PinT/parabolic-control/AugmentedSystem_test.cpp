@@ -177,8 +177,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::Ptr< ROL::PinTVector<RealT>> state;
   ROL::Ptr< ROL::PinTVector<RealT>> control;
 
-  state        = ROL::buildStatePinTVector<RealT>(   communicators, nt,     u0);
-  control      = ROL::buildControlPinTVector<RealT>( communicators, nt,     zk);
+  state        = ROL::buildStatePinTVector<RealT>(   communicators, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
+  control      = ROL::buildControlPinTVector<RealT>( communicators, nt,     zk); // time discontinous, stencil = [0]
 
   // Construct reduced dynamic objective
   auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
@@ -188,7 +188,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     timeStamp->at(k).t.at(1) = (k+1)*dt;
   }
 
-  int sweeps = 3;
+  int sweeps = 1;          // TODO: Add MGRIT parameter list stuff
   RealT omega = 2.0/3.0;
 
   int numLevels = 3;
@@ -214,15 +214,14 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector(*kkt_x_in);
   kkt_b->zero();
   // apply_kkt(*kkt_b,*kkt_x_in,*state,*control);
-  pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol);
+  pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol); // b = A * x
 
-  // check exact
+  // check exact: Update so this works right (TODO)
   {
     auto kkt_x_out = kkt_vector->clone();
     kkt_x_out->zero();
 
-    // apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
-    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol);
+    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol); // apply Wathen style preconditioner serially
 
     kkt_x_out->axpy(-1.0,*kkt_x_in);
 
@@ -234,7 +233,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   if(myRank==0)
     (*outStream) << std::endl;
 
-  // check jacobi
+  // check jacobi is reducing the norm (TODO - write more equations)
   {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -245,14 +244,14 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     for(int i=0;i<sweeps;i++) {
       pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
       kkt_res->scale(-1.0);
-      kkt_res->axpy(1.0,*kkt_b);
+      kkt_res->axpy(1.0,*kkt_b);   // r = b - A*x_i
     
-      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true);
+      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
-      kkt_x_out->axpy(omega,*kkt_diff);
+      kkt_x_out->axpy(omega,*kkt_diff); // x_{i+1} = x_i + dx_i
 
       kkt_err->set(*kkt_x_out);
-      kkt_err->axpy(-1.0,*kkt_x_in);
+      kkt_err->axpy(-1.0,*kkt_x_in);    // err = x_i - x
       RealT norm = kkt_err->norm() / kkt_b->norm();
       if(myRank==0)
         (*outStream) << "NORM JACOBI= " << norm << std::endl;
@@ -286,7 +285,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     parlist.set("Absolute Tolerance",1.e-1);
     parlist.set("Relative Tolerance",1.e-4);
  
-    ROL::GMRES<RealT> krylov(parlist);
+    ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
 
     int flag = 0, iter = 0;
 

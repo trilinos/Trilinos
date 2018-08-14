@@ -199,6 +199,9 @@ public:
   void setRelaxation(Real o)
   { omega_ = o; }
 
+  /**
+   * Set the global scaling for the coupling constraints.
+   */
   void setGlobalScale(Real o)
   { globalScale_ = o; }
 
