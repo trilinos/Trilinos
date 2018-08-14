@@ -188,10 +188,10 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     timeStamp->at(k).t.at(1) = (k+1)*dt;
   }
 
-  int sweeps = 1;          // TODO: Add MGRIT parameter list stuff
-  RealT omega = 2.0/3.0;
-
-  int numLevels = 3;
+  // Add MGRIT parameter list stuff
+  int sweeps    = pl->get("MGRIT Sweeps", 1); 
+  RealT omega   = pl->get("MGRIT Relaxation",2.0/3.0);
+  int numLevels = pl->get("MGRIT Levels",3);
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
@@ -233,7 +233,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   if(myRank==0)
     (*outStream) << std::endl;
 
-  // check jacobi is reducing the norm (TODO - write more equations)
+  // check jacobi is reducing the norm 
   {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -244,14 +244,14 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     for(int i=0;i<sweeps;i++) {
       pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
       kkt_res->scale(-1.0);
-      kkt_res->axpy(1.0,*kkt_b);   // r = b - A*x_i
+      kkt_res->axpy(1.0,*kkt_b);                                                       // r = b - A*x_i
     
       pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
-      kkt_x_out->axpy(omega,*kkt_diff); // x_{i+1} = x_i + dx_i
+      kkt_x_out->axpy(omega,*kkt_diff);                                                // x_{i+1} = x_i + omega*dx_i
 
       kkt_err->set(*kkt_x_out);
-      kkt_err->axpy(-1.0,*kkt_x_in);    // err = x_i - x
+      kkt_err->axpy(-1.0,*kkt_x_in);                                                   // err = x_{i+1} - x
       RealT norm = kkt_err->norm() / kkt_b->norm();
       if(myRank==0)
         (*outStream) << "NORM JACOBI= " << norm << std::endl;
