@@ -56,14 +56,14 @@ IF( TPL_ENABLE_MPI )
     ADD_DIR_TO_NAME
   )
   
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    AugmentedSystem_test
-#    SOURCES  AugmentedSystem_test.cpp
-#    ARGS PrintItAll
-#    NUM_MPI_PROCS 2
-#    PASS_REGULAR_EXPRESSION "TEST PASSED"
-#    ADD_DIR_TO_NAME
-#  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AugmentedSystem_test
+    SOURCES  AugmentedSystem_test.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 2
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
