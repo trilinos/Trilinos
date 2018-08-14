@@ -93,7 +93,7 @@ namespace MueLu {
 
     // Returns 1 if the given parameters are within same 
     // same domain as training data, 0 otherwise
-    int checkBounds(std::string trialString) const;
+    int checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const;
 
     int hybrid(float * probabilities, std::vector<int> acceptableCombos) const; 
 
@@ -118,6 +118,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
     Teuchos::Array<std::string> filestem_;
+    Teuchos::ArrayRCP<std::string> boundsString_;
     int avatarGoodClass_;
     int heuristicToUse_;
 

@@ -61,6 +61,8 @@
    "avatar: decision tree files"   "{'mystem1.trees','mystem2.trees'}"
    "avatar: names files"           "{'mystem1.names','mystem2.names'}"
    "avatar: good class"            "1"
+   "avatar: heuristic" 		   "1"
+   "avatar: bounds file"           "{'bounds.data'}"
    "avatar: muelu parameter mapping"
      - "param0'
        - "muelu parameter"          "aggregation: threshold"
@@ -124,6 +126,9 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
    // Which drop tol choice heuristic to use
   validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heurisitc we want to use");  
 
+  // Bounds file for extrapolation risk
+  validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
+
   return validParamList;
 }
 
@@ -158,6 +163,7 @@ void AvatarInterface::Setup() {
   // Get the avatar strings (NOTE: Only exist on proc 0)
   avatarStrings_ = ReadFromFiles("avatar: decision tree files");
   namesStrings_  = ReadFromFiles("avatar: names files");
+  boundsString_ = ReadFromFiles("avatar: bounds file");
   filestem_ = params_.get<Teuchos::Array<std::string>>("avatar: filestem");
 
 
@@ -315,7 +321,8 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
 
       std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
-      int bound_check = checkBounds(testString);
+
+      int bound_check = checkBounds(testString, boundsString_);
       
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
@@ -376,7 +383,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
     }
 
-    // Cleanup  
+    // Cleanup 
+    free(predictions);
+    free(probabilities); 
   } 
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
@@ -384,7 +393,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
 }
 
-int AvatarInterface::checkBounds(std::string trialString) const {
+int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString_) const {
   float ElEdge_max_MAX=500.0;
   float ElEdge_max_MIN=5.85;
   float ElEdge_mean_MAX=330.11;
@@ -410,23 +419,38 @@ int AvatarInterface::checkBounds(std::string trialString) const {
     if (ss.peek() == ',')
       ss.ignore();
   }
-   
-  if (vect.at(3) > 500 || vect.at(3) < 5.85)
+
+  std::string bounds = const_cast<char*>(boundsString_[0].c_str());
+
+  std::stringstream ssBounds(bounds);
+  std::vector<float> boundsVect;
+
+  float b;
+ 
+  while (ssBounds >> b)
+  {
+    boundsVect.push_back(b);
+
+    if (ssBounds.peek() == ',')
+      ssBounds.ignore();
+  }
+
+  if (vect.at(3) > boundsVect.at(0) || vect.at(3) < boundsVect.at(1))
     return 0;
  
-  if (vect.at(4) > 330.11 || vect.at(4) < 5.425)
+  if (vect.at(4) > boundsVect.at(2) || vect.at(4) < boundsVect.at(3))
     return 0;
 
-  if (vect.at(5) > 0.921659 || vect.at(5) < 0.000458804)
+  if (vect.at(5) > boundsVect.at(4) || vect.at(5) < boundsVect.at(5))
     return 0;
  
-  if (vect.at(6) > 3.91452 || vect.at(6) < 1.07834)
+  if (vect.at(6) > boundsVect.at(6) || vect.at(6) < boundsVect.at(7))
     return 0;
 
-  if (vect.at(8) > 0.223193 || vect.at(8) < 0.00263527)
+  if (vect.at(8) > boundsVect.at(8) || vect.at(8) < boundsVect.at(9))
     return 0;
 
-  if (vect.at(9) > 0.232755 || vect.at(9) < 0.0116566)
+  if (vect.at(9) > boundsVect.at(10) || vect.at(9) < boundsVect.at(11))
     return 0;
 
   return 1;
