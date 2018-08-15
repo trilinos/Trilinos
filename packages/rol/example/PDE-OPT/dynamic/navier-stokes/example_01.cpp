@@ -96,8 +96,11 @@ int main(int argc, char *argv[]) {
     RealT dt       = T/static_cast<RealT>(nt);
     int verbosity  = parlist->sublist("General").get("Print Verbosity", 0);
     verbosity      = (myRank==0 ? verbosity : 0);
+    bool solveOutput = parlist->sublist("Dynamic Constraint").sublist("Solve").get("Output Iteration History", false);
+    solveOutput      = (myRank==0 ? solveOutput : false);
     parlist->sublist("General").set("Print Verbosity", verbosity);
     bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", false);
+    parlist->sublist("Dynamic Constraint").sublist("Solve").set("Output Iteration History", solveOutput);
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
