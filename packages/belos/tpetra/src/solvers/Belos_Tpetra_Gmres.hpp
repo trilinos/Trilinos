@@ -260,13 +260,14 @@ private:
     return ortho_->projectAndNormalize (AP, h_array, r_new, Q_array);
   }
 
+protected:
   //! Reduce a column of Henssenburg matrix to triangular form
   void
   reduceHessenburgToTriangular(const int j,
 			       dense_matrix_type& H,
 			       std::vector<mag_type>& cs,
 			       std::vector<SC>& sn,
-			       dense_vector_type& y) const
+			       SC y[]) const
   {
     Teuchos::BLAS<LO, SC> blas;
     // Apply previous Givens rotations to new column of H
@@ -277,9 +278,20 @@ private:
     blas.ROTG (&H(j, j), &H(j+1, j), &cs[j], &sn[j]);
     H(j+1, j) = STS::zero ();
     // Update RHS w/ new transformation
-    blas.ROT (1, &y(j), 1, &y(j+1), 1, &cs[j], &sn[j]);
+    blas.ROT (1, &y[j], 1, &y[j+1], 1, &cs[j], &sn[j]);
   }
 
+  void
+  reduceHessenburgToTriangular(const int j,
+			       dense_matrix_type& H,
+			       std::vector<mag_type>& cs,
+			       std::vector<SC>& sn,
+			       dense_vector_type& y) const
+  {
+    this->reduceHessenburgToTriangular (j, H, cs, sn, y.values ());
+  }
+
+private:
   //! Sort Ritz values, using the Leja ordering.
   void
   sortRitzValues (const LO m, std::vector<SC>& RR)

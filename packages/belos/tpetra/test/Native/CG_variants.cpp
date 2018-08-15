@@ -278,6 +278,11 @@ TEUCHOS_UNIT_TEST( CgVariants, Gmres )
   testCgVariant (out, success, "TPETRA GMRES", maxAllowedNumIters);
 }
 
+TEUCHOS_UNIT_TEST( GmresVariants, GmresSingleReduce )
+{
+  testCgVariant (out, success, "TPETRA GMRES SINGLE REDUCE", maxAllowedNumIters);    
+}
+
 // Compare against Belos' "generic" CG implementation.
 TEUCHOS_UNIT_TEST( CgVariants, BelosGenericCg )
 {
@@ -291,7 +296,8 @@ namespace Impl {
   extern void register_Cg (const bool verbose);
   extern void register_CgPipeline (const bool verbose);
   extern void register_CgSingleReduce (const bool verbose);
-  extern void register_Gmres (const bool verbose);  
+  extern void register_Gmres (const bool verbose);
+  extern void register_GmresSingleReduce (const bool verbose);    
 } // namespace Impl
 } // namespace BelosTpetra
 
@@ -303,6 +309,7 @@ int main (int argc, char* argv[])
   BelosTpetra::Impl::register_Cg (verbose);
   BelosTpetra::Impl::register_CgPipeline (verbose);
   BelosTpetra::Impl::register_CgSingleReduce (verbose);
-  BelosTpetra::Impl::register_Gmres (verbose);  
+  BelosTpetra::Impl::register_Gmres (verbose);
+  BelosTpetra::Impl::register_GmresSingleReduce (verbose);      
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
