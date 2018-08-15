@@ -60,16 +60,36 @@ namespace ROL {
 template <class Real>
 class BranchHelper_PEBBL {
 private:
+  Ptr<const Vector<Real>> getVector(const Vector<Real> &xs ) const {
+    try {
+      return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
+    }
+    catch (std::exception &e) {
+      return makePtrFromRef(xs);
+    }
+  }
 
 public:
+  virtual ~BranchHelper_PEBBL(void) {}
+
   BranchHelper_PEBBL(void) {}
 
   BranchHelper_PEBBL(const BranchHelper_PEBBL &con) {}
 
-  virtual int getIndex(const Vector<Real> &x) const = 0;
+  virtual int getMyIndex(const Vector<Real> &x) const = 0;
+  virtual void getMyNumFrac(int &nfrac, Real &integralityMeasure,
+                            const Vector<Real> &x) const = 0;
 
-  virtual void getNumFrac(int &nfrac, Real &integralityMeasure,
-                          const Vector<Real> &x) const = 0;
+  int getIndex(const Vector<Real> &x) const {
+    Ptr<const Vector<Real>> xp = getVector(x);
+    return getMyIndex(*xp);
+  }
+
+  void getNumFrac(int &nfrac, Real &integralityMeasure,
+                  const Vector<Real> &x) const {
+    Ptr<const Vector<Real>> xp = getVector(x);
+    getMyNumFrac(nfrac, integralityMeasure, *xp);
+  }
 
   virtual Ptr<Transform_PEBBL<Real>> createTransform(void) const = 0;
 }; // class BranchHelper_PEBBL
