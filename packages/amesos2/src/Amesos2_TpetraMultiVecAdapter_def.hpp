@@ -193,6 +193,7 @@ namespace Amesos2 {
         typedef typename multivec_t::dual_view_type dual_view_type;
         typedef typename dual_view_type::host_mirror_space host_execution_space;
         redist_mv.template sync < host_execution_space > ();
+        Kokkos::fence(); // For UVM
 
         auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
         if ( redist_mv.isConstantStride() ) {
@@ -211,12 +212,9 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = av(lda*j, lclNumRows);
-            //auto X_j = redist_mv.getVector(j);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            for ( size_t i = 0; i < lclNumRows; ++i ) {
-              av_j[i] = X_lcl_j_1d(i);
-            }
+            std::memcpy( &(av_j[0]), (X_lcl_j_1d.data()), sizeof( decltype(X_lcl_j_1d(0)) )*lclNumRows );
           }
         }
       }
@@ -337,7 +335,7 @@ namespace Amesos2 {
       RCP<const map_type> srcMap;
       if (importer_.is_null () ||
           ! importer_->getSourceMap ()->isSameAs (* source_map) ||
-          ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) { // At this point, redist_mv's map was overwritten and is target to change
+          ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
 
         // Since we're caching the Import object, and since the Import
         // needs to keep the source Map, we have to make a copy of the
@@ -353,12 +351,10 @@ namespace Amesos2 {
         srcMap = importer_->getSourceMap ();
       }
 
-      //multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
-
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
         // Do this if GIDs contiguous - existing functionality
         // Redistribute the output (multi)vector.
-        const multivec_t source_mv (srcMap, new_data, lda, num_vecs); // create mv with copy of av i.e. new_data
+        const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
@@ -384,17 +380,15 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = new_data(lda*j, lclNumRows);
-            //auto X_j = redist_mv.getVector(j);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            for ( size_t i = 0; i < lclNumRows; ++i ) {
-              X_lcl_j_1d(i) = av_j[i];
-            }
+            std::memcpy( (X_lcl_j_1d.data()), &(av_j[0]), sizeof( decltype(X_lcl_j_1d(0)) )*lclNumRows );
           }
         }
 
         typedef typename multivec_t::node_type::memory_space memory_space;
         redist_mv.template sync <memory_space> ();
+        Kokkos::fence(); // For UVM
 
         mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
       }
