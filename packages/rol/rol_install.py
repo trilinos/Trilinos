@@ -160,6 +160,9 @@ if __name__ == '__main__':
 
         # Exclude testproblems
         headers = [ h for h in headers if "testproblems" not in h ]
+        headers = [ h for h in headers if "HelperFunctions" not in h ]
+        headers = [ h for h in headers if "StdLinearOperatorFactory" not in h ]
+
 
         if shared_ptr:
             headers = [ h for h in headers if 'rcp' not in h ]
@@ -200,6 +203,10 @@ if __name__ == '__main__':
     """.format(numfiles,src_path,install_path,opt_text)
     print(result)
     print("\nInstallation successful.\n")
+
+    ROL_config=os.path.join(install_path,'ROL_config.h')
+    open(ROL_config,'a').close()
+        
 
     rol_txt = open("ROL.txt",'r')
     rol_logo = rol_txt.read()

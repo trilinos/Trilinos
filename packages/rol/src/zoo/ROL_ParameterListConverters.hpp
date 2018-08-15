@@ -131,7 +131,6 @@ void setParameter( ROL::ParameterList &parlist,
 inline void tierParameterList( ROL::ParameterList &outList, 
                                const ROL::ParameterList &inList ) {
 
-  using namespace Teuchos;
   using StringList::join;
 
   typedef std::string                  Str;
