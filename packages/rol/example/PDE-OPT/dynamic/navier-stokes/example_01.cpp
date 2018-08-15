@@ -148,19 +148,21 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(1,ROL::nullPtr);
     RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
-    std::vector<RealT> wts = {w1};
+    RealT w2 = parlist->sublist("Problem").get("Control Cost",1e-2);
+    std::vector<RealT> wts = {w1, w2};
     qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(*parlist,
                                                               pde->getVelocityFE(),
                                                               pde->getPressureFE(),
                                                               pde->getFieldHelper());
-    if (!useParametricControl) {
+    if (useParametricControl) {
+      qoi_vec.push_back(ROL::makePtr<QoI_RotationControl_NavierStokes<RealT>>());
+    }
+    else {
       qoi_vec.push_back(ROL::makePtr<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
                                                                         pde->getPressureFE(),
                                                                         pde->getVelocityBdryFE(),
                                                                         pde->getBdryCellLocIds(),
                                                                         pde->getFieldHelper()));
-      RealT w2 = parlist->sublist("Problem").get("Control Cost",1e-2);
-      wts.push_back(w2);
     }
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
