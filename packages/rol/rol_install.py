@@ -25,13 +25,16 @@ if __name__ == '__main__':
    
     Install options can be set through OPTS:
 
+    NOTE: use OPTS='no_teuchos' to use all non-teuchos options 
+
     Build Option         OPTS argument            Default Implementation
     --------------------------------------------------------------------
     ROL::Ptr             'shared_ptr'             Teuchos::RCP
     ROL::ParameterList   'property_tree'          Teuchos::ParameterList
     ROL::stacktrace      'backward_cpp'           Teuchos::stacktrace
                          'no_stacktrace'
-    
+    ROL::LAPACK          'simple'                 Teuchos::LAPACK
+    ROL::LinearAlgebra   'Eigen'                  Teuchos::SerialDense
     """
 
     print(notice)
@@ -82,6 +85,9 @@ if __name__ == '__main__':
     if len(options)>0:
         opt_text += "\t Enabled options: \n"
 
+    if 'no_teuchos' in options:
+        options = ['shared_ptr','property_tree','no_stacktrace','simple','Eigen']
+
     # ROL::Ptr Implementation
     shared_ptr    = 'shared_ptr'    in options
 
@@ -104,12 +110,27 @@ if __name__ == '__main__':
     no_stacktrace = 'no_stacktrace' in options
 
     if backward_cpp:
-      opt_text += "\t Use backward-cpp for ROL::stacktrace\n"
+        opt_text += "\t Use backward-cpp for ROL::stacktrace\n"
     elif no_stacktrace:
-      opt_text += "\t ROL::stacktrace disabled\n"
+        opt_text += "\t ROL::stacktrace disabled\n"
     else:
-      opt_text += "\t Use Teuchos::stacktrace for ROL::stacktrace\n"
+        opt_text += "\t Use Teuchos::stacktrace for ROL::stacktrace\n"
 
+    # ROL::LAPACK Implementation
+    simple = 'simple' in options
+ 
+    if simple:
+        opt_text += "\t Use ROL's LAPACK wrappers for ROL::LAPACK\n"
+    else: 
+        opt_text += "\t Use Teucho::LAPACK\n"   
+    
+    # ROL::LinearAlgebra Implementation
+    Eigen = 'Eigen' in options
+
+    if Eigen:
+        opt_text += "\t Use Eigen for ROL::LinearAlgebra"
+    else:
+        opt_text += "\t Use Teuchos::SerialDense for ROL::LinearAlgebra"
 
     status = \
     """
@@ -149,6 +170,11 @@ if __name__ == '__main__':
             headers = [ h for h in headers if 'parameterlist' not in h ]
         else:
             headers = [ h for h in headers if 'property_tree' not in h ]
+
+        if simple:
+            headers = [ h for h in headers if 'teuchos/lapack' not in h ] 
+        else:
+            headers = [ h for h in headers if 'simple/lapack' not in h ] 
 
         if backward_cpp:
             headers = [ h for h in headers if 'noop' not in h 
