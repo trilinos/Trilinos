@@ -258,6 +258,7 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 * <a href="#chamaserrano">chama/serrano</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
+* <a href="#waterman">waterman</a>
 
 
 ### ride/white
@@ -427,6 +428,45 @@ $ cmake \
 $ make NP=16
 
 $ ctest -j16 \
+```
+
+
+### waterman
+
+Once logged on to `waterman` (SRN), one can directly configure and build on
+the login node (being careful not to overload the node).  But to run the
+tests, one must run on the compute nodes using the `bsub` command to run if
+using a CUDA build.  For example, to configure, build and run the tests for
+the default `cuda-debug` build for say `MueLu` (after cloning Trilinos on the
+`develop` branch) one would do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=20
+
+$ bsub -x -Is -n 20 ctest -j20
+```
+
+Note that one can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ bsub -x -Is -n 20 \
+  ./checkin-test-atdm.sh cuda-debug \
+  --enable-all-packages=off --no-enable-fwd-packages \
+  --enable-packages=MueLu \
+  --local-do-all
 ```
 
 
@@ -728,3 +768,5 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
+
+* `wateman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.
