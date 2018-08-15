@@ -242,6 +242,7 @@ else
     CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
   elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]; then
     CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+  fi
 fi
 
 ctest -S simple_testing.cmake \
