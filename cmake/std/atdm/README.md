@@ -247,7 +247,8 @@ $ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
 ```
 
 However, a default `local-checkin-test-defaults.py` is created the first time
-the `checkin-test-atdm.sh` script is run (after which can be modified).
+the `checkin-test-atdm.sh` script is run and will set these as the defaults
+(after which can be modified).
 
 
 ## Specific instructions for each system
@@ -296,7 +297,6 @@ $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ bsub -x -I -q rhel7F -n 16 \
   ./checkin-test-atdm.sh cuda-debug \
-  --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
@@ -335,7 +335,6 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ srun ./checkin-test-atdm.sh intel-opt-openmp \
-  --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
@@ -429,6 +428,7 @@ $ make NP=16
 
 $ ctest -j16 \
 ```
+
 
 ## Troubleshooting configuration problems
 
