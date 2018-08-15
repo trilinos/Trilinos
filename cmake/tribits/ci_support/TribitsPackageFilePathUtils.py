@@ -113,6 +113,15 @@ def getProjectCiFileChangeLogic(projectDir):
 
   if not projectDir:
     return DefaultProjectCiFileChangeLogic()
+  else:
+    projectCiFileChangeLogicFileBaseDir = os.path.join(projectDir, "cmake")
+    projectCiFileChangeLogicFile = os.path.join(
+      projectCiFileChangeLogicFileBaseDir, "ProjectCiFileChangeLogic.py")
+    if not os.path.isfile(projectCiFileChangeLogicFile):
+      return DefaultProjectCiFileChangeLogic()
+
+  # Else, if we get here, then the file
+  # <projectDir>/cmake/ProjectCiFileChangeLogic.py exists so lets read it in!
 
   tribitsDirPath = os.path.abspath(
     os.path.join(
@@ -124,7 +133,7 @@ def getProjectCiFileChangeLogic(projectDir):
   old_sys_path = sys.path
 
   try:
-    sys.path = [tribitsDirPath+"/examples/TribitsExampleProject/cmake"] + sys.path
+    sys.path = [projectCiFileChangeLogicFileBaseDir] + sys.path
     import ProjectCiFileChangeLogic
     return ProjectCiFileChangeLogic.ProjectCiFileChangeLogic()
   finally:
