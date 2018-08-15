@@ -53,6 +53,7 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
+#include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
 
 
@@ -193,7 +194,6 @@ namespace Amesos2 {
         typedef typename multivec_t::dual_view_type dual_view_type;
         typedef typename dual_view_type::host_mirror_space host_execution_space;
         redist_mv.template sync < host_execution_space > ();
-        Kokkos::fence(); // For UVM
 
         auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
         if ( redist_mv.isConstantStride() ) {
@@ -214,7 +214,10 @@ namespace Amesos2 {
             auto av_j = av(lda*j, lclNumRows);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            std::memcpy( &(av_j[0]), (X_lcl_j_1d.data()), sizeof( decltype(X_lcl_j_1d(0)) )*lclNumRows );
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            Kokkos::View<val_type*, Kokkos::HostSpace> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
       }
@@ -382,13 +385,15 @@ namespace Amesos2 {
             auto av_j = new_data(lda*j, lclNumRows);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            std::memcpy( (X_lcl_j_1d.data()), &(av_j[0]), sizeof( decltype(X_lcl_j_1d(0)) )*lclNumRows );
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            Kokkos::View<val_type*, Kokkos::HostSpace> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
 
         typedef typename multivec_t::node_type::memory_space memory_space;
         redist_mv.template sync <memory_space> ();
-        Kokkos::fence(); // For UVM
 
         mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
       }
