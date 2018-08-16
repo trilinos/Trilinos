@@ -302,7 +302,7 @@ namespace Belos {
     
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.
-    Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+    Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
 
     //! Get the current update to the linear system solution?.
     /*! \note getCurrentUpdate returns a null pointer indicating that the linear problem
