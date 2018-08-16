@@ -45,14 +45,10 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Experimental_BlockView.hpp>
 #include "Teuchos_OrdinalTraits.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
 
 namespace Tpetra {
 namespace Experimental {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of BlockCrsMatrix, needed for debugging.
-template<class S, class LO, class GO, class N> class BlockCrsMatrix;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \class BlockMultiVector
 /// \brief MultiVector for multiple degrees of freedom per mesh point
@@ -623,10 +619,6 @@ protected:
   }
 
 private:
-  // mfh 20 May 2014: I'm only using this for debugging.
-  template<class Scalar2, class LO2, class GO2, class Node2>
-  friend class BlockCrsMatrix;
-
   /// \brief Mesh Map given to constructor.
   ///
   /// This is stored by value, not as a Teuchos::RCP, because the

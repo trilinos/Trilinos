@@ -52,6 +52,7 @@
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_RowGraph.hpp"
@@ -70,12 +71,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  namespace Experimental {
-    // forward declaration (needed for "friend" inside CrsGraph)
-    template<class S, class LO, class GO, class N>
-    class BlockCrsMatrix;
-  } // namespace Experimental
-
   namespace Details {
     // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
@@ -274,8 +269,6 @@ namespace Classes {
     friend class CrsMatrix;
     template <class LO2, class GO2, class N2>
     friend class CrsGraph;
-    template <class S, class LO, class GO, class N>
-    friend class ::Tpetra::Experimental::BlockCrsMatrix;
 
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
