@@ -102,9 +102,11 @@ namespace MueLu {
 
     // Cached data
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    Teuchos::ParameterList params_;
+    mutable Teuchos::ParameterList params_; // The mutable is a hack to deal with issues in Teuchos
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
+    Teuchos::Array<std::string> filestem_;
+    int avatarGoodClass_;
 
     // RCP's don't handle opaque pointers well
     Avatar_handle * avatarHandle_;
@@ -113,7 +115,7 @@ namespace MueLu {
     Teuchos::Array<std::string> avatarParameterName_;
 
     Teuchos::ArrayRCP<Teuchos::Array<double> > mueluParameterValues_;
-    Teuchos::ArrayRCP<Teuchos::Array<int> > avatarParameterValues_;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > avatarParameterValues_;
 
   };
 

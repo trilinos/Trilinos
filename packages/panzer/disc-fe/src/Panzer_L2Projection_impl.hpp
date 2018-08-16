@@ -67,6 +67,11 @@ namespace panzer {
   }
 
   template<typename LO, typename GO>
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>>
+  panzer::L2Projection<LO,GO>::getTargetGlobalIndexer() const 
+  {return targetGlobalIndexer_;}
+
+  template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
   panzer::L2Projection<LO,GO>::buildMassMatrix()
   {

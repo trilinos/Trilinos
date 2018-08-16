@@ -210,7 +210,7 @@ public:
                     (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*Z[m])(cidx,fvidx_[j][l]);
                   }
                   else {
-                    bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                    bv  = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
                     (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*z_param)[0] * bv;
                   }
                 }
@@ -446,7 +446,7 @@ public:
                 for (int l = 0; l < numBdryDofs; ++l) {
                   for (int m=0; m < d; ++m) {
                     bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
-                    (*J[m])(cidx,fvidx_[j][l]) = - bv;
+                    (*J[m])(cidx,fvidx_[j][l]) = -bv;
                   }
                 }
               }
@@ -749,12 +749,14 @@ public:
 private:
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
     const Real one(1);
+    const Real x = coords[0], y = coords[1];
     Real val(0);
     if ((sideset==3) && (dir==0)) {
-      val = (one + coords[1]) * (one - coords[1]);
+      val = (one + y) * (one - y);
     }
     if (sideset==4) {
-      val = (dir==0 ? -(coords[1]-cy_) : (coords[0]-cx_));
+      Real tx = y-cy_, ty = cx_-x;
+      val = (dir==0 ? tx : ty);
     }
     return val;
   }

@@ -422,7 +422,9 @@ constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride)
 // LayoutContiguous<LayoutLeft>
 template <unsigned rank, unsigned static_dim, typename Layout>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if< !std::is_same<Layout, LayoutLeft>::value, Layout>::type
+typename std::enable_if< !std::is_same<Layout, LayoutLeft>::value &&
+                         !std::is_same<Layout, LayoutStride>::value,
+                       Layout>::type
 create_fad_array_layout(const Layout& layout)
 {
   size_t dims[8];
@@ -432,6 +434,33 @@ create_fad_array_layout(const Layout& layout)
     dims[rank] = static_dim+1;
   return Layout( dims[0], dims[1], dims[2], dims[3],
                  dims[4], dims[5], dims[6], dims[7] );
+}
+
+// Create new Layout with Fad dimension set to the last
+// Note:  we use enable_if<> here to handle both LayoutStride and
+// LayoutContiguous<LayoutStride>
+template <unsigned rank, unsigned static_dim, typename Layout>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if< std::is_same<Layout, LayoutStride>::value, Layout>::type
+create_fad_array_layout(const Layout& layout)
+{
+  size_t dims[8], strides[8];
+  for (int i=0; i<8; ++i) {
+    dims[i] = layout.dimension[i];
+    strides[i] = layout.stride[i];
+  }
+  if (static_dim > 0) {
+    dims[rank] = static_dim+1;
+    strides[rank] = 1;
+  }
+  return Layout( dims[0], strides[0],
+                 dims[1], strides[1],
+                 dims[2], strides[2],
+                 dims[3], strides[3],
+                 dims[4], strides[4],
+                 dims[5], strides[5],
+                 dims[6], strides[6],
+                 dims[7], strides[7] );
 }
 
 // Create new LayoutLeft with Fad dimension shuffled to the first
@@ -507,7 +536,7 @@ private:
 public:
 
   enum { FadStaticDimension = Sacado::StaticSize< fad_type >::value };
-  enum { PartitionedFadStride = Traits::array_layout::stride };
+  enum { PartitionedFadStride = Traits::array_layout::scalar_stride };
 
   // The partitioned static size -- this will be 0 if ParitionedFadStride
   // does not evenly divide FadStaticDimension
@@ -627,6 +656,10 @@ public:
 #else
     { return m_fad_size.value+1; }
 #endif
+
+  // trode of sacado scalar dimension
+  KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned stride_scalar() const
+    { return m_fad_stride; }
 
   //----------------------------------------
   // Range of mapping
@@ -1454,6 +1487,23 @@ public:
 namespace Kokkos {
 namespace Impl {
 
+// Rules for subview arguments and layouts matching
+
+template<class LayoutDest, class LayoutSrc, int RankDest, int RankSrc, int CurrentArg, class ... SubViewArgs>
+struct SubviewLegalArgsCompileTime<Kokkos::LayoutContiguous<LayoutDest>,LayoutSrc,RankDest,RankSrc,CurrentArg,SubViewArgs...> {
+  enum { value = SubviewLegalArgsCompileTime<LayoutDest,LayoutSrc,RankDest,RankSrc,CurrentArg,SubViewArgs...>::value };
+};
+
+template<class LayoutDest, class LayoutSrc, int RankDest, int RankSrc, int CurrentArg, class ... SubViewArgs>
+struct SubviewLegalArgsCompileTime<LayoutDest,Kokkos::LayoutContiguous<LayoutSrc>,RankDest,RankSrc,CurrentArg,SubViewArgs...> {
+  enum { value = SubviewLegalArgsCompileTime<LayoutDest,LayoutSrc,RankDest,RankSrc,CurrentArg,SubViewArgs...>::value };
+};
+
+template<class LayoutDest, class LayoutSrc, int RankDest, int RankSrc, int CurrentArg, class ... SubViewArgs>
+struct SubviewLegalArgsCompileTime<Kokkos::LayoutContiguous<LayoutDest>,Kokkos::LayoutContiguous<LayoutSrc>,RankDest,RankSrc,CurrentArg,SubViewArgs...> {
+  enum { value = SubviewLegalArgsCompileTime<LayoutDest,LayoutSrc,RankDest,RankSrc,CurrentArg,SubViewArgs...>::value };
+};
+
 // Subview mapping
 
 template< class SrcTraits , class Arg0 , class ... Args >
@@ -1516,7 +1566,7 @@ private:
         // OutputRank 1 or 2, InputLayout Right, Interval [InputRank-1]
         // because single stride one or second index has a stride.
         ( rank <= 2 && R0_rev && std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutRight >::value )
-        ), typename SrcTraits::array_layout , Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::stride>
+        ), typename SrcTraits::array_layout , Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride>
       >::type array_layout ;
 
   typedef typename SrcTraits::value_type  fad_type ;

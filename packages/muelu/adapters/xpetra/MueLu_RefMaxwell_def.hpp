@@ -52,6 +52,7 @@
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_TripleMatrixMultiply.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
+#include "Xpetra_MatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
 
@@ -972,6 +973,8 @@ namespace MueLu {
       Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
         MultiplyRAP(*P11_, true, *SM_Matrix_, false, *P11_, false, *Matrix1, true, true);
     }
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true))
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Matrix1, true, GetOStream(Warnings1));
 
     if(disable_addon_==true) {
       // if add-on is not chosen

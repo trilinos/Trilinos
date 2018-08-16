@@ -1,5 +1,5 @@
 function [] = mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,...
-                       globalDims,localDims,relcorners,abscorners)
+                       globalDims,localDims,relcorners,abscorners, outDir)
 %
 % Most of this information is computed in the mk2DRegionfile() and so
 % here we basically need to just print it.
@@ -7,14 +7,11 @@ function [] = mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,...
 
 for myRank=0:nProcs-1
    % open file
-   fp = fopen(sprintf('myAppData_%d',myRank),'w');
+   fp = fopen(sprintf('%s/myAppData_%d', outDir, myRank), 'w');
    if fp == -1
      error('mkAppData: cannot open myAppData_%d\n',myRank);
    end
    
-   % write to file
-%    fprintf(fp,'LoadAppDataForLIDregion()\n');
-
    curRegionList = allMyRegions{myRank+1}.myRegions;
 
    nRegions = length(curRegionList);

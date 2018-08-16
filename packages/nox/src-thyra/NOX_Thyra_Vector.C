@@ -70,7 +70,7 @@ Vector(const ::Thyra::VectorBase<double>& source) :
 }
 
 NOX::Thyra::Vector::
-Vector(const NOX::Thyra::Vector& source, NOX::CopyType type) :
+Vector(const NOX::Thyra::Vector& source, NOX::CopyType /* type */) :
   thyraVec(source.thyraVec->clone_v()),
   do_implicit_weighting_(false)
 {

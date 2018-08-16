@@ -239,6 +239,8 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
+  TEST_ASSERT(nonnull(projectionFactory.getTargetGlobalIndexer()));
+
   // Build mass matrix
   timer->start("projectionFactory.buildMassMatrix()");
   auto massMatrix = projectionFactory.buildMassMatrix();

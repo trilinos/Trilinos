@@ -275,18 +275,18 @@ getLocalRowCopy (LocalOrdinal LocalRow,
 
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::
-getGlobalRowView (GlobalOrdinal GlobalRow,
-                  Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                  Teuchos::ArrayView<const Scalar> &values) const
+getGlobalRowView (GlobalOrdinal /* GlobalRow */,
+                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
+                  Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getGlobalRowView.");
 }
 
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::
-getLocalRowView (LocalOrdinal LocalRow,
-                 Teuchos::ArrayView<const LocalOrdinal> &indices,
-                 Teuchos::ArrayView<const Scalar> &values) const
+getLocalRowView (LocalOrdinal /* LocalRow */,
+                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
+                 Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getLocalRowView.");
 }
@@ -300,13 +300,13 @@ void DiagonalFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrd
 }
 
 template<class MatrixType>
-void DiagonalFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void DiagonalFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter does not support leftScale.");
 }
 
 template<class MatrixType>
-void DiagonalFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void DiagonalFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter does not support rightScale.");
 }

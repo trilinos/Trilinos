@@ -60,7 +60,7 @@ NOX::Epetra::LinearSystemAmesos::
 LinearSystemAmesos(
   Teuchos::ParameterList& printingParams,
   Teuchos::ParameterList& linearSolverParams,
-  const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+  const Teuchos::RCP<NOX::Epetra::Interface::Required>& /* iReq */,
   const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
   const Teuchos::RCP<Epetra_Operator>& J,
   const NOX::Epetra::Vector& cloneVector,
@@ -119,7 +119,7 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-applyJacobianInverse(Teuchos::ParameterList &params,
+applyJacobianInverse(Teuchos::ParameterList &/* params */,
                       const NOX::Epetra::Vector &input,
                       NOX::Epetra::Vector &result)
 {
@@ -156,10 +156,10 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-applyRightPreconditioning(bool useTranspose,
-                        Teuchos::ParameterList& params,
-                        const NOX::Epetra::Vector& input,
-                        NOX::Epetra::Vector& result) const
+applyRightPreconditioning(bool /* useTranspose */,
+                        Teuchos::ParameterList& /* params */,
+                        const NOX::Epetra::Vector& /* input */,
+                        NOX::Epetra::Vector& /* result */) const
 {
   return false;
 }
@@ -187,9 +187,9 @@ computeJacobian(const NOX::Epetra::Vector& x)
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-createPreconditioner(const NOX::Epetra::Vector& x,
-                      Teuchos::ParameterList& p,
-                      bool recomputeGraph) const
+createPreconditioner(const NOX::Epetra::Vector& /* x */,
+                      Teuchos::ParameterList& /* p */,
+                      bool /* recomputeGraph */) const
 {
   return false;
 }
@@ -201,15 +201,15 @@ destroyPreconditioner() const
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-recomputePreconditioner(const NOX::Epetra::Vector& x,
-              Teuchos::ParameterList& linearSolverParams) const
+recomputePreconditioner(const NOX::Epetra::Vector& /* x */,
+              Teuchos::ParameterList& /* linearSolverParams */) const
 {
   return false;
 }
 
 NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
 NOX::Epetra::LinearSystemAmesos::
-getPreconditionerPolicy(bool advanceReuseCounter)
+getPreconditionerPolicy(bool /* advanceReuseCounter */)
 {
   return PRPT_REUSE;
 }
@@ -261,7 +261,7 @@ setJacobianOperatorForSolve(const
 
 void NOX::Epetra::LinearSystemAmesos::
 setPrecOperatorForSolve(const
-           Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
+           Teuchos::RCP<const Epetra_Operator>& /* solvePrecOp */)
 {
   return;
 }

@@ -69,6 +69,9 @@ namespace panzer {
                const std::vector<std::string>& elementBlockNames,
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 
+    /// Returns the target global indexer. Will be null if setup() has not been called.
+    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>> getTargetGlobalIndexer() const;
+
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.
 

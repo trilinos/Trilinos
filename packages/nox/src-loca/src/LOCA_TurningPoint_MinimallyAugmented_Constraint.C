@@ -494,7 +494,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 computeDP(const std::vector<int>& paramIDs,
       NOX::Abstract::MultiVector::DenseMatrix& dgdp,
-      bool isValidG)
+      bool /* isValidG */)
 {
   std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDP()";

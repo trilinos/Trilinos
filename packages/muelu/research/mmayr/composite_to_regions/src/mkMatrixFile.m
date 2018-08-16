@@ -1,14 +1,18 @@
 % writeMatrixFile
 %
-% Write matrix to file
+% Write matrix to file 'Amat.mm'
+%
+% Input:
+%   A       matrix to be written
+%   outDir  path to output directory
 %
 
 % now send matrix to C++
 
-function [] = writeMatrixFile(A)
+function [] = writeMatrixFile(A, outDir)
 
 % open file
-fp = fopen('Amat.mm','w');
+fp = fopen(sprintf('%s/Amat.mm', outDir), 'w');
 if (fp == -1)
   error('Cannot open file.');
 end

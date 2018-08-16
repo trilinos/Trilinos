@@ -600,7 +600,7 @@ LOCA::Homotopy::Group::getParam(std::string paramID) const
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
                     NOX::Abstract::MultiVector& dfdp,
-                    bool isValidF)
+                    bool /* isValidF */)
 {
   // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
   // dg/dp = f(x) - (x - randomVec) when p = conParam
@@ -675,7 +675,7 @@ LOCA::Homotopy::Group::projectToDrawDimension() const
 }
 
 void
-LOCA::Homotopy::Group::printSolution(const double conParm) const
+LOCA::Homotopy::Group::printSolution(const double /* conParm */) const
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() <<
@@ -687,8 +687,8 @@ LOCA::Homotopy::Group::printSolution(const double conParm) const
 }
 
 void
-LOCA::Homotopy::Group::printSolution(const NOX::Abstract::Vector& x_,
-                     const double conParm) const
+LOCA::Homotopy::Group::printSolution(const NOX::Abstract::Vector& /* x_ */,
+                     const double /* conParm */) const
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() <<
