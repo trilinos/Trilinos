@@ -49,6 +49,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Tpetra_Directory_fwd.hpp"
+#include "Tpetra_TieBreak_fwd.hpp"
 #include "Tpetra_Details_LocalMap.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
@@ -56,14 +57,8 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_Describable.hpp"
 
-namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  namespace Details {
-    // Forward declaration of TieBreak
-    template <class LO, class GO> class TieBreak;
-  } // namespace Details
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
 
   namespace Classes {
   namespace Details {
