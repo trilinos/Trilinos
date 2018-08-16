@@ -62,8 +62,7 @@ INPUT                  = ../core/doc/index.doc \
                          ../core/example/Lesson07-Kokkos-Fill/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
-EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp
+EXCLUDE                = ../src/Tpetra_ImportExportData.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
 #
 # Set up paths and patterns for examples
