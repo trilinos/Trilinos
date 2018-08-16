@@ -397,6 +397,8 @@ int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std:
   std::stringstream ss(trialString);
   std::vector<float> vect;
 
+  int useNewFeatures = 0;
+
   float i;
  
   while (ss >> i)
@@ -434,11 +436,13 @@ int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std:
   if (vect.at(6) > boundsVect.at(6) || vect.at(6) < boundsVect.at(7))
     return 0;
 
-  if (vect.at(8) > boundsVect.at(8) || vect.at(8) < boundsVect.at(9))
-    return 0;
+  if (useNewFeatures == 1){
+    if (vect.at(8) > boundsVect.at(8) || vect.at(8) < boundsVect.at(9))
+      return 0;
 
-  if (vect.at(9) > boundsVect.at(10) || vect.at(9) < boundsVect.at(11))
-    return 0;
+    if (vect.at(9) > boundsVect.at(10) || vect.at(9) < boundsVect.at(11))
+      return 0;
+  }
 
   return 1;
 }
