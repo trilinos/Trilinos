@@ -37,11 +37,79 @@
 
 #if defined(HAVE_SACADO_KOKKOSCONTAINERS)
 
-#include "Kokkos_DynRankView.hpp"
+// Only include forward declarations so any overloads appear before they
+// might be used inside Kokkos
+#include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_Layout.hpp"
+//#include "Kokkos_DynRankView.hpp"
+
+namespace Kokkos {
+
+template< class DataType , class ... Properties >
+struct ViewTraits ;
+
+template< class DataType , class ... Properties >
+class DynRankView ;
+
+namespace Impl {
+
+template<class Space, class T, class ... P>
+struct MirrorDRVType;
+
+}
+
+}
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "Kokkos_View_Fad.hpp"
+
+namespace Kokkos {
+
+// Declare overloads of create_mirror() so they are in scope
+// Kokkos_DynRankView.hpp is included below
+
+template< class T , class ... P >
+inline
+typename Kokkos::DynRankView<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::DynRankView<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+        Kokkos::LayoutStride >::value >::type * = 0);
+
+
+template< class T , class ... P >
+inline
+typename Kokkos::DynRankView<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::DynRankView<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value >::type * = 0);
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+create_mirror(
+  const Space&,
+  const Kokkos::DynRankView<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+
+} // namespace Kokkos
+
+#include "Kokkos_DynRankView.hpp"
 
 namespace Kokkos {
 namespace Impl {
@@ -158,6 +226,9 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
     const size_t fad_size = layout.dimension[fad_dim];
     l.dimension[fad_dim] = 1;
     l.dimension[7] = fad_size;
+    const size_t fad_stride = layout.stride[fad_dim];
+    l.stride[fad_dim] = 0;
+    l.stride[7] = fad_stride;
 
     return l;
   }
@@ -222,17 +293,21 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
                  );
 
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
+    const unsigned fad_dim = computeRank(layout);
     if (test_traits_check == true) {
       using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad, typename Traits::value_type >;
       auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
+      l.dimension[fad_dim] = 1;
       l.dimension[7] = cast_prop.fad_dim;
     }
     else {
-      const unsigned fad_dim = computeRank(layout);
       const size_t fad_size = layout.dimension[fad_dim];
       l.dimension[fad_dim] = 1;
       l.dimension[7] = fad_size;
     }
+    const size_t fad_stride = layout.stride[fad_dim];
+    l.stride[fad_dim] = 0;
+    l.stride[7] = fad_stride;
 
     return l;
   }
@@ -956,7 +1031,7 @@ void deep_copy
     , "deep_copy requires non-const destination type" );
 
   typedef DstType dst_type ;
-  typedef SrcType src_type ;;
+  typedef SrcType src_type ;
 
   typedef typename dst_type::execution_space  dst_execution_space ;
   typedef typename src_type::execution_space  src_execution_space ;
@@ -976,9 +1051,10 @@ void deep_copy
 
     // If same type, equal layout, equal dimensions, equal span, and contiguous memory then can byte-wise copy
     if ( rank(src) == 0 && rank(dst) == 0 )
-    { 
-      typedef typename dst_type::value_type    value_type ;
-      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , sizeof(value_type) ); 
+    {
+      typedef typename dst_type::value_type::value_type value_type ;
+      const size_t nbytes = sizeof(value_type) * dst.span() ;
+      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
     }
     else if ( std::is_same< typename DstType::traits::value_type ,
                        typename SrcType::traits::non_const_value_type >::value &&
@@ -1000,8 +1076,8 @@ void deep_copy
              rank(src) == 1
            )
          ) &&
-//         dst.span_is_contiguous() && //will always fail - stride set to 0s
-//         src.span_is_contiguous() &&
+         dst.span_is_contiguous() &&
+         src.span_is_contiguous() &&
          dst.span() == src.span() &&
          dst.extent(0) == src.extent(0) &&
          dst.extent(1) == src.extent(1) &&
@@ -1035,8 +1111,8 @@ void deep_copy
              rank(src) == 1
            )
          ) &&
-//         dst.span_is_contiguous() && //will always fail - stride set to 0s
-//         src.span_is_contiguous() &&
+         dst.span_is_contiguous() &&
+         src.span_is_contiguous() &&
          dst.span() == src.span() &&
          dst.extent(0) == src.extent(0) &&
          dst.extent(1) == src.extent(1) &&
@@ -1072,6 +1148,92 @@ void deep_copy
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");
     }
   }
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::DynRankView<T,P...>::HostMirror
+create_mirror( const Kokkos::DynRankView<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               &&
+                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef DynRankView<T,P...>            src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
+
+  return dst_type(std::string(src.label()).append("_mirror"),
+                  Impl::reconstructLayout(layout, src.rank()+1));
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::DynRankView<T,P...>::HostMirror
+create_mirror( const Kokkos::DynRankView<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                   Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                &&
+                   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef DynRankView<T,P...>            src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  Kokkos::LayoutStride layout ;
+
+  layout.dimension[0] = src.extent(0);
+  layout.dimension[1] = src.extent(1);
+  layout.dimension[2] = src.extent(2);
+  layout.dimension[3] = src.extent(3);
+  layout.dimension[4] = src.extent(4);
+  layout.dimension[5] = src.extent(5);
+  layout.dimension[6] = src.extent(6);
+  layout.dimension[7] = src.extent(7);
+
+  layout.stride[0] = src.stride_0();
+  layout.stride[1] = src.stride_1();
+  layout.stride[2] = src.stride_2();
+  layout.stride[3] = src.stride_3();
+  layout.stride[4] = src.stride_4();
+  layout.stride[5] = src.stride_5();
+  layout.stride[6] = src.stride_6();
+  layout.stride[7] = src.stride_7();
+
+  layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
+  layout.stride[src.rank()] = src.implementation_map().stride_scalar();
+
+  return dst_type(std::string(src.label()).append("_mirror"),
+                  Impl::reconstructLayout(layout, src.rank()+1));
+}
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorDRVType<Space,T,P ...>::view_type
+create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               >::type *) {
+  typedef DynRankView<T,P...> src_type ;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
+  return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
+    src.label(),Impl::reconstructLayout(layout, src.rank()+1));
 }
 
 } // end Kokkos
