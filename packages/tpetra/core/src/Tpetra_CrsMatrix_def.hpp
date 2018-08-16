@@ -6093,6 +6093,7 @@ namespace Tpetra {
     if (vl == VERB_NONE) {
       return; // Don't print anything at all
     }
+
     // By convention, describe() always begins with a tab.
     Teuchos::OSTab tab0 (out);
 

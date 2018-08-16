@@ -69,7 +69,9 @@ namespace Amesos2 {
                                                         LocalOrdinal,
                                                         GlobalOrdinal,
                                                         Node> >(m) // with implicit cast
-    {}
+    {
+	m->computeGlobalConstants();
+    }
 
   template <typename Scalar,
             typename LocalOrdinal,
