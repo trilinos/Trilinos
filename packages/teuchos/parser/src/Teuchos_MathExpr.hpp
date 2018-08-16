@@ -102,6 +102,8 @@ class SymbolSetReader : public Reader {
 std::set<std::string> get_variables_used(std::string const& expr);
 std::set<std::string> get_symbols_used(std::string const& expr);
 
+Reader* new_calc_reader();
+
 }  // end namespace MathExpr
 
 }  // end namespace Teuchos
