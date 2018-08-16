@@ -54,12 +54,6 @@
 # @HEADER
 
 #
-# This is a CI build that uses the new CMake/CTest/CDash all-at-once features
-# to submit to the Experimental track on the new testing-vm.sandia.gov/CDash/
-# site and also, at the same time, does a sumbit to the old
-# testing.sandia.gov/CDash/ site (where it is not displayed in an optional
-# way).
-#
 # NOTE: This requires an updated version of CMake/CTest to run or it will
 # crash!.
 # 
