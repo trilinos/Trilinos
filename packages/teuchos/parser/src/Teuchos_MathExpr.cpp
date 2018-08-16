@@ -19,9 +19,9 @@ Teuchos::Language make_language() {
   prods[PROD_OR_DECAY]("or") >> "and";
   prods[PROD_AND_DECAY]("and") >> "comp";
   prods[PROD_ADD_SUB_DECAY]("add_sub") >> "mul_div";
-  prods[PROD_MUL_DIV_DECAY]("mul_div") >> "pow";
-  prods[PROD_POW_DECAY]("pow") >> "neg";
-  prods[PROD_NEG_DECAY]("neg") >> "scalar";
+  prods[PROD_MUL_DIV_DECAY]("mul_div") >> "neg";
+  prods[PROD_NEG_DECAY]("neg") >> "pow";
+  prods[PROD_POW_DECAY]("pow") >> "scalar";
   prods[PROD_TERNARY]("ternary")
     >> "or", "?", "S?", "add_sub", ":", "S?", "add_sub";
   prods[PROD_OR]("or") >> "or", "||", "S?", "and";
@@ -36,7 +36,7 @@ Teuchos::Language make_language() {
   prods[PROD_SUB]("add_sub") >> "add_sub", "-", "S?", "mul_div";
   prods[PROD_MUL]("mul_div") >> "mul_div", "*", "S?", "pow";
   prods[PROD_DIV]("mul_div") >> "mul_div", "/", "S?", "pow";
-  prods[PROD_POW]("pow") >> "pow", "^", "S?", "neg";
+  prods[PROD_POW]("pow") >> "scalar", "^", "S?", "pow";
   prods[PROD_CALL]("scalar")
     >> "name", "S?", "(", "S?", "args?", ")", "S?";
   prods[PROD_NO_ARGS]("args?");
