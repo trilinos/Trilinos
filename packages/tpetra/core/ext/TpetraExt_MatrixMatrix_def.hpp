@@ -1232,7 +1232,7 @@ addUnsorted(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -1303,7 +1303,7 @@ convertToGlobalAndAdd(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
   GO minGlobalCol,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
@@ -1514,8 +1514,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label,
-  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  const std::string& /* label */,
+  const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -2252,9 +2252,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-                                                                                               const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
+                                                                                               const std::string& /* label */,
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -2902,9 +2902,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-                                                                                               const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
+                                                                                               const std::string& /* label */,
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;

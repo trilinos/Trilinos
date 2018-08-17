@@ -56,17 +56,17 @@ namespace Cublas {
 namespace Impl {
 
 void
-cgemv (const char char_trans,
-       const int m,
-       const int n,
-       const Kokkos::complex<float>& alpha,
-       const Kokkos::complex<float> A[],
-       const int lda,
-       const Kokkos::complex<float> x[],
-       const int incx,
-       const Kokkos::complex<float>& beta,
-       Kokkos::complex<float> y[],
-       const int incy)
+cgemv (const char /* char_trans */,
+       const int /* m */,
+       const int /* n */,
+       const Kokkos::complex<float>& /* alpha */,
+       const Kokkos::complex<float> /* A */[],
+       const int /* lda */,
+       const Kokkos::complex<float> /* x */[],
+       const int /* incx */,
+       const Kokkos::complex<float>& /* beta */,
+       Kokkos::complex<float> /* y */[],
+       const int /* incy */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   const cuComplex alpha_c = make_cuFloatComplex (alpha.real (), alpha.imag ());
@@ -88,17 +88,17 @@ cgemv (const char char_trans,
 }
 
 void
-dgemv (const char char_trans,
-       const int m,
-       const int n,
-       const double alpha,
-       const double A[],
-       const int lda,
-       const double x[],
-       const int incx,
-       const double beta,
-       double y[],
-       const int incy)
+dgemv (const char /* char_trans */,
+       const int /* m */,
+       const int /* n */,
+       const double /* alpha */,
+       const double /* A */[],
+       const int /* lda */,
+       const double /* x */[],
+       const int /* incx */,
+       const double /* beta */,
+       double /* y */[],
+       const int /* incy */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   ::cublasDgemv (char_trans, m, n,
@@ -118,17 +118,17 @@ dgemv (const char char_trans,
 }
 
 void
-sgemv (const char char_trans,
-       const int m,
-       const int n,
-       const float alpha,
-       const float A[],
-       const int lda,
-       const float x[],
-       const int incx,
-       const float beta,
-       float y[],
-       const int incy)
+sgemv (const char /* char_trans */,
+       const int /* m */,
+       const int /* n */,
+       const float /* alpha */,
+       const float /* A */[],
+       const int /* lda */,
+       const float /* x */[],
+       const int /* incx */,
+       const float /* beta */,
+       float /* y */[],
+       const int /* incy */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   ::cublasSgemv (char_trans, m, n,
@@ -148,17 +148,17 @@ sgemv (const char char_trans,
 }
 
 void
-zgemv (const char char_trans,
-       const int m,
-       const int n,
-       const Kokkos::complex<double>& alpha,
-       const Kokkos::complex<double> A[],
-       const int lda,
-       const Kokkos::complex<double> x[],
-       const int incx,
-       const Kokkos::complex<double>& beta,
-       Kokkos::complex<double> y[],
-       const int incy)
+zgemv (const char /* char_trans */,
+       const int /* m */,
+       const int /* n */,
+       const Kokkos::complex<double>& /* alpha */,
+       const Kokkos::complex<double> /* A */[],
+       const int /* lda */,
+       const Kokkos::complex<double> /* x */[],
+       const int /* incx */,
+       const Kokkos::complex<double>& /* beta */,
+       Kokkos::complex<double> /* y */[],
+       const int /* incy */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   const cuDoubleComplex alpha_c =

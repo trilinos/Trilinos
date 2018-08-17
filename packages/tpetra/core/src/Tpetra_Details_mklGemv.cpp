@@ -77,17 +77,17 @@ transCharToMklEnum (const char trans)
 #endif // HAVE_KOKKOSKERNELS_MKL
 
 void
-cgemv (const char trans,
-       const int m,
-       const int n,
-       const ::Kokkos::complex<float>& alpha,
-       const ::Kokkos::complex<float> A[],
-       const int lda,
-       const ::Kokkos::complex<float> x[],
-       const int incx,
-       const ::Kokkos::complex<float>& beta,
-       ::Kokkos::complex<float> y[],
-       const int incy)
+cgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const ::Kokkos::complex<float>& /* alpha */,
+       const ::Kokkos::complex<float> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<float> /* x */[],
+       const int /* incx */,
+       const ::Kokkos::complex<float>& /* beta */,
+       ::Kokkos::complex<float> /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etrans = transCharToMklEnum (trans);
@@ -105,17 +105,17 @@ cgemv (const char trans,
 }
 
 void
-dgemv (const char trans,
-       const int m,
-       const int n,
-       const double alpha,
-       const double A[],
-       const int lda,
-       const double x[],
-       const int incx,
-       const double beta,
-       double y[],
-       const int incy)
+dgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const double /* alpha */,
+       const double /* A */[],
+       const int /* lda */,
+       const double /* x */[],
+       const int /* incx */,
+       const double /* beta */,
+       double /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etrans = transCharToMklEnum (trans);
@@ -131,17 +131,17 @@ dgemv (const char trans,
 }
 
 void
-sgemv (const char trans,
-       const int m,
-       const int n,
-       const float alpha,
-       const float A[],
-       const int lda,
-       const float x[],
-       const int incx,
-       const float beta,
-       float y[],
-       const int incy)
+sgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const float /* alpha */,
+       const float /* A */[],
+       const int /* lda */,
+       const float /* x */[],
+       const int /* incx */,
+       const float /* beta */,
+       float /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etrans = transCharToMklEnum (trans);
@@ -157,17 +157,17 @@ sgemv (const char trans,
 }
 
 void
-zgemv (const char trans,
-       const int m,
-       const int n,
-       const ::Kokkos::complex<double>& alpha,
-       const ::Kokkos::complex<double> A[],
-       const int lda,
-       const ::Kokkos::complex<double> x[],
-       const int incx,
-       const ::Kokkos::complex<double>& beta,
-       ::Kokkos::complex<double> y[],
-       const int incy)
+zgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const ::Kokkos::complex<double>& /* alpha */,
+       const ::Kokkos::complex<double> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<double> /* x */[],
+       const int /* incx */,
+       const ::Kokkos::complex<double>& /* beta */,
+       ::Kokkos::complex<double> /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etrans = transCharToMklEnum (trans);

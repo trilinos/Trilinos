@@ -407,7 +407,7 @@ unpackAndCombineWithOwningPIDsCount(
   const Kokkos::View<const typename LocalGraph::data_type*,
                      typename LocalGraph::device_type,
                      Kokkos::MemoryUnmanaged> permute_from_lids,
-  const Kokkos::View<const Packet*, BufferDevice>& imports,
+  const Kokkos::View<const Packet*, BufferDevice>& /* imports */,
   const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid,
   const size_t num_same_ids)
 {
@@ -468,7 +468,7 @@ void
 setupRowPointersForRemotes(
   const Kokkos::View<size_t*, Device>& tgt_rowptr,
   const Kokkos::View<const LO*, Device>& import_lids,
-  const Kokkos::View<const Packet*, BufferDevice>& imports,
+  const Kokkos::View<const Packet*, BufferDevice>& /* imports */,
   const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid)
 {
   using Kokkos::parallel_reduce;
@@ -624,7 +624,7 @@ unpackAndCombineIntoCrsArrays2(
     const Kokkos::View<const typename LocalMap::local_ordinal_type*, typename LocalMap::device_type>& import_lids,
     const Kokkos::View<const Packet*, BufferDevice>& imports,
     const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid,
-    const LocalGraph& local_graph,
+    const LocalGraph& /* local_graph */,
     const LocalMap /*& local_col_map*/,
     const int my_pid)
 {
@@ -872,8 +872,8 @@ unpackCrsGraphAndCombine(
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,Node>::packet_type>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
-    size_t constantNumPackets,
-    Distributor & distor,
+    size_t /* constantNumPackets */,
+    Distributor & /* distor */,
     CombineMode combineMode,
     const bool atomic)
 {
@@ -933,8 +933,8 @@ unpackCrsGraphAndCombineNew(
     const Kokkos::DualView<const size_t*,
                            typename CrsGraph<LO,GO,Node>::buffer_device_type>& numPacketsPerLID,
     const Kokkos::DualView<const LO*, typename Node::device_type>& importLIDs,
-    const size_t constantNumPackets,
-    Distributor& distor,
+    const size_t /* constantNumPackets */,
+    Distributor& /* distor */,
     const CombineMode combineMode,
     const bool atomic)
 {
@@ -1040,9 +1040,9 @@ unpackAndCombineWithOwningPIDsCount(
     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
     const Teuchos::ArrayView<const typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    size_t constantNumPackets,
-    Distributor &distor,
-    CombineMode combineMode,
+    size_t /* constantNumPackets */,
+    Distributor &/* distor */,
+    CombineMode /* combineMode */,
     size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
@@ -1112,9 +1112,9 @@ unpackAndCombineIntoCrsArrays(
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Teuchos::ArrayView<const typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t constantNumPackets,
-    Distributor& distor,
-    const CombineMode combineMode,
+    const size_t /* constantNumPackets */,
+    Distributor& /* distor */,
+    const CombineMode /* combineMode */,
     const size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,

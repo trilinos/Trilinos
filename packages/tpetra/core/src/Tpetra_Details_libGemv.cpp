@@ -132,17 +132,17 @@ namespace Lib {
 namespace Impl {
 
 void
-cgemv (const char trans,
-       const int m,
-       const int n,
-       const ::Kokkos::complex<float>& alpha,
-       const ::Kokkos::complex<float> A[],
-       const int lda,
-       const ::Kokkos::complex<float> x[],
-       const int incx,
-       const ::Kokkos::complex<float>& beta,
-       ::Kokkos::complex<float> y[],
-       const int incy)
+cgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const ::Kokkos::complex<float>& /* alpha */,
+       const ::Kokkos::complex<float> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<float> /* x */[],
+       const int /* incx */,
+       const ::Kokkos::complex<float>& /* beta */,
+       ::Kokkos::complex<float> /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
   TPETRACORE_CGEMV (&trans, &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy);
@@ -185,17 +185,17 @@ sgemv (const char trans,
 }
 
 void
-zgemv (const char trans,
-       const int m,
-       const int n,
-       const ::Kokkos::complex<double>& alpha,
-       const ::Kokkos::complex<double> A[],
-       const int lda,
-       const ::Kokkos::complex<double> x[],
-       const int incx,
-       const ::Kokkos::complex<double>& beta,
-       ::Kokkos::complex<double> y[],
-       const int incy)
+zgemv (const char /* trans */,
+       const int /* m */,
+       const int /* n */,
+       const ::Kokkos::complex<double>& /* alpha */,
+       const ::Kokkos::complex<double> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<double> /* x */[],
+       const int /* incx */,
+       const ::Kokkos::complex<double>& /* beta */,
+       ::Kokkos::complex<double> /* y */[],
+       const int /* incy */)
 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   TPETRACORE_ZGEMV (&trans, &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy);

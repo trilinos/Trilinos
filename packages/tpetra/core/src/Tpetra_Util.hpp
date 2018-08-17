@@ -447,9 +447,9 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2,
+    const IT2& /* last2 */,
     const IT3& first3,
-    const IT3& last3)
+    const IT3& /* last3 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -484,7 +484,7 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2)
+    const IT2& /* last2 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -632,7 +632,7 @@ namespace Tpetra {
   void
   merge2 (IT1& indResultOut, IT2& valResultOut,
           IT1 indBeg, IT1 indEnd,
-          IT2 valBeg, IT2 valEnd)
+          IT2 valBeg, IT2 /* valEnd */)
   {
     if (indBeg == indEnd) {
       indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd

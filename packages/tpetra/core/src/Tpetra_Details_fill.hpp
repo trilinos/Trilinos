@@ -228,7 +228,7 @@ struct Fill<ViewType,
   fill (const Kokkos::Serial& /* execSpace */,
         const ViewType& X,
         const ValueType& alpha,
-        const IndexType numRows,
+        const IndexType /* numRows */,
         const IndexType numCols)
   {
     static_assert (ViewType::Rank == 2,

@@ -487,7 +487,7 @@ namespace Tpetra {
             Teuchos::Array<char>& exports,
             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
             size_t& constantNumPackets,
-            Distributor& distor) const
+            Distributor& /* distor */) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;

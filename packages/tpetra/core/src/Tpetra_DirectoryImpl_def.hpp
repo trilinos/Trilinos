@@ -121,7 +121,7 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     bool
     ReplicatedDirectory<LO, GO, NT>::
-    isOneToOne (const Teuchos::Comm<int>& comm) const
+    isOneToOne (const Teuchos::Comm<int>& /* comm */) const
     {
       // A locally replicated Map is one-to-one only if there is no
       // replication, that is, only if the Map's communicator only has

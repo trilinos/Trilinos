@@ -77,19 +77,19 @@ transCharToMklEnum (const char trans)
 #endif // HAVE_KOKKOSKERNELS_MKL
 
 void
-cgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const ::Kokkos::complex<float>& alpha,
-       const ::Kokkos::complex<float> A[],
-       const int lda,
-       const ::Kokkos::complex<float> B[],
-       const int ldb,
-       const ::Kokkos::complex<float>& beta,
-       ::Kokkos::complex<float> C[],
-       const int ldc)
+cgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const ::Kokkos::complex<float>& /* alpha */,
+       const ::Kokkos::complex<float> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<float> /* B */[],
+       const int /* ldb */,
+       const ::Kokkos::complex<float>& /* beta */,
+       ::Kokkos::complex<float> /* C */[],
+       const int /* ldc */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
@@ -108,19 +108,19 @@ cgemm (const char transA,
 }
 
 void
-dgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const double alpha,
-       const double A[],
-       const int lda,
-       const double B[],
-       const int ldb,
-       const double beta,
-       double C[],
-       const int ldc)
+dgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const double /* alpha */,
+       const double /* A */[],
+       const int /* lda */,
+       const double /* B */[],
+       const int /* ldb */,
+       const double /* beta */,
+       double /* C */[],
+       const int /* ldc */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
@@ -137,19 +137,19 @@ dgemm (const char transA,
 }
 
 void
-sgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const float alpha,
-       const float A[],
-       const int lda,
-       const float B[],
-       const int ldb,
-       const float beta,
-       float C[],
-       const int ldc)
+sgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const float /* alpha */,
+       const float /* A */[],
+       const int /* lda */,
+       const float /* B */[],
+       const int /* ldb */,
+       const float /* beta */,
+       float /* C */[],
+       const int /* ldc */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
@@ -166,19 +166,19 @@ sgemm (const char transA,
 }
 
 void
-zgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const ::Kokkos::complex<double>& alpha,
-       const ::Kokkos::complex<double> A[],
-       const int lda,
-       const ::Kokkos::complex<double> B[],
-       const int ldb,
-       const ::Kokkos::complex<double>& beta,
-       ::Kokkos::complex<double> C[],
-       const int ldc)
+zgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const ::Kokkos::complex<double>& /* alpha */,
+       const ::Kokkos::complex<double> /* A */[],
+       const int /* lda */,
+       const ::Kokkos::complex<double> /* B */[],
+       const int /* ldb */,
+       const ::Kokkos::complex<double>& /* beta */,
+       ::Kokkos::complex<double> /* C */[],
+       const int /* ldc */)
 {
 #ifdef HAVE_KOKKOSKERNELS_MKL
   const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);

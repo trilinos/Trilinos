@@ -56,19 +56,19 @@ namespace Cublas {
 namespace Impl {
 
 void
-cgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const Kokkos::complex<float>& alpha,
-       const Kokkos::complex<float> A[],
-       const int lda,
-       const Kokkos::complex<float> B[],
-       const int ldb,
-       const Kokkos::complex<float>& beta,
-       Kokkos::complex<float> C[],
-       const int ldc)
+cgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const Kokkos::complex<float>& /* alpha */,
+       const Kokkos::complex<float> /* A */[],
+       const int /* lda */,
+       const Kokkos::complex<float> /* B */[],
+       const int /* ldb */,
+       const Kokkos::complex<float>& /* beta */,
+       Kokkos::complex<float> /* C */[],
+       const int /* ldc */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   const cuComplex alpha_c = make_cuFloatComplex (alpha.real (), alpha.imag ());
@@ -91,19 +91,19 @@ cgemm (const char transA,
 }
 
 void
-dgemm (const char char_transA,
-       const char char_transB,
-       const int m,
-       const int n,
-       const int k,
-       const double alpha,
-       const double A[],
-       const int lda,
-       const double B[],
-       const int ldb,
-       const double beta,
-       double C[],
-       const int ldc)
+dgemm (const char /* char_transA */,
+       const char /* char_transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const double /* alpha */,
+       const double /* A */[],
+       const int /* lda */,
+       const double /* B */[],
+       const int /* ldb */,
+       const double /* beta */,
+       double /* C */[],
+       const int /* ldc */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   ::cublasDgemm (char_transA, char_transB, m, n, k,
@@ -121,19 +121,19 @@ dgemm (const char char_transA,
 }
 
 void
-sgemm (const char char_transA,
-       const char char_transB,
-       const int m,
-       const int n,
-       const int k,
-       const float alpha,
-       const float A[],
-       const int lda,
-       const float B[],
-       const int ldb,
-       const float beta,
-       float C[],
-       const int ldc)
+sgemm (const char /* char_transA */,
+       const char /* char_transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const float /* alpha */,
+       const float /* A */[],
+       const int /* lda */,
+       const float /* B */[],
+       const int /* ldb */,
+       const float /* beta */,
+       float /* C */[],
+       const int /* ldc */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   ::cublasSgemm (char_transA, char_transB, m, n, k,
@@ -151,19 +151,19 @@ sgemm (const char char_transA,
 }
 
 void
-zgemm (const char transA,
-       const char transB,
-       const int m,
-       const int n,
-       const int k,
-       const Kokkos::complex<double>& alpha,
-       const Kokkos::complex<double> A[],
-       const int lda,
-       const Kokkos::complex<double> B[],
-       const int ldb,
-       const Kokkos::complex<double>& beta,
-       Kokkos::complex<double> C[],
-       const int ldc)
+zgemm (const char /* transA */,
+       const char /* transB */,
+       const int /* m */,
+       const int /* n */,
+       const int /* k */,
+       const Kokkos::complex<double>& /* alpha */,
+       const Kokkos::complex<double> /* A */[],
+       const int /* lda */,
+       const Kokkos::complex<double> /* B */[],
+       const int /* ldb */,
+       const Kokkos::complex<double>& /* beta */,
+       Kokkos::complex<double> /* C */[],
+       const int /* ldc */)
 {
 #ifdef KOKKOS_ENABLE_CUDA
   const cuDoubleComplex alpha_c =
