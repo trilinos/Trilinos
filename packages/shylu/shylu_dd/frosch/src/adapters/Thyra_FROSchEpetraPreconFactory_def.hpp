@@ -1,7 +1,7 @@
 #ifndef THYRA_FROSCH_TWOLEVELPRECONDITIONER_FACTORY_DEF_HPP
 #define THYRA_FROSCH_TWOLEVELPRECONDITIONER_FACTORY_DEF_HPP
 
-#include "Thyra_FROSch_TwoLevelPreconditionerFactory_decl.hpp"
+//#include "Thyra_FROSch_TwoLevelPreconditionerFactory_decl.hpp"
 
 
 #include <FROSch_Tools_def.hpp>
@@ -30,7 +30,7 @@ FROSch_EpetraPreconFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FROSch_Epetr
     }
     //--------------------------------------------------------------
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal , class Node>
-    RCP<PreconditionerBase<Scalar> >FROSch_EpetraPreconFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const{
+    RCP<PreconditionerBase<Scalar> > FROSch_EpetraPreconFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const{
         return Teuchos::rcp(new DefaultPreconditioner<Scalar>);
         
     }

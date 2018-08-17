@@ -3,6 +3,7 @@
 
 #include "Thyra_FROSch_TwoLevelPreconditionerFactory_decl.hpp"
 
+#include <Frosch_EpetraOp_def.hpp>
 
 #include <FROSch_Tools_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
@@ -25,7 +26,7 @@ namespace Thyra {
     {
         const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
         //so far only Epetra is allowed
-        if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isBlockedOperator(fwdOp)) return true;
+        if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
         
         return false;
     }
@@ -44,7 +45,7 @@ namespace Thyra {
     ) const{
         
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-
+        
         
         using Teuchos::rcp_dynamic_cast;
         //Some Typedefs
@@ -57,6 +58,9 @@ namespace Thyra {
         typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
         typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
         typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
+        typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
+
+        
         
         
         
@@ -82,51 +86,18 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
         
         RCP<XpMat> A = Teuchos::null;
-        if(bIsBlocked) {
-            Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > ThyBlockedOp =
-            Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(fwdOp);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(ThyBlockedOp));
-            
-            TEUCHOS_TEST_FOR_EXCEPT(ThyBlockedOp->blockExists(0,0)==false);
-            
-            Teuchos::RCP<const LinearOpBase<Scalar> > b00 = ThyBlockedOp->getBlock(0,0);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(b00));
-            
-            RCP<const XpCrsMat > xpetraFwdCrsMat00 = XpThyUtils::toXpetra(b00);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat00));
-            
-            // TwoLevelPreconditioner needs Xpetra CRS Matrix ans input object as input
-            RCP<XpCrsMat> xpetraFwdCrsMatNonConst00 = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat00);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst00));
-            
-            // wrap the forward operator as an Xpetra::Matrix that TwoLevelPreconditioner can work with
-            RCP<XpMat> A00 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst00));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A00));
-            
-            RCP<const XpMap> rowmap00 = A00->getRowMap();
-            RCP< const Teuchos::Comm< int > > comm = rowmap00->getComm();
-            
-            // create a Xpetra::BlockedCrsMatrix which derives from Xpetra::Matrix that FROSCH can work with
-            RCP<XpBlockedCrsMat> bMat = Teuchos::rcp(new XpBlockedCrsMat(ThyBlockedOp, comm));
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(bMat));
-            
-            // save blocked matrix
-            A = bMat;
-        } else {
-            std::cout<<"Not Blocked\n";
-            
-            RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
-            
-            // FROSCH needs a non-const object as input
-            RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
-            
-            // wrap the forward operator as an Xpetra::Matrix that FROSch can work with
-            A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
-            //A->describe(*fancy,Teuchos::VERB_EXTREME);
-            
-        }
+        RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
+        
+        // FROSCH needs a non-const object as input
+        RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
+        
+        // wrap the forward operator as an Xpetra::Matrix that FROSch can work with
+        A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
+        //A->describe(*fancy,Teuchos::VERB_EXTREME);
+        
+        
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
         
         // Retrieve concrete preconditioner object--->Here Mem Leak?
@@ -141,50 +112,35 @@ namespace Thyra {
         //not implemented yet
         // FROSCH::Tools<SC,LO,GO,Node>::ExtractCoordinatesFromParameterList(paramList);
         
+        //-------Build New Two Level Prec--------------
         const RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,rcpFromRef(paramList)));
         
         RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
-        
-        
         //Initialize-> Only Works for laplce (cause defaults are used) and compute
         TwoLevelPrec->initialize();
-        std::cout<<"Initialize Two Level Prec\n";
-
         TwoLevelPrec->compute();
+        //-----------------------------------------------
+        //Prepare for FROSch Epetra Op-------------------
+        RCP<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> > epetraTwoLevel = rcp_dynamic_cast<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> >(TwoLevelPrec);
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetraTwoLevel));
+        RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel));
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(frosch_epetraop));
         
+        //attach to fwdOp
+        set_extra_data(fwdOp,"IFPF::fwdOp", Teuchos::inOutArg(frosch_epetraop), Teuchos::POST_DESTROY,false);
+        
+        RCP<ThyEpLinOp> thyra_epetraOp = Thyra::nonconstEpetraLinearOp(frosch_epetraop, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyra_epetraOp));
+ 
         //Wrap tp thyra
         RCP<ThyLinOpBase > thyraPrecOp = Teuchos::null;
-        Comm->barrier();        Comm->barrier();        Comm->barrier();
-        std::cout<<"Compute Two Level Prec\n";
-
-       // if(bIsBlocked) {
-            TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
-            
-            //create const Operator
-            //RCP<const FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > frosch_op = Teuchos::rcp_implicit_cast<const FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TwoLevelPrec);
-            //Teuchos::rcp_const_cast<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > (frosch_op) = TwoLevelPrec;
-           //TwoLevelPrec->getRangeMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-            RCP<const VectorSpaceBase<Scalar> > thyraRangeSpace  = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(TwoLevelPrec->getRangeMap());
-            Comm->barrier();        Comm->barrier();        Comm->barrier();
-            RCP<const VectorSpaceBase<Scalar> > thyraDomainSpace = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(TwoLevelPrec->getDomainMap());
-            
-            RCP <Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp = Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TwoLevelPrec);
-            thyraPrecOp = Thyra::xpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace, thyraDomainSpace,xpOp);
         
-        //}
-        Comm->barrier();
-        Comm->barrier();
-        Comm->barrier();
         
-        std::cout<<"Test for null pointer\n";
-
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
         
+        thyraPrecOp = rcp_dynamic_cast<ThyLinOpBase>(thyra_epetraOp);
         defaultPrec->initializeUnspecified(thyraPrecOp);
-        Comm->barrier();
-        Comm->barrier();
-        Comm->barrier();
-        std::cout<<"Thyra OP\n";
+       
         
     }
 //-------------------------------------------------------------

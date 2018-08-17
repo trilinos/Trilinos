@@ -4,7 +4,8 @@
 
 
 
-#include "Thyra_FROSchEpetraPreconFactory_decl.hpp"
+#include <Thyra_FROSchEpetraPreconFactory_decl.hpp>
+
 
 
 #include "Teuchos_RCP.hpp"

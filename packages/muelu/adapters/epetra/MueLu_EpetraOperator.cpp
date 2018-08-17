@@ -88,6 +88,7 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
         << e.what() << std::endl;
     return -1;
   }
+ 
   return 0;
 }
 

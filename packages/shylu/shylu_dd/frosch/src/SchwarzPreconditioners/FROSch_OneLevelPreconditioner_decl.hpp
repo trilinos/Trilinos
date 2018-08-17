@@ -96,6 +96,8 @@ namespace FROSch {
         
         virtual std::string description() const;
         
+        virtual CrsMatrixPtr getCrsMatrix() const;
+        
         
     protected:
         

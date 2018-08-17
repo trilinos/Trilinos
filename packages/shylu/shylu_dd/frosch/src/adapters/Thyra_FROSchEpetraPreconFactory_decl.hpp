@@ -38,7 +38,7 @@
 //#include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_decl.hpp>
-#includ  "FROSch_EpetraOp_def.hpp"
+#include <FROSch_EpetraOp_def.hpp>
 #include <FROSch_Tools_def.hpp>
 //
 
