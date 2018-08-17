@@ -45,6 +45,9 @@
 #ifndef ROL_CONSTRAINT_DEF_H
 #define ROL_CONSTRAINT_DEF_H
 
+#include "ROL_LinearAlgebra.hpp"
+#include "ROL_LAPACK.hpp"
+
 namespace ROL {
 
 template <class Real>
