@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 #include <type_traits>
 
@@ -123,7 +124,10 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
                           functor_type (proc_ids, comm_size));
   }
   Kokkos::fence ();
-  auto proc_ids_host = Kokkos::create_mirror_view (proc_ids);
+  auto proc_ids_host = Kokkos::create_mirror_view (Kokkos::HostSpace (), proc_ids);
+  static_assert (std::is_same<typename decltype (proc_ids_host)::memory_space,
+                   Kokkos::HostSpace>::value,
+                 "proc_ids_host should be a HostSpace View, but is not.");
   Kokkos::deep_copy (proc_ids_host, proc_ids);
   const int n_imports =
     distributor.createFromSends (Teuchos::ArrayView<const int> (proc_ids_host.data (), n_exports));
@@ -140,6 +144,9 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
 
   distributor.doPostsAndWaits (exports, 1, imports);
   auto imports_host = Kokkos::create_mirror_view (imports);
+  static_assert (std::is_same<typename decltype (imports_host)::memory_space,
+                   Kokkos::HostSpace>::value,
+                 "imports_host should be a HostSpace View, but is not.");
   Kokkos::deep_copy (imports_host, imports);
 
   for (int i = 0; i < n_imports; ++i) {
