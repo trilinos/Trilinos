@@ -336,11 +336,11 @@ namespace Teuchos
   { SSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info); }
 
 
-  void LAPACK<int,float>::HEEV(const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* W, float* WORK, const int& lwork, float* RWORK, int* info) const
+  void LAPACK<int,float>::HEEV(const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* W, float* WORK, const int& lwork, float* /* RWORK */, int* info) const
   { SSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info); }
 
 
-  void LAPACK<int,float>::HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* B, const int& ldb, float* W, float* WORK, const int& lwork, float* RWORK, int* info) const
+  void LAPACK<int,float>::HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* B, const int& ldb, float* W, float* WORK, const int& lwork, float* /* RWORK */, int* info) const
   { SSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info); }
 
 
@@ -360,7 +360,7 @@ namespace Teuchos
   { SGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info); }
 
 
-  void LAPACK<int, float>::GEES(const char& JOBVS, const int& n, float* A, const int& lda, int* sdim, float* WR, float* WI, float* VS, const int& ldvs, float* WORK, const int& lwork, float* RWORK, int* BWORK, int* info) const
+  void LAPACK<int, float>::GEES(const char& JOBVS, const int& n, float* A, const int& lda, int* sdim, float* WR, float* WI, float* VS, const int& ldvs, float* WORK, const int& lwork, float* /* RWORK */, int* BWORK, int* info) const
   {
     int (*nullfptr)(float*,float*) = NULL;
     const char sort = 'N';
@@ -377,7 +377,7 @@ namespace Teuchos
   }
 
 
-  void LAPACK<int, float>::GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, float* A, const int& lda, float* S, float* U, const int& ldu, float* V, const int& ldv, float* WORK, const int& lwork, float* RWORK, int* info) const
+  void LAPACK<int, float>::GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, float* A, const int& lda, float* S, float* U, const int& ldu, float* V, const int& ldv, float* WORK, const int& lwork, float* /* RWORK */, int* info) const
   { SGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, info); }
 
 
@@ -454,7 +454,7 @@ namespace Teuchos
   { STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info); }
 
 
-  void LAPACK<int, float>::TREVC(const char& SIDE, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, float* RWORK, int* info) const
+  void LAPACK<int, float>::TREVC(const char& SIDE, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, float* /* RWORK */, int* info) const
   {
     std::vector<int> select(1);
     const char whch = 'A';
@@ -764,13 +764,13 @@ namespace Teuchos
   }
 
 
-  void LAPACK<int,double>::HEEV(const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* W, double* WORK, const int& lwork, double* RWORK, int* info) const
+  void LAPACK<int,double>::HEEV(const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* W, double* WORK, const int& lwork, double* /* RWORK */, int* info) const
   {
     DSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info);
   }
 
 
-  void LAPACK<int,double>::HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* B, const int& ldb, double* W, double* WORK, const int& lwork, double* RWORK, int* info) const
+  void LAPACK<int,double>::HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* B, const int& ldb, double* W, double* WORK, const int& lwork, double* /* RWORK */, int* info) const
   {
     DSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info);
   }
@@ -796,7 +796,7 @@ namespace Teuchos
   }
 
 
-  void LAPACK<int, double>::GEES(const char& JOBVS, const int& n, double* A, const int& lda, int* sdim, double* WR, double* WI, double* VS, const int& ldvs, double* WORK, const int& lwork, double* RWORK, int* BWORK, int* info) const
+  void LAPACK<int, double>::GEES(const char& JOBVS, const int& n, double* A, const int& lda, int* sdim, double* WR, double* WI, double* VS, const int& ldvs, double* WORK, const int& lwork, double* /* RWORK */, int* BWORK, int* info) const
   {
     //int (*nullfptr)(double*,double*) = NULL;
     gees_nullfptr_t nullfptr = 0;
@@ -816,7 +816,7 @@ namespace Teuchos
   }
 
 
-  void LAPACK<int, double>::GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, double* A, const int& lda, double* S, double* U, const int& ldu, double* V, const int& ldv, double* WORK, const int& lwork, double* RWORK, int* info) const {
+  void LAPACK<int, double>::GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, double* A, const int& lda, double* S, double* U, const int& ldu, double* V, const int& ldv, double* WORK, const int& lwork, double* /* RWORK */, int* info) const {
     DGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, info);
   }
 
@@ -910,7 +910,7 @@ namespace Teuchos
   }
 
 
-  void LAPACK<int, double>::TREVC(const char& SIDE, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, double* RWORK, int* info) const
+  void LAPACK<int, double>::TREVC(const char& SIDE, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, double* /* RWORK */, int* info) const
   {
     std::vector<int> select(1);
     const char whch = 'A';
