@@ -998,6 +998,12 @@ namespace Tpetra {
     const char tfecfFuncName[] = "getGlobalNumEntries: ";
     // if(! this->haveGlobalConstants_)  
     // 	const_cast<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>* >(this)->computeGlobalConstants(false);
+    bool good = true;
+    if(! this->haveGlobalConstants_)  {
+      good = false;
+      (void) good;
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->haveGlobalConstants_, std::logic_error,
        "The graph does not have global constants computed, "

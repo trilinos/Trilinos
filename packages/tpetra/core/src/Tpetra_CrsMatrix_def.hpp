@@ -8160,7 +8160,6 @@ namespace Tpetra {
     typedef node_type NT;
     typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
-    typedef Teuchos::Array<int>::size_type size_type;
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
     const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();
     using Teuchos::as;

@@ -211,8 +211,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     typedef std::pair<GO,GO> pidgidpair_t;
     using Teuchos::RCP;
     const std::string prefix {" Import_Util2::ReverseND:: "};
-    typedef typename Tpetra::MultiVector< pidgidpair_t, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev dev_view_type;
     const std::string label ("IU2::Neighbor");
 
     std::ostringstream errstr;
@@ -273,7 +271,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #endif
         for(uint i=0;i<NumRecvs;++i) {
             RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
-            assert(RSB[i].size() == NumExportLIDs);
+            assert(RSB[i].size() == (uint)NumExportLIDs);
         }
         // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
         for(size_t i=0; i < NumExportLIDs; i++) {
@@ -392,7 +390,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #endif
 
     int totalexportpairrecsize = 0;
-    for(int i = 0; i < NumSends; i++) {
+    for(uint i = 0; i < NumSends; i++) {
         totalexportpairrecsize += ReverseRecvSizes[i];
 #ifdef HAVE_TPETRA_DEBUG
         if(ReverseRecvSizes[i]<0) {

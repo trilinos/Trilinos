@@ -74,6 +74,28 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
+namespace {
+  template<class XpetraMatrixType>
+  Xpetra::global_size_t
+  getFakeGlobalNumEntries (const XpetraMatrixType& Am)
+  {
+    auto comm = Am.getDomainMap()->getComm();
+
+    // CBL: If this has a Tpetra::CrsMatrix underneath, it might
+    // not have global constants computed.  In that case, it will
+    // throw std::logic_error.
+    try {
+      return Am.getGlobalNumEntries();
+    }
+    catch (std::logic_error&) {
+      // This has to be some reasonable positive value, since it's
+      // used for formatting below.  We also can't do an
+      // all-reduce or any MPI operations here, since we're only
+      // on Process 0.
+      return Am.getNodeNumEntries() * static_cast<Xpetra::global_size_t>(comm->getSize());
+    }
+  }
+}
 
 
 namespace MueLu {
@@ -183,7 +205,7 @@ namespace MueLu {
         return 0.0;
       }
 
-      totalNnz += as<double>(Am->getGlobalNumEntries());
+      totalNnz += as<double>(getFakeGlobalNumEntries(*Am));
       if (i == 0)
         lev0Nnz = totalNnz;
     }
@@ -203,7 +225,7 @@ namespace MueLu {
     if (A.is_null()) return -1.0;
     RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
     if(Am.is_null()) return -1.0;
-    a0_nnz = as<double>(Am->getGlobalNumEntries());
+    a0_nnz = as<double>(getFakeGlobalNumEntries(*Am));
 
     // Get smoother complexity at each level
     for (int i = 0; i < GetNumLevels(); ++i) {
@@ -1170,6 +1192,7 @@ namespace MueLu {
     describe(out, toMueLuVerbLevel(tVerbLevel));
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     RCP<Operator> A0 = Levels_[0]->template Get<RCP<Operator> >("A");
@@ -1217,7 +1240,8 @@ namespace MueLu {
           break;
         }
 
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries();
+        Xpetra::global_size_t nnz = getFakeGlobalNumEntries (*Am);
+       
         nnzPerLevel     .push_back(nnz);
         rowsPerLevel    .push_back(Am->getGlobalNumRows());
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
