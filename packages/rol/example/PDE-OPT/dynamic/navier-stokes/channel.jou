@@ -2,10 +2,10 @@ reset
 reset aprepro
 
 #{rw = 10} # rectangle width
-#{rh = 2} # rectangle height
+#{rh = 4} # rectangle height
 #{cr = 0.25} # circle radius
-#{frw = 0.4} # fraction of rectangle width to which to move circle left from center of rectangle
-#{sz = 1} # mesh size, relative to some unknown nominal resolution; play with it!
+#{frw = 0.3} # fraction of rectangle width to which to move circle left from center of rectangle
+#{sz = 0.5} # mesh size, relative to some unknown nominal resolution; play with it!
 #{ms = 1} # meshing scheme: if set to 1, geometry adaptive quad 'pave' meshing
 # if set to 2 'auto' quad 'pave' meshing
 # if set to 3 triangular Delaunay meshing
@@ -45,3 +45,4 @@ surface {CylinderChannel} scheme TriDelaunay
 #{endif}
 
 mesh surface {CylinderChannel}
+

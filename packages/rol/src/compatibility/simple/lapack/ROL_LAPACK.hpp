@@ -89,13 +89,13 @@ functions that include the macro:
 // in progress - added for EQUED which is a modified char *, not const
 #if defined(INTEL_CXML)
 #  define PREFIX __stdcall
-#  define Teuchos_nonconst_fcd char *, unsigned int // Need to evaluate unsigned int - CXML deprecated
+#  define ROL_nonconst_fcd char *, unsigned int // Need to evaluate unsigned int - CXML deprecated
 #elif defined(INTEL_MKL)
 #  define PREFIX
-#  define Teuchos_nonconst_fcd char *
+#  define ROL_nonconst_fcd char *
 #else
 #  define PREFIX
-#  define Teuchos_nonconst_fcd char *
+#  define ROL_nonconst_fcd char *
 #endif
 
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,  DGEEV )

@@ -1155,53 +1155,120 @@ public:
 }; // QoI_L2Penalty_NavierStokes
 
 template <class Real>
-class StdObjective_NavierStokes : public ROL::StdObjective<Real> {
-private:
-  Real alpha_;
-  std::string stateObj_;
-
+class QoI_RotationControl_NavierStokes : public QoI<Real> {
 public:
-  StdObjective_NavierStokes(Teuchos::ParameterList &parlist) {
-    alpha_    = parlist.sublist("Problem").get("Control penalty parameter",1.e-4);
-    stateObj_ = parlist.sublist("Problem").get("Objective type","Vorticity");
-    if ( stateObj_ != "Vorticity" && stateObj_ != "Circulation" && stateObj_ != "Directional") {
-      throw Exception::NotImplemented(">>> (StdObjective_NavierStokes): Unknown objective type."); 
+  QoI_RotationControl_NavierStokes(void) {}
+
+  Real value(ROL::Ptr<Intrepid::FieldContainer<Real> > & val,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+             const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    const int size = z_param->size();
+    Real half(0.5), sum(0);
+    for (int i = 0; i < size; ++i) {
+      sum += std::pow((*z_param)[i],2);
     }
+    val = ROL::nullPtr;
+    return half * sum;
   }
 
-  Real value(const std::vector<Real> &x, Real &tol) {
-    Real val = alpha_*x[1];
-    if ( stateObj_ == "Vorticity" || stateObj_ == "Directional" ) {
-      val += x[0];
-    }
-    else {
-      val += static_cast<Real>(0.5)*x[0]*x[0];
-    }
-    return val;
+  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::gradient_1 is zero.");
   }
 
-  void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
-    const Real one(1);
-    if ( stateObj_ == "Vorticity" || stateObj_ == "Directional" ) {
-      g[0] = one;
-    }
-    else {
-      g[0] = x[0];
-    }
-    g[1] = alpha_;
+  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::gradient_2 is zero.");
   }
 
-  void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    if ( stateObj_ == "Vorticity" || stateObj_ == "Directional" ) {
-      hv[0] = zero;
-    }
-    else {
-      hv[0] = v[0];
-    }
-    hv[1] = zero;
+  std::vector<Real> gradient_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    const int size = z_param->size();
+    std::vector<Real> g; g.assign(z_param->begin(),z_param->end());
+    return g;
   }
 
-}; // OBJ_SCALAR
+  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_11 is zero.");
+  }
+
+  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_12 is zero.");
+  }
+
+  void HessVec_13(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::Ptr<const std::vector<Real> > & v_param,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_13 is zero.");
+  }
+
+  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_21 is zero.");
+  }
+
+  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_22 is zero.");
+  }
+
+  void HessVec_23(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::Ptr<const std::vector<Real> > & v_param,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_23 is zero.");
+  }
+
+  std::vector<Real> HessVec_31(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_31 is zero.");
+  }
+
+  std::vector<Real> HessVec_32(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_RotationControl_NavierStokes::HessVec_32 is zero.");
+  }
+
+  std::vector<Real> HessVec_33(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::Ptr<const std::vector<Real> > & v_param,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    const int size = v_param->size();
+    std::vector<Real> h; h.assign(v_param->begin(),v_param->end());
+    return h;
+  }
+
+}; // QoI_RotationControl_NavierStoke
 
 #endif

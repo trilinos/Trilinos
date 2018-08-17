@@ -31,8 +31,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
   APPEND_SET(HEADERS 
-    function/ODEConstraint_TimeSimOpt.hpp
-    function/ROL_Constraint_PinTSimOpt.hpp
     function/ROL_PinTConstraint.hpp
 )
 
