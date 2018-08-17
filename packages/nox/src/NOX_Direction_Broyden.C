@@ -238,9 +238,9 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
-                      NOX::Abstract::Group& soln,
-                      const NOX::Solver::Generic& solver)
+bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& /* dir */,
+                      NOX::Abstract::Group& /* soln */,
+                      const NOX::Solver::Generic& /* solver */)
 {
   throwError("compute", "This direction can only be used with a line search based solver.");
   return false;

@@ -65,7 +65,7 @@ NOX::StatusTest::Divergence::~Divergence()
 
 NOX::StatusTest::StatusType NOX::StatusTest::Divergence::
 checkStatus(const Solver::Generic& problem,
-        NOX::StatusTest::CheckType checkType)
+        NOX::StatusTest::CheckType /* checkType */)
 {
   status = Unconverged;
 

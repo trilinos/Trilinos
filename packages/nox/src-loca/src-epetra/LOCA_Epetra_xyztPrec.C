@@ -188,14 +188,14 @@ LOCA::Epetra::xyztPrec::
 
 
 int LOCA::Epetra::xyztPrec::
-SetUseTranspose(bool UseTranspose)
+SetUseTranspose(bool /* UseTranspose */)
 {
   // Disable this option
   return false;
 }
 
 int LOCA::Epetra::xyztPrec::
-Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   // Not implemented: Throw an error!
   std::cout << "ERROR: LOCA::Epetra::xyztPrec::Apply() - "
@@ -536,8 +536,8 @@ computeJacobian(const Epetra_Vector&, Epetra_Operator&)
 
 bool LOCA::Epetra::xyztPrec::
 computePreconditioner(const Epetra_Vector& x,
-              Epetra_Operator& Prec,
-              Teuchos::ParameterList* p)
+              Epetra_Operator& /* Prec */,
+              Teuchos::ParameterList* /* p */)
 {
   //std::cout << "LOCA::Epetra::xyztPrec::computePreconditioner called - ";
   std::string prec = lsParams.get("XYZTPreconditioner","None");

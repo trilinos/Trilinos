@@ -61,6 +61,16 @@ namespace ROL {
 
 template <class Real>
 class Transform_PEBBL : public Constraint<Real> {
+private:
+  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
+    try {
+      return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
+    }
+    catch (std::exception &e) {
+      return makePtrFromRef(xs);
+    }
+  }
+
 protected:
   std::map<int,Real> map_;
 
@@ -69,11 +79,32 @@ public:
 
   Transform_PEBBL(const Transform_PEBBL &T) : map_(T.map_) {}
 
+  virtual void pruneVector(Vector<Real> &c) = 0;
+  virtual void shiftVector(Vector<Real> &c) = 0;
+
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+    c.set(x);
+    Ptr<Vector<Real>> cp = getVector(c);
+    pruneVector(*cp);
+    shiftVector(*cp);
+  }
+
+  void applyJacobian(Vector<Real> &jv,
+               const Vector<Real> &v,
+               const Vector<Real> &x,
+                     Real &tol) {
+    jv.set(v);
+    Ptr<Vector<Real>> jvp = getVector(jv);
+    pruneVector(*jvp);
+  }
+
   void applyAdjointJacobian(Vector<Real> &ajv,
                       const Vector<Real> &v,
                       const Vector<Real> &x,
                             Real &tol) {
-    applyJacobian(ajv,v,x,tol);
+    ajv.set(v);
+    Ptr<Vector<Real>> ajvp = getVector(ajv);
+    pruneVector(*ajvp);
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv,

@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+# 2018-08-01 : This script is deprecated in the PR testing suite and 
+#              is replaced by `commonTools/framework/get-changed-trilinos-packages.sh`
+
 #The purpose of this file is to generate a list of package enables that
 #when used with forward packages turned on will result in the right set of
 #tests being run to test a pull request. The current implementation is neither

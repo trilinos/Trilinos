@@ -158,7 +158,7 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
   auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
   auto  Nt     = numRanks*local_Nt; // use a power of two
-  auto  T       = pl.get("Total Time", 20.0);
+  auto  T      = pl.get("Total Time", 20.0);
 
   RealT dt = T/Nt;
 

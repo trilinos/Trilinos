@@ -45,6 +45,7 @@
 #define ROL_STDBRANCHHELPER_PEBBL_H
 
 #include "ROL_StdVector.hpp"
+#include "ROL_BranchHelper_PEBBL.hpp"
 #include "ROL_StdTransform_PEBBL.hpp"
 
 /** @ingroup func_group
@@ -72,7 +73,7 @@ public:
   StdBranchHelper_PEBBL(const StdBranchHelper_PEBBL &BH)
     : tol_(BH.tol_) {}
 
-  int getIndex(const Vector<Real> &x) const {
+  int getMyIndex(const Vector<Real> &x) const {
     // Get index closest to 0.5
     Ptr<const std::vector<Real>> xval = getConstData(x);
     int index = 0;
@@ -91,14 +92,14 @@ public:
     return index;
   }
 
-  void getNumFrac(int &nfrac, Real &integralityMeasure,
+  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                   const Vector<Real> &x) const {
     // Return number of fractional variables and the
     // sum of the distance to integer for the input vector
     Ptr<const std::vector<Real>> xval = getConstData(x);
     nfrac = 0;
     integralityMeasure = static_cast<Real>(0);
-    Real minD(0), minX(ROL_INF<Real>()), half(0.5);
+    Real minD(0);
     int size = xval->size();
     for (int i = 0; i < size; ++i) {
       Real x  = (*xval)[i];

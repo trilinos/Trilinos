@@ -32,11 +32,14 @@ elif [[ $JOB_NAME == *"cuda-8.0"* ]]; then
   ATDM_CONFIG_COMPILER=CUDA-8.0
 elif [[ $JOB_NAME == *"cuda-9.0"* ]]; then
   ATDM_CONFIG_COMPILER=CUDA-9.0
+elif [[ $JOB_NAME == *"cuda-9.2"* ]]; then
+  ATDM_CONFIG_COMPILER=CUDA-9.2
 elif [[ $JOB_NAME == *"cuda"* ]]; then
   ATDM_CONFIG_COMPILER=CUDA
 elif [[ $JOB_NAME == *"clang"* ]]; then
   ATDM_CONFIG_COMPILER=CLANG
 else
+  echo
   echo "***"
   echo "*** ERROR: A compiler was not specified in '$JOB_NAME'!"
   echo "***"

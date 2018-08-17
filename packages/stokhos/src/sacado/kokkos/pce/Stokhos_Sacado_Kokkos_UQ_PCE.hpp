@@ -56,8 +56,8 @@
 #include "Stokhos_DynamicThreadedStorage.hpp"
 #include "Stokhos_ViewStorage.hpp"
 
-#include "Sacado_UQ_PCE_Traits.hpp"
-#include "Sacado_UQ_PCE.hpp"
+// Don't include "Sacado_UQ_PCE.hpp" here, it is included in the file below
+// in a special order for Kokkos overloads to be found correctly
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_Atomic_UQ_PCE.hpp"
 

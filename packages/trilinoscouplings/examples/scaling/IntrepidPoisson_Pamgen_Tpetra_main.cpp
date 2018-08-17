@@ -68,6 +68,11 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
+
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+#  include "MueLu_AvatarInterface.hpp"
+#endif //HAVE_TRILINOSCOUPLINGS_AVATAR
+
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #include "Tpetra_Core.hpp"
@@ -304,10 +309,29 @@ main (int argc, char *argv[])
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
-          for(int i=0; i<numMueluRebuilds+1; i++) {
-            if (inputList.isSublist("MueLu")) {
-              ParameterList mueluParams = inputList.sublist("MueLu");
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU         
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+          // If we have Avatar, then let's use it
+          if (inputList.isSublist("Avatar-MueLu")) {
+            // NOTE: User will need to make sure these are named consistently with the tree files specified
+            ParameterList problemFeatures = problemStatistics;
+            ParameterList avatarParams = inputList.sublist("Avatar-MueLu");
+            ParameterList & mueluParams = inputList.sublist("MueLu");
+
+            *out<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
+
+            MueLu::AvatarInterface avatar(comm,avatarParams);
+            *out<<"*** Avatar Setup ***"<<std::endl;
+            avatar.Setup();
+            avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
+
+            *out<<"*** Updated MueLu Parameters ***\n"<<mueluParams<<std::endl;
+            avatar.Cleanup();
+          }
+#endif
+	  for(int i=0; i<numMueluRebuilds+1; i++) {
+	    if (inputList.isSublist("MueLu")) {
+	      ParameterList mueluParams = inputList.sublist("MueLu");
               mueluParams.sublist("user data").set("Coordinates",coords);
               M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
             } else {

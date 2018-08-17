@@ -678,7 +678,7 @@ public:
       int size = z_param->size();
       int c    = u_coeff->dimension(0);
       std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> tmp(size,ROL::nullPtr);
-      hess.resize(size,tmp);
+      hess.clear(); hess.resize(size,tmp);
       for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
           hess[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
@@ -686,7 +686,7 @@ public:
       }
     }
     else {
-      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_3): Jacobian is zero.");
+      throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_33): Hessian is zero.");
     }
   }
 

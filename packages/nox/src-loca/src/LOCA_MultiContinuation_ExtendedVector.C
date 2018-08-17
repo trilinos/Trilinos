@@ -124,7 +124,7 @@ LOCA::MultiContinuation::ExtendedVector::ExtendedVector(
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::MultiContinuation::ExtendedVector::generateMultiVector(
                             int nColumns,
-                            int nVectorRows,
+                            int /* nVectorRows */,
                             int nScalarRows) const
 {
   return

@@ -71,7 +71,7 @@ NOX::StatusTest::Stagnation::~Stagnation()
 NOX::StatusTest::StatusType
 NOX::StatusTest::Stagnation::
 checkStatus(const Solver::Generic& problem,
-        NOX::StatusTest::CheckType checkType)
+        NOX::StatusTest::CheckType /* checkType */)
 {
   status = Unconverged;
 

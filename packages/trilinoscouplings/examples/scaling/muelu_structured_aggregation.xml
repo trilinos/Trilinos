@@ -45,6 +45,11 @@
         <!-- Parameter name="R"                                   type="string" value="myRestrictorFact"/ -->
       </ParameterList>
 
+      <ParameterList name="myNullspaceFact">
+        <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
+        <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
+      </ParameterList>
+
       <ParameterList name="myCoordTransferFact">
         <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
         <Parameter name="structured aggregation"              type="bool"   value="true"/>
@@ -89,7 +94,7 @@
       <ParameterList name="All">
         <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
         <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
-        <Parameter name="Nullspace"                           type="string"   value="myProlongatorFact"/>
+        <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
         <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
         <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
         <Parameter name="A"                                   type="string"   value="myRAPFact"/>

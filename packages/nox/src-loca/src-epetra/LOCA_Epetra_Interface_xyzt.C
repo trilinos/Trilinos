@@ -214,7 +214,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 }
 
 bool LOCA::Epetra::Interface::xyzt::
-computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+computeJacobian(const Epetra_Vector& x, Epetra_Operator& /* Jac */)
 {
   bool stat = true;
   jacobian->PutScalar(0.0);
