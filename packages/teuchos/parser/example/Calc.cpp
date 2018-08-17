@@ -8,7 +8,7 @@
 #include <Teuchos_MathExpr.hpp>
 
 int main() {
-  Teuchos::RCP<Reader> reader(Teuchos::MathExpr::new_calc_reader());
+  Teuchos::RCP<Teuchos::Reader> reader(Teuchos::MathExpr::new_calc_reader());
   for (std::string line; std::getline(std::cin, line);) {
     Teuchos::any result_any;
     try {
