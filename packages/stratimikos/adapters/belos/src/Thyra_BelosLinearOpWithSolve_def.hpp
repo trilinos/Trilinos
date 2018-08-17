@@ -656,8 +656,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     try {
       belosSolveStatus = iterativeSolver_->solve();
     }
-    catch (Belos::BelosError&) {
-      belosSolveStatus = Belos::Unconverged;
+    catch (Belos::BelosError& ex) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                  CatastrophicSolveFailure,
+                                  ex.what() );
     }
   }
 
