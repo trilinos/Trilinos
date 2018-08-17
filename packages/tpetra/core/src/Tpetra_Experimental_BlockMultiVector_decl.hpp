@@ -42,13 +42,15 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
 
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Experimental_BlockView.hpp>
-#include "Teuchos_OrdinalTraits.hpp"
+#include "Tpetra_Experimental_BlockMultiVector_fwd.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Experimental {
+namespace Classes {
 
 /// \class BlockMultiVector
 /// \brief MultiVector for multiple degrees of freedom per mesh point
@@ -665,6 +667,7 @@ private:
   getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
 };
 
+} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 
