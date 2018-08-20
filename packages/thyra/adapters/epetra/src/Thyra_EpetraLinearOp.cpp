@@ -427,12 +427,10 @@ void EpetraLinearOp::applyImpl(
     X = get_Epetra_MultiVector(
       real_M_trans==NOTRANS ? getDomainMap() : getRangeMap(), X_in );
     // Y
-      std::cout<<"Epetra LinOp line 430\n";
 
     if( beta == 0 ) {
       Y = get_Epetra_MultiVector(
         real_M_trans==NOTRANS ? getRangeMap() : getDomainMap(), *Y_inout );
-        std::cout<<"Epetra LinOp line 435\n";
 
     }
   }
@@ -445,11 +443,9 @@ void EpetraLinearOp::applyImpl(
    * application. The reason for this is that if we later apply the 
    * operator outside Thyra (in Aztec, for instance), it will remember
    * the transpose flag set here. */
-  RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
   bool oldState = op_->UseTranspose();
   op_->SetUseTranspose(
     real_trans(trans_trans(opTrans_,M_trans)) == NOTRANS ? false : true );
-    std::cout<<"Epetra LinOp line 451\n";
 
 
   //
@@ -461,26 +457,23 @@ void EpetraLinearOp::applyImpl(
     if( beta == 0.0 ) {
       // Y = M * X
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-          Comm->Barrier();Comm->Barrier();Comm->Barrier();
-          std::cout<<"Epetra LinOp line 463\n";
+          
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Apply",
           ApplyApply);
         op_->Apply( *X, *Y );
-          Comm->Barrier();Comm->Barrier();Comm->Barrier();
-          std::cout<<"Epetra LinOp line 469\n";
+         
 
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-          std::cout<<"Epetra LinOp line 473\n";
+          
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): ApplyInverse",
           ApplyApplyInverse);
         op_->ApplyInverse( *X, *Y );
-          std::cout<<"Epetra LinOp line 479\n";
-
+          
       }
       else {
 #ifdef TEUCHOS_DEBUG
@@ -489,63 +482,52 @@ void EpetraLinearOp::applyImpl(
       }
       // Y = alpha * Y
       if( alpha != 1.0 ) {
-          std::cout<<"Epetra LinOp line 489\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Scale Y",
           Scale);
         Y->Scale(alpha);
-          std::cout<<"Epetra LinOp line 495\n";
 
       }
     }
     else {  // beta != 0.0
       // Y_inout = beta * Y_inout
       if(beta != 0.0) {
-          std::cout<<"Epetra LinOp line 502\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Scale Y",
           Scale);
         scale( beta, Y_inout );
-          std::cout<<"Epetra LinOp line 508\n";
 
       }
       else {
-          std::cout<<"Epetra LinOp line 512\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0",
           Apply2);
         assign( Y_inout, 0.0 );
-          std::cout<<"Epetra LinOp line 518\n";
 
       }
       // T = M * X
       Epetra_MultiVector T(op_->OperatorRangeMap(), numCols, false);
-        std::cout<<"Epetra LinOp line 523\n";
 
       // NOTE: Above, op_->OperatorRange() will be right for either
       // non-transpose or transpose because we have already set the
       // UseTranspose flag correctly.
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-          std::cout<<"Epetra LinOp line 529\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply",
           Apply2);
         op_->Apply( *X, T );
-          std::cout<<"Epetra LinOp line 535\n";
 
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-          std::cout<<"Epetra LinOp line 539\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): ApplyInverse",
           ApplyInverse);
         op_->ApplyInverse( *X, T );
-          std::cout<<"Epetra LinOp line 545\n";
 
       }
       else {
@@ -555,12 +537,10 @@ void EpetraLinearOp::applyImpl(
       }
       // Y_inout += alpha * T
       {
-          std::cout<<"Epetra LinOp line 555\n";
 
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Update Y",
           Update);
-          std::cout<<"Epetra LinOp line 560\n";
 
         update(
           alpha,
@@ -571,16 +551,13 @@ void EpetraLinearOp::applyImpl(
             ),
           Y_inout
           );
-          std::cout<<"Epetra LinOp line 571\n";
 
       }
     }
   }
-    std::cout<<"Epetra LinOp line 576\n";
 
   // Reset the transpose state
   op_->SetUseTranspose(oldState);
-    std::cout<<"Epetra LinOp line 580\n";
 
   // 2009/04/14: ToDo: This will not reset the transpose flag correctly if an
   // exception is thrown!
