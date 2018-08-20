@@ -8197,13 +8197,9 @@ namespace Tpetra {
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     std::string tlstr;
     {
-
         std::ostringstream os;
-        if(isMM) os<<":MM";
-        else os<<":notMM";
-        if(::isMMOverride) os<<"_Over";
-        else os<<"_NOver";
-        tlstr=os.str();
+        if(isMM) os<<":MMOpt";
+        else os<<":MMLegacy";
     }
     Teuchos::TimeMonitor MMall(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr ));
 #endif
