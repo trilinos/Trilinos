@@ -16,6 +16,7 @@
 // Thyra
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 
 namespace Tempus {
 
@@ -70,6 +71,17 @@ public:
   //! Compute time step derivative w.r.t. model parameters
   virtual void computeStepParamDeriv(
     Thyra::LinearOpBase<Scalar>& deriv,
+    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+    const Teuchos::Array<Scalar>& t,
+    const Thyra::VectorBase<Scalar>& p,
+    const int param_index) const = 0;
+
+  //! Compute time step Jacobian solver
+  /*!
+   * Derivative is always w.r.t. the most current solution vector
+   */
+  virtual void computeStepSolver(
+    Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
     const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
     const Teuchos::Array<Scalar>& t,
     const Thyra::VectorBase<Scalar>& p,

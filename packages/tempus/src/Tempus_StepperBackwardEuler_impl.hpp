@@ -414,6 +414,22 @@ StepperBackwardEuler<Scalar>::computeStepParamDeriv(
 
 template <class Scalar>
 void
+StepperBackwardEuler<Scalar>::computeStepSolver(
+  Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W));
+  outArgs.set_W(Teuchos::rcpFromRef(jacobian_solver));
+  computeStepResidDerivImpl(outArgs, x, t, p, param_index, 0);
+}
+
+template <class Scalar>
+void
 StepperBackwardEuler<Scalar>::computeStepResidDerivImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
   const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,

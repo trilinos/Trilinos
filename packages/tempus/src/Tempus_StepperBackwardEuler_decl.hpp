@@ -121,6 +121,12 @@ public:
       const Teuchos::Array<Scalar>& t,
       const Thyra::VectorBase<Scalar>& p,
       const int param_index) const;
+    virtual void computeStepSolver(
+      Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
   //@}
 
 private:

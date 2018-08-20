@@ -630,6 +630,14 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     Thyra::createMembers(model->get_f_space(), num_p);
   RCP< Thyra::MultiVectorBase<double> > dfdp2 =
     Thyra::createMembers(model->get_f_space(), num_p);
+  RCP< Thyra::LinearOpWithSolveBase<double> > W =
+    model->create_W();
+  RCP< Thyra::LinearOpWithSolveBase<double> > W2 =
+    model->create_W();
+  RCP< Thyra::MultiVectorBase<double> > tmp =
+    Thyra::createMembers(model->get_x_space(), num_p);
+  RCP< Thyra::MultiVectorBase<double> > tmp2 =
+    Thyra::createMembers(model->get_x_space(), num_p);
   std::vector<double> nrms(num_p);
   double err;
 
@@ -698,12 +706,29 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
 
     // Check df/dp
+    opt_stepper->computeStepParamDeriv(*dfdp, x, t, *p, 0);
     out_args.set_DfDp(
       0, MEB::Derivative<double>(dfdp2, MEB::DERIV_MV_JACOBIAN_FORM));
-    opt_stepper->computeStepParamDeriv(*dfdp, x, t, *p, 0);
     model->evalModel(in_args, out_args);
+    out_args.set_DfDp(0, MEB::Derivative<double>());
     Thyra::V_VmV(dfdp.ptr(), *dfdp, *dfdp2);
     Thyra::norms(*dfdp, nrms);
+    err = 0.0;
+    for (auto nrm : nrms) err += nrm;
+    TEST_FLOATING_EQUALITY(err, 0.0, tol);
+
+    // Check W
+    opt_stepper->computeStepSolver(*W, x, t, *p, 0);
+    out_args.set_W(W2);
+    in_args.set_alpha(1.0/dt);
+    in_args.set_beta(1.0);
+    model->evalModel(in_args, out_args);
+    out_args.set_W(Teuchos::null);
+    // note:  dfdp overwritten above so dfdp != dfdp2
+    Thyra::solve(*W, Thyra::NOTRANS, *dfdp2, tmp.ptr());
+    Thyra::solve(*W2, Thyra::NOTRANS, *dfdp2, tmp2.ptr());
+    Thyra::V_VmV(tmp.ptr(), *tmp, *tmp2);
+    Thyra::norms(*tmp, nrms);
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
