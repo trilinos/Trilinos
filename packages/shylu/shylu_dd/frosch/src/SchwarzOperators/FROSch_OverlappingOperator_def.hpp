@@ -77,7 +77,7 @@ namespace FROSch {
         
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
-        
+        Teuchos::RCP<const Teuchos::Comm<int> > Comm = x.getMap()->getComm();
         if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }
@@ -88,8 +88,11 @@ namespace FROSch {
         xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
         
         xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
-        
+        Comm->barrier(); Comm->barrier(); Comm->barrier();
+        if(Comm->getRank()==0)std::cout<<"Overlapping Op Before Subdomain Solve\n";
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
+        Comm->barrier(); Comm->barrier(); Comm->barrier();
+        if(Comm->getRank()==0)std::cout<<"Overlapping Op After Subdomain Solve\n";
         
         yOverlap->replaceMap(OverlappingMap_);
         

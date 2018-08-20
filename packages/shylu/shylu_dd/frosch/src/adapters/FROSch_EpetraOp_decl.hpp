@@ -59,8 +59,7 @@ namespace FROSch {
 
     
     /*! @class EpetraOperator
-     @brief Turns a MueLu::Hierarchy into a Epetra_Operator.
-     It allows MueLu to be used as a preconditioner for AztecOO (for instance).
+     
      */
     class FROSch_EpetraOperator : public Epetra_Operator {
         typedef double              SC;
@@ -69,8 +68,8 @@ namespace FROSch {
         typedef Xpetra::EpetraNode  NO;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
-        typedef FROSch::TwoLevelPreconditioner<SC,LO,GO,NO>                   TwoLevelPrec;
-        
+        typedef FROSch::TwoLevelPreconditioner<SC,LO,GO,NO>     TwoLevelPrec;
+        typedef RCP<Teuchos::ParameterList>                     ParameterListPtr;
         
         
         
@@ -80,8 +79,11 @@ namespace FROSch {
         //@{
         
         //! Constructor
-        FROSch_EpetraOperator(const RCP<TwoLevelPrec>& T) : TwoLevelPrec_(T) { }
+        FROSch_EpetraOperator(const RCP<TwoLevelPrec>& T,const ParameterListPtr &P) : TwoLevelPrec_(T),paramList_(P)
         
+        { }
+        
+        FROSch_EpetraOperator(RCP<Matrix> K,ParameterListPtr paramList);
         //! Destructor.
         virtual ~FROSch_EpetraOperator() { }
         
@@ -161,6 +163,7 @@ namespace FROSch {
     private:
         
         RCP<TwoLevelPrec> TwoLevelPrec_;
+        ParameterListPtr paramList_;
         
     };
     

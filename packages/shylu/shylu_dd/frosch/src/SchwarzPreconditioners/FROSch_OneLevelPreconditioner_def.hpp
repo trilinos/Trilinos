@@ -113,6 +113,9 @@ namespace FROSch {
                                                     SC alpha,
                                                     SC beta) const
     {
+        if(this->Verbose_)std::cout<<"Overlapping Prec Apply\n";
+        
+        //ParameterListPtr list = sublist(this->ParameterList_,"AlgebraicOverlappingOperator");
         return SumOperator_->apply(x,y,true,mode,alpha,beta);
     }
     
@@ -133,6 +136,7 @@ namespace FROSch {
     {
         return K_;
     }
+    
     
     template <class SC,class LO,class GO,class NO>
     void OneLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,

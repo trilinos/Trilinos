@@ -4,6 +4,8 @@
 #include "Thyra_FROSch_TwoLevelPreconditionerFactory_decl.hpp"
 
 #include <Frosch_EpetraOp_def.hpp>
+#include <Teuchos_XMLParameterListCoreHelpers.hpp>
+
 
 #include <FROSch_Tools_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
@@ -113,17 +115,45 @@ namespace Thyra {
         // FROSCH::Tools<SC,LO,GO,Node>::ExtractCoordinatesFromParameterList(paramList);
         
         //-------Build New Two Level Prec--------------
-        const RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,rcpFromRef(paramList)));
+       RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,rcpFromRef(paramList)));
+        
         
         RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
+        Comm->barrier();
+        /*if(Comm->getRank() ==0){std::cout<<"Create Epetra Op new Constructor\n";
+            
+            cout << "--------------------------------------------------------------------------------\nPARAMETERS Two Level Precon Factory:" << endl;
+            paramList.print(std::cout);
+            cout << "--------------------------------------------------------------------------------\n\n";
+            
+        }*/
         //Initialize-> Only Works for laplce (cause defaults are used) and compute
+       
         TwoLevelPrec->initialize();
         TwoLevelPrec->compute();
         //-----------------------------------------------
         //Prepare for FROSch Epetra Op-------------------
         RCP<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> > epetraTwoLevel = rcp_dynamic_cast<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> >(TwoLevelPrec);
+        
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetraTwoLevel));
-        RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel));
+        
+        
+        RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel,rcpFromRef(paramList)));
+        
+        Comm->barrier();
+        /*if(Comm->getRank() ==0){std::cout<<"Create Epetra Op new Constructor\n";
+            
+                cout << "--------------------------------------------------------------------------------\nPARAMETERS Two Level Precon Factory:" << endl;
+            paramList.print(std::cout);
+                cout << "--------------------------------------------------------------------------------\n\n";
+            
+        }*/
+        Comm->barrier();Comm->barrier();Comm->barrier();
+        
+
+       // RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop(new FROSch::FROSch_EpetraOperator(A,rcpFromRef(paramList)))
+        ;
+        
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(frosch_epetraop));
         
         //attach to fwdOp
@@ -131,7 +161,7 @@ namespace Thyra {
         
         RCP<ThyEpLinOp> thyra_epetraOp = Thyra::nonconstEpetraLinearOp(frosch_epetraop, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyra_epetraOp));
- 
+        //thyra_epetraOp->describe(*fancy,Teuchos::VERB_EXTREME);
         //Wrap tp thyra
         RCP<ThyLinOpBase > thyraPrecOp = Teuchos::null;
         
@@ -139,6 +169,8 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
         
         thyraPrecOp = rcp_dynamic_cast<ThyLinOpBase>(thyra_epetraOp);
+        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
+
         defaultPrec->initializeUnspecified(thyraPrecOp);
        
         
