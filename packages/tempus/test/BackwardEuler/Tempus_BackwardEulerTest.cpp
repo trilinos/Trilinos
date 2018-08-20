@@ -630,7 +630,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     Thyra::createMembers(model->get_f_space(), num_p);
   RCP< Thyra::MultiVectorBase<double> > dfdp2 =
     Thyra::createMembers(model->get_f_space(), num_p);
-  Teuchos::Array<double> nrms(num_p);
+  std::vector<double> nrms(num_p);
   double err;
 
   // Loop over states, checking residuals and derivatives
@@ -678,7 +678,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     model->evalModel(in_args, out_args);
     out_args.set_W_op(Teuchos::null);
     Thyra::V_VmV(dfdx_mv.ptr(), *dfdx_mv, *dfdx_mv2);
-    Thyra::norms(*dfdx_mv, nrms());
+    Thyra::norms(*dfdx_mv, nrms);
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
@@ -692,7 +692,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     model->evalModel(in_args, out_args);
     out_args.set_W_op(Teuchos::null);
     Thyra::V_VmV(dfdx_mv.ptr(), *dfdx_mv, *dfdx_mv2);
-    Thyra::norms(*dfdx_mv, nrms());
+    Thyra::norms(*dfdx_mv, nrms);
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
@@ -703,7 +703,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     opt_stepper->computeStepParamDeriv(*dfdp, x, t, *p, 0);
     model->evalModel(in_args, out_args);
     Thyra::V_VmV(dfdp.ptr(), *dfdp, *dfdp2);
-    Thyra::norms(*dfdp, nrms());
+    Thyra::norms(*dfdp, nrms);
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
