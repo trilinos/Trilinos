@@ -266,8 +266,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           xml = "solverMueLuRefMaxwell.xml";
         else
           xml = "solverMueLuRefMaxwell2D.xml";
-      } else
-        xml = "solverMueLuRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
         if (linAlgebra == "Tpetra")
@@ -282,6 +280,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         }
       }
 #endif
+      } else
+        xml = "solverMueLuRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_CUDA
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
         xml = "solverMueLuRefMaxwellCuda.xml";
