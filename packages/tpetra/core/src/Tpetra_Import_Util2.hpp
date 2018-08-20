@@ -284,7 +284,8 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                     GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
                     auto tpair = pidgidpair_t(exp_pid,gid);
                     // don't use a set here
-                    // NOTE: This would be more efficient if Reverse Iterators were used in the find, as
+                    // NOTE: This would be more efficient if 
+		    // Reverse Iterators were used in the find, as
                     // gid order tends to follow lid order, generally.
                     if(std::find(RSB[pid_order].begin(),RSB[pid_order].begin()+ReverseSendSizes[pid_order],tpair)
                        == RSB[pid_order].begin()+ReverseSendSizes[pid_order])
@@ -308,8 +309,15 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 	TimeMonitor set_all(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSB")));
 #endif
 	
-        // 25 Jul 2018: Consider std::unordered_set (hash table),
-        // with an adequate prereservation ("bucket count").
+        // 25 Jul 2018: CBL
+	// todo:std::unordered_set (hash table),
+        // with an adequate prereservation ("bucket count"). 
+        // An onordered_set has to have a custom hasher for pid/gid pair
+	// However, when pidsets is copied to RSB, it will be in key
+	// order _not_ in pid,gid order. (unlike std::set). 
+	// Impliment this with a reserve, and time BOTH building pidsets
+	// _and_ the sort after the receive. Even if unordered_set saves
+	// time, if it causes the sort to be longer, it's not a win. 
 
         Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
 	{

@@ -4820,7 +4820,7 @@ namespace Tpetra {
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     using Teuchos::TimeMonitor;
     
-    Teuchos::TimeMonitor all(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-all")))));
+    Teuchos::TimeMonitor all(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-all")));
 #endif
 
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
@@ -4832,7 +4832,7 @@ namespace Tpetra {
 
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	Teuchos::TimeMonitor  graph(*Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-Graph")))));
+	Teuchos::TimeMonitor  graph(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-Graph")));
 #endif
 	// We will presume globalAssemble is not needed, so we do the ESFC on the graph
 	myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
@@ -4870,7 +4870,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor cIS(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS")));
+    Teuchos::TimeMonitor cIS(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS")));
 #endif
 
     checkInternalState();
@@ -8201,11 +8201,11 @@ namespace Tpetra {
         std::ostringstream os;
         if(isMM) os<<":MM";
         else os<<":notMM";
-        if(::isMMOverride) os<<"Over";
-        else os<<"NOver";
+        if(::isMMOverride) os<<"_Over";
+        else os<<"_NOver";
         tlstr=os.str();
     }
-    Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
+    Teuchos::TimeMonitor MMall(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr ));
 #endif
 
     // Make sure that the input argument rowTransfer is either an
@@ -8424,7 +8424,7 @@ namespace Tpetra {
     /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::RCP<Teuchos::TimeMonitor> MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ImportSetup"))));
+    Teuchos::TimeMonitor MM2iptSup(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ImportSetup")));
 #endif
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
@@ -8538,7 +8538,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    auto MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
+    Teuchos::TimeMonitor MMpac2(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2")));
 #endif
 
     // Tpetra-specific stuff
@@ -8626,7 +8626,7 @@ namespace Tpetra {
 
     // Do the exchange of remote data.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor mm3(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer")));
+    TimeMonitor mmTAFCxfer(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer")));
 #endif
 
     if (communication_needed) {
@@ -8733,7 +8733,7 @@ namespace Tpetra {
     /*********************************************************************/
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor mm4 (*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1")));
+    TimeMonitor mmTAFCupk (*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1")));
 #endif
 
     // Backwards compatibility measure.  We'll use this again below.
@@ -8989,7 +8989,7 @@ namespace Tpetra {
         int iloc = 0; // will be the size of the userExportLID/PIDs
         
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	auto ssortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort"))));
+	auto ssortMM(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort")));
 #endif
 	while(i1 < Len1 || i2 < Len2 || i3 < Len3){
 	    int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
@@ -9031,7 +9031,7 @@ namespace Tpetra {
 	}// end while
 	{
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-            auto ismmIctor = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor"))));
+	    auto ismmIctor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor")));
 #endif
             Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
             // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
@@ -9046,7 +9046,7 @@ namespace Tpetra {
 	
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-            TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMMdestMat->expertStaticFillComplete")));
+            TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMM::destMat->eSFC")));
             esfc_params.set("Timer Label",label+std::string("isMM eSFC"));
 #endif
             destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
