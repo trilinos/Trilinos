@@ -677,6 +677,22 @@ namespace FROSch {
         }
         return xMultiVector;
     }
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> >  ExtractCoordinatesFromParameterList (Teuchos::ParameterList& paramList){
+        Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+        
+        if(paramList.isParameter ("Coordinates") == false)
+            return coordinates;
+        
+        if(paramList.isType<decltype(coordinates)>("Coordinates")) {
+            coordinates = paramList.get<decltype(coordinates)>("Coordinates");
+        } else{
+            std::cerr<<"Wrong Type of Multovector\n";
+        }
+        
+        return coordinates;
+    }
 }
 
 #endif

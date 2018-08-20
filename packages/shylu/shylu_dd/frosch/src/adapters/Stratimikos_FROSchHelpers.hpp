@@ -17,7 +17,7 @@
 namespace Stratimikos {
    
     template <typename LocalOrdinal = int, typename GlobalOrdinal = int, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-    void enableFROSchTwoLevel(DefaultLinearSolverBuilder& builder, const std::string& stratName = "FROSchTwoLevel")
+    void enableFROSchTwoLevel(DefaultLinearSolverBuilder& builder, const std::string& stratName = "TwoLevelPreconditioner")
     {
         const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
         
