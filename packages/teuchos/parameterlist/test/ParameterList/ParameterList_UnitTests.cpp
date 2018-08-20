@@ -702,9 +702,11 @@ TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesWithEmpty )
   ParameterList A;
   ParameterList B;
   TEST_ASSERT( haveSameValues(A,B) );
-  A.set("Hello","World");
+  A.set("a",1);
   TEST_ASSERT( !haveSameValues(A,B) );
-  B.set("Hello","World");
+  A.set("b",2);
+  B.set("a",1);
+  B.set("b",2);
   TEST_ASSERT( haveSameValues(A,B) );
 }
 
@@ -716,6 +718,20 @@ TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesDifferentSublistNames )
   A.sublist("Smith").set("People",4);
   B.sublist("Jones").set("People",4);
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesSortedReversedOrder )
+{
+  ParameterList A, B;
+  A.set("a",1);
+  A.set("b",2);
+  // Create second list with the same entries but different order
+  B.set("b",2);
+  B.set("a",1);
+  TEST_ASSERT( haveSameValuesSorted(A,B) );
+  B.set("c",3);
+  TEST_ASSERT( !haveSameValuesSorted(A,B) ); // check for length
 }
 
 
