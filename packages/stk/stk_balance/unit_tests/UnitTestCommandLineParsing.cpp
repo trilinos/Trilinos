@@ -1,102 +1,96 @@
 #include <iosfwd>
 
 #include <gtest/gtest.h>
+#include <stk_balance/internal/balanceCommandLine.hpp>
+#include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_balance/internal/Inputs.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <fstream>
 
 namespace
 {
 
-void touch_new_file(const std::string& filename)
+class BalanceCommandLine : public ::testing::Test
 {
-    std::ofstream out(filename, std::ios_base::app);
-    out << "hi";
-    out.close();
-}
-
-stk::balance::Inputs get_inputs_for_no_options()
-{
-    const int numInputs = 1;
-    const char* inputs[numInputs] = { "stk_balance" };
-    stk::balance::Inputs parsedInput(numInputs, inputs);
-    return parsedInput;
-}
-
-stk::balance::Inputs get_inputs_for_filename_only()
-{
-    const int numInputs = 2;
-    const char* inputs[numInputs] = { "stk_balance", "junk.exo"};
-    stk::balance::Inputs parsedInput(numInputs, inputs);
-    return parsedInput;
-}
-
-stk::balance::Inputs get_inputs_for_valid_inputs()
-{
-    const int numInputs = 3;
-    const char* inputs[numInputs] = { "stk_balance", "junk.exo", "alpha" };
-    stk::balance::Inputs parsedInput(numInputs, inputs);
-    return parsedInput;
-}
-
-TEST(CommandLineParse, testNoOptions)
-{
-    stk::balance::Inputs parsedInput = get_inputs_for_no_options();
-    EXPECT_EQ("stk_balance", parsedInput.get_executable_name());
-    EXPECT_EQ("", parsedInput.get_exodus_filename());
-    EXPECT_EQ(".", parsedInput.get_output_directory());
-}
-
-TEST(CommandLineParse, testWithOneOption)
-{
-    stk::balance::Inputs parsedInput= get_inputs_for_filename_only();
-    EXPECT_EQ("stk_balance", parsedInput.get_executable_name());
-    EXPECT_EQ("junk.exo", parsedInput.get_exodus_filename());
-    EXPECT_EQ(".", parsedInput.get_output_directory());
-}
-
-TEST(CommandLineParse, testOptions)
-{
-    stk::balance::Inputs parsedInput= get_inputs_for_valid_inputs();
-    EXPECT_EQ("stk_balance", parsedInput.get_executable_name());
-    EXPECT_EQ("junk.exo", parsedInput.get_exodus_filename());
-    EXPECT_EQ("alpha", parsedInput.get_output_directory());
-}
-
-TEST(ParsedInput, withNoInputsWriteUsageInfo)
-{
-    stk::balance::Inputs parsedInput = get_inputs_for_no_options();
-    EXPECT_TRUE( stk::balance::should_write_usage_info( parsedInput.get_exodus_filename() ) );
-}
-
-TEST(ParsedInput, checkIfFilenameExistsWhenFileExists)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD)==1)
+protected:
+    std::vector<std::string> argv;
+    BalanceCommandLine() :
+        argv({"exe", "infile"})
     {
-        stk::balance::Inputs parsedInput= get_inputs_for_filename_only();
-        touch_new_file(parsedInput.get_exodus_filename());
-        EXPECT_TRUE( stk::parallel::does_file_exist( parsedInput.get_exodus_filename() ));
-        unlink(parsedInput.get_exodus_filename().c_str());
+
     }
-}
-
-TEST(ParsedInput, checkIfFilenameExistsWhenFileDoesNotExist)
-{
-    stk::balance::Inputs parsedInput= get_inputs_for_filename_only();
-    EXPECT_FALSE( stk::parallel::does_file_exist( parsedInput.get_exodus_filename() ));
-}
-
-
-TEST(ParsedInput, outputDirectoryExistsAfterCallToCreatePath)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    virtual stk::balance::ParsedOptions test_command_line(stk::balance::AppTypeDefaults expectedAppDefaults)
     {
-        stk::balance::Inputs parsedInput = get_inputs_for_valid_inputs();
-        EXPECT_TRUE(stk::balance::create_path(parsedInput.get_output_directory()));
+        const std::string quickExample = "";
+
+        MPI_Comm comm(MPI_COMM_WORLD);
+
+        std::vector<const char *> argvCstr = get_argv_c_strings();
+        stk::balance::ParsedOptions balanceOptions = stk::balance::parse_balance_command_line(argvCstr.size(), argvCstr.data(), argv[0], comm);
+
+        EXPECT_EQ(expectedAppDefaults, balanceOptions.appTypeDefaults);
+        EXPECT_EQ(argv[1], balanceOptions.inFile);
+
+        return balanceOptions;
     }
+    std::vector<const char *> get_argv_c_strings()
+    {
+        std::vector<const char *> argvCstr(argv.size());
+        for(size_t i=0; i<argv.size(); i++)
+            argvCstr[i] = argv[i].c_str();
+        return argvCstr;
+    }
+    void add_defaults_flag(const std::string &defaultsName)
+    {
+        std::string defaultsFlag = stk::dash_it(defaultsName);
+        argv.push_back(defaultsFlag.c_str());
+    }
+};
+
+TEST_F(BalanceCommandLine, parse_getValues)
+{
+    test_command_line(stk::balance::NO_DEFAULTS);
 }
 
+TEST_F(BalanceCommandLine, parseSmDefaultOption_smDefaultSet)
+{
+    add_defaults_flag(stk::balance::CommandLineOptions().smDefaults.name);
+    test_command_line(stk::balance::SM_DEFAULTS);
+}
+
+TEST_F(BalanceCommandLine, parseSmDefaultOption_sdDefaultSet)
+{
+    add_defaults_flag(stk::balance::CommandLineOptions().sdDefaults.name);
+    test_command_line(stk::balance::SD_DEFAULTS);
+}
+
+TEST_F(BalanceCommandLine, parseSmAndSdDefaultOptions_throws)
+{
+    add_defaults_flag(stk::balance::CommandLineOptions().smDefaults.name);
+    add_defaults_flag(stk::balance::CommandLineOptions().sdDefaults.name);
+    EXPECT_THROW(test_command_line(stk::balance::SD_DEFAULTS), std::exception);
+}
+
+class BalanceCommandLineWithOutputDir : public BalanceCommandLine
+{
+protected:
+    BalanceCommandLineWithOutputDir()
+    {
+        argv.push_back("outputDir");
+    }
+    virtual stk::balance::ParsedOptions test_command_line(stk::balance::AppTypeDefaults expectedAppDefaults)
+    {
+        stk::balance::ParsedOptions balanceOptions = BalanceCommandLine::test_command_line(expectedAppDefaults);
+        EXPECT_EQ(argv[2], balanceOptions.outputDirectory);
+        return balanceOptions;
+    }
+};
+
+TEST_F(BalanceCommandLineWithOutputDir, parseSmDefaultOption_smDefaultSet)
+{
+    add_defaults_flag(stk::balance::CommandLineOptions().smDefaults.name);
+    test_command_line(stk::balance::SM_DEFAULTS);
+}
 
 }

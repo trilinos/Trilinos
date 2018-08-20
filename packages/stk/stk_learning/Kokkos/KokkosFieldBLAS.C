@@ -12,17 +12,17 @@
 
 typedef stk::mesh::Field<double> ScalarField;
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
-#elif KOKKOS_ENABLE_CUDA
+#elif KOKKOS_HAVE_CUDA
   typedef Kokkos::Cuda     ExecSpace ;
 #else
   typedef Kokkos::Serial   ExecSpace ;
 #endif
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
-#elif KOKKOS_ENABLE_CUDA
+#elif KOKKOS_HAVE_CUDA
    typedef Kokkos::CudaSpace    MemSpace;
 #else
    typedef Kokkos::HostSpace    MemSpace;
@@ -500,6 +500,9 @@ TEST_F(MTK_Kokkos, stkFieldBLAS) {
 
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+    if (bulk.parallel_size() > 1) {
+      return;
+    }
 
     int nx, ny, nz;
     get_mesh_dimensions(nx, ny, nz);
@@ -562,6 +565,9 @@ TEST_F(MTK_Kokkos, kokkosFieldBLAS) {
 
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+    if (bulk.parallel_size() > 1) {
+      return;
+    }
 
     int nx, ny, nz;
     get_mesh_dimensions(nx, ny, nz);

@@ -33,17 +33,34 @@
 #ifndef PROTOTYPE_SEARCH_UTILS_INSTRUMENTED_H_
 #define PROTOTYPE_SEARCH_UTILS_INSTRUMENTED_H_
 
-#include <functional>
-
-#include <tuple>
-#include <map>
-#include <unordered_map>
-
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <math.h>                                        // for floor
+#include <stddef.h>                                      // for size_t
+#include <algorithm>                                     // for max
+#include <iostream>                                      // for operator<<, etc
+#include <map>                                           // for map, etc
+#include <set>                                           // for set
+#include <stk_search/CommonSearchUtilsInstrumented.hpp>  // for SplitTimer
 #include <stk_util/parallel/CommNeighbors.hpp>
-#include <stk_util/parallel/MPI.hpp>
+#include <tuple>                                         // for get, tuple
+#include <unordered_map>                                 // for hash
+#include <utility>                                       // for pair
+#include <vector>                                        // for vector
+#include "mpi.h"                                         // for MPI_Comm, etc
+#include "stk_search/BoundingBox.hpp"                    // for add_to_box, etc
+#include "stk_search/Box.hpp"                            // for Box
+#include "stk_search/CommonSearchUtil.hpp"
+#include "stk_search/KDTree.hpp"
+#include "stk_search/KDTree_BoundingBox.hpp"
+#include "stk_util/parallel/CommSparse.hpp"              // for CommSparse
+#include "stk_util/parallel/ParallelComm.hpp"            // for CommBuffer, etc
+namespace stk { class CommBufferV; }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
-#include <stk_search/CommonSearchUtilsInstrumented.hpp>
+
+
 
 namespace stk {
 namespace search {
@@ -472,7 +489,7 @@ void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int pSize,
       for (const OwnedBox3D &domainBox : domainResidents) {
         for (const OwnedBox3D &rangeBox : rangeResidents) {
           if ((domainBox.owner != rangeBox.owner) && intersects(domainBox.box, rangeBox.box)) {
-            neighborPairs.push_back(std::pair<OwnedBox3D, OwnedBox3D>(domainBox, rangeBox));
+            neighborPairs.emplace_back(domainBox, rangeBox);
           }
         }
       }

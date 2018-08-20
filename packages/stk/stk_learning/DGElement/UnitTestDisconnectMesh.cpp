@@ -576,9 +576,10 @@ void disconnectMesh(     stk::mesh::MetaData &oldMeta,
         }
     }
 
+    std::vector<size_t> num_nodes_needed_per_proc_local(oldBulkData.parallel_size(),0);
+    num_nodes_needed_per_proc_local[oldBulkData.parallel_rank()] = num_nodes_needed;
     std::vector<size_t> num_nodes_needed_per_proc(oldBulkData.parallel_size(),0);
-    num_nodes_needed_per_proc[oldBulkData.parallel_rank()] = num_nodes_needed;
-    stk::all_reduce_sum(oldBulkData.parallel(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.size());
+    stk::all_reduce_sum(oldBulkData.parallel(), num_nodes_needed_per_proc_local.data(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.size());
 
     size_t offset_this_proc = 0;
     for(int i=0;i<oldBulkData.parallel_rank();++i)

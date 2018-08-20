@@ -37,10 +37,10 @@
 #if defined( STK_HAS_MPI )
 
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
 #include <sstream>                      // for ostringstream, etc
 #include "mpi.h"                        // for MPI_Datatype, etc
-#include <boost/static_assert.hpp> 
+#include <assert.h>                     // for static_assert
 
 namespace sierra {
 namespace MPI {
@@ -92,7 +92,7 @@ short_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<short>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_SHORT, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_short_int64);
@@ -111,7 +111,7 @@ int_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<int>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_INT, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_int_int64);
@@ -130,7 +130,7 @@ long_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<long>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_LONG, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_long_int64);
@@ -149,7 +149,7 @@ unsigned_long_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0,(MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_unsigned_long_int64);
@@ -168,7 +168,7 @@ float_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<float>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_FLOAT, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_float_int64);
@@ -187,7 +187,7 @@ double_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<double>, m_loc)};
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_DOUBLE, MPI_LONG_LONG};
 
     MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_double_int64);
@@ -207,7 +207,6 @@ double_double_int_type()
   MPI_Aint D[] = {0, 16};
   MPI_Datatype T[] = {MPI_DOUBLE, MPI_INT};
   
-  
   if (!initialized) {
     initialized = true;
 
@@ -216,7 +215,6 @@ double_double_int_type()
   }
   return s_mpi_double_double_int;
 }
-
 
 namespace {
 
@@ -255,7 +253,7 @@ double_complex_sum_op()
 
 namespace {
 
-const MPI::ReduceSet *s_currentReduceSet = 0;
+const MPI::ReduceSet *s_currentReduceSet = nullptr;
 
 extern "C" {
   typedef void (*ParallelReduceOp)
@@ -344,7 +342,7 @@ ReduceSet::~ReduceSet()
 
 size_t
 ReduceSet::size() const {
-  void *buffer_end = 0;
+  void *buffer_end = nullptr;
 
   for (auto& it : m_reduceVector) {
     it->size(buffer_end);

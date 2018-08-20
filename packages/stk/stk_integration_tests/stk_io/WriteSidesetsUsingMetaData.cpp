@@ -9,13 +9,13 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/FillMesh.hpp>
-#include <Ioss_Region.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_io/WriteMesh.hpp"
+#include "stk_unit_test_utils/FaceTestingUtils.hpp"
 
 namespace
 {
@@ -101,7 +101,8 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
     for(;iter!=goldSideset.end();++iter)
     {
         int id = iter->first;
-        stk::mesh::SideSet &sset = bulkData.get_sideset(id);
+        stk::mesh::Part *part = stk::unit_test_util::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
+        stk::mesh::SideSet &sset = bulkData.get_sideset(*part);
         ElementSidePairs goldSet = iter->second;
         ASSERT_EQ(goldSet.size(), sset.size());
         bool found_matching_sset_entry = false;
@@ -119,8 +120,6 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
           EXPECT_TRUE(found_matching_sset_entry);
         }
     }
-
-    bulkData.clear_sidesets();
 }
 
 void fill_mesh(stk::mesh::BulkData& bulkData, const std::string& filename)
@@ -147,7 +146,6 @@ void write_mesh(const std::string& filename, stk::mesh::BulkData &bulkData)
     std::string output_file_name = get_output_file_name(filename);
     stk::io::create_bulkdata_sidesets(bulkData);
     stk::io::write_mesh(output_file_name, bulkData);
-    stk::io::clear_bulkdata_sidesets(bulkData);
 }
 
 void fill_sideset_data_structure_and_test(const std::string& filename, const ExodusSideSet &goldSideset)

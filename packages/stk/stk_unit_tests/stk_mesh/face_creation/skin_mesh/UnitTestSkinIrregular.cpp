@@ -31,18 +31,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
-#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank, etc
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <gtest/gtest.h>                             // for AssertHelper, etc
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/Entity.hpp>                  // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>              // for declare_element
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData
+#include <stk_mesh/base/SkinMesh.hpp>                // for skin_mesh
+#include <stk_mesh/base/Types.hpp>                   // for EntityId, etc
+#include <stk_util/parallel/Parallel.hpp>
+#include "mpi.h"                                     // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"                 // for topology, etc
 namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace mesh { class Bucket; } }
 
 

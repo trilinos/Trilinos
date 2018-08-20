@@ -66,10 +66,8 @@ double SIERRA_FORTRAN(dnrm2)(const int * n, const double* x, const int * incx); 
 void SIERRA_FORTRAN(sscal)(const int *n, const float *sscale, float *vect, const int *inc); //vect = sscale * vect
 void SIERRA_FORTRAN(dcopy)(const int* n, const double* d, const int* inc, double* d1, const int* inc1); // d1 = d
 void SIERRA_FORTRAN(dswap)(const int* n, double* d, const int* inc, double* d1, const int* inc1); // switch d1 , d // D.N.E.
-//void SIERRA_FORTRAN(dfill)(const int *n, const double *fill, double *vect, const int *inc); // x = fill // D.N.E.
 double SIERRA_FORTRAN(dasum)(const int * n,const double * x,const int * incx);
 int SIERRA_FORTRAN(idamax)(const int *n, const double *vect, const int *inc);
-//int SIERRA_FORTRAN(idamin)(const int *n, const double *vect, const int *inc);
 void SIERRA_FORTRAN(saxpy)(const int *n, const float *xscale, const float x[], const int *incx, float y[],const int *incy); // y=y+sscale*x
 void SIERRA_FORTRAN(scopy)(const int* n, const float* s, const int* inc, float* s1, const int* inc1); // s1 = s
 #if defined(__INTEL_COMPILER) || !defined(STK_BUILT_IN_SIERRA)
@@ -82,20 +80,7 @@ double SIERRA_FORTRAN(snrm2)(const int * n, const float* x, const int * incx); /
 double SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
 #endif
 void SIERRA_FORTRAN(sswap)(const int* n, float* s, const int* inc, float* s1, const int* inc1); // switch s1 , s // D.N.E.
-//void SIERRA_FORTRAN(sfill)(const int *n, const float *fill, double *vect, const int *inc); // x = fill // D.N.E.
 int SIERRA_FORTRAN(isamax)(const int *n, const float *vect, const int *inc);
-//int SIERRA_FORTRAN(isamin)(const int *n, const float *vect, const int *inc);
-//void SIERRA_FORTRAN(zaxpy)(const int *n, const complex<double> *xscale, const complex<double> x[], const int *incx, complex<double> y[],const int *incy); // y=y+sscale*x
-//void SIERRA_FORTRAN(zdscal)(const int *n, const complex<double> *sscale, complex<double> *vect, const int *inc); //vect = sscale * vect
-//void SIERRA_FORTRAN(zcopy)(const int* n, const complex<double>* s, const int* inc, complex<double>* s1, const int* inc1); // s1 = s
-//complex<double> SIERRA_FORTRAN(zdotu)(const int * n, const complex<double>* x, const int * incx, const complex<double>* y, const int * incy); // < x , y >
-//complex<double> SIERRA_FORTRAN(zdotc)(const int * n, const complex<double>* x, const int * incx, const complex<double>* y, const int * incy); // < x , conj y >
-//complex<double> SIERRA_FORTRAN(dznrm2)(const int * n, const complex<double>* x, const int * incx); // || x ||
-//void SIERRA_FORTRAN(zswap)(const int* n, complex<double>* s, const int* inc, complex<double>* s1, const int* inc1); // switch s1 , s // D.N.E.
-////void SIERRA_FORTRAN(cfill)(const int *n, const complex<double> *fill, double *vect, const int *inc); // x = fill // D.N.E.
-//double SIERRA_FORTRAN(dzasum)(const int * n,const complex<double> * x,const int * incx);
-//int SIERRA_FORTRAN(izamax)(const int *n, const complex<double> *vect, const int *inc);
-////int SIERRA_FORTRAN(izamin)(const int *n, const complex<double> *vect, const int *inc);
 }
 
 namespace stk {
@@ -107,7 +92,7 @@ struct FortranBLAS
     inline
     static void axpy( const int & kmax, const Scalar & alpha, const Scalar x[], Scalar y[])
     {
-        for(int k = 0 ; k < kmax ; ++k) {
+        for(int k = 0; k < kmax; ++k) {
             y[k] = alpha * x[k] + y[k];
         }
     }
@@ -115,7 +100,7 @@ struct FortranBLAS
     inline
     static void copy( const int & kmax, const Scalar x[], Scalar y[])
     {
-        for(int k = 0 ; k < kmax ; ++k) {
+        for(int k = 0 ; k < kmax; ++k) {
             y[k] = x[k];
         }
     }
@@ -123,9 +108,8 @@ struct FortranBLAS
     inline
     static void product( const int & kmax, const Scalar x[], const Scalar y[], Scalar z[])
     {
-        for (int k=0;k<kmax;k++)
-        {
-            z[k]=x[k]*y[k];
+        for (int k = 0; k < kmax; ++k) {
+            z[k] = x[k]*y[k];
         }
     }
 
@@ -134,7 +118,7 @@ struct FortranBLAS
     {
         Scalar result = Scalar(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
-            result+=y[k] * x[k];
+            result += y[k] * x[k];
         }
         return result;
     }
@@ -144,7 +128,7 @@ struct FortranBLAS
     {
         Scalar result = Scalar(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
-            result+=pow(std::abs(x[k]),2);
+            result += pow(std::abs(x[k]),2);
         }
         return Scalar(sqrt(result));
     }
@@ -160,16 +144,11 @@ struct FortranBLAS
     inline
     static void fill(const int & kmax, const Scalar alpha, Scalar x[],const int inc=1)
     {
-        for(int k = 0 ; k < kmax*inc ; k+=inc) {
+        auto ke = kmax*inc;
+        for(int k = 0 ; k < ke ; k += inc) {
             x[k] = alpha;
         }
     }
-
-    //    inline
-    //    static void fill(const int & kmax, const Scalar alpha, Scalar x[])
-    //    {
-    //        std::fill(x,x+kmax,alpha);
-    //    }
 
     inline
     static void swap(const int & kmax, Scalar x[], Scalar y[])
@@ -187,7 +166,7 @@ struct FortranBLAS
     {
         Scalar result = Scalar(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
-            result+=std::abs(x[k]);
+            result += std::abs(x[k]);
         }
         return Scalar(result);
     }
@@ -198,7 +177,7 @@ struct FortranBLAS
         double amax = 0.0;
         int result = 0;
         for(int k = 0 ; k < kmax ; ++k) {
-            if (amax<std::abs(x[k])) {
+            if (amax < std::abs(x[k])) {
                 result = k;
                 amax = std::abs(x[k]);
             }
@@ -227,8 +206,6 @@ struct FortranBLAS<std::complex<Scalar> >
     inline
     static void axpy( const int & kmax, const std::complex<Scalar>  & alpha, const std::complex<Scalar>  x[], std::complex<Scalar>  y[])
     {
-        //        const int one = 1;
-        //        SIERRA_FORTRAN(zaxpy)(&kmax,&alpha,x,&one,y,&one);
         for(int k = 0 ; k < kmax ; ++k) {
             y[k] = alpha * x[k] + y[k];
         }
@@ -237,17 +214,15 @@ struct FortranBLAS<std::complex<Scalar> >
     inline
     static void product( const int & kmax, const std::complex<Scalar> x[], const std::complex<Scalar> y[], std::complex<Scalar> z[])
     {
-        for (int k=0;k<kmax;k++)
+        for (int k = 0; k < kmax; ++k)
         {
-            z[k]=x[k]*y[k];
+            z[k] = x[k]*y[k];
         }
     }
 
     inline
     static void copy( const int & kmax, const std::complex<Scalar>  x[], std::complex<Scalar>  y[])
     {
-        //        const int one = 1;
-        //        SIERRA_FORTRAN(zcopy)(&kmax,x,&one,y,&one);
         for(int k = 0 ; k < kmax ; ++k) {
             y[k] = x[k];
         }
@@ -255,8 +230,6 @@ struct FortranBLAS<std::complex<Scalar> >
 
     inline
     static std::complex<Scalar> dot( const int & kmax, const std::complex<Scalar>  x[], const std::complex<Scalar>  y[]) {
-        //        const int one = 1;
-        //        return SIERRA_FORTRAN(zdotu)(&kmax,x,&one,y,&one);
         std::complex<Scalar> result = std::complex<Scalar>(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
             result+=y[k] * x[k];
@@ -266,11 +239,9 @@ struct FortranBLAS<std::complex<Scalar> >
 
     inline
     static std::complex<Scalar> nrm2( const int & kmax, const std::complex<Scalar>  x[]) {
-        //        const int one = 1;
-        //        return sqrt(SIERRA_FORTRAN(zdotc)(&kmax,x,&one,x,&one).real());
         Scalar result = Scalar(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
-            result+=pow(std::abs(x[k]),2);
+            result += pow(std::abs(x[k]),2);
         }
         return std::complex<Scalar>(sqrt(result));
     }
@@ -278,8 +249,6 @@ struct FortranBLAS<std::complex<Scalar> >
     inline
     static void scal( const int & kmax, const std::complex<Scalar>  alpha, std::complex<Scalar>  x[])
     {
-        //        const int one = 1;
-        //        SIERRA_FORTRAN(zdscal)(&kmax,&alpha,x,&one);
         for(int k = 0 ; k < kmax ; ++k) {
             x[k] = alpha * x[k];
         }
@@ -288,22 +257,15 @@ struct FortranBLAS<std::complex<Scalar> >
     inline
     static void fill(const int & kmax, const std::complex<Scalar>  alpha, std::complex<Scalar>  x[],const int inc=1)
     {
-        for(int k = 0 ; k < kmax*inc ; k+=inc) {
+        auto ke = kmax*inc;
+        for(int k = 0 ; k < ke ; k += inc) {
             x[k] = alpha;
         }
     }
 
-    //    inline
-    //    static void fill(const int & kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[])
-    //    {
-    //        std::fill(x,x+kmax,alpha);
-    //    }
-
     inline
     static void swap(const int & kmax, std::complex<Scalar>  x[], std::complex<Scalar>  y[])
     {
-        //        const int one = 1;
-        //        SIERRA_FORTRAN(zswap)(&kmax,x,&one,y,&one);
         std::complex<Scalar> temp;
         for(int k = 0 ; k < kmax ; ++k) {
             temp = y[k];
@@ -313,21 +275,17 @@ struct FortranBLAS<std::complex<Scalar> >
     }
 
     inline
-    static std::complex<Scalar> asum( const int & kmax, const std::complex<Scalar>  x[])
+    static std::complex<Scalar> asum( const int & kmax, const std::complex<Scalar> x[])
     {
-        //        const int one = 1;
-        //        return SIERRA_FORTRAN(dzasum)(&kmax,x,&one);
         Scalar result = Scalar(0.0);
         for(int k = 0 ; k < kmax ; ++k) {
-            result+=std::abs(x[k]);
+            result += std::abs(x[k]);
         }
         return std::complex<Scalar>(result,0.0);
     }
 
     inline
-    static int iamax( const int & kmax, const std::complex<Scalar>  x[]) {
-        //        const int one = 1;
-        //        return (SIERRA_FORTRAN(izamax)(&kmax, x, &one) - 1);
+    static int iamax( const int & kmax, const std::complex<Scalar> x[]) {
         Scalar amax = Scalar(0.0);
         int result = 0;
         for(int k = 0 ; k < kmax ; ++k) {
@@ -340,11 +298,9 @@ struct FortranBLAS<std::complex<Scalar> >
     }
 
     inline
-    static int iamin( const int & kmax, const std::complex<Scalar>  x[]) {
-        //        const int one = 1;
-        //        return (SIERRA_FORTRAN(izamin)(&kmax, x, &one) - 1); //dne
+    static int iamin( const int & kmax, const std::complex<Scalar> x[]) {
         int result = 0;
-        Scalar amin=std::norm(x[0]);
+        Scalar amin = std::norm(x[0]);
         for(int k = 0 ; k < kmax ; ++k) {
             if (std::norm(x[k])<amin) {
                 result = k;
@@ -369,9 +325,9 @@ struct FortranBLAS<double>
     inline
     static void product( const int & kmax, const double x[], const double y[], double z[])
     {
-        for (int k=0;k<kmax;k++)
+        for (int k = 0; k < kmax; ++k)
         {
-            z[k]=x[k]*y[k];
+            z[k] = x[k]*y[k];
         }
     }
 
@@ -404,18 +360,13 @@ struct FortranBLAS<double>
     }
 
     inline
-    static void fill(const int & kmax, const double alpha, double x[],const int inc=1) //CR consider std::fill
+    static void fill(const int & kmax, const double alpha, double x[],const int inc=1)
     {
-        for(int k = 0 ; k < kmax*inc ; k+=inc) {
+        auto ke = kmax*inc;
+        for(int k = 0 ; k < ke ; k += inc) {
             x[k] = alpha;
         }
     }
-
-    //    inline
-    //    static void fill(const int & kmax, const double alpha, double x[])
-    //    {
-    //        std::fill(x,x+kmax,alpha);
-    //    }
 
     inline
     static void swap(const int & kmax, double x[], double y[])
@@ -465,9 +416,9 @@ struct FortranBLAS<float>
     inline
     static void product( const int & kmax, const float x[], const float y[], float z[])
     {
-        for (int k=0;k<kmax;k++)
+        for (int k = 0; k < kmax; ++k)
         {
-            z[k]=x[k]*y[k];
+            z[k] = x[k]*y[k];
         }
     }
 
@@ -502,16 +453,11 @@ struct FortranBLAS<float>
     inline
     static void fill(const int & kmax, const float alpha, float x[],const int inc=1)
     {
-        for(int k = 0 ; k < kmax*inc ; k+=inc) {
+        auto ke = kmax*inc;
+        for(int k = 0 ; k < ke ; k += inc) {
             x[k] = alpha;
         }
     }
-
-    //    inline
-    //    static void fill(const int & kmax, const float alpha, float x[])
-    //    {
-    //        std::fill(x,x+kmax,alpha);
-    //    }
 
     inline
     static void swap(const int & kmax, float x[], float y[])
@@ -538,7 +484,7 @@ struct FortranBLAS<float>
         int result = 0;
         float amin = std::abs(x[0]);
         for(int k = 0 ; k < kmax ; ++k) {
-            if (std::abs(x[k])<amin) {
+            if (std::abs(x[k]) < amin) {
                 result = k;
                 amin = std::abs(x[k]);
             }
@@ -707,8 +653,6 @@ void field_product(
         INTERNAL_field_product<std::complex<float> >(xFieldBase,yFieldBase,zFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_product<int>(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_product<std::complex<int> >(xFieldBase,yFieldBase,zFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_product; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -828,8 +772,6 @@ void field_copy(
         INTERNAL_field_copy<std::complex<float> >(xFieldBase,yFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_copy<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_copy<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -914,7 +856,7 @@ Scalar field_dot(
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
         const Scalar * y = static_cast<Scalar*>(field_data(yField, b));
-        local_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
+        local_result += FortranBLAS<Scalar>::dot(kmax,x,y);
     }
 
     Scalar glob_result = local_result;
@@ -954,8 +896,8 @@ std::complex<Scalar>  field_dot(
         const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
         const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yField, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        local_result_r+=priv_tmp.real();
-        local_result_i+=priv_tmp.imag();
+        local_result_r += priv_tmp.real();
+        local_result_i += priv_tmp.imag();
     }
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
@@ -990,7 +932,7 @@ template<class Scalar>
 inline
 void field_dot(
         std::complex<Scalar> & global_result,
-        const FieldBase & xFieldBase, //CR LAST COMMENT LOCATION
+        const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const Selector& selector,
         const MPI_Comm comm)
@@ -1020,8 +962,8 @@ void field_dot(
         const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
         const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yFieldBase, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        local_result_r+=priv_tmp.real();
-        local_result_i+=priv_tmp.imag();
+        local_result_r += priv_tmp.real();
+        local_result_i += priv_tmp.imag();
     }
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
@@ -1063,7 +1005,7 @@ void field_dot(
         const Scalar* x = static_cast<Scalar*>(field_data(xFieldBase, b));
         const Scalar* y = static_cast<Scalar*>(field_data(yFieldBase, b));
 
-        local_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
+        local_result += FortranBLAS<Scalar>::dot(kmax,x,y);
     }
 
     glob_result = local_result;
@@ -1399,8 +1341,6 @@ void field_swap(
         INTERNAL_field_swap<std::complex<float> >(xFieldBase,yFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_swap<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        INTERNAL_field_swap<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -1438,7 +1378,7 @@ Scalar field_nrm2(
         const int kmax = length * fieldSize;
         Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        local_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
+        local_result += FortranBLAS<Scalar>::dot(kmax,x,x);
     }
 
     Scalar glob_result=local_result;
@@ -1470,7 +1410,7 @@ std::complex<Scalar> field_nrm2(
         const int kmax = length * fieldSize;
         std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
-        local_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
+        local_result_r += pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
     }
 
     Scalar glob_result=local_result_r;
@@ -1525,12 +1465,12 @@ void field_nrm2(
         const int kmax = length * fieldSize;
         Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
-        local_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
+        local_result += FortranBLAS<Scalar>::dot(kmax,x,x);
     }
 
     glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    glob_result=sqrt(glob_result);
+    glob_result = sqrt(glob_result);
     unfix_omp_threads(orig_thread_count);
 }
 
@@ -1560,7 +1500,7 @@ void field_nrm2(
         const int kmax = length * fieldSize;
         std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
-        local_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
+        local_result_r += pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
     }
 
     Scalar glob_result=local_result_r;
@@ -1599,7 +1539,6 @@ Scalar field_asum(
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
-
     Scalar local_result = Scalar(0.0);
 
     int orig_thread_count = fix_omp_threads();
@@ -1613,7 +1552,7 @@ Scalar field_asum(
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        local_result+=FortranBLAS<Scalar>::asum(kmax,x);
+        local_result += FortranBLAS<Scalar>::asum(kmax,x);
     }
 
     Scalar glob_result=local_result;
@@ -1631,7 +1570,6 @@ std::complex<Scalar> field_asum(
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
-
     Scalar local_result = Scalar(0.0);
 
     int orig_thread_count = fix_omp_threads();
@@ -1775,7 +1713,7 @@ Entity field_eamax(
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar local_amax=Scalar(-2.0);
+    Scalar local_amax = Scalar(-2.0);
     Entity local_result=Entity();
 
     int orig_thread_count = fix_omp_threads();
@@ -1783,7 +1721,7 @@ Entity field_eamax(
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
-        priv_amax=Scalar(-1.0);
+        priv_amax = Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp for schedule(static) reduction(max:local_amax)
 #endif
@@ -1796,7 +1734,7 @@ Entity field_eamax(
             Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
             priv_iamax = FortranBLAS<Scalar>::iamax(kmax,x);
-            if (priv_amax<std::abs(x[priv_iamax]))
+            if (priv_amax < std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
@@ -1839,7 +1777,7 @@ Entity field_eamax(
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar local_amax=Scalar(-2.0);
+    Scalar local_amax = Scalar(-2.0);
     Entity local_result=Entity();
 
     int orig_thread_count = fix_omp_threads();
@@ -1847,7 +1785,7 @@ Entity field_eamax(
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
-        priv_amax=Scalar(-1.0);
+        priv_amax = Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp for schedule(static) reduction(max:local_amax)
 #endif
@@ -1860,7 +1798,7 @@ Entity field_eamax(
             std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
             priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(kmax,x);
-            if (priv_amax<std::abs(x[priv_iamax]))
+            if (priv_amax < std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
@@ -1911,7 +1849,7 @@ Scalar field_amax(
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar local_amax=Scalar(-1.0);
+    Scalar local_amax = Scalar(-1.0);
 
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
@@ -1948,7 +1886,7 @@ std::complex<Scalar> field_amax(
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar local_amax=Scalar(0.0);
+    Scalar local_amax = Scalar(0.0);
 
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
@@ -2005,7 +1943,7 @@ Entity INTERNAL_field_eamax_complex(
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar local_amax=Scalar(-2.0);
+    Scalar local_amax = Scalar(-2.0);
     Entity local_result=Entity();
 
     int orig_thread_count = fix_omp_threads();
@@ -2013,7 +1951,7 @@ Entity INTERNAL_field_eamax_complex(
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
-        priv_amax=Scalar(-1.0);
+        priv_amax = Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp for schedule(static) reduction(max:local_amax)
 #endif
@@ -2075,7 +2013,7 @@ Entity INTERNAL_field_eamax(
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
-        priv_amax=Scalar(-1.0);
+        priv_amax = Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp for schedule(static) reduction(max:local_amax)
 #endif
@@ -2088,7 +2026,7 @@ Entity INTERNAL_field_eamax(
             Scalar* x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
             priv_iamax = FortranBLAS<Scalar>::iamax(kmax,x);
-            if (priv_amax<std::abs(x[priv_iamax]))
+            if (priv_amax < std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
@@ -2134,8 +2072,6 @@ Entity field_eamax(
         return INTERNAL_field_eamax_complex<float>(xFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamax<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        return INTERNAL_field_eamax_complex<int>(xFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
@@ -2164,7 +2100,7 @@ void field_amax(
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar local_amax=Scalar(-1.0);
+    Scalar local_amax = Scalar(-1.0);
 
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
@@ -2204,7 +2140,7 @@ void field_amax(
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar local_amax=Scalar(-1.0);
+    Scalar local_amax = Scalar(-1.0);
 
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
@@ -2285,7 +2221,7 @@ Entity field_eamin(
             std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
             priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(kmax,x);
-            if (std::abs(x[priv_iamin])<priv_amin) {
+            if (std::abs(x[priv_iamin]) < priv_amin) {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
                 local_amin = priv_amin;
@@ -2348,7 +2284,7 @@ Entity field_eamin(
             Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
             priv_iamin = FortranBLAS<Scalar>::iamin(kmax,x);
-            if (std::abs(x[priv_iamin])<priv_amin)
+            if (std::abs(x[priv_iamin]) < priv_amin)
             {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
@@ -2574,7 +2510,7 @@ Entity INTERNAL_field_eamin(
             Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
             priv_iamin = FortranBLAS<Scalar>::iamin(kmax,x);
-            if (std::abs(x[priv_iamin])<priv_amin)
+            if ( std::abs(x[priv_iamin]) < priv_amin)
             {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
@@ -2619,8 +2555,6 @@ Entity field_eamin(
         return INTERNAL_field_eamin_complex<float>(xFieldBase,selector);
     } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamin<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
-        return INTERNAL_field_eamin_complex<int>(xFieldBase,selector);
     } else {
         ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }

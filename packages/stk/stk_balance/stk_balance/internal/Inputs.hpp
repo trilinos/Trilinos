@@ -36,37 +36,14 @@
 #include <string>
 
 #include <sys/stat.h> // move us
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <iostream>
 #include <fstream>
+#include <sstream>
 
 namespace stk { namespace balance {
-
-class Inputs
-{
-public:
-    Inputs(const int argc, const char* inputs[])
-    : executableName(inputs[0]), exodusFilename(""), outputDirectory(".")
-    {
-        if(argc>1)
-        {
-            exodusFilename = std::string(inputs[1]);
-        }
-
-        if(argc>2)
-            outputDirectory = std::string(inputs[2]);
-    }
-
-    std::string get_executable_name() const { return executableName; }
-    std::string get_exodus_filename() const { return exodusFilename; }
-    std::string get_output_directory() const { return outputDirectory; }
-
-
-private:
-    std::string executableName;
-    std::string exodusFilename;
-    std::string outputDirectory;
-};
 
 // Only call for proc 0 (or any single proc)
 // Copied and modified from Ioss_DatabaseIO.C::create_path

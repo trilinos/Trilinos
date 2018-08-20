@@ -96,7 +96,7 @@
 ///
 /// \code
 ///     Int step = (Int) parameters().value( "GLOBAL_TIMESTEP_COUNTER" ) + 1;
-///     Fmwk::Domain::singleton()->print_timer_information(step);
+///     Domain::singleton()->print_timer_information(step);
 /// \endcode
 ///
 /// \anchor stk_util_diag_timer_howto_stop_watch

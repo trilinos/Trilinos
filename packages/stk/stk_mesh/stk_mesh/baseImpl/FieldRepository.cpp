@@ -40,7 +40,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }

@@ -109,7 +109,7 @@ private:
         stk::mesh::EntityVector nodes(num_nodes);
         get_bulk().modification_begin();
         for(unsigned int i=0;i<num_nodes;++i)
-            nodes[i] = get_bulk().declare_node(i+1, {nodePart});
+            nodes[i] = get_bulk().declare_node(i+1, stk::mesh::ConstPartVector{nodePart});
         get_bulk().modification_end();
         return nodes;
     }
