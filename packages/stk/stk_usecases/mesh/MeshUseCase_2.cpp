@@ -42,7 +42,7 @@
 #include <stk_util/util/SimpleArrayOps.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>

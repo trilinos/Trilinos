@@ -721,7 +721,7 @@ TEST(MeshImplUtils, check_for_connected_nodes)
     mesh.modification_begin();
     Entity node1, node2, node3, node4;
     if (mesh.parallel_rank() == 0) {
-        Entity element = mesh.declare_element(1, {&block_1});
+        Entity element = mesh.declare_element(1, stk::mesh::ConstPartVector{&block_1});
         node1 = mesh.declare_node(1);
         node2 = mesh.declare_node(2);
         node3 = mesh.declare_node(3);
@@ -763,7 +763,7 @@ TEST(MeshImplUtils, comm_mesh_very_parallel_consistency_nominal)
         mesh.modification_begin();
         Entity node1, node2, node3, node4;
         if (mesh.parallel_rank() == 0) {
-            Entity element = mesh.declare_element(1, {&block_1});
+            Entity element = mesh.declare_element(1, stk::mesh::ConstPartVector{&block_1});
             node1 = mesh.declare_node(1);
             node2 = mesh.declare_node(2);
             node3 = mesh.declare_node(3);
@@ -794,7 +794,7 @@ TEST(MeshImplUtils, check_no_shared_elements_or_higher_nominal)
         Entity node1, node2, node3, node4, node5, node6;
         if (myRank == 0)
         {
-            Entity element = mesh.declare_element(1, {&block_1});
+            Entity element = mesh.declare_element(1, stk::mesh::ConstPartVector{&block_1});
             node1 = mesh.declare_node(1);
             node2 = mesh.declare_node(2); // shared
             node3 = mesh.declare_node(3); // shared
@@ -808,7 +808,7 @@ TEST(MeshImplUtils, check_no_shared_elements_or_higher_nominal)
         }
         if (myRank == 1)
         {
-            Entity element = mesh.declare_element(2, {&block_1});
+            Entity element = mesh.declare_element(2, stk::mesh::ConstPartVector{&block_1});
             node2 = mesh.declare_node(2); // shared
             node5 = mesh.declare_node(5);
             node6 = mesh.declare_node(6);

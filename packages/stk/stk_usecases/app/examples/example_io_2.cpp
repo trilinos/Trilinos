@@ -646,8 +646,9 @@ namespace app {
     /// fields to stk::io.  This maybe works with only a single field,
     /// but adding attributes, distribution factors and perhaps other
     /// fields will make this unwieldy.
-    stk::io::define_output_db(out_region, bulk_data, {}, &in_region);
-    stk::io::write_output_db(out_region,  bulk_data);
+    stk::io::OutputParams params(out_region, bulk_data);
+    stk::io::define_output_db(params, {}, &in_region);
+    stk::io::write_output_db(params);
 
     // ------------------------------------------------------------------------
     /// \todo REFACTOR A real app would register a subset of the

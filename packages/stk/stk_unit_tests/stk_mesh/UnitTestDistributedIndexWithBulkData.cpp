@@ -60,14 +60,11 @@ void updateDistributedIndexUsingStkMesh(stk::unit_test_util::BulkDataTester &stk
 
     size_t num_created_or_modified = 0;
 
-    stk::mesh::impl::EntityRepository &m_entity_repo = stkMeshBulkData.my_get_entity_repository();
-
-    for(stk::mesh::impl::EntityRepository::const_iterator i = m_entity_repo.begin(); i != m_entity_repo.end(); ++i)
+    for(stk::mesh::const_entity_iterator i = stkMeshBulkData.begin_entities(stk::topology::NODE_RANK); i != stkMeshBulkData.end_entities(stk::topology::NODE_RANK); ++i)
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stkMeshBulkData.owned_closure(entity) &&
-                stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
+        if(stkMeshBulkData.owned_closure(entity))
         {
             ++num_created_or_modified;
         }
@@ -75,12 +72,11 @@ void updateDistributedIndexUsingStkMesh(stk::unit_test_util::BulkDataTester &stk
 
     local_created_or_modified.reserve(num_created_or_modified);
 
-    for(stk::mesh::impl::EntityRepository::const_iterator i = m_entity_repo.begin(); i != m_entity_repo.end(); ++i)
+    for(stk::mesh::const_entity_iterator i = stkMeshBulkData.begin_entities(stk::topology::NODE_RANK); i != stkMeshBulkData.end_entities(stk::topology::NODE_RANK); ++i)
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stkMeshBulkData.owned_closure(entity)  &&
-                stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
+        if(stkMeshBulkData.owned_closure(entity))
         {
             local_created_or_modified.push_back(stkMeshBulkData.entity_key(entity));
         }

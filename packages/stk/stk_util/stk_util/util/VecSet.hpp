@@ -152,7 +152,6 @@ public:
   const_reverse_iterator rend() const     { return Storage.rend(); }
   bool                   empty() const    { return Storage.empty(); }
   size_type              size() const     { return Storage.size(); }
-  size_type              max_size() const { return Storage.max_size(); }
 
   iterator lower_bound( const_key_type & k ) {
     iterator __first = begin();

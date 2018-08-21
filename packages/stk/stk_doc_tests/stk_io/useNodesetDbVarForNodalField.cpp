@@ -108,7 +108,8 @@ namespace {
 
       //+ The "temperature" field will be output on nodesets consisting
       //+ of the nodes of each part the field is defined on.
-      stkIo.use_nodeset_for_part_nodes_fields(fh, true);
+      stkIo.use_nodeset_for_sideset_nodes_fields(fh, true);
+      stkIo.use_nodeset_for_block_nodes_fields(fh, true);
       stkIo.add_field(fh, temperature, dbFieldName);
 
       std::vector<stk::mesh::Entity> nodes;
@@ -148,7 +149,7 @@ namespace {
       // Six nodesets should have been created -- 1 for each shell block in the mesh.
       const Ioss::NodeSetContainer &nsets = ioRegion.get_nodesets();
       size_t nset_count = 6;
-      ASSERT_EQ(nsets.size(), nset_count);
+      ASSERT_EQ(nset_count, nsets.size());
 
       for (size_t i=0; i < nsets.size(); i++) {
 	const Ioss::NodeSet *nset = nsets[i];

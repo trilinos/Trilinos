@@ -33,6 +33,8 @@
 #ifndef CONFIG_STK_SIMD_H
 #define CONFIG_STK_SIMD_H
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 #if !defined(__CUDA_ARCH__)
 //#if 0 // to turn off simd
 
@@ -77,9 +79,11 @@
 #define USE_STK_SIMD_AUTO // default to SSE or less capability
 #endif
 
-#define STK_NO_SIMD
+#ifdef USE_STK_SIMD_NONE
 
-#ifndef USE_STK_SIMD_NONE
+#  define STK_SIMD_NONE
+
+#else
 
 #  if defined (USE_STK_SIMD_SSE)
 #    if defined(__SSE_23__) || defined(__SSE4_X__) || defined(__x86_64__)
@@ -102,12 +106,9 @@
 #      define STK_SIMD_AVX
 #    elif defined(__SSE_23__) || defined(__SSE4_X__) || defined(__x86_64__)
 #      define STK_SIMD_SSE
+#    else
+#      define STK_SIMD_NONE
 #    endif
-#  endif
-
-#  if defined(STK_SIMD_SSE) || defined(STK_SIMD_AVX) || defined(STK_SIMD_AVX512)
-#    define STK_SIMD
-#    undef STK_NO_SIMD
 #  endif
 
 #  if defined(STK_SIMD_SSE) && defined(STK_SIMD_AVX)
@@ -123,6 +124,9 @@
 #  endif
 
 #endif
+
+//#undef STK_SIMD_SSE
+//#undef STK_SIMD_AVX
 
 #endif // #ifndef CONFIG_STK_SIMD_H
 

@@ -4,6 +4,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_balance/internal/balanceDefaults.hpp>
 
 class ReverseOrderAttributes : public stk::unit_test_util::MeshFixture {};
 
@@ -11,7 +12,7 @@ TEST_F(ReverseOrderAttributes, balance_attributeOrderPreserved)
 {
     const std::string inputFile = "reverseOrderAttr.exo";
     const std::string outputDir = "outputDir";
-    stk::balance::run_stk_rebalance(outputDir, inputFile, MPI_COMM_WORLD);
+    stk::balance::run_stk_rebalance(outputDir, inputFile, stk::balance::SD_DEFAULTS, MPI_COMM_WORLD);
 
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::io::StkMeshIoBroker stkIo(get_comm());

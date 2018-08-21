@@ -52,6 +52,7 @@
 
 namespace Tpetra {
 namespace Experimental {
+namespace Classes {
 
 /// \class BlockCrsMatrix
 /// \brief Sparse matrix whose entries are small dense square blocks,
@@ -135,13 +136,13 @@ template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
          class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
 class BlockCrsMatrix :
-  virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
-  virtual public Tpetra::DistObject<char, LO, GO, Node>
+  virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
+  virtual public ::Tpetra::DistObject<char, LO, GO, Node>
 {
 private:
-  typedef Tpetra::DistObject<char, LO, GO, Node> dist_object_type;
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
+  using dist_object_type = ::Tpetra::DistObject<char, LO, GO, Node>;
+  using BMV = BlockMultiVector<Scalar, LO, GO, Node>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
 
 protected:
   //! Implementation detail; tells
@@ -152,7 +153,7 @@ public:
   //@{
 
   //! The type of entries in the matrix (that is, of each entry in each block).
-  typedef Scalar scalar_type;
+  using scalar_type = Scalar;
 
   /// \brief The implementation type of entries in the matrix.
   ///
@@ -160,7 +161,7 @@ public:
   /// work correctly for Scalar types like std::complex<T>, which lack
   /// the necessary CUDA device macros and volatile overloads to work
   /// correctly with Kokkos.
-  typedef typename BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type impl_scalar_type;
+  using impl_scalar_type = typename BMV::impl_scalar_type;
 
   //! The type of local indices.
   typedef LO local_ordinal_type;
@@ -182,9 +183,9 @@ public:
   //! The implementation of Map that this class uses.
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
   //! The implementation of MultiVector that this class uses.
-  typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
+  typedef ::Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
   //! The implementation of CrsGraph that this class uses.
-  typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
+  typedef ::Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
@@ -337,7 +338,7 @@ public:
   LO getBlockSize () const { return blockSize_; }
 
   //! Get the (mesh) graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
+  virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
 
   const crs_graph_type & getCrsGraph () const { return graph_; }
 
@@ -357,8 +358,8 @@ public:
   /// Not Implemented
   void
   gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const MultiVector<Scalar,LO,GO,Node> &B,
-                   const MultiVector<Scalar,LO,GO,Node> &D,
+                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &B,
+                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &D,
                    const Scalar& dampingFactor,
                    const ESweepDirection direction,
                    const int numSweeps,
@@ -368,9 +369,9 @@ public:
   ///
   /// Not Implemented
   void
-  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
-                            const MultiVector<Scalar,LO,GO,Node>& B,
-                            const MultiVector<Scalar,LO,GO,Node>& D,
+  reorderedGaussSeidelCopy (::Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
+                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& D,
                             const Teuchos::ArrayView<LO>& rowIndices,
                             const Scalar& dampingFactor,
                             const ESweepDirection direction,
@@ -735,29 +736,29 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
+  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
   virtual void
-  copyAndPermute (const Tpetra::SrcDistObject& source,
+  copyAndPermute (const ::Tpetra::SrcDistObject& source,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LO>& permuteToLIDs,
                   const Teuchos::ArrayView<const LO>& permuteFromLIDs);
 
   virtual void
-  packAndPrepare (const Tpetra::SrcDistObject& source,
+  packAndPrepare (const ::Tpetra::SrcDistObject& source,
                   const Teuchos::ArrayView<const LO>& exportLIDs,
                   Teuchos::Array<packet_type>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t& constantNumPackets,
-                  Tpetra::Distributor& distor);
+                  ::Tpetra::Distributor& distor);
 
   virtual void
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
                     const Teuchos::ArrayView<const packet_type> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                     size_t constantNumPackets,
-                    Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM);
+                    ::Tpetra::Distributor& distor,
+                    ::Tpetra::CombineMode CM);
   //@}
 
 private:
@@ -1239,7 +1240,7 @@ public:
   /// same diagonal element.  You may combine these overlapping
   /// diagonal elements by doing an Export from the row Map Vector
   /// to a range Map Vector.
-  virtual void getLocalDiagCopy (Vector<Scalar,LO,GO,Node>& diag) const;
+  virtual void getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const;
 
   //@}
   //! \name Mathematical methods
@@ -1250,14 +1251,14 @@ public:
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
    */
-  virtual void leftScale (const Vector<Scalar, LO, GO, Node>& x);
+  virtual void leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
 
   /**
    * \brief Scale the RowMatrix on the right with the given Vector x.
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
    */
-  virtual void rightScale (const Vector<Scalar, LO, GO, Node>& x);
+  virtual void rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
 
   /// \brief The Frobenius norm of the matrix.
   ///
@@ -1267,11 +1268,12 @@ public:
   /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |A(i,j)|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
-  virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
+  virtual typename ::Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   getFrobeniusNorm () const;
   //@}
 };
 
+} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 

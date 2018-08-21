@@ -30,6 +30,38 @@ SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
         impl::populate_selected_value_for_remote_elements(eeGraph.get_mesh(), eeGraph, airSelector, remoteAirSelector);
 }
 
+std::vector<SideSetEntry> SkinMeshUtil::get_skinned_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector)
+{
+  bulk.initialize_face_adjacent_element_graph();
+  ElemElemGraph& elemElemGraph = bulk.get_face_adjacent_element_graph();
+  SkinMeshUtil skinMesh(elemElemGraph, skinSelector, nullptr);
+  return skinMesh.extract_skinned_sideset();
+}
+
+std::vector<SideSetEntry> SkinMeshUtil::get_skinned_sideset_excluding_region(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector, const stk::mesh::Selector& exclusionRegionSelector)
+{
+  bulk.initialize_face_adjacent_element_graph();
+  ElemElemGraph& elemElemGraph = bulk.get_face_adjacent_element_graph();
+  SkinMeshUtil skinMesh(elemElemGraph, skinSelector, &exclusionRegionSelector);
+  return skinMesh.extract_skinned_sideset();
+}
+
+std::vector<SideSetEntry> SkinMeshUtil::get_interior_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector)
+{
+  bulk.initialize_face_adjacent_element_graph();
+  ElemElemGraph& elemElemGraph = bulk.get_face_adjacent_element_graph();
+  SkinMeshUtil skinMesh(elemElemGraph, skinSelector, nullptr);
+  return skinMesh.extract_interior_sideset();
+}
+
+std::vector<SideSetEntry> SkinMeshUtil::get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector)
+{
+  bulk.initialize_face_adjacent_element_graph();
+  ElemElemGraph& elemElemGraph = bulk.get_face_adjacent_element_graph();
+  SkinMeshUtil skinMesh(elemElemGraph, skinSelector, nullptr);
+  return skinMesh.extract_all_sides_sideset();
+}
+
 std::vector<int> SkinMeshUtil::get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement)
 {
     std::vector<int> exposedSides;

@@ -41,7 +41,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
@@ -95,7 +95,7 @@ public :
       for (unsigned j=0; j<m_spatial_dim; ++j) {
         center[j] = c[j];
       }
-      v.push_back( std::make_pair( Sphere( center, r), EntityProc(i,proc_id)));
+      v.emplace_back( Sphere( center, r), EntityProc(i,proc_id));
     }
   }
 
