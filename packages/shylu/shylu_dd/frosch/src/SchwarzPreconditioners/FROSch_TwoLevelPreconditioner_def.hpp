@@ -210,7 +210,17 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     std::string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
+        this->ParameterList_->print();
         return "GDSW Preconditioner";
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    void TwoLevelPreconditioner<SC,LO,GO,NO>::setParameterList(ParameterListPtr para){
+        this->ParameterList_=para;
+        if(this->Verbose_){
+            std::cout<<"In set ParameterList\n";
+            this->ParameterList_->print();
+        }
     }
     
 }

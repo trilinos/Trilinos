@@ -122,6 +122,16 @@ namespace FROSch {
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
                                                                     Epetra_MultiVector &vector,
                                                                     Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> >  ExtractCoordinatesFromParameterList (Teuchos::ParameterList& paramList);
+    
+    template <
+    class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList);
+    
+    
+    
 }
 
 #endif
