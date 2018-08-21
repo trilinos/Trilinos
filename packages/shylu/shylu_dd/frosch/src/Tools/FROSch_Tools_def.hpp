@@ -679,7 +679,7 @@ namespace FROSch {
     }
     
     template <class SC, class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> >  ExtractCoordinatesFromParameterList (Teuchos::ParameterList& paramList){
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> >  ExtractCoordinatesFromParameterList(Teuchos::ParameterList& paramList){
         Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
         
         if(paramList.isParameter ("Coordinates") == false)
@@ -688,10 +688,24 @@ namespace FROSch {
         if(paramList.isType<decltype(coordinates)>("Coordinates")) {
             coordinates = paramList.get<decltype(coordinates)>("Coordinates");
         } else{
-            std::cerr<<"Wrong Type of Multovector\n";
+            std::cerr<<"Wrong Type of Multivector\n";
         }
         
         return coordinates;
+    }
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList){
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repMap = Teuchos::null;
+        if(paramList.isParameter("RepeatedMap") == false){
+            return repMap;
+        }
+        if(paramList.isType<decltype(repMap)>("RepeatedMap")){
+            repMap = paramList.get<decltype(repMap)>("RepeatedMap");
+        }else{
+            std::cerr<<"Wrong Type of Map\n";
+        }
+        return repMap;
     }
 }
 

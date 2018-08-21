@@ -89,31 +89,20 @@ void EpetraLinearOp::initialize(
     "Thyra::EpetraLinearOp::initialize(...): Error!" );
   // ToDo: Validate spmdRange, spmdDomain against op maps!
 #endif
-    std::cout<<"Epetra LinOp line 92\n";
-  RCP<const SPMDVSB> l_spmdRange;
-    if(!is_null(range_in)){
-        l_spmdRange = rcp_dynamic_cast<const SPMDVSB>(range_in,true);
-        std::cout<<"Epetra LinOp line 96\n";
-    }
 
-    else{
+  RCP<const SPMDVSB> l_spmdRange;
+  if(!is_null(range_in))
+    l_spmdRange = rcp_dynamic_cast<const SPMDVSB>(range_in,true);
+  else
     l_spmdRange = ( applyAs==EPETRA_OP_APPLY_APPLY
       ? allocateRange(op,opTrans) : allocateDomain(op,opTrans) );
-        std::cout<<"Epetra LinOp line 102\n";
 
-    }
   RCP<const SPMDVSB> l_spmdDomain;
-    if(!is_null(domain_in)){
-        l_spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain_in,true);
-        std::cout<<"Epetra LinOp line 108\n";
-    }
-    else{
+  if(!is_null(domain_in))
+    l_spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain_in,true);
+  else
     l_spmdDomain = ( applyAs==EPETRA_OP_APPLY_APPLY
-                    ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
-        std::cout<<"Epetra LinOp line 113\n";
-
-        
-    }
+      ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
   
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = true;
@@ -124,7 +113,6 @@ void EpetraLinearOp::initialize(
   adjointSupport_ = adjointSupport;
   range_ = l_spmdRange;
   domain_ = l_spmdDomain;
-  std::cout<<"Epetra LinOp line 127\n";
 
 }
 
@@ -151,16 +139,12 @@ void EpetraLinearOp::partiallyInitialize(
   TEUCHOS_TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
 #endif
-    std::cout<<"Epetra LinOp line 154\n";
 
   RCP<const SPMDVSB>
     l_spmdRange = rcp_dynamic_cast<const SPMDVSB>(range_in,true);
-    std::cout<<"Epetra LinOp line 158\n";
-
   RCP<const SPMDVSB>
     l_spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain_in,true);
-    std::cout<<"Epetra LinOp line 162\n";
-
+  
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = false;
   op_ = op;
@@ -399,16 +383,9 @@ void EpetraLinearOp::applyImpl(
     "are not supported when initialized." 
     );
 #endif
-    
-    std::cout<<"Epetra LinOp line 404\n";
-
 
   const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
-    std::cout<<"Epetra LinOp line 407\n";
-
   const int numCols = XY_domain->dim();
-    std::cout<<"Epetra LinOp line 410\n";
-
  
   //
   // Get Epetra_MultiVector objects for the arguments
@@ -427,11 +404,9 @@ void EpetraLinearOp::applyImpl(
     X = get_Epetra_MultiVector(
       real_M_trans==NOTRANS ? getDomainMap() : getRangeMap(), X_in );
     // Y
-
     if( beta == 0 ) {
       Y = get_Epetra_MultiVector(
         real_M_trans==NOTRANS ? getRangeMap() : getDomainMap(), *Y_inout );
-
     }
   }
 
@@ -447,7 +422,6 @@ void EpetraLinearOp::applyImpl(
   op_->SetUseTranspose(
     real_trans(trans_trans(opTrans_,M_trans)) == NOTRANS ? false : true );
 
-
   //
   // Perform the apply operation
   //
@@ -457,23 +431,16 @@ void EpetraLinearOp::applyImpl(
     if( beta == 0.0 ) {
       // Y = M * X
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-          
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Apply",
           ApplyApply);
         op_->Apply( *X, *Y );
-         
-
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-          
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): ApplyInverse",
           ApplyApplyInverse);
         op_->ApplyInverse( *X, *Y );
-          
       }
       else {
 #ifdef TEUCHOS_DEBUG
@@ -482,53 +449,42 @@ void EpetraLinearOp::applyImpl(
       }
       // Y = alpha * Y
       if( alpha != 1.0 ) {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Scale Y",
           Scale);
         Y->Scale(alpha);
-
       }
     }
     else {  // beta != 0.0
       // Y_inout = beta * Y_inout
       if(beta != 0.0) {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Scale Y",
           Scale);
         scale( beta, Y_inout );
-
       }
       else {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0",
           Apply2);
         assign( Y_inout, 0.0 );
-
       }
       // T = M * X
       Epetra_MultiVector T(op_->OperatorRangeMap(), numCols, false);
-
       // NOTE: Above, op_->OperatorRange() will be right for either
       // non-transpose or transpose because we have already set the
       // UseTranspose flag correctly.
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply",
           Apply2);
         op_->Apply( *X, T );
-
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): ApplyInverse",
           ApplyInverse);
         op_->ApplyInverse( *X, T );
-
       }
       else {
 #ifdef TEUCHOS_DEBUG
@@ -537,11 +493,9 @@ void EpetraLinearOp::applyImpl(
       }
       // Y_inout += alpha * T
       {
-
         THYRA_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Update Y",
           Update);
-
         update(
           alpha,
           *create_MultiVector(
@@ -551,7 +505,6 @@ void EpetraLinearOp::applyImpl(
             ),
           Y_inout
           );
-
       }
     }
   }

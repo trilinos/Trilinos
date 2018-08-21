@@ -127,6 +127,19 @@ namespace Thyra {
             cout << "--------------------------------------------------------------------------------\n\n";
             
         }*/
+        if(paramList.isParameter("Coordinates")){
+            Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList);
+            coord->describe(*fancy,Teuchos::VERB_EXTREME);
+            
+        }
+       
+        if(paramList.isParameter("RepeatedMap")){
+            Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
+            
+            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(paramList);
+            RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+            
+        }
         //Initialize-> Only Works for laplce (cause defaults are used) and compute
        
         TwoLevelPrec->initialize();

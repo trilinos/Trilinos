@@ -44,14 +44,15 @@ namespace FROSch {
             
             //Teuchos::RCP<ParameterList> para = TwoLevelPrec_->getParameterList();
             //Comm->barrier();Comm->barrier();Comm->barrier();
-            /*if(Comm->getRank() == 0){
+           if(Comm->getRank() == 0){
                 {
                 std::cout<<"Print now Parameters\n";
-                para->print();
+                //para->print();
                 
-            }}*/
-            TwoLevelPrec_->setParameterList(paramList_);
-            TwoLevelPrec_->description();
+            }}
+            
+            //TwoLevelPrec_->setParameterList(paramList_);
+            //TwoLevelPrec_->description();
             
             Comm->barrier();Comm->barrier();Comm->barrier();
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
