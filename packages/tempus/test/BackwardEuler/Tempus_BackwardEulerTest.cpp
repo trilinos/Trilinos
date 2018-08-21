@@ -686,7 +686,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     model->evalModel(in_args, out_args);
     out_args.set_W_op(Teuchos::null);
     Thyra::V_VmV(dfdx_mv.ptr(), *dfdx_mv, *dfdx_mv2);
-    Thyra::norms(*dfdx_mv, nrms);
+    Thyra::norms(*dfdx_mv, Teuchos::arrayViewFromVector(nrms));
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
@@ -700,7 +700,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     model->evalModel(in_args, out_args);
     out_args.set_W_op(Teuchos::null);
     Thyra::V_VmV(dfdx_mv.ptr(), *dfdx_mv, *dfdx_mv2);
-    Thyra::norms(*dfdx_mv, nrms);
+    Thyra::norms(*dfdx_mv, Teuchos::arrayViewFromVector(nrms));
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
@@ -712,7 +712,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     model->evalModel(in_args, out_args);
     out_args.set_DfDp(0, MEB::Derivative<double>());
     Thyra::V_VmV(dfdp.ptr(), *dfdp, *dfdp2);
-    Thyra::norms(*dfdp, nrms);
+    Thyra::norms(*dfdp, Teuchos::arrayViewFromVector(nrms));
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
@@ -728,7 +728,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
     Thyra::solve(*W, Thyra::NOTRANS, *dfdp2, tmp.ptr());
     Thyra::solve(*W2, Thyra::NOTRANS, *dfdp2, tmp2.ptr());
     Thyra::V_VmV(tmp.ptr(), *tmp, *tmp2);
-    Thyra::norms(*tmp, nrms);
+    Thyra::norms(*tmp, Teuchos::arrayViewFromVector(nrms));
     err = 0.0;
     for (auto nrm : nrms) err += nrm;
     TEST_FLOATING_EQUALITY(err, 0.0, tol);
