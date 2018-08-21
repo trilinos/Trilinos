@@ -47,6 +47,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include "Tpetra_TieBreak.hpp"
+#include "Tpetra_Map_fwd.hpp"
 
 //
 // mfh 13-15 May 2013: HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX governs
@@ -75,13 +76,7 @@ namespace Teuchos {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-  // Forward declaration.
-  template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
-
   namespace Details {
-    // Forward declaration.
-    template <class LocalOrdinal, class GlobalOrdinal> class TieBreak;
-
     /// \class Directory
     /// \brief Computes the local ID and process ID corresponding to given global IDs.
     ///
