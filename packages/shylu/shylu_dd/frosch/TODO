@@ -8,3 +8,5 @@
 	- Assert for ScalarType not being float or double
 	- check on Tpetra deprecating DynamicProfile in FY19
 	
+21.08.2018 Alexander Heinlein:
+	- Use a graph instead of a matrix to do communicateLocalComponents in FROSch_DDInterface
