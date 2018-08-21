@@ -187,7 +187,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   ROL::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
 
-  double tol = 1e-12;
+  double tol = 1e-10;
 
   // check the pint constraint
   {
