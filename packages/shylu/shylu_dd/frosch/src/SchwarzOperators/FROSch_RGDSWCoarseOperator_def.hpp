@@ -204,7 +204,7 @@ namespace FROSch {
                 vertices: rotations         --- " << useRotations << "\n\
                 --------------------------------------------\n";
             }
-            this->BlockCoarseSize_[blockId] = numEntitiesGlobal[0];
+            this->BlockCoarseDimension_[blockId] = numEntitiesGlobal[0];
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
             ////////////////////

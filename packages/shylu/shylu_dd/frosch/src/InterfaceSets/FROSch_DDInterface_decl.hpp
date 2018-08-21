@@ -148,11 +148,14 @@ namespace FROSch {
         
         
     protected:
-        
+#ifdef FROSCH_OFFSET_MAPS
         int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                        GOVecVec &componentsSubdomainsUnique,
                                        UN priorDofsPerNode = 0);
-        
+#else
+        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
+                                       GOVecVec &componentsSubdomainsUnique);
+#endif
         int identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
                                     GOVecVec &componentsSubdomainsUnique);
         

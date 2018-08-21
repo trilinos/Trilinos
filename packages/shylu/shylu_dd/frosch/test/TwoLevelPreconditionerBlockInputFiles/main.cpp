@@ -40,6 +40,7 @@
 //@HEADER
 
 //#define Tpetra_issue_1752
+#define FROSCH_OFFSET_MAPS
 
 #include <mpi.h>
 #include <Epetra_MpiComm.h>

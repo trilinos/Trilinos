@@ -56,7 +56,7 @@ namespace FROSch {
     SubdomainSolver_ (),
     Multiplicity_(),
     Combine_(),
-    levelID_(this->ParameterList_->get("Level ID",1))
+    LevelID_(this->ParameterList_->get("Level ID",1))
     {
         if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Averaging")) {
             Combine_ = Averaging;

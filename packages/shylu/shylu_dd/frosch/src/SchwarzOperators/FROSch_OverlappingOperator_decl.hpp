@@ -110,7 +110,7 @@ namespace FROSch {
         
         CombinationType Combine_;
         
-        int levelID_;
+        int LevelID_;
         
     };
     
