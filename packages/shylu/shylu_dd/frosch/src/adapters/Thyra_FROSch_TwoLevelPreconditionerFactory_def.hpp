@@ -127,22 +127,33 @@ namespace Thyra {
             cout << "--------------------------------------------------------------------------------\n\n";
             
         }*/
+        Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = Teuchos::null;
+        Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
+
         if(paramList.isParameter("Coordinates")){
-            Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList);
+            coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList);
             coord->describe(*fancy,Teuchos::VERB_EXTREME);
             
         }
        
         if(paramList.isParameter("RepeatedMap")){
-            Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
             
             RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(paramList);
             RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
             
         }
-        //Initialize-> Only Works for laplce (cause defaults are used) and compute
+        
+        if(coord.get()!=NULL && RepeatedMap.get()!=NULL){
+            
+            
+            TwoLevelPrec->initialize(paramList.get("Dimension",1),paramList.get("Overlap",1),RepeatedMap,paramList.get("DofsPerNode",1),FROSch::NodeWise,coord);
+            
+
+        }else{
+            TwoLevelPrec->initialize();
+        }
        
-        TwoLevelPrec->initialize();
+        
         TwoLevelPrec->compute();
         //-----------------------------------------------
         //Prepare for FROSch Epetra Op-------------------
