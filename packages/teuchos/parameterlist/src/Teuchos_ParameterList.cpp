@@ -745,6 +745,11 @@ bool Teuchos::haveSameValuesSorted( const ParameterList& list1, const ParameterL
   for(itr2 = list2.begin(); itr2 != list2.end(); ++itr2){
     arr2.push_back(list2.name(itr2));
   }
+  // Check that the two parameter lists are the same length:
+  if (arr1.size() != arr2.size()) {
+    if (verbose) std::cerr << "lists are not the same size\n";
+    return false;
+  }
   std::sort(arr1.begin(), arr1.end());
   std::sort(arr2.begin(), arr2.end());
   Array<std::string>::iterator iarr1, iarr2;
@@ -784,11 +789,6 @@ bool Teuchos::haveSameValuesSorted( const ParameterList& list1, const ParameterL
         return false;
       }
     }
-  }
-  // Check that the two parameter lists are the same length:
-  if (arr1.size() != arr2.size()) {
-    if (verbose) std::cerr << "lists are not the same size\n";
-    return false;
   }
   return true;
 }
