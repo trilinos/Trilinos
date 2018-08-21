@@ -381,15 +381,8 @@ namespace FROSch {
             k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
             if (NumProcsCoarseSolve_<this->MpiComm_->getSize()) {
                 ParameterListPtr tmpList = sublist(DistributionList_,"Zoltan2 Parameter");
-                ParameterListPtr zoltanParameterList = Teuchos::rcp(new ParameterList("Zoltan2 Parameter"));
-                
-                zoltanParameterList->set("algorithm", tmpList->get("algorithm","parmetis"));
-                zoltanParameterList->set("debug_level", tmpList->get("debug_level","basic_status"));
-                zoltanParameterList->set("debug_procs", tmpList->get("debug_procs","0"));
-                zoltanParameterList->set("error_check_level", tmpList->get("error_check_level","basic_assertions"));
-                zoltanParameterList->set("imbalance_tolerance",tmpList->get("imbalance_tolerance",1.1));
-                zoltanParameterList->set("num_global_parts", NumProcsCoarseSolve_);
-                FROSch::RepartionMatrixZoltan2(k0Unique,zoltanParameterList);
+                tmpList->set("num_global_parts", NumProcsCoarseSolve_);
+                FROSch::RepartionMatrixZoltan2(k0Unique,tmpList);
             }
 
             k0 = k0Unique;
