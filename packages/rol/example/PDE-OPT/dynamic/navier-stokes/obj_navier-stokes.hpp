@@ -647,6 +647,7 @@ private:
   const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
   ROL::Ptr<Intrepid::FieldContainer<Real>> weight_;
   ROL::Ptr<Intrepid::FieldContainer<Real>> target_;
+  bool useParabolicInflow_;
 
   const Real eps_;
 
@@ -656,18 +657,24 @@ private:
   }
 
   Real target(const std::vector<Real> &x, const int dir) const {
-    const Real zero(0), one(1);
-    return (dir == 0 ? (one + x[1])*(one-x[1]) : zero);
+    const Real one(1), two(2);
+    Real val(0);
+    if (dir == 0) {
+     val = (useParabolicInflow_ ? (two + x[1])*(two - x[1]) : one);
+    }
+    return val;
   }
 
 public:
-  QoI_Tracking_NavierStokes(const ROL::Ptr<FE<Real>> &feVel,
-                              const ROL::Ptr<FE<Real>> &fePrs,
-                              const ROL::Ptr<FieldHelper<Real>> &fieldHelper)
+  QoI_Tracking_NavierStokes(Teuchos::ParameterList &parlist,
+                            const ROL::Ptr<FE<Real>> &feVel,
+                            const ROL::Ptr<FE<Real>> &fePrs,
+                            const ROL::Ptr<FieldHelper<Real>> &fieldHelper)
     : feVel_(feVel), fePrs_(fePrs), fieldHelper_(fieldHelper), eps_(std::sqrt(ROL::ROL_EPSILON<Real>())) {
     int c = feVel_->cubPts()->dimension(0);
     int p = feVel_->cubPts()->dimension(1);
     int d = feVel_->cubPts()->dimension(2);
+    useParabolicInflow_ = parlist.sublist("Problem").get("Use Parabolic Inflow", true);
     weight_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     target_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     std::vector<Real> pt(d);
@@ -832,6 +839,216 @@ public:
 }; // QoI_Tracking_NavierStokes
 
 template <class Real>
+class QoI_Dissipation_NavierStokes : public QoI<Real> {
+private:
+  const ROL::Ptr<FE<Real>> feVel_;
+  const ROL::Ptr<FE<Real>> fePrs_;
+  const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
+  ROL::Ptr<Intrepid::FieldContainer<Real>> weight_;
+
+  Real nu_;
+
+  Real weightFunc(const std::vector<Real> & x) const {
+    return static_cast<Real>(1);
+  }
+
+public:
+  QoI_Dissipation_NavierStokes(Teuchos::ParameterList &parlist,
+                               const ROL::Ptr<FE<Real>> &feVel,
+                               const ROL::Ptr<FE<Real>> &fePrs,
+                               const ROL::Ptr<FieldHelper<Real>> &fieldHelper)
+    : feVel_(feVel), fePrs_(fePrs), fieldHelper_(fieldHelper) {
+    Real Re = parlist.sublist("Problem").get("Reynolds Number", 40.0);
+    nu_ = static_cast<Real>(1.0)/Re;
+    int c = feVel_->cubPts()->dimension(0);
+    int p = feVel_->cubPts()->dimension(1);
+    int d = feVel_->cubPts()->dimension(2);
+    std::vector<Real> pt(d);
+    weight_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for (int k = 0; k < d; ++k) {
+          pt[k] = (*feVel_->cubPts())(i,j,k);
+        }
+        (*weight_)(i,j) = weightFunc(pt);
+      }
+    }
+  }
+
+  Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+             const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    const Real half(0.5);
+    // Get relevant dimensions
+    const int c = feVel_->gradN()->dimension(0);
+    const int p = feVel_->gradN()->dimension(2);
+    const int d = feVel_->gradN()->dimension(3);
+    // Initialize output val
+    val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
+    // Get components of the control
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    // Evaluate on FE basis
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradU(d);
+    for (int i = 0; i < d; ++i) {
+      gradU[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      feVel_->evaluateGradient(gradU[i], U[i]);
+    }
+    // Compute energy dissipation rate
+    ROL::Ptr<Intrepid::FieldContainer<Real>> sigmaU
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i = 0; i < d; ++i) {
+      for (int j = 0; j < d; ++j) {
+        for (int k = 0; k < c; ++k) {
+          for (int l = 0; l < p; ++l) {
+            (*sigmaU)(k,l) = (*weight_)(k,l)*((*gradU[i])(k,l,j)+(*gradU[j])(k,l,i));
+          }
+        }
+        feVel_->computeIntegral(val,sigmaU,sigmaU,true);
+      }
+    }
+    Intrepid::RealSpaceTools<Real>::scale(*val, half*nu_);
+    return static_cast<Real>(0);
+  }
+
+  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Get relevant dimensions
+    const int c  = feVel_->gradN()->dimension(0);
+    const int fv = feVel_->gradN()->dimension(1);
+    const int fp = fePrs_->gradN()->dimension(1);
+    const int p  = feVel_->gradN()->dimension(2);
+    const int d  = feVel_->gradN()->dimension(3);
+    // Initialize output grad
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(d+1);
+    for (int i = 0; i < d; ++i) {
+      G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv);
+    }
+    G[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    // Get components of the control
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    // Evaluate on FE basis
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradU(d);
+    for (int i = 0; i < d; ++i) {
+      gradU[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      feVel_->evaluateGradient(gradU[i], U[i]);
+    }
+    // Compute energy dissipation gradient
+    ROL::Ptr<Intrepid::FieldContainer<Real>> sigmaU
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i = 0; i < d; ++i) {
+      for (int j = 0; j < d; ++j) {
+        for (int k = 0; k < c; ++k) {
+          for (int l = 0; l < p; ++l) {
+            (*sigmaU)(k,l) = std::pow((*weight_)(k,l),2)*((*gradU[i])(k,l,j)+(*gradU[j])(k,l,i));
+          }
+        }
+        Intrepid::FunctionSpaceTools::integrate<Real>(*G[j],
+                                                      *sigmaU,
+                                                      *(feVel_->DNDdetJ(i)),
+                                                      Intrepid::COMP_CPP,
+                                                      true);
+        Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
+                                                      *sigmaU,
+                                                      *(feVel_->DNDdetJ(j)),
+                                                      Intrepid::COMP_CPP,
+                                                      true);
+      }
+    }
+    fieldHelper_->combineFieldCoeff(grad, G);
+    Intrepid::RealSpaceTools<Real>::scale(*grad, nu_);
+  }
+
+  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_Dissipation_NavierStokes::gradient_2 is zero.");
+  }
+
+  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Get relevant dimensions
+    const int c  = feVel_->gradN()->dimension(0);
+    const int fv = feVel_->gradN()->dimension(1);
+    const int fp = fePrs_->gradN()->dimension(1);
+    const int p  = feVel_->gradN()->dimension(2);
+    const int d  = feVel_->gradN()->dimension(3);
+    // Initialize output grad
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(d+1);
+    for (int i = 0; i < d; ++i) {
+      H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv);
+    }
+    H[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    // Get components of the control
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V;
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    // Evaluate on FE basis
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradV(d);
+    for (int i = 0; i < d; ++i) {
+      gradV[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      feVel_->evaluateGradient(gradV[i], V[i]);
+    }
+    // Compute energy dissipation gradient
+    ROL::Ptr<Intrepid::FieldContainer<Real>> sigmaV
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i = 0; i < d; ++i) {
+      for (int j = 0; j < d; ++j) {
+        for (int k = 0; k < c; ++k) {
+          for (int l = 0; l < p; ++l) {
+            (*sigmaV)(k,l) = std::pow((*weight_)(k,l),2)*((*gradV[i])(k,l,j)+(*gradV[j])(k,l,i));
+          }
+        }
+        Intrepid::FunctionSpaceTools::integrate<Real>(*H[j],
+                                                      *sigmaV,
+                                                      *(feVel_->DNDdetJ(i)),
+                                                      Intrepid::COMP_CPP,
+                                                      true);
+        Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                      *sigmaV,
+                                                      *(feVel_->DNDdetJ(j)),
+                                                      Intrepid::COMP_CPP,
+                                                      true);
+      }
+    }
+    fieldHelper_->combineFieldCoeff(hess, H);
+    Intrepid::RealSpaceTools<Real>::scale(*hess, nu_);
+  }
+
+  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_Dissipation_NavierStokes::HessVec_12 is zero.");
+  }
+
+  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_Dissipation_NavierStokes::HessVec_21 is zero.");
+  }
+
+  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_Dissipation_NavierStokes::HessVec_22 is zero.");
+  }
+
+}; // QoI_Dissipation_NavierStokes
+
+template <class Real>
 class QoI_State_NavierStokes : public QoI<Real> {
 private:
   ROL::Ptr<QoI<Real>> qoi_;
@@ -852,7 +1069,10 @@ public:
       qoi_ = ROL::makePtr<QoI_Horizontal_NavierStokes<Real>>(feVel,fePrs,fieldHelper);
     }
     else if ( stateObj == "Tracking" ) {
-      qoi_ = ROL::makePtr<QoI_Tracking_NavierStokes<Real>>(feVel,fePrs,fieldHelper);
+      qoi_ = ROL::makePtr<QoI_Tracking_NavierStokes<Real>>(parlist,feVel,fePrs,fieldHelper);
+    }
+    else if ( stateObj == "Dissipation" ) {
+      qoi_ = ROL::makePtr<QoI_Dissipation_NavierStokes<Real>>(parlist,feVel,fePrs,fieldHelper);
     }
     else {
       throw Exception::NotImplemented(">>> (QoI_State_NavierStokes): Unknown objective type."); 
