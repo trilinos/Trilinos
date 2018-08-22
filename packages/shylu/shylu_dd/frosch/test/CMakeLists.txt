@@ -6,5 +6,7 @@ ADD_SUBDIRECTORIES(
     Import_Tpetra
     LocalPartitionOfUnityBasis
 #    InterfacePartitionOfUnity
+	Thyra_Epetra
     TwoLevelPreconditionerInputFiles
+    
 )
