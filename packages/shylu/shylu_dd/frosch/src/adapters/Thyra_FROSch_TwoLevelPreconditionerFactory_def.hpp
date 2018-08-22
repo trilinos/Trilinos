@@ -73,7 +73,7 @@ namespace Thyra {
         TEUCHOS_ASSERT(prec);
         
         // Create a copy, as we may remove some things from the list
-        ParameterList paramList = *paramList_;
+        RCP<ParameterList> paramList(new ParameterList(*paramList_)); // AH: Muessen wir diese Kopie machen? Irgendwie wäre es doch besser, wenn man die nicht kopieren müsste, oder?
         
         // Retrieve wrapped concrete Xpetra matrix from FwdOp
         const RCP<const ThyLinOpBase> fwdOp = fwdOpSrc->getOp();
@@ -115,7 +115,7 @@ namespace Thyra {
         // FROSCH::Tools<SC,LO,GO,Node>::ExtractCoordinatesFromParameterList(paramList);
         
         //-------Build New Two Level Prec--------------
-       RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,rcpFromRef(paramList)));
+       RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,paramList));
         
         
         RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
@@ -130,15 +130,15 @@ namespace Thyra {
         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
 
-        if(paramList.isParameter("Coordinates")){
-            coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList);
+        if(paramList->isParameter("Coordinates")){
+            coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList);
             coord->describe(*fancy,Teuchos::VERB_EXTREME);
             
         }
        
-        if(paramList.isParameter("RepeatedMap")){
+        if(paramList->isParameter("RepeatedMap")){
             
-            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(paramList);
+            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*paramList);
             RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
             
         }
@@ -146,7 +146,7 @@ namespace Thyra {
         if(coord.get()!=NULL && RepeatedMap.get()!=NULL){
             
             
-            TwoLevelPrec->initialize(paramList.get("Dimension",1),paramList.get("Overlap",1),RepeatedMap,paramList.get("DofsPerNode",1),FROSch::NodeWise,coord);
+            TwoLevelPrec->initialize(paramList->get("Dimension",1),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,coord);
             
 
         }else{
@@ -162,7 +162,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetraTwoLevel));
         
         
-        RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel,rcpFromRef(paramList)));
+        RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel,paramList));
         
         Comm->barrier();
         /*if(Comm->getRank() ==0){std::cout<<"Create Epetra Op new Constructor\n";
