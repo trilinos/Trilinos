@@ -63,11 +63,13 @@
 #include "ROL_DynamicObjectiveCheck.hpp"
 
 #include "../../TOOLS/dynconstraint.hpp"
+#include "../../TOOLS/pdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/ltiobjective.hpp"
 #include "../../TOOLS/meshreader.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "dynpde_navier-stokes.hpp"
+#include "steadypde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
 
 
@@ -91,16 +93,19 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile("input.xml");
-    int nt         = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
-    RealT T        = parlist->sublist("Time Discretization").get("End Time",             1.0);
-    RealT dt       = T/static_cast<RealT>(nt);
-    int verbosity  = parlist->sublist("General").get("Print Verbosity", 0);
-    verbosity      = (myRank==0 ? verbosity : 0);
+    int nt           = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
+    RealT T          = parlist->sublist("Time Discretization").get("End Time",             1.0);
+    RealT dt         = T/static_cast<RealT>(nt);
+    bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", false);
+    int verbosity    = parlist->sublist("General").get("Print Verbosity", 0);
+    verbosity        = (myRank==0 ? verbosity : 0);
+    parlist->sublist("General").set("Print Verbosity", verbosity);
     bool solveOutput = parlist->sublist("Dynamic Constraint").sublist("Solve").get("Output Iteration History", false);
     solveOutput      = (myRank==0 ? solveOutput : false);
-    parlist->sublist("General").set("Print Verbosity", verbosity);
-    bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", false);
     parlist->sublist("Dynamic Constraint").sublist("Solve").set("Output Iteration History", solveOutput);
+    solveOutput      = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History", false);
+    solveOutput      = (myRank==0 ? solveOutput : false);
+    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -111,6 +116,9 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     ROL::Ptr<DynamicPDE_NavierStokes<RealT>> pde
       = ROL::makePtr<DynamicPDE_NavierStokes<RealT>>(*parlist);
+    // Initalize PDE describing steady Navier-Stokes equations.
+    ROL::Ptr<SteadyPDE_NavierStokes<RealT>> pde0
+      = ROL::makePtr<SteadyPDE_NavierStokes<RealT>>(*parlist);
 
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
@@ -120,6 +128,9 @@ int main(int argc, char *argv[]) {
     const ROL::Ptr<Assembler<RealT>> assembler = dyn_con->getAssembler();
     dyn_con->setSolveParameters(*parlist);
     dyn_con->getAssembler()->printMeshData(*outStream);
+    ROL::Ptr<PDE_Constraint<RealT>> steady_con
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde0,meshMgr,comm,*parlist,*outStream);
+    steady_con->setSolveParameters(*parlist);
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
@@ -178,6 +189,29 @@ int main(int argc, char *argv[]) {
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
+    std::clock_t timer_init = std::clock();
+    std::ifstream infile("initial_condition.txt");
+    if (infile.good()) {
+      dyn_con->inputTpetraVector(u0_ptr, "initial_condition.txt");
+    }
+    else {
+      // Solve/output steady equation to determine initial condition
+      //RealT tol(1e-8);
+      //u0->zero(); ck->zero(); zk->zero();
+      //steady_con->solve(*ck, *u0, *zk, tol);
+      zk->zero(); uo->set(*u0); un->zero();
+      for (int k = 1; k < nt/2; ++k) {
+        // Advance time stepper
+        dyn_con->solve(*ck, *uo, *un, *zk, timeStamp[k]);
+        uo->set(*un);
+      }
+      u0->set(*uo);
+      steady_con->outputTpetraVector(u0_ptr, "initial_condition.txt");
+    }
+    *outStream << "Compute initial condition time: "
+               << static_cast<RealT>(std::clock()-timer_init)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl << std::endl;
+    // Construct reduce dynamic objective function
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
@@ -191,44 +225,66 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
       zk->randomize(); z->randomize(); dz->randomize(); hz->randomize();
       uo->randomize(); un->randomize();
+      steady_con->checkApplyJacobian_1(*uo,*zk,*un,*uo,true,*outStream);
       ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
       ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
       ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
       obj->checkGradient(*z,*dz,true,*outStream);
       obj->checkHessVec(*z,*dz,true,*outStream);
       obj->checkHessSym(*z,*dz,*hz,true,*outStream);
+
     }
 
     /*************************************************************************/
-    /***************** OUTPUT UNCONTROLLED STATE *****************************/
+    /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
     /*************************************************************************/
-    std::clock_t timer_print0 = std::clock();
-    // Output state and control to file
-    z->zero();
-    uo->set(*u0); un->zero();
-    for (int k = 1; k < nt; ++k) {
+    bool printU0 = parlist->sublist("Problem").get("Print Uncontrolled State", false);
+    if (printU0) {
+      std::clock_t timer_print0 = std::clock();
+      zk->zero(); uo->set(*u0); un->zero();
+      for (int k = 1; k < nt; ++k) {
+        // Print previous state to file
+        std::stringstream u0file;
+        u0file << "uncontrolled_state." << k-1 << ".txt";
+        dyn_con->outputTpetraVector(uo_ptr, u0file.str());
+        // Advance time stepper
+        dyn_con->solve(*ck, *uo, *un, *zk, timeStamp[k]);
+        uo->set(*un);
+      }
       // Print previous state to file
       std::stringstream u0file;
-      u0file << "uncontrolled_state." << k-1 << ".txt";
+      u0file << "uncontrolled_state." << nt-1 << ".txt";
       dyn_con->outputTpetraVector(uo_ptr, u0file.str());
-      // Advance time stepper
-      dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
-      uo->set(*un);
+      *outStream << "Output uncontrolled state time: "
+                 << static_cast<RealT>(std::clock()-timer_print0)/static_cast<RealT>(CLOCKS_PER_SEC)
+                 << " seconds." << std::endl << std::endl;
     }
-    // Print previous state to file
-    std::stringstream u0file;
-    u0file << "uncontrolled_state." << nt-1 << ".txt";
-    dyn_con->outputTpetraVector(uo_ptr, u0file.str());
-    *outStream << "Output uncontrolled state time: "
-               << static_cast<RealT>(std::clock()-timer_print0)/static_cast<RealT>(CLOCKS_PER_SEC)
-               << " seconds." << std::endl << std::endl;
 
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
+    z->zero();
+    if (useParametricControl) {
+      // Linearly interpolate between optimal values for angular velocity
+      // amplitude and Strouhal number obtained for Re=200, 1000 in
+      //     JW He, R Glowinski, R Metcalfe, A Nordlander, J Periaux
+      //     Active Control and Drag Optimization for Flow Past a
+      //     Circular Cylinder
+      //     Journal of Computation Physics, 163, pg. 83-117, 2000.
+      RealT Re   = parlist->sublist("Problem").get("Reynolds Number",200.0);
+      RealT amp0 = 6.0 - (Re - 200.0)/1600.0;
+      RealT Se0  = 0.74 - (Re - 200.0) * (0.115/800.0);
+      RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
+      RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
+      RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);
+      for( int k=0; k<nt; ++k ) {
+        ROL::Ptr<std::vector<RealT>> zn
+          = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k))->getParameter()->getVector();
+        (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
+      }
+    }
     ROL::OptimizationProblem<RealT> problem(obj,z);
     ROL::OptimizationSolver<RealT> solver(problem,*parlist);
-    z->zero();
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
     *outStream << "Optimization time: "
