@@ -528,6 +528,8 @@ private:
     // Build basis maps
     std::vector<std::vector<int> > map2IP(numBases_);
     std::vector<std::vector<int> > map2FP(numBases_);
+    shards::CellTopology cellType = intrepidBasis_[0]->getBaseCellTopology();
+    int nv = cellType.getVertexCount();
     for (int f=0; f<numBases_; ++f) { 
       int basisDeg = intrepidBasis_[f]->getDegree();
       if (cellDim_ == 1) {
@@ -546,12 +548,25 @@ private:
       }
       else if (cellDim_ == 2) {
         if (basisDeg == 1) {
-          map2IP[f] = {0, 1, 2, 3};
-          map2FP[f] = {0, 1, 2, 3};
+          map2IP[f].resize(nv);
+          map2FP[f].resize(nv);
+          for (int i = 0; i < nv; ++i) {
+            map2IP[f][i] = i;
+            map2FP[f][i] = i;
+          }
+          //map2IP[f] = {0, 1, 2, 3};
+          //map2FP[f] = {0, 1, 2, 3};
         }
         else if (basisDeg == 2) {
-          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+          int lim = (nv==3 ? 6 : 9);
+          map2IP[f].resize(lim);
+          map2FP[f].resize(lim);
+          for (int i = 0; i < lim; ++i) {
+            map2IP[f][i] = i;
+            map2FP[f][i] = i;
+          }
+          //map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+          //map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
