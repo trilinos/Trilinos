@@ -8178,12 +8178,24 @@ namespace Tpetra {
       matrixparams = sublist (params, "CrsMatrix");
       isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
 
-      int mm_optimization_core_count=0; // ~800 for serrano
+      int mm_optimization_core_count=3000; // ~800 for serrano
       mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       int commSize = getComm() -> getSize();
       if(commSize < mm_optimization_core_count) isMM = false;
       if(reverseMode) isMM = false;
     }
+
+    // Test for pathalogical matrix transfer
+    bool source_vals = ! getGraph ()->getImporter ().is_null();
+    bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 || rowTransfer.getRemoteLIDs ().size() == 0);
+    bool mismatch = source_vals != target_vals;
+    bool reduced_mismatch = false; 
+    MPI_Request rawRequest = MPI_REQUEST_NULL;
+    MPI_Comm rawComm            = getRawMpiComm(*getComm());
+
+    int immRedErr = 0;
+    if(isMM)    immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
+
 
 // cbl debug only, REMOVE before checkin.
     if(isMM && ::isMMOverride) {
@@ -8883,6 +8895,14 @@ namespace Tpetra {
 
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",false));
+
+
+    // now resolve the non-blocking allreduce on reduced_mismatch;
+    MPI_Status stat;
+    int mmwaiterr = 0;
+    if(isMM) mmwaiterr = MPI_Wait (&rawRequest,&stat);
+    (void)mmwaiterr;
+    if(isMM && reduced_mismatch) isMM = false; 
 
 
     if( isMM && !MyImporter.is_null()) {
