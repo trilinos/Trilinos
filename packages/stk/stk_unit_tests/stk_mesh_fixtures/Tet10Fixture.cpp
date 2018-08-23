@@ -76,10 +76,11 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
   m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 }
 
   Tet10Fixture::Tet10Fixture(   stk::ParallelMachine pm
@@ -110,10 +111,11 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
   Tet10Fixture::Tet10Fixture(   stk::ParallelMachine pm
@@ -145,10 +147,11 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
 

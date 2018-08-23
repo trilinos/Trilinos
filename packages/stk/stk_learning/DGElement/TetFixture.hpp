@@ -55,7 +55,7 @@ protected:
         skinPart = &metaData.declare_part("skin", stk::topology::FACE_RANK);
         nodePart = &metaData.declare_part_with_topology("node_part", stk::topology::NODE);
         coords = &metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates");
-        stk::mesh::put_field(*coords, metaData.universal_part(), metaData.spatial_dimension());
+        stk::mesh::put_field_on_mesh(*coords, metaData.universal_part(), metaData.spatial_dimension(), nullptr);
     }
 
     virtual ~DGTetFixture()

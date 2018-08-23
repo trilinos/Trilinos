@@ -354,7 +354,7 @@ stk::mesh::Field<double> &createNodalTestField(stk::mesh::MetaData &stkMeshMetaD
 {
     const int numberOfStates = 1;
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, numberOfStates);
-    stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
+    stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(), nullptr);
     return field0;
 }
 void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<double> &field0, std::vector<double> &nodalFieldValues)

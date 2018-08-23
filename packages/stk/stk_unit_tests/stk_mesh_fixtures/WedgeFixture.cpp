@@ -78,10 +78,11 @@ WedgeFixture::WedgeFixture(   MetaData& meta
   owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 }
 
 WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
@@ -112,10 +113,11 @@ WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
 
@@ -148,10 +150,11 @@ WedgeFixture::WedgeFixture(   stk::ParallelMachine pm
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
 

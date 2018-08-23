@@ -62,7 +62,7 @@ namespace {
     stkIo.create_input_mesh();
       
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "disp", 3);
-    stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
     stkIo.populate_bulk_data();
 

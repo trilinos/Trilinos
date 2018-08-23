@@ -138,13 +138,13 @@ void do_parallel_assemble()
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
-  put_field( universal_scalar_node_field , meta.universal_part() );
-  put_field( universal_cartesian_node_field , meta.universal_part() );
-  put_field( universal_scalar_int_node_field , meta.universal_part() );
-  put_field( universal_scalar_edge_field , meta.universal_part() );
-  put_field( non_universal_scalar_node_field, center_part);
-  put_field( universal_scalar_long_double_node_field , meta.universal_part() );
-  put_field( universal_scalar_id_node_field , meta.universal_part() );
+  put_field_on_mesh( universal_scalar_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_cartesian_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_scalar_int_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_scalar_edge_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( non_universal_scalar_node_field, center_part, nullptr);
+  put_field_on_mesh( universal_scalar_long_double_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_scalar_id_node_field , meta.universal_part() , nullptr);
 
   // TODO - Need a field that gets shared between more than 2 procs.
 
@@ -370,11 +370,11 @@ void do_parallel_assemble_including_ghosts()
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
-  put_field( universal_scalar_node_field , meta.universal_part() );
-  put_field( universal_cartesian_node_field , meta.universal_part() );
-  put_field( universal_scalar_int_node_field , meta.universal_part() );
-  put_field( non_universal_scalar_node_field, center_part);
-  put_field( universal_scalar_id_node_field , meta.universal_part() );
+  put_field_on_mesh( universal_scalar_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_cartesian_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( universal_scalar_int_node_field , meta.universal_part() , nullptr);
+  put_field_on_mesh( non_universal_scalar_node_field, center_part, nullptr);
+  put_field_on_mesh( universal_scalar_id_node_field , meta.universal_part() , nullptr);
 
   meta.commit();
 

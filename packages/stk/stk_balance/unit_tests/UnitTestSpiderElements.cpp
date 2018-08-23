@@ -29,7 +29,7 @@ protected:
 
         stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "beam_connectivity_count");
         const int initValue = 0;
-        stk::mesh::put_field(field, get_meta().universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
 
