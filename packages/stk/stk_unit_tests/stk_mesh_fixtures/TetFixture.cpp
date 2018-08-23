@@ -79,10 +79,11 @@ TetFixture::TetFixture(   MetaData& meta
   owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 }
 
   TetFixture::TetFixture(   stk::ParallelMachine pm
@@ -113,10 +114,11 @@ TetFixture::TetFixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
   TetFixture::TetFixture(   stk::ParallelMachine pm
@@ -148,10 +150,11 @@ TetFixture::TetFixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
 

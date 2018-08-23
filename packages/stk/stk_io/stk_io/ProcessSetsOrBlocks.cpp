@@ -50,8 +50,8 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   meta.set_coordinate_field(&coord_field);
 
   Ioss::NodeBlock *nb = node_blocks[0];
-  stk::mesh::put_field(coord_field, meta.universal_part(),
-                       meta.spatial_dimension());
+  stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(),
+                       meta.spatial_dimension(), nullptr);
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
 }
 
@@ -86,7 +86,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
         meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, nodesetDistFieldName);
 
       stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field_per_nodeset, *part);
+      stk::mesh::put_field_on_mesh(distribution_factors_field_per_nodeset, *part, nullptr);
     }
   }
 }
@@ -123,8 +123,8 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
         }
         stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
-        stk::mesh::put_field(*distribution_factors_field,
-                             *sb_part, side_node_count);
+        stk::mesh::put_field_on_mesh(*distribution_factors_field,
+                             *sb_part, side_node_count, nullptr);
       }
     }
   }

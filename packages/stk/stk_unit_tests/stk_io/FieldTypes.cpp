@@ -69,7 +69,7 @@ stk::io::FieldType setup_field_type(stk::mesh::MetaData& meta, const std::string
     const int numStates = 1;
     stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
     stk::mesh::FieldBase& field = meta.declare_field<stk::mesh::Field<T>>(rank, fieldName , numStates);
-    stk::mesh::put_field(field, meta.universal_part(), firstDimension, numCopies);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), firstDimension, numCopies, nullptr);
 
     const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(field, rank, meta.universal_part());
     EXPECT_EQ(int(firstDimension), res.dimension());
@@ -86,7 +86,7 @@ stk::io::FieldType setup_field_type(stk::mesh::MetaData& meta, const std::string
     const int numStates = 1;
     stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
     stk::mesh::FieldBase& field = meta.declare_field<stk::mesh::Field<T, S>>(rank, fieldName , numStates);
-    stk::mesh::put_field(field, meta.universal_part(), firstDimension, numCopies);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), firstDimension, numCopies, nullptr);
 
     const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(field, rank, meta.universal_part());
     EXPECT_EQ(int(firstDimension), res.dimension());

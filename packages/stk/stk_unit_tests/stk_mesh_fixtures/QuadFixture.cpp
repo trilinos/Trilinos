@@ -64,10 +64,11 @@ QuadFixture::QuadFixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, 
     m_elem_id_start(eid_start)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      nullptr
       );
 }
 
@@ -87,10 +88,11 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      nullptr
       );
 }
 
@@ -111,10 +113,11 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      nullptr
       );
 }
 
@@ -134,10 +137,11 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      nullptr
       );
 }
 

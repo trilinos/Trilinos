@@ -73,7 +73,7 @@ namespace {
 
       stk::mesh::Field<double> &temperature = stkIo.meta_data().
 	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
-      stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
       stkIo.populate_bulk_data();
 
       size_t fh = stkIo.create_output_mesh(ic_name, stk::io::WRITE_RESULTS);
@@ -117,11 +117,11 @@ namespace {
 
       stk::mesh::Field<double> &temperature = stkIo.meta_data().
 	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
-      stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
 
       stk::mesh::Field<double> &displacement = stkIo.meta_data().
 	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"displacement",1);
-      stk::mesh::put_field(displacement, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(displacement, stkIo.meta_data().universal_part(), nullptr);
       stkIo.populate_bulk_data();
 
       // The name of the field on the database is "temp"

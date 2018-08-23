@@ -83,28 +83,32 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
   , m_gears()
   {
 
-    put_field(
+    put_field_on_mesh(
         cartesian_coord_field,
         meta_data.universal_part(),
-        SpatialDimension
+        SpatialDimension,
+        nullptr
         );
 
-    put_field(
+    put_field_on_mesh(
         displacement_field,
         meta_data.universal_part(),
-        SpatialDimension
+        SpatialDimension,
+        nullptr
         );
 
-    put_field(
+    put_field_on_mesh(
         translation_field,
         cylindrical_coord_part,
-        SpatialDimension
+        SpatialDimension,
+        nullptr
         );
 
-    put_field(
+    put_field_on_mesh(
         cylindrical_coord_field,
         cylindrical_coord_part,
-        SpatialDimension
+        SpatialDimension,
+        nullptr
         );
 
     m_gears.resize(NUM_GEARS);
