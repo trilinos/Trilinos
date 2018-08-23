@@ -12,6 +12,7 @@
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperBackwardEulerObserver.hpp"
+#include "Tempus_StepperOptimizationInterface.hpp"
 
 
 namespace Tempus {
@@ -29,7 +30,9 @@ namespace Tempus {
  *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
  */
 template<class Scalar>
-class StepperBackwardEuler : virtual public Tempus::StepperImplicit<Scalar>
+class StepperBackwardEuler :
+    virtual public Tempus::StepperImplicit<Scalar>,
+    virtual public Tempus::StepperOptimizationInterface<Scalar>
 {
 public:
 
@@ -78,7 +81,7 @@ public:
 
   /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
   virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x) const;
 
   /// \name ParameterList methods
   //@{
@@ -96,10 +99,49 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  /// \name Implementation of StepperOptimizationInterface
+  //@{
+    virtual int stencilLength() const;
+    virtual void computeStepResidual(
+      Thyra::VectorBase<Scalar>& residual,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+    virtual void computeStepJacobian(
+      Thyra::LinearOpBase<Scalar>& jacobian,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index,
+      const int deriv_index) const;
+    virtual void computeStepParamDeriv(
+      Thyra::LinearOpBase<Scalar>& deriv,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+    virtual void computeStepSolver(
+      Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+  //@}
+
 private:
 
   /// Default Constructor -- not allowed
   StepperBackwardEuler();
+
+  /// Implementation of computeStep*() methods
+  void computeStepResidDerivImpl(
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+    const Teuchos::Array<Scalar>& t,
+    const Thyra::VectorBase<Scalar>& p,
+    const int param_index,
+    const int deriv_index = 0) const;
 
 private:
 
@@ -107,7 +149,7 @@ private:
   Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
+  mutable Teuchos::RCP<Thyra::VectorBase<Scalar> >    xDotTemp_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 

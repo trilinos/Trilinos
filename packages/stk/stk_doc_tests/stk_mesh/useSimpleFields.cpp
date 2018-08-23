@@ -125,7 +125,7 @@ void create_single_tet_element(stk::mesh::BulkData &bulk)
 }
 
 //BEGINBADFIELD
-TEST(stkMeshHowTo, declareVectorFields_putFieldIgnoresLength)
+TEST(stkMeshHowTo, declareVectorFields_putFieldLengthWithoutCartesian3dParam)
 {
     stk::mesh::MetaData metaData(SpatialDimension::three, stk::mesh::entity_rank_names());
 
@@ -143,7 +143,7 @@ TEST(stkMeshHowTo, declareVectorFields_putFieldIgnoresLength)
     create_single_tet_element(mesh);
 
     stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
-    EXPECT_NE(stk::mesh::field_scalars_per_entity(velocities, node1), stk::mesh::field_scalars_per_entity(displacements, node1));
+    EXPECT_EQ(stk::mesh::field_scalars_per_entity(velocities, node1), stk::mesh::field_scalars_per_entity(displacements, node1));
 }
 //ENDBADFIELD
 

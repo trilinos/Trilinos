@@ -123,6 +123,7 @@ lib stk_search
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
     /tpl/boost//boost_header_only_libs
+    /sierra/stk_math//stk_math_headers
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -138,15 +139,9 @@ exe stk_search_integration_tester
     [ glob $(stk_search-root)/integrationtest/*.cpp
       glob $(stk_search-root)/integrationtest/*.[cC] ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_search
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_diag
     /sierra/mesh//mesh
-    /sierra/acme//acme
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+    /sierra/stk_math//stk_math_headers
   : <tag>@sierra-exec-tag
   ;
 }
@@ -156,14 +151,9 @@ exe stk_search_utest
     [ glob $(stk_search-root)/unit_tests/*.cpp ]
     [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_search
     /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_diag
-    /sierra/acme//acme
     /sierra/mesh//mesh
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+    /sierra/stk_math//stk_math_headers
 
   : <tag>@sierra-exec-tag
   ;

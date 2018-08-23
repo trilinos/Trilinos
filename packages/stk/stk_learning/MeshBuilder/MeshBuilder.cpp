@@ -21,7 +21,7 @@
 #include "stk_mesh/base/GetEntities.hpp"  // for get_entities
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 // change for meshing big things
 const double zOffset = 1;

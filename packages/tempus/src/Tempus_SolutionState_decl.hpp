@@ -147,9 +147,13 @@ public:
   /// This is a deep copy
   virtual void copy(const Teuchos::RCP<const SolutionState<Scalar> >& ss);
 
-  /// This is a deep copy of the solution and stepper state
-  virtual void copySolutionStepperState(
+  /// Deep copy solution data, but keep metaData untouched.
+  virtual void copySolutionData(
     const Teuchos::RCP<const SolutionState<Scalar> >& s);
+
+  /// Swap solution data, but keep metaData untouched.
+  virtual void swapSolutionData(
+    const Teuchos::RCP<SolutionState<Scalar> >& ss);
 
   /// Destructor
   virtual ~SolutionState() {}

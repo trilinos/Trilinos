@@ -48,21 +48,10 @@
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_Core.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 
 namespace Tpetra {
-
-//
-// Dear users: These are just forward declarations.  Please skip over
-// them and go down to the leftAndOrRightScaleCrsMatrix function
-// declaration.  Thank you.
-//
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-template<class SC, class LO, class GO, class N>
-class CrsMatrix;
-
-template<class SC, class LO, class GO, class N>
-class Vector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \brief Whether "scaling" a matrix means multiplying or dividing
 ///   its entries.

@@ -37,7 +37,7 @@
 #include <stk_util/parallel/GenerateParallelConsistentIDs.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stdint.h>
 
 
@@ -52,7 +52,7 @@ std::vector<std::pair<uint64_t, uint64_t> > GenerateGlobalPairedList(std::vector
   std::vector<std::pair<uint64_t, uint64_t> > idOrderPairsLocal;
   std::vector<std::pair<uint64_t, uint64_t> > idOrderPairsGlobal;
   for(uint64_t i = 0; i < localOrderArray.size(); ++i) {
-    idOrderPairsLocal.push_back(std::pair<uint64_t, uint64_t>(localOrderArray[i], newIdsLocal[i]));
+    idOrderPairsLocal.emplace_back(localOrderArray[i], newIdsLocal[i]);
   }
 
   stk::parallel_vector_concat(comm, idOrderPairsLocal, idOrderPairsGlobal);

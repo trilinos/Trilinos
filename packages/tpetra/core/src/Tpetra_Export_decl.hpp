@@ -42,22 +42,22 @@
 #ifndef TPETRA_EXPORT_DECL_HPP
 #define TPETRA_EXPORT_DECL_HPP
 
-#include <Tpetra_Details_Transfer.hpp>
+#include "Tpetra_Details_Transfer.hpp"
+#include "Tpetra_Export_fwd.hpp"
+#include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_ImportExportData_fwd.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_RCP.hpp"
 
-namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportExportData;
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Import;
+namespace Teuchos {
+template<class T> class Array; // forward declaration
+class ParameterList; // forward declaration
+} // namespace Teuchos
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+namespace Tpetra {
+namespace Classes {
   /// \brief Communication plan for data redistribution from a
   ///   (possibly) multiply-owned to a uniquely-owned distribution.
   ///
@@ -350,6 +350,7 @@ namespace Tpetra {
     void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
+} // namespace Classes
 
   /** \brief Non-member constructor for Export objects.
 

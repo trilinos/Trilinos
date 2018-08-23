@@ -128,11 +128,7 @@ exe stk_topology_utest
       glob $(stk_topology-root)/../stk_unit_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_topology
-    /sierra/seacas//ioinit
-    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_topology-root)/../stk_unit_tests/stk_topology
   ;
@@ -143,11 +139,7 @@ exe stk_topology_doc_test
       glob $(stk_topology-root)/../stk_doc_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_topology
-    /sierra/seacas//ioinit
-    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_topology-root)/../stk_doc_tests/stk_topology
   ;

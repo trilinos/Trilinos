@@ -241,6 +241,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
     // Create OperatorSplit SolutionHistory to pass to subSteppers.
     tempState_->copy(solutionHistory->getCurrentState());
+    OpSpSolnHistory_->clear();
     OpSpSolnHistory_->addState(tempState_);
     OpSpSolnHistory_->addWorkingState(workingState, false);
 
@@ -272,7 +273,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
       // "promote" workingSubState
       currentSubState = OpSpSolnHistory_->getCurrentState();
-      currentSubState->copySolutionStepperState(workingSubState);
+      currentSubState->copySolutionData(workingSubState);
     }
 
     if (pass == true) workingState->setStepperStatus(Status::PASSED);

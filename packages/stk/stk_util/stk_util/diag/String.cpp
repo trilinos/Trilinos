@@ -73,12 +73,9 @@ int to_label( int c )
 int char_simple_traits::compare( const char * c1 , const char * c2 )
 {
   if(c1 == nullptr) {
-    if(c2 == nullptr) {
-      return 0;
-    } else {
-      return -1;
-    }
-  } else if (c2 == nullptr) {
+    return (c2 == nullptr) ? 0 : -1;
+  } 
+  if (c2 == nullptr) {
     return 1;
   }
 
@@ -98,12 +95,10 @@ void char_label_traits::convert( char * c , size_t n )
 int char_label_traits::compare( const char * c1 , const char * c2 )
 {
   if(c1 == nullptr) {
-    if(c2 == nullptr) {
-      return 0;
-    } else {
-      return -1;
-    }
-  } else if (c2 == nullptr) {
+    return (c2 == nullptr) ? 0 : -1;
+  } 
+  
+  if (c2 == nullptr) {
     return 1;
   }
 

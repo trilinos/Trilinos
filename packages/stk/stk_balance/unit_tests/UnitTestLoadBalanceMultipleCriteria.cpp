@@ -11,7 +11,7 @@
 
 namespace
 {
-void set_criteria_on_mesh(std::vector<stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
+void set_criteria_on_mesh(std::vector<const stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
 {
     const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
     for(size_t i=0;i<buckets.size();++i)
@@ -66,7 +66,7 @@ public:
 
             setup_mesh("generated:4x4x4", stk::mesh::BulkData::AUTO_AURA);
 
-            std::vector<stk::mesh::Field<double>*> critFields = {&criteria1, &criteria2};
+            std::vector<const stk::mesh::Field<double>*> critFields = {&criteria1, &criteria2};
 
             set_criteria_on_mesh(critFields, get_bulk());
 

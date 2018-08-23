@@ -50,7 +50,6 @@
 /// Tpetra_computeRowAndColumnOneNorms_decl.hpp in this directory.
 
 #include "Tpetra_Details_copyConvert.hpp"
-#include "Tpetra_Details_EquilibrationInfo.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"

@@ -95,14 +95,14 @@ fi
 
 git remote -v
 
-git fetch source_remote
+git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
 ierror=$?
 if [[ $ierror != 0 ]]; then
   echo "Source remote fetch failed. The error code was: $ierror"
   exit $ierror
 fi
 
-git fetch origin
+git fetch origin ${TRILINOS_TARGET_BRANCH:?}
 ierror=$?
 if [[ $ierror != 0 ]]; then
   echo "Origin target remote fetch failed. The error code was: $ierror"

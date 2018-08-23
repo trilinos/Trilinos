@@ -36,7 +36,7 @@
 
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace mesh {
@@ -1314,7 +1314,7 @@ private:
 
   // meta data
   UInt32Vector m_indices;  // Common index into vectors below that stores where connectivity starts for a partition_offset (entity).
-  UInt16Vector m_num_connectivities;
+  UInt32Vector m_num_connectivities;
   unsigned     m_total_connectivities;
 
   // connectivity data
@@ -1376,7 +1376,7 @@ void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modificatio
     }
 
     {
-      UInt16Vector temp(m_num_connectivities.begin(), m_num_connectivities.end());
+      UInt32Vector temp(m_num_connectivities.begin(), m_num_connectivities.end());
       m_num_connectivities.swap(temp);
     }
 

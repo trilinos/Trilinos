@@ -167,4 +167,45 @@ TEST(SchedulerTest, largeStartingTimeFollowedBySmallStep)
       }
     }
 }
+
+TEST(SchedulerTest, timePlusDtEqualsTime)
+{
+  using Time = stk::util::Time;
+
+  stk::util::Scheduler scheduler;
+
+  const int number_of_time_steps = 10;
+  const Time start_time = 1l;
+
+  const Time simulation_dt = std::numeric_limits<Time>::epsilon();
+  const Time termination_time = start_time + number_of_time_steps * simulation_dt;
+
+  const Time output_dt = 2 * simulation_dt;
+  scheduler.add_interval(start_time, output_dt);
+  scheduler.set_termination_time(termination_time);
+
+  Time t = start_time;
+  EXPECT_TRUE( scheduler.is_it_time(t, 0) );
+
+  t = start_time + simulation_dt;
+
+  if( simulation_dt < std::numeric_limits<Time>::epsilon() ) {
+    // In this situation, adding a time step that is less than machine
+    // epsilon will not be observable.
+    EXPECT_TRUE(t == start_time);
+    auto p = std::numeric_limits<Time>::max_digits10;
+    // This is the expected behavior for time steps less than machine epsilon
+    // for a time value in [-1, 1]
+    EXPECT_TRUE( scheduler.is_it_time(t, 1) )
+      << std::setprecision(p) << t
+      << " = " << std::setprecision(p) << start_time
+      << " + " << std::setprecision(p) << simulation_dt
+      << " = " << std::setprecision(p) << start_time + simulation_dt
+      << '\n';
+  }
+
+  scheduler.print(std::cout);
 }
+
+}
+
