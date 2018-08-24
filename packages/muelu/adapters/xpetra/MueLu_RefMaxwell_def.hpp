@@ -113,6 +113,7 @@ namespace MueLu {
     parameterList_    = list;
     disable_addon_    = list.get("refmaxwell: disable addon",true);
     mode_             = list.get("refmaxwell: mode","additive");
+    use_as_preconditioner_ = list.get<bool>("refmaxwell: use as preconditioner");
     dump_matrices_    = list.get("refmaxwell: dump matrices",false);
 
     if(list.isSublist("refmaxwell: 11list"))
@@ -1265,7 +1266,7 @@ namespace MueLu {
     }
     else
 #endif
-      PreSmoother_->Apply(X, RHS, false);
+      PreSmoother_->Apply(X, RHS, use_as_preconditioner_);
 
     // do solve for the 2x2 block system
     if(mode_=="additive")

@@ -1,5 +1,6 @@
 <ParameterList name="MueLu">
 
+  <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
   <Parameter name="refmaxwell: mode" type="string" value="additive"/>
   <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
   <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
