@@ -581,7 +581,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     }
 
   comm->barrier();
-  tm = Teuchos::null;
+  tm.reset();// = Teuchos::null;
 
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
@@ -662,24 +662,22 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
       // Preconditioner construction
       // =========================================================================
       comm->barrier();
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
+      auto MueLuSU_D2 = TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup"));
 
       RCP<Hierarchy> H;
       A->SetMaxEigenvalueEstimate(-one);
 
       H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       comm->barrier();
-      tm = Teuchos::null;
 
 
       // =========================================================================
       // Grab useful pieces
       // =========================================================================
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Extract Stuff")));
+      auto MueLuES_D3 = TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Extract Stuff"));
       RCP<Matrix> P;
       H->GetLevel(1)->Get("P",P);
       comm->barrier();
-      tm= Teuchos::null;
 
 
       RCP<Teuchos::ParameterList> opt_list = rcp(new Teuchos::ParameterList);
@@ -689,14 +687,13 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
         // =========================================================================
         // Optimized transfer & fill complete loop for P_1
         // =========================================================================
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - TransferAndFillComplete")));
+	auto D4 = TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - TransferAndFillComplete"));
         TestTransfer(A,P);
         comm->barrier();
-        tm= Teuchos::null;
       }
 
       //Cleanup
-      globalTimeMonitor = Teuchos::null;
+      globalTimeMonitor.reset();// = Teuchos::null;
 
       // =========================================================================
       // Timing stuff
