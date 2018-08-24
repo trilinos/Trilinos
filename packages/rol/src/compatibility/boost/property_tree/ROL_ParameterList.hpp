@@ -302,6 +302,10 @@ public:
 
   //  friend void readParametersFromXml( const string&, ParameterList& parlist );
 
+  void validateParametersAndSetDefaults( const ParameterList& parlist ) {
+    throw Exception::NotImplemented("ParameterList validation has not been "
+          "implemented for the  boost::property_tree implementation.");
+  }
 
 };
 
@@ -353,5 +357,7 @@ public:
                                            const std::string& filename ) {
     boost::property_tree::write_xml(filename, parlist.tree());
   }
+
+
 
 } // namespace ROL

@@ -50,6 +50,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
@@ -143,6 +144,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using size_type         = std::vector<RealT>::size_type;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
+
+  auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
   int numRanks = -1;
   int myRank = -1;
@@ -299,13 +302,29 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     MPI_Barrier(MPI_COMM_WORLD);
     double t0 = MPI_Wtime();
 
+    pint_con->clearTimePerLevel();
+
+    timer->start("krylov");
     RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
+    timer->stop("krylov");
 
     MPI_Barrier(MPI_COMM_WORLD);
     double tf = MPI_Wtime();
 
+    std::stringstream ss;
+    timer->report(ss);
+
     if(myRank==0) {
       (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
+
+      const std::vector<RealT> & timePerLevel = pint_con->getTimePerLevel();
+      (*outStream) << "Time per level = ";
+      for(RealT time : timePerLevel) 
+        (*outStream) << time << " ";
+      (*outStream) << std::endl;
+
+      (*outStream) << std::endl;
+      (*outStream) << ss.str();
     }
   }
 }
