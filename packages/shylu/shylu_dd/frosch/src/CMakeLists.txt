@@ -115,7 +115,12 @@ APPEND_SET(HEADERS
   adapters/stratimikos_froschEpetra.hpp
   adapters/FROSch_EpetraOp_decl.hpp
   adapters/FROSch_EpetraOp_def.hpp
-
+  adapters/FROSch_XpetraOperator_decl.hpp
+  adapters/stratimikos_FROSchXpetra.hpp
+  adapters/Thyra_FROSchLinearOp_decl.hpp
+  adapters/Thyra_FROSchLinearOp_def.hpp
+  adapters/Thyra_FROSchXpetraFactory_decl.hpp
+  adapters/Thyra_FROSchXpetraFactory_def.hpp
 
 )
 

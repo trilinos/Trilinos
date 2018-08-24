@@ -8,5 +8,6 @@ ADD_SUBDIRECTORIES(
 #    InterfacePartitionOfUnity
 	Thyra_Epetra
     TwoLevelPreconditionerInputFiles
+     Thyra_Xpetra
     
 )
