@@ -100,6 +100,7 @@ namespace MueLu {
                                   Allowed values are: "additive" (default), "121", "212"
     - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
                                            Default: "true"
+    - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifing whether RefMaxwell is used as a preconditioner or as a solver.
     - <tt>refmaxwell: dump matrices</tt> - <tt>bool</tt> specifing whether the matrices should be dumped.
                                            Default: "false"
     - <tt>refmaxwell: prolongator compute algorithm</tt> - a <tt>string</tt> specifying the algorithm to build the prolongator.
@@ -362,7 +363,7 @@ namespace MueLu {
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_;
