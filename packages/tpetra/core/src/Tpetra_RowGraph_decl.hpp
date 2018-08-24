@@ -42,17 +42,15 @@
 #ifndef TPETRA_ROWGRAPH_DECL_HPP
 #define TPETRA_ROWGRAPH_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Packable.hpp"
-
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
   /// \class RowGraph
   /// \brief An abstract interface for graphs accessed by rows.
@@ -311,6 +309,7 @@ namespace Tpetra {
           Distributor& distor) const;
     //@}
   }; // class RowGraph
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWGRAPH_DECL_HPP

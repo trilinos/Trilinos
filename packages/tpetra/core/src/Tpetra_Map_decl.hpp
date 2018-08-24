@@ -47,6 +47,9 @@
 ///   nonmember constructors.
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_Directory_fwd.hpp"
+#include "Tpetra_TieBreak_fwd.hpp"
 #include "Tpetra_Details_LocalMap.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
@@ -54,19 +57,11 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_Describable.hpp"
 
+
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // Forward declaration of Directory.
-  template <class LO, class GO, class N> class Directory;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+  namespace Classes {
   namespace Details {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-    // Forward declaration of TieBreak
-    template <class LO, class GO> class TieBreak;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \class MapCloner
     /// \brief Implementation detail of Map::clone().
@@ -287,7 +282,7 @@ namespace Tpetra {
     /// communication, and can only access information that would
     /// never need MPI communication, no matter what kind of Map this
     /// is.
-    typedef Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
+    typedef ::Tpetra::Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
       local_map_type;
 
     //@}
@@ -939,7 +934,7 @@ namespace Tpetra {
     /// some Export or Import (communication) operations. Tpetra
     /// could use this, for example, in optimizing its sparse
     /// matrix-vector multiply.
-    bool isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const;
+    bool isLocallyFitted (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const;
 
     //@}
     //! Accessors for the Teuchos::Comm and Kokkos Node objects.
@@ -1255,7 +1250,7 @@ namespace Tpetra {
 #endif
 
     //! Type of a mapping from global IDs to local IDs.
-    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
+    typedef ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
       global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
@@ -1312,6 +1307,8 @@ namespace Tpetra {
 
   }; // Map class
 
+} // namespace Classes
+
   /// \brief Nonmember constructor for a locally replicated Map with
   ///   the default Kokkos Node.
   ///
@@ -1326,7 +1323,7 @@ namespace Tpetra {
   ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal> >
   createLocalMap (const size_t numElements,
                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
@@ -1457,13 +1454,14 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
-                 const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
+                 const ::Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
 
 } // namespace Tpetra
 
 #include "Tpetra_Directory_decl.hpp"
 
 namespace Tpetra {
+namespace Classes {
   namespace Details {
 
     template<class OutMapType, class InMapType>
@@ -1565,7 +1563,7 @@ namespace Tpetra {
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
 
-
+} // namespace Classes
 } // namespace Tpetra
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.

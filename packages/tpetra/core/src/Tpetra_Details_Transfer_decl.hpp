@@ -42,7 +42,7 @@
 #ifndef TPETRA_DETAILS_TRANSFER_DECL_HPP
 #define TPETRA_DETAILS_TRANSFER_DECL_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_Transfer_fwd.hpp"
 #include "Tpetra_Map_decl.hpp"
 #include "Teuchos_Describable.hpp"
 
@@ -57,6 +57,7 @@ class Distributor;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Details {
+namespace Classes {
 
 /// \class Transfer
 /// \brief Common base class of Import and Export
@@ -205,6 +206,7 @@ private:
   localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
 };
 
+} // namespace Classes
 } // namespace Details
 } // namespace Tpetra
 
@@ -217,6 +219,6 @@ private:
 // NODE: The Kokkos Node type.
 #define TPETRA_DETAILS_TRANSFER_INSTANT(LO, GO, NODE) \
   \
-  template class Transfer< LO , GO , NODE >;
+  namespace Classes { template class Transfer< LO , GO , NODE >; }
 
 #endif // TPETRA_DETAILS_TRANSFER_DECL_HPP

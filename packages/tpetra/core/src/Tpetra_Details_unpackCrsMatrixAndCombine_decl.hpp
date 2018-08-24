@@ -45,6 +45,7 @@
 #include "TpetraCore_config.h"
 #include "Tpetra_CombineMode.hpp"
 #include "Kokkos_DualView.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject_decl.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
@@ -82,9 +83,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration of Distributor
 class Distributor;
-// Forward declaration of CrsMatrix
-template<class ST, class LO, class GO, class NT>
-class CrsMatrix;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 //
