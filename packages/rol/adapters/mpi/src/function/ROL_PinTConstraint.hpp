@@ -50,6 +50,10 @@
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_SerialConstraint.hpp"
 
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
 namespace ROL {
 
 /** This helper method builds a pint "state" vector for use in the 
@@ -114,6 +118,7 @@ private:
   int numSweeps_;
   Real omega_;
   Real globalScale_;
+  std::vector<double> timePerLevel_; // given a MGRIT solve, what is the runtime for each level
 
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
@@ -204,6 +209,18 @@ public:
    */
   void setGlobalScale(Real o)
   { globalScale_ = o; }
+
+  /**
+   * Get the aggregate time per multigrid level. 
+   */
+  const std::vector<Real> & getTimePerLevel() const
+  { return timePerLevel_; }
+
+  /**
+   * Clear out the aggregate MGRIT timers
+   */
+  void clearTimePerLevel()
+  { return timePerLevel_.clear(); }
 
   /**
    * Turn on multigrid preconditioning in time with a specified number of levels.
@@ -1303,7 +1320,6 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-//     int Np_input = pint_input.numOwnedSteps();
      int Np = pint_output.numOwnedSteps();
 
      // this is the virtual variable (set it to -1)
@@ -1351,7 +1367,6 @@ public:
        else
          out.scale(1.0/3.0);
      }
-
    }
    
    /**
@@ -1541,6 +1556,17 @@ public:
    {
      using PartitionedVector = PartitionedVector<Real>;
 
+     auto timer = Teuchos::TimeMonitor::getStackedTimer();
+
+     std::string levelStr = "";
+     {
+       std::stringstream ss;
+       ss << "-" << level;
+       levelStr = ss.str();
+     }
+
+     timer->start("applyAugmentedInverseKKT"+levelStr); 
+
      auto part_output = dynamic_cast<PartitionedVector&>(output);
      auto part_input = dynamic_cast<const PartitionedVector&>(input);
  
@@ -1610,6 +1636,7 @@ public:
      output_u->scale(-1.0);
      output_u->axpy(1.0,*temp_u);
 
+     timer->stop("applyAugmentedInverseKKT"+levelStr); 
    }
 
    /**
@@ -1634,6 +1661,16 @@ public:
    {
      using PartitionedVector = PartitionedVector<Real>;
 
+     auto timer = Teuchos::TimeMonitor::getStackedTimer();
+
+     std::string levelStr = "";
+     {
+       std::stringstream ss;
+       ss << "-" << level;
+       levelStr = ss.str();
+     }
+
+     timer->start("applyMGAugmentedKKT"+levelStr);
 
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
@@ -1641,10 +1678,13 @@ public:
   
        applyAugmentedInverseKKT(x,b,u,z,tol,approxSmoother,level);
 
+       timer->stop("applyMGAugmentedKKT"+levelStr);
        return;
      }
 
-     bool approxSmoother = false;
+     bool approxSmoother = true;
+
+     timer->start("applyMGAugmentedKKT-preSmooth");
 
      auto dx = x.clone();
      auto residual = b.clone();
@@ -1660,8 +1700,10 @@ public:
        residual->scale(-1.0);
        residual->axpy(1.0,b);
      }
+     timer->stop("applyMGAugmentedKKT-preSmooth");
 
      // solve the coarse system
+     timer->start("applyMGAugmentedKKT-coarse");
      {
        auto pint_u = dynamic_cast<const PinTVector<Real>&>(u);
        auto pint_z = dynamic_cast<const PinTVector<Real>&>(z);
@@ -1689,8 +1731,8 @@ public:
        restrictOptVector(*residual_z,*crs_residual_z);
        restrictSimVector(*residual_v,*crs_residual_v);
 
-       restrictSimVector(u,*crs_u);               // restrict the control to the coarse level
-       restrictOptVector(z,*crs_z);               // restrict the state to the coarse level
+       restrictSimVector(u,*crs_u);               // restrict the state to the coarse level
+       restrictOptVector(z,*crs_z);               // restrict the control to the coarse level
 
        auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
        auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
@@ -1703,8 +1745,10 @@ public:
 
        x.axpy(1.0,*dx);
      }
+     timer->stop("applyMGAugmentedKKT-coarse");
 
      // apply one smoother sweep
+     timer->start("applyMGAugmentedKKT-postSmooth");
      for(int i=0;i<numSweeps_;i++) {
        // compute the residual
        applyAugmentedKKT(*residual,x,u,z,tol,level);
@@ -1714,6 +1758,9 @@ public:
        applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
        x.axpy(omega_,*dx);
      }
+     timer->stop("applyMGAugmentedKKT-postSmooth");
+
+     timer->stop("applyMGAugmentedKKT"+levelStr);
    }
 
 }; // ROL::PinTConstraint

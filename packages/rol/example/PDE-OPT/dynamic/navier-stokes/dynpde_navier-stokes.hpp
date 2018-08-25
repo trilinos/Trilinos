@@ -88,8 +88,8 @@ public:
     useParametricControl_   = parlist.sublist("Problem").get("Use Parametric Control", false);
     useParabolicInflow_     = parlist.sublist("Problem").get("Use Parabolic Inflow", true);
     useNonPenetratingWalls_ = parlist.sublist("Problem").get("Use Non-Penetrating Walls", false);
-    cx_ = static_cast<Real>(-4);
-    cy_ = static_cast<Real>(0);
+    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", -2.0);
+    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y",  0.0);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -872,11 +872,11 @@ public:
 
 private:
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
-    const Real one(1);
+    const Real one(1), two(2);
     const Real x = coords[0], y = coords[1];
     Real val(0);
     if ((sideset!=4) && (dir==0)) {
-      val = (useParabolicInflow_ ? (one + y) * (one - y) : one);
+      val = (useParabolicInflow_ ? (two + y) * (two - y) : one);
     }
     if (sideset==4) {
       Real tx = y-cy_, ty = cx_-x;

@@ -2031,6 +2031,18 @@ void Assembler<Real>::outputTpetraVector(const ROL::Ptr<const Tpetra::MultiVecto
                                          const std::string &filename) const {
   Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> vecWriter;
   vecWriter.writeDenseFile(filename, vec);
+  std::string mapfile = "map_" + filename;
+  vecWriter.writeMapFile(mapfile, *(vec->getMap()));
+}
+
+template<class Real>
+void Assembler<Real>::inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
+                                        const std::string &filename) const {
+  Tpetra::MatrixMarket::Reader< Tpetra::CrsMatrix<>> vecReader;
+  auto map = vec->getMap();
+  auto comm = map->getComm();
+  auto vec_rcp = vecReader.readDenseFile(filename, comm, map);
+  vec->scale(1.0, *vec_rcp);
 }
 
 template<class Real>
