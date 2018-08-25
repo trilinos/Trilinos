@@ -94,6 +94,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  waterman_mpi
+  SOURCES waterman_mpi.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  waterman_teuchoscomm
+  SOURCES waterman_teuchoscomm.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   absDefineTest
   SOURCES absdefinitiontest.cpp
   NUM_MPI_PROCS 1
