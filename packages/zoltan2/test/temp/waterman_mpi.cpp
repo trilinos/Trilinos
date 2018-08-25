@@ -36,15 +36,16 @@ int main(int narg, char **arg)
   int me;
   MPI_Comm_rank(comm, &me);
 
-  if (narg != 2 && me == 0) {
-    std::cout << "Usage:  a.out [0|1] \n"
-              << "        a.out 1 ==> duplicate communicator \n"
-              << "        a.out 0 ==> do not duplicate communicator \n"
-              << std::endl;
+  if (narg != 2) {
+    if (me == 0)
+      std::cout << "Usage:  a.out [Y|N] \n"
+                << "        a.out Y ==> duplicate communicator \n"
+                << "        a.out N ==> do not duplicate communicator \n"
+                << std::endl;
     return -1;
   }
 
-  int dupComm = atoi(arg[1]);
+  bool dupComm = (arg[1][0] == 'Y' ? true : false);
   MPI_Comm commdup;
 
   if (dupComm) 
