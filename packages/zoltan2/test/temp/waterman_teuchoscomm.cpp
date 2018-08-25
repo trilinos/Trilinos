@@ -1,3 +1,7 @@
+// Program demonstrating the Teuchos::Comm issues causing #3331.
+// On waterman, this test passes if it skips the call to 
+// Teuchos::Comm::duplicate, but segfaults if Teuchos::Comm::duplicate 
+// is called.
 #include <iostream>
 #include <fstream>
 #include <Teuchos_RCP.hpp>

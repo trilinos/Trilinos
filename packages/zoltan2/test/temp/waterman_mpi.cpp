@@ -1,3 +1,5 @@
+// MPI-only (no Teuchos::Comm) version of waterman_teuchoscomm.cpp
+// This version runs correctly on waterman.
 #include <iostream>
 #include <fstream>
 #include <mpi.h>
