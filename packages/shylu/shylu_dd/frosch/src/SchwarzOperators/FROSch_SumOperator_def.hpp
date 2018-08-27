@@ -113,11 +113,6 @@ namespace FROSch {
                                          SC alpha,
                                          SC beta) const
     {
-        Teuchos::RCP<const Teuchos::Comm<int> > Comm = x.getMap()->getComm();
-        Comm->barrier();Comm->barrier();Comm->barrier();
-        if(Comm->getRank() == 0) std::cout<<"SumOperator Apply\n";
-        
-        
         if (OperatorVector_.size()>0) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
             *xTmp = x; // Das brauche ich für den Fall das x=y

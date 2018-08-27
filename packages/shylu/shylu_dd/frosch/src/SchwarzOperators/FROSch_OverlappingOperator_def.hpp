@@ -86,7 +86,7 @@ namespace FROSch {
 
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
-        Teuchos::RCP<const Teuchos::Comm<int> > Comm = x.getMap()->getComm();
+        
         if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }

@@ -215,7 +215,6 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     std::string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
-        this->ParameterList_->print();
         return "GDSW Preconditioner";
     }
 

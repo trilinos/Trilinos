@@ -93,9 +93,6 @@ namespace FROSch {
         
         virtual ConstMapPtr getRangeMap() const;
         
-        virtual CrsMatrixPtr getCrsMatrix() const;
-
-        
         virtual void describe(Teuchos::FancyOStream &out,
                               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         

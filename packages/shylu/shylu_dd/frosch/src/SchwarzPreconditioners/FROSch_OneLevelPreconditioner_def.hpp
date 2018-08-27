@@ -145,13 +145,6 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename OneLevelPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr OneLevelPreconditioner<SC,LO,GO,NO>::getCrsMatrix()  const
-    {
-        return K_;
-    }
-    
-    
-    template <class SC,class LO,class GO,class NO>
     void OneLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                         const Teuchos::EVerbosityLevel verbLevel) const
     {
