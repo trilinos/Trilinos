@@ -35,6 +35,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSets)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzOperators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzPreconditioners)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Tools)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/adapters)
+
 
 
 APPEND_SET(HEADERS
@@ -102,6 +104,13 @@ APPEND_SET(HEADERS
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
+  adapters/FROSch_XpetraOperator_decl.hpp
+  adapters/stratimikos_FROSchXpetra.hpp
+  adapters/Thyra_FROSchLinearOp_decl.hpp
+  adapters/Thyra_FROSchLinearOp_def.hpp
+  adapters/Thyra_FROSchXpetraFactory_decl.hpp
+  adapters/Thyra_FROSchXpetraFactory_def.hpp
+
 )
 
 # Set sources

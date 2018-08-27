@@ -898,7 +898,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   }
 #endif
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
+    *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory< kann man sehen?"<<ST::name()<<">::initializeOpImpl(...) ...\n";
   
 }
 

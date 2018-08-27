@@ -108,6 +108,8 @@ namespace FROSch {
         
         std::string description() const;
         
+        void setParameterList(ParameterListPtr para);
+        
         
     protected:
         
