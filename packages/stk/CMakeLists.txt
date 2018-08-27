@@ -63,7 +63,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 
-# set fortran mangling options
+# Set fortran mangling options
 
 IF("${FC_FN_UNDERSCORE}" STREQUAL "NO_UNDER")
   SET(FORTRAN_NO_UNDERSCORE ON)
