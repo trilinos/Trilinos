@@ -147,8 +147,15 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  teuchosSubcommTest
-  SOURCES teuchosSubcommTest.cpp
+  subcommTestTeuchosComm
+  SOURCES subcommTestTeuchosComm.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  subcommTestMpi
+  SOURCES subcommTestMpi.cpp
   NUM_MPI_PROCS 4
   COMM mpi
 )
