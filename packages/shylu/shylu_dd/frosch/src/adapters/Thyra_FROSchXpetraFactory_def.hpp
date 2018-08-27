@@ -3,7 +3,7 @@
 
 #include "Thyra_FROSchXpetraFactory_decl.hpp"
 
-#include <Frosch_EpetraOp_def.hpp>
+//#include <Frosch_EpetraOp_def.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 
@@ -78,7 +78,6 @@ namespace Thyra {
         //TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
         TEUCHOS_ASSERT(prec);
         
-        // Create a copy, as we may remove some things from the list
         RCP<ParameterList> paramList(new ParameterList(*paramList_)); // AH: Muessen wir diese Kopie machen? Irgendwie wäre es doch besser, wenn man die nicht kopieren müsste, oder?
 
         // Retrieve wrapped concrete Xpetra matrix from FwdOp
@@ -103,8 +102,6 @@ namespace Thyra {
         
         // wrap the forward operator as an Xpetra::Matrix that FROSch can work with
         A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
-        //A->describe(*fancy,Teuchos::VERB_EXTREME);
-        
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
         
@@ -116,29 +113,18 @@ namespace Thyra {
         RCP<ThyLinOpBase> thyra_precOp = Teuchos::null;
         thyra_precOp = rcp_dynamic_cast<Thyra::LinearOpBase<Scalar> >(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
         
-        //Later needs to be a utility ExtractCoordinatesFromParameterList
-        //not implemented yet
-        // FROSCH::Tools<SC,LO,GO,Node>::ExtractCoordinatesFromParameterList(paramList);
-        
         //-------Build New Two Level Prec--------------
         RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,paramList));
         
-        
         RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
         Comm->barrier();
-        /*if(Comm->getRank() ==0){std::cout<<"Create Epetra Op new Constructor\n";
-         
-         cout << "--------------------------------------------------------------------------------\nPARAMETERS Two Level Precon Factory:" << endl;
-         paramList.print(std::cout);
-         cout << "--------------------------------------------------------------------------------\n\n";
-         
-         }*/
+        
         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
         
         if(paramList->isParameter("Coordinates")){
             coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList);
-            coord->describe(*fancy,Teuchos::VERB_EXTREME);
+            
             
         }
         
@@ -146,32 +132,20 @@ namespace Thyra {
             
             RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*
                                                                                                        paramList);
-            RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
-            
         }
         
         if(coord.get()!=NULL && RepeatedMap.get()!=NULL){
-            
-            
             TwoLevelPrec->initialize(paramList->get("Dimension",1),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,coord);
-            
-            
-            
         }else{
             TwoLevelPrec->initialize();
         }
         
-        
         TwoLevelPrec->compute();
         //-----------------------------------------------
-        //FROSCh_XpetraOP
-        RCP<FROSch_XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > froschXOP (new FROSch_XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TwoLevelPrec));
-        
         
         RCP<ThyLinOpBase > thyraPrecOp = Teuchos::null;
-
-        // RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop(new FROSch::FROSch_EpetraOperator(A,rcpFromRef(paramList)))
-        ;
+        //FROSCh_XpetraOP
+        RCP<FROSch_XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > froschXOP (new FROSch_XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TwoLevelPrec));
         
         RCP<const VectorSpaceBase<Scalar> > thyraRangeSpace  = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(froschXOP->getRangeMap());
         RCP<const VectorSpaceBase<Scalar> > thyraDomainSpace = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(froschXOP->getDomainMap());
@@ -180,6 +154,33 @@ namespace Thyra {
         thyraPrecOp = Thyra::fROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace, thyraDomainSpace,xpOp);
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
+        
+        /*##############################Epetra-Version###############################
+         //Prepare for FROSch Epetra Op-------------------
+         RCP<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> > epetraTwoLevel = rcp_dynamic_cast<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> >(TwoLevelPrec);
+         
+         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetraTwoLevel));
+         
+         
+         RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel,paramList));
+         
+         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(frosch_epetraop));
+         
+         //attach to fwdOp
+         set_extra_data(fwdOp,"IFPF::fwdOp", Teuchos::inOutArg(frosch_epetraop), Teuchos::POST_DESTROY,false);
+         
+         //Thyra Epetra Linear Operator
+         RCP<ThyEpLinOp> thyra_epetraOp = Thyra::nonconstEpetraLinearOp(frosch_epetraop, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
+         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyra_epetraOp));
+         
+         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
+         
+         thyraPrecOp = rcp_dynamic_cast<ThyLinOpBase>(thyra_epetraOp);
+         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
+
+         ############################################################################*/
+        
+        
         
         defaultPrec->initializeUnspecified(thyraPrecOp);
         
