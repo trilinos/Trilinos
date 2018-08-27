@@ -34,9 +34,9 @@ size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, 
     stk::mesh::Field<double> & field3 = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "field_3", 1);
 
     double fieldValues[] = {1.0, 2.0, 3.0};
-    stk::mesh::put_field(field1, meta.universal_part(), &fieldValues[0]);
-    stk::mesh::put_field(field2, meta.universal_part(), &fieldValues[1]);
-    stk::mesh::put_field(field3, meta.universal_part(), &fieldValues[2]);
+    stk::mesh::put_field_on_mesh(field1, meta.universal_part(), &fieldValues[0]);
+    stk::mesh::put_field_on_mesh(field2, meta.universal_part(), &fieldValues[1]);
+    stk::mesh::put_field_on_mesh(field3, meta.universal_part(), &fieldValues[2]);
     stkIo.populate_bulk_data();
 
     size_t results_output_index = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);

@@ -282,7 +282,7 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
             stk::io::put_io_part_attribute(part);
     }
     CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
-    stk::mesh::put_field(coordsField, meta.universal_part(), meshData.spatialDim);
+    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim, nullptr);
 }
 
 void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)

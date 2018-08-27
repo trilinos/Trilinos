@@ -159,10 +159,10 @@ protected:
     {
         double init_value = 1.0;
         weight_field = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "Weights", 1);
-        stk::mesh::put_field(*weight_field, get_meta().universal_part(), &init_value);
+        stk::mesh::put_field_on_mesh(*weight_field, get_meta().universal_part(), &init_value);
         double init_proc = 0.0;
         procOwner = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "ProcOwner", 1);
-        stk::mesh::put_field(*procOwner, get_meta().universal_part(), &init_proc);
+        stk::mesh::put_field_on_mesh(*procOwner, get_meta().universal_part(), &init_proc);
     }
 
     size_t get_global_element_count()

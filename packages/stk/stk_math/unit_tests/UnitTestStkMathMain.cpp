@@ -32,8 +32,6 @@
 //
 
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 #include <Kokkos_Core.hpp>
 
 int gl_argc = 0;
@@ -41,7 +39,6 @@ char** gl_argv = 0;
 
 int main(int argc, char **argv)
 {
-    stk::parallel_machine_init(&argc, &argv);
     Kokkos::initialize(argc, argv);
 
     testing::InitGoogleTest(&argc, argv);
@@ -49,13 +46,10 @@ int main(int argc, char **argv)
     gl_argc = argc;
     gl_argv = argv;
 
-    int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
-    stk::unit_test_util::create_parallel_output(procId);
-
     int returnVal = RUN_ALL_TESTS();
 
     Kokkos::finalize_all();
-    stk::parallel_machine_finalize();
 
     return returnVal;
 }
+

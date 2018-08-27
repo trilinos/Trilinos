@@ -37,7 +37,7 @@
 #include <set>                          // for set, etc
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
 #include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
 #include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
 #include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
@@ -776,8 +776,8 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   ScalarFieldType & temperature =
     fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "temperature" , 4 );
   Part  & universal     = fem_meta.universal_part ();
-  put_field ( volume , universal );
-  put_field ( temperature , universal );
+  put_field_on_mesh ( volume , universal , nullptr);
+  put_field_on_mesh ( temperature , universal , nullptr);
 
   fem_meta.commit();
 

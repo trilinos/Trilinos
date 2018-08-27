@@ -83,21 +83,21 @@ void build_mesh(stk::mesh::MetaData & meta,
   VectorField & vectorFieldNode = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
   VectorField & coordsFieldNode = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
   meta.set_coordinate_field(&coordsFieldNode);
-  stk::mesh::put_field(scalarFieldNode, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldNode, meta.universal_part(), init_vals);
-  stk::mesh::put_field(coordsFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(coordsFieldNode, meta.universal_part(), init_vals);
   ScalarField & scalarFieldElement = meta.declare_field<ScalarField>(stk::topology::ELEM_RANK, "Element Scalar Field");
   VectorField & vectorFieldElement = meta.declare_field<VectorField>(stk::topology::ELEM_RANK, "Element Vector Field");
-  stk::mesh::put_field(scalarFieldElement, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldElement, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldElement, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldElement, meta.universal_part(), init_vals);
   ScalarField & scalarFieldFace = meta.declare_field<ScalarField>(stk::topology::FACE_RANK, "Face Scalar Field");
   VectorField & vectorFieldFace = meta.declare_field<VectorField>(stk::topology::FACE_RANK, "Face Vector Field");
-  stk::mesh::put_field(scalarFieldFace, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldFace, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldFace, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldFace, meta.universal_part(), init_vals);
   ScalarField & scalarFieldShell = meta.declare_field<ScalarField>(stk::topology::ELEM_RANK, "Shell Scalar Field");
   VectorField & vectorFieldShell = meta.declare_field<VectorField>(stk::topology::ELEM_RANK, "Shell Vector Field");
-  stk::mesh::put_field(scalarFieldShell, *shell_part, init_vals);
-  stk::mesh::put_field(vectorFieldShell, *shell_part, init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldShell, *shell_part, init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldShell, *shell_part, init_vals);
   meta.commit();
 
   mesh.initialize_face_adjacent_element_graph();
@@ -1483,7 +1483,7 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
     const size_t num_elements = 4;
     const size_t num_nodes = 20;
     stk::mesh::EntityIdVector element_ids {1, 2, 3, 4};
-    std::vector<stk::mesh::EntityIdVector> elem_node_ids {
+    std::vector<stk::mesh::EntityIdVector> elem_node_ids = {
         {1, 2, 7, 6, 11, 12, 17, 16},
         {2, 3, 8, 7, 12, 13, 18, 17},
         {3, 4, 9, 8, 13, 14, 19, 18},
@@ -1622,9 +1622,9 @@ TEST(Transfer, copy0T_)
     ScalarField & scalarTargetField = metaB.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
     VectorField & vectorTargetField = metaB.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
     VectorField & coordsTargetField = metaB.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(scalarTargetField, metaB.universal_part(), init_vals);
-    stk::mesh::put_field(vectorTargetField, metaB.universal_part(), init_vals);
-    stk::mesh::put_field(coordsTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(vectorTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(coordsTargetField, metaB.universal_part(), init_vals);
     metaB.commit();
 
     // Fill "source" fields with valid data
@@ -1736,9 +1736,9 @@ TEST(Transfer, copy_T0)
     ScalarField & scalarSourceField = metaA.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
     VectorField & vectorSourceField = metaA.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
     VectorField & coordsSourceField = metaA.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(scalarSourceField, metaA.universal_part(), init_vals);
-    stk::mesh::put_field(vectorSourceField, metaA.universal_part(), init_vals);
-    stk::mesh::put_field(coordsSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(vectorSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(coordsSourceField, metaA.universal_part(), init_vals);
     metaA.commit();
 
     // Set up the "target" mesh for the transfer without creating any elements

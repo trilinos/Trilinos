@@ -75,10 +75,11 @@ TriFixtureImpl<DIM>::TriFixtureImpl( MetaData& meta,
     m_face_topology( DIM == 2 ? stk::topology::LINE_2 : stk::topology::TRI_3)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 }
 
 template <int DIM>
@@ -121,10 +122,11 @@ TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
     m_face_topology( DIM == 2 ? stk::topology::LINE_2 : stk::topology::TRI_3)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    nullptr);
 
 }
 
