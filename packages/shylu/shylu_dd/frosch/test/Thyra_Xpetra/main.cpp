@@ -1,4 +1,3 @@
-
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
 
@@ -45,17 +44,12 @@
 
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_FROSchHelpers.hpp>
 #include "stratimikos_FROSchXpetra.hpp"
-//#include "stratimikos_froschEpetra.hpp"
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
-#include <Thyra_FROSch_TwoLevelPreconditionerFactory_def.hpp>
-//#include "Thyra_FROSchEpetraPreconFactory_decl.hpp"
-#include "Frosch_EpetraOp_def.hpp"
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchXpetraFactory_def.hpp"
 
@@ -225,8 +219,7 @@ int main(int argc, char *argv[])
             } else {
                 assert(0!=0);
             }
-            // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); UniqueMap->describe(*fancy,Teuchos::VERB_EXTREME); UniqueMap->getComm()->barrier(); UniqueMap->getComm()->barrier();
-          
+            
            
             RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
             RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
@@ -234,16 +227,6 @@ int main(int argc, char *argv[])
             xSolution->putScalar(0.0);
             xRightHandSide->putScalar(1.0);
             
-            auto lows_factory = Thyra::BelosLinearOpWithSolveFactory<SC> ();
-            auto pl = Teuchos::rcp(new Teuchos::ParameterList());
-            pl->set("Solver Type", "Block GMRES");
-            Teuchos::ParameterList& solver_pl = pl->sublist("Solver Types").sublist("Block GMRES");
-            solver_pl.set("Convergence Tolerance", 1e-6);
-            solver_pl.set("Maximum Iterations", 100);
-            solver_pl.set("Num Blocks", 1);
-            lows_factory.setParameterList(pl);
-            lows_factory.setVerbLevel(Teuchos::VERB_HIGH);
-            //auto lows = lows_factory.createOp();
             
             Teuchos::RCP<Xpetra::CrsMatrix<SC, LO, GO, NO > > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,NO>(KEpetra));
             Teuchos::RCP<CrsMatrixWrap<SC,LO,GO> > exAWrap = Teuchos::rcp(new CrsMatrixWrap<SC,LO,GO> (exA));
@@ -251,13 +234,7 @@ int main(int argc, char *argv[])
             RCP<Xpetra::MultiVector<SC,LO,GO,NO> >Coord = ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*epCoord,TeuchosComm);
             
             RCP<Xpetra::Map<LO,GO,NO> > RepMapX = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K);
-            
-            
-            
-            
-            
-            
-            
+      
             
             
             RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(exAWrap->getCrsMatrix());
@@ -267,12 +244,10 @@ int main(int argc, char *argv[])
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
             
-            //This Basic solve without Preconditioner
-            //Thyra::initializeOp(lows_factory, K_thyra, lows.ptr());
-            //auto status = Thyra::solve(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------Stratimikos LinearSolverBuilder-----------\n";
-            
+           
+            //-----------Set Coordinates and RepMap in ParameterList--------------------------
            // RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
            // sublist(plList,"TwoLevelPreconditioner")->set("Coordinates",Coord);
            // sublist(plList,"TwoLevelPreconditioner")->set("RepeatedMap",RepMapX);
