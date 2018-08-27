@@ -1,6 +1,6 @@
 // MPI-only version of subcommTestTeuchosComm.cpp
 
-#include <stdio.h>
+#include <iostream>
 #include <mpi.h>
 
 
@@ -14,30 +14,35 @@ int main(int narg, char **arg)
   MPI_Comm_size(comm, &np);
 
   int niter = 4;
-  int *ids = NULL;
-  ids = new int[np/2+1];
-  ids[0] = me;
-  for (int i = 1; i < np/2+1; i++) {
-    ids[i] = (i != me ? i : 0);
-  }
+  int *ids = new int[np/2+1];
+  for (int i = 0; i < np/2+1; i++) ids[i] = i;
+  
   for (int i = 0; i < niter; i++) {
     MPI_Comm a;
-    MPI_Group cgrp;
+    MPI_Group cgrp, agrp;
     MPI_Comm_group(comm, &cgrp);
-    MPI_Group_incl(cgrp, np/2+1, ids, &agrp)
-    MPI_Comm_create(comm, agrp, a);
+    MPI_Group_incl(cgrp, np/2+1, ids, &agrp);
 
-    int anp;
-    MPI_Comm_size(a, &anp);
-    printf("Iteration %d:  New comm has %d ranks\n", i, anp);
+    MPI_Comm_create(comm, agrp, &a);
 
     MPI_Group_free(&agrp);
     MPI_Group_free(&cgrp);
-    MPI_Comm_free(&a);
+
+    if (a != MPI_COMM_NULL) {
+      int anp;
+      MPI_Comm_size(a, &anp);
+      std::cout << me << " Iteration " << i << " New comm has " << anp << " ranks"
+                << std::endl;
+      MPI_Comm_free(&a);
+    }
+    else {
+      std::cout << me << " not in new communicator" << std::endl;
+    }
   }
   delete [] ids;
   if (me == 0)
-    printf("\nPASS\n");
+    std::cout << "PASS" << std::endl;
 
+  MPI_Finalize();
   return 0;
 }

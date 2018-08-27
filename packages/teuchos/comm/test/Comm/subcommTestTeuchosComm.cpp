@@ -21,13 +21,10 @@ int main(int narg, char **arg)
   int np = comm->getSize();
 
   int niter = 4;
-  int *ids = NULL;
-  ids = new int[np/2+1];
-  ids[0] = me;
-  for (int i = 1; i < np/2+1; i++) {
-    ids[i] = (i != me ? i : 0);
-  }
+  int *ids = new int[np/2+1];
+  for (int i = 0; i < np/2+1; i++) ids[i] = i;
   Teuchos::ArrayView<const int> list(ids, np/2+1);
+
   for (int i = 0; i < niter; i++) {
     Teuchos::RCP<const Teuchos::Comm<int> > a 
                                             = comm->createSubcommunicator(list);
