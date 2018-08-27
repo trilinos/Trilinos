@@ -60,6 +60,7 @@ int main(int narg, char **arg)
               << (dupComm ? "comm duplication " : "no comm duplication ")
               << std::endl;
 
+  if (dupComm) MPI_Comm_free(&commdup);
   MPI_Finalize();
   return 0;
 }
