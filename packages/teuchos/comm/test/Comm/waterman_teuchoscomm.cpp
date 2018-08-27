@@ -27,6 +27,8 @@ void runTest(int ndoubles, Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   if (me == 0) 
     std::cout << "Trying reduceAll with ndoubles = " << ndoubles << std::endl;
 
+  std::cout << *comm << std::endl;
+
   Teuchos::reduceAll<int, double>(*comm, Teuchos::REDUCE_SUM,
                                    ndoubles, sendBuf, recvBuf);
 
