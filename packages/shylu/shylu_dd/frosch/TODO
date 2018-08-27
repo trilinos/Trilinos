@@ -15,3 +15,6 @@
 	- General MultiplicativeOperator for more than 2 operators
 	- New class "CombinationOperator" and derive MultiplicativeOperator and SumOperator from this class 
 	- Get rid of resetMatrix() methods
+
+27.08.2018 Alexander Heinlein:
+    - Use Thyra instead of Subdomain_Solver.hpp

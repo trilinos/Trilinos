@@ -157,16 +157,9 @@ void XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
 
   TEUCHOS_TEST_FOR_EXCEPTION(getConstXpetraOperator() == Teuchos::null, MueLu::Exceptions::RuntimeError, "XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
   RCP< const Teuchos::Comm< int > > comm = getConstXpetraOperator()->getRangeMap()->getComm();
-    comm->barrier();
-    comm->barrier();
-    comm->barrier();
-    if(comm->getRank() == 0) std::cout<<"LinearOP Base line 163\n";
+
   const RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tX_in =
       Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromRef(X_in), comm);
-    comm->barrier();
-    comm->barrier();
-    comm->barrier();
-    if(comm->getRank() == 0) std::cout<<"LinearOP Base line 169\n";
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tY_inout =
       Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromPtr(Y_inout), comm);
   Teuchos::ETransp transp;
