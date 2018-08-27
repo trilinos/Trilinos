@@ -54,7 +54,7 @@ protected:
         get_bulk().set_use_entity_ids_for_resolving_sharing(use_ids_for_sharing);
         stk::mesh::EntityId uniqueNodeId = 100;
         get_bulk().modification_begin();
-        stk::mesh::Entity node = get_bulk().declare_node(uniqueNodeId, {});
+        stk::mesh::Entity node = get_bulk().declare_node(uniqueNodeId, stk::mesh::ConstPartVector{});
         int other_proc = 1 - get_bulk().parallel_rank();
         get_bulk().add_node_sharing(node, other_proc);
         get_bulk().modification_end();

@@ -637,6 +637,8 @@ public:
   void printMeshData(std::ostream &outStream) const;
   void outputTpetraVector(const ROL::Ptr<const Tpetra::MultiVector<>> &vec,
                           const std::string &filename) const;
+  void inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
+                         const std::string &filename) const;
   void serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                  const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                  const std::string &filename,

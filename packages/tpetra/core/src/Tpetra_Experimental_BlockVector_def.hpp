@@ -42,10 +42,9 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
 
-#include "Tpetra_Experimental_BlockVector_decl.hpp"
-
 namespace Tpetra {
 namespace Experimental {
+namespace Classes {
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
@@ -171,6 +170,7 @@ namespace Experimental {
     }
   }
 
+} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 
@@ -180,6 +180,10 @@ namespace Experimental {
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class Experimental::BlockVector< S, LO, GO, NODE >;
+  namespace Experimental { \
+    namespace Classes { \
+      template class BlockVector< S, LO, GO, NODE >; \
+    } \
+  }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP

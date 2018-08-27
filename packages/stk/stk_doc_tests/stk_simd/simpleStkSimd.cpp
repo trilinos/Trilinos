@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <stk_simd/Simd.hpp>
+#include <limits>                       // for std::numeric_limits
 
 TEST(Simd, basic)
 {
@@ -63,6 +64,9 @@ TEST(stkMeshHowTo, simdSimdTest)
   const int N = 512; // this is a multiple of the simd width
                      // if this is not true, the remainder 
                      // must be handled appropriately
+                     
+  static_assert( N % stk::simd::ndoubles == 0, "Required to be a multiple of ndoubles");
+
   std::vector<double, non_std::AlignedAllocator<double,64> > x(N);
   std::vector<double, non_std::AlignedAllocator<double,64> > y(N);
   std::vector<double, non_std::AlignedAllocator<double,64> > solution(N);
@@ -79,8 +83,9 @@ TEST(stkMeshHowTo, simdSimdTest)
     stk::simd::store(&solution[n],zl);
   }  
 
+  const double epsilon = std::numeric_limits<double>::epsilon();
   for (int n=0; n < N; ++n) {
-    EXPECT_NEAR( std::abs(x[n]) * std::exp(y[n]), solution[n], 1.e-6 );
+    EXPECT_NEAR( std::abs(x[n]) * std::exp(y[n]), solution[n], epsilon );
   }
-} 
+}
 //ENDsimdSimd

@@ -51,14 +51,14 @@ class StkSimdViewFixture : public ::testing::Test {
   
   // virtual void SetUp() {
   static void SetUpTestCase() { 
-    std::cout << "STK_Kokkos: Setting up fixtures." << std::endl;
+    //std::cout << "STK_Kokkos: Setting up fixtures." << std::endl;
     Kokkos::initialize();
   }
   
   //virtual void TearDown() {
   static void TearDownTestCase() {
     Kokkos::finalize_all();
-    printf("STK_Kokkos: Tearing down fixture.\n");
+    //printf("STK_Kokkos: Tearing down fixture.\n");
   }  
 };
 

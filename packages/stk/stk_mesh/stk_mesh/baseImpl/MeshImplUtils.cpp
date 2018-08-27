@@ -306,13 +306,7 @@ void internal_clean_and_verify_parallel_change(
   std::ostringstream error_msg ;
 
   // Order and eliminate redundancies:
-  {
-    std::vector<EntityProc>::iterator i = local_change.begin() ,
-                                      j = local_change.end() ;
-    std::sort( i , j , EntityLess(mesh) );
-    i = std::unique( i , j );
-    local_change.erase( i , j );
-  }
+  stk::util::sort_and_unique(local_change, EntityLess(mesh));
 
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
@@ -655,8 +649,9 @@ void get_part_ordinals_to_induce_on_lower_ranks(const BulkData       & mesh,
 
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
-  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
-    const Bucket   & bucket_from    = mesh.bucket(entity_from);
+  const MeshIndex& mi = mesh.mesh_index(entity_from);
+  const Bucket& bucket_from = *mi.bucket;
+  if ( dont_check_owner || local_proc_rank == bucket_from.parallel_owner_rank(mi.bucket_ordinal) ) {
     const EntityRank entity_rank_from = bucket_from.entity_rank();
     ThrowAssert(entity_rank_from > entity_rank_to);
 

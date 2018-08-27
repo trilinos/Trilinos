@@ -108,7 +108,9 @@ bool is_edge_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity eleme
 
 NAMED_PAIR(EquivAndPositive, bool, is_equiv, bool, is_positive)
 
-EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::EntityVector& candidateSideNodes);
+
+EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes, size_t numCandidateSideNodes);
 
 EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
 

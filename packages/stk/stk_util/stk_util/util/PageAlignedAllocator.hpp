@@ -34,13 +34,11 @@
 #ifndef STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 
-#include <boost/type_traits/is_same.hpp>  // for is_same
+#include <type_traits>                  // for is_same
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <cstdlib>                      // for malloc, free
 #include <limits>                       // for numeric_limits
 #include <new>                          // for operator new
-
-
 
 namespace stk {
 
@@ -155,11 +153,11 @@ private:
 // return that all specializations of the page_aligned_allocator with the same allocator and same tag are interchangeable
 template <typename T1, typename T2>
 inline bool operator==(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
-{ return boost::is_same<T1,T2>::value; }
+{ return std::is_same<T1,T2>::value; }
 
 template <typename T1, typename T2>
 inline bool operator!=(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
-{ return !boost::is_same<T1,T2>::value; }
+{ return !std::is_same<T1,T2>::value; }
 
 } // namespace stk
 

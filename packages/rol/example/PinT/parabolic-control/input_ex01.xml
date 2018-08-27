@@ -12,7 +12,7 @@
   <!--================================================================================--> 
   <!-- Time Discretization                                                            --> 
   <Parameter name="End Time"                type="double"   value="1.0"   />
-  <Parameter name="Temporal Discretization" type="int"      value="100"   />
+  <Parameter name="Temporal Discretization" type="int"      value="128"   />
   <Parameter name="Integration Factor"      type="double"   value="0.5"   />
   <!--================================================================================-->
   <!-- Objective Function                                                             --> 
@@ -29,6 +29,12 @@
     <Parameter name="Use Only Sketched Sensitivity" type="bool"     value="true"  />
   </ParameterList>
   <!--================================================================================-->
+  <!--================================================================================--> 
+  <!-- MGRIT Parameters                                                               --> 
+  <Parameter name="MGRIT Sweeps"                    type="int"      value="1"     />
+  <Parameter name="MGRIT Relaxation"                type="double"   value="0.6666"/>
+  <Parameter name="MGRIT Levels"                    type="int"      value="3"     />
+  <Parameter name="MGRIT Krylov Relative Tolerance" type="double"   value="1e-4"     />
 </ParameterList>
 
 

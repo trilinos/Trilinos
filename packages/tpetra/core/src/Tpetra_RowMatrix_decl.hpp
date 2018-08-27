@@ -42,27 +42,17 @@
 #ifndef TPETRA_ROWMATRIX_DECL_HPP
 #define TPETRA_ROWMATRIX_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Vector_decl.hpp"
+#include "Tpetra_RowMatrix_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Operator.hpp"
-#include "Tpetra_RowGraph.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "Tpetra_Packable.hpp"
 #include "Tpetra_SrcDistObject.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+namespace Classes {
   /// \class RowMatrix
   /// \brief A read-only, row-oriented interface to a sparse matrix.
   ///
@@ -114,7 +104,7 @@ namespace Tpetra {
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
-    typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
     //@}
     //! @name Destructor
@@ -574,6 +564,7 @@ namespace Tpetra {
           Distributor& distor) const;
     //@}
   }; // class RowMatrix
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWMATRIX_DECL_HPP

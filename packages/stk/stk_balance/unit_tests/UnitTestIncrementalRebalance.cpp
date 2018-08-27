@@ -41,6 +41,8 @@ public:
         m_incrementalRebalance(incrementalRebalance) { }
     virtual ~FieldVertexWeightSettingsWithSearchForParticles() = default;
 
+    using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
+
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
@@ -478,8 +480,8 @@ protected:
             destroy_element_and_lower(elements[i]);
             for (int particleIndex=0 ; particleIndex < numParticlesPerElement ; ++particleIndex)
             {
-                stk::mesh::Entity node = get_bulk().declare_node(++entityId, {&nodeTopologyPart});
-                stk::mesh::Entity particle = get_bulk().declare_element(entityId, {&particleTopologyPart,block2Part});
+                stk::mesh::Entity node = get_bulk().declare_node(++entityId, stk::mesh::ConstPartVector{&nodeTopologyPart});
+                stk::mesh::Entity particle = get_bulk().declare_element(entityId, stk::mesh::ConstPartVector{&particleTopologyPart,block2Part});
                 get_bulk().declare_relation(particle, node, 0);
 
                 set_coords(node, centroid);

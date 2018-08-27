@@ -26,7 +26,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -1470,7 +1470,9 @@ TEST(ElementGraph, test_element_death)
             }
 
             std::cerr << os.str();
-            stk::io::write_mesh("out.exo", bulkData);
+
+            stk::mesh::Selector activeSelector(active);
+            stk::io::write_mesh_subset("out.exo", bulkData, activeSelector);
         }
     }
 }

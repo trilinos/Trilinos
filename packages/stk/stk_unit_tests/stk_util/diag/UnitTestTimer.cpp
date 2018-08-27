@@ -38,9 +38,13 @@
 #include <stk_util/diag/PrintTimer.hpp>  // for printTimersTable
 #include <stk_util/diag/Timer.hpp>      // for Timer, TimeBlock, etc
 #include <gtest/gtest.h>
+#include <mpi.h>
+#include <stk_unit_test_utils/getOption.h>
 #include <string>                       // for string, operator<<, etc
 #include <vector>                       // for vector
 #include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), etc
+
+using stk::unit_test_util::get_command_line_option;
 
 
 
@@ -311,4 +315,37 @@ TEST(UnitTestTimer, UnitTest)
     
 //    dw().m(LOG_TIMER) << strout.str() << stk::diag::dendl;
   }
+}
+
+TEST(UnitTestTimer, YuugeNumberOfTimers)
+{
+    std::ostringstream strout;
+
+    stk::diag::TimerSet unitTestSecondTimerSet(TIMER_APP_3);
+    const std::string name("Unit Test Timer");
+    stk::diag::Timer rootTimer (stk::diag::createRootTimer(name, unitTestSecondTimerSet));
+
+    stk::diag::TimeBlock root_time_block(rootTimer);
+
+    unsigned numTimers = 100;
+    numTimers = stk::unit_test_util::get_command_line_option("-numTimers", numTimers);
+    {
+        static std::vector<stk::diag::Timer> lap_timers;
+        for (unsigned i = 0; i < numTimers; ++i)
+        {
+            std::ostringstream os;
+            os << "Really Great Timer For Index with lots of space in between the name and index" << i;
+            lap_timers.emplace_back(os.str(), rootTimer);
+            stk::diag::TimeBlock _time(lap_timers[i]);
+            // work(1);
+        }
+        for (unsigned i = 0; i < numTimers; ++i)
+        {
+            stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = lap_timers[i].getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+            EXPECT_EQ(1u, lap_count);
+        }
+    }
+
+    stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    std::cout << strout.str() << std::endl;
 }

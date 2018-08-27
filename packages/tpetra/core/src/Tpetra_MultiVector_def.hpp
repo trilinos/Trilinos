@@ -299,6 +299,7 @@ namespace { // (anonymous)
 
 
 namespace Tpetra {
+namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1279,7 +1280,7 @@ namespace Tpetra {
          << ", newExportsSize = " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
-    Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
+    ::Tpetra::Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // 'exports' may have different memory spaces than device_type
     // would indicate.  See GitHub issue #1088.  Abbreviations:
@@ -1776,7 +1777,7 @@ namespace Tpetra {
         // The calling process only participates in the collective if
         // both the Map and its Comm on that process are nonnull.
         const int nv = static_cast<int> (numVecs);
-        const bool commIsInterComm = Details::isInterComm (*comm);
+        const bool commIsInterComm = ::Tpetra::Details::isInterComm (*comm);
 
         if (commIsInterComm) {
           // If comm is an intercomm, then we may not alias input and
@@ -1868,7 +1869,7 @@ namespace Tpetra {
     auto thisView = this->template getLocalView<dev_memory_space> ();
     auto A_view = A.template getLocalView<dev_memory_space> ();
 
-    Tpetra::Details::lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
+    ::Tpetra::Details::lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
                      this->whichVectors_.getRawPtr (),
                      A.whichVectors_.getRawPtr (),
                      this->isConstantStride (), A.isConstantStride ());
@@ -4750,7 +4751,7 @@ namespace Tpetra {
     // This is collective over the Map's communicator.
     if (vl > VERB_LOW) { // VERB_MEDIUM, VERB_HIGH, or VERB_EXTREME
       const std::string lclStr = this->localDescribeToString (vl);
-      Tpetra::Details::gathervPrint (out, lclStr, *comm);
+      ::Tpetra::Details::gathervPrint (out, lclStr, *comm);
     }
   }
 
@@ -4776,9 +4777,11 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
   {
-    typedef LocalOrdinal LO;
-    typedef device_type DT;
-    typedef typename dual_view_type::host_mirror_space::device_type HMDT;
+    using LO = LocalOrdinal;
+    using DT = device_type;
+    using HMDT = typename dual_view_type::host_mirror_space::device_type;
+    using ::Tpetra::Details::localDeepCopy;
+    using ::Tpetra::Details::localDeepCopyConstStride;
     const char prefix[] = "Tpetra::deep_copy (MultiVector): ";
     const bool debug = false;
 
@@ -4818,14 +4821,14 @@ namespace Tpetra {
       if (useHostVersion) { // Host memory has the most recent version of src.
         // Copy from src to dst on host.
         this->template modify<HMDT> ();
-        Details::localDeepCopyConstStride (this->template getLocalView<HMDT> (),
-                                           src.template getLocalView<HMDT> ());
+        localDeepCopyConstStride (this->template getLocalView<HMDT> (),
+                                  src.template getLocalView<HMDT> ());
       }
       else { // Device memory has the most recent version of src.
         // Copy from src to dst on device.
         this->template modify<DT> ();
-        Details::localDeepCopyConstStride (this->template getLocalView<DT> (),
-                                           src.template getLocalView<DT> ());
+        localDeepCopyConstStride (this->template getLocalView<DT> (),
+                                  src.template getLocalView<DT> ());
       }
     }
     else {
@@ -4860,9 +4863,9 @@ namespace Tpetra {
           // host.  The function ignores its dstWhichVecs argument in
           // this case.
           this->template modify<HMDT> ();
-          Details::localDeepCopy (this->template getLocalView<HMDT> (),
-                                  src.template getLocalView<HMDT> (),
-                                  true, false, srcWhichVecs, srcWhichVecs);
+          localDeepCopy (this->template getLocalView<HMDT> (),
+                         src.template getLocalView<HMDT> (),
+                         true, false, srcWhichVecs, srcWhichVecs);
         }
         else { // copy from the device version of src
           if (debug && this->getMap ()->getComm ()->getRank () == 0) {
@@ -4885,10 +4888,10 @@ namespace Tpetra {
           // device.  The function ignores its dstWhichVecs argument
           // in this case.
           this->template modify<DT> ();
-          Details::localDeepCopy (this->template getLocalView<DT> (),
-                                  src.template getLocalView<DT> (),
-                                  true, false, srcWhichVecs.d_view,
-                                  srcWhichVecs.d_view);
+          localDeepCopy (this->template getLocalView<DT> (),
+                         src.template getLocalView<DT> (),
+                         true, false, srcWhichVecs.d_view,
+                         srcWhichVecs.d_view);
         }
 
       }
@@ -4914,11 +4917,11 @@ namespace Tpetra {
             // Copy from src to the selected vectors of dst, on the
             // host.  The functor ignores its 4th arg in this case.
             this->template modify<HMDT> ();
-            Details::localDeepCopy (this->template getLocalView<HMDT> (),
-                                    src.template getLocalView<HMDT> (),
-                                    this->isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecs, whichVecs);
+            localDeepCopy (this->template getLocalView<HMDT> (),
+                           src.template getLocalView<HMDT> (),
+                           this->isConstantStride (),
+                           src.isConstantStride (),
+                           whichVecs, whichVecs);
           }
           else { // Copy from the device version of src.
             // whichVecs tells the kernel which vectors (columns) of dst
@@ -4936,11 +4939,12 @@ namespace Tpetra {
 
             // Copy src to the selected vectors of dst, on the device.
             this->template modify<DT> ();
-            Details::localDeepCopy (this->template getLocalView<DT> (),
-                                    src.template getLocalView<DT> (),
-                                    this->isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecs.d_view, whichVecs.d_view);
+            localDeepCopy (this->template getLocalView<DT> (),
+                           src.template getLocalView<DT> (),
+                           this->isConstantStride (),
+                           src.isConstantStride (),
+                           whichVecs.d_view,
+                           whichVecs.d_view);
           }
         }
         else { // neither src nor dst have constant stride
@@ -4967,12 +4971,12 @@ namespace Tpetra {
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
             this->template modify<HMDT> ();
-            Details::localDeepCopy (this->template getLocalView<HMDT> (),
-                                    src.template getLocalView<HMDT> (),
-                                    this->isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVectorsDst, whichVectorsSrc);
-
+            localDeepCopy (this->template getLocalView<HMDT> (),
+                           src.template getLocalView<HMDT> (),
+                           this->isConstantStride (),
+                           src.isConstantStride (),
+                           whichVectorsDst,
+                           whichVectorsSrc);
           }
           else { // copy from the device version of src
             // whichVectorsDst tells the kernel which columns of dst
@@ -5004,11 +5008,12 @@ namespace Tpetra {
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
             this->template modify<DT> ();
-            Details::localDeepCopy (this->template getLocalView<DT> (),
-                                    src.template getLocalView<DT> (),
-                                    this->isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecsDst.d_view, whichVecsSrc.d_view);
+            localDeepCopy (this->template getLocalView<DT> (),
+                           src.template getLocalView<DT> (),
+                           this->isConstantStride (),
+                           src.isConstantStride (),
+                           whichVecsDst.d_view,
+                           whichVecsSrc.d_view);
           }
         }
       }
@@ -5019,40 +5024,27 @@ namespace Tpetra {
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
-    typedef impl_scalar_type ST;
-    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space HES;
-    size_t l1 = this->getLocalLength();
-    size_t l2 = vec.getLocalLength();
-    if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors()))
+    using ::Tpetra::Details::PackTraits;
+    using ST = impl_scalar_type;
+    using HES = typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
+
+    const size_t l1 = this->getLocalLength();
+    const size_t l2 = vec.getLocalLength();
+    if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors())) {
       return false;
-    if(l1==0)  return true;
+    }
+    if (l1==0) {
+      return true;
+    }
 
     auto v1 = this->template getLocalView<HES>();
     auto v2 = vec.template getLocalView<HES>();
-    if(Details::PackTraits<ST,HES>::packValueCount(v1(0,0)) != Details::PackTraits<ST,HES>::packValueCount(v2(0,0)))
+    if (PackTraits<ST, HES>::packValueCount (v1(0,0)) !=
+        PackTraits<ST, HES>::packValueCount (v2(0,0))) {
       return false;
+    }
 
     return true;
-  }
-
-
-  template <class Scalar, class LO, class GO, class NT>
-  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
-  createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
-                     size_t numVectors)
-  {
-    typedef MultiVector<Scalar, LO, GO, NT> MV;
-    return Teuchos::rcp (new MV (map, numVectors));
-  }
-
-  template <class ST, class LO, class GO, class NT>
-  MultiVector<ST, LO, GO, NT>
-  createCopy (const MultiVector<ST, LO, GO, NT>& src)
-  {
-    typedef MultiVector<ST, LO, GO, NT> MV;
-    MV cpy (src.getMap (), src.getNumVectors (), false);
-    cpy.assign (src);
-    return cpy;
   }
 
   template <class ST, class LO, class GO, class NT>
@@ -5078,7 +5070,26 @@ namespace Tpetra {
     this->origView_     = origView;
     this->whichVectors_ = whichVectors;
   }
+} // namespace Classes
 
+  template <class Scalar, class LO, class GO, class NT>
+  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
+  createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
+                     size_t numVectors)
+  {
+    typedef MultiVector<Scalar, LO, GO, NT> MV;
+    return Teuchos::rcp (new MV (map, numVectors));
+  }
+
+  template <class ST, class LO, class GO, class NT>
+  MultiVector<ST, LO, GO, NT>
+  createCopy (const MultiVector<ST, LO, GO, NT>& src)
+  {
+    typedef MultiVector<ST, LO, GO, NT> MV;
+    MV cpy (src.getMap (), src.getNumVectors (), false);
+    cpy.assign (src);
+    return cpy;
+  }
 
 } // namespace Tpetra
 
@@ -5089,7 +5100,7 @@ namespace Tpetra {
 //
 
 #define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  template class MultiVector< SCALAR , LO , GO , NODE >; \
+  namespace Classes { template class MultiVector< SCALAR , LO , GO , NODE >; } \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
   template Teuchos::RCP<MultiVector< SCALAR , LO , GO , NODE > > createMultiVector (const Teuchos::RCP<const Map<LO, GO, NODE> >& map, size_t numVectors);
 

@@ -61,20 +61,16 @@ enum LogMask {
   LOG_TRACE_STATS	= stk::LOG_TRACE_STATS,
   LOG_TRACE_SUB_CALLS	= stk::LOG_TRACE_SUB_CALLS,
   LOG_MEMBERS		= stk::LOG_MEMBERS,
-
   LOG_TEST1             = 0x0000010,
   LOG_TEST2             = 0x0000020
 };
 
-
 std::ostringstream &
 oss()
 {
-  static std::ostringstream     s_oss;
-
+  static std::ostringstream s_oss;
   return s_oss;
 }
-
 
 std::ostream &
 dwout()
@@ -84,7 +80,6 @@ dwout()
   
   return s_dwout;
 }
-
 
 // Diagnostic writer
 stk::diag::Writer &
@@ -214,10 +209,7 @@ TEST(UnitTestWriter, UnitTest)
 
   oss().str("");
   {
-    std::vector<int> v;
-    v.push_back(1);
-    v.push_back(2);
-    v.push_back(3);
+    std::vector<int> v = { 1, 2, 3};
     
     std::vector<int> vl;
     for (int i = 0; i < 20; ++i)
@@ -227,12 +219,9 @@ TEST(UnitTestWriter, UnitTest)
     vp.push_back(new int(1));
     vp.push_back(new int(2));
     vp.push_back(new int(3));
-    vp.push_back(0);
+    vp.push_back(nullptr);
     
-    std::list<int> l;
-    l.push_back(1);
-    l.push_back(2);
-    l.push_back(3);
+    std::list<int> l = { 1, 2, 3 };
     
     std::list<int *> lp;
     lp.push_back(new int(1));
@@ -259,15 +248,7 @@ TEST(UnitTestWriter, UnitTest)
     mmp.insert(std::multimap<int, int *>::value_type(1, new int(3)));
     mmp.insert(std::multimap<int, int *>::value_type(2, new int(4)));
 
-    std::set<int> s;
-    s.insert(2);
-    s.insert(3);
-    s.insert(4);
-    
-    std::multiset<int> ms;
-    ms.insert(2);
-    ms.insert(2);
-    ms.insert(4);
+    std::set<int> s = { 2, 3, 4};
     
     std::bitset<8> b;
     b[1] = 1;
@@ -285,7 +266,6 @@ TEST(UnitTestWriter, UnitTest)
     dw() << mm << dendl;
     dw() << mmp << dendl;
     dw() << s << dendl;
-    dw() << ms << dendl;
     dw() << b << dendl;
 
     for(std::vector<int*>::iterator it=vp.begin(); it!=vp.end(); ++it)

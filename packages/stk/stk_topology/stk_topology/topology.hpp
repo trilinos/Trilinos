@@ -368,6 +368,27 @@ struct topology
     : m_value(topo)
   {}
 
+  //copy constructor needs to be defined for GPU
+  STK_FUNCTION
+  topology(const topology& topo)
+    : m_value(topo.m_value)
+  {}
+
+  //***************************************************************************
+  // comparison operator
+  //***************************************************************************
+  STK_FUNCTION
+  bool operator==(const topology& rhs) const
+  {
+    return m_value == rhs.m_value;
+  }
+
+  STK_FUNCTION
+  bool operator==(const topology_t& rhs) const
+  {
+    return m_value == rhs;
+  }
+
   //***************************************************************************
   // compile time for topology
   // used with apply_functor
@@ -560,7 +581,7 @@ bool isTriangle (topology topo);
 bool isQuadrilateral (topology topo);
 bool isTetrahedron (topology topo);
 bool isHexahedron (topology topo);
-
+bool is_solid_element(stk::topology t);
 
 } //namespace stk
 

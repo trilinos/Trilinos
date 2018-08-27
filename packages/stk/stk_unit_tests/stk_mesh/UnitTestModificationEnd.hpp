@@ -1270,15 +1270,15 @@ void checkEntityRelationsGhosted(int procId, stk::mesh::BulkData& stkMeshBulkDat
     std::vector<std::pair<int, stk::mesh::Entity> > element2edge;
     if ( procId == 0 )
     {
-        element2edge.push_back(std::make_pair(1, edge1));
-        element2edge.push_back(std::make_pair(2, edge1));
-        element2edge.push_back(std::make_pair(3, edge2));
+        element2edge.emplace_back(1, edge1);
+        element2edge.emplace_back(2, edge1);
+        element2edge.emplace_back(3, edge2);
     }
     else
     {
-        element2edge.push_back(std::make_pair(2, edge1));
-        element2edge.push_back(std::make_pair(3, edge2));
-        element2edge.push_back(std::make_pair(4, edge2));
+        element2edge.emplace_back(2, edge1);
+        element2edge.emplace_back(3, edge2);
+        element2edge.emplace_back(4, edge2);
     }
 
     {

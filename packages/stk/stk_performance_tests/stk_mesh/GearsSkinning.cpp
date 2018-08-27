@@ -32,10 +32,11 @@
 // 
 
 #include <gtest/gtest.h>
+#include <random> // for random_device, mt19937, etc. 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
 #include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
@@ -211,7 +212,13 @@ void find_and_shuffle_wedges_to_separate(
       wedges
       );
 
+#if __cplusplus >= 201402L
+  std::random_device random_number_generator;
+  std::mt19937 uniform_random_number_generator(random_number_generator());
+  std::shuffle(wedges.begin(), wedges.end(), uniform_random_number_generator);
+#else
   std::random_shuffle(wedges.begin(),wedges.end());
+#endif
 }
 
 //

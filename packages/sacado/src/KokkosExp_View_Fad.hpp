@@ -36,6 +36,7 @@
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_Layout.hpp"
 #include "Kokkos_View.hpp"
 
 // Some definition that should exist whether the specializations exist or not
@@ -71,11 +72,6 @@ dimension_scalar_aligned(const view_type& view) {
 
 // Make sure the user really wants these View specializations
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "Sacado_Traits.hpp"
-#include "impl/Kokkos_ViewMapping.hpp"
-#include "Kokkos_LayoutContiguous.hpp"
-#include "Kokkos_LayoutNatural.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -141,10 +137,58 @@ typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
                        >::type
 view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
 
+template<class Space, class T, class ... P>
+struct MirrorType;
+
 } // namespace Impl
+
+// Declare overloads of create_mirror() so they are in scope
+// Kokkos_Core.hpp is included below
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+        Kokkos::LayoutStride >::value >::type * = 0);
+
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value >::type * = 0);
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(
+  const Space&,
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+
 } // namespace Kokkos
 
+#include "Sacado_Traits.hpp"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_LayoutContiguous.hpp"
+#include "Kokkos_LayoutNatural.hpp"
 
 namespace Kokkos {
 namespace Impl {
@@ -407,6 +451,88 @@ void deep_copy( const View<DT,DP...> & dst ,
   typename PODViewDeepCopyType< View<ST,SP...> >::type src_array( src );
 #endif
   Kokkos::deep_copy( dst_array , src_array );
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               &&
+                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(std::string(src.label()).append("_mirror"), layout);
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                   Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                &&
+                   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  Kokkos::LayoutStride layout ;
+
+  layout.dimension[0] = src.extent(0);
+  layout.dimension[1] = src.extent(1);
+  layout.dimension[2] = src.extent(2);
+  layout.dimension[3] = src.extent(3);
+  layout.dimension[4] = src.extent(4);
+  layout.dimension[5] = src.extent(5);
+  layout.dimension[6] = src.extent(6);
+  layout.dimension[7] = src.extent(7);
+
+  layout.stride[0] = src.stride_0();
+  layout.stride[1] = src.stride_1();
+  layout.stride[2] = src.stride_2();
+  layout.stride[3] = src.stride_3();
+  layout.stride[4] = src.stride_4();
+  layout.stride[5] = src.stride_5();
+  layout.stride[6] = src.stride_6();
+  layout.stride[7] = src.stride_7();
+
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(std::string(src.label()).append("_mirror"), layout);
+}
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(const Space& , const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               >::type *) {
+  typedef View<T,P...> src_type ;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
 }
 
 } // namespace Kokkos
@@ -961,6 +1087,10 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
     { return m_fad_size.value+1; }
 
+  // trode of sacado scalar dimension
+  KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned stride_scalar() const
+    { return m_fad_stride.value; }
+
   //----------------------------------------
   // Range of mapping
 
@@ -975,9 +1105,9 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t span() const
     { return m_array_offset.span(); }
 
-  /** \brief  The mapped range span cannot be guaranteed contiguous */
+  /** \brief  Is the mapped range span contiguous */
   KOKKOS_INLINE_FUNCTION constexpr bool span_is_contiguous() const
-    { return false ; }
+    { return m_array_offset.span_is_contiguous() ; }
 
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const

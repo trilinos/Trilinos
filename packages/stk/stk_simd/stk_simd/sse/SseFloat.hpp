@@ -1,4 +1,5 @@
 // Copyright 2013 Sandia Corporation, Albuquerque, NM.
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
 
 namespace stk {
 namespace simd {
@@ -73,7 +74,7 @@ struct Float
   }
 
   STK_MATH_FORCE_INLINE Float operator-() const {
-    return Float( _mm_sub_ps(Float(0.0)._data,_data) );
+    return Float( _mm_sub_ps(Float(0)._data,_data) );
   }
 
   STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}

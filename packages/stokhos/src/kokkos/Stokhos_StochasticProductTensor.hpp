@@ -45,6 +45,7 @@
 #include <ostream>
 
 #include "Kokkos_Core.hpp"
+//#include "Kokkos_View.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_ParameterList.hpp"

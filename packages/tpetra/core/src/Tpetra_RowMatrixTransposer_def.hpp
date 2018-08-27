@@ -42,13 +42,14 @@
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
-#include "Tpetra_RowMatrixTransposer_decl.hpp"
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Import.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Import.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
 template<class Scalar,
      class LocalOrdinal,
@@ -286,10 +287,11 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
 //
 
 #define TPETRA_ROWMATRIXTRANSPOSER_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class RowMatrixTransposer< SCALAR, LO , GO , NODE >;
+  namespace Classes { \
+    template class RowMatrixTransposer< SCALAR, LO , GO , NODE >; \
+  }
 
-
-}
+} // namespace Classes
+} // namespace Tpetra
 
 #endif

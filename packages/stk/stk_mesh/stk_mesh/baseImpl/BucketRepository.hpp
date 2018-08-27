@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, OrdinalVector, etc
 #include <vector>                       // for vector
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
@@ -102,18 +102,11 @@ public:
   void internal_default_sort_bucket_entities();
   void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);
 
-  void optimize_buckets();
-
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
   template <class RankType>
   inline
   Bucket *get_bucket(RankType rank_id) const;
-
-  //  Bucket *get_bucket(Node node) const;
-  //  Bucket *get_bucket(Edge edge) const;
-  //  Bucket *get_bucket(Face face) const;
-  //  Bucket *get_bucket(Element elem) const;
 
   ////
   //// Partitions are now the primary location of buckets.

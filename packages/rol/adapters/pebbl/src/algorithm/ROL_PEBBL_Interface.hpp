@@ -4,18 +4,14 @@
 
 //#include <acro_config.h>
 #include <pebbl/bb/branching.h>
-#include <pebbl/utilib/CharString.h>
-#include <pebbl/utilib/BasicArray.h>
 #include <pebbl/utilib/BitArray.h>
 #include <pebbl/utilib/IntVector.h>
 #include <pebbl/utilib/DoubleVector.h>
 #include <pebbl/utilib/_math.h>
-#include <pebbl/utilib/ParameterSet.h>
-#ifdef ACRO_HAVE_MPI
-#include <pebbl/utilib/PackBuf.h>
-#endif
 #include <pebbl/misc/chunkAlloc.h>
 
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_OptimizationProblemFactory.hpp"
 #include "ROL_BranchHelper_PEBBL.hpp"
 #include "ROL_Constraint_PEBBL.hpp"
 #include "ROL_TransformedObjective_PEBBL.hpp"
@@ -65,7 +61,7 @@ public:
     solution_.set(*dynamic_cast<ROL_PEBBL_Solution>(toCopy)->getVector());
   }
 
-  const char* typeDescription() const { return "ROL solution"; };
+  const char* typeDescription() const { return "ROL solution"; }
 
   void print(std::ostream& s) {
     solution_->print(s);
@@ -86,22 +82,22 @@ private:
   // subject to xl <= x <= xu
   //            econ(x) = 0         (Lagrange Multiplier: emul)
   //            cl <= icon(x) <= cu (Lagrange Multiplier: imul)
-  const Ptr<OptimizationProblem<Real>> problem_;
+  const Ptr<OptimizationProblemFactory<Real>> factory_;
   // Solver parameters
-  const Ptr<ParameterList>             parlist_;
+  const Ptr<ParameterList>                    parlist_;
   // Vector specific branching helper
-  const Ptr<BranchHelper_PEBBL<Real>>  bHelper_;
+  const Ptr<BranchHelper_PEBBL<Real>>         bHelper_;
 
   const int verbosity_;
   const Ptr<std::ostream> outStream_;
 
 public:
-  ROL_PEBBL_Branching(const Ptr<OptimizationProblem<Real>> &problem,
-                      const Ptr<ParameterList>             &parlist,
-                      const Ptr<BranchHelper_PEBBL<Real>>  &bHelper,
-                      const int verbosity = 0,
-                      const Ptr<std::ostream> &outStream = nullPtr)
-    : problem_(problem), parlist_(parlist), bHelper_(bHelper),
+  ROL_PEBBL_Branching(const Ptr<OptimizationProblemFactory<Real>> &factory,
+                      const Ptr<ParameterList>                    &parlist,
+                      const Ptr<BranchHelper_PEBBL<Real>>         &bHelper,
+                      const int                                    verbosity = 0,
+                      const Ptr<std::ostream>                     &outStream = nullPtr)
+    : factory_(factory), parlist_(parlist), bHelper_(bHelper),
       verbosity_(verbosity), outStream_(outStream) {}
 
   pebbl::branchSub* blankSub() {
@@ -110,17 +106,17 @@ public:
 
   void writeLoadLog(std::ostream &llFile, int proc = 0) {}
 
-  const Ptr<OptimizationProblem<Real>> getOptimizationProblem(void) const {
-    return problem_;
+  const Ptr<OptimizationProblemFactory<Real>> getProblemFactory(void) const {
+    return factory_;
   }
 
   const Ptr<ParameterList> getSolverParameters(void) const {
     return parlist_;
   }
 
-  const Ptr<Vector<Real>> getIncumbent(void) const {
-    return problem_->getSolutionVector();
-  }
+//  const Ptr<Vector<Real>> getIncumbent(void) const {
+//    return problem_->getSolutionVector();
+//  }
 
   const Ptr<BranchHelper_PEBBL<Real>> getBranchHelper(void) const {
     return bHelper_;
@@ -133,11 +129,10 @@ private:
   const Ptr<ROL_PEBBL_Branching<Real>> branching_;
   const Ptr<BranchHelper_PEBBL<Real>> bHelper_;
   std::map<int,Real> fixed_;
-  //Ptr<Constraint_PEBBL<Real>> fixedCon_;
   Ptr<Transform_PEBBL<Real>>  ptrans_;
   Ptr<Objective<Real>> tobj_;
   Ptr<Constraint<Real>> tcon_;
-  Ptr<OptimizationProblem<Real>> problem_;
+  Ptr<OptimizationProblem<Real>> problem_, problem0_;
   Ptr<OptimizationSolver<Real>> solver_;
   Ptr<Vector<Real>> solution_;
   Ptr<Vector<Real>> multiplier_;
@@ -153,11 +148,12 @@ public:
                       const Ptr<std::ostream> &outStream = nullPtr)
     : branching_(branching),
       bHelper_(branching_->getBranchHelper()),
-      //fixedCon_(makePtr<Constraint_PEBBL<Real>>()),
       nfrac_(-1), index_(-1), integralityMeasure_(-1),
       verbosity_(verbosity), outStream_(outStream) {
-    solution_   = branching_->getOptimizationProblem()->getSolutionVector()->clone();
-    multiplier_ = branching_->getOptimizationProblem()->getMultiplierVector()->clone();
+    problem0_   = branching_->getProblemFactory()->build();
+    solution_   = problem0_->getSolutionVector()->clone();
+    solution_->set(*problem0_->getSolutionVector());
+    multiplier_ = problem0_->getMultiplierVector()->clone();
     ptrans_     = branching_->getBranchHelper()->createTransform();
   }
 
@@ -165,12 +161,12 @@ public:
     : branching_(rpbs.branching_),
       bHelper_(rpbs.bHelper_),
       fixed_(rpbs.fixed_),
-      //fixedCon_(makePtr<Constraint_PEBBL<Real>>()),
       nfrac_(-1), index_(-1), integralityMeasure_(-1), 
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
-    solution_   = branching_->getOptimizationProblem()->getSolutionVector()->clone();
-    multiplier_ = branching_->getOptimizationProblem()->getMultiplierVector()->clone();
+    problem0_   = branching_->getProblemFactory()->build();
+    solution_   = rpbs.solution_->clone();   solution_->set(*rpbs.solution_);
+    multiplier_ = rpbs.multiplier_->clone(); multiplier_->set(*rpbs.multiplier_);
     ptrans_     = branching_->getBranchHelper()->createTransform();
     bound = rpbs.bound;
   }
@@ -189,41 +185,28 @@ public:
       *outStream_ << std::scientific << std::setprecision(3);
       *outStream_ << std::endl << "In boundCompuation" << std::endl;
     }
-    // Get base optimization problem 
-    const Ptr<OptimizationProblem<Real>> problem0
-      = branching_->getOptimizationProblem();
     // Get base optimization solver parameters
     const Ptr<ParameterList> parlist
       = branching_->getSolverParameters();
     // Set fixed constraint
-    //fixedCon_->add(fixed_);
     ptrans_->add(fixed_);
     // Set solution and multiplier vectors
-    //solution_->set(*problem0->getSolutionVector());
     Real tol = static_cast<Real>(1e-10);
-    ptrans_->value(*solution_,*problem0->getSolutionVector(),tol);
-    multiplier_->set(*problem0->getMultiplierVector());
-//    // Build vector of equality constraints/multipliers
-//    std::vector<Ptr<Constraint<Real>>> econ_vec(2,nullPtr);
-//    econ_vec[0] = problem0->getConstraint();
-//    econ_vec[1] = fixedCon_;
-//    std::vector<Ptr<Vector<Real>>> emul_vec(2,nullPtr);
-//    emul_vec[0] = multiplier_;
-//    emul_vec[1] = fixedCon_->makeConstraintVector();
-    // Construct new optimization problem from base
-//    problem_
-//      = makePtr<OptimizationProblem<Real>>(problem0->getObjective(),
-//                                           solution_,
-//                                           problem0->getBoundConstraint(),
-//                                           econ_vec,
-//                                           emul_vec);
+    ptrans_->value(*solution_,*solution_,tol);
+    if (verbosity_ > 2) {
+      *outStream_ << std::endl << "After apply transformation" << std::endl;
+      solution_->print(*outStream_);
+      *outStream_ << std::endl;
+    }
+    multiplier_->set(*problem0_->getMultiplierVector());
+    // Construct new optimization problem from problem0_
     tobj_ = makePtr<TransformedObjective_PEBBL<Real>>(
-              problem0->getObjective(),ptrans_);
+              problem0_->getObjective(),ptrans_);
     tcon_ = makePtr<TransformedConstraint_PEBBL<Real>>(
-              problem0->getConstraint(),ptrans_);
+              problem0_->getConstraint(),ptrans_);
     problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
                                                   solution_,
-                                                  problem0->getBoundConstraint(),
+                                                  problem0_->getBoundConstraint(),
                                                   tcon_,
                                                   multiplier_);
     // Construct optimization solver
@@ -234,6 +217,7 @@ public:
         problem_->check(*outStream_);
       }
       solver_->solve(*outStream_);
+      ptrans_->value(*solution_,*problem_->getSolutionVector(),tol);
       if (verbosity_ > 2) {
         *outStream_ << std::endl << "  ";
         solution_->print(*outStream_);

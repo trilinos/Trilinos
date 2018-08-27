@@ -736,8 +736,12 @@ int main(int argc, char* argv[]) {
     clp.setOption("sfad", "no-sfad", &sfad, "Run SFad derivative calculation");
     bool slfad = true;
     clp.setOption("slfad", "no-slfad", &slfad, "Run SLFad derivative calculation");
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
     bool dfad = true;
     clp.setOption("dfad", "no-dfad", &dfad, "Run DFad derivative calculation");
+#else
+    bool dfad = false;
+#endif
     bool check = false;
     clp.setOption("check", "no-check", &check, "Check calculations are correct");
 
