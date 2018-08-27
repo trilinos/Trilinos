@@ -88,7 +88,8 @@ namespace {
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
       for (size_t i=0; i < all_parts.size(); i++) {
 	//+ Put the field on all element block parts...
-	stk::mesh::put_field_on_mesh(pressure, *all_parts[i], nullptr);
+	stk::mesh::put_field_on_mesh(pressure, *all_parts[i],
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
       }
 
       // This commits BulkData and populates the coordinates, connectivity, mesh...

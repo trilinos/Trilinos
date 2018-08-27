@@ -80,7 +80,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 }
 
   Tet10Fixture::Tet10Fixture(   stk::ParallelMachine pm
@@ -115,7 +115,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
   Tet10Fixture::Tet10Fixture(   stk::ParallelMachine pm
@@ -151,7 +151,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 

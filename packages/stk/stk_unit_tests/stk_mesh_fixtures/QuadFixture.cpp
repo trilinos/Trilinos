@@ -68,7 +68,7 @@ QuadFixture::QuadFixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, 
       m_coord_field,
       m_meta.universal_part(),
       m_spatial_dimension,
-      nullptr
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -92,7 +92,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
       m_coord_field,
       m_meta.universal_part(),
       m_spatial_dimension,
-      nullptr
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -117,7 +117,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
       m_coord_field,
       m_meta.universal_part(),
       m_spatial_dimension,
-      nullptr
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -141,7 +141,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
       m_coord_field,
       m_meta.universal_part(),
       m_spatial_dimension,
-      nullptr
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 

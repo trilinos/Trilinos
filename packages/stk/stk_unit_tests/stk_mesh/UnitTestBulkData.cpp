@@ -2197,7 +2197,8 @@ TEST(BulkData, testFieldComm)
 
         BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         PressureFieldType& p_field = fixture.fem_meta().declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-        stk::mesh::put_field_on_mesh(p_field, fixture.fem_meta().universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(p_field, fixture.fem_meta().universal_part(),
+                                     (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
         fixture.fem_meta().commit();
         BulkData & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -2225,7 +2226,8 @@ TEST(BulkData, testFieldComm)
     {
         stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
         PressureFieldType& p_field = fixture.m_meta.declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-        stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(),
+                                     (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
         fixture.m_meta.commit();
         fixture.generate_mesh();
         stk::mesh::BulkData & bulk = fixture.m_bulk_data;
@@ -4444,7 +4446,8 @@ TEST(BulkData, can_we_create_shared_nodes)
             stk::mesh::Selector all_nodes = meta.universal_part();
             typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
             CoordFieldType& coordField = meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "model_coordinates");
-            stk::mesh::put_field_on_mesh(coordField, all_nodes, nullptr);
+            stk::mesh::put_field_on_mesh(coordField, all_nodes,
+                                         (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
             stk::mesh::Part& elem_part = meta.declare_part_with_topology("block_1", stk::topology::BEAM_2);
             stk::io::put_io_part_attribute(elem_part);
@@ -5338,9 +5341,11 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   //declare a field for coordinates
   typedef stk::mesh::Field<double, stk::mesh::Cartesian2d> CoordFieldType;
   CoordFieldType& coordField = meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "model_coordinates");
-  stk::mesh::put_field_on_mesh(coordField, all_nodes, nullptr);
+  stk::mesh::put_field_on_mesh(coordField, all_nodes,
+                               (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
   stk::mesh::Field<double>& oneField = meta.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field_of_one");
-  stk::mesh::put_field_on_mesh(oneField, block_1, nullptr);
+  stk::mesh::put_field_on_mesh(oneField, block_1,
+                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
   meta.commit();
   mesh.modification_begin();

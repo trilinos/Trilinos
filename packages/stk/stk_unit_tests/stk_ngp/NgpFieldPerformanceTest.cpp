@@ -81,7 +81,8 @@ protected:
     void declare_centroid_field()
     {
         centroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "centroid");
-        stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3, nullptr);
+        stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
     }
     void generate_mesh()
     {

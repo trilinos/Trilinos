@@ -87,28 +87,28 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
         cartesian_coord_field,
         meta_data.universal_part(),
         SpatialDimension,
-        nullptr
+        (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr
         );
 
     put_field_on_mesh(
         displacement_field,
         meta_data.universal_part(),
         SpatialDimension,
-        nullptr
+        (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr
         );
 
     put_field_on_mesh(
         translation_field,
         cylindrical_coord_part,
         SpatialDimension,
-        nullptr
+        (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr
         );
 
     put_field_on_mesh(
         cylindrical_coord_field,
         cylindrical_coord_part,
         SpatialDimension,
-        nullptr
+        (stk::mesh::FieldTraits<stk::mesh::Field<double, Cylindrical> >::data_type*) nullptr
         );
 
     m_gears.resize(NUM_GEARS);

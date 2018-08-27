@@ -388,11 +388,14 @@ protected:
     void create_mesh_and_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption, const stk::mesh::Part &part)
     {
         elemVolumePerNodeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "elemVolumePerNodeField");
-        stk::mesh::put_field_on_mesh(*elemVolumePerNodeField, part, nullptr);
+        stk::mesh::put_field_on_mesh(*elemVolumePerNodeField, part,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
         nodalVolumeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
-        stk::mesh::put_field_on_mesh(*nodalVolumeField, part, nullptr);
+        stk::mesh::put_field_on_mesh(*nodalVolumeField, part,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
         numElemsPerNodeField = &get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
-        stk::mesh::put_field_on_mesh(*numElemsPerNodeField, part, nullptr);
+        stk::mesh::put_field_on_mesh(*numElemsPerNodeField, part,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<int> >::data_type*) nullptr);
         std::string meshName = stk::unit_test_util::get_mesh_spec("-dim");
         setup_mesh(meshName, auraOption);
         std::cout << "Using mesh: "<<meshName<<", numRepeat: "<<get_num_repeat()<<std::endl;

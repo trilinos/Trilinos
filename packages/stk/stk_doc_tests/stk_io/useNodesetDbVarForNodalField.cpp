@@ -97,7 +97,8 @@ namespace {
 	const stk::mesh::Part *part = all_parts[i];
 	stk::topology topo = part->topology();
 	if (topo == stk::topology::SHELL_QUAD_4) {
-	  stk::mesh::put_field_on_mesh(temperature, *part, nullptr);
+	  stk::mesh::put_field_on_mesh(temperature, *part,
+                                       (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 	}
       }
 

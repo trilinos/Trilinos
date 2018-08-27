@@ -505,7 +505,8 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
     Part* elem_block = &meta_data.declare_part("elem_block", stk::topology::ELEMENT_RANK);
     typedef stk::mesh::Field<double> rank_zero_field;
     rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( NODE_RANK, "elem_field" );
-    stk::mesh::put_field_on_mesh( f0 , *elem_block , nullptr);
+    stk::mesh::put_field_on_mesh( f0 , *elem_block ,
+                                  (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
     meta_data.commit();
 
 // Begin modification cycle so we can create the entities and relations

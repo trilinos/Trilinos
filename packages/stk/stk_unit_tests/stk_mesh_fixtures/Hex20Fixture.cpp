@@ -76,7 +76,7 @@ Hex20Fixture::Hex20Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 }
 
   Hex20Fixture::Hex20Fixture(   stk::ParallelMachine pm
@@ -111,7 +111,7 @@ Hex20Fixture::Hex20Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
   Hex20Fixture::Hex20Fixture(   stk::ParallelMachine pm
@@ -147,7 +147,7 @@ Hex20Fixture::Hex20Fixture(   MetaData& meta
     m_coord_field,
     m_meta.universal_part(),
     m_spatial_dimension,
-    nullptr);
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 

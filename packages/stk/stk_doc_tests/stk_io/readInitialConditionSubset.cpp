@@ -93,7 +93,8 @@ namespace {
 	const stk::mesh::Part *part = all_parts[i];
 	
 	//+ Put the field on all element block parts...
-	stk::mesh::put_field_on_mesh(pressure, *part, nullptr);
+	stk::mesh::put_field_on_mesh(pressure, *part,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
 	stk::topology topo = part->topology();
 	if (topo == stk::topology::SHELL_QUAD_4) {

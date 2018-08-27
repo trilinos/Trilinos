@@ -1482,7 +1482,7 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 4;
     const size_t num_nodes = 20;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3, 4};
+    stk::mesh::EntityIdVector element_ids = {1, 2, 3, 4};
     std::vector<stk::mesh::EntityIdVector> elem_node_ids = {
         {1, 2, 7, 6, 11, 12, 17, 16},
         {2, 3, 8, 7, 12, 13, 18, 17},

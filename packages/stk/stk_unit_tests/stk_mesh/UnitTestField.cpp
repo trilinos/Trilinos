@@ -205,10 +205,10 @@ TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
-  stk::mesh::put_field_on_mesh( f0 , p0 , nullptr);
-  stk::mesh::put_field_on_mesh( f1 , p1 , 10 , nullptr);
-  stk::mesh::put_field_on_mesh( f2 , p2 , 10 , 20 , nullptr);
-  stk::mesh::put_field_on_mesh( f3 , p3 , 10 , 20 , 30 , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f1 , p1 , 10 , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f2 , p2 , 10 , 20 , (stk::mesh::FieldTraits<rank_two_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f3 , p3 , 10 , 20 , 30 , (stk::mesh::FieldTraits<rank_three_field>::data_type*) nullptr);
 
   meta_data.commit();
 
@@ -262,7 +262,7 @@ TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::Selector select_p0 = p0;
   std::cout <<"select_p0: "<< select_p0 << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , select_p0 , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , select_p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -328,8 +328,8 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   std::cout <<"elem_hex_selector: "<< elem_hex_selector << std::endl;
   std::cout <<"elem_tet_selector: "<< elem_tet_selector << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , elem_hex_selector, 8u , nullptr);
-  stk::mesh::put_field_on_mesh( f0 , elem_tet_selector, 4u , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hex_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_tet_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -399,12 +399,12 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
   std::cout <<"elem_hexA_selector: "<< elem_hexA_selector << std::endl;
   std::cout <<"elem_hexB_selector: "<< elem_hexB_selector << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 8u , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
   ASSERT_THROW(
-    stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 4u , nullptr),
+    stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr),
     std::runtime_error
   );
-  stk::mesh::put_field_on_mesh( f0 , elem_hexB_selector, 4u , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hexB_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
