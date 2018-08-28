@@ -46,10 +46,11 @@ namespace Thyra {
     }
     //-------------------------------------------------------------
     template<class Scalar, class LocalOrdinal , class GlobalOrdinal, class Node>
-    void FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializePrec
-    (const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
-     PreconditionerBase<Scalar>* prec,
-     const ESupportSolveUse supportSolveUse
+    void FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
+     
+                                                                                      PreconditionerBase<Scalar>* prec,
+     
+                                                                                      const ESupportSolveUse supportSolveUse
      ) const{
         
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -57,22 +58,12 @@ namespace Thyra {
         
         using Teuchos::rcp_dynamic_cast;
         //Some Typedefs
-        typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
-        typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
-        typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
-        typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
-        typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
-        typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-        typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-        typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
-        typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
-        typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
+        typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpThyUtils;
+        typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpCrsMat;
+        typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpMat;
+        typedef Thyra::LinearOpBase<Scalar> ThyLinOpBase;
         
-        
-        
-        
-        
-        
+                
         //PreCheck
         TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
         //TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));

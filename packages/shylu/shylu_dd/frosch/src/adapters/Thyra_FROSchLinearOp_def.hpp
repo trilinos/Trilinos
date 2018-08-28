@@ -170,10 +170,6 @@ namespace Thyra {
         
         RCP<Epetra_MultiVector> Y;
        
-        comm->barrier();
-        comm->barrier();
-        comm->barrier();
-        if(comm->getRank() == 0) std::cout<<"FROSchLinearOP XXin (134)\n";
         THYRA_FUNC_TIME_MONITOR_DIFF(
                                          "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
             // X
@@ -193,13 +189,6 @@ namespace Thyra {
         }
         
         xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
-        
-      
-        
-        comm->barrier();
-        comm->barrier();
-        comm->barrier();
-        if(comm->getRank() == 0) std::cout<<"FROSchLinearOP update (lin186)\n";
         
         RCP<Thyra::MultiVectorBase<Scalar> >thyraX =
         Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(xY));

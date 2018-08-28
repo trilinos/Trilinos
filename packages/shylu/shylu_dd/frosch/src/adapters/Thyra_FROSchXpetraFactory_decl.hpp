@@ -90,9 +90,7 @@ namespace Thyra {
         std::string description() const;
         private:
         Teuchos::RCP<Teuchos::ParameterList> paramList_;
-        
-        
-        
+                
     };
 }
 
