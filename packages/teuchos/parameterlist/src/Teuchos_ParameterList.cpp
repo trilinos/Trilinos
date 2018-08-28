@@ -769,7 +769,7 @@ bool Teuchos::haveSameValuesSorted( const ParameterList& list1, const ParameterL
     }
     if( entry1.isList() && entry2.isList() ) {
       if (
-        !haveSameValues(
+        !haveSameValuesSorted(
           getValue<ParameterList>(entry1),
           getValue<ParameterList>(entry2),
           verbose)
