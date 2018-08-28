@@ -372,7 +372,7 @@ namespace Belos {
       // Do local multiply
       {
         const char ctransA = 'N', ctransB = 'N';
-        Kokkos::Blas::gemm (
+        KokkosBlas::gemm (
           &ctransA, &ctransB,
           alpha, flat_A_view, B_view_dev, beta, flat_C_view);
       }
@@ -481,7 +481,7 @@ namespace Belos {
       // Do local multiply
       {
         const char ctransA = 'C', ctransB = 'N';
-        Kokkos::Blas::gemm (
+        KokkosBlas::gemm (
           &ctransA, &ctransB,
           alpha, flat_A_view, flat_B_view,
           Kokkos::Details::ArithTraits<dot_type>::zero(),
