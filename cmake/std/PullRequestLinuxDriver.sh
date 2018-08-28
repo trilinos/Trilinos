@@ -251,7 +251,7 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=22 \
+  -DPARALLEL_LEVEL=18 \
   -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \
