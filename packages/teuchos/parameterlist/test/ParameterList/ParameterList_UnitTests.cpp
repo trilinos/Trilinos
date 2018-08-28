@@ -735,6 +735,22 @@ TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesSortedReversedOrder )
 }
 
 
+TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesSortedNested)
+{
+  ParameterList A, B;
+  ParameterList &asublist = A.sublist("A");
+  asublist.set("a",1);
+  asublist.set("b",2);
+  ParameterList &bsublist = B.sublist("A");
+  bsublist.set("a",1);
+  bsublist.set("b",2);
+  TEST_ASSERT( haveSameValuesSorted(A,B) );
+  asublist.set("c",3);
+  bsublist.set("c",4);
+  TEST_ASSERT( !haveSameValuesSorted(A,B) );
+}
+
+
 TEUCHOS_UNIT_TEST( ParameterList, validateAgainstSelf )
 {
   ParameterList PL_Main = createMainPL();
