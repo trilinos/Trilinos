@@ -16,8 +16,8 @@
 
 #include <Xpetra_ThyraUtils.hpp>
 
-#include <FROSch_TwoLevelBlockPreconditioner_decl.hpp>
-#include "Thyra_FROSchLinearOP_decl.hpp"
+#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
+#include "Thyra_FROSchLinearOP_def.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
 //#include "Kokkos_DefaultNode.hpp"
@@ -31,7 +31,7 @@ namespace Thyra {
     class Thyra_FROSchXpetraTwoLevelBlockPrec:public Thyra::PreconditionerFactoryBase<SC>{
         public:
         
-        
+ 
         typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
         
         typedef Xpetra::Map<LO,GO,NO> Map;
@@ -62,6 +62,7 @@ namespace Thyra {
         
         typedef Teuchos::Array<GO>          GOVec;
         typedef Teuchos::Array<GOVec>       GOVec2D;
+        typedef Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
         
         //Constructor
         Thyra_FROSchXpetraTwoLevelBlockPrec();

@@ -8,7 +8,6 @@
 
 
 #include <FROSch_Tools_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
 
 
 namespace Thyra {

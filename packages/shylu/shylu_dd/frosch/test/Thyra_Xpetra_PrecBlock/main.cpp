@@ -44,15 +44,15 @@
 
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "stratimikos_FROSchXpetra.hpp"
+#include "Stratimikos_FROSchXpetra.hpp"
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
-#include "Thyra_FROSchLinearOp_decl.hpp"
-#include "Thyra_FROSchXpetraFactory_decl.hpp"
-#include "Thyra_FROSchXpetraTwoLevelBlockPrec_decl.hpp"
+#include "Thyra_FROSchLinearOp_def.hpp"
+
+#include "Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp"
 #include "EpetraExt_HDF5.h"
 
 typedef unsigned UN;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         
         string xmlFile = "xpetra_ParameterList.xml";
         My_CLP.setOption("List",&xmlFile,"File name of the parameter list.");
-                cout << "test0"<< endl;
+
         My_CLP.recogniseAllOptions(true);
         My_CLP.throwExceptions(false);
         CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -97,13 +97,13 @@ int main(int argc, char *argv[])
         MPI_Comm COMM;
         int color=0;
         //bool onFirstLevelComm=false;
-             cout << "test-1"<< endl;
+        
         
         MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);
         RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(COMM));
         RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (COMM));
         if (color==0) {    
-                    cout << "test1"<< endl;
+        
             ///////////////////
             // ParameterList //
             ///////////////////
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
             sublist(plList,"FROSchBlock")->set("Ordering2",FROSch::NodeWise);
             
             Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-            Stratimikos::enableXpetraFROSch<LO,GO,NO>(linearSolverBuilder,"FROSchBlock");
+            Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder,"FROSchBlock");
             
             linearSolverBuilder.setParameterList(parameterList);
             
