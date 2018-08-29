@@ -95,12 +95,22 @@ fi
 
 git remote -v
 
-git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
-ierror=$?
-if [[ $ierror != 0 ]]; then
-  echo "Source remote fetch failed. The error code was: $ierror"
-  exit $ierror
-fi
+num_retries=3
+
+for i in `seq ${num_retries}`
+do
+  git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
+  ierror=$?
+  if [[ $ierror != 0 ]]; then
+    echo "Source remote fetch failed. The error code was: $ierror"
+    if i != num_retries
+    then
+      echo "retry $i"
+    else
+      exit $ierror
+    fi
+  fi
+done
 
 git fetch origin ${TRILINOS_TARGET_BRANCH:?}
 ierror=$?
