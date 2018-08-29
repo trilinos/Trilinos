@@ -21,5 +21,6 @@
 
 28.08.2018 Alexander Heinlein:
     - Resolve the dependency on MueLu
+    
 29.08.2018 Alexander Heinlein:
     - Standardize the names in the Thyra interface

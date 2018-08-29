@@ -42,11 +42,10 @@
 
 
 //#include <FROSch_GDSWPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_decl.hpp>
 #include "FROSch_XpetraOperator_decl.hpp"
-#include "Thyra_FROSchLinearOP_def.hpp"
-#include <FROSch_Tools_def.hpp>
+#include "Thyra_FROSchLinearOP_decl.hpp"
+#include <FROSch_Tools_decl.hpp>
 //
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
