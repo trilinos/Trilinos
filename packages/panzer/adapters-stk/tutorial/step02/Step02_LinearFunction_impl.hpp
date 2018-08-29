@@ -31,11 +31,8 @@ LinearFunction<EvalT,Traits>::LinearFunction(const std::string & name,
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                          PHX::FieldManager<Traits>& fm)
+                                                          PHX::FieldManager<Traits>& /* fm */)
 {
-
-  this->utils.setFieldData(result,fm);
-
   ir_index_ = panzer::getIntegrationRuleIndex(ir_degree_,(*sd.worksets_)[0]);
 }
 

@@ -110,7 +110,7 @@ template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -122,9 +122,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
   }
 }
 

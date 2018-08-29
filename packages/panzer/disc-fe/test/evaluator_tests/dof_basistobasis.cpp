@@ -96,11 +96,6 @@ class DummyFieldEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -127,17 +122,6 @@ DummyFieldEvaluator(
   
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
-}
-template<typename EvalT, typename Traits>
-void
-DummyFieldEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(fieldValue,fm);
-
-  
 }
 
 template<typename EvalT, typename Traits>

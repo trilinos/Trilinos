@@ -120,8 +120,8 @@ GatherSolution_Tpetra(
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData  d ,
-                      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -135,19 +135,11 @@ postRegistrationSetup(typename TRAITS::SetupData  d ,
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       scratch_offsets_[fd](i) = offsets[i];
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
@@ -281,7 +273,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -290,15 +282,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_.clear();  // Don't need this anymore
@@ -455,7 +438,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -468,9 +451,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     // get field ID from DOF manager
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
 
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
