@@ -578,7 +578,7 @@ public:
       RCP<Thyra::DetachedMultiVectorView<Scalar> > thyData =
           Teuchos::rcp(new Thyra::DetachedMultiVectorView<Scalar>(*target,Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
 
-      // loop over all vectors in multivector
+      // loop over all vectors in multivecto
       for(size_t j = 0; j < source->getNumVectors(); ++j) {
         Teuchos::ArrayRCP< const Scalar > xpData = source->getData(j); // access const data from Xpetra object
         // loop over all local rows

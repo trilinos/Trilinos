@@ -75,9 +75,7 @@ int main(int argc, char *argv[])
         
         CommandLineProcessor My_CLP;
         
-        Teuchos::RCP<Teuchos::FancyOStream>
-        
-        out = Teuchos::VerboseObjectBase::getDefaultOStream();
+        Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
         
         int M = 4;
         My_CLP.setOption("M",&M,"H / h.");
