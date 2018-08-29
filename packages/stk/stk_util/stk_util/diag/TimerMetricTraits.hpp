@@ -44,21 +44,17 @@ typedef unsigned long MetricsMask;
 /**
  * @brief Member function <code>setTimerTimeFormat</code> sets the display format of time in the
  * output tables
- *
- * @param time_format    a <code>TimeFormat</code> variable...
  */
 void setTimerTimeFormat(int time_format);
 
 /**
  * @brief Member function <code>getTimerTimeFormat</code>
- *
  */
 int getTimerTimeFormat();
 
 /**
  * @brief Enumeration <code>Metrics</code> assigns a unique but for each type of timer.  The
  * METRICS_FORCE type allows a timer to force itself to be active, even is not enabled.
- *
  */
 enum Metrics {
   METRICS_LAP_COUNT      = 0x0001,              ///< Count of timer starts
@@ -68,7 +64,6 @@ enum Metrics {
   METRICS_MPI_BYTE_COUNT = 0x0010,              ///< MPI byte count
   METRICS_HEAP_ALLOC     = 0x0020,              ///< Heap allocation
   METRICS_ALL            = 0x7FFF,
-
   METRICS_FORCE          = 0x8000               ///< Force metrics to be acquired
 };
 

@@ -61,12 +61,3 @@ int null_streambuf::sync()
   return 0 ;
 }
 
-std::streambuf * null_streambuf::setbuf( char * s , std::streamsize n )
-{
-  return this ;
-}
-
-
-
-
-/*--------------------------------------------------------------------*/

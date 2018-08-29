@@ -138,6 +138,10 @@ class ProximitySearchTree_T {
   // Empty out everything in the tree
   void clear() {m_tree.clear();}
 
+
+  std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > &data()             { return m_tree; }
+  const std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > &data() const { return m_tree; }
+
  protected:
   std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > m_tree;
 };

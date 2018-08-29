@@ -37,7 +37,8 @@
 #include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include <stk_mesh/base/FindRestriction.hpp>
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 namespace stk { namespace mesh { class BulkData; } }
 
 
@@ -94,6 +95,30 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
   else {
     ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
   }
+}
+
+bool FieldBase::defined_on_any(const stk::mesh::ConstPartVector& parts) const
+{
+  bool defined_on_any_part = false;
+  size_t i = 0;
+  while(!defined_on_any_part && i < parts.size()) {
+    defined_on_any_part = defined_on_any_part || defined_on(*parts[i]);
+    ++i;
+  }
+
+  return defined_on_any_part;
+}
+
+bool FieldBase::defined_on(const stk::mesh::Part& part) const
+{
+  return (length(part) > 0);
+}
+
+unsigned FieldBase::length(const stk::mesh::Part& part) const
+{
+  const stk::mesh::FieldRestriction& restriction =
+    stk::mesh::find_restriction(*this, entity_rank(), part);
+  return restriction.num_scalars_per_entity();
 }
 
 //----------------------------------------------------------------------

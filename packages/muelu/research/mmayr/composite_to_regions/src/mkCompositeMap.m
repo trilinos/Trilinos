@@ -1,7 +1,19 @@
-function [] = mkCompositeMap(myNodes,myRank)
+% mkCompositeMap.m
+%
+% Write composite map to file 'myCompositeMap_*' on each processor.
+%
+% Input:
+%   myNodes   list of all nodes owned by this processor
+%   myRank    rank of this processor
+%   outDir    path to output directory
+%
+% Output: 
+%   [none]
+%
+function [] = mkCompositeMap(myNodes,myRank,outDir)
 
   % open file
-  filename = 'myCompositeMap_';
+  filename = sprintf('%s/myCompositeMap_', outDir);
   fp = fopen(sprintf('%s%d',filename,myRank),'w');
   if fp == -1
     error('mkCompositeMap: cannot open myData_%d\n',myRank);

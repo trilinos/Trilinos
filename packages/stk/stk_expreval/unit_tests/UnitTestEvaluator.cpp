@@ -578,6 +578,7 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
   EXPECT_TRUE(evaluate_range("random()"                 , -1.0,  1.0,  2000, false ));
   EXPECT_TRUE(evaluate_range("random(7)"                , -1.0,  1.0,  2000, false ));
+  EXPECT_TRUE(evaluate_range("random(time())"           , -1.0,  1.0,   100, false ));
   EXPECT_TRUE(evaluate_range("rand()"                   , -1.0,  1.0,  2000, false ));
   EXPECT_TRUE(evaluate_range("srand(7)"                 , -1.0,  1.0,  2000, false ));
   EXPECT_TRUE(evaluate_range("sign(sin(x))"             ,    0,   12, 12000, false )); // square wave

@@ -50,7 +50,7 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include this file (Tpetra_CrsMatrix_decl.hpp).
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -69,6 +69,240 @@
 #include "KokkosSparse_sor_sequential_impl.hpp"
 
 namespace Tpetra {
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// A common use case is to create an empty destination CrsMatrix,
+  /// redistribute from a source CrsMatrix (by an Import or Export
+  /// operation), then call fillComplete() on the destination
+  /// CrsMatrix.  This constructor fuses these three cases, for an
+  /// Import redistribution.
+  ///
+  /// Fusing redistribution and fillComplete() exposes potential
+  /// optimizations.  For example, it may make constructing the column
+  /// Map faster, and it may avoid intermediate unoptimized storage in
+  /// the destination CrsMatrix.  These optimizations may improve
+  /// performance for specialized kernels like sparse matrix-matrix
+  /// multiply, as well as for redistributing data after doing load
+  /// balancing.
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \warning If the target Map of the Import is a subset of the
+  ///   source Map of the Import, then you cannot use the default
+  ///   range Map.  You should instead construct a nonoverlapping
+  ///   version of the target Map and supply that as the nondefault
+  ///   value of the range Map.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   import.  The source of an Import must have a nonoverlapping
+  ///   distribution.
+  ///
+  /// \param importer [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the rowMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the rowMap of the sourceMatrix
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.  If
+  ///   null, we use the default, which is the domain Map of the
+  ///   source matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.  If
+  ///   null, we use the default, which is the range Map of the
+  ///   source matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Import<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& importer,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// A common use case is to create an empty destination CrsMatrix,
+  /// redistribute from a source CrsMatrix (by an Import or Export
+  /// operation), then call fillComplete() on the destination
+  /// CrsMatrix.  This constructor fuses these three cases, for an
+  /// Import redistribution.
+  ///
+  /// Fusing redistribution and fillComplete() exposes potential
+  /// optimizations.  For example, it may make constructing the column
+  /// Map faster, and it may avoid intermediate unoptimized storage in
+  /// the destination CrsMatrix.  These optimizations may improve
+  /// performance for specialized kernels like sparse matrix-matrix
+  /// multiply, as well as for redistributing data after doing load
+  /// balancing.
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \warning If the target Map of the Import is a subset of the
+  ///   source Map of the Import, then you cannot use the default
+  ///   range Map.  You should instead construct a nonoverlapping
+  ///   version of the target Map and supply that as the nondefault
+  ///   value of the range Map.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   import.  The source of an Import must have a nonoverlapping
+  ///   distribution.
+  ///
+  /// \param rowImporter [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the rowMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the rowMap of the sourceMatrix
+  ///
+  /// \param domainImporter [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the domainMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the domainMap of the sourceMatrix
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Import<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& rowImporter,
+                                  const Import<typename CrsMatrixType::local_ordinal_type,
+                                              typename CrsMatrixType::global_ordinal_type,
+                                              typename CrsMatrixType::node_type>& domainImporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// For justification, see the documentation of
+  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
+  /// this function).
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   export.  Its row Map may be overlapping, since the source of
+  ///   an Export may be overlapping.
+  ///
+  /// \param exporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.  If
+  ///   null, we use the default, which is the domain Map of the
+  ///   source matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.  If
+  ///   null, we use the default, which is the range Map of the
+  ///   source matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Export<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& exporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// For justification, see the documentation of
+  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
+  /// this function).
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   export.  Its row Map may be overlapping, since the source of
+  ///   an Export may be overlapping.
+  ///
+  /// \param rowExporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param domainExporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the domain Map of sourceMatrix.
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Export<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& rowExporter,
+                                  const Export<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& domainExporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+namespace Classes {
 
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
@@ -190,7 +424,7 @@ namespace Tpetra {
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
   public:
     //! @name Typedefs
@@ -3870,7 +4104,7 @@ namespace Tpetra {
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType>
-    importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+    Tpetra::importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
                                     const Import<typename CrsMatrixType::local_ordinal_type,
                                                  typename CrsMatrixType::global_ordinal_type,
                                                  typename CrsMatrixType::node_type>& importer,
@@ -3885,7 +4119,7 @@ namespace Tpetra {
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType>
-    importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+    Tpetra::importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
                                     const Import<typename CrsMatrixType::local_ordinal_type,
                                                  typename CrsMatrixType::global_ordinal_type,
                                                  typename CrsMatrixType::node_type>& rowImporter,
@@ -3904,7 +4138,7 @@ namespace Tpetra {
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType>
-    exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+    Tpetra::exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
                                     const Export<typename CrsMatrixType::local_ordinal_type,
                                                  typename CrsMatrixType::global_ordinal_type,
                                                  typename CrsMatrixType::node_type>& exporter,
@@ -3919,7 +4153,7 @@ namespace Tpetra {
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType>
-    exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+    Tpetra::exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
                                     const Export<typename CrsMatrixType::local_ordinal_type,
                                                  typename CrsMatrixType::global_ordinal_type,
                                                  typename CrsMatrixType::node_type>& rowExporter,
@@ -4583,7 +4817,7 @@ namespace Tpetra {
     /// parameter to fillComplete was false, the matrix may keep
     /// unpacked 1-D or 2-D storage around and resume it on the next
     /// resumeFill call.
-    Details::EStorageStatus storageStatus_;
+    ::Tpetra::Details::EStorageStatus storageStatus_;
 
     //! Whether the matrix is fill complete.
     bool fillComplete_;
@@ -4658,7 +4892,7 @@ namespace Tpetra {
       }
     };
   }; // class CrsMatrix
-
+} // namespace Classes
 
   /** \brief Non-member function to create an empty CrsMatrix given a
         row map and a non-zero profile.
@@ -4679,57 +4913,6 @@ namespace Tpetra {
                                           DynamicProfile, params));
   }
 
-  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
-  /// \relatesalso CrsMatrix
-  /// \tparam CrsMatrixType A specialization of CrsMatrix.
-  ///
-  /// A common use case is to create an empty destination CrsMatrix,
-  /// redistribute from a source CrsMatrix (by an Import or Export
-  /// operation), then call fillComplete() on the destination
-  /// CrsMatrix.  This constructor fuses these three cases, for an
-  /// Import redistribution.
-  ///
-  /// Fusing redistribution and fillComplete() exposes potential
-  /// optimizations.  For example, it may make constructing the column
-  /// Map faster, and it may avoid intermediate unoptimized storage in
-  /// the destination CrsMatrix.  These optimizations may improve
-  /// performance for specialized kernels like sparse matrix-matrix
-  /// multiply, as well as for redistributing data after doing load
-  /// balancing.
-  ///
-  /// The resulting matrix is fill complete (in the sense of
-  /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  By default, its domain Map is the domain
-  /// Map of the source matrix, and its range Map is the range Map of
-  /// the source matrix.
-  ///
-  /// \warning If the target Map of the Import is a subset of the
-  ///   source Map of the Import, then you cannot use the default
-  ///   range Map.  You should instead construct a nonoverlapping
-  ///   version of the target Map and supply that as the nondefault
-  ///   value of the range Map.
-  ///
-  /// \param sourceMatrix [in] The source matrix from which to
-  ///   import.  The source of an Import must have a nonoverlapping
-  ///   distribution.
-  ///
-  /// \param importer [in] The Import instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Import must be the same as the rowMap of sourceMatrix unless
-  ///   the "Reverse Mode" option on the params list, in which case
-  ///   the targetMap of Import must match the rowMap of the sourceMatrix
-  ///
-  /// \param domainMap [in] Domain Map of the returned matrix.  If
-  ///   null, we use the default, which is the domain Map of the
-  ///   source matrix.
-  ///
-  /// \param rangeMap [in] Range Map of the returned matrix.  If
-  ///   null, we use the default, which is the range Map of the
-  ///   source matrix.
-  ///
-  /// \param params [in/out] Optional list of parameters.  If not
-  ///   null, any missing parameters will be filled in with their
-  ///   default values.
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
@@ -4738,70 +4921,17 @@ namespace Tpetra {
                                                typename CrsMatrixType::node_type>& importer,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+				                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->importAndFillComplete (destMatrix,importer,domainMap, rangeMap, params);
+    sourceMatrix->importAndFillComplete (destMatrix, importer, domainMap, rangeMap, params);
     return destMatrix;
   }
 
-  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
-  /// \relatesalso CrsMatrix
-  /// \tparam CrsMatrixType A specialization of CrsMatrix.
-  ///
-  /// A common use case is to create an empty destination CrsMatrix,
-  /// redistribute from a source CrsMatrix (by an Import or Export
-  /// operation), then call fillComplete() on the destination
-  /// CrsMatrix.  This constructor fuses these three cases, for an
-  /// Import redistribution.
-  ///
-  /// Fusing redistribution and fillComplete() exposes potential
-  /// optimizations.  For example, it may make constructing the column
-  /// Map faster, and it may avoid intermediate unoptimized storage in
-  /// the destination CrsMatrix.  These optimizations may improve
-  /// performance for specialized kernels like sparse matrix-matrix
-  /// multiply, as well as for redistributing data after doing load
-  /// balancing.
-  ///
-  /// The resulting matrix is fill complete (in the sense of
-  /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  By default, its domain Map is the domain
-  /// Map of the source matrix, and its range Map is the range Map of
-  /// the source matrix.
-  ///
-  /// \warning If the target Map of the Import is a subset of the
-  ///   source Map of the Import, then you cannot use the default
-  ///   range Map.  You should instead construct a nonoverlapping
-  ///   version of the target Map and supply that as the nondefault
-  ///   value of the range Map.
-  ///
-  /// \param sourceMatrix [in] The source matrix from which to
-  ///   import.  The source of an Import must have a nonoverlapping
-  ///   distribution.
-  ///
-  /// \param rowImporter [in] The Import instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Import must be the same as the rowMap of sourceMatrix unless
-  ///   the "Reverse Mode" option on the params list, in which case
-  ///   the targetMap of Import must match the rowMap of the sourceMatrix
-  ///
-  /// \param domainImporter [in] The Import instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Import must be the same as the domainMap of sourceMatrix unless
-  ///   the "Reverse Mode" option on the params list, in which case
-  ///   the targetMap of Import must match the domainMap of the sourceMatrix
-  ///
-  /// \param domainMap [in] Domain Map of the returned matrix.
-  ///
-  /// \param rangeMap [in] Range Map of the returned matrix.
-  ///
-  /// \param params [in/out] Optional list of parameters.  If not
-  ///   null, any missing parameters will be filled in with their
-  ///   default values.
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
@@ -4820,43 +4950,10 @@ namespace Tpetra {
                                   const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->importAndFillComplete (destMatrix,rowImporter,domainImporter, domainMap, rangeMap, params);
+    sourceMatrix->importAndFillComplete (destMatrix, rowImporter, domainImporter, domainMap, rangeMap, params);
     return destMatrix;
   }
 
-  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
-  /// \relatesalso CrsMatrix
-  /// \tparam CrsMatrixType A specialization of CrsMatrix.
-  ///
-  /// For justification, see the documentation of
-  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
-  /// this function).
-  ///
-  /// The resulting matrix is fill complete (in the sense of
-  /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  By default, its domain Map is the domain
-  /// Map of the source matrix, and its range Map is the range Map of
-  /// the source matrix.
-  ///
-  /// \param sourceMatrix [in] The source matrix from which to
-  ///   export.  Its row Map may be overlapping, since the source of
-  ///   an Export may be overlapping.
-  ///
-  /// \param exporter [in] The Export instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Export must be the same as the row Map of sourceMatrix.
-  ///
-  /// \param domainMap [in] Domain Map of the returned matrix.  If
-  ///   null, we use the default, which is the domain Map of the
-  ///   source matrix.
-  ///
-  /// \param rangeMap [in] Range Map of the returned matrix.  If
-  ///   null, we use the default, which is the range Map of the
-  ///   source matrix.
-  ///
-  /// \param params [in/out] Optional list of parameters.  If not
-  ///   null, any missing parameters will be filled in with their
-  ///   default values.
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
@@ -4865,50 +4962,17 @@ namespace Tpetra {
                                                typename CrsMatrixType::node_type>& exporter,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->exportAndFillComplete (destMatrix,exporter,domainMap, rangeMap, params);
+    sourceMatrix->exportAndFillComplete (destMatrix, exporter, domainMap, rangeMap, params);
     return destMatrix;
   }
 
-  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
-  /// \relatesalso CrsMatrix
-  /// \tparam CrsMatrixType A specialization of CrsMatrix.
-  ///
-  /// For justification, see the documentation of
-  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
-  /// this function).
-  ///
-  /// The resulting matrix is fill complete (in the sense of
-  /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  By default, its domain Map is the domain
-  /// Map of the source matrix, and its range Map is the range Map of
-  /// the source matrix.
-  ///
-  /// \param sourceMatrix [in] The source matrix from which to
-  ///   export.  Its row Map may be overlapping, since the source of
-  ///   an Export may be overlapping.
-  ///
-  /// \param rowExporter [in] The Export instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Export must be the same as the row Map of sourceMatrix.
-  ///
-  /// \param domainExporter [in] The Export instance containing a
-  ///   precomputed redistribution plan.  The source Map of the
-  ///   Export must be the same as the domain Map of sourceMatrix.
-  ///
-  /// \param domainMap [in] Domain Map of the returned matrix.
-  ///
-  /// \param rangeMap [in] Range Map of the returned matrix.
-  ///
-  /// \param params [in/out] Optional list of parameters.  If not
-  ///   null, any missing parameters will be filled in with their
-  ///   default values.
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
@@ -4927,7 +4991,7 @@ namespace Tpetra {
                                   const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->exportAndFillComplete (destMatrix,rowExporter,domainExporter,domainMap, rangeMap, params);
+    sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
   }
 } // namespace Tpetra

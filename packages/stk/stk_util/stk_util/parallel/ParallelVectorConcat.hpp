@@ -156,7 +156,7 @@ namespace stk {
       char curChar = charGlobalList[curCharIndex];
       nextString.push_back(curChar);
       if(curChar == 0) {
-        globalList.push_back(std::string(nextString.data()));
+        globalList.emplace_back(nextString.data());
         nextString.clear();
       }
       curCharIndex++;

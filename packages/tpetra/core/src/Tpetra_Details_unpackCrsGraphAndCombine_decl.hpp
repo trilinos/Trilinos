@@ -46,6 +46,7 @@
 #include "Tpetra_CombineMode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Tpetra_DistObject_decl.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
 
 /// \file Tpetra_Details_unpackCrsGraphAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -80,9 +81,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration of Distributor
 class Distributor;
-// Forward declaration of CrsGraph
-template<class LO, class GO, class NT>
-class CrsGraph;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 //

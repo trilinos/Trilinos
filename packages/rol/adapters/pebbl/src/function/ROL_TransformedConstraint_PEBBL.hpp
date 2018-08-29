@@ -95,9 +95,12 @@ public:
     : con_(con.con_), trans_(con.trans_), isInit_(false), isTransformed_(false) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     isTransformed_ = false;
     initialize(x);
     Tx_->zero(); Tv_->zero(); dx_->zero();
+    transform(x,tol);
+    con_->update(*Tx_,flag,iter);
   }
 
   void value(Vector<Real> &c,

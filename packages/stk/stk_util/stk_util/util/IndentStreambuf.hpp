@@ -353,7 +353,6 @@ private:
 template<class Ch, class Tr>
 std::basic_ostream<Ch, Tr> &push(std::basic_ostream<Ch, Tr> &os) {
   os.put(PUSH);
-//  os.put('\n');
   os.flush();
   return os;
 }
@@ -361,7 +360,6 @@ std::basic_ostream<Ch, Tr> &push(std::basic_ostream<Ch, Tr> &os) {
 template<class Ch, class Tr>
 std::basic_ostream<Ch, Tr> &pop(std::basic_ostream<Ch, Tr> &os) {
   os.put(POP);
-//  os.put('\n');
   os.flush();
   return os;
 }

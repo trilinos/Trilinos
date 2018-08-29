@@ -428,7 +428,8 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
 
 
 Teuchos::RCP<const Epetra_Map>
-Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
+Thyra::get_Epetra_Map(
+  const VectorSpaceBase<double>& vs_in,
   const RCP<const Epetra_Comm>& comm)
 {
 
@@ -497,6 +498,33 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
 
 }
 
+// Almost like the above one, but working on an RCP vs as input, we can check for the
+// presence of RCP<const Epetra_Map> in the RCP extra data, to save us time.
+Teuchos::RCP<const Epetra_Map>
+Thyra::get_Epetra_Map(
+  const RCP<const VectorSpaceBase<double>>& vs,
+  const RCP<const Epetra_Comm>& comm)
+{
+  //
+  // First, try to grab the Epetra_Map straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_Map> >
+    epetra_map_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_Map> >(
+      vs,"epetra_map");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_map_ptr)) {
+    return *epetra_map_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Map(*vs,comm).
+  TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::runtime_error,
+                             "Error! No RCP Epetra_Map attached to the input vector space RCP, "
+                             "and the input comm RCP is null.\n");
+
+  return get_Epetra_Map(*vs,comm);
+}
 
 Teuchos::RCP<Epetra_Vector>
 Thyra::get_Epetra_Vector(
@@ -576,6 +604,34 @@ Thyra::get_Epetra_Vector(
   return epetra_v;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_Vector>)
+Teuchos::RCP<Epetra_Vector>
+Thyra::get_Epetra_Vector(
+  const RCP<VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_Vector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<Epetra_Vector> >
+    epetra_v_ptr = Teuchos::get_optional_extra_data<RCP<Epetra_Vector> >(
+      v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_v_ptr)) {
+    return *epetra_v_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Vector(*map,v).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                            "Error! No RCP Epetra_Vector attached to the input vector RCP, "
+                            "and the input map RCP is null.\n");
+
+  return get_Epetra_Vector(*map,v);
+}
 
 Teuchos::RCP<const Epetra_Vector>
 Thyra::get_Epetra_Vector(
@@ -647,6 +703,34 @@ Thyra::get_Epetra_Vector(
   return epetra_v;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_Vector>)
+Teuchos::RCP<const Epetra_Vector>
+Thyra::get_Epetra_Vector(
+  const RCP<const VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_Vector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_Vector> >
+    epetra_v_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_Vector> >(
+      v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_v_ptr)) {
+    return *epetra_v_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Vector(*map,v).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_Vector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_Vector(*map,v);
+}
 
 Teuchos::RCP<Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
@@ -727,6 +811,34 @@ Thyra::get_Epetra_MultiVector(
   return epetra_mv;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_MultiVector>)
+Teuchos::RCP<Epetra_MultiVector>
+Thyra::get_Epetra_MultiVector(
+  const RCP<MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_MultiVector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<Epetra_MultiVector> >
+    epetra_mv_ptr = Teuchos::get_optional_extra_data<RCP<Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_mv_ptr)) {
+    return *epetra_mv_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_MultiVector(*map,mv).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_MultiVector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_MultiVector(*map,mv);
+}
 
 Teuchos::RCP<const Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
@@ -804,6 +916,34 @@ Thyra::get_Epetra_MultiVector(
   return epetra_mv;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_MultiVector>)
+Teuchos::RCP<const Epetra_MultiVector>
+Thyra::get_Epetra_MultiVector(
+  const RCP<const MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_MultiVector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_MultiVector> >
+    epetra_mv_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_mv_ptr)) {
+    return *epetra_mv_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_MultiVector(*map,mv).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_MultiVector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_MultiVector(*map,mv);
+}
 
 Teuchos::RCP<Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(

@@ -45,10 +45,12 @@
 /// \file Tpetra_TieBreak.hpp
 /// \brief Interface for breaking ties in ownership.
 
-#include <Teuchos_RCP.hpp>
+#include "Tpetra_TieBreak_fwd.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Tpetra {
 namespace Details {
+namespace Classes {
 
   /// \class TieBreak
   /// \brief Interface for breaking ties in ownership.
@@ -126,7 +128,8 @@ namespace Details {
                    const std::vector<std::pair<int, LocalOrdinal> >& pid_and_lid) const = 0;
   };
 
-} // namespace Tpetra
+} // namespace Classes
 } // namespace Details
+} // namespace Tpetra
 
 #endif // TPETRA_DETAILS_TIEBREAK_HPP

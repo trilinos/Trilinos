@@ -30,6 +30,7 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
 
 namespace stk {
 namespace simd {

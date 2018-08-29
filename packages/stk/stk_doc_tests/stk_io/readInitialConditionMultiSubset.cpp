@@ -41,7 +41,6 @@
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
-#include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_NodeSet.h"               // for NodeSet
 #include "Ioss_Region.h"                // for NodeSetContainer, Region
 #include "Ioss_Utils.h"                 // for Utils

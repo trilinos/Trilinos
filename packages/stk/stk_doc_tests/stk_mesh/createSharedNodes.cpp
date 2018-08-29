@@ -87,7 +87,7 @@ TEST(stkMeshHowTo, createSharedNodes)
         std::vector<stk::mesh::EntityIdVector> elemNodeIds = { {1, 3, 2}, {4, 2, 3} };
         const int myproc = bulkData.parallel_rank();
 
-        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc], {&triPart});
+        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc], stk::mesh::ConstPartVector{&triPart});
         stk::mesh::EntityVector elemNodes(nodesPerElem);
         elemNodes[0] = bulkData.declare_node(elemNodeIds[myproc][0]);
         elemNodes[1] = bulkData.declare_node(elemNodeIds[myproc][1]);
@@ -179,7 +179,7 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
         stk::mesh::EntityId elemIds[][elemsPerProc] = { {1}, {2}};
 
         bulkData.modification_begin();
-        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc][0], {&triPart});
+        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc][0], stk::mesh::ConstPartVector{&triPart});
         bulkData.declare_relation(elem, nodes[0], 0);
         bulkData.declare_relation(elem, nodes[1], 1);
         bulkData.declare_relation(elem, nodes[2], 2);

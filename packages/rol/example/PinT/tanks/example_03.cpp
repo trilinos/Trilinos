@@ -187,6 +187,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   ROL::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
 
+  double tol = 1e-10;
+
   // check the pint constraint
   {
     auto c   = state->clone();
@@ -196,8 +198,24 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     ROL::RandomizeVector<RealT>(*control);
     ROL::RandomizeVector<RealT>(*v_u);
 
+    pint_constraint.setGlobalScale(1.0);
     pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
     pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
+    RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+    RealT adj_inv_1 = pint_constraint.checkInverseAdjointJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+
+    if(inv_1 > tol) {
+      std::stringstream ss;
+      ss << "Forward Jacobian inverse inversion FAILED: error = " << inv_1  << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    if(adj_inv_1 > tol) {
+      std::stringstream ss;
+      ss << "Adjoint Jacobian inverse inversion FAILED: error = " << adj_inv_1  << std::endl;
+      throw std::logic_error(ss.str());
+    }
+    
   }
 
   auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
@@ -208,32 +226,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*r_1);
   ROL::RandomizeVector<RealT>(*r_2);
 
-  int numSolves = 1;
-  double tol = 1e-12;
-  std::clock_t timer_total = 0;
-  for(int i=0;i<numSolves;i++) {
-    v_1->zero();
-    v_2->zero();
-
-    auto b1 = r_1->clone();
-    b1->set(*r_1);
-    auto b2 = r_2->clone();
-    b2->set(*r_2);
-
-    std::clock_t timer_start = std::clock();
-    auto res = pint_constraint.solveAugmentedSystem(*v_1,*v_2,*b1,*b2,*x,tol);
-    timer_total += std::clock()-timer_start;
-
-    if(myRank==0) {
-      for(size_t k=0;k<res.size();k++)
-        *outStream << "  " << k << ". " << res[k] << " (rel = " << res[k]/res[0] << ")" << std::endl;
-    }
-  }
- 
-  if(myRank==0)
-    *outStream << numSolves << " Solves in " << (timer_total)/(RealT) CLOCKS_PER_SEC << " seconds." << std::endl;
-
-  for(int chkProc=0;chkProc<numRanks;++chkProc) {
+  // check parallel communication for invertTimeStep methods
+  {
     using ROL::PinTVector;
 
     auto v  = state->clone();
@@ -241,19 +235,18 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto afv  = state->clone();
     auto jv = state->clone();
     auto ajv = state->clone();
+    PinTVector<RealT> & pint_v = dynamic_cast<PinTVector<RealT>&>(*v);
+    PinTVector<RealT> & pint_jv = dynamic_cast<PinTVector<RealT>&>(*jv);
+    PinTVector<RealT> & pint_ajv = dynamic_cast<PinTVector<RealT>&>(*ajv);
 
     ROL::RandomizeVector<RealT>(*v);
 
     double tol = 1e-12;
 
-    // zero all contribution off the processor being checked
-    if(myRank!=chkProc)
-      v->scale(0.0);
-
     // make sure we are globally consistent
     state->boundaryExchange();
     control->boundaryExchange();
-    dynamic_cast<PinTVector<RealT>&>(*v).boundaryExchange();
+    pint_v.boundaryExchange();
 
     // compute jacobian action
     pint_constraint.applyJacobian_1(*jv,
@@ -261,17 +254,23 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                               *state,
                               *control,tol);
 
+
     // compute jacobian action
     pint_constraint.applyAdjointJacobian_1(*ajv,
                                      *v,
                                      *state,
                                      *control,tol);
 
-    // zero all contribution off the processor being checked
-    if(myRank!=chkProc) {
-      jv->zero();
-      ajv->zero();
+    pint_jv.boundaryExchange();
+
+    // fix up right hand side to give the right solution for the sub domain solvers
+    if(myRank!=0) {
+      pint_jv.getVectorPtr(-1)->axpy(1.0,*pint_v.getRemoteBufferPtr(-1)); 
+
+      pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1));
     }
+
+    pint_ajv.boundaryExchangeSumInto();
 
     int level = 0;
     pint_constraint.invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
@@ -280,27 +279,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                            dynamic_cast<const PinTVector<RealT>&>(*control),
                                            tol,
                                            level);
-    fv->axpy(-1.0,*v);
-
-    RealT fv_norm  = fv->norm();
-    RealT v_norm   = v->norm();
-
-    if(myRank==0) {
-      *outStream << "Testing vector norm = " << v_norm << std::endl;
-    }
-
-    // check norms
-    if(fv_norm/v_norm > 1e-13) {
-      std::stringstream ss;
-      ss << "Forward block Jacobi inversion FAILED with proc " << chkProc 
-         << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
-      throw std::logic_error(ss.str());
-    }
-    else {
-      if(myRank==0)
-        *outStream << "Forward block Jacobi inversion PASSED with proc " << chkProc 
-                   << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
-    }
 
     pint_constraint.invertAdjointTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*afv),
                                                   dynamic_cast<const PinTVector<RealT>&>(*ajv),
@@ -309,20 +287,50 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                   tol,
                                                   level);
 
-    afv->axpy(-1.0,*v);
-    RealT afv_norm = afv->norm();
+    RealT v_norm   = v->norm();
 
-    // check norms (adjoint)
-    if(afv_norm/v_norm > 1e-13) {
-      std::stringstream ss;
-      ss << "Adjoint block Jacobi inversion FAILED with proc " << chkProc 
-         << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
-      throw std::logic_error(ss.str());
+    // check forward time step jacobian
+    {
+      fv->axpy(-1.0,*v);
+  
+      RealT fv_norm  = fv->norm();
+  
+      if(myRank==0) {
+        *outStream << "Testing vector norm = " << v_norm << std::endl;
+      }
+  
+      // check norms
+      if(fv_norm/v_norm > 1e-13) {
+        std::stringstream ss;
+        ss << "Forward block Jacobi subdomain inversion FAILED with proc " 
+           << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
+        throw std::logic_error(ss.str());
+      }
+      else {
+        if(myRank==0)
+          *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
+                     << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
+      }
     }
-    else {
-      if(myRank==0)
-        *outStream << "Adjoint block Jacobi inversion PASSED with proc " << chkProc 
-                   << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+    
+    // check backward time step jacobian
+    {
+      afv->axpy(-1.0,*v);
+      RealT afv_norm = afv->norm();
+  
+      // check norms (adjoint)
+      if(afv_norm/v_norm > 1e-13) {
+        std::stringstream ss;
+        ss << "Adjoint block Jacobi subdomain inversion FAILED with proc " 
+           << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+        throw std::logic_error(ss.str());
+      }
+      else {
+        if(myRank==0)
+          *outStream << "Adjoint block Jacobi subdomain inversion PASSED with proc " 
+                     << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+      }
     }
+
   }
 }

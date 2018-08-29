@@ -42,6 +42,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -80,6 +81,8 @@ class QuadShellFixture
   QuadShellFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, bool auraOn );
 
   QuadShellFixture( MetaData& meta, BulkData& bulk, unsigned nx , unsigned ny, unsigned nid_start, unsigned eid_start );
+  QuadShellFixture( MetaData& meta, BulkData& bulk, unsigned nx , unsigned ny, unsigned nz, unsigned nid_start, unsigned eid_start )
+  : QuadShellFixture(meta, bulk, nx, ny, nid_start, eid_start) {}
 
   ~QuadShellFixture();
 
@@ -94,27 +97,35 @@ class QuadShellFixture
   PartVector                    m_elem_parts;
   PartVector                    m_node_parts;
   CoordFieldType &              m_coord_field ;
-  const unsigned                node_id_start = 1;
-  const unsigned                elem_id_start = 1;
+  const unsigned                m_node_id_start = 1;
+  const unsigned                m_elem_id_start = 1;
   bool                          owns_mesh = true;
   stk::topology                 m_elem_topology = stk::topology::SHELL_QUAD_4;
   stk::topology                 m_face_topology = stk::topology::QUAD_4;
   const unsigned                m_nx ;
   const unsigned                m_ny ;
 
+  size_t num_nodes() const {
+    return (m_nx+1)*(m_ny+1);
+  }
+
+  size_t num_elements() const {
+    return (m_nx)*(m_ny);
+  }
+
   /**
    * Thinking in terms of rows and columns of nodes, get the id of the node in
    * the (x, y) position.
    */
   EntityId node_id( unsigned x , unsigned y ) const
-    { return node_id_start + x + ( m_nx + 1 ) * y ; }
+    { return m_node_id_start + x + ( m_nx + 1 ) * y ; }
 
   /**
    * Thinking in terms of rows and columns of elements, get the id of the
    * element in the (x, y) position.
    */
   EntityId elem_id( unsigned x , unsigned y ) const
-    { return elem_id_start + x + m_nx * y ; }
+    { return m_elem_id_start + x + m_nx * y ; }
 
   /**
    * Thinking in terms of rows and columns of nodes, get the node in
@@ -147,9 +158,9 @@ class QuadShellFixture
   /**
    * Create the mesh (into m_bulk_data).
    */
-  void generate_mesh();
+  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
-  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
+  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping() );
  private:
 
   typedef std::multimap<EntityId, int> NodeToProcsMMap;

@@ -25,6 +25,7 @@
 #include "Epetra_RowMatrix.h"
 #include "ml_Preconditioner.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
 #ifdef HAVE_ML_IFPACK
@@ -146,9 +147,8 @@ namespace ML_Epetra
     //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
     int BuildProlongator(const Epetra_MultiVector & nullspace);
 
-    //! Forms the coarse matrix, given the build prolongator.
+    //! Forms the coarse matrix, given the prolongator
     int FormCoarseMatrix();
-
 
 
     //@}
@@ -188,6 +188,9 @@ namespace ML_Epetra
     //! Coarse Matrix
     Epetra_CrsMatrix * CoarseMatrix;
     ML_Operator * CoarseMat_ML;
+
+    //! Coarse data objects
+    Teuchos::Array<double> CoarseXcoord_, CoarseYcoord_, CoarseZcoord_;
 
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC;

@@ -147,22 +147,20 @@ namespace Ifpack2 {
     template<typename T, int N>
     static 
     KOKKOS_INLINE_FUNCTION 
-    volatile ArrayValueType<T,N>& 
+    void
     operator+=(volatile ArrayValueType<T,N> &a, 
                volatile const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i) 
         a.v[i] += b.v[i];
-      return a;
     }
     template<typename T, int N>
     static 
     KOKKOS_INLINE_FUNCTION
-    ArrayValueType<T,N>& 
+    void
     operator+=(ArrayValueType<T,N> &a, 
                const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i) 
         a.v[i] += b.v[i];
-      return a;
     }
 
     ///
