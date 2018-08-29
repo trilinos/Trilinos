@@ -53,117 +53,16 @@
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
 
+#include "ROL_PinTCommunicators.hpp"
+#include "ROL_PinTVectorCommunication.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
+
 /** @ingroup la_group
     \class ROL::PinTVector
     \brief Defines a parallel in time vector.
 */
 
 namespace ROL {
-
-/** 
- * This class handles PinT communication. Its
- * based on the approach taken in X-Braid.
- */
-class PinTCommunicators {
-public:
-  PinTCommunicators(MPI_Comm parent,int spatialProcs)
-  { 
-    parentComm_ = parent; 
-
-    int myGlobalRank = -1;
-    int globalProcs = -1;
-    MPI_Comm_size(parentComm_, &globalProcs);
-    MPI_Comm_rank(parentComm_, &myGlobalRank);
-
-    // make sure they divide evenly (for sanity!)
-    assert(globalProcs % spatialProcs == 0);
-
-    int space = myGlobalRank / spatialProcs;
-    int time  = myGlobalRank % spatialProcs;
-
-    // this decomposition comes from X-Braid 
-    MPI_Comm_split(parentComm_,space,myGlobalRank,&spaceComm_); 
-    MPI_Comm_split(parentComm_, time,myGlobalRank, &timeComm_); 
-
-    MPI_Comm_size(timeComm_, &timeSize_);
-    MPI_Comm_rank(timeComm_, &timeRank_);
-
-    MPI_Comm_size(spaceComm_, &spaceSize_);
-    MPI_Comm_rank(spaceComm_, &spaceRank_);
-  }
-
-  // cleanup
-  ~PinTCommunicators()
-  { MPI_Comm_free(&spaceComm_);  
-    MPI_Comm_free(&timeComm_); }
-
-   MPI_Comm getParentCommunicator() const { return parentComm_; }
-   MPI_Comm getSpaceCommunicator() const { return spaceComm_; }
-   MPI_Comm getTimeCommunicator() const { return timeComm_; }
-
-   int getTimeRank() const { return timeRank_; }
-   int getTimeSize() const { return timeSize_; }
-
-   int getSpaceRank() const { return spaceRank_; }
-   int getSpaceSize() const { return spaceSize_; }
-
-private:
-
-  MPI_Comm parentComm_;
-
-  MPI_Comm spaceComm_;
-  MPI_Comm timeComm_;
-  int timeSize_;
-  int timeRank_;
-  int spaceSize_;
-  int spaceRank_;
-};
-
-template <class Real> 
-class PinTVectorCommunication {
-public:
-  void send(MPI_Comm comm,int rank,Vector<Real> & source) const
-  {
-    const std::vector<Real> & std_source = *dynamic_cast<const StdVector<Real>&>(source).getVector();
-
-    // int myRank = -1;
-    // MPI_Comm_rank(comm, &myRank);
-
-    MPI_Send(const_cast<Real*>(&std_source[0]),int(std_source.size()),MPI_DOUBLE,rank,0,comm);
-  }
-
-  void recv(MPI_Comm comm,int rank,Vector<Real> & dest,bool sumInto) const
-  {
-    if(sumInto)
-      recvSumInto(comm,rank,dest);
-    else
-      recv(comm,rank,dest);
-  }
-
-  void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const
-  {
-    std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
-
-    // int myRank = -1;
-    // MPI_Comm_rank(comm, &myRank);
-
-    MPI_Recv(&std_dest[0],int(std_dest.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
-  }
-
-  void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest) const
-  {
-    std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
-    std::vector<Real> buffer(std_dest.size(),0.0);
-
-    int myRank = -1;
-    MPI_Comm_rank(comm, &myRank);
-
-    MPI_Recv(&buffer[0],int(buffer.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
-
-    for(size_t i=0;i<std_dest.size();i++)
-      std_dest[i] += buffer[i];
-  }
-};
 
 template <class Real>
 class PinTVector
@@ -294,7 +193,7 @@ public:
     localVector_   = localVector;
     steps_         = steps;
     stencil_       = stencil;
-    vectorComm_    = makePtr<PinTVectorCommunication<Real>>();
+    vectorComm_    = makePtr<PinTVectorCommunication_StdVector<Real>>();
 
     computeStepStartEnd(steps_);
     allocateBoundaryExchangeVectors();
