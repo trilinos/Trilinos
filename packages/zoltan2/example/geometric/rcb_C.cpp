@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
 
-  typedef double scalar_t;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_t;
   typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
 
   // TODO explain

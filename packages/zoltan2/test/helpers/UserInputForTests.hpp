@@ -2744,7 +2744,8 @@ void UserInputForTests::setPamgenCoordinateMV()
   zscalar_t **elem_coords = new zscalar_t * [dimension];
   for(int i = 0; i < dimension; ++i){
     elem_coords[i] = new zscalar_t[numelements];
-    memcpy(elem_coords[i],&pamgen_mesh->element_coord[i*numelements],sizeof(double) * numelements);
+    double *tmp = &pamgen_mesh->element_coord[i*numelements];
+    for (int j = 0; j < numelements; j++) elem_coords[i][j] = tmp[j];
   }
 
   // make a Tpetra map
