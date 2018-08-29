@@ -287,7 +287,7 @@ namespace Details {
     void
     locallyAssemble (MV& X)
     {
-      std::plus<double> f;
+      std::plus<scalar_type> f;
       locallyAssemble<std::plus<scalar_type> > (X, f);
     }
 
@@ -837,7 +837,7 @@ namespace Details {
     void
     locallyAssemble (MV& X)
     {
-      std::plus<double> f;
+      std::plus<scalar_type> f;
       locallyAssemble<std::plus<scalar_type> > (X, f);
     }
 
