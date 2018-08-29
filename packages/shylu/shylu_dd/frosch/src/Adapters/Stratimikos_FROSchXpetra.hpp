@@ -18,7 +18,7 @@
 namespace Stratimikos {
     
     template <typename LocalOrdinal = int, typename GlobalOrdinal = int, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-    void enableXpetraFROSch
+    void enableFROSch
     (DefaultLinearSolverBuilder& builder, const std::string& stratName = "FROSch")
     {
         const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
