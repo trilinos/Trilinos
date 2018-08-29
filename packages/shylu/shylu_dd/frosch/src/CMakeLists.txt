@@ -114,7 +114,8 @@ APPEND_SET(HEADERS
   Adapters/Thyra_FROSchLinearOp_def.hpp
   Adapters/Thyra_FROSchXpetraFactory_decl.hpp
   Adapters/Thyra_FROSchXpetraFactory_def.hpp
-
+  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_decl.hpp
+  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp
 )
 
 # Set sources
