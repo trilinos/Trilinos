@@ -36,7 +36,7 @@ INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_math)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    search_unit_tests
+    stkmath_unit_tests
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi

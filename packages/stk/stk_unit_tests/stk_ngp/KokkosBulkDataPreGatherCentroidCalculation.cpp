@@ -110,25 +110,28 @@ struct ScratchData
 
 TEST_F(NGP_Kokkos, calculate_centroid_field_on_device)
 {
-    MyApp app;
-
-    ScratchData scratch;
-    scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part());
-
-    CentroidCalculator<ScratchData> calculator(scratch);
-
-    app.start_timer();
-    calculator.calculate_centroids(app.num_repeat, 5, app.teamSize );
-    app.stop_timer();
-    app.report_bandwidth();
-
-    calculator.copy_centroids_to_host();
-    calculator.test_centroid_of_element_1();
-
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(app.meta.locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
-    for(unsigned elementIndex=0; elementIndex<elements.size(); ++elementIndex) {
-        calculator.test_centroid_of_element(app.hostCentroid, elements[elementIndex], elementIndex);
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        MyApp app;
+    
+        ScratchData scratch;
+        scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part());
+    
+        CentroidCalculator<ScratchData> calculator(scratch);
+    
+        app.start_timer();
+        calculator.calculate_centroids(app.num_repeat, app.choice, app.teamSize );
+        app.stop_timer();
+        app.report_bandwidth();
+    
+        calculator.copy_centroids_to_host();
+        calculator.test_centroid_of_element_1();
+    
+        stk::mesh::EntityVector elements;
+        stk::mesh::get_selected_entities(app.meta.locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
+        for(unsigned elementIndex=0; elementIndex<elements.size(); ++elementIndex) {
+            calculator.test_centroid_of_element(app.hostCentroid, elements[elementIndex], elementIndex);
+        }
     }
 }
 

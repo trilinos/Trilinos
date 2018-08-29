@@ -715,7 +715,7 @@ void setup_hex_shell_hex_mesh(stk::mesh::BulkData& bulkData)
     meta.initialize(spatial_dimension, stk::mesh::entity_rank_names());
 
     stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
-    stk::mesh::put_field(field, meta.universal_part());
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), nullptr);
 
     stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
     stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::SHELL_QUAD_4);
