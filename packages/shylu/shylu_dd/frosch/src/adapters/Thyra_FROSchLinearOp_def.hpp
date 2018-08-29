@@ -153,37 +153,8 @@ namespace Thyra {
 
         TEUCHOS_TEST_FOR_EXCEPTION(getConstXpetraOperator() == Teuchos::null, MueLu::Exceptions::RuntimeError, "XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
         RCP< const Teuchos::Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
+        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xY;
         
-
-        const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
-        const int numCols = XY_domain->dim();
-        
-        Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DomainM = this->xpetraOperator_->getDomainMap();
-        
-        Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >RangeM = this->xpetraOperator_->getRangeMap();
-        
-        RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(DomainM);
-        
-        const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
-        
-        RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eRangeM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(RangeM);
-        
-        const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
-        
-        RCP<const Epetra_MultiVector> X;
-        
-        RCP<Epetra_MultiVector> Y;
-       
-        THYRA_FUNC_TIME_MONITOR_DIFF(
-                                         "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
-            // X
-        X = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
-        RCP<Epetra_MultiVector> X_nonconst = Teuchos::rcp_const_cast<Epetra_MultiVector>(X);
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*X_nonconst,comm);
-            // Y
-        Y = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraRange: epetraDomain, *Y_inout );
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xY = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*Y,comm);
- 
         Teuchos::ETransp transp;
         switch (M_trans) {
             case NOTRANS:   transp = Teuchos::NO_TRANS;   break;
@@ -192,7 +163,50 @@ namespace Thyra {
             default: TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::NotImplemented, "Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
         }
         
-        xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
+        if(this->bIsEpetra_){
+            const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
+            const int numCols = XY_domain->dim();
+        
+            Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DomainM = this->xpetraOperator_->getDomainMap();
+        
+            Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >RangeM = this->xpetraOperator_->getRangeMap();
+        
+            RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(DomainM);
+        
+            const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
+        
+            RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eRangeM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(RangeM);
+        
+            const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
+            
+            RCP<const Epetra_MultiVector> X;
+        
+            RCP<Epetra_MultiVector> Y;
+       
+            THYRA_FUNC_TIME_MONITOR_DIFF(
+                                         "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
+            // X
+            X = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
+            RCP<Epetra_MultiVector> X_nonconst = Teuchos::rcp_const_cast<Epetra_MultiVector>(X);
+            RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*X_nonconst,comm);
+            // Y
+            Y = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraRange: epetraDomain, *Y_inout );
+            xY = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*Y,comm);
+            xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
+
+        }
+        else if(bIsTpetra_){
+            const RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX =
+            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromRef(X_in), comm);
+            xY = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromPtr(Y_inout), comm);
+            xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
+            
+        }
+        else{
+            std::cout<<"Only Implemented for Epetra and Tpetra\n";
+        }
+ 
+       
         
         RCP<Thyra::MultiVectorBase<Scalar> >thyraX =
         Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(xY));

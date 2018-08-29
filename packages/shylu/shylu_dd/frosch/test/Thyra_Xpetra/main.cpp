@@ -292,7 +292,6 @@ int main(int argc, char *argv[])
             
             //Check Solution
             const RCP<const Thyra::VectorSpaceBase<double> > XY_domain = thyraX->domain();
-            const int numCols = XY_domain->dim();
             
             Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > DomainM = K->getDomainMap();
             
