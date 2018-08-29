@@ -124,17 +124,13 @@ void StepperOperatorSplit<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (stepperOSObserver_ == Teuchos::null) {
       stepperOSObserver_ =
         Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
-      stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperOSObserver_);
      }
   } else {
-    stepperObserver_ = obs;
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> >
-        (stepperObserver_);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
   }
 }
 
