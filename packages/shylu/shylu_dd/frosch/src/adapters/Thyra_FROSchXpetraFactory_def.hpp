@@ -142,7 +142,7 @@ namespace Thyra {
         RCP<const VectorSpaceBase<Scalar> > thyraDomainSpace = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(froschXOP->getDomainMap());
         
         RCP <Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp = Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(froschXOP);
-        thyraPrecOp = Thyra::fROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace, thyraDomainSpace,xpOp);
+        thyraPrecOp = Thyra::fROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace, thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
         

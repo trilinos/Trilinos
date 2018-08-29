@@ -32,14 +32,18 @@ namespace Thyra {
         void initialize(
                         const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                         const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                        const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                        const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                        bool bIsEpetra,
+                        bool bIsTpetra
                         );
         
         /** \brief Initialize. */
         void constInitialize(
                              const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                              const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                             const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                             const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                             bool bIsEpetra,
+                             bool bIsTpetra
                              );
         
         /** \brief Get embedded non-const Xpetra::Operator. */
@@ -90,6 +94,9 @@ namespace Thyra {
         RCP<const VectorSpaceBase<Scalar> >
         domainSpace_;
         
+        
+        bool bIsEpetra_;
+        bool bIsTpetra_;
         Teuchos::ConstNonconstObjectContainer<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
         xpetraOperator_;
         
@@ -97,7 +104,9 @@ namespace Thyra {
         void initializeImpl(
                             const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                             const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                            const RCP<XpetraOperator_t> &xpetraOperator
+                            const RCP<XpetraOperator_t> &xpetraOperator,
+                            bool bIsEpetra,
+                            bool bIsTpetra
                             );
         
     };
@@ -112,12 +121,14 @@ namespace Thyra {
     fROSchLinearOp(
                    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                   const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                   const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                   bool bIsEpetra,
+                   bool bIsTpetra
                    )
     {
         const RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
         Teuchos::rcp(new FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
-        op->initialize(rangeSpace, domainSpace, xpetraOperator);
+        op->initialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
         return op;
     }
     
@@ -131,12 +142,14 @@ namespace Thyra {
     constFROSchLinearOp(
                         const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                         const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                        const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                        const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                        bool bIsEpetra,
+                        bool bIsTpetra
                         )
     {
         const RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
         Teuchos::rcp(new FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
-        op->constInitialize(rangeSpace, domainSpace, xpetraOperator);
+        op->constInitialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
         return op;
     }
     

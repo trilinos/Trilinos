@@ -59,10 +59,12 @@ namespace Thyra {
     void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
                                                                             const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                                                                             const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                            const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                                                                            const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                                                                            bool bIsEpetra,
+                                                                            bool bIsTpetra
                                                                             )
     {
-        initializeImpl(rangeSpace, domainSpace, xpetraOperator);
+        initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
     
     
@@ -70,10 +72,12 @@ namespace Thyra {
     void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::constInitialize(
                                                                                  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                                                                                  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                                 const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
+                                                                                 const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
+                                                                                 bool bIsEpetra,
+                                                                                 bool bIsTpetra
                                                                                  )
     {
-        initializeImpl(rangeSpace, domainSpace, xpetraOperator);
+        initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
     
     
@@ -230,7 +234,9 @@ namespace Thyra {
     void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
                                                                                 const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                                                                                 const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                                const RCP<XpetraOperator_t> &xpetraOperator
+                                                                                const RCP<XpetraOperator_t> &xpetraOperator,
+                                                                                bool bIsEpetra,
+                                                                                bool bIsTpetra
                                                                                 )
     {
         
@@ -242,6 +248,8 @@ namespace Thyra {
         rangeSpace_ = rangeSpace;
         domainSpace_ = domainSpace;
         xpetraOperator_ = xpetraOperator;
+        bIsEpetra_ = bIsEpetra;
+        bIsTpetra_ = bIsTpetra;
     }
     
     
