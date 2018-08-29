@@ -1,5 +1,5 @@
 #ifndef THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
-#define THYRA_FROSCH_XPETRA_DEF_HPP
+#define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchXpetraFactory_decl.hpp"
 
