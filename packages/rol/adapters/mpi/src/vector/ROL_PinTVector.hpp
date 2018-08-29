@@ -90,7 +90,7 @@ protected:
   std::vector<Ptr<Vector<Real>>> leftVectors_;
   std::vector<Ptr<Vector<Real>>> rightVectors_;
 
-  Ptr<PinTVectorCommunication<Real>> vectorComm_;
+  Ptr<const PinTVectorCommunication<Real>> vectorComm_;
 
   // Using parallel communication and a linear decomposition
   // determine where this processor lives in the global
@@ -162,7 +162,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    initialize(v.communicators_,v.localVector_,v.steps_,v.stencil_);
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.stencil_);
 
     // make sure you copy boundary exchange "end points" - handles initial conditions
     for(std::size_t i=0;i<leftVectors_.size();i++)
@@ -174,17 +174,19 @@ public:
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
+             const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
              const Ptr<Vector<Real>> & localVector,
              int steps,
              const std::vector<int> & stencil)
     : isInitialized_(false)
   {
-    initialize(comm,localVector,steps,stencil);
+    initialize(comm,vectorComm,localVector,steps,stencil);
   }
 
   virtual ~PinTVector() {}
 
   void initialize(const Ptr<const PinTCommunicators> & comm,
+                  const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                   const Ptr<Vector<Real>> & localVector,
                   int steps,
                   const std::vector<int> & stencil)
@@ -193,7 +195,7 @@ public:
     localVector_   = localVector;
     steps_         = steps;
     stencil_       = stencil;
-    vectorComm_    = makePtr<PinTVectorCommunication_StdVector<Real>>();
+    vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
     computeStepStartEnd(steps_);
     allocateBoundaryExchangeVectors();
@@ -250,6 +252,10 @@ public:
   /** What is the communicators object used to build this vector?
     */
   Ptr<const PinTCommunicators> communicatorsPtr() const { return communicators_; }
+
+  /** What is the communicators object used to build this vector?
+    */
+  Ptr<const PinTVectorCommunication<Real>> vectorCommunicationPtr() const { return vectorComm_; }
 
   /** \brief Determine if an index is valid including the stencil.
 

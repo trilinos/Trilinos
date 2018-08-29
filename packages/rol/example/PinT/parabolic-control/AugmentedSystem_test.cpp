@@ -57,8 +57,9 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_PinTConstraint.hpp"
 #include "ROL_GMRES.hpp"
+#include "ROL_PinTConstraint.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 #include "dynamicConstraint.hpp"
 #include "dynamicObjective.hpp"
@@ -156,6 +157,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
 
   ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+  ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
 
   // Parse input parameter list
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
@@ -180,8 +182,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::Ptr< ROL::PinTVector<RealT>> state;
   ROL::Ptr< ROL::PinTVector<RealT>> control;
 
-  state        = ROL::buildStatePinTVector<RealT>(   communicators, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
-  control      = ROL::buildControlPinTVector<RealT>( communicators, nt,     zk); // time discontinous, stencil = [0]
+  state        = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
+  control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, nt,     zk); // time discontinous, stencil = [0]
 
   // Construct reduced dynamic objective
   auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());

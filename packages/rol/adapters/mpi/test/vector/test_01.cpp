@@ -45,6 +45,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_PinTVector.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 typedef double RealT;
 
@@ -86,6 +87,8 @@ int main(int argc, char* argv[])
     // }
     
     *outStream << "Testing checkVector" << std::endl; 
+
+    ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
     
     {
       // allocate state vector
@@ -99,9 +102,9 @@ int main(int argc, char* argv[])
   
       std::vector<int> stencil = {-1,0};
   
-      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,x_vec,3*numRanks,stencil);
-      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,y_vec,3*numRanks,stencil);
-      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,z_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,x_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,y_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,z_vec,3*numRanks,stencil);
   
       /*
       *outStream << "X = " << std::endl;
@@ -144,7 +147,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );  // backwards time is owned for this stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -182,7 +185,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(0)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(1)) );
@@ -219,7 +222,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(0)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(1)) );
@@ -273,7 +276,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );  // backwards time is owned for this stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -315,7 +318,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT(  ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -358,7 +361,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) ); // this comes from the stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );

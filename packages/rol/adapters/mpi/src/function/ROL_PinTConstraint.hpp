@@ -61,32 +61,36 @@ namespace ROL {
 
     \param[in] communicators Structure with objects required for parallel-in-time communication.
                              (hint: this can be used to properly allocate the state and control vectors)
+    \param[in] vectorComm Communication mechansim for sharing vectors between processors.
     \param[in] steps Number of steps 
     \param[in] localVector Spatial vector for a single time step.
   */
 template <class Real>
 Ptr<PinTVector<Real>>
 buildStatePinTVector(const Ptr<const PinTCommunicators> & communicators,
+                     const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                      int steps,
                      const Ptr<Vector<Real>> & localVector)
 { std::vector<int> stencil = {-1,0};
-  return makePtr<PinTVector<Real>>(communicators,localVector,steps,stencil); }
+  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,stencil); }
 
 /** This helper method builds a pint "control" vector for use in the 
     PinTConstraint class. 
 
     \param[in] communicators Structure with objects required for parallel-in-time communication.
                              (hint: this can be used to properly allocate the state and control vectors)
+    \param[in] vectorComm Communication mechansim for sharing vectors between processors.
     \param[in] steps Number of steps 
     \param[in] localVector Spatial vector for a single time step.
   */
 template <class Real>
 Ptr<PinTVector<Real>>
 buildControlPinTVector(const Ptr<const PinTCommunicators> & communicators,
+                       const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                        int steps,
                        const Ptr<Vector<Real>> & localVector)
 { std::vector<int> stencil = {0};
-  return makePtr<PinTVector<Real>>(communicators,localVector,steps,stencil); }
+  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,stencil); }
 
 template<typename Real> 
 class PinTConstraint : public ROL::Constraint_SimOpt<Real> {
@@ -1275,9 +1279,10 @@ public:
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto comm = pint_ref.communicatorsPtr();
+     auto vectorComm = pint_ref.vectorCommunicationPtr();
      
      Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
-     return buildStatePinTVector(comm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     return buildStatePinTVector(comm,vectorComm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
    }
 
    /**
@@ -1287,9 +1292,10 @@ public:
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto comm = pint_ref.communicatorsPtr();
+     auto vectorComm = pint_ref.vectorCommunicationPtr();
      
      Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
-     return buildControlPinTVector(comm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     return buildControlPinTVector(comm,vectorComm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
    }
    
    /**

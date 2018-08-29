@@ -1,5 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
+
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Ifpack2  AND
    ${PROJECT_NAME}_ENABLE_MueLu    AND
@@ -21,6 +24,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
       input_ex01.xml plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    AugmentedSystem 
+    SOURCES AugmentedSystem.cpp
+    ADD_DIR_TO_NAME
   )
 
 

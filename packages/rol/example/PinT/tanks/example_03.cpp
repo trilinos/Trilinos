@@ -53,6 +53,7 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_PinTConstraint.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 #include "Tanks_DynamicConstraint.hpp"
 #include "Tanks_SerialConstraint.hpp"
@@ -122,6 +123,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
 
   ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+  ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
 
   ROL::Ptr< ROL::PinTVector<RealT>> state;
   ROL::Ptr< ROL::PinTVector<RealT>> control;
@@ -171,8 +173,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       }
     }
 
-    state        = ROL::buildStatePinTVector<RealT>(   communicators, Nt,     u_old);
-    control      = ROL::buildControlPinTVector<RealT>( communicators, Nt,         z);
+    state        = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, Nt,     u_old);
+    control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, Nt,         z);
 
     initial_cond = u_initial;
     state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
