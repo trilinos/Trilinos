@@ -150,10 +150,6 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPTION(getConstXpetraOperator() == Teuchos::null, MueLu::Exceptions::RuntimeError, "XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
         RCP< const Teuchos::Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
         
-
-        const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
-        const int numCols = XY_domain->dim();
-        
         Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DomainM = this->xpetraOperator_->getDomainMap();
         
         Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >RangeM = this->xpetraOperator_->getRangeMap();
