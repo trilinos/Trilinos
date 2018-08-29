@@ -125,11 +125,11 @@ int main(int argc, char *argv[])
             
             RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
             
-             if(Comm->MyPID()==0) {
+             /*if(Comm->MyPID()==0) {
                 cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
                 parameterList->print(cout);
                 cout << "--------------------------------------------------------------------------------\n\n";
-            }
+            }*/
             
             if (Comm->MyPID()==0) cout << "----------------ASSEMBLY-----------\n";
             
@@ -281,12 +281,35 @@ int main(int argc, char *argv[])
             
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-              if (Comm->MyPID()==0) cout << "----------------Solve-----------\n";
+  
+            if (Comm->MyPID()==0) cout << "----------------Solve-----------\n";
             Thyra::SolveStatus<double> status =
             Thyra::solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
             
+            
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
+            
+            //Check Solution
+            const RCP<const Thyra::VectorSpaceBase<double> > XY_domain = thyraX->domain();
+            const int numCols = XY_domain->dim();
+            
+            Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > DomainM = K->getDomainMap();
+            
+            Teuchos::RCP<const Xpetra::Map<LO,GO,NO> >RangeM = K->getRangeMap();
+            
+            RCP<const Xpetra::EpetraMapT<GO,NO> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(DomainM);
+            
+            const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
+            
+            RCP<const Xpetra::EpetraMapT<GO,NO> > eRangeM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(RangeM);
+            
+            const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
+            
+            RCP<const Epetra_MultiVector> X;
+            
+            X = Thyra::get_Epetra_MultiVector(epetraDomain, thyraX );
+            std::cout<<*X;
             
         }
         MPI_Comm_free(&COMM);
