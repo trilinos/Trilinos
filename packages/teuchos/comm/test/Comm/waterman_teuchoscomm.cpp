@@ -15,7 +15,7 @@ void runTest(int ndoubles, Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   int np = comm->getSize();
 
   double *sendBuf = new double[ndoubles];
-  memset(sendBuf, 0, sizeof(double) * ndoubles);
+  for (int i = 0; i < ndoubles; i++) sendBuf[i] = 0.;
   int nMy = ndoubles / np + (me < (ndoubles % np));
   int myBegin = (ndoubles / np) * me;
   myBegin += ((ndoubles % np) < me ? (ndoubles % np) : me);

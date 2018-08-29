@@ -11,7 +11,7 @@ void runTest(int ndoubles, MPI_Comm &comm)
   MPI_Comm_size(comm, &np);
 
   double *sendBuf = new double[ndoubles];
-  memset(sendBuf, 0, sizeof(double) * ndoubles);
+  for (int i = 0; i < ndoubles; i++) sendBuf[i] = 0.;
   int nMy = ndoubles / np + (me < (ndoubles % np));
   int myBegin = (ndoubles / np) * me;
   myBegin += ((ndoubles % np) < me ? (ndoubles % np) : me);
