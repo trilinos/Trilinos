@@ -36,7 +36,6 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <assert.h>                                  // for assert
-#include <ext/alloc_traits.h>
 #include <stdlib.h>                                  // for exit, etc
 #include <string.h>                                  // for memcpy
 #include <cstdint>                                   // for int64_t
