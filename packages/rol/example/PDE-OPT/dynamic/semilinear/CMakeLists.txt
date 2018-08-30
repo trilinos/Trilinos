@@ -2,6 +2,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/mpi)
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Ifpack2  AND
