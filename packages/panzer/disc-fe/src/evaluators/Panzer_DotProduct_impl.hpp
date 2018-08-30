@@ -117,16 +117,9 @@ template<typename EvalT, typename Traits>
 void
 DotProduct<EvalT, Traits>::
 postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
+  typename Traits::SetupData /* sd */,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(vec_a_dot_vec_b,fm);
-  this->utils.setFieldData(vec_a,fm);
-  this->utils.setFieldData(vec_b,fm);
-
-  if(multiplier_field_on)
-    this->utils.setFieldData(multiplier_field,fm);
-
   num_pts = vec_a.extent(1);
   num_dim = vec_a.extent(2);
 

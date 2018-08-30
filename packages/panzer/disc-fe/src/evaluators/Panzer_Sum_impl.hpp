@@ -112,12 +112,8 @@ void
 Sum<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+  PHX::FieldManager<Traits>&  /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < scalars.extent(0); ++i)
-    this->utils.setFieldData(values[i],fm);
-
   cell_data_size = sum.size() / sum.fieldTag().dataLayout().extent(0);
 }
 
@@ -273,18 +269,6 @@ SumStatic(const Teuchos::ParameterList& p)
 
 template<typename EvalT, typename TRAITS,typename Tag0>
 void SumStatic<EvalT,TRAITS,Tag0,void,void>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
-}
-
-//**********************************************************************
-
-template<typename EvalT, typename TRAITS,typename Tag0>
-void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
@@ -395,13 +379,10 @@ SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i) {
-    this->utils.setFieldData(values[i],fm);
+  for (std::size_t i=0; i < values.size(); ++i)
     value_views[i] = values[i].get_static_view();
-  }
 }
 
 //**********************************************************************
@@ -475,20 +456,6 @@ SumStatic(const Teuchos::ParameterList& p)
  
   std::string n = "Sum Evaluator";
   this->setName(n);
-}
-*/
-
-//**********************************************************************
-/*
-
-template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-void SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>::
-postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
 }
 */
 

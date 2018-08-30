@@ -96,16 +96,13 @@ template<typename EvalT, typename Traits>
 void
 ScatterCellAvgQuantity<EvalT, Traits>::
 postRegistrationSetup(
-  typename Traits::SetupData  /* d */,
-  PHX::FieldManager<Traits>&  fm)
+  typename Traits::SetupData /* d */,
+  PHX::FieldManager<Traits>& /* fm */)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
     stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
   }
 }
 
