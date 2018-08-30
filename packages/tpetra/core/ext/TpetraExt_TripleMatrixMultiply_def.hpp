@@ -494,7 +494,7 @@ namespace Tpetra {
       {
         lno_view_t thread_nnz_count("thread_nnz_counts", thread_max);
         for(size_t i = 0; i < thread_max; i++)
-          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).dimension(0) - 1);
+          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).extent(0) - 1);
         Tpetra::Details::computeOffsetsFromCounts(thread_start_nnz, thread_nnz_count);
       }
       c_nnz_size = thread_start_nnz(thread_max);

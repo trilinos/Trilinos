@@ -490,8 +490,8 @@ void populate_mesh(stk::mesh::BulkData& bulk, int nx, int ny, int nz)
     ScalarField *x = &meta.declare_field<ScalarField>(stk::topology::ELEMENT_RANK, "x");
     ScalarField *y = &meta.declare_field<ScalarField>(stk::topology::ELEMENT_RANK, "y");
 
-    stk::mesh::put_field(*x, meta.locally_owned_part(), &val);
-    stk::mesh::put_field(*y, meta.locally_owned_part(), &val);
+    stk::mesh::put_field_on_mesh(*x, meta.locally_owned_part(), &val);
+    stk::mesh::put_field_on_mesh(*y, meta.locally_owned_part(), &val);
 
     stk::io::fill_mesh(os.str(), bulk);
 }

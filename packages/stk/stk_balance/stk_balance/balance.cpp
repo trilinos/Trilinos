@@ -121,7 +121,7 @@ void register_internal_fields(stk::mesh::BulkData& bulkData, stk::balance::Balan
         stk::mesh::Field<int> & field = meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
                                                                                   balanceSettings.getSpiderConnectivityCountFieldName());
         const int initValue = 0;
-        stk::mesh::put_field(field, meta.universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, meta.universal_part(), &initValue);
     }
 }
 

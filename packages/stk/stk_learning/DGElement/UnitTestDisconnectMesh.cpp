@@ -126,9 +126,9 @@ TEST_F(TOSDTWD, birds)
            double init_status = 1;
            std::vector<double> init_vec = {0,0,0};
 
-           stk::mesh::put_field(field, stkIo.meta_data().universal_part(), init_vec.data());
-           stk::mesh::put_field(velocity, stkIo.meta_data().universal_part(), init_vec.data());
-           stk::mesh::put_field(active_status, stkIo.meta_data().universal_part(), &init_status);
+           stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), init_vec.data());
+           stk::mesh::put_field_on_mesh(velocity, stkIo.meta_data().universal_part(), init_vec.data());
+           stk::mesh::put_field_on_mesh(active_status, stkIo.meta_data().universal_part(), &init_status);
 
            stkIo.populate_bulk_data();
 
@@ -316,7 +316,7 @@ TEST_F(TOSDTWD, expand_mesh)
 
         typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
         CoordFieldType& dispField = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, "disp");
-        stk::mesh::put_field(dispField, stkIo.meta_data().universal_part());
+        stk::mesh::put_field_on_mesh(dispField, stkIo.meta_data().universal_part(), nullptr);
 
         stkIo.populate_bulk_data();
 

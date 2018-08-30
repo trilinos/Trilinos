@@ -77,7 +77,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   const double initial_value = 99.9;
 
-  stk::mesh::put_field(dfield, meta_data.universal_part(), &initial_value);
+  stk::mesh::put_field_on_mesh(dfield, meta_data.universal_part(), &initial_value);
 
   meta_data.commit();
 
@@ -123,7 +123,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
     
       const double initial_value = 99.9;
     
-      stk::mesh::put_field(dfield, newPart, &initial_value);
+      stk::mesh::put_field_on_mesh(dfield, newPart, &initial_value);
     
       meta_data.commit();
     
@@ -185,7 +185,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  stk::mesh::put_field(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
@@ -236,7 +236,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
-  stk::mesh::put_field(vfield, node_part, stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, node_part, stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
@@ -297,7 +297,7 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  stk::mesh::put_field(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
