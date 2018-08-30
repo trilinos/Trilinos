@@ -2,6 +2,8 @@
 #define THYRA_FROSCHXPETRATWOLEVELBLOCKPREC_DEF
 
 #include <Thyra_FROSchXpetraTwoLevelBlockPrec_decl.hpp>
+#include <Thyra_FROSchLinearOp_decl.hpp>
+
 namespace Thyra {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -142,7 +144,7 @@ namespace Thyra {
         RCP<const VectorSpaceBase<SC> > thyraRangeSpace  = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(TwoLevelPrec->getRangeMap());
         RCP<const VectorSpaceBase<SC> > thyraDomainSpace = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(TwoLevelPrec->getDomainMap());
     
-        thyraPrecOp = Thyra::fROSchLinearOp<SC, LO, GO, NO>(thyraRangeSpace, thyraDomainSpace,TwoLevelPrec);
+        thyraPrecOp = Thyra::fROSchLinearOp<SC, LO, GO, NO>(thyraRangeSpace, thyraDomainSpace,TwoLevelPrec,bIsEpetra,bIsTpetra);
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
         

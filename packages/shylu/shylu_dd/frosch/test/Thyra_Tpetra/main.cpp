@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
             // sublist(plList,"TwoLevelPreconditioner")->set("RepeatedMap",RepMapX);
             
             Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-            Stratimikos::enableXpetraFROSch<LO,GO,NO>(linearSolverBuilder);
+            Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
             
             linearSolverBuilder.setParameterList(parameterList);
             
