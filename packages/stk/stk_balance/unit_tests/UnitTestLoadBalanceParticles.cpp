@@ -120,7 +120,7 @@ protected:
     {
         double init_value = 0.0;
         m_particleCountField = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "Particles", 1);
-        stk::mesh::put_field(*m_particleCountField, get_meta().universal_part(), &init_value);
+        stk::mesh::put_field_on_mesh(*m_particleCountField, get_meta().universal_part(), &init_value);
     }
 
     std::vector<int> get_particle_ids(int firstParticleId, int numParticles)

@@ -67,8 +67,8 @@ namespace app {
     stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
       meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field( coord_field, meta.universal_part(),
-                          spatial_dim);
+    stk::mesh::put_field_on_mesh( coord_field, meta.universal_part(),
+                          spatial_dim, nullptr);
 
     /// \todo IMPLEMENT truly handle fields... For this case we
     /// are just defining a field for each transient field that is
@@ -141,7 +141,7 @@ namespace app {
 
         const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
 
-	stk::mesh::put_field(distribution_factors_field, *part);
+	stk::mesh::put_field_on_mesh(distribution_factors_field, *part, nullptr);
 
 	/// \todo IMPLEMENT truly handle fields... For this case we
 	/// are just defining a field for each transient field that is
@@ -191,8 +191,8 @@ namespace app {
 	  }
 	  stk::io::set_distribution_factor_field(*sideblock_part, *distribution_factors_field);
 	  int side_node_count = sideblock->topology()->number_nodes();
-	  stk::mesh::put_field(*distribution_factors_field,
-                               *sideblock_part, side_node_count);
+	  stk::mesh::put_field_on_mesh(*distribution_factors_field,
+                               *sideblock_part, side_node_count, nullptr);
 	}
 
 	/// \todo IMPLEMENT truly handle fields... For this case we

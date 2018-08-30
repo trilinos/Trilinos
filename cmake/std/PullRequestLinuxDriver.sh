@@ -20,8 +20,9 @@
 # and we get the correct behavior for PR testing.
 #
 
-export https_proxy=https://wwwproxy.sandia.gov:80
+export https_proxy=http://wwwproxy.sandia.gov:80
 export http_proxy=http://wwwproxy.sandia.gov:80
+no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 whoami
 which -a env
@@ -251,7 +252,7 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=22 \
+  -DPARALLEL_LEVEL=18 \
   -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \

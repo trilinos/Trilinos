@@ -1,7 +1,6 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
-#include <ext/alloc_traits.h>
 #include <gtest/gtest.h>                   // for AssertHelper, EXPECT_EQ, etc
 #include <unistd.h>                        // for unlink
 #include <ostream>                         // for operator<<
