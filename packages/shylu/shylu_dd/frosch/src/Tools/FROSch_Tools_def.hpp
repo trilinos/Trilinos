@@ -420,10 +420,11 @@ namespace FROSch {
                 }
             }
         } else if (dofOrdering == 1) {
+            GO numGlobalIDs = map->getMaxAllGlobalIndex()+1;
             for (unsigned i=0; i<nodes.size(); i++) {
                 nodes[i] = map->getGlobalElement(i);
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    dofs[j][i] = nodes[i]+j*(map->getMaxAllGlobalIndex()+1)/dofsPerNode;
+                    dofs[j][i] = nodes[i]+j*numGlobalIDs/dofsPerNode;
                 }
             }
         } else {

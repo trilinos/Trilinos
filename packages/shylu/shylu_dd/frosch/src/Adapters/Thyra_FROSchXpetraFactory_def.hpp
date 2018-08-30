@@ -120,7 +120,18 @@ namespace Thyra {
             RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*paramList);
         }
         
-        TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,Coord);
+        DofOrdering dofOrdering; // AH 08/29/2018: This should be BlockWise
+        if (!paramList->get("DofOrdering","NodeWise").compare("NodeWise")) {
+            dofOrdering = NodeWise;
+        } else if (!paramList->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+            dofOrdering = DimensionWise;
+        } else if (!paramList->get("DofOrdering","NodeWise").compare("Custom")) {
+            dofOrdering = Custom;
+        } else {
+            FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
+        }
+        
+        TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),dofOrdering,Coord);
         
 //        if(Coord.get()!=NULL && RepeatedMap.get()!=NULL){
 //            TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,Coord);

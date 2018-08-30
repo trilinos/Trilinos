@@ -153,3 +153,7 @@ rsync.*
 # Eclipse IDE
 .project
 .settings/
+
+#my
+installed/
+build/
