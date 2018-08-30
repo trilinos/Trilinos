@@ -24,6 +24,7 @@ ENDIF()
 
 APPEND_SET(SOURCES
   Aggregates.cpp
+  AggregateQualityEstimateFactory.cpp
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
