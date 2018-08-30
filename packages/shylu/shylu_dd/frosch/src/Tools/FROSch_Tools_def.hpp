@@ -420,10 +420,11 @@ namespace FROSch {
                 }
             }
         } else if (dofOrdering == 1) {
+            GO numGlobalIDs = map->getMaxAllGlobalIndex()+1;
             for (unsigned i=0; i<nodes.size(); i++) {
                 nodes[i] = map->getGlobalElement(i);
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    dofs[j][i] = nodes[i]+j*(map->getMaxAllGlobalIndex()+1)/dofsPerNode;
+                    dofs[j][i] = nodes[i]+j*numGlobalIDs/dofsPerNode;
                 }
             }
         } else {
@@ -808,13 +809,13 @@ namespace FROSch {
     }
     
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList){
+Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList, std::string nameMap){
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repMap = Teuchos::null;
-        if(paramList.isParameter("RepeatedMap") == false){
+        if(paramList.isParameter(nameMap) == false){
             return repMap;
         }
-        if(paramList.isType<decltype(repMap)>("RepeatedMap")){
-            repMap = paramList.get<decltype(repMap)>("RepeatedMap");
+        if(paramList.isType<decltype(repMap)>(nameMap)){
+            repMap = paramList.get<decltype(repMap)>(nameMap);
         }else{
             std::cerr<<"Wrong Type of Map\n";
         }

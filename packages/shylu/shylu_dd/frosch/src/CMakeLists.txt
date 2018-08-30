@@ -108,13 +108,14 @@ APPEND_SET(HEADERS
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
-  adapters/FROSch_XpetraOperator_decl.hpp
-  adapters/stratimikos_FROSchXpetra.hpp
-  adapters/Thyra_FROSchLinearOp_decl.hpp
-  adapters/Thyra_FROSchLinearOp_def.hpp
-  adapters/Thyra_FROSchXpetraFactory_decl.hpp
-  adapters/Thyra_FROSchXpetraFactory_def.hpp
-
+  Adapters/FROSch_XpetraOperator_decl.hpp
+  Adapters/Stratimikos_FROSchXpetra.hpp
+  Adapters/Thyra_FROSchLinearOp_decl.hpp
+  Adapters/Thyra_FROSchLinearOp_def.hpp
+  Adapters/Thyra_FROSchXpetraFactory_decl.hpp
+  Adapters/Thyra_FROSchXpetraFactory_def.hpp
+  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_decl.hpp
+  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp
 )
 
 # Set sources

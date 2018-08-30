@@ -1,5 +1,5 @@
 #ifndef THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
-#define THYRA_FROSCH_XPETRA_DEF_HPP
+#define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchXpetraFactory_decl.hpp"
 
@@ -8,7 +8,6 @@
 
 
 #include <FROSch_Tools_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
 
 
 namespace Thyra {
@@ -110,26 +109,40 @@ namespace Thyra {
         RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
         Comm->barrier();
         
-        Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coord = Teuchos::null;
+        Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
         
         if(paramList->isParameter("Coordinates")){
-            coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList);
-            
-            
+            Coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList);
         }
         
         if(paramList->isParameter("RepeatedMap")){
-            
-            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*
-                                                                                                       paramList);
+            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*paramList);
         }
         
-        if(coord.get()!=NULL && RepeatedMap.get()!=NULL){
-            TwoLevelPrec->initialize(paramList->get("Dimension",1),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,coord);
-        }else{
-            TwoLevelPrec->initialize();
+        DofOrdering dofOrdering; // AH 08/29/2018: This should be BlockWise
+        if (!paramList->get("DofOrdering","NodeWise").compare("NodeWise")) {
+            dofOrdering = NodeWise;
+        } else if (!paramList->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+            dofOrdering = DimensionWise;
+        } else if (!paramList->get("DofOrdering","NodeWise").compare("Custom")) {
+            dofOrdering = Custom;
+        } else {
+            FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
         }
+        
+        TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),dofOrdering,Coord);
+        
+//        if(Coord.get()!=NULL && RepeatedMap.get()!=NULL){
+//            TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,Coord);
+//            std::cout << "111111111111111111111111\n";
+//        } else if (RepeatedMap.get()!=NULL) {
+//            TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise);
+//            std::cout << "222222222222222222222222\n";
+//        } else {
+//            TwoLevelPrec->initialize();
+//            std::cout << "333333333333333333333333\n";
+//        }
         
         TwoLevelPrec->compute();
         //-----------------------------------------------

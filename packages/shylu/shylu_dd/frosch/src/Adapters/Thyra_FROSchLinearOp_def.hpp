@@ -166,7 +166,7 @@ namespace Thyra {
         if(this->bIsEpetra_){
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
             const int numCols = XY_domain->dim();
-        
+
             Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DomainM = this->xpetraOperator_->getDomainMap();
         
             Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >RangeM = this->xpetraOperator_->getRangeMap();

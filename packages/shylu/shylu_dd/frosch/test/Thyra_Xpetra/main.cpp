@@ -44,7 +44,7 @@
 
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "stratimikos_FROSchXpetra.hpp"
+#include "Stratimikos_FROSchXpetra.hpp"
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
@@ -156,10 +156,8 @@ int main(int argc, char *argv[])
             
             RCP<Map<LO,GO,NO> > UniqueMap;
             RCP<Matrix<SC,LO,GO,NO> > K;
-            DofOrdering Ord;
             
             if (DOFOrdering == 0) {
-                Ord = NodeWise;
                 Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
                 for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
                     for (LO j=0; j<DofsPerNode; j++) {
@@ -186,7 +184,6 @@ int main(int argc, char *argv[])
                 }
                 K->fillComplete();
             } else if (DOFOrdering == 1) {
-                Ord = DimensionWise;
                 Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
                 for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
                     for (LO j=0; j<DofsPerNode; j++) {
@@ -251,7 +248,7 @@ int main(int argc, char *argv[])
            // sublist(plList,"TwoLevelPreconditioner")->set("RepeatedMap",RepMapX);
 
             Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-            Stratimikos::enableXpetraFROSch<LO,GO,NO>(linearSolverBuilder);
+            Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
             
             linearSolverBuilder.setParameterList(parameterList);
 

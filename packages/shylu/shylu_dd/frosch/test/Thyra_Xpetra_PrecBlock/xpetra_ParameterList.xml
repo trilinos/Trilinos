@@ -1,23 +1,7 @@
 <ParameterList name="Thyra Example">
-  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
-  <ParameterList name="Linear Solver Types">
-    <ParameterList name="Belos">
-      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
-      <ParameterList name="Solver Types">
-        <ParameterList name="Block GMRES">
-          <Parameter name="PreconditionerPosition" type="string" value="left"/>
-          <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Convergence Tolerance" type="double" value="1e-4"/>
-          <Parameter name="Maximum Iterations" type="int" value="100"/>
-          <Parameter name="Output Frequency" type="int" value="1"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
+  <Parameter name="Preconditioner Type" type="string" value="FROSchBlock"/>
   <ParameterList name="Preconditioner Types">
-      <ParameterList name="FROSch">
+      <ParameterList name="FROSchBlock">
           <Parameter name="Dimension"                                         type="int"      value="2"/>
           <Parameter name="DofsPerNode"                                       type="int"      value="1"/>
           <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
@@ -71,11 +55,27 @@
                           <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
                       </ParameterList>
                   </ParameterList>
+                  <ParameterList name="2">
+                      <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                      <Parameter name="Rotations"                             type="bool"     value="true"/>
+                      <ParameterList name="Custom">
+                          <Parameter name="Vertices: translations"            type="bool"     value="true"/>
+                          <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
+                          <Parameter name="ShortEdges: rotations"             type="bool"     value="true"/>
+                          <Parameter name="StraightEdges: translations"       type="bool"     value="true"/>
+                          <Parameter name="StraightEdges: rotations"          type="bool"     value="true"/>
+                          <Parameter name="Edges: translations"               type="bool"     value="true"/>
+                          <Parameter name="Edges: rotations"                  type="bool"     value="true"/>
+                          <Parameter name="Faces: translations"               type="bool"     value="true"/>
+                          <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
+                      </ParameterList>
+                  </ParameterList>
+
               </ParameterList>
               
               <ParameterList name="ExtensionSolver">
-                  <Parameter name="SolverType"                                type="string"   value="Amesos"/>
-                  <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                  <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                  <Parameter name="Solver"                                    type="string"   value="KLU"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                       <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>

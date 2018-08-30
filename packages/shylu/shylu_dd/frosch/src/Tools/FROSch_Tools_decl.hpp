@@ -157,7 +157,7 @@ namespace FROSch {
     
     
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList);
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList, std::string nameMap="RepeatedMap");
     
 
     template <class LO,class GO,class NO>
