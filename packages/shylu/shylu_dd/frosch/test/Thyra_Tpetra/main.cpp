@@ -94,6 +94,9 @@
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchXpetraFactory_def.hpp"
+#include <MueLu_Utilities_def.hpp>
+#include <MueLu_Utilities_decl.hpp>
+
 
 
 typedef unsigned UN;
@@ -102,6 +105,8 @@ typedef int LO;
 typedef int GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
 typedef EpetraNode NO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType TpetraNode;
+typedef TpetraNode TO;
 
 using namespace std;
 using namespace Teuchos;
@@ -213,6 +218,20 @@ int main(int argc, char *argv[])
 			K->fillComplete();
 			//        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); K->describe(*fancy,Teuchos::VERB_EXTREME);
     
+            //RCP<Matrix<SC,LO,GO,TO> > TK = rcp_dynamic_cast<Matrix<SC,LO,GO,TO> >(K);
+            RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(K);
+            if (crsOp == Teuchos::null){
+                if (Comm->MyPID()==0) cout << "CRS Cast not working\n";
+                
+                }
+            const RCP<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(crsOp->getCrsMatrix());
+            if (tmp_ECrsMtx == Teuchos::null){
+                if (Comm->MyPID()==0) cout << "CRS Tpetra Cast not working\n";
+
+            }
+            RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > TMat = tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
+
+            //TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(TK));
 
 			RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
 			RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
@@ -220,10 +239,10 @@ int main(int argc, char *argv[])
 			xSolution->putScalar(0.0);
             xRightHandSide->putScalar(1.0);
             
-            Teuchos::RCP<Xpetra::CrsMatrix<SC, LO, GO, NO > > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,NO>(KEpetra));
-            Teuchos::RCP<CrsMatrixWrap<SC,LO,GO> > exAWrap = Teuchos::rcp(new CrsMatrixWrap<SC,LO,GO> (exA));
+            //Teuchos::RCP<Xpetra::CrsMatrix<SC, LO, GO, NO > > exA = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<int,TO>(K));
+            //Teuchos::RCP<CrsMatrixWrap<SC,LO,GO> > exAWrap = Teuchos::rcp(new CrsMatrixWrap<SC,LO,GO> (exA));
             
-            RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(exAWrap->getCrsMatrix());
+            RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp->getCrsMatrix());
             RCP<Thyra::MultiVectorBase<SC> >thyraX =
             Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
             RCP<const Thyra::MultiVectorBase<SC> >thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
