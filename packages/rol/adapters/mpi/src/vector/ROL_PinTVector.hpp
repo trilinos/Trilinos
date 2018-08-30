@@ -55,7 +55,6 @@
 
 #include "ROL_PinTCommunicators.hpp"
 #include "ROL_PinTVectorCommunication.hpp"
-#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 /** @ingroup la_group
     \class ROL::PinTVector
