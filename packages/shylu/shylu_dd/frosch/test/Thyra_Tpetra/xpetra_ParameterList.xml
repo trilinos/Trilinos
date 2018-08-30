@@ -31,7 +31,7 @@
           
           <ParameterList name="AlgebraicOverlappingOperator">
               <ParameterList name="Solver">
-                  <Parameter name="SolverType"                                type="string"   value="Amesos"/>
+                  <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
                   <Parameter name="Solver"                                    type="string"   value="Klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
@@ -74,7 +74,7 @@
               </ParameterList>
               
               <ParameterList name="ExtensionSolver">
-                  <Parameter name="SolverType"                                type="string"   value="Amesos"/>
+                  <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
                   <Parameter name="Solver"                                    type="string"   value="Klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
@@ -111,7 +111,7 @@
               </ParameterList>
               
               <ParameterList name="CoarseSolver">
-                  <Parameter name="SolverType"                                type="string"   value="Amesos"/>
+                  <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
                   <Parameter name="Solver"                                    type="string"   value="Klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
