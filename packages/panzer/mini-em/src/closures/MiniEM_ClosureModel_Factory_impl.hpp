@@ -134,7 +134,7 @@ buildClosureModels(const std::string& model_id,
           input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
           input.set("Vector A Name", "E_edge");
           input.set("Vector B Name", "E_edge");
-          input.set("Field Multiplier", "PERMITTIVITY");
+          input.set("Field Multiplier", "epsilon");
 
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
@@ -149,7 +149,7 @@ buildClosureModels(const std::string& model_id,
             input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
             input.set("Vector A Name", "B_face");
             input.set("Vector B Name", "B_face");
-            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
+            input.set("Field Multiplier", "1/mu");
 
             RCP< Evaluator<panzer::Traits> > e =
               rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
@@ -162,7 +162,7 @@ buildClosureModels(const std::string& model_id,
             valuesNames->push_back("B_face");
             input.set("Values Names",valuesNames);
             input.set("Data Layout",ir->dl_scalar);
-            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
+            input.set("Field Multiplier", "1/mu");
 
             RCP< Evaluator<panzer::Traits> > e =
               rcp(new panzer::Product<EvalT,panzer::Traits>(input));
@@ -188,6 +188,22 @@ buildClosureModels(const std::string& model_id,
 
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
+        {
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+          valuesNames->push_back("EM_ENERGY");
+          valuesNames->push_back("1/dt");
+          valuesNames->push_back("1/dt");
+
+          Teuchos::ParameterList input;
+          input.set("Product Name","EM_ENERGY/dt^2");
+          input.set("Values Names",valuesNames);
+          input.set("Data Layout",ir->dl_scalar);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::Product<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);
         }
  

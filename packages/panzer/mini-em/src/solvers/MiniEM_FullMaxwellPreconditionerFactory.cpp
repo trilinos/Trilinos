@@ -223,9 +223,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
            if (dump)
              writeOut("DiscreteGradient.mm",*T);
            describeMatrix("DiscreteGradient",*T,debug);
-           double dt = params.get<double>("dt");
-           double epsilon = params.get<double>("epsilon");
-           G = Teko::explicitMultiply(Q_E,Teko::scale(-dt/epsilon,T));
+           G = Teko::explicitMultiply(Q_E,Teko::scale(-1.0,T));
          } else {
            G = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Weak Gradient"));
          }
