@@ -93,7 +93,6 @@ int main(int argc, char *argv[])
             return 0;
         }
         
-        int N;
         MPI_Comm COMM;
         int color=0;
         //bool onFirstLevelComm=false;
@@ -199,7 +198,7 @@ int main(int argc, char *argv[])
             
             sublist(plList,"FROSchBlock")->set("RepeatedMap1",repeatedMapsVector[0]);
             sublist(plList,"FROSchBlock")->set("RepeatedMap2",repeatedMapsVector[1]);
-            sublist(plList,"FROSchBlock")->set("DofsPerNode1",Dimension);
+            sublist(plList,"FROSchBlock")->set("DofsPerNode1",(int)Dimension);
             sublist(plList,"FROSchBlock")->set("DofsPerNode2",1);
             sublist(plList,"FROSchBlock")->set("Ordering1",FROSch::NodeWise);
             sublist(plList,"FROSchBlock")->set("Ordering2",FROSch::NodeWise);

@@ -101,37 +101,39 @@ namespace Thyra {
         GOVecPtr blockMaxGID(nmbBlocks);
         DofOrderingVecPtr dofOrderingVec(nmbBlocks);
 
-
-//        MultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
-//        MultiVectorPtrVecPtr nodeListVec = Teuchos::null,
-//        MapPtrVecPtr2D dofsMapsVec = Teuchos::null,
-//        GOVecPtr2D dirichletBoundaryDofsVec = Teuchos::null
-
-        
+        GO offsetAllPrior = 0;
         for (UN i=0; i<nmbBlocks; i++) {
             
-            std::string stringIDBlock = std::to_string(i+1);
-            if(paramList->isParameter("RepeatedMap"+stringIDBlock)){
-                repeatedMapVec[i] = FROSch::ExtractRepeatedMapFromParameterList<LO,GO,NO>(*paramList);
+            std::string repeatedMapName = "RepeatedMap" + std::to_string(i+1);
+            if(paramList->isParameter(repeatedMapName)){
+                Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LO,GO,NO>(*paramList, repeatedMapName );
+                
+                Teuchos::ArrayView< const GO > 	nodeList = repeatedMap->getNodeElementList();
+                Teuchos::Array<GO> nodeListOffset(nodeList.size());
+                
+                for (unsigned i=0; i<nodeList.size(); i++) {
+                    nodeListOffset[i] = nodeList[i] + offsetAllPrior;
+                }
+                repeatedMapVec[i] = Xpetra::MapFactory<LO,GO,NO>::Build(repeatedMap->lib(),-1,nodeListOffset,0,comm);
+                offsetAllPrior = repeatedMapVec[i]->getMaxAllGlobalIndex()+1;
             }
             else{
 #ifdef FROSCH_ASSERT
-                FROSCH_ASSERT(false,"RepeatedMap" + stringIDBlock + " not found!");
+                FROSCH_ASSERT(false, repeatedMapName + " not found!");
 #endif
             }
-#ifdef FROSCH_ASSERT
-            FROSCH_ASSERT(repeatedMapVec[i]!=Teuchos::null,"RepeatedMap" + stringIDBlock + " not loaded correctly!");
-#endif
 
-            GO offset = (i>0) ? blockMaxGID[i-1] : 0;
-            blockMaxGID[i] = offset + repeatedMapVec[i]->getMaxAllGlobalIndex();
-            dofsPerNodeVec[i] = paramList->get("DofsPerNode" + stringIDBlock,1);
-            dofOrderingVec[i] = paramList->get("Ordering" + stringIDBlock, FROSch::NodeWise);
+#ifdef FROSCH_ASSERT
+            FROSCH_ASSERT(repeatedMapVec[i]!=Teuchos::null,repeatedMapName + " not loaded correctly!");
+#endif
+            Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+            blockMaxGID[i] = repeatedMapVec[i]->getMaxAllGlobalIndex();
+            dofsPerNodeVec[i] = paramList->get("DofsPerNode" + std::to_string(i+1),1);
+            dofOrderingVec[i] = paramList->get("Ordering" + std::to_string(i+1), FROSch::NodeWise);
             
         }
 
         if (comm->getRank()==0) std::cout << "INITIALIZE FROSch...";
-
         TwoLevelPrec->initialize(paramList->get("Dimension",2), dofsPerNodeVec, dofOrderingVec,blockMaxGID, paramList->get("Overlap",1), repeatedMapVec);
         
         TwoLevelPrec->compute();

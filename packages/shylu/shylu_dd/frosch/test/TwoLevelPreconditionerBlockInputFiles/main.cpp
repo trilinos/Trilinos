@@ -173,8 +173,8 @@ int main(int argc, char *argv[])
 
             if (Comm->MyPID()==0) cout << "INITIALIZE...";
             SchwarzOperator<SC,LO,GO,NO>::GOVecPtr blockMaxGID(2);
-            blockMaxGID[0] = repeatedMapVelo->getMaxAllGlobalIndex();
-            blockMaxGID[1] = blockMaxGID[0]+repeatedMapPress->getMaxAllGlobalIndex();
+            blockMaxGID[0] = repeatedMapVelo->getMaxAllGlobalIndex(); //CH: 30.08.18 fix offet, not needed anymore? Only needed for setup without repeated Maps
+            blockMaxGID[1] = repeatedMapPress->getMaxAllGlobalIndex();
             
             Teuchos::ArrayRCP<unsigned> dofsPerNodeVec(2);
             dofsPerNodeVec[0] = 2;
