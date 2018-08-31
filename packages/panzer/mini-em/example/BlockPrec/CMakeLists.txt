@@ -102,13 +102,13 @@ IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
     NUM_MPI_PROCS 1
     )
 
-  # TRIBITS_ADD_TEST(
-  #   BlockPrec
-  #   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
-  #   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
-  #   COMM mpi
-  #   NUM_MPI_PROCS 4
-  #   )
+  TRIBITS_ADD_TEST(
+    BlockPrec
+    NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    )
 
 ENDIF()
 
