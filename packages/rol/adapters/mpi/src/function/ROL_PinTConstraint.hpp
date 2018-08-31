@@ -124,6 +124,9 @@ private:
   Real globalScale_;
   std::vector<double> timePerLevel_; // given a MGRIT solve, what is the runtime for each level
 
+  std::vector<Ptr<const PinTCommunicators>> communicators_;
+  Ptr<const PinTVectorCommunication<Real>> vectorComm_; // object for sending whole vectors between processors
+
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
   {
@@ -1003,229 +1006,14 @@ public:
      }
    }
  
-   void blockJacobiSweep(PinTVector<Real>       & pint_pv,
-                         const PinTVector<Real> & pint_rhs,
-                         const PinTVector<Real> & pint_u,
-                         const PinTVector<Real> & pint_z,
-                         Real &tol,
-                         int level)
-   {
-     pint_rhs.boundaryExchange();
- 
-     Ptr<Vector<Real>> scratch = pint_rhs.clone();
-     PinTVector<Real> pint_scratch  = dynamic_cast<const PinTVector<Real>&>(*scratch);
-
-     // do block Jacobi smoothing
-     invertTimeStepJacobian(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
-     // applyInverseJacobian_1_leveled(pint_scratch, pint_rhs, pint_u,pint_z,tol,level);
-
-     invertAdjointTimeStepJacobian(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
-     // applyInverseAdjointJacobian_1_leveled(pint_pv, pint_scratch, pint_u,pint_z,tol,level);
-
-     pint_pv.scale(-1.0);
-
-     int timeRank = pint_u.communicators().getTimeRank();
-     if(false)
-     {
-       std::stringstream ss;
-       ss << timeRank << " AFTER SOLVE = " << std::endl;
-       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
-         ss << "   " << timeRank << " - " << i << ": "<< pint_pv.getVectorPtr(i)->norm()  << std::endl;
-       std::cout << ss.str() << std::endl;; 
-     }
-   }
- 
-   void schurComplementAction(Vector<Real>       & sc_v,
-                              const Vector<Real> & v,
-                              const Vector<Real> & u,
-                              const Vector<Real> & z,
-                              Real &tol,
-                              int level)
-   {
-     auto scratch_u = u.clone(); 
-     auto scratch_z = z.clone(); 
-
-     scratch_u->zero();
-     scratch_z->zero();
-     sc_v.zero();
- 
-     // do boundary exchange
-     {
-       const PinTVector<Real>       & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
-       pint_v.boundaryExchange();
-     }
- 
-     // compute J_1 * J_1^T
-     applyAdjointJacobian_1_leveled(*scratch_u,v,u,z,tol,level)  ;
-     applyJacobian_1_leveled(sc_v,*scratch_u,u,z,tol,level);
- 
-     // compute J_2 * J_2^T
-     applyAdjointJacobian_2_leveled(*scratch_z,v,u,z,tol,level);
-     applyJacobian_2_leveled(*scratch_u,*scratch_z,u,z,tol,level);
-     
-     // compute J_1 * J_1^T + J_2 * J_2^T
-     // sc_v.axpy(1.0,*scratch_u);
-     sc_v.scale(-1.0);
-   }
- 
-   virtual void weightedJacobiRelax(PinTVector<Real> &pint_pv,
-                                    const PinTVector<Real> & pint_v,
-                                    const PinTVector<Real> & pint_u,
-                                    const PinTVector<Real> & pint_z,
-                                    Real omega,
-                                    int numSweeps,
-                                    Real &tol,
-                                    int level) 
-   {
-     auto residual = pint_v.clone();
-     auto dx = pint_pv.clone();
-
-     int timeRank = pint_u.communicators().getTimeRank();
-     if(false)
-     {
-       std::stringstream ss;
-       ss << timeRank << " INITIAL = " << std::endl;
-       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
-         ss << "   " << timeRank << " - " << i << ": "<< pint_pv.getVectorPtr(i)->norm()  << std::endl;
-       std::cout << ss.str() << std::endl;; 
-     }
-     if(false)
-     {
-       std::stringstream ss;
-       ss << timeRank << " RHS = " << std::endl;
-       for(int i=-1;i<pint_u.numOwnedSteps();i++) 
-         ss << "   " << timeRank << " - " << i << ": "<< pint_v.getVectorPtr(i)->norm()  << std::endl;
-       std::cout << ss.str() << std::endl;; 
-     }
-     
-
-     // force intial guess to zero
-     dx->scale(0.0);
-     residual->set(pint_v);           
- 
-     PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
-     PinTVector<Real> & pint_dx       = dynamic_cast<PinTVector<Real>&>(*dx);
-
-     for(int s=0;s<numSweeps;s++) {
-
-       // update the residual
-       schurComplementAction(pint_residual,pint_pv,pint_u,pint_z,tol,level); // A*x
- 
-       pint_residual.scale(-1.0);                            // -A*x
-       pint_residual.plus(pint_v);                           // b - A*x
-
-       // compute and apply the correction
-       blockJacobiSweep(pint_dx,pint_residual,pint_u,pint_z,tol,level);
- 
-       pint_pv.axpy(omega,pint_dx);
-     }
-   }
-
-   virtual void multigridInTime(Vector<Real> & pv,
-                                const Vector<Real> & v,
-                                const Vector<Real> & u,
-                                const Vector<Real> & z,
-                                Real omega,
-                                int numSweeps,
-                                Real &tol,
-                                int level) 
-   {
-     PinTVector<Real> & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
-     const PinTVector<Real> & pint_v = dynamic_cast<const PinTVector<Real>&>(v);
-     const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
-     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
-
-     multigridInTime(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
-   }
-
-   virtual void multigridInTime(PinTVector<Real> &pint_x,
-                                const PinTVector<Real> & pint_b,
-                                const PinTVector<Real> & pint_u,
-                                const PinTVector<Real> & pint_z,
-                                Real omega,
-                                int numSweeps,
-                                Real &tol,
-                                int level) 
-   {
-     // sanity check the input (preconditions)
-     assert(multigridEnabled());
-     assert(maxLevels_>=0);
-
-     auto residual = pint_b.clone();
-     auto correction = pint_x.clone();
-     PinTVector<Real> & pint_residual = dynamic_cast<PinTVector<Real>&>(*residual);
-
-     pint_b.boundaryExchange();
-     pint_u.boundaryExchange();
-     pint_z.boundaryExchange();
-
-     if(level==maxLevels_) {
-       // compute fine residual
-       schurComplementAction(pint_residual,pint_x,pint_u,pint_z,tol,level); // A*x
- 
-       pint_residual.scale(-1.0);                       // -A*x 
-       pint_residual.plus(pint_b);                      // b - A*x
-
-       // base case !!!
-       auto scratch = pint_x.clone();
-       scratch->zero();
-     
-       // compute -J_1^-T * J_1^-1
-       applyInverseJacobian_1_leveled(*scratch,pint_residual,pint_u,pint_z,tol,level);
-       applyInverseAdjointJacobian_1_leveled(*correction,*scratch,pint_u,pint_z,tol,level);
-
-       pint_x.axpy(-1.0,*correction);
-
-       return;
-     }
-
-     // pre-smooth
-     /////////////////////////////////////////////////////////////////////////////////////
-     weightedJacobiRelax(pint_x,pint_b,pint_u,pint_z,omega,numSweeps,tol,level);
-
-     // compute fine residual
-     schurComplementAction(pint_residual,pint_x,pint_u,pint_z,tol,level); // A*x
- 
-     pint_residual.scale(-1.0);                       // -A*x 
-     pint_residual.plus(pint_b);                      // b - A*x
-
-     int timeRank = pint_residual.communicators().getTimeRank();
-
-     // coarse solve
-     /////////////////////////////////////////////////////////////////////////////////////
-     if(true)
-     {
-       auto crs_u          = allocateSimVector(pint_x,level+1);
-       auto crs_z          = allocateOptVector(pint_z,level+1);
-       auto crs_residual   = allocateSimVector(pint_x,level+1);
-       auto crs_correction = allocateSimVector(pint_x,level+1);
-
-       crs_correction->zero();
-
-       restrictSimVector(pint_u,*crs_u);               // restrict the control to the coarse level
-       restrictOptVector(pint_z,*crs_z);               // restrict the state to the coarse level
-       restrictSimVector(pint_residual,*crs_residual);  
-
-       multigridInTime(*crs_correction,*crs_residual,*crs_u,*crs_z,omega,numSweeps,tol,level+1);
-
-       prolongSimVector(*crs_correction,*correction);  // prolongate the correction 
-
-       pint_x.plus(*correction);                          // x+c
-     }
-
-     // post-smooth
-     /////////////////////////////////////////////////////////////////////////////////////
-     
-     weightedJacobiRelax(pint_x,pint_b,pint_u,pint_z,omega,numSweeps,tol,level);
-   }
- 
- 
    virtual void applyPreconditioner(Vector<Real> &pv,
                                     const Vector<Real> &v,
                                     const Vector<Real> &x,
                                     const Vector<Real> &g,
                                     Real &tol) 
    {
+     assert(false);
+/*
      const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
      auto u = xs.get_1(); // sim
      auto z = xs.get_2(); // opt
@@ -1267,10 +1055,42 @@ public:
        // unreachable :(
        pv.set(v.dual());
      } 
+*/
    }
 
    // restriction and prolongation functions
    ///////////////////////////////////////////////////////////////////////////////////////////
+   
+   void buildLevelCommunicators(const Vector<Real> & level_0_ref)
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+
+     // we allocate the communicators with null
+     communicators_.resize(maxLevels_);
+     vectorComm_ = pint_ref.vectorCommunicationPtr();
+     communicators_[0] = pint_ref.communicatorsPtr();
+
+     buildLevelCommunicators(1);
+   }
+
+   void buildLevelCommunicators(int level)
+   {
+     // protect sanity
+     assert(level>0);
+
+     // don't go to deep (base case)
+     if(level>=maxLevels_)
+       return;
+
+     // this processor is no longer participating (base case)
+     if(ROL::is_nullPtr(communicators_[level-1]))
+       return;
+
+     // this will subdivide the communicators by two
+     communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
+
+     buildLevelCommunicators(level+1);
+   }
    
    /**
     * \brief Allocate a simulation space vector at a particular multigrid level.
@@ -1344,10 +1164,10 @@ public:
 
        out.zero();
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
+       out.axpy(2.0,*pint_input.getVectorPtr(2*k+1)); 
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+2)); 
        
-       out.scale(1.0/3.0);
+       out.scale(1.0/4.0);
      }
 
      // handle the end point on this processor
@@ -1359,7 +1179,7 @@ public:
        ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
        out.zero();
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
+       out.axpy(2.0,*pint_input.getVectorPtr(2*k+1)); 
      
        pint_output.getRemoteBufferPtr(-1)->set(*pint_input.getVectorPtr(0));
        pint_output.boundaryExchangeSumInto();   // this adds the X_0^1 into the previous rank
@@ -1369,12 +1189,12 @@ public:
        int timeSize = pint_input.communicators().getTimeSize();
 
        if(timeRank+1==timeSize)
-         out.scale(1.0/2.0);
-       else
          out.scale(1.0/3.0);
+       else
+         out.scale(1.0/4.0);
      }
    }
-   
+
    /**
     * \brief Restrict a control space vector
     *
