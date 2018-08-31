@@ -61,7 +61,8 @@ namespace ROL {
  */
 class PinTCommunicators {
 public:
-  PinTCommunicators(MPI_Comm parent,int spatialProcs)
+  PinTCommunicators(MPI_Comm parent,int spatialProcs, bool freeParent=false)
+    : freeParent_(freeParent)
   { 
     parentComm_ = parent; 
 
@@ -90,7 +91,9 @@ public:
   // cleanup
   ~PinTCommunicators()
   { MPI_Comm_free(&spaceComm_);  
-    MPI_Comm_free(&timeComm_); }
+    MPI_Comm_free(&timeComm_); 
+    if(freeParent_)
+      MPI_Comm_free(&parentComm_); }
 
    MPI_Comm getParentCommunicator() const { return parentComm_; }
    MPI_Comm getSpaceCommunicator() const { return spaceComm_; }
@@ -102,8 +105,39 @@ public:
    int getSpaceRank() const { return spaceRank_; }
    int getSpaceSize() const { return spaceSize_; }
 
+   // support for coarsening
+   ROL::Ptr<PinTCommunicators> buildCoarseCommunicators() const
+   {
+      // this would be easy to generalize by just adjusting the subdivide
+      // variable
+
+      int subdivide = 2;
+
+      int myGlobalRank = -1;
+      int globalProcs = -1;
+      MPI_Comm_size(parentComm_, &globalProcs);
+      MPI_Comm_rank(parentComm_, &myGlobalRank);
+
+      int halfCount = globalProcs / subdivide;
+      
+      // split the communicator in half, using only the lower alf
+      MPI_Comm halfComm;
+      if(myGlobalRank<halfCount) {
+        MPI_Comm_split(parentComm_,0,myGlobalRank,&halfComm); 
+      }
+      else {
+        MPI_Comm_split(parentComm_,MPI_UNDEFINED,myGlobalRank,&halfComm); 
+        assert(MPI_COMM_NULL==halfComm);
+        return ROL::nullPtr;
+      }
+
+      // build a new pint communicator that works on half the parent processors
+      return ROL::makePtr<PinTCommunicators>(halfComm,getSpaceSize(),true);
+   }
+
 private:
 
+  bool freeParent_;    // for when we coarsen
   MPI_Comm parentComm_;
 
   MPI_Comm spaceComm_;
