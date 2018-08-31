@@ -111,7 +111,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   waterman_mpi
   NAME waterman_mpi_without_comm_duplicate
-  ARGS "X"
+  ARGS "N"
   COMM mpi
   PASS_REGULAR_EXPRESSION "PASS"
 )
@@ -141,7 +141,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   waterman_teuchoscomm
   NAME waterman_teuchoscomm_without_comm_duplicate
-  ARGS "X"
+  ARGS "N"
   COMM mpi 
   PASS_REGULAR_EXPRESSION "PASS"
 )
