@@ -41,19 +41,19 @@ namespace Thyra {
         typedef Xpetra::CrsMatrix<SC,LO,GO,NO> XpCrsMat;
         typedef Xpetra::Matrix<SC,LO,GO,NO> XpMat;
         typedef Thyra::LinearOpBase<SC> ThyLinOpBase;
-        cout << "test1"<< endl;
+
                 
         //PreCheck
         TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
         //TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
         TEUCHOS_ASSERT(prec);
-                cout << "test2"<< endl;
+
         RCP<ParameterList> paramList(new ParameterList(*paramList_)); // AH: Muessen wir diese Kopie machen? Irgendwie wäre es doch besser, wenn man die nicht kopieren müsste, oder?
 
         // Retrieve wrapped concrete Xpetra matrix from FwdOp
         const RCP<const ThyLinOpBase> fwdOp = fwdOpSrc->getOp();
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
-                cout << "test3"<< endl;
+
         // Check whether it is Epetra/Tpetra
         bool bIsEpetra  = XpThyUtils::isEpetra(fwdOp);
         bool bIsTpetra  = XpThyUtils::isTpetra(fwdOp);
@@ -61,7 +61,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true  && bIsTpetra == true));
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == bIsTpetra) && bIsBlocked == false);
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
-        cout << "test4"<< endl;
+
         RCP<XpMat> A = Teuchos::null;
         RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
@@ -69,7 +69,7 @@ namespace Thyra {
         // FROSCH needs a non-const object as input
         RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
-        cout << "test5"<< endl;
+
         // wrap the forward operator as an Xpetra::Matrix that FROSch can work with
         A = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(xpetraFwdCrsMatNonConst));
         
@@ -78,14 +78,14 @@ namespace Thyra {
         // Retrieve concrete preconditioner object--->Here Mem Leak?
         const Teuchos::Ptr<DefaultPreconditioner<SC> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<SC> *>(prec));
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
-        cout << "test6"<< endl;
+
         // extract preconditioner operator
         RCP<ThyLinOpBase> thyra_precOp = Teuchos::null;
         thyra_precOp = rcp_dynamic_cast<Thyra::LinearOpBase<SC> >(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
         
         //-------Build New Two Level Prec--------------
         RCP<FROSch::TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TwoLevelPrec (new FROSch::TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList));
-        cout << "test7"<< endl;
+
         RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
         
 //        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > coord = Teuchos::null;
@@ -100,7 +100,7 @@ namespace Thyra {
         UNVecPtr dofsPerNodeVec(nmbBlocks);
         GOVecPtr blockMaxGID(nmbBlocks);
         DofOrderingVecPtr dofOrderingVec(nmbBlocks);
-        cout << "test8"<< endl;
+
 
 //        MultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
 //        MultiVectorPtrVecPtr nodeListVec = Teuchos::null,
