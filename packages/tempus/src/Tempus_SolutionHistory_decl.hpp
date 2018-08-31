@@ -9,11 +9,13 @@
 #ifndef Tempus_SolutionHistory_decl_hpp
 #define Tempus_SolutionHistory_decl_hpp
 
-// Teuchos
+
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-// Tempus
+
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_Interpolator.hpp"
