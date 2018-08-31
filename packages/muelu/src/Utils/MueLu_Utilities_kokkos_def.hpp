@@ -600,7 +600,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > X) {
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  RealValuedToScalarMultiVector(RCP<RealValuedMultiVector > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
@@ -623,17 +624,10 @@ namespace MueLu {
     return Xscalar;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > X) {
-    return MueLu::RealValuedToScalarMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X);
-  }
-
   template <class Node>
   RCP<Xpetra::MultiVector<double,int,int,Node> >
   Utilities_kokkos<double,int,int,Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,int,int,Node> > X) {
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<Magnitude,int,int,Node> > X) {
     return X;
   }
 
