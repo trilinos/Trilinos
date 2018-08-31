@@ -1061,6 +1061,9 @@ public:
    // restriction and prolongation functions
    ///////////////////////////////////////////////////////////////////////////////////////////
    
+   ROL::Ptr<const PinTCommunicators> getLevelCommunicators(int level) const
+   { return communicators_[level]; }
+   
    void buildLevelCommunicators(const Vector<Real> & level_0_ref)
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);

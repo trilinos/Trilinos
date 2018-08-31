@@ -66,6 +66,7 @@ void run_test_getTimeStampsByLevel(MPI_Comm comm, const ROL::Ptr<std::ostream> &
 void run_test_allocateVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main( int argc, char* argv[] ) 
 {
@@ -99,6 +100,10 @@ int main( int argc, char* argv[] )
     (*outStream) << "prolongVectors" << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_prolongVectors(MPI_COMM_WORLD, outStream);
+
+    (*outStream) << "buildCommunicators" << std::endl;
+    (*outStream) << "**************************************************" << std::endl;
+    run_test_buildCommunicators(MPI_COMM_WORLD, outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
@@ -645,6 +650,90 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
           throw std::logic_error(ss.str());
         }
       }
+    }
+  }
+}
+
+void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
+{
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  using RealT             = double;
+  using size_type         = std::vector<RealT>::size_type;
+
+  auto & out = *outStream;
+  std::stringstream ss;  // for errors
+
+  int numRanks = -1;
+  int myRank = -1;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  int local_Nt = 16;
+  ConstraintData cd = buildPinTConstraint(local_Nt,comm,outStream);
+  Ptr<ROL::PinTConstraint<RealT>> pint_constraint = cd.constraint;
+  pint_constraint->applyMultigrid(3);
+  pint_constraint->buildLevelCommunicators(*cd.state);
+
+  auto comm_0 = pint_constraint->getLevelCommunicators(0);
+  auto comm_1 = pint_constraint->getLevelCommunicators(1);
+  auto comm_2 = pint_constraint->getLevelCommunicators(2);
+
+  if(myRank==0) {
+    if(ROL::is_nullPtr(comm_0) || 
+       ROL::is_nullPtr(comm_1) || 
+       ROL::is_nullPtr(comm_2)) {
+      ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+  else if(myRank==1) {
+    if( ROL::is_nullPtr(comm_0) || 
+        ROL::is_nullPtr(comm_1) || 
+       !ROL::is_nullPtr(comm_2)) {
+      ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+  else if(myRank==2) {
+    if( ROL::is_nullPtr(comm_0) || 
+       !ROL::is_nullPtr(comm_1) || 
+       !ROL::is_nullPtr(comm_2)) {
+      ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+  else if(myRank==3) {
+    if( ROL::is_nullPtr(comm_0) || 
+       !ROL::is_nullPtr(comm_1) || 
+       !ROL::is_nullPtr(comm_2)) {
+      ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  // check the communicators are build correctly
+  if(not ROL::is_nullPtr(comm_0)) {
+    if(comm_0->getTimeSize()!=4 || comm_0->getTimeRank()!=myRank) {
+      ss << "Rank " << myRank << " has wrong level 0 communicator." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  if(not ROL::is_nullPtr(comm_1)) {
+    if(comm_1->getTimeSize()!=2 || comm_1->getTimeRank()!=myRank) {
+      ss << "Rank " << myRank << " has wrong level 1 communicator." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  if(not ROL::is_nullPtr(comm_2)) {
+    if(comm_2->getTimeSize()!=1 || comm_2->getTimeRank()!=myRank) {
+      ss << "Rank " << myRank << " has wrong level 2 communicator." << std::endl;
+      throw std::logic_error(ss.str());
     }
   }
 }
