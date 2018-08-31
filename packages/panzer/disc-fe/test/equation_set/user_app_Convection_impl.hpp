@@ -87,19 +87,6 @@ Convection(
 template<typename EvalT, typename Traits>
 void
 Convection<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(conv,fm);
-  this->utils.setFieldData(a,fm);
-  this->utils.setFieldData(grad_x,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-Convection<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
