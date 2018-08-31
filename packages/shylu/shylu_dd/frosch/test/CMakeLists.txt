@@ -9,6 +9,6 @@ ADD_SUBDIRECTORIES(
     TwoLevelPreconditionerInputFiles
     Thyra_Xpetra
     Thyra_Xpetra_Prec
-    Thyra_Xpetra_PrecBlock
-    TwoLevelPreconditionerBlockInputFiles
+# Thyra_Xpetra_PrecBlock
+#   TwoLevelPreconditionerBlockInputFiles
 )
