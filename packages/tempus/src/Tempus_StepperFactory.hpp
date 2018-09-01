@@ -115,6 +115,7 @@ private:
     else if (
       stepperType == "RK Backward Euler" ||
       stepperType == "IRK 1 Stage Theta Method" ||
+      stepperType == "Implicit Midpoint" ||
       stepperType == "SDIRK 1 Stage 1st order" ||
       stepperType == "SDIRK 2 Stage 2nd order" ||
       stepperType == "SDIRK 2 Stage 3rd order" ||
