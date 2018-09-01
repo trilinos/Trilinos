@@ -129,7 +129,6 @@ public:
     const Scalar errorRel = metaData->getErrorRel();
     int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
-    RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
     bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
 
@@ -150,7 +149,7 @@ public:
     Scalar eta   = computeEta(tsc, solutionHistory);
 
     // General rule: only increase/decrease dt once for any given reason.
-    if (stepperState->stepperStatus_ == Status::FAILED) {
+    if (workingState->getSolutionStatus() == Status::FAILED) {
       if (printChanges) *out << changeDT(dt, dt*sigma,
         "Stepper failure - Decreasing dt.");
       dt *= sigma;

@@ -578,10 +578,8 @@ void StepperIMEX_RK<Scalar>::takeStep(
         Thyra::Vp_StV((workingState->getX()).ptr(), -dt*b   (i), *(stageG_[i]));
     }
 
-    if (pass == true)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

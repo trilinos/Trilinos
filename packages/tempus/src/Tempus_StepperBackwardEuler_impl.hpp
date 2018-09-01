@@ -160,7 +160,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     if (xDot == Teuchos::null) xDot = getXDotTemp(x);
 
     computePredictor(solutionHistory);
-    if (workingState->getStepperState()->stepperStatus_ == Status::FAILED)
+    if (workingState->getSolutionStatus() == Status::FAILED)
       return;
 
     const Scalar time = workingState->getTime();
@@ -195,9 +195,9 @@ void StepperBackwardEuler<Scalar>::takeStep(
       timeDer->compute(x, xDot);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
@@ -223,16 +223,13 @@ void StepperBackwardEuler<Scalar>::computePredictor(
   if (predictorStepper_ == Teuchos::null) return;
   predictorStepper_->takeStep(solutionHistory);
 
-  Status & stepperStatus =
-    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
-
-  if (stepperStatus == Status::FAILED) {
+  if (solutionHistory->getWorkingState()->getSolutionStatus()==Status::FAILED) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::computePredictor");
     *out << "Warning - predictorStepper has failed." << std::endl;
   } else {
     // Reset status to WORKING since this is the predictor
-    stepperStatus = Status::WORKING;
+    solutionHistory->getWorkingState()->setSolutionStatus(Status::WORKING);
   }
 }
 

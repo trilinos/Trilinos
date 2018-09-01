@@ -327,7 +327,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // At this point, the stepper has passed.
     // but when using adaptive time stepping, the embedded method can change the step status
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
 
     if (ERK_ButcherTableau_->isEmbedded() and stepperPL_->get<bool>("Use Embedded")){
 
@@ -362,9 +362,7 @@ void StepperExplicitRK<Scalar>::takeStep(
        metaData->setErrorRel(err);
 
        // test if step should be rejected
-       if (err > 1.0){
-          workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-       }
+       if (err > 1.0) workingState->setSolutionStatus(Status::FAILED);
     }
 
     workingState->setOrder(this->getOrder());

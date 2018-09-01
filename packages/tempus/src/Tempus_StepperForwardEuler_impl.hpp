@@ -144,7 +144,7 @@ void StepperForwardEuler<Scalar>::takeStep(
     if (workingState->getXDot() != Teuchos::null)
       assign((workingState->getXDot()).ptr(),
         Teuchos::ScalarTraits<Scalar>::zero());
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

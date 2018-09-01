@@ -231,9 +231,9 @@ void StepperBDF2<Scalar>::takeStep(
       timeDer->compute(x, xDot);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

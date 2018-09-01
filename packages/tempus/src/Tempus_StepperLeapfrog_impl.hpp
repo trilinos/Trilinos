@@ -190,7 +190,7 @@ void StepperLeapfrog<Scalar>::takeStep(
       workingState->setIsSynced(false);
     }
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

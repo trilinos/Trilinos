@@ -230,7 +230,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     *out_ << "IKT v_new = " << Thyra::max(*(workingState()->getXDot())) << "\n";
 #endif
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
   }
   return;

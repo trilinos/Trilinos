@@ -281,15 +281,11 @@ void StepperDIRK<Scalar>::takeStep(
        metaData->setErrorRel(err);
 
        // test if step should be rejected
-       if (err > 1.0){
-          workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-       }
+       if (err > 1.0) workingState->setSolutionStatus(Status::FAILED);
     }
 
-    if (pass == true)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

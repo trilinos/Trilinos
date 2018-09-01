@@ -262,7 +262,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
       stepperOSObserver_->observeAfterStepper(index, solutionHistory, *this);
 
-      if (workingSubState->getStepperStatus() == Status::FAILED) {
+      if (workingSubState->getSolutionStatus() == Status::FAILED) {
         pass = false;
         Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::takeStep()");
@@ -276,8 +276,8 @@ void StepperOperatorSplit<Scalar>::takeStep(
       currentSubState->copySolutionData(workingSubState);
     }
 
-    if (pass == true) workingState->setStepperStatus(Status::PASSED);
-    else              workingState->setStepperStatus(Status::FAILED);
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     OpSpSolnHistory_->clear();
     stepperOSObserver_->observeEndTakeStep(solutionHistory, *this);
