@@ -629,7 +629,14 @@ main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
+#if defined (HAVE_TPETRA_INST_DOUBLE)
   typedef double ST;
+#elif defined (HAVE_TPETRA_INST_FLOAT)
+  typedef float ST;
+#else
+#  error "Tpetra: Must enable at least one Scalar type in {double, float} in order to build this test."
+#endif
+
   typedef Tpetra::Map<>::local_ordinal_type LO;
 #if defined (HAVE_TPETRA_INST_INT_LONG_LONG)
   typedef long long GO;
