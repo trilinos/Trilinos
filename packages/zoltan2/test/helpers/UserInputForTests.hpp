@@ -2860,8 +2860,11 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
 
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
-  for(zgno_t gid : rowMap->getNodeElementList())
+  Teuchos::ArrayView<const zgno_t> rowMapElementList = 
+                                        rowMap->getNodeElementList();
+  for (size_t ii = 0; ii < rowMapElementList.size(); ii++)
   {
+    zgno_t gid = rowMapElementList[ii];
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
     Array<zscalar_t> rowvals (numEntriesInRow);
     Array<zgno_t> rowinds (numEntriesInRow);
