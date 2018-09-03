@@ -9,11 +9,30 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_ProblematicLookup
+  SOURCES
+    Map2_ProblematicLookup
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
 # kdd Test for bug 2431
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug2431
   SOURCES
     Map_Bug2431
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_Bug2431
+  SOURCES
+    Map2_Bug2431
   COMM mpi
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
@@ -30,16 +49,36 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_Bug5399
+  Map2_Bug5378
   SOURCES
-    Map_Bug5399
+    Map2_Bug5378
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
-  NUM_MPI_PROCS 4
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_Bug5399
+    SOURCES
+      Map_Bug5399
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map2_Bug5399
+    SOURCES
+      Map2_Bug5399
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()
 
 # This one uses the default LO and GO types.
@@ -47,6 +86,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug6051
   SOURCES
     Map_Bug6051
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_Bug6051
+  SOURCES
+    Map2_Bug6051
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -64,9 +114,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_UnitTests
+  SOURCES
+    Map2_UnitTests
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_LocalMap
   SOURCES
     Map_LocalMap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_LocalMap
+  SOURCES
+    Map2_LocalMap
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -85,6 +153,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_OneToOne
+  SOURCES
+    Map2_OneToOne
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
+
 IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
   # Tpetra bug 5822, first test.
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -97,11 +175,31 @@ IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
     NUM_MPI_PROCS 2
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map2_Bug5822
+    SOURCES
+    Map2_Bug5822
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+
   # Tpetra bug 5822, second test.
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Map_Bug5822_2
     SOURCES
     Map_Bug5822_2
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map2_Bug5822_2
+    SOURCES
+    Map2_Bug5822_2
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     STANDARD_PASS_OUTPUT
@@ -129,6 +227,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_replaceCommWithSubset
+  SOURCES
+    Map2_replaceCommWithSubset
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )
+
 # tjf 20 Oct 2016 modified to use default LO, GO, NT types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_removeEmptyProcesses
@@ -140,11 +248,31 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_removeEmptyProcesses
+  SOURCES
+    Map2_removeEmptyProcesses
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+)
+
 # tjf 20 Oct 2016 modified to use default LO, GO types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_isOneToOne
   SOURCES
     isOneToOne
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_isOneToOne
+  SOURCES
+    Map2_isOneToOne
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1-10
@@ -167,10 +295,38 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   STANDARD_PASS_OUTPUT
 #   )
 
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   Map2_Bug6412
+#   SOURCES
+#     Map2_Bug6412.cpp
+#     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#   COMM mpi
+#   NUM_MPI_PROCS 2-10
+#   STANDARD_PASS_OUTPUT
+#   )
+
+TRIBITS_ADD_EXECUTABLE(
+  Map2_Bug6412
+  SOURCES
+    Map2_Bug6412.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_getMyGlobalIndices
   SOURCES
     Map_getMyGlobalIndices
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_getMyGlobalIndices
+  SOURCES
+    Map2_getMyGlobalIndices
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 1-10
@@ -188,11 +344,31 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test needs to run on at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_isLocallyFitted
+  SOURCES
+    Map2_isLocallyFitted.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-10
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_getMinGlobalIndex
   SOURCES
     Map_getMinGlobalIndex
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_getMinGlobalIndex
+  SOURCES
+    Map2_getMinGlobalIndex
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 1-4
@@ -208,9 +384,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_warn_on_post_finalize_destruction_issue_2372
+  SOURCES
+    Map2_warn_on_post_finalize_destruction
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_no_warn_on_pre_finalize_destruction_issue_2372
   SOURCES
     Map_no_warn_on_pre_finalize_destruction
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_no_warn_on_pre_finalize_destruction_issue_2372
+  SOURCES
+    Map2_no_warn_on_pre_finalize_destruction
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -225,9 +417,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_initializes_Kokkos_inner_scope
+  SOURCES
+    Map2_initializes_Kokkos_inner_scope
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "FAILED:"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_does_not_double_initialize_Kokkos
   SOURCES
     Map_does_not_double_initialize_Kokkos
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "FAILED:"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map2_does_not_double_initialize_Kokkos
+  SOURCES
+    Map2_does_not_double_initialize_Kokkos
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "FAILED:"
@@ -243,6 +453,16 @@ IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_INT)
     NegativeBaseIndexTest
     SOURCES
       NegativeBaseIndexTest
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map2_NegativeBaseIndexTest
+    SOURCES
+      Map2_NegativeBaseIndexTest
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     STANDARD_PASS_OUTPUT
