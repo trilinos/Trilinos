@@ -374,7 +374,7 @@ class HDF5
     }
 
     //! Return \c true if \c Name is contained in the database.
-    bool IsContained(const std::string Name);
+    bool IsContained(std::string Name, std::string GroupName = "");
 
     // @}
     // @{ \name basic non-distributed data types

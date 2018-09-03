@@ -80,6 +80,33 @@ TEUCHOS_UNIT_TEST(EpetraExt_HDF5, WriteReadInt)
   TEST_EQUALITY(value1, value2);
 }
 
+TEUCHOS_UNIT_TEST(EpetraExt_HDF5, NestedGroups)
+{
+#ifdef EPETRA_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+
+  HDF5 file1(comm);
+  file1.Create("HDF5_test.h5");
+
+  const int value1 = 5;
+  file1.CreateGroup("group 1");
+  file1.CreateGroup("group 1/group 2");
+  file1.Write("group 1/group 2/data", "int", value1);
+  file1.Close();
+
+  HDF5 file2(comm);
+  file2.Open("HDF5_test.h5");
+
+  int value2 = -1;
+  file2.Read("group 1/group 2/data", "int", value2);
+  file2.Close();
+
+  TEST_EQUALITY(value1, value2);
+}
+
 } // namespace EpetraExt
 
 int main(int argc, char* argv[])
