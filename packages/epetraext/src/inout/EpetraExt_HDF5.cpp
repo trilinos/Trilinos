@@ -1611,7 +1611,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
 // ==========================================================================
 void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
                          const hid_t type, const int Length,
-                         void* data)
+                         const void* data)
 {
   if (!IsContained(GroupName))
     CreateGroup(GroupName);

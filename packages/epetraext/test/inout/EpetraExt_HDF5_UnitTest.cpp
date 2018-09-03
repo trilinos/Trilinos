@@ -49,8 +49,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "Epetra_Vector.h"
-
 #include "EpetraExt_HDF5.h"
 
 namespace EpetraExt {
@@ -78,6 +76,32 @@ TEUCHOS_UNIT_TEST(EpetraExt_HDF5, WriteReadInt)
   file2.Close();
 
   TEST_EQUALITY(value1, value2);
+}
+
+TEUCHOS_UNIT_TEST(EpetraExt_HDF5, WriteReadSerialData)
+{
+#ifdef EPETRA_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+
+  HDF5 file1(comm);
+  file1.Create("HDF5_test.h5");
+
+  const int data1[2] = {1, 2};
+  file1.Write("data", "values", H5T_NATIVE_INT, 2, data1);
+  file1.Close();
+
+  HDF5 file2(comm);
+  file2.Open("HDF5_test.h5");
+
+  int data2[2] = {-1, -1};
+  file2.Read("data", "values", H5T_NATIVE_INT, 2, data2);
+  file2.Close();
+
+  TEST_EQUALITY(data1[0], data2[0]);
+  TEST_EQUALITY(data1[1], data2[1]);
 }
 
 TEUCHOS_UNIT_TEST(EpetraExt_HDF5, NestedGroups)
