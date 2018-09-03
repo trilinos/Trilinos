@@ -154,6 +154,10 @@
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
+\cbb{gmg: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+        
+\cbb{gmg: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
         
 \cbb{pcoarsen: element}{string}{""}{Element class for IntrepidPCoarsening}

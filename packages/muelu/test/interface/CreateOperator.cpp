@@ -143,6 +143,9 @@ namespace MueLuExamples {
 #include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
 
@@ -272,6 +275,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using Teuchos::TimeMonitor;
+
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;

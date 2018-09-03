@@ -646,6 +646,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -828,6 +831,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -1006,6 +1012,9 @@ namespace MueLuTests {
     out << "Compare results of Epetra and Tpetra" << std::endl;
     out << "for 3 level AMG solver using Petrov Galerkin smoothed aggregation with" << std::endl;
     out << "one SGS sweep on each multigrid level as pre- and postsmoother" << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 

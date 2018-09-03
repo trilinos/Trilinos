@@ -64,90 +64,14 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, CreateGlobalLexicographicIndexManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    out << "version: " << MueLu::Version() << std::endl;
-
-    // Set global geometric data
-    const bool coupled = true;
-    const int numDimensions = 2;
-    const int interpolationOrder = 0;
-    Array<GO> meshData;
-    Array<LO> lNodesPerDir(3);
-    Array<GO> gNodesPerDir(3);
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim < numDimensions) {
-        // Use more nodes in 1D to have a reasonable number of nodes per procs
-        gNodesPerDir[dim] = 6;
-      } else {
-        gNodesPerDir[dim] = 1;
-      }
-    }
-
-    RCP<RealValuedMultiVector> Coordinates =
-      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
-                                                                 lNodesPerDir, meshData,
-                                                                 "Global Lexicographic");
-
-    RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
-    Array<LO> coarseRate(1);
-    coarseRate[0] = 3;
-    RCP<MueLu::GlobalLexicographicIndexManager<LO,GO,NO> > myIndexManager =
-      rcp(new MueLu::GlobalLexicographicIndexManager<LO,GO,NO>(comm, coupled, numDimensions,
-                                                               interpolationOrder, gNodesPerDir,
-                                                               lNodesPerDir, coarseRate, 0));
-
-  } // CreateGlobalLexicographicIndexManager
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, CreateLocalLexicographicIndexManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    out << "version: " << MueLu::Version() << std::endl;
-
-    // Set global geometric data
-    const bool coupled = true;
-    const int numDimensions = 2;
-    const int interpolationOrder = 0;
-    Array<GO> meshData;
-    Array<LO> lNodesPerDir(3);
-    Array<GO> gNodesPerDir(3);
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim < numDimensions) {
-        // Use more nodes in 1D to have a reasonable number of nodes per procs
-        gNodesPerDir[dim] = 6;
-      } else {
-        gNodesPerDir[dim] = 1;
-      }
-    }
-
-    RCP<RealValuedMultiVector> Coordinates =
-      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
-                                                                 lNodesPerDir, meshData,
-                                                                 "Local Lexicographic");
-
-    RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
-    Array<LO> coarseRate(1);
-    coarseRate[0] = 3;
-    RCP<MueLu::LocalLexicographicIndexManager<LO,GO,NO> > myIndexManager =
-      rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(comm, coupled, numDimensions,
-                                                              interpolationOrder, comm->getRank(),
-                                                              comm->getSize(), gNodesPerDir,
-                                                              lNodesPerDir, coarseRate, meshData));
-
-  } // CreateLocalLexicographicIndexManager
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, GlobalLexiTentative1D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -249,6 +173,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -348,6 +275,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -446,6 +376,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -548,6 +481,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -648,6 +584,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -750,6 +689,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -860,6 +802,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -968,6 +913,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -1079,6 +1027,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
@@ -1255,8 +1206,6 @@ namespace MueLuTests {
   } // UncoupledMultilevelScalar
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,CreateGlobalLexicographicIndexManager,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,CreateLocalLexicographicIndexManager,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative2D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative3D,Scalar,LO,GO,Node) \

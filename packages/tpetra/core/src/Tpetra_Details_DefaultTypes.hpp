@@ -60,7 +60,14 @@ namespace Details {
 ///   <tt>Tpetra::Map<>::local_ordinal_type</tt>.
 namespace DefaultTypes {
   //! Default value of Scalar template parameter.
+#if defined(HAVE_TPETRA_INST_DOUBLE)
   typedef double scalar_type;
+#elif defined(HAVE_TPETRA_INST_FLOAT)
+  typedef float scalar_type;
+#else
+#  error "Tpetra: No scalar types in the set {float, double} have been enabled."
+#endif
+
   //! Default value of LocalOrdinal template parameter.
   typedef int local_ordinal_type;
 

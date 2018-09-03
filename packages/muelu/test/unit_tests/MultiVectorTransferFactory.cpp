@@ -97,6 +97,7 @@ namespace MueLuTests {
     out << "equal to the number of fine degrees of freedom." << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    typedef typename Xpetra::MultiVector<magnitude_type,LO,GO,NO> RealValuedMultiVector;
 
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -155,6 +156,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     out << "Tests usage on a three-level hierarchy." << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     GO nx = 199;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);

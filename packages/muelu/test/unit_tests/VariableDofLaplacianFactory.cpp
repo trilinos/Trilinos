@@ -65,6 +65,9 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(SC, double)) { out << "Skipping test for SC != double; no support for complex SC in Galeri::Xpetra branch" << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -117,6 +120,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -215,6 +221,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 

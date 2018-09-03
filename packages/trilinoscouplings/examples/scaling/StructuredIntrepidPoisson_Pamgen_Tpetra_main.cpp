@@ -104,11 +104,11 @@ main (int argc, char *argv[])
   typedef TpetraIntrepidPoissonExample::GO GO;
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
-  typedef Teuchos::ScalarTraits<ST> STS;
-  typedef STS::magnitudeType MT;
+  typedef TpetraIntrepidPoissonExample::MT MT;
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef TpetraIntrepidPoissonExample::realmultivector_type realmultivector_type;
   typedef TpetraIntrepidPoissonExample::operator_type operator_type;
 
   bool success = true;
@@ -258,13 +258,17 @@ main (int argc, char *argv[])
 
       RCP<sparse_matrix_type> A;
       RCP<vector_type> B, X_exact, X;
-      Teuchos::Array<Teuchos::Array<ST> > coordsArray(3);
+      RCP<realmultivector_type> Coordinates;
+      Teuchos::Array<Teuchos::ArrayView<const MT> > coordArrayView(3);
+      Teuchos::Array<Teuchos::Array<MT> > coordsArray(3);
       Teuchos::Array<LO> lNodesPerDim(3);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
         makeMatrixAndRightHandSide (A, B, X_exact, X, coordsArray, lNodesPerDim,
                                     comm, node, meshInput, out, err, verbose, debug);
       }
+      for(int dim = 0; dim < 3; ++dim) {coordArrayView[dim] = coordsArray[dim]();}
+      Coordinates = Teuchos::rcp(new realmultivector_type(A->getRowMap(), coordArrayView(), 3));
 
       // Optionally dump the matrix and/or its row Map to files.
       {
@@ -304,6 +308,7 @@ main (int argc, char *argv[])
               ParameterList mueluParams = inputList.sublist("MueLu");
               const std::string userName = "user data";
               Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
+              userParamList.set<RCP<realmultivector_type> >("Coordinates", Coordinates);
               userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
               M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
             } else {

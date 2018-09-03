@@ -137,6 +137,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;

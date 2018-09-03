@@ -428,6 +428,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuStructuredFiles
     SOURCE_FILES muelu_structured_aggregation.xml
+                 muelu_geometric_interpolation.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )

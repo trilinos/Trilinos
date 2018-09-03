@@ -121,6 +121,7 @@ namespace MueLu {
   public:
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+    typedef typename Xpetra::MultiVector<magnitudeType,LO,GO,NO> RealValuedMultiVector;
 
     //! Constructor
     RefMaxwell() :
