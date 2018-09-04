@@ -609,9 +609,17 @@ bool isZeroOp(const LinearOp op)
    if(op==Teuchos::null) return true;
 
    // try to cast it to a zero linear operator
-   const LinearOp test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(op);
+   LinearOp test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(op);
 
    // if it works...then its zero...otherwise its null
+   if(test!=Teuchos::null) return true;
+
+   // See if the operator is a wrapped zero op
+   ST scalar = 0.0;
+   Thyra::EOpTransp transp = Thyra::NOTRANS;
+   RCP<const Thyra::LinearOpBase<ST> > wrapped_op;
+   Thyra::unwrap(op, &scalar, &transp, &wrapped_op);
+   test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(wrapped_op);
    return test!=Teuchos::null;
 }
 
@@ -1832,6 +1840,34 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+
+   // if one of the operators in the sum is a thyra zero op
+   if(isZeroOp(opl)){
+     if(isZeroOp(opr))
+       return opr; // return a zero op if both are zero
+     if(isTpetrar){ // if other op is tpetra, replace this with a zero crs matrix
+       ST scalar = 0.0;
+       bool transp = false;
+       auto crs_op = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
+       auto zero_crs = Tpetra::createCrsMatrix<ST,LO,GO,NT>(crs_op->getRowMap());
+       zero_crs->fillComplete();
+       opl = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getDomainMap()),zero_crs);
+       isTpetral = true;
+     } else
+       return opr->clone();
+   }
+   if(isZeroOp(opr)){
+     if(isTpetral){ // if other op is tpetra, replace this with a zero crs matrix
+       ST scalar = 0.0;
+       bool transp = false;
+       auto crs_op = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
+       auto zero_crs = Tpetra::createCrsMatrix<ST,LO,GO,NT>(crs_op->getRowMap());
+       zero_crs->fillComplete();
+       opr = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getDomainMap()),zero_crs);
+       isTpetrar = true;
+     } else
+       return opl->clone();
+   }
 
    if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix add
 
