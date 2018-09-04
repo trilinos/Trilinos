@@ -832,7 +832,7 @@ namespace FROSch {
 
     template <class SC, class LO,class GO,class NO>
     int RepartionMatrixZoltan2(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &crsMatrix, Teuchos::RCP<Teuchos::ParameterList> parameterList){
-        
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
 
         typedef Zoltan2::XpetraCrsMatrixAdapter<Xpetra::CrsMatrix<SC,LO,GO,NO> > inputAdapter;
@@ -851,7 +851,7 @@ namespace FROSch {
         
         Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap2 = Teuchos::rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(matrixRepartition));
         crsMatrix = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<SC,LO,GO,NO> >(tmpCrsWrap2);
-        
+#endif
         return 0;
     }
     

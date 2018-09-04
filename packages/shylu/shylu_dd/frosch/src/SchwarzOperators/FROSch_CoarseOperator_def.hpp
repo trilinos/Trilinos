@@ -366,6 +366,9 @@ namespace FROSch {
             
         }
         else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
+#ifndef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+      FROSCH_ASSERT(false,"CoarseOperator uses Zoltan2 for repartitioning coarse problem, but Trilinos not compiled with Zoltan2. Change setting or compile with Zoltan2.")
+#endif
             Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
             GatheringMaps_.resize(1);
