@@ -329,9 +329,9 @@ main (int argc, char *argv[])
             avatar.Cleanup();
           }
 #endif
-          for(int i=0; i<numMueluRebuilds+1; i++) {
-            if (inputList.isSublist("MueLu")) {
-              ParameterList mueluParams = inputList.sublist("MueLu");
+	  for(int i=0; i<numMueluRebuilds+1; i++) {
+	    if (inputList.isSublist("MueLu")) {
+	      ParameterList mueluParams = inputList.sublist("MueLu");
               mueluParams.sublist("user data").set("Coordinates",coords);
               M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
             } else {
