@@ -53,6 +53,11 @@
 namespace Tpetra {
 class Distributor; // forward declaration
 } // namespace Tpetra
+
+namespace Teuchos {
+template<class T> class Array; // forward declaration
+class ParameterList; // forward declaration
+} // namespace Teuchos
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace TpetraNew {
