@@ -89,16 +89,6 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
 
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
-void DOF_PointField<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData /* d */,
-			                                  PHX::FieldManager<TRAITST>& fm)
-{
-  this->utils.setFieldData(coordinates,fm);
-  this->utils.setFieldData(dof_coeff,fm);
-  this->utils.setFieldData(dof_field,fm);
-}
-
-//**********************************************************************
-template <typename EvalT, typename TRAITST>
 void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum! 1/17/2012)

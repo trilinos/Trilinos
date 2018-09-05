@@ -112,18 +112,9 @@ void
 GlobalStatistics<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(volumes,fm);
-  this->utils.setFieldData(tmp,fm);
-  this->utils.setFieldData(ones,fm);
-  
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
-       field != field_values.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
-
   for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.extent(0); ++cell)
     for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.extent(1); ++ip)
       ones(cell,ip) = 1.0;

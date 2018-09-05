@@ -100,16 +100,28 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates,
-                         std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+                         Aggregates& aggregates, std::vector<unsigned>& aggStat,
+                         LO& numNonAggregatedNodes) const;
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const GraphBase& graph,
-                         RCP<IndexManager>& geoData, RCP<CrsGraph>& myGraph) const;
+    void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData,
+                    RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
+                    RCP<const Map>& coarseCoordinatesMap) const;
     //@}
 
     std::string description() const { return "Aggretation: structured algorithm"; }
+
+  private:
+
+    void ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
+                                  const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
+                                  Array<size_t>& rowPtr, Array<LO>& colIndex) const;
+
+    void ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+                                const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
+                                Array<size_t>& rowPtr, Array<LO>& colIndex) const;
 
   };
 

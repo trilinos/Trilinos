@@ -2229,11 +2229,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReverseImportExport, doImport, LO, GO, Scalar
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, GetPids, LO, GO )  {
   // Unit Test the functionality in Tpetra_Import_Util
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::Export<LO, GO> ExportType;
   typedef Tpetra::Vector<int, LO, GO> IntVectorType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
@@ -2584,7 +2585,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex, LO, GO)  {
   // Test the colmap...
   RCP<const Comm<int> > Comm = getDefaultComm();
-  typedef double Scalar;
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO,GO> MapType;
   typedef Tpetra::Import<LO,GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> CrsMatrixType;
@@ -2657,9 +2658,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   // Test the remotePIDs Tpetra::Import constructor
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,B;
 
   RCP<const ImportType> Import1, Import2;
@@ -2738,7 +2740,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   /////////////////////////////////////////////////////////
   {
     // Create Transpose
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(A);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(A);
     B = transposer.createTranspose();
 
     // Build Importer
@@ -2761,7 +2763,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,Ptent,P,R,AP,RAP,rebalancedP;
   RCP<MapType> Map0;
   RCP<const ImportType> Import0,ImportTemp;
@@ -2803,12 +2805,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     build_test_prolongator<CrsMatrixType>(A,P);
 
     // Build R
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(P);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
     ArrayRCP<const size_t> rowptr;
     ArrayRCP<const LO> colind;
-    ArrayRCP<const double> vals;
+    ArrayRCP<const Scalar> vals;
     R->getAllValues(rowptr,colind,vals);
 
     // Form AP
@@ -2850,7 +2852,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     Tpetra::MatrixMatrix::Multiply(*A,false,*Ptent,false,*P);
 
     // Build R
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(P);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
     // Form AP
@@ -2902,10 +2904,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
 // Test the remotePIDs Tpetra::Import constructor
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<double, LO, GO> VectorType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::Vector<Scalar, LO, GO> VectorType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,B;
 
   RCP<const ImportType> Import1, Import2;
@@ -2977,7 +2980,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
   /////////////////////////////////////////////////////////
   try {
     // Import reference vector
-    Teuchos::ScalarTraits< double >::seedrandom(24601);
+    Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
     SourceVector->randomize();
     TargetVector->doImport(*SourceVector,*Import1,Tpetra::INSERT);
 
@@ -2992,8 +2995,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
     TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);
 
     // Compare vector output
-    Teuchos::ArrayRCP<const double> view1 = TargetVector->get1dView();
-    Teuchos::ArrayRCP<const double> view2 = TestVector->get1dView();
+    Teuchos::ArrayRCP<const Scalar> view1 = TargetVector->get1dView();
+    Teuchos::ArrayRCP<const Scalar> view2 = TestVector->get1dView();
     double diff=0;
     size_t NumComps = Map0->getNodeNumElements();
     for(size_t i=0; i < NumComps; i++) {

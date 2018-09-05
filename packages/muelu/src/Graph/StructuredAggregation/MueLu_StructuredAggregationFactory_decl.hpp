@@ -133,7 +133,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -141,7 +141,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Build aggregates. */
-    void Build(Level &currentLevel) const;
+    void Build(Level& currentLevel) const;
 
     //@}
 
