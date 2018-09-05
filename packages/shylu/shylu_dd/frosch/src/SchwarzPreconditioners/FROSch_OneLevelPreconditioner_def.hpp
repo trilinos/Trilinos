@@ -168,7 +168,6 @@ namespace FROSch {
     {
         K_ = k;
         OverlappingOperator_->resetMatrix(K_);
-        if (UseMultiplicative_) MultiplicativeOperator_->resetMatrix(K_);
         return 0;
     }
     
