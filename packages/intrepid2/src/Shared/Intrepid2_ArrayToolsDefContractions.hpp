@@ -80,14 +80,9 @@ namespace Intrepid2 {
                            _outputFields.extent(2),
                            iter );
 
-//        auto result = Kokkos::subview( _outputFields,  cl, lbf, rbf );
-//
-//        const auto left  = Kokkos::subview( _leftFields,  cl, lbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-//        const auto right = Kokkos::subview( _rightFields, cl, rbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-
-        const size_type npts = _leftFields.dimension(2);
-        const ordinal_type iend = _leftFields.dimension(3);
-        const ordinal_type jend = _leftFields.dimension(4);
+        const size_type npts = _leftFields.extent(2);
+        const ordinal_type iend = _leftFields.extent(3);
+        const ordinal_type jend = _leftFields.extent(4);
 
         value_type tmp(0);        
         for (size_type qp = 0; qp < npts; ++qp) 
