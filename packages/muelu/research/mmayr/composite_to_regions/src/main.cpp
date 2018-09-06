@@ -223,6 +223,19 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec
   return;
 }
 
+//! Print an Epetra_CrsMatrix in regional layout to screen
+void printRegionalMatrix(const std::string matrixName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_CrsMatrix> > regMats, ///< regional matrix to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+//  sleep(myRank);
+  for (int j = 0; j < (int) regMats.size(); j++) {
+    printf("%d: %s %d\n", myRank, matrixName.c_str(), j);
+    regMats[j]->Print(std::cout);
+  }
+}
+
 //! Print an Epetra_Vector in regional layout to screen
 void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
     const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
