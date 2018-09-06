@@ -51,15 +51,52 @@
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include <MueLu_CoalesceDropFactory.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
-//#include <Xpetra_IO.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
 
 namespace MueLuTests {
+
+    template<typename LocalOrdinal>
+    std::vector<LocalOrdinal> flip_agg_horizontal(const std::vector<LocalOrdinal>& indices, LocalOrdinal nx) {
+	
+	std::vector<LocalOrdinal> flipped;
+
+	for (LocalOrdinal idx : indices) {
+	    LocalOrdinal x = idx % nx;
+	    LocalOrdinal y = idx / nx;
+
+	    flipped.push_back(nx*y - x);
+	}
+
+	std::sort(flipped.begin(), flipped.end());
+	return flipped;
+
+    }
+
+    template<typename LocalOrdinal>
+    std::vector<LocalOrdinal> flip_agg_vertical(const std::vector<LocalOrdinal>& indices, LocalOrdinal nx) {
+	
+	std::vector<LocalOrdinal> flipped;
+
+	for (LocalOrdinal idx : indices) {
+	    LocalOrdinal x = idx % nx;
+	    LocalOrdinal y = idx / nx;
+
+	    flipped.push_back(-nx*y + x);
+	}
+
+	std::sort(flipped.begin(), flipped.end());
+	return flipped;
+
+    }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -90,32 +127,23 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level level;
+    TestHelpers::TestFactory<Scalar, LO, GO, NO>::createSingleLevelHierarchy(level);
 
-    GO nx = 27*comm->getSize();
+    GO nx = 20*comm->getSize();
     GO ny = nx;
     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build2DPoisson(nx, ny);
-    fineLevel.Set("A",Op);
-
-    // Teuchos::ParameterList galeriList;
-    // galeriList.set("nx", nx);
-    // galeriList.set("ny", ny);
-    // RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", Op->getRowMap(), galeriList);
-    // fineLevel.Set("Coordinates", coordinates);
+    level.Set("A",Op);
 
     AggregateQualityEstimateFactory aggQualityEstimateFactory;
 
-    fineLevel.Request("AggregateQualities", &aggQualityEstimateFactory);
-    fineLevel.Request(aggQualityEstimateFactory);
+    level.Request("AggregateQualities", &aggQualityEstimateFactory);
+    level.Request(aggQualityEstimateFactory);
 
     out << "Getting aggregate qualities...\n\n";
 
-    RCP<MultiVector> aggQualities = fineLevel.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
+    RCP<MultiVector> aggQualities = level.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
     
-    fineLevel.print(out, Teuchos::VERB_EXTREME);
-    coarseLevel.print(out, Teuchos::VERB_EXTREME);
-
     out << "Testing aggregate qualities to make sure all aggregates are of good quality...\n\n";
 
     ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
@@ -129,210 +157,190 @@ namespace MueLuTests {
 
   } // Poisson 2D test
 
-//   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, ImplicitTranspose, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-//   {
-// #   include "MueLu_UseShortNames.hpp"
-//     MUELU_TESTING_SET_OSTREAM;
-//     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-//     out << "version: " << MueLu::Version() << std::endl;
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, AnisotropicDiffusion2D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-//     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    out << "version: " << MueLu::Version() << std::endl;
 
-//     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
 
-//     if (comm->getSize() > 1 && TestHelpers::Parameters::getLib() == Xpetra::UseEpetra ) {
-//       out << "Skipping ImplicitTranspose test for Epetra and #proc>1" << std::endl;
-//       return;
-//     }
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
-//     // build test-specific default factory manager
-//     RCP<FactoryManager> defManager = rcp(new FactoryManager());
-//     defManager->SetKokkosRefactor(false);
-//     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-//     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-//     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-//     defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-//     Level fineLevel, coarseLevel;
-//     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    LO nx = (LO) 20;
 
-//     // overwrite default factory manager
-//     fineLevel.SetFactoryManager(defManager);
-//     coarseLevel.SetFactoryManager(defManager);
+    LO num_nodes = (LO) nx*nx;
+    RCP<Map> map_for_read = MapFactory::Build(TestHelpers::Parameters::getLib(),num_nodes,0,comm);
+    RCP<Matrix> A =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/aniso2dx.mat", map_for_read);
 
-//     GO nx = 19*comm->getSize();
-//     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
-//     fineLevel.Set("A",Op);
+    std::vector<std::string> test_matrices = { "TestMatrices/aniso2dx.mat", "TestMatrices/aniso2dy.mat", "TestMatrices/iso2d.mat" };
 
-//     Teuchos::ParameterList galeriList;
-//     galeriList.set("nx", nx);
-//     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
-//     fineLevel.Set("Coordinates", coordinates);
+    const std::vector<LO> AGG0_NODES = {0,1};
+    const std::vector<LO> AGG1_NODES = {0,nx};
+    const std::vector<LO> AGG2_NODES = {0,nx,nx+1};
+    const std::vector<LO> AGG3_NODES = {0,1,nx,nx+1};
+    const std::vector<LO> AGG4_NODES = {0,1,2};
+    const std::vector<LO> AGG5_NODES = {0,nx,2*nx};
+    const std::vector<LO> AGG6_NODES = {0,nx,nx+1,2*nx};
+    const std::vector<LO> AGG7_NODES = {1,nx,nx+1,nx+2};
+    const std::vector<LO> AGG8_NODES = {1,nx,nx+1,nx+2,2*nx+1};
+    const std::vector<LO> AGG9_NODES = {0,1,2,nx,nx+1,nx+2};
+    const std::vector<LO> AGG10_NODES = {0,1,nx,nx+1,2*nx,2*nx+1};
+    const std::vector<LO> AGG11_NODES = {0,1,2,nx,nx+1,nx+2,2*nx,2*nx+1,2*nx+2};
+    const std::vector<LO> AGG12_NODES = {0,1,nx,nx+1,nx+2};
+    const std::vector<LO> AGG13_NODES = {0,1,nx,nx+1,2*nx};
+    const std::vector<LO> AGG14_NODES = {0,1,2,nx,nx+1,nx+2,2*nx};
+    const std::vector<LO> AGG15_NODES = {0,1,2,nx,nx+1,nx+2,2*nx+1};
+    const std::vector<LO> AGG16_NODES = {0,1,2,nx,nx+1,2*nx,2*nx+1};
+    const std::vector<LO> AGG17_NODES = {0,1,nx,nx+1,nx+2,2*nx,2*nx+1};
+    const std::vector<LO> AGG18_NODES = {1,nx,nx+1,nx+2,2*nx+1,2*nx+2};
 
-//     TentativePFactory tentpFactory;
-//     SaPFactory sapFactory;
-//     sapFactory.SetFactory("P",rcpFromRef(tentpFactory));
-//     TransPFactory transPFactory;
-//     transPFactory.SetFactory("P", rcpFromRef(sapFactory));
-//     coarseLevel.Request("P", &sapFactory);
-//     coarseLevel.Request("R", &transPFactory);
+    const std::vector<std::vector<LO>> AGG_TYPES = {AGG0_NODES, AGG1_NODES, AGG2_NODES,
+						    AGG3_NODES, AGG4_NODES, AGG5_NODES,
+						    AGG6_NODES, AGG7_NODES, AGG8_NODES,
+						    AGG9_NODES, AGG10_NODES, AGG11_NODES,
+						    AGG12_NODES, AGG13_NODES, AGG14_NODES,
+						    AGG15_NODES, AGG16_NODES, AGG17_NODES,
+						    AGG18_NODES};
 
-//     coarseLevel.Request(sapFactory);
-//     coarseLevel.Request(transPFactory);
-//     sapFactory.Build(fineLevel, coarseLevel);
-//     transPFactory.Build(fineLevel,coarseLevel);
-//     RAPFactory rap;
-//     Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
-//     rapList.set("transpose: use implicit", true);
-//     rap.SetParameterList(rapList);
-//     rap.SetFactory("P", rcpFromRef(sapFactory));
-//     rap.SetFactory("R", rcpFromRef(transPFactory));
-//     coarseLevel.Request("A", &rap);
+    const std::vector<SC> AGG_QUALITIES = {2.002, 2002., 2670.000811,
+					   2001.9998, 4.004, 4003.999998,
+					   4003.999198, 3003.666728, 4003.998397,
+					   2001.999599, 4003.999198, 4003.999198,
+					   2403.067729, 4004.666568, 4005.666904,
+					   4004.665757, 4886.458381, 4003.998397,
+					   4004.665841};
 
-//     coarseLevel.Request(rap);
-//     rap.Build(fineLevel,coarseLevel);
+    for (int i=0;i<3;i++) {
 
-//     RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
-//     RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
-//     RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
+	Level level;
+	TestHelpers::TestFactory<Scalar, LO, GO, NO>::createSingleLevelHierarchy(level);
 
-//     //std::string filename = "A.dat";
-//     //Utils::Write(filename,Op);
-//     //filename = "P.dat";
-//     //Utils::Write(filename,P);
+	RCP<Matrix> A_agg =  Xpetra::IO<SC, LO, GO, NO>::Read(test_matrices.at(i), map_for_read);
 
-//     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
-//     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
-//     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
-//     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
-//     X->randomize();
-//     //out.precision(12);
-//     //out.setOutputToRootOnly(-1);
-//     //X->describe(out,Teuchos::VERB_EXTREME);
+	level.Set("A",A_agg);
 
-//     //Calculate result1 = P^T*(A*(P*X))
-//     P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
-//     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
-//     P->apply(*workVec2,*result1,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
+	CoalesceDropFactory dropFact;
+	dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.1));
 
-//     RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
+	level.Request("Graph", &dropFact);
+	level.Request("DofsPerNode", &dropFact);
+	level.Request("Filtering", &dropFact);
+	level.Request(dropFact);
 
-//     //Calculate result2 = (R*A*P)*X
-//     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
-//     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+	dropFact.Build(level);
 
-//     Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
-//     X->norm2(normX);
-//     out << "This test checks the correctness of the Galerkin triple "
-//       << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
-//     out << "||X||_2 = " << normX << std::endl;
-//     result1->norm2(normResult1);
-//     result2->norm2(normResult2);
-//     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+	RCP<GraphBase> graph = level.Get< RCP<GraphBase> >("Graph", &dropFact);
+	graph->print(out, Teuchos::VERB_EXTREME);
 
-//   } // ImplicitTranspose test
+	UncoupledAggregationFactory aggFactory;
 
-//   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, FixZeroDiagonals, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-//   {
-// #   include "MueLu_UseShortNames.hpp"
-//     MUELU_TESTING_SET_OSTREAM;
-//     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-//     out << "version: " << MueLu::Version() << std::endl;
+	level.Request("Aggregates", &aggFactory);
+	level.Request(aggFactory);
 
-//     out << "This test checks that the option \"rap: fix zero diagonals\" works properly." << std::endl;
+	aggFactory.Build(level);
 
-//     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+	RCP<Aggregates> aggs = level.Get< RCP<Aggregates> >("Aggregates", &aggFactory);
 
-//     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+	AggregateQualityEstimateFactory aggQualityEstimateFactory;
 
-//     // build test-specific default factory manager
-//     RCP<FactoryManager> defManager = rcp(new FactoryManager());
-//     defManager->SetKokkosRefactor(false);
-//     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-//     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-//     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-//     defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
-//     defManager->SetFactory("P", rcp(MueLu::NoFactory::get(),false));         // dummy factory for P
-//     defManager->SetFactory("R", rcp(MueLu::NoFactory::get(),false));         // dummy factory for R
+	level.Request("AggregateQualities", &aggQualityEstimateFactory);
+	level.Request(aggQualityEstimateFactory);
 
-//     Level fineLevel, coarseLevel;
-//     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+	level.Set("A",A);
+	
+	RCP<MultiVector> aggQualities = level.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
+    
+	ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
 
-//     // overwrite default factory manager
-//     fineLevel.SetFactoryManager(defManager);
-//     coarseLevel.SetFactoryManager(defManager);
+	Teuchos::ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
+	AggregateQualityEstimateFactory::ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
 
-//     GO nx = 19*comm->getSize();
-//     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
-//     fineLevel.Set("A",Op);
+	for (size_t j=0;j<aggQualities->getLocalLength();++j) {
 
-//     //Create diagonal matrix, same dimensions as A, but with some zeros on the diagonal
-//     RCP<const Map> rowMap = Op->getRowMap();
-//     Teuchos::Array<GO> indout(1);
-//     Teuchos::Array<SC> valout(1);
-//     RCP<Matrix> diagMat = MatrixFactory::Build(rowMap, 1);
-//     RCP<Matrix> zdiagMat = MatrixFactory::Build(rowMap, 1);
-//     for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
-//       GO grid = rowMap->getGlobalElement(r);
-//       indout[0] = grid;
-//       (r == 0) ?  valout[0] = TST::zero() : valout[0] = TST::one();
-//       zdiagMat->insertGlobalValues(grid, indout(), valout());
-//       valout[0] = TST::one();
-//       diagMat->insertGlobalValues(grid, indout(), valout());
-//     }
-//     zdiagMat->fillComplete();
-//     diagMat->fillComplete();
+	    std::vector<LO> nodes;
+	    for (LO k=0;k<aggSizes[j];++k) {
+		nodes.push_back(aggSortedVertices[aggsToIndices[j]+k]);
+	    }
 
-//     // this effectively zero's just the row of R*A*P
-//     coarseLevel.Set("P", diagMat, MueLu::NoFactory::get());
-//     coarseLevel.Set("R", zdiagMat, MueLu::NoFactory::get());
+	    std::sort(nodes.begin(), nodes.end());
 
-//     RAPFactory rap;
-//     Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
-//     rapList.set("rap: fix zero diagonals", true);
-//     rap.SetParameterList(rapList);
-//     coarseLevel.Request("A", &rap);
+	    if (nodes[0]%nx == 0 || nodes[0]%nx == nx-1 || nodes[0]/nx == 0 || nodes[0]/nx == nx-1) {
+		continue;
+	    }
 
-//     coarseLevel.Request(rap);
-//     rap.Build(fineLevel,coarseLevel);
+	    bool assert_performed = false;
 
-//     RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
-//     RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P");
-//     RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R");
+	    for (size_t agg_id=0;agg_id<AGG_TYPES.size();++agg_id) {
 
-//     RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
-//     //filename = "Ac.dat";
-//     //Xpetra::IO<SC,LO,GO,NO>::Write(filename,*coarseOp);
+		if (AGG_TYPES[agg_id].size() != nodes.size()) continue;
 
-//     //The diagonal repair should result in a single nonzero entry with scalar value one in local row 0,
-//     //There should be no repeated column indices.
-//     Teuchos::ArrayView<const LocalOrdinal> indices;
-//     Teuchos::ArrayView<const Scalar> vals;
-//     coarseOp->getLocalRowView(0,indices,vals);
-//     for (int j=0; j<indices.size(); ++j) {
-//       for (int i=j+1; i<indices.size(); ++i) {
-//         out << "checking indices[" << j << "] and indices[" << i << "]" << std::endl;
-//         TEST_INEQUALITY(indices[i],indices[j]);
-//       } 
-//     }
-//     Scalar sum = Teuchos::ScalarTraits<SC>::zero();
-//     for (int j=0; j<vals.size(); ++j)
-//       sum += vals[j];
-//     TEST_EQUALITY(sum, Teuchos::ScalarTraits<SC>::one());
-//     const RCP<const Map> colmap = coarseOp->getColMap();
-//     const RCP<const Map> rowmap = coarseOp->getRowMap();
-//     for (int j=0; j<vals.size(); ++j) {
-//       if (vals[j] == Teuchos::ScalarTraits<SC>::one()) {
-//         out << "checking that nonzero entry is on diagonal" << std::endl;
-//         TEST_EQUALITY(colmap->getGlobalElement(indices[j]),rowmap->getGlobalElement(0));
-//       }
-//     }
+		const std::vector<LO>& unflipped_agg = AGG_TYPES[agg_id];
 
-//   } // FixZeroDiagonals test
+		for (int flip_id=0;flip_id<4;++flip_id) {
+
+		    std::vector<LO> flipped_agg;
+
+		    switch(flip_id) {
+		    case 0:
+			flipped_agg = unflipped_agg;
+			break;
+		    case 1:
+			flipped_agg = flip_agg_horizontal(unflipped_agg, nx);
+			break;
+		    case 2:
+			flipped_agg = flip_agg_vertical(unflipped_agg, nx);
+			break;
+		    case 3:
+			flipped_agg = flip_agg_horizontal(flip_agg_vertical(unflipped_agg,nx),nx);
+			break;
+		    }
+
+		    LO difference = nodes[0] - flipped_agg[0];
+
+		    bool aggFound = true;
+
+		    for (size_t k=1;k<nodes.size();++k) {
+			if (difference != nodes[k] - flipped_agg[k]) {
+			    aggFound = false;
+			    break;
+			}
+
+			if (nodes[k]%nx == 0 || nodes[k]%nx == nx-1 || nodes[k]/nx == 0 || nodes[k]/nx == nx-1) {
+			    aggFound = false;
+			    break;
+			}
+			
+		    }
+
+		    if (!aggFound) continue;
+
+		    TEST_FLOATING_EQUALITY(aggQualitiesLocalData[j], AGG_QUALITIES[agg_id], 1e-3);
+
+		    assert_performed = true;
+		    break;
+
+		}
+
+		if (assert_performed) break;
+
+	    }
+
+	}
+
+    }    
+
+  } // Anisotropic Diffusion 2D test
+
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Constructor,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Poisson2D,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Poisson2D,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

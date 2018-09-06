@@ -116,12 +116,20 @@ namespace MueLu {
 
       //@}
 
+      //! @name Utility method to convert aggregate data to a convenient format.
+      //@{
+
+      //! Build aggregate quality esimates with this factory.
+      static void ConvertAggregatesData(RCP<const Aggregates> aggs, Teuchos::ArrayRCP<LO>& aggSortedVertices, Teuchos::ArrayRCP<LO>& aggsToIndices, Teuchos::ArrayRCP<LO>& aggSizes);
+
+      //@}
+
   private:
 
       //! @name Internal methods for computing aggregate quality.
       //@{
 
-      void ComputeAggregateQualities(RCP<Matrix> A, RCP<Aggregates> aggs, RCP<MultiVector> agg_qualities) const;
+      void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<MultiVector> agg_qualities) const;
 
       //@}
 
