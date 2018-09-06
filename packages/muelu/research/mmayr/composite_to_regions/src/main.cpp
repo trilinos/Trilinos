@@ -1015,7 +1015,7 @@ sleep(myRank*3);
         }
         else {
           tempRegIDs[i] = LIDregionCircleSquare(genericVector.data(), i, k);
-          printf("%d: LIDRegion(Composite LID=%d or GID=%d) = %d\n",myRank,i,colGIDsComp[i],tempRegIDs[i]); fflush(stdout);
+//          printf("%d: LIDRegion(Composite LID=%d or GID=%d) = %d\n",myRank,i,colGIDsComp[i],tempRegIDs[i]); fflush(stdout);
         }
       }
 
@@ -2522,8 +2522,12 @@ std::vector<int> &appData)
   for (int k=startRgt; k < nRegionalGhosts; k++)
      appData[ghostCompLIDs[k]+offset] = Rx*(k+Cy-startRgt)+Rx-1;
 
-for (int i = 0; i <  ghostCompLIDs.size() ; i++) printf("ghostComp(%d)=%d ",i,ghostCompLIDs[i]);
-printf("\n"); fflush(stdout);
+//  for (int i = 0; i < ghostCompLIDs.size(); i++)
+//    printf("ghostComp(%d)=%d ", i, ghostCompLIDs[i]);
+//  printf("\n");
+//  fflush (stdout);
+
+  return;
 }
 
 void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[], int edgeLength, int alongX, int ownedEdge, int interiorEdge, int start, int ownedX, int ownedY)
