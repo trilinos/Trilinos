@@ -2229,12 +2229,12 @@ int main(int argc, char *argv[]) {
 
 }
 
-// returns local ID (within region curRegion) for the LIDcomp^th composite grid
-// point that myRank owns. If this grid point is not part of curRegion, then
-// -1 is returned.
-//
-// Code currently hardwired for 1D only.
-
+/* Returns local ID (within region curRegion) for the LIDcomp^th composite grid
+ * point that myRank owns. If this grid point is not part of curRegion, then
+ * -1 is returned.
+ *
+ * For fully structured 1D problems only.
+ */
 int LIDregion(void *ptr, int LIDcomp, int whichGrp)
 {
    struct widget * myWidget = (struct widget *) ptr;
@@ -2267,6 +2267,13 @@ int LIDregion(void *ptr, int LIDcomp, int whichGrp)
 
    return( colGIDsComp[LIDcomp] - minGIDComp[whichGrp] );
 }
+
+/* Returns local ID (within region curRegion) for the LIDcomp^th composite grid
+ * point that myRank owns. If this grid point is not part of curRegion, then
+ * -1 is returned.
+ *
+ * For fully structured 2D problems only.
+ */
 int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
 {
    struct widget * myWidget = (struct widget *) ptr;
