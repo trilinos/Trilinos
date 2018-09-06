@@ -109,8 +109,8 @@ public:
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-    
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+
+    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
     virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
        {initial_guess_ = initial_guess;}
 

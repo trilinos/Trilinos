@@ -23,9 +23,7 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   std::string stepperType)
 {
   this->setTableau(Teuchos::null, stepperType);
-  this->setParameterList(Teuchos::null);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -37,7 +35,6 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   this->setTableau(pList, "RK Explicit 4 Stage");
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -50,7 +47,6 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   this->setTableau(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -243,6 +239,10 @@ void StepperExplicitRK<Scalar>::initialize()
   TEUCHOS_TEST_FOR_EXCEPTION( appModel_ == Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperExplicitRK::initialize()\n");
+
+  this->setTableau(stepperPL_);
+  this->setParameterList(stepperPL_);
+  this->setObserver();
 
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
@@ -460,7 +460,13 @@ StepperExplicitRK<Scalar>::getDefaultParameters() const
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"
     "  'false' - Stepper is not embedded(adaptive).\n");
-  pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
+  if (ERK_ButcherTableau_ == Teuchos::null) {
+    auto ERK_ButcherTableau =
+      createRKBT<Scalar>("RK Explicit 4 Stage", Teuchos::null);
+    pl->setParameters(*(ERK_ButcherTableau->getValidParameters()));
+  } else {
+    pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
+  }
   return pl;
 }
 
