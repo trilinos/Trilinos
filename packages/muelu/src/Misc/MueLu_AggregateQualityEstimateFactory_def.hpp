@@ -97,15 +97,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<Matrix> A, RCP<Aggregates> aggs, RCP<MultiVector> agg_qualities) const {
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConvertAggregatesData(RCP<const Aggregates> aggs, Teuchos::ArrayRCP<LO>& aggSortedVertices, Teuchos::ArrayRCP<LO>& aggsToIndices, Teuchos::ArrayRCP<LO>& aggSizes) {
 
-      const double SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
-      const double SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
-      const double SCALAR_TWO = SCALAR_ONE + SCALAR_ONE;
-
-      const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
-      const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
-      
       // Reorder local aggregate information into a format amenable to computing
       // per-aggregate quantities. Specifically, we compute a format
       // similar to compressed sparse row format for sparse matrices in which
@@ -114,20 +107,23 @@ namespace MueLu {
       // array (aggsToIndices) whose k-th element stores the index of the first
       // vertex in aggregate k in the array aggSortedVertices.
 
+      const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+      const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
+
       const RCP<LOMultiVector> vertex2AggId = aggs->GetVertex2AggId();
       const ArrayRCP<const LO> vertex2AggIdData = vertex2AggId->getData(0);
 
       LO numAggs = aggs->GetNumAggregates();
-      Teuchos::ArrayRCP<LO> aggSizes = aggs->ComputeAggregateSizes();
+      aggSizes = aggs->ComputeAggregateSizes();
 
-      Teuchos::ArrayRCP<LO> aggsToIndices(numAggs+LO_ONE,LO_ZERO);
+      aggsToIndices = Teuchos::ArrayRCP<LO>(numAggs+LO_ONE,LO_ZERO);
 
       for (LO i=0;i<numAggs;++i) {
 	  aggsToIndices[i+LO_ONE] = aggsToIndices[i] + aggSizes[i];
       }
 
       LO numNodes = vertex2AggId->getLocalLength();
-      Teuchos::ArrayRCP<LO> aggSortedVertices(numNodes,-LO_ONE);
+      aggSortedVertices = Teuchos::ArrayRCP<LO>(numNodes,-LO_ONE);
       Teuchos::ArrayRCP<LO> vertexInsertionIndexByAgg(numNodes,LO_ZERO);
       
       for (LO i=0;i<numNodes;++i) {
@@ -138,6 +134,32 @@ namespace MueLu {
 
       }
 
+
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<MultiVector> agg_qualities) const {
+
+      const double SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
+      const double SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
+      const double SCALAR_TWO = SCALAR_ONE + SCALAR_ONE;
+
+      const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+      const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
+
+      // Reorder local aggregate information into a format amenable to computing
+      // per-aggregate quantities. Specifically, we compute a format
+      // similar to compressed sparse row format for sparse matrices in which
+      // we store all the local vertices in a single array in blocks corresponding
+      // to aggregates. (This array is aggSortedVertices.) We then store a second
+      // array (aggsToIndices) whose k-th element stores the index of the first
+      // vertex in aggregate k in the array aggSortedVertices.      
+
+      ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
+      ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
+
+      LO numAggs = aggs->GetNumAggregates();
+
       // Compute the per-aggregate quality estimate
 
       typedef Teuchos::SerialDenseMatrix<LO,SC> DenseMatrix;
@@ -146,8 +168,6 @@ namespace MueLu {
       ArrayView<const LO> rowIndices;
       ArrayView<const SC> rowValues;
       Teuchos::LAPACK<LO,SC> myLapack;
-
-#include <iostream>
 
       // Iterate over each aggregate to compute the quality estimate
       for (LO aggId=LO_ZERO; aggId<numAggs; ++aggId) {
