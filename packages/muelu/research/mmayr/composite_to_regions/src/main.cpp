@@ -98,6 +98,22 @@
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
 int LID2Dregion(void *ptr, int LIDcomp, int whichGrp);
 
+extern void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[], int edgeLength, int alongX, int ownedEdge, int interiorEdge, int start, int ownedX, int ownedY);
+
+extern void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int ownedY, int Cx, int Cy, int Rx, int Ry, std::vector<int> &appData);
+
+extern int LIDregionCircleSquare(void *ptr, int compLID,int whichGrp);
+
+#define ISSTRUCTURED 0
+#define OWNEDX   1 
+#define OWNEDY   2 
+#define REGIONX  3 
+#define REGIONY  4 
+#define CORNERX  5 
+#define CORNERY  6 
+#define NGHOSTS  7
+#define FirstLIDsOfGhosts 8
+
 // this little widget handles application specific data
 // used to implement LIDregion()
 struct widget {
@@ -604,6 +620,7 @@ int main(int argc, char *argv[]) {
   bool doing1D = false;
   int  globalNx, globalNy;
   std::string xmlFileName;
+  std::string problemType;
   std::string regionDataDirectory;
 
   myRank = Comm.MyPID();
@@ -623,6 +640,7 @@ int main(int argc, char *argv[]) {
 
     // define command line arguments
     clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration", true);
+    clp.setOption("probType", &problemType, "Problem type [structured, hybrid]", true);
     clp.setOption("regDataDir", &regionDataDirectory, "directory with all region information/files", true);
 
     // force user to specify all options
@@ -638,6 +656,10 @@ int main(int argc, char *argv[]) {
     if(parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return 1; // Error!
     }
+
+    // Check for valid command line arguments
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(problemType == "structured" || problemType == "hybrid"),
+        "Unknown problem type. Use either 'structured' or 'hybrid'.\n");
   }
 
   Comm.Barrier();
@@ -897,6 +919,7 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
+  std::vector<int> genericVector;
   // Load AppData for LID region
   {
     std::stringstream fileNameSS;
@@ -904,40 +927,63 @@ int main(int argc, char *argv[]) {
     fp = fopen(fileNameSS.str().c_str(), "r");
     TEUCHOS_ASSERT(fp!=NULL);
 
-    if (doing1D) {
-      int minGID, maxGID;
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d",&minGID,&maxGID);
-        minGIDComp[i] = minGID;
-        maxGIDComp[i] = maxGID;
+    if (problemType == "structured") {
+      if (doing1D) {
+        int minGID, maxGID;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d",&minGID,&maxGID);
+          minGIDComp[i] = minGID;
+          maxGIDComp[i] = maxGID;
+        }
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+        }
+        appData.minGIDComp = minGIDComp.data();
+        appData.maxGIDComp = maxGIDComp.data();
       }
-      appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+      else {
+        appData.nx = globalNx;
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDimx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.lDimy= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornery= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornery= (int *) malloc(sizeof(int)*myRegions.size());
+        int garbage;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
+        }
       }
-      appData.minGIDComp = minGIDComp.data();
-      appData.maxGIDComp = maxGIDComp.data();
     }
     else {
-      appData.nx = globalNx;
-      appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lDimx= (int *) malloc(sizeof(int)*myRegions.size());
-      appData.lDimy= (int *) malloc(sizeof(int)*myRegions.size());
-      appData.trueCornerx= (int *) malloc(sizeof(int)*myRegions.size());
-      appData.trueCornery= (int *) malloc(sizeof(int)*myRegions.size());
-      appData.relcornerx= (int *) malloc(sizeof(int)*myRegions.size());
-      appData.relcornery= (int *) malloc(sizeof(int)*myRegions.size());
-      int garbage;
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
-        fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
-        fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
+      int isStructured;
+      fscanf(fp,"%d",&isStructured);
+      if (isStructured == 0) {
+         genericVector.resize(3);
+         genericVector[ISSTRUCTURED] = 0;
+         fscanf(fp,"%d",&(genericVector[OWNEDX]));
+         genericVector[OWNEDY] = 1;
       }
+      else {
+         int Cx, Cy, Rx, Ry;
+         int ownedX,ownedY;
+         fscanf(fp,"%d%d",&Rx,&Ry);
+         fscanf(fp,"%d%d",&ownedX,&ownedY);
+         fscanf(fp,"%d%d",&Cx,&Cy);
+         int *rowptr, *cols;  double *values;
+         AComp->ExtractCrsDataPointers(rowptr, cols, values);
+         fillCircleSquareData(rowptr, cols, ownedX,ownedY, Cx, Cy, Rx, Ry,genericVector);
+      }
+      fclose(fp);
     }
 
     appData.maxRegPerGID = maxRegPerGID;
@@ -955,12 +1001,22 @@ int main(int argc, char *argv[]) {
 
     std::vector<int> rowGIDsReg;
     int *colGIDsComp = AComp->ColMap().MyGlobalElements();
+sleep(myRank*3);
     for (int k = 0; k < (int) myRegions.size(); k++) {
       rowGIDsReg.resize(0);
       std::vector<int> tempRegIDs(AComp->ColMap().NumMyElements());
       for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
-        if (doing1D) tempRegIDs[i] = LIDregion(&appData, i, k);
-        else tempRegIDs[i] = LID2Dregion(&appData, i, k);
+
+        if (problemType == "structured") {
+          if (doing1D)
+            tempRegIDs[i] = LIDregion(&appData, i, k);
+          else
+            tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
+        else {
+          tempRegIDs[i] = LIDregionCircleSquare(genericVector.data(), i, k);
+          printf("%d: LIDRegion(Composite LID=%d or GID=%d) = %d\n",myRank,i,colGIDsComp[i],tempRegIDs[i]); fflush(stdout);
+        }
       }
 
       std::vector<int> idx(tempRegIDs.size());
@@ -1011,8 +1067,15 @@ int main(int argc, char *argv[]) {
       double *jthRegions;
       int *colGIDsComp =  AComp->ColMap().MyGlobalElements();
       for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
-        if (doing1D) LID = LIDregion(&appData, i, 0);
-        else LID = LID2Dregion(&appData, i, 0);
+      if (problemType == "structured") {
+        if (doing1D)
+          LID = LIDregion(&appData, i, 0);
+        else
+          LID = LID2Dregion(&appData, i, 0);
+      }
+      else {
+        LID = LIDregionCircleSquare(genericVector.data(), i, 0);
+      }
         if (LID == -1) {
           for (int j = 0; j < maxRegPerGID; j++) {
             jthRegions = (*regionsPerGIDWithGhosts)[j];
@@ -1089,10 +1152,15 @@ int main(int argc, char *argv[]) {
       // must put revisedGIDs in application-provided order by
       // invoking LIDregion() and sorting
       for (int i = 0; i < nExtended; i++) {
-        if (doing1D)
-          tempRegIDs[i] = LIDregion(&appData, i, k);
-        else
-          tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        if (problemType == "structured") {
+          if (doing1D)
+            tempRegIDs[i] = LIDregion(&appData, i, k);
+          else
+            tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
+        else {
+          tempRegIDs[i] = LIDregionCircleSquare(genericVector.data(), i, k);
+        }
       }
       std::vector<int> idx(tempRegIDs.size());
       std::iota(idx.begin(),idx.end(),0);
@@ -2332,4 +2400,361 @@ int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
 
    return(
     (yGIDComp - relcornery[whichGrp]-trueCornery[whichGrp])*lDimx[whichGrp]+ (xGIDComp - relcornerx[whichGrp]-trueCornerx[whichGrp]));
+}
+
+
+
+void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int ownedY, int Cx, int Cy, int Rx, int Ry,
+std::vector<int> &appData)
+{
+/* Fills the vector appData so that the function LIDregionCircleSquareWithUnstr2D() can
+ * properly map CompositeLIDs to RegionLIDs. Specifically, appData's 
+ * contents will be given by 
+ *
+ *   appData[OWNEDX ]     x/y dimensions of rectangle owned by proc, which is 
+ *   appData[OWNEDY ]     given as input parameters 'ownedX' and 'ownedY'
+ *
+ *   appData[REGIONX]     x/y dimensions of proc's region, which is given 
+ *   appData[REGIONY]     as input parameters 'Rx' and 'Ry'
+ *
+ *   appData[CORNERX]     Offset of the lower left corner defined by the
+ *   appData[CORNERY]     rectangular region piece that is actually owned by 
+ *                        this processor (in the composite layout). Should be
+ *                        either 0 or 1.  So, Cx = Cy=0 means that the processor
+ *                        actually owns the lower left corner of the region.
+ *                        This is given as input parameters 'Cx' and 'Cy'
+ *
+ *   appData[k]           Gives the region LID associated with the 
+ *                        (k-FirstLIDsOfGhosts+ownedX*ownedY)^th
+ *                        composite LID  .. for k >= FirstLIDsOfGhosts,
+ *                        which is the (k-FirstLIDsOfGhosts)^th ghost
+ *                        composite LID.
+ *
+ *
+ * Before filling appData, fillCircleSquareData() first fills 
+ * ghostCompLIDs with ids of any ghosts associated with a region boundary.
+ * The edges are done in the following order: bottom, top, left, right. 
+ * If a region boundary does not correspond to ghost unknowns in the composite layout,
+ * then this boundary is not included in ghostCompLIDs. Once filled, ghostCompLIDs[]
+ * should have the following contents:
+ * 
+ *    ghostCompLIDs[startBot:startTop-1]   Ghost composite LIDs for bottom
+ *                                         edge of region
+ *    
+ *    ghostCompLIDs[startTop:startLft-1]   Ghost composite LIDs for top
+ *                                         edge of region
+ *
+ *    ghostCompLIDs[startLft:startRgt-1]   Ghost composite LIDs for left edge
+ *                                         of region. Does not include corners
+ *                                         if they are already included
+ *                                         with the bottom or top ghosts
+ *
+ *    ghostCompLIDs[startRgt:              Ghost composite LIDs for right edge
+ *                     nRegionalGhosts ]   of region. Does not include corners
+ *                                         if they are already included
+ *                                         with the bottom or top ghosts
+ *
+ * Read comments for edgeGhosts(). The main assumption is that all stencils are full (9
+ * point in the interior). 
+ *
+ */
+
+  /* Compute the number of ghosts that lie on the region boundary and where*/
+  /* the different region boundaries will start in the vector.             */
+
+  int nRegionalGhosts = 0;
+  int startBot = nRegionalGhosts;
+  if (Cy==1) {
+     nRegionalGhosts= nRegionalGhosts+ownedX;
+     if (Cx==1)           nRegionalGhosts=nRegionalGhosts+1;
+     if (Rx==ownedX+Cx+1) nRegionalGhosts=nRegionalGhosts+1;
+  }
+  int startTop = nRegionalGhosts;
+
+  if (Ry == ownedY+Cy+1) {
+     nRegionalGhosts= nRegionalGhosts+ownedX;
+     if (Cx==1)          nRegionalGhosts=nRegionalGhosts+1;
+     if (Rx==ownedX+Cx+1)nRegionalGhosts=nRegionalGhosts+1;
+  }
+  int startLft = nRegionalGhosts;
+
+  if (Cx==1)             nRegionalGhosts= nRegionalGhosts+ownedY;
+  int startRgt = nRegionalGhosts;
+
+  if (Rx == ownedX+Cx+1) nRegionalGhosts= nRegionalGhosts+ownedY;
+  std::vector<int> ghostCompLIDs(nRegionalGhosts);
+
+  /* insert ghosts for bottom, top, left, and right edges into ghostCompLIDs */
+
+  int nGhostFound = 0;
+  if (Cy==1)            edgeGhosts(ArowPtr, Acols, nGhostFound, ghostCompLIDs.data(), Rx-Cx-1,1,     1,       2,2-Cx,ownedX, ownedY);
+  if (Ry == ownedY+Cy+1)edgeGhosts(ArowPtr, Acols, nGhostFound, ghostCompLIDs.data(), Rx-Cx-1,1,ownedY,ownedY-1,2-Cx,ownedX, ownedY);
+  if (Cx==1)            edgeGhosts(ArowPtr, Acols, nGhostFound, ghostCompLIDs.data(),ownedY-1,0,     1,       2,   2,ownedX, ownedY);
+  if (Rx == ownedX+Cx+1)edgeGhosts(ArowPtr, Acols, nGhostFound, ghostCompLIDs.data(),ownedY-1,0,ownedX,ownedX-1,   2,ownedX, ownedY);
+
+  /* determine the largest ghost LID so that we can allocate enough space */
+  int biggest = ownedX*ownedY-1;
+  for (int k = 0; k < nRegionalGhosts; k++)
+     if (ghostCompLIDs[k] > biggest) biggest = ghostCompLIDs[k];
+
+  // fill appData 
+
+  appData.resize(FirstLIDsOfGhosts+biggest-ownedX*ownedY);
+
+  appData[ISSTRUCTURED] = 1;
+  appData[OWNEDX ] = ownedX;
+  appData[OWNEDY ] = ownedY;
+  appData[REGIONX] = Rx;
+  appData[REGIONY] = Ry;
+  appData[CORNERX] = Cx;
+  appData[CORNERY] = Cy;
+  appData[NGHOSTS] = biggest-ownedX*ownedY;
+
+  int offset = FirstLIDsOfGhosts-ownedX*ownedY;
+
+  for (int k = 0; k < biggest-ownedX*ownedY; k++) appData[FirstLIDsOfGhosts+k] = -1;
+  for (int k=startBot; k < startTop; k++)
+     appData[ghostCompLIDs[k]+offset]=k;
+  for (int k=startTop; k < startLft; k++)
+     appData[ghostCompLIDs[k]+offset] = Rx*(Ry-1)+k-startTop;
+  for (int k=startLft; k < startRgt; k++)
+     appData[ghostCompLIDs[k]+offset] = Rx*(k+Cy-startLft);
+  for (int k=startRgt; k < nRegionalGhosts; k++)
+     appData[ghostCompLIDs[k]+offset] = Rx*(k+Cy-startRgt)+Rx-1;
+
+for (int i = 0; i <  ghostCompLIDs.size() ; i++) printf("ghostComp(%d)=%d ",i,ghostCompLIDs[i]);
+printf("\n"); fflush(stdout);
+}
+
+void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[], int edgeLength, int alongX, int ownedEdge, int interiorEdge, int start, int ownedX, int ownedY)
+{
+/*
+%
+%  Find the local region-oriented ids of a region's shared interface, which is
+%  owned by another processor in the composite layout. The situation is basically
+%  this 
+%
+%            ?   ?   ?  ?  ?  ?  ?  ?
+%             ====================== 
+%            ?|| .   .  .  .  .  .||?
+%            ?||                  ||?
+%
+%  The = and || denote the inter-processor boundary. We know that we have a 
+%  bunch of externally owned vertices, denoted by ?. The problem is that we
+%  are not completely sure which remote local composite id is associated with
+%  which vertex on the regular grid layout (as this was done automatically
+%  by a fill complete on the composite matrix. To figure this out, this function
+%  assumes a 9-pt stencil and that the chunk that each processor owns is at
+%  least 3 wide in each dimension.
+%
+%  The way local region ids are computed is as follows:
+%   1) We basically do a series of find(A(row,:)) for matrix rows corresponding
+%      to the ownedEdge that is adjacent to the shared interface that we wish
+%      to find region ids.
+%   2) We assign any non-local columns (those > nOwned) an index, ii, indicating
+%      that this column is adjacent to the ii^th point along ownedEdge. Some 
+%      columns might be adjacent to several points along ownedEdge. These 
+%      columns end up with the largest ii value, as we over-write the assigned
+%      indices. Thus, a typical situation might look like this
+%
+%            1   2   3  4  5  6  6  6
+%             ====================== 
+%            1|| .   .  .  .  .  .||6
+%            1||                  ||6
+%
+%      In this picture, locations corresponding to entries owned by other
+%      processors have been assigned a number. The = and || symbols denote
+%      the edge of the inter-processor boundary. The .'s lie along ownedEdge
+%      So non-local dofs of the kth dot (counting from left to right) are
+%      assigned the number k.
+%   3) The two lower 1's and the two lower 6's are problematic as we do not
+%      wish to consider these vertices as each function invocation is only
+%      concerned with the one region edge. So we will stick large numbers
+%      (equal to nOwned) in these locations. This is done by probing points
+%      that are 1 away (provided externally as interiorEdge) from the corner
+%      along orthogonal edges and assigning these a largeNumber. Our example
+%      might now look like 
+%
+%            1   2   3  4  5  6  6  6
+%             ====================== 
+%            L|| .   .  .  .  .  .||L
+%            L|| *               *||L
+%            L||                  ||L
+%
+%      where L denotes newly assigned large numbers and * are the one away
+%      point that were just probed to assign large numbers.
+%
+%   4) We can now determine which remote vertices correspond to the 2D layout.
+%      Specifically, we take the 1st vertex along ownedEdge and examine its
+%      5 neighbors (e.g., col1,col2,col3,col4,col5). We look at assignedIndices
+%      computed in steps 2 and 3. The column with the lowest assignedIndices
+%      value (= 1) is the corner point. The column with the next lowest 
+%      (= 2) is adjacent to this corner point along the desired edge. The
+%      column with the next lowest value (= 3) is the next point. We record
+%      these 3 column indices in ghostCompLIDs and set assignedIndices for 
+%      them to a large number (so now 1 2 3 in the above picture would now be
+%      replaced by L L L). We now examine the 2nd vertex's remote neighbors
+%      which should have the values L L 3 and assign the column associated 
+%      with the smallest value (= 3) to ghostCompLIDs ... continuing along
+%      until we have assigned the entire edge.
+%
+%  Note: In the above picture we are assuming that all region edges are owned
+%  by remote processors. However, this function works as well when either
+%  of the orthogonal edges (vertical edges in our example) are owned locally.
+%  For example, we might have the case below
+%
+%                ?   ?  ?  ?  ?  ?  ?
+%             ====================== 
+%             || .   .  .  .  .  .||?
+%             ||                  ||?
+%  Here, the left edge might be a real physical boundary or it might be that 
+%  the processor owns the shared interface of the region (so it has remotes
+%  to the left of the leftmost ||, but there is no need to assign them a 
+%  local region-oriented id.  In these cases start is not necessarily 1
+%  and fullEdgeLength is not necessarily equal to edgeLength
+*/
+
+  if (ownedX < 3) { fprintf(stderr,"edges must be longer\n"); exit(1);}
+  if (ownedY < 3) { fprintf(stderr,"edges must be longer\n"); exit(1);}
+
+  int  nOwned      = ownedX*ownedY;
+  int  largeNumber = nOwned+10;
+
+  std::vector<int> assignedIndices( (ownedX+2)*(ownedY+2) + 1);
+
+  /* Perform steps 1) and 2) described above. */
+
+  int fullEdgeLength, row, *cols, nCols;
+
+  if (alongX)  fullEdgeLength = ownedX;
+  else         fullEdgeLength = ownedY;
+
+  for (int ii=1; ii <= fullEdgeLength; ii++) {
+
+    /* non-Ghosts are lexicographically ordered  */
+
+    if   (alongX) row = ownedX*(ownedEdge-1) +     ii   ;
+    else          row = ownedX*(   ii    -1) + ownedEdge; 
+    cols = &(Acols[ArowPtr[row-1]]);
+    nCols = ArowPtr[row] - ArowPtr[row-1];
+    for (int k = 0; k < nCols; k++) {
+       if (cols[k] >= nOwned ) assignedIndices[cols[k]] = ii;
+    }
+  }
+
+  /* Now assign large numbers (step 3) to 2 closest vertices */
+  /* along each orthogonal edge                              */
+
+  /* non-Ghosts are lexicographically ordered  */
+  if  (alongX) row = ownedX*(interiorEdge-1)+     1     ;
+  else         row =                        interiorEdge; 
+
+  cols = &(Acols[ArowPtr[row-1]]);
+  nCols = ArowPtr[row] - ArowPtr[row-1];
+  bool firstCornerHasGhosts = false;
+  for (int k = 0; k < nCols; k++)
+    if (cols[k] >= nOwned) {firstCornerHasGhosts = true; assignedIndices[cols[k]]=largeNumber;}
+
+// This is a case not originally considered. I hope it fixes this bug.
+// When coding this up, I failed to recognize the case when Cx is 0
+// because 
+if ( (start==2) && (firstCornerHasGhosts == false)) start--; 
+
+  /* non-Ghosts are lexicographically ordered  */
+  if  (alongX) row = ownedX*(interiorEdge-1) +  edgeLength ;
+  else         row = ownedX*( edgeLength -1) + interiorEdge;
+
+  cols = &(Acols[ArowPtr[row-1]]);
+  nCols = ArowPtr[row] - ArowPtr[row-1];
+  for (int k = 0; k < nCols; k++)
+    if (cols[k] >= nOwned) assignedIndices[cols[k]]=largeNumber; 
+
+  /* Now perform step 4 by looking at smallest */
+  /* assignedIndices along ownedEdge.          */
+
+  int min, kk;
+
+  for (int ii=1; ii <= edgeLength; ii++) {
+
+    /* non-Ghosts are lexicographically ordered  */
+    if  (alongX) row = ownedX*(ownedEdge-1) +    ii    ;
+    else         row = ownedX*(   ii    -1) + ownedEdge;
+
+    cols = &(Acols[ArowPtr[row-1]]);
+    nCols= ArowPtr[row] - ArowPtr[row-1];
+
+    min  = largeNumber-1;  kk = -1;
+
+    for (int k = 0; k < nCols; k++) {
+      if (cols[k] >= nOwned ) {
+        if (assignedIndices[cols[k]] == min) { fprintf(stderr,"a tie?\n"); exit(1);}
+        if (assignedIndices[cols[k]] < min) {
+          kk = cols[k];
+          min = assignedIndices[cols[k]];
+        }
+      }
+    }
+    if ((ii>=start) && (kk != -1)) ghostCompLIDs[nGhostFound++]= kk;
+    if (kk != -1) assignedIndices[kk] = largeNumber;
+
+    if (ii==1) {
+      for (int kkkk = 1; kkkk <= 2; kkkk++) {
+        min  = largeNumber-1;  kk = -1;
+        for (int k = 0; k < nCols; k++) {
+          if (cols[k] >= nOwned ) {
+            if (assignedIndices[cols[k]] == min) { fprintf(stderr,"a Tie?\n"); exit(1);}
+            if (assignedIndices[cols[k]] < min) {
+              kk = cols[k];
+              min = assignedIndices[cols[k]];
+            }
+          }
+        }
+        if (kk != -1) {
+          ghostCompLIDs[nGhostFound++]= kk;
+          assignedIndices[kk] = largeNumber;
+        }
+      } // for (int kkkk = 1; kkkk <= 2; kkkk++)
+    } // if (ii==1)
+  } // for (int ii=1; ii <= edgeLength; ii++)
+}
+
+int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
+{
+   // Maps composite LIDs to region LIDs for the example 
+   // corresponding to a circle embedded within a box created
+   // by the mkUnstrQuads Matlab functions. Assumes that 
+   // fillCircleSquareData() has been invoked. 
+
+   int* appData      = (int *) ptr;
+
+   if (appData[ISSTRUCTURED] == 0) return(compLID);
+
+   int* LIDsOfGhosts = (int *) &(appData[FirstLIDsOfGhosts]);
+   int  ownedX = appData[ OWNEDX];
+   int  ownedY = appData[ OWNEDY];
+   int  Rx     = appData[REGIONX];
+   int  Ry     = appData[REGIONY];
+   int  Cx     = appData[CORNERX];
+   int  Cy     = appData[CORNERY];
+
+
+   int i,j,ii;
+   // local composite ids are assumed to be lexicographical
+   // on the owned rectangle. These need to be mapped to
+   // the region rectangle.
+
+   if (compLID < ownedX*ownedY) {
+      i = (compLID+1)%ownedX;
+      if (i==0) i=ownedX; 
+
+      j = (compLID+1 - i)/ownedX + 1;
+
+      return(Rx*(j-1+Cy)+i+Cx -1);  // C-style ==> -1
+   }
+   else {
+      ii = compLID - ownedX*ownedY;
+      if (ii > appData[NGHOSTS] ) return(-1); 
+      if (LIDsOfGhosts[ii] == -1) return(-1);
+      return(LIDsOfGhosts[ii]); 
+   }
 }
