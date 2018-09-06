@@ -686,7 +686,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
     }
     problem->printTimers();
 
@@ -886,7 +886,7 @@ int testFromDataFile(
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
         std::cout << "testFromDataFile is done " << std::endl;
     }
 
@@ -1073,7 +1073,7 @@ int testFromSeparateDataFiles(
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
         std::cout << "testFromDataFile is done " << std::endl;
     }
 
