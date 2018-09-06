@@ -222,6 +222,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*r_2);
 
   int numSolves = 1;
+/*
   std::clock_t timer_total = 0;
   for(int i=0;i<numSolves;i++) {
     v_1->zero();
@@ -246,6 +247,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
  
   if(myRank==0)
     *outStream << numSolves << " Solves in " << (timer_total)/(RealT) CLOCKS_PER_SEC << " seconds." << std::endl;
+*/
 
   for(int chkProc=0;chkProc<numRanks;++chkProc) {
     using ROL::PinTVector;
