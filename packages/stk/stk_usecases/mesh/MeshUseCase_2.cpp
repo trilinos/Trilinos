@@ -97,11 +97,11 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   // Put the coordinates and temperature field on all nodes
 
   stk::mesh::Part & universal = m_fem_metaData.universal_part();
-  stk::mesh::put_field( m_coordinates_field , universal , SpatialDim );
-  stk::mesh::put_field( m_temperature_field, universal );
+  stk::mesh::put_field_on_mesh( m_coordinates_field , universal , SpatialDim , nullptr);
+  stk::mesh::put_field_on_mesh( m_temperature_field, universal , nullptr);
 
   // Put the volume field on all elements:
-  stk::mesh::put_field( m_volume_field , universal );
+  stk::mesh::put_field_on_mesh( m_volume_field , universal , nullptr);
 
   // Done populating the mesh meta data.
   // Commit the meta data: this locks out changes,

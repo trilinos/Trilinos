@@ -578,8 +578,8 @@ TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
          //getCurrentState()->getMetaData()->getNFailures();
          const int iStep = integrator->getSolutionHistory()->
             getCurrentState()->getIndex();
-         const int nFail = integrator->getSolutionHistory()->
-            getCurrentState()->getMetaData()->getNRunningFailures();
+         //const int nFail = integrator->getSolutionHistory()->
+         //   getCurrentState()->getMetaData()->getNRunningFailures();
 
          // Should be close to the prescribed tolerance
          TEST_FLOATING_EQUALITY(std::log10(L2norm),std::log10(absTol), 0.3 );

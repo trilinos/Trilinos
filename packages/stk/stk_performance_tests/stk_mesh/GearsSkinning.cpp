@@ -313,15 +313,17 @@ TEST( gears_skinning, gears_skinning )
   CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>(face_rank, "face_displacement",ONE_STATE);
   IntField & processor_field = fixture.meta_data.declare_field<IntField>(stk::topology::ELEMENT_RANK, "processor_id",ONE_STATE);
 
-  stk::mesh::put_field(
+  stk::mesh::put_field_on_mesh(
       velocity_field,
       fixture.meta_data.universal_part(),
-      fixture.meta_data.spatial_dimension()
+      fixture.meta_data.spatial_dimension(),
+      nullptr
       );
 
-  stk::mesh::put_field(
+  stk::mesh::put_field_on_mesh(
       processor_field,
-      fixture.meta_data.universal_part()
+      fixture.meta_data.universal_part(),
+      nullptr
       );
 
   // add io parts
@@ -360,13 +362,13 @@ TEST( gears_skinning, gears_skinning )
   }
   stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field( displacement, skin_part);
+    stk::mesh::put_field_on_mesh( displacement, skin_part, nullptr);
     const stk::mesh::PartVector &surf_parts = skin_part.subsets();
     for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
       stk::mesh::Part & surf_part = **ip;
       if (surf_part.primary_entity_rank() == stk::topology::ELEMENT_RANK-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field( displacement, surf_part);
+        stk::mesh::put_field_on_mesh( displacement, surf_part, nullptr);
       }
     }
   }

@@ -139,7 +139,7 @@ ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const Uniq
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -151,12 +151,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -357,7 +351,7 @@ ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const Uniq
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -369,12 +363,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -574,7 +562,7 @@ ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const Uniq
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -586,12 +574,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)

@@ -136,7 +136,7 @@ namespace MueLu {
 
         This has to be done by the aggregation factory.
     */
-    RCP<IndexManager> & GetIndexManager() { return geoData_; }
+    RCP<IndexManager>& GetIndexManager() { return geoData_; }
 
     /*! @brief Get the index manager used by structured aggregation algorithms.
 

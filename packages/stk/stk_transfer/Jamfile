@@ -104,7 +104,6 @@ local xml-files =
 # If sources are added to this library change this target to use the lib rule instead.
 alias stk_transfer
   : # No sources defined for header-only libraries.
-    /sierra/stk_search//stk_search
   : # No build requirements
   : # No default build
   : <include>$(stk_transfer-root-inc)

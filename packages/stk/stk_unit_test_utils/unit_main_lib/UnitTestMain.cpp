@@ -32,7 +32,6 @@
 //
 
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
-#include "mpi.h"                        // for MPI_Comm_rank, MPI_Finalize, etc
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 #include <Kokkos_Core.hpp>

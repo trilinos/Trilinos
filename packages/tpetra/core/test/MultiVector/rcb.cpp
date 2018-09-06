@@ -76,7 +76,7 @@
 
 typedef Tpetra::Map<>::local_ordinal_type LO;
 typedef Tpetra::Map<>::global_ordinal_type GO;
-typedef double Scalar;
+typedef Tpetra::MultiVector<>::scalar_type Scalar;
 
 Teuchos::RCP<Teuchos::Time> tmvBuild;
 Teuchos::RCP<Teuchos::Time> tmvMigrate;

@@ -57,8 +57,8 @@ namespace {
   template<class MapType>
   class Test {
   public:
-    typedef double ST;
-    typedef Teuchos::ScalarTraits<double>::magnitudeType MT;
+    typedef Tpetra::MultiVector<>::scalar_type ST;
+    typedef Teuchos::ScalarTraits<ST>::magnitudeType MT;
 
     typedef typename MapType::local_ordinal_type LO;
     typedef typename MapType::global_ordinal_type GO;

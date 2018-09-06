@@ -300,7 +300,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -310,15 +310,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_.clear();  // Don't need this anymore
