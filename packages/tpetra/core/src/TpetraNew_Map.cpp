@@ -60,8 +60,8 @@ namespace TpetraNew {
   Map::Map () :
     comm_ (new Teuchos::SerialComm<int> ()),
     indexBase_ (0),
-    numGlobalElements_ (0),
-    numLocalElements_ (0),
+    globalNumIndices_ (0),
+    myNumIndices_ (0),
     minMyGID_ (::Tpetra::Details::OrdinalTraits<global_ordinal_type>::invalid ()),
     maxMyGID_ (::Tpetra::Details::OrdinalTraits<global_ordinal_type>::invalid ()),
     minAllGID_ (::Tpetra::Details::OrdinalTraits<global_ordinal_type>::invalid ()),
@@ -218,8 +218,8 @@ namespace TpetraNew {
     minAllGID_ = indexBase;
     maxAllGID_ = indexBase + numGlobalElements - 1;
     indexBase_ = indexBase;
-    numGlobalElements_ = numGlobalElements;
-    numLocalElements_ = numLocalElements;
+    globalNumIndices_ = numGlobalElements;
+    myNumIndices_ = numLocalElements;
     firstContiguousGID_ = minMyGID_;
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
@@ -257,7 +257,7 @@ namespace TpetraNew {
                                    indexBase, comm);
 #endif // HAVE_TPETRA_DEBUG
 
-    // Distribute the elements across the nodes so that they are
+    // Distribute the elements across the processes so that they are
     // - non-overlapping
     // - contiguous
 
@@ -273,7 +273,7 @@ namespace TpetraNew {
     const GO myOffset = scanResult - numLocalElements;
 
     if (numGlobalElements != GINV) {
-      numGlobalElements_ = numGlobalElements; // Use the user's value.
+      globalNumIndices_ = numGlobalElements; // Use the user's value.
     }
     else {
       // Inclusive scan means that the last process has the final sum.
@@ -285,7 +285,7 @@ namespace TpetraNew {
       if (numProcs > 1) {
         broadcast (*comm, numProcs - 1, outArg (globalSum));
       }
-      numGlobalElements_ = globalSum;
+      globalNumIndices_ = globalSum;
 
 #ifdef HAVE_TPETRA_DEBUG
       // No need for an all-reduce here; both come from collectives.
@@ -296,18 +296,18 @@ namespace TpetraNew {
         << ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     }
-    numLocalElements_ = numLocalElements;
+    myNumIndices_ = numLocalElements;
     indexBase_ = indexBase;
-    minAllGID_ = (numGlobalElements_ == 0) ?
+    minAllGID_ = (globalNumIndices_ == 0) ?
       std::numeric_limits<GO>::max () :
       indexBase;
-    maxAllGID_ = (numGlobalElements_ == 0) ?
+    maxAllGID_ = (globalNumIndices_ == 0) ?
       std::numeric_limits<GO>::lowest () :
-      indexBase + static_cast<GO> (numGlobalElements_) - static_cast<GO> (1);
-    minMyGID_ = (numLocalElements_ == 0) ?
+      indexBase + static_cast<GO> (globalNumIndices_) - static_cast<GO> (1);
+    minMyGID_ = (myNumIndices_ == 0) ?
       std::numeric_limits<GO>::max () :
       indexBase + static_cast<GO> (myOffset);
-    maxMyGID_ = (numLocalElements_ == 0) ?
+    maxMyGID_ = (myNumIndices_ == 0) ?
       std::numeric_limits<GO>::lowest () :
       indexBase + myOffset + static_cast<GO> (numLocalElements) - static_cast<GO> (1);
     firstContiguousGID_ = minMyGID_;
@@ -459,17 +459,17 @@ namespace TpetraNew {
     // this Map don't ever need the Directory (i.e., if they never
     // call getRemoteIndexList on this Map).
     if (numGlobalElements != GINV) {
-      numGlobalElements_ = numGlobalElements; // Use the user's value.
+      globalNumIndices_ = numGlobalElements; // Use the user's value.
     }
     else { // The user wants us to compute the sum.
       reduceAll<int, GO> (*comm, REDUCE_SUM,
 			  static_cast<GO> (numLocalElements),
-			  outArg (numGlobalElements_));
+			  outArg (globalNumIndices_));
     }
 
     // mfh 20 Feb 2013: We've never quite done the right thing for
     // duplicate GIDs here.  Duplicate GIDs have always been counted
-    // distinctly in numLocalElements_, and thus should get a
+    // distinctly in myNumIndices_, and thus should get a
     // different LID.  However, we've always used std::map or a hash
     // table for the GID -> LID lookup table, so distinct GIDs always
     // map to the same LID.  Furthermore, the order of the input GID
@@ -490,7 +490,7 @@ namespace TpetraNew {
     // get inserted is not defined.  This would make the assignment of
     // LID to GID nondeterministic.
 
-    numLocalElements_ = numLocalElements;
+    myNumIndices_ = numLocalElements;
     indexBase_ = indexBase;
 
     minMyGID_ = indexBase_;
@@ -504,11 +504,11 @@ namespace TpetraNew {
     // interval followed by noncontiguous entries.  On the other hand,
     // we could just expose this case explicitly as yet another Map
     // constructor, and avoid the trouble of detecting it.
-    if (numLocalElements_ > 0) {
+    if (myNumIndices_ > 0) {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
+      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", myNumIndices_);
       auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       // The input array entryList_host is already on host, so we
@@ -527,7 +527,7 @@ namespace TpetraNew {
 
       lgMap_host[0] = firstContiguousGID_;
       LO i = 1;
-      for ( ; i < numLocalElements_; ++i) {
+      for ( ; i < myNumIndices_; ++i) {
         const GO curGid = entryList_host[i];
         const LO curLid = i;
 
@@ -581,7 +581,7 @@ namespace TpetraNew {
       // indices anyway.  Thus, why not have the constructor compute
       // and return the min and max?
 
-      for ( ; i < numLocalElements_; ++i) {
+      for ( ; i < myNumIndices_; ++i) {
         const GO curGid = entryList_host[i];
         const LO curLid = i;
         lgMap_host[curLid] = curGid; // LID -> GID table
@@ -616,7 +616,7 @@ namespace TpetraNew {
     }
 
     // Compute the min and max of all processes' GIDs.  If
-    // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
+    // myNumIndices_ == 0 on this process, minMyGID_ and maxMyGID_
     // are both indexBase_.  This is wrong, but fixing it would
     // require either a fancy sparse all-reduce, or a custom reduction
     // operator that ignores invalid values ("invalid" means
@@ -639,7 +639,7 @@ namespace TpetraNew {
     if (std::numeric_limits<GO>::is_signed) {
       // Does my process NOT own all the elements?
       const GO localDist =
-        (static_cast<GO> (numLocalElements_) < numGlobalElements_) ? 1 : 0;
+        (static_cast<GO> (myNumIndices_) < globalNumIndices_) ? 1 : 0;
 
       GO minMaxInput[3];
       minMaxInput[0] = -minMyGID_;
@@ -1068,17 +1068,17 @@ namespace TpetraNew {
     // this Map don't ever need the Directory (i.e., if they never
     // call getRemoteIndexList on this Map).
     if (numGlobalElements != GINV) {
-      numGlobalElements_ = numGlobalElements; // Use the user's value.
+      globalNumIndices_ = numGlobalElements; // Use the user's value.
     }
     else { // The user wants us to compute the sum.
       reduceAll<int, GO> (*comm, REDUCE_SUM,
 			  static_cast<GO> (numLocalElements),
-			  outArg (numGlobalElements_));
+			  outArg (globalNumIndices_));
     }
 
     // mfh 20 Feb 2013: We've never quite done the right thing for
     // duplicate GIDs here.  Duplicate GIDs have always been counted
-    // distinctly in numLocalElements_, and thus should get a
+    // distinctly in myNumIndices_, and thus should get a
     // different LID.  However, we've always used std::map or a hash
     // table for the GID -> LID lookup table, so distinct GIDs always
     // map to the same LID.  Furthermore, the order of the input GID
@@ -1099,7 +1099,7 @@ namespace TpetraNew {
     // get inserted is not defined.  This would make the assignment of
     // LID to GID nondeterministic.
 
-    numLocalElements_ = numLocalElements;
+    myNumIndices_ = numLocalElements;
     indexBase_ = indexBase;
 
     minMyGID_ = indexBase_;
@@ -1113,11 +1113,11 @@ namespace TpetraNew {
     // interval followed by noncontiguous entries.  On the other hand,
     // we could just expose this case explicitly as yet another Map
     // constructor, and avoid the trouble of detecting it.
-    if (numLocalElements_ > 0) {
+    if (myNumIndices_ > 0) {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
+      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", myNumIndices_);
       auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       // Creating the mirror view is trivial, and the deep_copy is a
@@ -1136,7 +1136,7 @@ namespace TpetraNew {
 
       lgMap_host[0] = firstContiguousGID_;
       LO i = 1;
-      for ( ; i < numLocalElements_; ++i) {
+      for ( ; i < myNumIndices_; ++i) {
         const GO curGid = entryList_host[i];
         const LO curLid = i;
 
@@ -1184,7 +1184,7 @@ namespace TpetraNew {
       // indices anyway.  Thus, why not have the constructor compute
       // and return the min and max?
 
-      for ( ; i < numLocalElements_; ++i) {
+      for ( ; i < myNumIndices_; ++i) {
         const GO curGid = entryList_host[i];
         const LO curLid = i;
         lgMap_host[curLid] = curGid; // LID -> GID table
@@ -1219,7 +1219,7 @@ namespace TpetraNew {
     }
 
     // Compute the min and max of all processes' GIDs.  If
-    // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
+    // myNumIndices_ == 0 on this process, minMyGID_ and maxMyGID_
     // are both indexBase_.  This is wrong, but fixing it would
     // require either a fancy sparse all-reduce, or a custom reduction
     // operator that ignores invalid values ("invalid" means
@@ -1242,7 +1242,7 @@ namespace TpetraNew {
     if (std::numeric_limits<GO>::is_signed) {
       // Does my process NOT own all the elements?
       const GO localDist =
-        (static_cast<GO> (numLocalElements_) < numGlobalElements_) ? 1 : 0;
+        (static_cast<GO> (myNumIndices_) < globalNumIndices_) ? 1 : 0;
 
       GO minMaxInput[3];
       minMaxInput[0] = -minMyGID_;
@@ -1343,9 +1343,20 @@ namespace TpetraNew {
     return directory_->isOneToOne (*this);
   }
 
+  Map::local_ordinal_type
+  Map::getMaxLocalIndex () const
+  {
+    const local_ordinal_type myNumInds = this->getMyNumIndices ();
+    if (myNumInds == 0) {
+      return ::Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid ();
+    }
+    else { // Local indices are always zero-based.
+      return local_ordinal_type (myNumInds - 1);
+    }
+  }
 
   Map::local_ordinal_type
-  Map::getLocalElement (global_ordinal_type globalIndex) const
+  Map::getLocalIndex (const global_ordinal_type globalIndex) const
   {
     if (isContiguous ()) {
       if (globalIndex < getMinGlobalIndex () ||
@@ -1365,8 +1376,14 @@ namespace TpetraNew {
     }
   }
 
+  Map::local_ordinal_type
+  Map::getLocalElement (const global_ordinal_type globalIndex) const
+  {
+    return getLocalIndex (globalIndex);
+  }
+  
   Map::global_ordinal_type
-  Map::getGlobalElement (local_ordinal_type localIndex) const
+  Map::getGlobalIndex (const local_ordinal_type localIndex) const
   {
     if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
       return ::Tpetra::Details::OrdinalTraits<global_ordinal_type>::invalid ();
@@ -1383,8 +1400,14 @@ namespace TpetraNew {
     }
   }
 
+  Map::global_ordinal_type
+  Map::getGlobalElement (const local_ordinal_type localIndex) const
+  {
+    return getGlobalIndex (localIndex);
+  }
+  
   bool
-  Map::isNodeLocalElement (local_ordinal_type localIndex) const
+  Map::isMyLocalIndex (local_ordinal_type localIndex) const
   {
     if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
       return false;
@@ -1394,9 +1417,20 @@ namespace TpetraNew {
   }
 
   bool
-  Map::isNodeGlobalElement (global_ordinal_type globalIndex) const {
-    return this->getLocalElement (globalIndex) !=
+  Map::isNodeLocalElement (const local_ordinal_type localIndex) const
+  {
+    return isMyLocalIndex (localIndex);
+  }
+
+  bool
+  Map::isMyGlobalIndex (const global_ordinal_type globalIndex) const {
+    return this->getLocalIndex (globalIndex) !=
       ::Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid ();
+  }
+
+  bool
+  Map::isNodeGlobalElement (const global_ordinal_type globalIndex) const {
+    return isMyGlobalIndex (globalIndex);
   }
 
   bool Map::isUniform () const {
@@ -1414,7 +1448,7 @@ namespace TpetraNew {
     return local_map_type (glMap_, lgMap_, getIndexBase (),
                            getMinGlobalIndex (), getMaxGlobalIndex (),
                            firstContiguousGID_, lastContiguousGID_,
-                           getNodeNumElements (), isContiguous ());
+                           getMyNumIndices (), isContiguous ());
   }
 
   bool
@@ -1439,7 +1473,7 @@ namespace TpetraNew {
       // may result in the all-reduce hanging below.
       return false;
     }
-    else if (getGlobalNumElements () != map.getGlobalNumElements ()) {
+    else if (getGlobalNumIndices () != map.getGlobalNumIndices ()) {
       // Two Maps are definitely NOT compatible if they have different
       // global numbers of indices.
       return false;
@@ -1468,14 +1502,14 @@ namespace TpetraNew {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      getGlobalNumElements () != map.getGlobalNumElements (), std::logic_error,
+      getGlobalNumIndices () != map.getGlobalNumIndices (), std::logic_error,
       "Tpetra::Map::isCompatible: There's a bug in this method.  We've already "
       "checked that this condition is true above, but it's false here.  "
       "Please report this bug to the Tpetra developers.");
 
     // Do both Maps have the same number of indices on each process?
     const int locallyCompat =
-      (getNodeNumElements () == map.getNodeNumElements ()) ? 1 : 0;
+      (getMyNumIndices () == map.getMyNumIndices ()) ? 1 : 0;
 
     int globallyCompat = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
@@ -1503,7 +1537,7 @@ namespace TpetraNew {
       // equality on all processes, since Map is immutable.
       return true;
     }
-    else if (getNodeNumElements () != map.getNodeNumElements ()) {
+    else if (getMyNumIndices () != map.getMyNumIndices ()) {
       return false;
     }
     else if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
@@ -1549,10 +1583,10 @@ namespace TpetraNew {
       else if (this->lgMap_.data () == map.lgMap_.data ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
-        return this->getNodeNumElements () == map.getNodeNumElements ();
+        return this->getMyNumIndices () == map.getMyNumIndices ();
       }
       else { // we actually have to compare the GIDs
-        if (this->getNodeNumElements () != map.getNodeNumElements ()) {
+        if (this->getMyNumIndices () != map.getMyNumIndices ()) {
           return false; // We already checked above, but check just in case
         }
         else {
@@ -1579,8 +1613,8 @@ namespace TpetraNew {
     auto lmap1 = map.getLocalMap();
     auto lmap2 = this->getLocalMap();
 
-    auto numLocalElements1 = lmap1.getNodeNumElements();
-    auto numLocalElements2 = lmap2.getNodeNumElements();
+    auto numLocalElements1 = lmap1.getMyNumIndices();
+    auto numLocalElements2 = lmap2.getMyNumIndices();
 
     if (numLocalElements1 > numLocalElements2) {
       // There are more indices in the first map on this process than in second map.
@@ -1606,7 +1640,7 @@ namespace TpetraNew {
     local_ordinal_type numDiff = 0;
     Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
       KOKKOS_LAMBDA(const local_ordinal_type i, local_ordinal_type& diff) {
-        diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
+        diff += (lmap1.getGlobalIndex(i) != lmap2.getGlobalIndex(i));
       }, numDiff);
 
     return (numDiff == 0);
@@ -1634,7 +1668,7 @@ namespace TpetraNew {
       // may result in the all-reduce hanging below.
       return false;
     }
-    else if (getGlobalNumElements () != map.getGlobalNumElements ()) {
+    else if (getGlobalNumIndices () != map.getGlobalNumIndices ()) {
       // Two Maps are definitely NOT the same if they have different
       // global numbers of indices.
       return false;
@@ -1719,7 +1753,7 @@ namespace TpetraNew {
     // have local entries, then create and fill the local-to-global
     // mapping.
     const bool needToCreateLocalToGlobalMapping =
-      lgMap_.extent (0) == 0 && numLocalElements_ > 0;
+      lgMap_.extent (0) == 0 && myNumIndices_ > 0;
 
     if (needToCreateLocalToGlobalMapping) {
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1731,7 +1765,7 @@ namespace TpetraNew {
         " this bug to the Tpetra team.");
 #endif // HAVE_TEUCHOS_DEBUG
 
-      const LO numElts = static_cast<LO> (getNodeNumElements ());
+      const LO numElts = static_cast<LO> (getMyNumIndices ());
 
       lg_view_type lgMap ("lgMap", numElts);
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
@@ -1788,7 +1822,7 @@ namespace TpetraNew {
     if (this->getObjectLabel () != "") {
       os << ", Label: \"" << this->getObjectLabel () << "\"";
     }
-    os << ", Global number of entries: " << getGlobalNumElements ()
+    os << ", Global number of entries: " << getGlobalNumIndices ()
        << ", Number of processes: " << getComm ()->getSize ()
        << ", Uniform: " << (isUniform () ? "true" : "false")
        << ", Contiguous: " << (isContiguous () ? "true" : "false")
@@ -1823,7 +1857,7 @@ namespace TpetraNew {
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
-    const LO numEnt = static_cast<LO> (this->getNodeNumElements ());
+    const LO numEnt = static_cast<LO> (this->getMyNumIndices ());
     out << "My number of entries: " << numEnt << endl
         << "My minimum global index: " << this->getMinGlobalIndex () << endl
         << "My maximum global index: " << this->getMaxGlobalIndex () << endl;
@@ -1832,7 +1866,7 @@ namespace TpetraNew {
       out << "My global indices: [";
       const LO minLclInd = this->getMinLocalIndex ();
       for (LO k = 0; k < numEnt; ++k) {
-        out << minLclInd + this->getGlobalElement (k);
+        out << minLclInd + this->getGlobalIndex (k);
         if (k + 1 < numEnt) {
           out << ", ";
         }
@@ -1902,7 +1936,7 @@ namespace TpetraNew {
       if (label != "") {
         out << "Label: \"" << label << "\"" << endl;
       }
-      out << "Global number of entries: " << getGlobalNumElements () << endl
+      out << "Global number of entries: " << getGlobalNumIndices () << endl
           << "Minimum global index: " << getMinAllGlobalIndex () << endl
           << "Maximum global index: " << getMaxAllGlobalIndex () << endl
           << "Index base: " << getIndexBase () << endl
@@ -1949,8 +1983,8 @@ namespace TpetraNew {
       // original index base may no longer be the globally min global
       // index.  See #616 for why this doesn't matter so much anymore.
       newMap->indexBase_ = this->indexBase_;
-      newMap->numGlobalElements_ = this->numLocalElements_;
-      newMap->numLocalElements_ = this->numLocalElements_;
+      newMap->globalNumIndices_ = this->myNumIndices_;
+      newMap->myNumIndices_ = this->myNumIndices_;
       newMap->minMyGID_ = this->minMyGID_;
       newMap->maxMyGID_ = this->maxMyGID_;
       newMap->minAllGID_ = this->minMyGID_;
@@ -1999,14 +2033,14 @@ namespace TpetraNew {
 	this->getMyGlobalIndices ();
       typedef typename std::decay<decltype (lgMap.extent (0)) >::type size_type;
       const size_type lclNumInds =
-        static_cast<size_type> (this->getNodeNumElements ());
+        static_cast<size_type> (this->getMyNumIndices ());
       using Teuchos::TypeNameTraits;
       TEUCHOS_TEST_FOR_EXCEPTION
         (lgMap.extent (0) != lclNumInds, std::logic_error,
          "Tpetra::Map::replaceCommWithSubset: Result of getMyGlobalIndices() "
          "has length " << lgMap.extent (0) << " (of type " <<
-         TypeNameTraits<size_type>::name () << ") != this->getNodeNumElements()"
-         " = " << this->getNodeNumElements () << ".  The latter, upon being "
+         TypeNameTraits<size_type>::name () << ") != this->getMyNumIndices()"
+         " = " << this->getMyNumIndices () << ".  The latter, upon being "
          "cast to size_type = " << TypeNameTraits<size_type>::name () << ", "
          "becomes " << lclNumInds << ".  Please report this bug to the Tpetra "
          "developers.");
@@ -2032,7 +2066,7 @@ namespace TpetraNew {
     // ignore the result.  Passing key == 0 tells MPI to order the
     // processes in the new communicator by their rank in the old
     // communicator.
-    const int color = (numLocalElements_ == 0) ? 0 : 1;
+    const int color = (myNumIndices_ == 0) ? 0 : 1;
     // MPI_Comm_split must be called collectively over the original
     // communicator.  We can't just call it on processes with color
     // one, even though we will ignore its result on processes with
@@ -2050,8 +2084,8 @@ namespace TpetraNew {
 
       map->comm_              = newComm;
       map->indexBase_         = indexBase_;
-      map->numGlobalElements_ = numGlobalElements_;
-      map->numLocalElements_  = numLocalElements_;
+      map->globalNumIndices_ = globalNumIndices_;
+      map->myNumIndices_  = myNumIndices_;
       map->minMyGID_          = minMyGID_;
       map->maxMyGID_          = maxMyGID_;
       map->minAllGID_         = minAllGID_;
@@ -2080,7 +2114,7 @@ namespace TpetraNew {
       if (! distributed_ || newComm->getSize () == 1) {
         map->distributed_ = false;
       } else {
-        const int iOwnAllGids = (numLocalElements_ == numGlobalElements_) ? 1 : 0;
+        const int iOwnAllGids = (myNumIndices_ == globalNumIndices_) ? 1 : 0;
         int allProcsOwnAllGids = 0;
         reduceAll<int, int> (*newComm, REDUCE_MIN, iOwnAllGids, outArg (allProcsOwnAllGids));
         map->distributed_ = (allProcsOwnAllGids == 1) ? false : true;
@@ -2135,7 +2169,7 @@ namespace TpetraNew {
     // invalid values, and return IDNotPresent to notify the caller.
     // It's perfectly valid to give getRemoteIndexList GIDs that the
     // Map doesn't own.  SubmapImport test 2 needs this functionality.
-    if (getGlobalNumElements () == 0) {
+    if (getGlobalNumIndices () == 0) {
       if (GIDs.size () == 0) {
         return ::Tpetra::AllIDsPresent; // trivially
       }
@@ -2162,7 +2196,7 @@ namespace TpetraNew {
   getRemoteIndexList (const Teuchos::ArrayView<const global_ordinal_type> & GIDs,
                       const Teuchos::ArrayView<int> & PIDs) const
   {
-    if (getGlobalNumElements () == 0) {
+    if (getGlobalNumIndices () == 0) {
       if (GIDs.size () == 0) {
         return ::Tpetra::AllIDsPresent; // trivially
       } else {
@@ -2210,7 +2244,7 @@ namespace TpetraNew {
       // The communicator has more than one process, but that doesn't
       // necessarily mean the Map is distributed.
       int localRep = 0;
-      if (numGlobalElements_ == static_cast<GO> (numLocalElements_)) {
+      if (globalNumIndices_ == GO (myNumIndices_)) {
         // The number of local elements on this process equals the
         // number of global elements.
         //
@@ -2365,10 +2399,10 @@ createOneToOne (const Teuchos::RCP<const Map>& M)
     // For a locally replicated Map, we assume that users want to push
     // all the GIDs to Process 0.
 
-    // mfh 05 Nov 2013: getGlobalNumElements() does indeed return what
+    // mfh 05 Nov 2013: getGlobalNumIndices() does indeed return what
     // you think it should return, in this special case of a locally
     // replicated contiguous Map.
-    const GO numGlobalEntries = M->getGlobalNumElements ();
+    const GO numGlobalEntries = M->getGlobalNumIndices ();
     if (M->isContiguous ()) {
       const LO numLocalEntries =
         (myRank == 0) ? static_cast<LO> (numGlobalEntries) : LO (0);
@@ -2389,7 +2423,7 @@ createOneToOne (const Teuchos::RCP<const Map>& M)
   }
   else {
     Directory directory;
-    const LO numMyElems = M->getNodeNumElements ();
+    const LO numMyElems = M->getMyNumIndices ();
     ArrayView<const GO> myElems = M->getNodeElementList ();
     Array<int> owner_procs_vec (numMyElems);
 
@@ -2434,7 +2468,7 @@ createOneToOne (const Teuchos::RCP<const Map>& M,
 
   Directory directory;
   directory.initialize (*M, tie_break);
-  LO numMyElems = M->getNodeNumElements ();
+  LO numMyElems = M->getMyNumIndices ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
 

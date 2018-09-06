@@ -78,7 +78,7 @@ namespace TpetraNew {
   ///    locally replicated), then my process ID is the process ID for
   ///    all global IDs.  The Directory gets the local ID (if
   ///    requested) directly from the user's Map via its
-  ///    getLocalElement() method (which requires no communication).
+  ///    getLocalIndex() method (which requires no communication).
   ///
   /// 2. If the user's Map is distributed, contiguous, and uniform,
   ///    the Directory computes a global ID's process ID and local ID

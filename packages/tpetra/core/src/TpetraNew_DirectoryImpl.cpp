@@ -390,7 +390,7 @@ getEntriesImpl (const map_type& map,
     if (map.isNodeGlobalElement (*gidIter)) {
       *procIter++ = myRank;
       if (computeLocalIndices) {
-	*lidIter++ = map.getLocalElement (*gidIter);
+	*lidIter++ = map.getLocalIndex (*gidIter);
       }
     }
     else {
@@ -699,7 +699,7 @@ initialize (const map_type& map,
       size_type importIndex = 0;
       for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
 	const GO curGID = importElements[importIndex++];
-	const LO curLID = directoryMap_->getLocalElement (curGID);
+	const LO curLID = directoryMap_->getLocalIndex (curGID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (curLID == LINVALID, std::logic_error, prefix << "Incoming "
 	   "global index " << curGID << " does not have a corresponding "
@@ -734,7 +734,7 @@ initialize (const map_type& map,
       size_type importIndex = 0;
       for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
 	const GO curGID = importElements[importIndex++];
-	const LO dirMapLid = directoryMap_->getLocalElement (curGID);
+	const LO dirMapLid = directoryMap_->getLocalIndex (curGID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (dirMapLid == LINVALID, std::logic_error,
 	   prefix << "Incoming global index "
@@ -812,7 +812,7 @@ initialize (const map_type& map,
       size_type importIndex = 0;
       for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
 	const GO curGID = importElements[importIndex++];
-	const LO curLID = directoryMap_->getLocalElement (curGID);
+	const LO curLID = directoryMap_->getLocalIndex (curGID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (curLID == LINVALID, std::logic_error,
 	   prefix << "Incoming global index "
@@ -848,7 +848,7 @@ initialize (const map_type& map,
 	const int PID = importElements[importIndex++];
 	const LO  LID = importElements[importIndex++];
 
-	const LO dirMapLid = directoryMap_->getLocalElement (GID);
+	const LO dirMapLid = directoryMap_->getLocalIndex (GID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (dirMapLid == LINVALID, std::logic_error,
 	   prefix << "Incoming global index "
@@ -1035,7 +1035,7 @@ getEntriesImpl (const map_type& map,
 	const GO curGID = sendGIDs[gidIndex];
 	// Don't use as() here (see above note).
 	exports[exportsIndex++] = static_cast<packed_integer_type> (curGID);
-	const LO curLID = directoryMap_->getLocalElement (curGID);
+	const LO curLID = directoryMap_->getLocalIndex (curGID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (curLID == LINVALID, std::logic_error, prefix << "The Directory "
 	   "Map's global index " << curGID << " does not have a corresponding "
@@ -1053,7 +1053,7 @@ getEntriesImpl (const map_type& map,
 	const GO curGID = sendGIDs[gidIndex];
 	// Don't use as() here (see above note).	    
 	exports[exportsIndex++] = static_cast<packed_integer_type> (curGID);
-	const LO curLID = directoryMap_->getLocalElement (curGID);
+	const LO curLID = directoryMap_->getLocalIndex (curGID);
 	TEUCHOS_TEST_FOR_EXCEPTION
 	  (curLID == LINVALID, std::logic_error, prefix << "The Directory "
 	   "Map's global index " << curGID << " does not have a corresponding "

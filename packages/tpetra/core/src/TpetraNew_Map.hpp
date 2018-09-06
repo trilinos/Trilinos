@@ -70,13 +70,13 @@ namespace TpetraNew {
   /// \class Map
   /// \brief A parallel distribution of indices over processes.
   ///
-  /// This class describes a distribution of data elements over one or
-  /// more processes in a communicator.  Each element has a global
-  /// index (of type \c global_ordinal_type) uniquely associated to it.
-  /// Each global index in the Map is "owned" by one or more processes
-  /// in the Map's communicator.  The user gets to decide what an
-  /// "element" means; examples include a row or column of a sparse
-  /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
+  /// This class describes a distribution of "things" over one or more
+  /// processes in a communicator.  Each thing has a global index (of
+  /// type \c global_ordinal_type) uniquely associated to it.  Each
+  /// global index in the Map is "owned" by one or more processes in
+  /// the Map's communicator.  The user gets to decide what an "thing"
+  /// means; examples include a row or column of a sparse matrix (as
+  /// in CrsMatrix), or a row of one or more vectors (as in
   /// MultiVector).
   ///
   /// \section Tpetra_Map_prereq Prerequisites
@@ -101,7 +101,7 @@ namespace TpetraNew {
   ///
   /// The distinction between local and global indices and types might
   /// confuse new Tpetra users.  <i>Global</i> indices represent the
-  /// elements of a distributed object (such as rows or columns of a
+  /// components of a distributed object (such as rows or columns of a
   /// CrsMatrix, or rows of a MultiVector) uniquely over the entire
   /// object, which may be distributed over multiple processes.
   /// <i>Local</i> indices are local to the process that owns them.
@@ -112,7 +112,7 @@ namespace TpetraNew {
   /// multiple processes might own the same global index (an
   /// "overlapping Map"), so a global index G might correspond to
   /// multiple (L, P) pairs.  In summary, local indices on a process
-  /// correspond to object elements (e.g., sparse matrix rows or
+  /// correspond to object components (e.g., sparse matrix rows or
   /// columns) owned by that process.
   ///
   /// Tpetra differs from Epetra in that local and global indices may
@@ -167,8 +167,8 @@ namespace TpetraNew {
   /// <ol>
   /// <li> The map's communicator has more than one process. </li>
   /// <li>There is at least one process in the map's communicator,
-  ///     whose local number of elements does not equal the number of
-  ///     global elements.  (That is, not all the elements are
+  ///     whose local number of indices does not equal the number of
+  ///     global indices.  (That is, not all the indices are
   ///     replicated over all the processes.) </li>
   /// </ol>
   /// If at least one of the above are not true, then the map is
@@ -176,16 +176,15 @@ namespace TpetraNew {
   ///
   /// Globally distributed objects are partitioned across multiple
   /// processes in a communicator.  Each process owns at least one
-  /// element in the object's Map that is not owned by another
-  /// process.  For locally replicated objects, each element in the
-  /// object's Map is owned redundantly by all processes in the
-  /// object's communicator.  Some algorithms use objects that are too
-  /// small to be distributed across all processes.  The upper
-  /// Hessenberg matrix in a GMRES iterative solve is a good example.
-  /// In other cases, such as with block iterative methods, block dot
-  /// product functions produce small dense matrices that are required
-  /// by all images.  Replicated local objects handle these
-  /// situations.
+  /// index in the object's Map that is not owned by another process.
+  /// For locally replicated objects, each index in the object's Map
+  /// is owned redundantly by all processes in the object's
+  /// communicator.  Some algorithms use objects that are too small to
+  /// be distributed across all processes.  The upper Hessenberg
+  /// matrix in a GMRES iterative solve is a good example.  In other
+  /// cases, such as with block iterative methods, block dot product
+  /// functions produce small dense matrices that are required by all
+  /// images.  Replicated local objects handle these situations.
   class Map : public Teuchos::Describable {
   public:
     //! @name Typedefs
@@ -264,13 +263,13 @@ namespace TpetraNew {
     /// \brief Constructor with contiguous uniform distribution.
     ///
     /// Build a Map representing the following contiguous range of
-    /// <tt>numGlobalElements</tt> indices:
+    /// <tt>numGlobalIndices</tt> indices:
     /// \code
     /// [indexBase,
     ///  indexBase + 1, ...,
-    ///  numGlobalElements + indexBase - 1]
+    ///  numGlobalIndices + indexBase - 1]
     /// \endcode
-    /// For example, if \c indexBase is 0 and \c numGlobalElements is
+    /// For example, if \c indexBase is 0 and \c numGlobalIndices is
     /// N and positive, the resulting contiguous range is [0, N-1].
     ///
     /// The \c lg argument determines whether the indices will be
@@ -278,7 +277,7 @@ namespace TpetraNew {
     /// communicator \c comm, or replicated on all processes in the
     /// communicator.  "Distributed evenly" (the default) means that
     /// each process gets a contiguous range of either
-    /// <tt>numGlobalElements / P</tt> or <tt>(numGlobalElements / P) +
+    /// <tt>numGlobalIndices / P</tt> or <tt>(numGlobalIndices / P) +
     /// 1</tt> indices.  The resulting Map is nonoverlapping.
     /// "Replicated" means that every process shares the range <tt>[0,
     /// N-1]</tt>; the resulting Map is an overlapping Map.
@@ -289,7 +288,7 @@ namespace TpetraNew {
     /// check fails, it will throw std::invalid_argument on all
     /// processes in the given communicator.
     ///
-    /// \param numGlobalElements [in] Global number of indices in the
+    /// \param numGlobalIndices [in] Global number of indices in the
     ///   Map (over all processes).
     ///
     /// \param indexBase [in] The base of the global indices in the
@@ -304,12 +303,12 @@ namespace TpetraNew {
     /// \param lg [in] Either <tt>GloballyDistributed</tt> or
     ///   <tt>LocallyReplicated</tt>.  If <tt>GloballyDistributed</tt>
     ///   and the communicator contains P processes, then each process
-    ///   will own either <tt>numGlobalElements/P</tt> or
-    ///   <tt>numGlobalElements/P + 1</tt> nonoverlapping contiguous
+    ///   will own either <tt>numGlobalIndices/P</tt> or
+    ///   <tt>numGlobalIndices/P + 1</tt> nonoverlapping contiguous
     ///   indices.  If <tt>LocallyReplicated</tt>, then all processes
     ///   will get the same set of indices, namely <tt>indexBase,
-    ///   indexBase + 1, ..., numGlobalElements + indexBase - 1</tt>.
-    Map (const global_ordinal_type numGlobalElements,
+    ///   indexBase + 1, ..., numGlobalIndices + indexBase - 1</tt>.
+    Map (const global_ordinal_type numGlobalIndices,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const ::Tpetra::LocalGlobal lg = ::Tpetra::GloballyDistributed);
@@ -317,11 +316,11 @@ namespace TpetraNew {
     /// \brief Constructor with contiguous, possibly nonuniform
     ///    distribution.
     ///
-    /// If N is the sum of \c numLocalElements over all processes, then
+    /// If N is the sum of \c numLocalIndices over all processes, then
     /// this constructor produces a nonoverlapping Map with N indices
     /// in the global contiguous range [0, N-1], distributed over all
     /// the processes in the given communicator \c comm, with a
-    /// contiguous range of \c numLocalElements indices on the calling
+    /// contiguous range of \c numLocalIndices indices on the calling
     /// process.
     ///
     /// This constructor must be called as a collective over the input
@@ -330,14 +329,14 @@ namespace TpetraNew {
     /// check fails, it will throw std::invalid_argument on all
     /// processes in the given communicator.
     ///
-    /// \param numGlobalElements [in] If you want Tpetra to compute the
+    /// \param numGlobalIndices [in] If you want Tpetra to compute the
     ///   global number of indices in the Map, set this to
     ///   <tt>Teuchos::OrdinalTraits<global_ordinal_type>::invalid()</tt>.
     ///   This costs a global all-reduce.  Otherwise, this must equal
-    ///   the sum of numLocalElements over all processes in the input
+    ///   the sum of numLocalIndices over all processes in the input
     ///   communicator \c comm.
     ///
-    /// \param numLocalElements [in] Number of indices that the calling
+    /// \param numLocalIndices [in] Number of indices that the calling
     ///   process will own in the Map.
     ///
     /// \param indexBase [in] The base of the global indices in the
@@ -347,10 +346,9 @@ namespace TpetraNew {
     ///   know what this should be, use zero.
     ///
     /// \param comm [in] Communicator over which to distribute the
-    ///   elements.
-    ///
-    Map (const global_ordinal_type numGlobalElements,
-         const local_ordinal_type numLocalElements,
+    ///   indices.
+    Map (const global_ordinal_type numGlobalIndices,
+         const local_ordinal_type numLocalIndices,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
@@ -373,17 +371,17 @@ namespace TpetraNew {
     /// std::invalid_argument on all processes in the given
     /// communicator.
     ///
-    /// \param numGlobalElements [in] If <tt>numGlobalElements ==
+    /// \param numGlobalIndices [in] If <tt>numGlobalIndices ==
     ///   Teuchos::OrdinalTraits<global_ordinal_type>::invalid()</tt>,
-    ///   compute the number of global elements (via a global
+    ///   compute the number of global indices (via a global
     ///   communication) as the sum of the counts of local indices.
     ///   Otherwise, it must equal the sum of the number of indices on
     ///   each process, over all processes in the given communicator,
     ///   and must be the same on all processes in the communicator.
     ///
-    /// \param indexList [in] List of global indices owned by the
-    ///   calling process.  (This likely differs on different
-    ///   processes.)
+    /// \param myGlobalIndices [in] Ordered array of global indices
+    ///   owned by the calling process.  (This likely differs on
+    ///   different processes.)
     ///
     /// \param indexBase [in] The base of the global indices in the
     ///   Map.  This must be the same on every process in the given
@@ -395,22 +393,22 @@ namespace TpetraNew {
     ///   indices.  This constructor must be called as a collective
     ///   over this communicator.
     ///
-    Map (const global_ordinal_type numGlobalElements,
-         const Kokkos::View<const long long*, device_type>& indexList,
+    Map (const global_ordinal_type numGlobalIndices,
+         const Kokkos::View<const long long*, device_type>& myGlobalIndices,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     /// \brief Noncontiguous constructor that takes indices as a
     ///    Kokkos::View of <tt>unsigned long long</tt>.  See above for
     ///    details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Kokkos::View<const unsigned long long*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     /// \brief Noncontiguous constructor that takes indices as a
     ///    Kokkos::View of <tt>long</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Kokkos::View<const long*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -418,14 +416,14 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as a
     ///    Kokkos::View of <tt>unsigned long</tt>.  See above for
     ///    details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Kokkos::View<const unsigned long*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     /// \brief Noncontiguous constructor that takes indices as a
     ///    Kokkos::View of <tt>int</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Kokkos::View<const int*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -433,7 +431,7 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as a
     ///    Kokkos::View of <tt>unsigned int</tt>.  See above for
     ///    details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Kokkos::View<const unsigned int*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -461,11 +459,11 @@ namespace TpetraNew {
     /// the input indices to \c global_ordinal_type.  If an conversion
     /// overflows, Map may throw an exception.
     ///
-    /// \param numGlobalElements [in] If <tt>numGlobalElements ==
+    /// \param numGlobalIndices [in] If <tt>numGlobalIndices ==
     ///   Teuchos::OrdinalTraits<global_ordinal_type>::invalid()</tt>,
-    ///   compute the number of global elements (via a global
-    ///   communication) as the sum of the counts of local elements.
-    ///   Otherwise, it must equal the sum of the local elements over
+    ///   compute the number of global indices (via a global
+    ///   communication) as the sum of the counts of local indices.
+    ///   Otherwise, it must equal the sum of the local indices over
     ///   all processes.  This value must be the same on all processes
     ///   participating in the call.
     ///
@@ -482,8 +480,8 @@ namespace TpetraNew {
     ///   global minimum index over all processes' \c indexList inputs.
     ///
     /// \param comm [in] Communicator over which to distribute the
-    ///   elements.
-    Map (const global_ordinal_type numGlobalElements,
+    ///   indices.
+    Map (const global_ordinal_type numGlobalIndices,
          const long long indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -492,7 +490,7 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as an
     ///   array of <tt>unsigned long long</tt>.  See above for
     ///   details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const unsigned long long indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -500,7 +498,7 @@ namespace TpetraNew {
 
     /// \brief Noncontiguous constructor that takes indices as an
     ///   array of <tt>long</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const long indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -508,7 +506,7 @@ namespace TpetraNew {
 
     /// \brief Noncontiguous constructor that takes indices as an
     ///   array of <tt>unsigned long</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const unsigned long indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -516,7 +514,7 @@ namespace TpetraNew {
 
     /// \brief Noncontiguous constructor that takes indices as an
     ///   array of <tt>int</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const int indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -524,7 +522,7 @@ namespace TpetraNew {
 
     /// \brief Noncontiguous constructor that takes indices as an
     ///   array of <tt>unsigned int</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const unsigned int indexList[],
          const local_ordinal_type indexListSize,
          const global_ordinal_type indexBase,
@@ -537,12 +535,12 @@ namespace TpetraNew {
     ///
     /// This constructor is equivalent to
     /// \code
-    /// Map (numGlobalElements, indexList.get (), indexList.size (), 
+    /// Map (numGlobalIndices, indexList.get (), indexList.size (), 
     ///      indexBase, comm);
     /// \endcode
     /// that is, to the noncontiguous constructor above with the same
     /// input index type.  See the documentation there.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const long long>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -550,14 +548,14 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as
     ///   Teuchos::ArrayView of <tt>unsigned long long</tt>.  See
     ///   above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const unsigned long long>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     /// \brief Noncontiguous constructor that takes indices as
     ///   Teuchos::ArrayView of <tt>long</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const long>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -565,14 +563,14 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as
     ///   Teuchos::ArrayView of <tt>unsigned long</tt>.  See above for
     ///   details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const unsigned long>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     /// \brief Noncontiguous constructor that takes indices as
     ///   Teuchos::ArrayView of <tt>int</tt>.  See above for details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const int>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -580,7 +578,7 @@ namespace TpetraNew {
     /// \brief Noncontiguous constructor that takes indices as
     ///   Teuchos::ArrayView of <tt>unsigned int</tt>.  See above for
     ///   details.
-    Map (const global_ordinal_type numGlobalElements,
+    Map (const global_ordinal_type numGlobalIndices,
          const Teuchos::ArrayView<const unsigned int>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
@@ -598,22 +596,42 @@ namespace TpetraNew {
     /// Map's communicator.
     bool isOneToOne () const;
 
-    /// \brief The number of elements in this Map.
+    /// \brief The global number of indices in this Map.
+    ///
+    /// This method includes duplicates in the total count.  For
+    /// example, if two different MPI processes have the same index,
+    /// that index counts twice.  If you want a unique count, get the
+    /// one-to-one version of this Map and call getGlobalNumIndices()
+    /// on that Map.
     ///
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    global_ordinal_type getGlobalNumElements () const {
-      return numGlobalElements_;
+    global_ordinal_type getGlobalNumIndices () const {
+      return globalNumIndices_;
     }
 
-    /// \brief The number of elements belonging to the calling process.
+    /// \brief The global number of indices in this Map.
+    ///
+    /// \warning Don't call this function; call getGlobalNumIndices() instead.
+    TPETRA_DEPRECATED global_ordinal_type getGlobalNumElements () const {
+      return globalNumIndices_;
+    }
+
+    /// \brief The number of indices that live on the calling process.
     ///
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    local_ordinal_type getNodeNumElements () const {
-      return numLocalElements_;
+    local_ordinal_type getMyNumIndices () const {
+      return myNumIndices_;
+    }
+    
+    /// \brief The number of indices that live on the calling process.
+    ///
+    /// \warning Don't call this function; call getMyNumIndices() instead.
+    TPETRA_DEPRECATED local_ordinal_type getNodeNumElements () const {
+      return myNumIndices_;
     }
 
     /// \brief The index base for this Map.
@@ -636,21 +654,14 @@ namespace TpetraNew {
 
     /// \brief The maximum local index on the calling process.
     ///
-    /// If this process owns no elements, that is, if
-    /// <tt>getNodeNumElements() == 0</tt>, then this method returns
-    /// the same value as
+    /// If this process owns no indices, that is, if
+    /// <tt>getMyNumIndices() == 0</tt>, then this method returns 
     /// <tt>Teuchos::OrdinalTraits<local_ordinal_type>::invalid()</tt>.
     ///
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    local_ordinal_type getMaxLocalIndex () const {
-      if (this->getNodeNumElements () == 0) {
-        return ::Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid ();
-      } else { // Local indices are always zero-based.
-        return static_cast<local_ordinal_type> (this->getNodeNumElements () - 1);
-      }
-    }
+    local_ordinal_type getMaxLocalIndex () const;
 
     /// \brief The minimum global index owned by the calling process.
     ///
@@ -700,7 +711,14 @@ namespace TpetraNew {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    local_ordinal_type getLocalElement (global_ordinal_type globalIndex) const;
+    local_ordinal_type
+    getLocalIndex (const global_ordinal_type globalIndex) const;
+
+    /// \brief The local index corresponding to the given global index.
+    ///
+    /// \warning Don't call this method; call getLocalIndex() instead.
+    TPETRA_DEPRECATED local_ordinal_type
+    getLocalElement (const global_ordinal_type globalIndex) const;    
 
     /// \brief The global index corresponding to the given local index.
     ///
@@ -710,8 +728,15 @@ namespace TpetraNew {
     ///   process, return the corresponding global index, else return
     ///   the same value as
     ///   Teuchos::OrdinalTraits<global_ordinal_type>::invalid().
-    global_ordinal_type getGlobalElement (local_ordinal_type localIndex) const;
+    global_ordinal_type
+    getGlobalIndex (const local_ordinal_type localIndex) const;
 
+    /// \brief The global index corresponding to the given local index.
+    ///
+    /// \warning Don't call this method; call getLocalIndex() instead.
+    TPETRA_DEPRECATED global_ordinal_type
+    getGlobalElement (const local_ordinal_type localIndex) const;
+    
     /// \brief Get the local Map for Kokkos kernels.
     ///
     /// \warning The interface of the local Map object is SUBJECT TO
@@ -839,7 +864,14 @@ namespace TpetraNew {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    bool isNodeLocalElement (local_ordinal_type localIndex) const;
+    bool isMyLocalIndex (const local_ordinal_type localIndex) const;
+
+    /// \brief Whether the given local index is valid for this Map on
+    ///   the calling process.
+    ///
+    /// \warning Don't call this method; call isMyLocalIndex() instead.
+    TPETRA_DEPRECATED bool
+    isNodeLocalElement (const local_ordinal_type localIndex) const;
 
     /// \brief Whether the given global index is owned by this Map on
     ///   the calling process.
@@ -847,7 +879,14 @@ namespace TpetraNew {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
-    bool isNodeGlobalElement (global_ordinal_type globalIndex) const;
+    bool isMyGlobalIndex (const global_ordinal_type globalIndex) const;
+
+    /// \brief Whether the given global index is owned by this Map on
+    ///   the calling process.
+    ///
+    /// \warning Don't call this method; call isMyGlobalIndex() instead.    
+    TPETRA_DEPRECATED bool
+    isNodeGlobalElement (const global_ordinal_type globalIndex) const;
 
     /// \brief Whether the range of global indices is uniform.
     ///
@@ -861,13 +900,13 @@ namespace TpetraNew {
     ///
     /// Currently, creating this Map using the constructor for a
     /// user-defined arbitrary distribution (that takes a list of
-    /// global elements owned on each process) means that this method
+    /// global indices owned on each process) means that this method
     /// always returns false.  We currently make no effort to test
     /// whether the user-provided global indices are actually
     /// contiguous on all the processes.  Many operations may be
     /// faster for contiguous Maps.  Thus, if you know the indices are
     /// contiguous on all processes, you should consider using one of
-    /// the constructors for contiguous elements.
+    /// the contiguous Map constructors.
     bool isContiguous () const;
 
     /// \brief Whether this Map is globally distributed or locally
@@ -880,8 +919,8 @@ namespace TpetraNew {
     /// <ol>
     /// <li> The map's communicator has more than one process.</li>
     /// <li> There is at least one process in the map's communicator,
-    ///    whose local number of elements does not equal the number of
-    ///    global elements.  (That is, not all the elements are
+    ///    whose local number of indices does not equal the number of
+    ///    global indices.  (That is, not all the indices are
     ///    replicated over all the processes.)</li>
     /// </ol>
     ///
@@ -898,8 +937,8 @@ namespace TpetraNew {
     /// <ol>
     /// <li> Their communicators have the same numbers of processes.
     ///    (This is necessary even to call this method.)</li>
-    /// <li> They have the same global number of elements.</li>
-    /// <li> They have the same number of local elements on each process.</li>
+    /// <li> They have the same global number of indices.</li>
+    /// <li> They have the same number of local indices on each process.</li>
     /// </ol>
     ///
     /// Determining #3 requires communication (a reduction over this
@@ -928,10 +967,10 @@ namespace TpetraNew {
     ///    the \c MPI_IDENT or \c MPI_CONGRUENT return values of
     ///    MPI_Comm_compare).</li>
     /// <li> They have the same min and max global indices.</li>
-    /// <li> They have the same global number of elements.</li>
+    /// <li> They have the same global number of indices.</li>
     /// <li> They are either both distributed, or both not distributed.</li>
     /// <li> Their index bases are the same.</li>
-    /// <li> They have the same number of local elements on each process.</li>
+    /// <li> They have the same number of local indices on each process.</li>
     /// <li> They have the same global indices on each process.</li>
     /// </ol>
     ///
@@ -939,8 +978,8 @@ namespace TpetraNew {
     /// "compatible" (isCompatible()).
     ///
     /// A Map corresponds to a block permutation over process ranks
-    /// and global element indices.  Two Maps with different numbers
-    /// of processes in their communicators cannot be compatible, let
+    /// and global indices.  Two Maps with different numbers of
+    /// processes in their communicators cannot be compatible, let
     /// alone identical.  Two identical Maps correspond to the same
     /// permutation.
     ///
@@ -1025,7 +1064,8 @@ namespace TpetraNew {
     //! Advanced methods
     //@{
 
-    /// \brief Return a new Map with processes with zero elements removed.
+    /// \brief Return a new Map that excludes processes with no
+    ///   indices (i.e., processes for which getMyNumIndices() == 0).
     ///
     /// \warning This method is only for expert users.  Understanding
     ///   how to use this method correctly requires some familiarity
@@ -1036,14 +1076,13 @@ namespace TpetraNew {
     ///
     /// This method first computes a new communicator, which contains
     /// only those processes in this Map's communicator (the "original
-    /// communicator") that have a nonzero number of elements in this
+    /// communicator") that have a nonzero number of indices in this
     /// Map (the "original Map").  It then returns a new Map
     /// distributed over the new communicator.  The new Map represents
     /// the same distribution as the original Map, except that
-    /// processes containing zero elements are not included in the new
-    /// Map or its communicator.  On processes not included in the new
-    /// Map or communicator, this method returns
-    /// <tt>Teuchos::null</tt>.
+    /// processes that have no indices are not included in the new Map
+    /// or its communicator.  On processes not included in the new Map
+    /// or communicator, this method returns <tt>Teuchos::null</tt>.
     ///
     /// The returned Map always has a distinct communicator from this
     /// Map's original communicator.  The new communicator contains a
@@ -1145,27 +1184,27 @@ namespace TpetraNew {
     ///   it does checks (with extra global communication) in a debug
     ///   build.  In a release build, it does nothing.
     ///
-    /// \return In a debug build: The global sum of numLocalElements
-    ///   over all processes in the given communicator.  In a release
+    /// \return In a debug build: The global sum of myNumIndices over
+    ///   all processes in the given communicator.  In a release
     ///   build: 0 (zero).
     global_ordinal_type
-    initialNonuniformDebugCheck (const global_ordinal_type numGlobalElements,
-                                 const local_ordinal_type numLocalElements,
+    initialNonuniformDebugCheck (const global_ordinal_type globalNumIndices,
+                                 const local_ordinal_type myNumIndices,
                                  const global_ordinal_type indexBase,
                                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm) const;
 
     void
-    initWithNonownedHostIndexList (const global_ordinal_type numGlobalElements,
+    initWithNonownedHostIndexList (const global_ordinal_type globalNumIndices,
                                    const Kokkos::View<const global_ordinal_type*,
                                      Kokkos::LayoutLeft,
                                      Kokkos::HostSpace,
-                                     Kokkos::MemoryUnmanaged>& entryList,
+  				     Kokkos::MemoryUnmanaged>& myIndices,
                                    const global_ordinal_type indexBase,
                                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     void
-    initWithOwnedHostIndexList (const global_ordinal_type numGlobalElements,
-				const Kokkos::View<const global_ordinal_type*, device_type>& entryList,
+    initWithOwnedHostIndexList (const global_ordinal_type globalNumIndices,
+				const Kokkos::View<const global_ordinal_type*, device_type>& myIndices,
 				const global_ordinal_type indexBase,
 				const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
@@ -1177,10 +1216,10 @@ namespace TpetraNew {
 
     /// \brief The total number of global indices in this Map over all
     ///   processes in its communicator \c comm (see above).
-    global_ordinal_type numGlobalElements_;
+    global_ordinal_type globalNumIndices_;
 
     //! The number of global indices owned by this process.
-    local_ordinal_type numLocalElements_;
+    local_ordinal_type myNumIndices_;
 
     //! The min global index owned by this process.
     global_ordinal_type minMyGID_;
@@ -1279,7 +1318,7 @@ namespace TpetraNew {
     ///
     /// This is allocated along with lgMap_, on demand (lazily), by
     /// getNodeElementList() (which see).  It is also used by
-    /// getGlobalElement() (which is a host method, and therefore
+    /// getGlobalIndex() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
 #ifndef SWIG
@@ -1298,10 +1337,9 @@ namespace TpetraNew {
     /// Epetra_BlockMapData's LIDHash_ hash table (which also maps
     /// from global to local indices).
     ///
-    /// This mapping is built only for a noncontiguous map, by the
-    /// noncontiguous map constructor.  For noncontiguous maps, the
-    /// getLocalElement() and isNodeGlobalElement() methods use
-    /// this mapping.
+    /// This mapping is built only for a noncontiguous Map, by the
+    /// noncontiguous Map constructor.  For noncontiguous Maps, both
+    /// getLocalIndex() and isMyGlobalIndex() use this.
     global_to_local_table_type glMap_;
 
     /// \brief Object that can find the process rank and local index
@@ -1409,21 +1447,19 @@ namespace TpetraNew {
   ///
   /// \relatesalso Map
   Teuchos::RCP<const Map>
-  createContigMap (const Map::global_ordinal_type numElements,
-                   const Map::local_ordinal_type localNumElements,
+  createContigMap (const Map::global_ordinal_type globalNumIndices,
+                   const Map::local_ordinal_type myNumIndices,
                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Nonmember constructor for a (potentially) nonuniformly
-  ///   distributed, contiguous Map for a user-specified, possibly
-  ///   nondefault Kokkos Node type.
+  ///   distributed, contiguous Map.
   ///
-  /// If Node is the default, use \c createContigMap instead.
-  /// The Map is configured to use zero-based indexing.
+  /// \warning Don't call this function; call createContigMap() instead.
   ///
   /// \relatesalso Map
   TPETRA_DEPRECATED Teuchos::RCP<const Map>
-  createContigMapWithNode (const Map::global_ordinal_type numElements,
-                           const Map::local_ordinal_type localNumElements,
+  createContigMapWithNode (const Map::global_ordinal_type globalNumIndices,
+                           const Map::local_ordinal_type myNumIndices,
                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Nonmember constructor for a non-contiguous Map using the
@@ -1433,18 +1469,16 @@ namespace TpetraNew {
   ///
   /// \relatesalso Map
   Teuchos::RCP<const Map>
-  createNonContigMap (const Teuchos::ArrayView<const Map::global_ordinal_type>& elementList,
+  createNonContigMap (const Teuchos::ArrayView<const Map::global_ordinal_type>& myGlobalIndices,
                       const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-  /// \brief Nonmember constructor for a noncontiguous Map with a
-  ///   user-specified, possibly nondefault Kokkos Node type.
+  /// \brief Nonmember constructor for a noncontiguous Map.
   ///
-  /// If Node is the default, use \c createNonContigMap instead.
-  /// The Map is configured to use zero-based indexing.
+  /// \warning Don't call this function; call createNonContigMap() instead.
   ///
   /// \relatesalso Map
   TPETRA_DEPRECATED Teuchos::RCP<const Map>
-  createNonContigMapWithNode (const Teuchos::ArrayView<const Map::global_ordinal_type>& elementList,
+  createNonContigMapWithNode (const Teuchos::ArrayView<const Map::global_ordinal_type>& myGlobalIndices,
                               const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Nonmember constructor for a contiguous Map with
@@ -1454,20 +1488,19 @@ namespace TpetraNew {
   ///
   /// \relatesalso Map
   Teuchos::RCP<const Map>
-  createWeightedContigMap (const int thisNodeWeight,
-			   const Map::global_ordinal_type numElements,
+  createWeightedContigMap (const int myProcessWeight,
+			   const Map::global_ordinal_type globalNumIndices,
 			   const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Nonmember constructor for a contiguous Map with
-  ///   user-defined weights and a user-specified, possibly nondefault
-  ///   Kokkos Node type.
+  ///   user-defined weights.
   ///
-  /// The Map is configured to use zero-based indexing.
+  /// \warning Don't call this function; call createWeightedContigMap() instead.
   ///
   /// \relatesalso Map
   TPETRA_DEPRECATED Teuchos::RCP<const Map>
-  createWeightedContigMapWithNode (const int thisNodeWeight,
-                                   const Map::global_ordinal_type numElements,
+  createWeightedContigMapWithNode (const int myProcessWeight,
+                                   const Map::global_ordinal_type globalNumIndices,
                                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Creates a one-to-one version of the given Map where each

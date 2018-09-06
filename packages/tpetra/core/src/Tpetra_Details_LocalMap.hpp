@@ -81,7 +81,7 @@ public:
     myMaxGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
     firstContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
     lastContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    numLocalElements_ (0),
+    myNumInds_ (0),
     contiguous_ (false)
   {}
   LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
@@ -91,7 +91,7 @@ public:
             const GlobalOrdinal myMaxGid,
             const GlobalOrdinal firstContiguousGid,
             const GlobalOrdinal lastContiguousGid,
-            const LocalOrdinal numLocalElements,
+            const LocalOrdinal myNumberOfIndices,
             const bool contiguous) :
     glMap_ (glMap),
     lgMap_ (lgMap),
@@ -100,13 +100,19 @@ public:
     myMaxGid_ (myMaxGid),
     firstContiguousGid_ (firstContiguousGid),
     lastContiguousGid_ (lastContiguousGid),
-    numLocalElements_ (numLocalElements),
+    myNumInds_ (myNumberOfIndices),
     contiguous_ (contiguous)
   {}
 
-  //! The number of indices that live on the calling process.
-  KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
-    return numLocalElements_;
+  KOKKOS_INLINE_FUNCTION LocalOrdinal getMyNumIndices () const {
+    return myNumInds_;
+  }
+
+  /// \brief The number of indices that live on the calling process.
+  ///
+  /// \warning Don't call this function; call getMyNumIndices() instead.
+  TPETRA_DEPRECATED KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
+    return getMyNumIndices ();
   }
 
   //! The (global) index base.
@@ -131,10 +137,10 @@ public:
   KOKKOS_INLINE_FUNCTION LocalOrdinal
   getMaxLocalIndex () const
   {
-    if (numLocalElements_ == 0) {
+    if (myNumInds_ == 0) {
       return ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
     } else { // Local indices are always zero-based.
-      return static_cast<LocalOrdinal> (numLocalElements_ - 1);
+      return static_cast<LocalOrdinal> (myNumInds_ - 1);
     }
   }
 
@@ -150,7 +156,7 @@ public:
 
   //! Get the local index corresponding to the given global index.
   KOKKOS_INLINE_FUNCTION LocalOrdinal
-  getLocalElement (const GlobalOrdinal globalIndex) const
+  getLocalIndex (const GlobalOrdinal globalIndex) const
   {
     if (contiguous_) {
       if (globalIndex < myMinGid_ || globalIndex > myMaxGid_) {
@@ -169,9 +175,18 @@ public:
     }
   }
 
+  /// \brief Get the local index corresponding to the given global index.
+  ///
+  /// \warning Don't call this function; call getLocalIndex() instead.
+  TPETRA_DEPRECATED KOKKOS_INLINE_FUNCTION LocalOrdinal
+  getLocalElement (const GlobalOrdinal globalIndex) const
+  {
+    return getLocalIndex (globalIndex);
+  }
+  
   //! Get the global index corresponding to the given local index.
   KOKKOS_INLINE_FUNCTION GlobalOrdinal
-  getGlobalElement (const LocalOrdinal localIndex) const
+  getGlobalIndex (const LocalOrdinal localIndex) const
   {
     if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
       return ::Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ();
@@ -182,6 +197,15 @@ public:
     else {
       return lgMap_(localIndex);
     }
+  }
+
+  /// \brief Get the global index corresponding to the given local index.
+  ///
+  /// \warning Don't call this function; call getGlobalIndex() instead.
+  KOKKOS_INLINE_FUNCTION GlobalOrdinal
+  getGlobalElement (const LocalOrdinal localIndex) const
+  {
+    return getGlobalIndex (localIndex);
   }
 
 private:
@@ -207,7 +231,7 @@ private:
   GlobalOrdinal myMaxGid_;
   GlobalOrdinal firstContiguousGid_;
   GlobalOrdinal lastContiguousGid_;
-  LocalOrdinal numLocalElements_;
+  LocalOrdinal myNumInds_;
   bool contiguous_;
 };
 

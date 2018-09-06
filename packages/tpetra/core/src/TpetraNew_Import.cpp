@@ -329,8 +329,8 @@ namespace TpetraNew {
 
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = targetGIDs[tgtLid];
-      // getLocalElement() returns LINVALID if the GID isn't in the source Map.
-      const LO srcLid = source->getLocalElement (curTargetGid);
+      // getLocalIndex() returns LINVALID if the GID isn't in the source Map.
+      const LO srcLid = source->getLocalIndex (curTargetGid);
       if (srcLid != LINVALID) {
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
@@ -855,7 +855,7 @@ namespace TpetraNew {
       this->ImportData_->exportLIDs_.resize (numExportIDs);
       Teuchos::ArrayView<LO> exportLIDs = this->ImportData_->exportLIDs_ ();
       for (size_type k = 0; k < numExportIDs; ++k) {
-        exportLIDs[k] = sourceMap->getLocalElement (exportGIDs[k]);
+        exportLIDs[k] = sourceMap->getLocalIndex (exportGIDs[k]);
       }
     }
 
@@ -1010,9 +1010,9 @@ namespace TpetraNew {
     // GID -> LID lookups for the source Map.
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = rawTgtGids[tgtLid];
-      // getLocalElement() returns LINVALID if the GID isn't in the source Map.
+      // getLocalIndex() returns LINVALID if the GID isn't in the source Map.
       // This saves us a lookup (which isNodeGlobalElement() would do).
-      const LO srcLid = source.getLocalElement (curTargetGid);
+      const LO srcLid = source.getLocalIndex (curTargetGid);
       if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
@@ -1227,7 +1227,7 @@ namespace TpetraNew {
       ArrayView<const GO> expGIDs = exportGIDs ();
       ArrayView<LO> expLIDs = ImportData_->exportLIDs_ ();
       for (size_type k = 0; k < numExportIDs; ++k) {
-        expLIDs[k] = source.getLocalElement (expGIDs[k]);
+        expLIDs[k] = source.getLocalIndex (expGIDs[k]);
       }
     }
 
@@ -1461,7 +1461,7 @@ namespace TpetraNew {
     for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
       size_type idx = numSameIDsUnion + k;
       permuteToLIDsUnion[k] = static_cast<LO>(idx);
-      permuteFromLIDsUnion[k] = srcMap->getLocalElement(unionTgtGIDs[idx]);
+      permuteFromLIDsUnion[k] = srcMap->getLocalIndex(unionTgtGIDs[idx]);
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1574,7 +1574,7 @@ namespace TpetraNew {
     const size_type numExportIDsUnion = exportGIDsUnion.size ();
     exportLIDsUnion.resize (numExportIDsUnion);
     for (size_type k = 0; k < numExportIDsUnion; ++k) {
-      exportLIDsUnion[k] = srcMap->getLocalElement (exportGIDsUnion[k]);
+      exportLIDsUnion[k] = srcMap->getLocalIndex (exportGIDsUnion[k]);
     }
 #endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
 
@@ -1675,7 +1675,7 @@ namespace TpetraNew {
     Teuchos::ArrayView<const local_ordinal_type> oldRemoteLIDs = getRemoteLIDs ();
     Teuchos::Array<local_ordinal_type> newRemoteLIDs (NumRemotes);
     for (size_t i = 0; i < NumRemotes; ++i) {
-      newRemoteLIDs[i] = remoteTarget->getLocalElement (getTargetMap ()->getGlobalElement (oldRemoteLIDs[i]));
+      newRemoteLIDs[i] = remoteTarget->getLocalIndex (getTargetMap ()->getGlobalElement (oldRemoteLIDs[i]));
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
       TEUCHOS_TEST_FOR_EXCEPTION(
         i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1],

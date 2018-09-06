@@ -433,9 +433,9 @@ namespace TpetraNew {
     // GID -> LID lookups for the target Map.
     for (LO srcLid = numSameGids; srcLid < numSrcLids; ++srcLid) {
       const GO curSrcGid = rawSrcGids[srcLid];
-      // getLocalElement() returns LINVALID if the GID isn't in the target Map.
+      // getLocalIndex() returns LINVALID if the GID isn't in the target Map.
       // This saves us a lookup (which isNodeGlobalElement() would do).
-      const LO tgtLid = target.getLocalElement (curSrcGid);
+      const LO tgtLid = target.getLocalIndex (curSrcGid);
       if (tgtLid != LINVALID) { // if target.isNodeGlobalElement (curSrcGid)
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
@@ -605,7 +605,7 @@ namespace TpetraNew {
       typename Array<GO>::const_iterator i = remoteGIDs.begin();
       typename Array<LO>::iterator       j = ExportData_->remoteLIDs_.begin();
       while (i != remoteGIDs.end()) {
-        *j++ = target.getLocalElement(*i++);
+        *j++ = target.getLocalIndex(*i++);
       }
     }
 
