@@ -118,6 +118,7 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, WithResetModel)
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Single Step");
+  nl_params->sublist("Single Step Solver").set("Print Norms", true);
 
   // Create a Thyra nonlinear solver
   Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
@@ -263,6 +264,8 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
   nl_params->set("Nonlinear Solver", "Single Step");
   nl_params->sublist("Single Step Solver").set("Ignore Linear Solver Failures", true);
   nl_params->sublist("Single Step Solver").set("Update Jacobian", false);
+  nl_params->sublist("Single Step Solver").set("Print Norms", true);
+  nl_params->sublist("Single Step Solver").set("Compute Relative Norm", true);
 
   // Create a Thyra nonlinear solver
   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver =
