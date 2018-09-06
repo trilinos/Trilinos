@@ -595,6 +595,64 @@ void vCycle(const int l, ///< ID of current level
   return;
 }
 
+Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
+    const bool doing1D, const Epetra_Map& rowMap)
+{
+  // Number of nodes per x/y/z-direction per processor
+  Teuchos::Array<int> lNodesPerDim(3);
+
+  if (problemType == "structured") {
+    if (doing1D) { // One-dimensional problems
+      lNodesPerDim[0] = rowMap.NumMyElements();
+      lNodesPerDim[1] = 1;
+      lNodesPerDim[2] = 1;
+    }
+    else { // Two-dimensional problems
+
+      // caseFifteen
+//      {
+//        lNodesPerDim[0] = 4;
+//        lNodesPerDim[1] = 4;
+//        lNodesPerDim[2] = 1;
+//      }
+//
+//      // caseSixteen
+//      {
+//        lNodesPerDim[0] = 7;
+//        lNodesPerDim[1] = 7;
+//        lNodesPerDim[2] = 1;
+//      }
+//
+//      // caseSeventeen
+//      {
+//        lNodesPerDim[0] = 31;
+//        lNodesPerDim[1] = 31;
+//        lNodesPerDim[2] = 1;
+//      }
+//
+//      // caseEightteen / caseNineteen
+//      {
+//        lNodesPerDim[0] = 16;
+//        lNodesPerDim[1] = 16;
+//        lNodesPerDim[2] = 1;
+//      }
+
+      // caseTwenty
+      {
+        lNodesPerDim[0] = 10;
+        lNodesPerDim[1] = 10;
+        lNodesPerDim[2] = 1;
+      }
+    }
+  }
+  else {
+
+  }
+
+
+  return lNodesPerDim;
+}
+
 /* To run the region MG sovler, first run the Matlab program 'createInput.m'
  * to write a bunch of files with region information to the disk.
  * Then start this executable with the appropriate number of MPI ranks.
@@ -1428,6 +1486,11 @@ sleep(myRank*3);
     std::vector<RCP<HierarchyManager> > regMueLuFactory(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) {
 
+
+      // Set number of nodes per processor per dimension
+      Array<int> lNodesPerDim = setLocalNodesPerDim(problemType, doing1D,
+          *revisedRowMapPerGrp[j]);
+
       // create nullspace vector
       RCP<const Map> map = regionGrpXMats[j]->getRowMap();
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
@@ -1452,51 +1515,6 @@ sleep(myRank*3);
         Array<int> gNodesPerDim(3);
         for (int i = 0; i < gNodesPerDim.size(); ++i)
           gNodesPerDim[i] = -1;
-
-        Array<int> lNodesPerDim(3);
-
-        if (doing1D) { // One-dimensional problems
-          lNodesPerDim[0] = revisedRowMapPerGrp[j]->NumMyElements();
-          lNodesPerDim[1] = 1;
-          lNodesPerDim[2] = 1;
-        }
-        else { // Two-dimensional problems
-
-          // caseFifteen
-//          {
-//            lNodesPerDim[0] = 4;
-//            lNodesPerDim[1] = 4;
-//            lNodesPerDim[2] = 1;
-//          }
-
-//          // caseSixteen
-//          {
-//            lNodesPerDim[0] = 7;
-//            lNodesPerDim[1] = 7;
-//            lNodesPerDim[2] = 1;
-//          }
-
-//          // caseSeventeen
-//          {
-//            lNodesPerDim[0] = 31;
-//            lNodesPerDim[1] = 31;
-//            lNodesPerDim[2] = 1;
-//          }
-
-//          // caseEightteen / caseNineteen
-//          {
-//            lNodesPerDim[0] = 16;
-//            lNodesPerDim[1] = 16;
-//            lNodesPerDim[2] = 1;
-//          }
-
-          // caseTwenty
-          {
-            lNodesPerDim[0] = 10;
-            lNodesPerDim[1] = 10;
-            lNodesPerDim[2] = 1;
-          }
-        }
 
         regGrpHierarchy[j]->GetLevel(0)->Set("gNodesPerDim", gNodesPerDim);
         regGrpHierarchy[j]->GetLevel(0)->Set("lNodesPerDim", lNodesPerDim);
