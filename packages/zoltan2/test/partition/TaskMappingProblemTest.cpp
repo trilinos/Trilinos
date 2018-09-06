@@ -451,15 +451,15 @@ int main(int narg, char *arg[]){
 #endif
 
     if (global_tcomm->getRank() == 0){
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
     }
   }
   catch(std::string &s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 
   catch(char * s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 }
 

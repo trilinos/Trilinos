@@ -733,7 +733,7 @@ int testFromDataFile(
 {
     int ierr = 0;
     //std::string fname("simple");
-    //cout << "running " << fname << std::endl;
+    //std::cout << "running " << fname << std::endl;
 
     UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
@@ -946,7 +946,7 @@ int testFromSeparateDataFiles(
 )
 {
     //std::string fname("simple");
-    //cout << "running " << fname << std::endl;
+    //std::cout << "running " << fname << std::endl;
 
     int ierr = 0;
     int mR = comm->getRank();
@@ -1393,12 +1393,12 @@ int main(int narg, char *arg[])
 
     catch(std::string &s){
         if (rank == 0)
-            cerr << s << std::endl;
+            std::cerr << s << std::endl;
     }
 
     catch(char * s){
         if (rank == 0)
-            cerr << s << std::endl;
+            std::cerr << s << std::endl;
     }
 
     return 0;

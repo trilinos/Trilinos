@@ -1325,7 +1325,7 @@ template <typename Adapter>
           double dNum = partCounter[part];
           double dProcs = numprocs;
   
-          //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
+          //std::cout << "dNum:" << dNum << " dProcs:" << dProcs << std::endl;
           double each = floor(dNum/dProcs);
           double extra = fmod(dNum,dProcs);
   
@@ -1806,7 +1806,7 @@ void PartitioningSolution<Adapter>::RemapParts()
     }
 
 #ifdef KDDKDD_DEBUG
-    cout << "IDX ";
+    std::cout << "IDX ";
     for (part_t i = 0; i <= tnVtx; i++) std::cout << idx[i] << " ";
     std::cout << std::endl;
 
@@ -1884,8 +1884,8 @@ void PartitioningSolution<Adapter>::RemapParts()
     delete [] match;
 
 #ifdef KDDKDD_DEBUG
-    cout << "Remap vector: ";
-    for (part_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
+    std::cout << "Remap vector: ";
+    for (part_t i = 0; i < nGlobalParts_; i++) std::cout << remap[i] << " ";
     std::cout << std::endl;
 #endif
 
