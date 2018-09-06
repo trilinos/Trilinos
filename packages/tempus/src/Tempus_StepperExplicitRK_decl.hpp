@@ -99,9 +99,10 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList,
-      std::string stepperType = "");
+    virtual void setTableau(std::string stepperType);
+
+    virtual void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
