@@ -113,8 +113,8 @@ private:
   Ptr<SerialConstraint<Real>>  timeDomainConstraint_;
   Ptr<const Vector<Real>>      initialCond_;
 
-  Ptr<const std::vector<TimeStamp<Real>>>  userTimeStamps_;   // these are the untouched ones the user passes in
-  Ptr<std::vector<TimeStamp<Real>>>        timeStamps_;       // these are used internally
+  Ptr<const std::vector<TimeStamp<Real>>>         userTimeStamps_;    // these are the untouched ones the user passes in
+  Ptr<std::vector<TimeStamp<Real>>>               timeStamps_;        // these are used internally
 
   // preconditioner settings
   bool applyMultigrid_;         // default to block jacobi
@@ -948,7 +948,7 @@ public:
    }
 
    // Done in parallel, no blocking, solve a linear system on this processor
-   void invertTimeStepJacobian(PinTVector<Real>       & pint_pv,
+   void invertTimeStepJacobian(PinTVector<Real>       & pint_pvM,
                                const PinTVector<Real> & pint_v,
                                const PinTVector<Real> & pint_u,
                                const PinTVector<Real> & pint_z,
@@ -1081,7 +1081,7 @@ public:
      // protect sanity
      assert(level>0);
 
-     // don't go to deep (base case)
+     // don't go too deep (base case)
      if(level>=maxLevels_)
        return;
 
@@ -1093,6 +1093,45 @@ public:
      communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
 
      buildLevelCommunicators(level+1);
+   }
+
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level using repartioning
+    *         
+    * Here repartioning means that the coarse levels are on fewer processors.
+    */
+   Ptr<Vector<Real>> allocateSimVector_repart(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level];
+
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       return buildStatePinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     }
+   }
+
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level using repartitioning.
+    *         
+    * Here repartioning means that the coarse levels are on fewer processors.
+    */
+   Ptr<Vector<Real>> allocateOptVector_repart(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level];
+     
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       // no vector exists on this processor at this level
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       return buildControlPinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     }
    }
    
    /**
