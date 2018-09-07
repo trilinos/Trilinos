@@ -118,7 +118,7 @@ namespace {
     Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
-    Ioss::ElementBlockContainer ebs = region.get_element_blocks();
+    const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
       if (eb->get_property("topology_type").get_string() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
@@ -185,8 +185,8 @@ namespace {
 
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
-    Ioss::NodeBlockContainer nbs             = region.get_node_blocks();
-    int64_t                  total_num_nodes = 0;
+    const Ioss::NodeBlockContainer &nbs             = region.get_node_blocks();
+    int64_t                         total_num_nodes = 0;
     if (summary) {
       int64_t degree = 0;
       for (auto nb : nbs) {
@@ -241,7 +241,7 @@ namespace {
     int64_t total_cells = 0;
     int64_t total_nodes = 0;
 
-    Ioss::StructuredBlockContainer sbs = region.get_structured_blocks();
+    const Ioss::StructuredBlockContainer &sbs = region.get_structured_blocks();
     for (int proc = 0; proc < parallel_size; proc++) {
       if (proc == region.get_database()->parallel_rank()) {
         if (parallel && !summary) {
@@ -313,8 +313,8 @@ namespace {
 
   void info_elementblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
-    Ioss::ElementBlockContainer ebs            = region.get_element_blocks();
-    int64_t                     total_elements = 0;
+    const Ioss::ElementBlockContainer &ebs            = region.get_element_blocks();
+    int64_t                            total_elements = 0;
     for (auto eb : ebs) {
       int64_t num_elem = eb->entity_count();
       total_elements += num_elem;
@@ -360,8 +360,8 @@ namespace {
 
   void info_edgeblock(Ioss::Region &region, bool summary)
   {
-    Ioss::EdgeBlockContainer ebs         = region.get_edge_blocks();
-    int64_t                  total_edges = 0;
+    const Ioss::EdgeBlockContainer &ebs         = region.get_edge_blocks();
+    int64_t                         total_edges = 0;
     for (auto eb : ebs) {
       int64_t num_edge = eb->entity_count();
       total_edges += num_edge;
@@ -397,8 +397,8 @@ namespace {
 
   void info_faceblock(Ioss::Region &region, bool summary)
   {
-    Ioss::FaceBlockContainer ebs         = region.get_face_blocks();
-    int64_t                  total_faces = 0;
+    const Ioss::FaceBlockContainer &ebs         = region.get_face_blocks();
+    int64_t                         total_faces = 0;
     for (auto eb : ebs) {
       int64_t num_face = eb->entity_count();
       total_faces += num_face;
@@ -434,8 +434,8 @@ namespace {
 
   void info_sidesets(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
-    Ioss::SideSetContainer fss         = region.get_sidesets();
-    int64_t                total_sides = 0;
+    const Ioss::SideSetContainer &fss         = region.get_sidesets();
+    int64_t                       total_sides = 0;
     for (auto fs : fss) {
       if (!summary) {
         OUTPUT << '\n' << name(fs) << " id: " << std::setw(6) << id(fs);
@@ -462,7 +462,7 @@ namespace {
         OUTPUT << "\n\tContains: \n";
       }
 
-      Ioss::SideBlockContainer fbs = fs->get_side_blocks();
+      const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
       for (auto fb : fbs) {
         int64_t num_side = fb->entity_count();
         if (!summary) {
@@ -473,9 +473,9 @@ namespace {
           if (fb->parent_block() != nullptr) {
             const auto *parent = fb->parent_block();
             OUTPUT << ",\tparent block: '" << parent->name() << "' (" << parent->type_string()
-                   << ")";
+                   << ")\n";
           }
-          info_df(fb, "\n\t\t\t");
+          info_df(fb, "\t\t\t");
           if (interface.adjacencies()) {
             std::vector<std::string> blocks;
             fb->block_membership(blocks);
@@ -500,8 +500,8 @@ namespace {
 
   void info_nodesets(Ioss::Region &region, bool summary)
   {
-    Ioss::NodeSetContainer nss         = region.get_nodesets();
-    int64_t                total_nodes = 0;
+    const Ioss::NodeSetContainer &nss         = region.get_nodesets();
+    int64_t                       total_nodes = 0;
     for (auto ns : nss) {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
@@ -527,8 +527,8 @@ namespace {
 
   void info_edgesets(Ioss::Region &region, bool summary)
   {
-    Ioss::EdgeSetContainer nss         = region.get_edgesets();
-    int64_t                total_edges = 0;
+    const Ioss::EdgeSetContainer &nss         = region.get_edgesets();
+    int64_t                       total_edges = 0;
     for (auto ns : nss) {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
@@ -551,8 +551,8 @@ namespace {
 
   void info_facesets(Ioss::Region &region, bool summary)
   {
-    Ioss::FaceSetContainer fss         = region.get_facesets();
-    int64_t                total_faces = 0;
+    const Ioss::FaceSetContainer &fss         = region.get_facesets();
+    int64_t                       total_faces = 0;
     for (auto fs : fss) {
       int64_t count      = fs->entity_count();
       int64_t num_attrib = fs->get_property("attribute_count").get_int();
@@ -575,8 +575,8 @@ namespace {
 
   void info_elementsets(Ioss::Region &region, bool summary)
   {
-    Ioss::ElementSetContainer ess            = region.get_elementsets();
-    int64_t                   total_elements = 0;
+    const Ioss::ElementSetContainer &ess            = region.get_elementsets();
+    int64_t                          total_elements = 0;
     for (auto es : ess) {
       int64_t count = es->entity_count();
       if (!summary) {
@@ -600,7 +600,7 @@ namespace {
   void info_commsets(Ioss::Region &region, bool summary)
   {
     // NOTE: This doesn't really do anything...
-    Ioss::CommSetContainer css = region.get_commsets();
+    const Ioss::CommSetContainer &css = region.get_commsets();
     for (auto cs : css) {
       std::string type = cs->get_property("entity_type").get_string();
     }
@@ -609,7 +609,7 @@ namespace {
 
   void info_coordinate_frames(Ioss::Region &region, bool summary)
   {
-    Ioss::CoordinateFrameContainer cf = region.get_coordinate_frames();
+    const Ioss::CoordinateFrameContainer &cf = region.get_coordinate_frames();
     for (const auto &frame : cf) {
       if (!summary) {
         const double *origin = frame.origin();

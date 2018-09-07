@@ -62,4 +62,11 @@ scale = {print_array(e*1/e[0,0])}
 {asub = csv_array("rect.csv", 10)}
 {asub_rows = rows(asub)}
 {a_rows = rows(a)}
+
+{std = array_from_string('2.3 5.7 11.13 17.19 23.29 31.37 41.43 47.53 59.61 67.71',' ')}
+{print_array(transpose(std))}
+
+{st = array_from_string('2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71',' ')}
+{print_array(transpose(st))}
+
 {DUMP()}

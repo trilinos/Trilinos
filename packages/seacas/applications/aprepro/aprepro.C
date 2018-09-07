@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         aprepro.add_variable(var, value, true); // Make it immutable
       }
       else {
-        double dval = strtod(value.c_str(), nullptr);
+        double dval = std::stod(value);
         aprepro.add_variable(var, dval, true);
       }
     }

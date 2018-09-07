@@ -48,7 +48,7 @@ C     --   o A listing of the input database information and any errors
 C     --     found on the standard output device.
 C     --   o The 3D GENESIS Shell database on unit 10.
       
-C     --Developed at Sandia-2017 National Laboratories.
+C     --Developed at Sandia National Laboratories.
 C     --
 C     --Current author and code sponsor: Gregory D. Sjaardema
 C     --

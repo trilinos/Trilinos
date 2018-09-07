@@ -63,7 +63,7 @@ C                 Is returned as: "This is the title"
 C
       CHARACTER*(*) TITLE(*)
       CHARACTER*(*) XLAB,YLAB
-      DIMENSION XX(1), YY(1)
+      DIMENSION XX(*), YY(*)
 C
       LOGICAL MONO, TPLOT
       CHARACTER*(*) CURVE

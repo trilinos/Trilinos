@@ -1,13 +1,13 @@
 netcdf test {
 dimensions:
-	len_string = 33 ;
-	len_line = 81 ;
-	four = 4 ;
 	len_name = 256 ;
 	time_step = UNLIMITED ; // (10 currently)
 	num_dim = 1 ;
 	num_qa_rec = 2 ;
+	four = 4 ;
+	len_string = 33 ;
 	num_info = 3 ;
+	len_line = 81 ;
 	num_glo_var = 1 ;
 variables:
 	float time_whole(time_step) ;

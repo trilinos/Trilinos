@@ -298,7 +298,7 @@ namespace Ioss {
 
     faces_.reserve(3.3 * numel);
 
-    Ioss::ElementBlockContainer ebs = region_.get_element_blocks();
+    const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
       const Ioss::ElementTopology *topo = eb->topology();
 

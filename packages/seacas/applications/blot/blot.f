@@ -82,7 +82,7 @@ C   --     found on the standard output device.
 C   --   o The plots on the specified graphics device.
 C   --   o A GRAFAID neutral file on unit 20.
 C   --   o A EXPLORE listing file on unit 21.
-C
+
 C   --Developed at Sandia National Laboratories.
 C   --
 C   --Current author and code sponsor: John Glick
