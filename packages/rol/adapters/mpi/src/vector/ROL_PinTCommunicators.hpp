@@ -61,8 +61,8 @@ namespace ROL {
  */
 class PinTCommunicators {
 public:
-  PinTCommunicators(MPI_Comm parent,int spatialProcs, bool freeParent=false)
-    : freeParent_(freeParent)
+  PinTCommunicators(MPI_Comm parent,int spatialProcs, bool freeParent=false,const std::string & label="Default")
+    : freeParent_(freeParent), label_(label)
   { 
     parentComm_ = parent; 
 
@@ -88,12 +88,21 @@ public:
     MPI_Comm_rank(spaceComm_, &spaceRank_);
   }
 
+  /**
+   * Deleted the copy constructor because the destructor is non-trivial. This could
+   * be fixed with a more complex copy constructor implementation and more logic in
+   * the destructor. However, following the pointer and reference semantics
+   * seems more straightforward.
+   */
+  PinTCommunicators(const PinTCommunicators &) = delete;
+
   // cleanup
-  ~PinTCommunicators()
-  { MPI_Comm_free(&spaceComm_);  
+  ~PinTCommunicators() {
+    MPI_Comm_free(&spaceComm_);  
     MPI_Comm_free(&timeComm_); 
     if(freeParent_)
-      MPI_Comm_free(&parentComm_); }
+      MPI_Comm_free(&parentComm_); 
+   }
 
    MPI_Comm getParentCommunicator() const { return parentComm_; }
    MPI_Comm getSpaceCommunicator() const { return spaceComm_; }
@@ -128,11 +137,12 @@ public:
       else {
         MPI_Comm_split(parentComm_,MPI_UNDEFINED,myGlobalRank,&halfComm); 
         assert(MPI_COMM_NULL==halfComm);
+
         return ROL::nullPtr;
       }
 
       // build a new pint communicator that works on half the parent processors
-      return ROL::makePtr<PinTCommunicators>(halfComm,getSpaceSize(),true);
+      return ROL::makePtr<PinTCommunicators>(halfComm,getSpaceSize(),true,label_+"->Coarse");
    }
 
 private:
@@ -146,6 +156,8 @@ private:
   int timeRank_;
   int spaceSize_;
   int spaceRank_;
+
+  std::string label_;
 };
 
 } // namespace ROL
