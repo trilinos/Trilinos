@@ -198,6 +198,7 @@ void StepperOperatorSplit<Scalar>::initialize()
     tempState_ = rcp(new SolutionState<Scalar>(
       model, this->getDefaultStepperState()));
   }
+  this->setParameterList(this->stepperPL_);
   this->setObserver();
 
   if (!isOneStepMethod() ) {

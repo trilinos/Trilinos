@@ -98,6 +98,18 @@ void StepperLeapfrog<Scalar>::setObserver(
 }
 
 template<class Scalar>
+void StepperLeapfrog<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperLeapfrog::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+  this->setObserver();
+}
+
+template<class Scalar>
 void StepperLeapfrog<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {

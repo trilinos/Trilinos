@@ -68,7 +68,7 @@ public:
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
-    virtual void initialize() { this->setObserver(); }
+    virtual void initialize();
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -94,7 +94,7 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
-  /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
        {initial_guess_ = initial_guess;}
 
@@ -136,7 +136,7 @@ protected:
   Teuchos::RCP<StepperForwardEulerObserver<Scalar> > stepperFEObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 };
 
 } // namespace Tempus
