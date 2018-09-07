@@ -60,27 +60,27 @@ public:
   /**
    * \brief Send a vector to a neighboring processor.
    */
-  virtual void send(MPI_Comm comm,int rank,Vector<Real> & source) const = 0;
+  virtual void send(MPI_Comm comm,int rank,Vector<Real> & source,int tag=0) const = 0;
 
   /**
    * \brief Recieve a vector from a neighboring processor. Uses blocking communication. 
    */
-  virtual void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const = 0;
+  virtual void recv(MPI_Comm comm,int rank,Vector<Real> & dest,int tag=0) const = 0;
 
   /**
    * \brief Recieve a vector from a neighboring processor. Uses blocking communication. 
    */
-  virtual void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest) const = 0;
+  virtual void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest,int tag=0) const = 0;
 
   /**
    * \brief Recieve a vector from a neighboring processor. Uses blocking communication. Optionally, sum into
    */
-  void recv(MPI_Comm comm,int rank,Vector<Real> & dest,bool sumInto) const 
+  void recv(MPI_Comm comm,int rank,Vector<Real> & dest,bool sumInto,int tag=0) const 
   {
     if(sumInto)
-      recvSumInto(comm,rank,dest);
+      recvSumInto(comm,rank,dest,tag);
     else
-      recv(comm,rank,dest);
+      recv(comm,rank,dest,tag);
   }
 };
 

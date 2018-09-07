@@ -948,7 +948,7 @@ public:
    }
 
    // Done in parallel, no blocking, solve a linear system on this processor
-   void invertTimeStepJacobian(PinTVector<Real>       & pint_pvM,
+   void invertTimeStepJacobian(PinTVector<Real>       & pint_pv,
                                const PinTVector<Real> & pint_v,
                                const PinTVector<Real> & pint_u,
                                const PinTVector<Real> & pint_z,
@@ -1109,7 +1109,7 @@ public:
        // no vector exists on this processor at this level
        return ROL::nullPtr;
      } else {
-       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
        return buildStatePinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
      }
    }
@@ -1129,7 +1129,7 @@ public:
        return ROL::nullPtr;
      } else {
        // no vector exists on this processor at this level
-       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
        return buildControlPinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
      }
    }

@@ -516,6 +516,15 @@ public:
   */
   virtual ROL::Ptr<Vector<Real>> clone() const override
   {
+    return clonePinT();
+  }
+
+  /** \brief Clone that provides direct access to a PinT vector.
+
+             @return         A reference-counted pointer to the cloned vector.
+  */
+  ROL::Ptr<PinTVector<Real>> clonePinT() const
+  {
     return makePtr<PinTVector<Real>>(*this);
   }
 

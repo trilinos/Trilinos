@@ -41,18 +41,23 @@
 // ************************************************************************
 // @HEADER
 
-#include "ROL_Stream.hpp"
+#include <vector>
+#include <mpi.h>
+
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "ODEConstraint_TimeSimOpt.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_PinTCommunicationUtilities.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
+#include "ROL_PinTVector.hpp"
 
-typedef double RealT;
+typedef double Real;
 
-int main(int argc, char* argv[]) {
+void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
+void run_VectorExport_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
 
-  typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
-  typedef ROL::Ptr<const ROL::Vector<RealT>> CPtrVector;
-
+int main(int argc, char* argv[]) 
+{
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -64,199 +69,263 @@ int main(int argc, char* argv[]) {
   else
     outStream = ROL::makePtrFromRef(bhs);
 
+  int myRank = -1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+  // split the comm so if three processors are used you can run a 3, 2 and 1 processor
+  // case all at once
+ 
+  int numSteps = 4;
   int errorFlag  = 0;
 
   try {
-    double dt = 0.1;
-    double tol = 1e-15;
 
-    // allocate state vector
-    std::vector<RealT> uo_data(3), un_data(3);
-    uo_data[0] = 0.0; uo_data[1] = 2.0*M_PI; uo_data[2] = 1.0;
-    un_data[0] = 0.0; un_data[1] = 0.0;      un_data[2] = 0.1;
-    PtrVector uo_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(uo_data));
-    PtrVector un_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(un_data));
-    PtrVector u = ROL::makePtr<ROL::PartitionedVector<RealT>>(std::vector<PtrVector>({uo_vec,un_vec}));
-    CPtrVector cu = u;
-    PtrVector v_u = u->clone();
-    PtrVector hv_u = u->clone();
+    (*outStream) << "Running TimeStamp test" << std::endl;
+    run_TimeStamp_test(MPI_COMM_WORLD, outStream,numSteps);
 
-    u->print(std::cout);
-
-    // allocate control vector
-    std::vector<RealT> z_data(1);
-    PtrVector z = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(z_data));
-    CPtrVector cz = z;
-    PtrVector v_z = z->clone();
-    PtrVector hv_z = z->clone();
-
-    // allocate constraint vector
-    std::vector<RealT> c_data(3);
-    PtrVector c = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(c_data));
-    CPtrVector cc  = c;
-    PtrVector jv   = c->clone();
-    PtrVector w    = c->clone();
-    PtrVector w_c    = c->clone();
-    PtrVector v_c  = c->clone();
-
-    ROL::Ptr<ROL::Constraint_TimeSimOpt<RealT>> constraint = ROL::makePtr<ODE_Constraint<RealT>>(dt,2.0*M_PI);
-
-    // ROL::RandomizeVector<RealT>(*u);
-    ROL::RandomizeVector<RealT>(*z);
-    ROL::RandomizeVector<RealT>(*v_u);
-    ROL::RandomizeVector<RealT>(*v_z);
-    ROL::RandomizeVector<RealT>(*v_c);
-    ROL::RandomizeVector<RealT>(*jv);
-    ROL::RandomizeVector<RealT>(*hv_u);
-    ROL::RandomizeVector<RealT>(*hv_z);
-    ROL::RandomizeVector<RealT>(*w);
-    ROL::RandomizeVector<RealT>(*w_c);
-
-    // check the solve
-    *outStream << "Checking solve" << std::endl;
-    constraint->checkSolve(*u,*z,*c,true,*outStream);
-
-    // check the Jacobian_1
-    *outStream << "Checking apply Jacobian 1" << std::endl;
-    { 
-      auto errors = constraint->checkApplyJacobian_1(*u,*z,*v_u,*jv,true,*outStream);
-      if(errors[6][3] >= 1e-6)
-        throw std::logic_error("Constraint apply jacobian 1 is incorrect");
-    }
-
-    // check the Jacobian_2
-    *outStream << "Checking apply Jacobian 2" << std::endl;
-    {
-      auto errors = constraint->checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
-      if(errors[6][3] >= 1e-6)
-        throw std::logic_error("Constraint apply jacobian 2 is incorrect");
-    }
-
-    // check inverses Jacobian_1_new
-    *outStream << "Checking apply Jacobian 2 new" << std::endl;
-    {
-      ROL::Vector<RealT> & v_un = *dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(1);
-      dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(0)->scale(0.0);
-
-
-      constraint->applyJacobian_1(*jv,*v_u,*u,*z,tol);
-
-      PtrVector ijv = v_un.clone();
-      constraint->applyInverseJacobian_1_new(*ijv,*jv,*uo_vec,*un_vec,
-                                                      *z,tol);
-
-      ijv->axpy(-1.0,v_un);
-
-      *outStream << "Inverse Jacobian_1_new error norm = " << ijv->norm() << std::endl;
-      if(ijv->norm() >= tol)
-        throw std::logic_error("Inverse Jacobian_1_new not checking out");
-    }
-
-    // check the Adjoint Jacobian_1
-    *outStream << "Checking apply Adjoint Jacobian 1" << std::endl;
-    {
-      auto error = constraint->checkAdjointConsistencyJacobian_1(*w,*v_u,*u,*z,true,*outStream);
-      if(error >= 1e-8)
-        throw std::logic_error("Constraint apply adjoint jacobian 1 is incorrect");
-    }
-
-    // check the Adjoint Jacobian_1
-    *outStream << "Checking apply Adjoint Jacobian 2" << std::endl;
-    {
-      auto error = constraint->checkAdjointConsistencyJacobian_2(*w,*v_z,*u,*z,true,*outStream);
-      if(error >= 1e-8)
-        throw std::logic_error("Constraint apply adjoint jacobian 2 is incorrect");
-    }
-
-    // check the Adjoint Hessian_11
-    *outStream << "Checking apply Adjoint Hessian_11" << std::endl;
-    {
-      auto errors = constraint->checkApplyAdjointHessian_11(*u,*z,*w_c,*v_u,*hv_u,true,*outStream);
-      if(errors[6][3] >= 1e-5)
-        throw std::logic_error("Constraint apply Adjoint Hessian 11 is incorrect");
-    }
-
-    // check the Adjoint Hessian_12
-    *outStream << "Checking apply Adjoint Hessian_12" << std::endl;
-    {
-      auto errors = constraint->checkApplyAdjointHessian_12(*u,*z,*w_c,*v_u,*hv_z,true,*outStream);
-      if(errors[6][3] >= 1e-5)
-        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
-    }
-
-    // check the Adjoint Hessian_21
-    *outStream << "Checking apply Adjoint Hessian_21" << std::endl;
-    {
-      auto errors = constraint->checkApplyAdjointHessian_21(*u,*z,*w_c,*v_z,*hv_u,true,*outStream);
-      if(errors[6][3] >= 1e-5)
-        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
-    }
-
-    // check the Adjoint Hessian_22
-    *outStream << "Checking apply Adjoint Hessian_22" << std::endl;
-    {
-      auto errors = constraint->checkApplyAdjointHessian_22(*u,*z,*w_c,*v_z,*hv_z,true,*outStream);
-      if(errors[6][3] >= 1e-5)
-        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
-    }
-
-    // check inverses adjoint Jacobian_1_new
-    *outStream << "Checking apply Inverse Adjoint Jacobian 2 new" << std::endl;
-    {
-      dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(0)->scale(0.0);
-
-      PtrVector jv_u = un_vec->clone();
-
-      constraint->applyAdjointJacobian_1_new(*jv,*v_c,
-                                         *uo_vec,*un_vec,
-                                         *z,tol);
-
-      PtrVector iajv = c->clone();
-      constraint->applyInverseAdjointJacobian_1_new(*iajv,*jv,
-                                                    *uo_vec,*un_vec,
-                                                    *z,tol);
-
-      iajv->axpy(-1.0,*v_c);
-
-      *outStream << "Inverse Adjoint Jacobian_1_new error norm = " << iajv->norm() << std::endl;
-      if(iajv->norm() >= tol)
-        throw std::logic_error("Inverse Adjoint Jacobian_1_new not checking out");
-    }
-
-    {
-      ROL::RandomizeVector<RealT>(*u);
-      ROL::RandomizeVector<RealT>(*z);
-
-      *outStream << "Pre solve: solution =\n";
-      u->print(*outStream);
-
-      // using randomized vectors, print value
-      constraint->value(*c,*cu,*cz,tol);
-      *outStream << "Pre solve: constraint =\n";
-      c->print(*outStream);
-
-      // using randomized vectors, print value
-      constraint->solve(*c,*u,*z,tol);
-      *outStream << "Post solve: constraint =\n";
-      c->print(*outStream);
-      *outStream << "Post solve: solution =\n";
-      u->print(*outStream);
-
-      *outStream << "Post solve constraint norm = " << c->norm() << std::endl;
-      if(c->norm() >= tol)
-        throw std::logic_error("Constraint required accuracy not reached");
-    }
-
+    (*outStream) << "Running VectorExport test" << std::endl;
+    run_VectorExport_test(MPI_COMM_WORLD, outStream,numSteps);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
 
-  if (errorFlag != 0)
+  int errors = std::abs(errorFlag);
+  MPI_Allreduce(&errors,&errorFlag,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+
+  if (errorFlag != 0 && myRank==0)
     std::cout << "End Result: TEST FAILED\n";
-  else
+  else if(myRank==0)
     std::cout << "End Result: TEST PASSED\n";
 
   return 0;
+}
+
+void printSerializedTimeStamps(const std::vector<ROL::TimeStamp<Real>> & timeStamps,
+                               int myRank,
+                               std::ostream & outStream)
+{
+  std::vector<double> serialized;
+  ROL::PinT::serializeTimeStamps(timeStamps,serialized,0);
+  
+  std::stringstream ss;
+  ss << "Processor " << myRank << ": ";
+  for(auto t : serialized) 
+    ss << t << " ";
+  outStream << ss.str() << std::endl;
+}
+
+void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int local_Nt)
+{
+  int numRanks = -1;
+  int myRank = -1;
+
+  std::stringstream ss;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
+  auto  Nt  = numRanks*local_Nt; // use a power of two
+  double dt = totaltime/Nt;
+  double timeOffset  = 0.0;
+
+  ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+
+  // compute the time offset for each processor
+  {
+    double myFinalTime = dt*local_Nt;
+    MPI_Exscan(&myFinalTime,&timeOffset,1,MPI_DOUBLE,MPI_SUM,communicators->getTimeCommunicator());
+  }
+
+  std::vector<ROL::TimeStamp<Real>> timeStamps(local_Nt);
+  for( size_t k=0; k< static_cast<size_t>(local_Nt); ++k ) {
+    timeStamps.at(k).t.resize(2);
+    timeStamps.at(k).t.at(0) = k*dt+timeOffset;
+    timeStamps.at(k).t.at(1) = (k+1)*dt+timeOffset;
+  }
+
+  printSerializedTimeStamps(timeStamps,myRank,*outStream);
+
+  // build the coarse communicators
+  auto coarseComms = communicators->buildCoarseCommunicators();
+
+  // check the coarse communicators are allocated correctly
+  if(myRank<2) {
+    if(ROL::is_nullPtr(coarseComms)) {
+      ss << "Coarse communicator is unexpectely null on rank " << myRank << std::endl;
+      throw std::logic_error(ss.str());
+    }  
+  }
+  else {
+    if(not ROL::is_nullPtr(coarseComms)) {
+      ss << "Coarse communicator is unexpectely NOT null on rank " << myRank << std::endl;
+      throw std::logic_error(ss.str());
+    }  
+  }
+
+  // print out a line
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  std::vector<ROL::TimeStamp<Real>> coarseStamps;
+  bool coarseStampsExist = ROL::PinT::exportToCoarseDistribution_TimeStamps(timeStamps,coarseStamps,*communicators,0);
+
+  // get the coarse communicators
+  if(not ROL::is_nullPtr(coarseComms)) {
+    if(not coarseStampsExist) {
+      ss << "Incorrect distribution of coarse stamps on rank " << myRank << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    if(coarseStamps.size()!=local_Nt*2) {
+      ss << "Incorrect number of coarse stamps on rank " << myRank << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    printSerializedTimeStamps(coarseStamps,coarseComms->getTimeRank(),*outStream);
+  }
+  else {
+    if(coarseStampsExist) {
+      ss << "Incorrect distribution of coarse stamps on rank " << myRank << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+}
+
+void run_VectorExport_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int local_Nt)
+{
+  typedef ROL::Ptr<ROL::Vector<Real>> PtrVector;
+  typedef ROL::Ptr<ROL::PinTVector<Real>> PtrPinTVector;
+  
+  int numRanks = -1;
+  int myRank = -1;
+
+  std::stringstream ss;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
+  auto  Nt  = numRanks*local_Nt; // use a power of two
+  double dt = totaltime/Nt;
+
+  int spatialProcs = 1;
+  ROL::Ptr<ROL::PinTCommunicators> fineComm = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spatialProcs);
+  ROL::Ptr<ROL::PinTCommunicators> crseComm = fineComm->buildCoarseCommunicators();
+  ROL::Ptr<const ROL::PinTVectorCommunication<Real>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<Real>>();
+
+  // allocate fine vector
+  PtrPinTVector fine_vec;
+  int spaceSize = 20;
+  {
+    std::vector<Real> data(spaceSize,0.0);
+    PtrVector vec = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtrFromRef(data));
+
+    std::vector<int> stencil = {-1,0};
+    fine_vec = ROL::makePtr<ROL::PinTVector<Real>>(fineComm,vectorComm,vec,local_Nt*numRanks,stencil);
+  }
+
+  // allocate coarse vector (if relevant)
+  PtrPinTVector crse_vec;
+  if(not ROL::is_nullPtr(crseComm)) {
+    std::vector<Real> data(spaceSize,0.0);
+    PtrVector vec = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtrFromRef(data));
+
+    std::vector<int> stencil = {-1,0};
+    crse_vec = ROL::makePtr<ROL::PinTVector<Real>>(crseComm,vectorComm,vec,local_Nt*numRanks,stencil);
+  }
+
+  // allocate and fill a fine vector
+  for(int i=-1;i<fine_vec->numOwnedSteps();i++) {
+    auto v = fine_vec->getVectorPtr(i);
+    v->setScalar(Real(myRank)+(i+1.0)/(spaceSize+1.0)); // EXPECTED VALUE
+  }
+
+  MPI_Barrier(fineComm->getTimeCommunicator());
+
+/*
+  for(int i=0;i<4;i++) {
+    if(myRank==i) {
+      std::cout << "FINE PROCESS " << myRank << std::endl;
+      std::cout << "===============================" << std::endl;
+      fine_vec->print(std::cout);
+      std::cout << "===============================" << std::endl;
+      std::cout.flush();
+    }
+
+    MPI_Barrier(fineComm->getTimeCommunicator());
+  }
+
+  MPI_Barrier(fineComm->getTimeCommunicator());
+*/
+
+  if(myRank==0)
+    std::cout << std::endl << std::endl;
+
+  // build a STL vector with the fine vectors
+  int startIndex = (myRank % 2==0) ? -1 : 0;
+  std::vector<ROL::Ptr<ROL::Vector<Real>>> fineVectors(fine_vec->numOwnedSteps()-startIndex);
+  for(int i=startIndex;i<fine_vec->numOwnedSteps();i++)
+    fineVectors[i-startIndex] = fine_vec->getVectorPtr(i); 
+  
+  // send data
+  ROL::PinT::sendToCoarseDistribution_Vector(fineVectors,*vectorComm,*fineComm);
+
+  // recv data
+  if(not ROL::is_nullPtr(crseComm)) {
+    // build a STL vector with the fine vectors
+    int fineSize = fine_vec->numOwnedSteps();
+    std::vector<ROL::Ptr<ROL::Vector<Real>>> crseVectors(2*fineSize+1);
+    for(int i=-1;i<crse_vec->numOwnedSteps();i++)
+      crseVectors[i+1] = crse_vec->getVectorPtr(i); 
+   
+    ROL::PinT::recvFromFineDistribution_Vector(crseVectors,*vectorComm,*fineComm,fineSize+1,fineSize);
+
+    /*
+    for(int i=0;i<2;i++) {
+      if(myRank==i) {
+        std::cout << "COARSE PROCESS " << myRank << std::endl;
+        std::cout << "===============================" << std::endl;
+        crse_vec->print(std::cout);
+        std::cout << "===============================" << std::endl;
+        std::cout.flush();
+      }
+
+      MPI_Barrier(crseComm->getTimeCommunicator());
+    }
+    MPI_Barrier(crseComm->getTimeCommunicator());
+    */
+
+    int numFineSteps = fine_vec->numOwnedSteps();
+    for(int i=-1;i<crse_vec->numOwnedSteps();i++) {
+      Real norm = crse_vec->getVectorPtr(i)->norm();
+
+      // the expected value is a function of the rank that sent it
+      // and the spatial index of the vector, see line labeled "EXPECTED VALUE"
+      Real expectedValue = 0.0;
+      if(i<numFineSteps) 
+        // the first numFineSteps+1 (not iteration start) expect this
+        expectedValue = (Real(2.0*myRank)+(i+1.0)/(spaceSize+1.0));
+      else
+        // the last numFineSteps expect this
+        expectedValue = (Real(2.0*myRank+1)+(i-numFineSteps+1.0)/(spaceSize+1.0));
+
+      Real expectedNorm  = std::sqrt(spaceSize*expectedValue*expectedValue);
+
+      if(std::fabs(norm-expectedNorm)/expectedNorm > 1e-15) {
+        ss << "Expected norm (" << expectedNorm << ") does not match computed norm (" << norm 
+           << ") on processor " << myRank << " vector " << i;
+
+        throw std::logic_error(ss.str());
+      }
+    }
+  }
 }
