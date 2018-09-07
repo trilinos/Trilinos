@@ -279,7 +279,7 @@ namespace MueLu {
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       // For piece-wise constant interpolation we only get one nnz per row
       nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
-      rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1;
+      rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1; // These needs to change for kokkos: rowPtr[nodeIdx + 1] = nodeIdx + 1;
 
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, ghostedIdx[0], ghostedIdx[1], ghostedIdx[2]);
@@ -300,7 +300,7 @@ namespace MueLu {
 
       geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
                                        ghostedCoarseNodeCoarseLID);
-      colIndex[rowPtr[nodeIdx]] = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID];
+      colIndex[rowPtr[nodeIdx]] = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID]; // Here too, substitute nodeIdx for rowPtr[nodeIdx]
     } // Loop over fine points
 
   } // ComputeGraphDataConstant()
@@ -328,6 +328,7 @@ namespace MueLu {
     int rate = 0;
 
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
+
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, ghostedIdx[0], ghostedIdx[1], ghostedIdx[2]);
       for(int dim=0; dim < numDimensions; dim++){
@@ -366,12 +367,15 @@ namespace MueLu {
           allCoarse = false;
       }
 
-      if(allCoarse) { // Fine node lies on Coarse node
+      if(allCoarse) {
+        // Fine node lies on Coarse node, easy case, we only need the LID of the coarse node.
         geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
                                          colIndex[rowPtr[nodeIdx]]);
         nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
         rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1;
       } else {
+        // Harder case, we need the LIDs of all the coarse nodes contributing to the interpolation
+        // at the current node.
         nnzOnRow[nodeIdx] = Teuchos::as<size_t>( numInterpolationPoints );
         rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + Teuchos::as<LO>( numInterpolationPoints );
 
