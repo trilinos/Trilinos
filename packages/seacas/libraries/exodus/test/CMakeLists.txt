@@ -100,6 +100,7 @@ IF ( NETCDF_NCDUMP_BINARY )
     rd_wt_mesh
     test-empty
     testwt-compress
+    testwt-results
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)

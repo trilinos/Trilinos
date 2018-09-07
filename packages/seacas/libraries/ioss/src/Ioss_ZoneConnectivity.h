@@ -56,12 +56,13 @@ namespace Ioss {
     ZoneConnectivity(const std::string name, int owner_zone, const std::string donor_name,
                      int donor_zone, const Ioss::IJK_t p_transform, const Ioss::IJK_t range_beg,
                      const Ioss::IJK_t range_end, const Ioss::IJK_t donor_beg,
-                     const Ioss::IJK_t donor_end, const Ioss::IJK_t owner_offset = IJK_t(), const Ioss::IJK_t donor_offset = IJK_t())
+                     const Ioss::IJK_t donor_end, const Ioss::IJK_t owner_offset = IJK_t(),
+                     const Ioss::IJK_t donor_offset = IJK_t())
         : m_connectionName(std::move(name)), m_donorName(std::move(donor_name)),
           m_transform(std::move(p_transform)), m_ownerRangeBeg(std::move(range_beg)),
-          m_ownerRangeEnd(std::move(range_end)), m_ownerOffset(std::move(owner_offset)), m_donorRangeBeg(std::move(donor_beg)),
-      m_donorRangeEnd(std::move(donor_end)),
-      m_donorOffset(std::move(donor_offset)), m_ownerZone(owner_zone), m_donorZone(donor_zone)
+          m_ownerRangeEnd(std::move(range_end)), m_ownerOffset(std::move(owner_offset)),
+          m_donorRangeBeg(std::move(donor_beg)), m_donorRangeEnd(std::move(donor_end)),
+          m_donorOffset(std::move(donor_offset)), m_ownerZone(owner_zone), m_donorZone(donor_zone)
     {
       assert(is_valid());
       m_intraBlock      = m_ownerZone == m_donorZone;
@@ -145,9 +146,8 @@ namespace Ioss {
     size_t m_donorGUID{};        // globally-unique id of donor
     int    m_ownerProcessor{-1}; // processor that owns the owner zone
     int    m_donorProcessor{-1}; // processor that owns the donor zone
-    bool   m_sameRange{
-        false}; // True if owner and donor range should always match...(special use during
-                  // decomp)
+    bool   m_sameRange{false};   // True if owner and donor range should always match...(special use
+                                 // during decomp)
     // True if it is the "lower" zone id in the connection. Uses adam unless both have same adam.
     bool m_ownsSharedNodes{false}; // Deprecate soon
 

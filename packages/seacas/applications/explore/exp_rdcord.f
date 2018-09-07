@@ -60,11 +60,13 @@ C   --upon exit at end of coordinates.
       CALL INIREA (NDIM*NUMNP, 0.0, CORD)
       CALL INISTR (NDIM, '--------------------------------', NAMECO)
 
-      call exgcor(ndb, cord(1,1), cord(1,2), cord(1,3), ierr)
-      if (ierr .ne. 0) go to 100
+      if (NDIM .gt. 0) then
+         call exgcor(ndb, cord(1,1), cord(1,2), cord(1,3), ierr)
+         if (ierr .ne. 0) go to 100
 
-      call exgcon(ndb, nameco, ierr)
-      if (ierr .ne. 0) go to 105
+         call exgcon(ndb, nameco, ierr)
+         if (ierr .ne. 0) go to 105
+      end if
 
       RETURN
 

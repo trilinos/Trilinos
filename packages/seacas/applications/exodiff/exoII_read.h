@@ -60,7 +60,7 @@ template <typename INT> class ExoII_Read
 {
 public:
   ExoII_Read();
-  explicit ExoII_Read(const char *fname);
+  explicit ExoII_Read(const std::string &fname);
   virtual ~ExoII_Read();
   const ExoII_Read &operator=(const ExoII_Read &); // Not written.
 

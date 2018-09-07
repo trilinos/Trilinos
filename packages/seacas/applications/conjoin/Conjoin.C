@@ -1170,14 +1170,7 @@ namespace {
         }
       }
 
-      if (debug_level & 4) {
-        std::cerr << "\nGetting element block info for part " << p << "..." << '\n';
-      }
       for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
-        if (debug_level & 4) {
-          std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id;
-        }
-
         ex_block block_param{};
         block_param.id   = glob_blocks[b].id;
         block_param.type = EX_ELEM_BLOCK;
@@ -1237,23 +1230,39 @@ namespace {
           }
           free_name_array(names, block_param.num_attribute);
         }
-        if (debug_level & 4) {
-          std::cerr << ", Name = '" << blocks[p][b].name_;
-          std::cerr << "', Elements = " << std::setw(8) << blocks[p][b].entity_count();
-          std::cerr << ", Nodes/element = " << blocks[p][b].nodesPerElement;
-          std::cerr << ", Attributes = " << blocks[p][b].attributeCount << '\n';
-          std::cerr << ", Position = " << blocks[p][b].position_ << '\n';
-        }
       }
     } // end for p=0..part_count
 
     // Convert block_offset from elements/block/part to true offset
     for (size_t p = 0; p < part_count; p++) {
+      if (debug_level & 4) {
+        std::cerr << "\nElement block info for part " << p << "..." << '\n';
+      }
+      // Number of elements per block in local block order...
+      std::vector<size_t> local_order_entity_count(global.count(Excn::EBLK));
+      for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
+	int local_order = blocks[p][b].position_;
+	local_order_entity_count[local_order] = blocks[p][b].entity_count();
+      }
       size_t sum = 0;
       for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
-        size_t save          = blocks[p][b].offset_;
-        blocks[p][b].offset_ = sum;
-        sum += save;
+	size_t save = local_order_entity_count[b];
+	local_order_entity_count[b] = sum;
+	sum += save;
+      }
+      for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
+	int local_order = blocks[p][b].position_;
+        blocks[p][b].offset_ = local_order_entity_count[local_order];
+
+        if (debug_level & 4) {
+          std::cerr << "\tBlock " << b << ", Id = " << glob_blocks[b].id;
+          std::cerr << ", Name = '" << blocks[p][b].name_;
+          std::cerr << "', Elements = " << std::setw(8) << blocks[p][b].entity_count();
+          std::cerr << ", Nodes/element = " << blocks[p][b].nodesPerElement;
+          std::cerr << ", Attributes = " << blocks[p][b].attributeCount;
+          std::cerr << ", Position = " << blocks[p][b].position_;
+          std::cerr << ", Offset = " << blocks[p][b].offset_ << '\n';
+        }
       }
     }
   }
